@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 import { getPublicEnv } from "@/lib/env";
+import type { Database } from "@/lib/supabase/database.types";
 
 /**
  * Supabase client for Server Components, Server Actions and Route Handlers.
@@ -14,12 +15,16 @@ import { getPublicEnv } from "@/lib/env";
  * This client uses the publishable key and therefore runs as the signed in user,
  * under Row Level Security. It is not an elevated client and must not be
  * replaced with one for ordinary user operations (AGENTS.md section 5).
+ *
+ * Typed with the generated `Database`, so every read and write of the tracking
+ * tables is checked against the real schema. Regenerate with `pnpm db:types`
+ * after any schema change; `pnpm db:types:check` fails when the two drift.
  */
 export async function createClient() {
   const env = getPublicEnv();
   const cookieStore = await cookies();
 
-  return createServerClient(
+  return createServerClient<Database>(
     env.NEXT_PUBLIC_SUPABASE_URL,
     env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     {
