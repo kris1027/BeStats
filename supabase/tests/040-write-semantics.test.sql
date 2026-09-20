@@ -5,7 +5,7 @@
 -- privileged role to delete an account.
 
 begin;
-select plan(20);
+select plan(27);
 
 set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
 set local role authenticated;
@@ -66,6 +66,31 @@ select is(
   'marking a season watched did not overwrite an existing episode rating'
 );
 
+-- AC-6, the third shape. AC-6 names movies, shows and episodes; without this
+-- the show table is the one whose idempotency nothing proves.
+insert into public.user_show_state (user_id, show_id, status, status_source)
+values ('11111111-1111-1111-1111-111111111111', 5555, 'watching', 'user')
+on conflict (user_id, show_id) do update
+  set status = excluded.status, status_source = excluded.status_source;
+
+insert into public.user_show_state (user_id, show_id, status, status_source)
+values ('11111111-1111-1111-1111-111111111111', 5555, 'on_hold', 'user')
+on conflict (user_id, show_id) do update
+  set status = excluded.status, status_source = excluded.status_source;
+
+select is(
+  (select count(*) from public.user_show_state
+   where user_id = '11111111-1111-1111-1111-111111111111' and show_id = 5555),
+  1::bigint,
+  'writing the same show twice leaves one row'
+);
+select is(
+  (select status from public.user_show_state
+   where user_id = '11111111-1111-1111-1111-111111111111' and show_id = 5555),
+  'on_hold'::public.tv_status,
+  'the later show write wins'
+);
+
 -- AC-10: watched state and rating are independent in both directions.
 update public.user_movie_state set watched_at = null
   where user_id = '11111111-1111-1111-1111-111111111111' and movie_id = 550;
@@ -106,6 +131,19 @@ select lives_ok(
     values ('11111111-1111-1111-1111-111111111111', 701, null)$$,
   'a null rating is allowed, because not rated is not zero'
 );
+-- The two ends of the range, which AC-7 calls inclusive. Only the rejections
+-- above are not enough: a check written as `between 2 and 10` would pass every
+-- one of them while quietly making 1 unreachable.
+select lives_ok(
+  $$insert into public.user_movie_state (user_id, movie_id, rating)
+    values ('11111111-1111-1111-1111-111111111111', 706, 1)$$,
+  'a rating of 1 is accepted, so the lower bound is inclusive'
+);
+select lives_ok(
+  $$insert into public.user_movie_state (user_id, movie_id, rating)
+    values ('11111111-1111-1111-1111-111111111111', 707, 10)$$,
+  'a rating of 10 is accepted, so the upper bound is inclusive'
+);
 
 -- AC-8: only the five statuses and the two sources exist.
 select throws_ok(
@@ -137,6 +175,26 @@ select throws_ok(
       (user_id, episode_id, show_id, season_number, episode_number)
     values ('11111111-1111-1111-1111-111111111111', 704, 1396, 1, 0)$$,
   '23514', null, 'an episode number of 0 is rejected'
+);
+
+-- A TMDB id is always positive, so a 0 or negative id is a bug upstream rather
+-- than data. AC-1 counts these checks as part of the schema the migration must
+-- create, and nothing else exercises them.
+select throws_ok(
+  $$insert into public.user_movie_state (user_id, movie_id)
+    values ('11111111-1111-1111-1111-111111111111', 0)$$,
+  '23514', null, 'a movie id of 0 is rejected'
+);
+select throws_ok(
+  $$insert into public.user_show_state (user_id, show_id, status, status_source)
+    values ('11111111-1111-1111-1111-111111111111', -1, 'watching', 'user')$$,
+  '23514', null, 'a negative show id is rejected'
+);
+select throws_ok(
+  $$insert into public.user_episode_state
+      (user_id, episode_id, show_id, season_number, episode_number)
+    values ('11111111-1111-1111-1111-111111111111', 0, 1396, 1, 1)$$,
+  '23514', null, 'an episode id of 0 is rejected'
 );
 
 -- AC-13: an episode row needs no show status row. Show 4242 has none.

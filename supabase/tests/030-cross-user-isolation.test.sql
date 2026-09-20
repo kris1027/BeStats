@@ -8,7 +8,7 @@
 -- `set local` confines both to this transaction, which is rolled back.
 
 begin;
-select plan(17);
+select plan(26);
 
 -- User A and user B come from supabase/seed.sql.
 -- A owns: movie 603 and 27205, show 1396 and 1399, episodes 62085 to 62119.
@@ -51,6 +51,30 @@ select ok(
   'user A can still see their own movie rows, so the zero counts above are not an empty table'
 );
 
+-- The same leak check on the other two tables. A policy that filters on the
+-- wrong column would still pass the targeted counts above, because those name
+-- user B explicitly; only an unqualified read catches it.
+select is(
+  (select count(*) from public.user_show_state
+   where user_id <> '11111111-1111-1111-1111-111111111111'),
+  0::bigint,
+  'every show row visible to user A belongs to user A'
+);
+select ok(
+  (select count(*) from public.user_show_state) > 0,
+  'user A can still see their own show rows'
+);
+select is(
+  (select count(*) from public.user_episode_state
+   where user_id <> '11111111-1111-1111-1111-111111111111'),
+  0::bigint,
+  'every episode row visible to user A belongs to user A'
+);
+select ok(
+  (select count(*) from public.user_episode_state) > 0,
+  'user A can still see their own episode rows'
+);
+
 -- Writing into someone else's space. An insert carrying user B's id is
 -- refused outright by the insert policy's with check clause.
 select throws_ok(
@@ -90,6 +114,8 @@ update public.user_show_state set status = 'dropped'
   where user_id = '22222222-2222-2222-2222-222222222222';
 delete from public.user_show_state
   where user_id = '22222222-2222-2222-2222-222222222222';
+update public.user_episode_state set rating = 1
+  where user_id = '22222222-2222-2222-2222-222222222222';
 delete from public.user_episode_state
   where user_id = '22222222-2222-2222-2222-222222222222';
 delete from public.user_movie_state
@@ -128,6 +154,14 @@ select is(
    where user_id = '22222222-2222-2222-2222-222222222222'),
   1::bigint,
   'user B episode row survived user A delete attempt'
+);
+-- AC-3 asks for all four commands on all three tables. Update on episodes is
+-- the one the matrix is otherwise missing.
+select is(
+  (select rating from public.user_episode_state
+   where user_id = '22222222-2222-2222-2222-222222222222' and episode_id = 63056),
+  9::smallint,
+  'user B episode rating was not changed by user A update attempt'
 );
 
 -- AC-5: a user cannot hand their own row to somebody else. This is what the
@@ -173,6 +207,53 @@ select throws_ok(
   '42501',
   null,
   'anon cannot write episode state at all'
+);
+
+reset role;
+reset request.jwt.claims;
+
+-- A token that carries the authenticated role but no `sub`, which is what a
+-- malformed or partly stripped JWT looks like. auth.uid() is then null, so
+-- every policy predicate is null rather than true and nothing is visible. The
+-- danger this rules out is a predicate that treats a missing subject as a
+-- match.
+set local request.jwt.claims = '{"role":"authenticated"}';
+set local role authenticated;
+
+select is(
+  (
+    select (select count(*) from public.user_movie_state)
+         + (select count(*) from public.user_show_state)
+         + (select count(*) from public.user_episode_state)
+  ),
+  0::bigint,
+  'a session with no subject claim sees no row in any table'
+);
+select throws_ok(
+  $$insert into public.user_movie_state (user_id, movie_id)
+    values ('11111111-1111-1111-1111-111111111111', 999)$$,
+  '42501',
+  null,
+  'a session with no subject claim cannot write either'
+);
+
+-- The positive half of the boundary. Every assertion above is a refusal, and a
+-- policy that refused everything would pass all of them while making the
+-- application unusable. This proves the door still opens for its owner.
+reset role;
+reset request.jwt.claims;
+set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local role authenticated;
+
+select lives_ok(
+  $$delete from public.user_movie_state where movie_id = 27205$$,
+  'user A can delete their own movie row'
+);
+select is(
+  (select count(*) from public.user_movie_state
+   where user_id = '11111111-1111-1111-1111-111111111111' and movie_id = 27205),
+  0::bigint,
+  'the row user A deleted is really gone'
 );
 
 reset role;
