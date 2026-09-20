@@ -56,16 +56,17 @@ spec [0003](../specs/0003-lint-format-and-test-tooling.md)
 The costliest thing to redo. Movie state, TV tracking state, episode state and catalog identity (media type plus TMDB ID), with constraints and row level security from the first migration.
 **Done when:** migrations create every table with ownership, uniqueness and rating bounds; RLS blocks any cross user read or write; repeated writes never duplicate rows.
 - [x] Design it (spec): `/architect data model and security policies`
-- [ ] Build it: `/develop data model and security policies`
-  - [ ] Local Supabase stack running, declarative schema workflow configured — AC-1
-  - [ ] Two enums, three tables, constraints, episode index and both triggers authored — AC-1, AC-7, AC-8, AC-9, AC-12
-  - [ ] RLS enabled and forced, twelve policies, grants to authenticated and revokes from anon — AC-2, AC-4, AC-5
-  - [ ] Migration generated and reviewed, advisors clean, reset reproducible twice — AC-1, AC-2
-  - [ ] Seed fixture, pgTAP suite, generated types with a drift check, service role absence confirmed — AC-3 to AC-6, AC-10 to AC-15
+- [x] Build it: `/develop data model and security policies`
+  - [x] Local Supabase stack running, declarative schema workflow configured — AC-1
+  - [x] Two enums, three tables, constraints, episode index and both triggers authored — AC-1, AC-7, AC-8, AC-9, AC-12
+  - [x] RLS enabled and forced, twelve policies, grants to authenticated and revokes from anon — AC-2, AC-4, AC-5
+  - [x] Migration generated and reviewed, advisors clean, reset reproducible twice — AC-1, AC-2
+  - [x] Seed fixture, pgTAP suite, generated types with a drift check, service role absence confirmed — AC-3 to AC-6, AC-10 to AC-15
 - [ ] Verify it: `/check verify data model and security policies`
 - [ ] Test it: `/test data model and security policies`
 - [ ] Review it (fresh model): `/check review data model and security policies`
 - [ ] Document it: `/document data model and security policies`
+Code in `supabase/schemas/`, `supabase/migrations/`, `supabase/seed.sql`, `supabase/tests/`, `lib/supabase/database.types.ts`, `scripts/db-types-check.sh`
 spec [0001](../specs/0001-user-tracking-schema-and-rls/index.md)
 
 ### 4. TMDB integration module · in-progress
