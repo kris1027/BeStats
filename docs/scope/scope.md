@@ -62,7 +62,7 @@ The costliest thing to redo. Movie state, TV tracking state, episode state and c
   - [x] RLS enabled and forced, twelve policies, grants to authenticated and revokes from anon — AC-2, AC-4, AC-5
   - [x] Migration generated and reviewed, advisors clean, reset reproducible twice — AC-1, AC-2
   - [x] Seed fixture, pgTAP suite, generated types with a drift check, service role absence confirmed — AC-3 to AC-6, AC-10 to AC-15
-- [ ] Verify it: `/check verify data model and security policies`
+- [x] Verify it: `/check verify data model and security policies`
 - [ ] Test it: `/test data model and security policies`
 - [ ] Review it (fresh model): `/check review data model and security policies`
 - [ ] Document it: `/document data model and security policies`
