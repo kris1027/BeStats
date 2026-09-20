@@ -152,7 +152,7 @@ expect('hello world').toEqual(
   expect.stringMatching(/world$/)
 )
 
-expect({ value: null }).toEqual({
+expect({ value: 'present' }).toEqual({
   value: expect.anything() // Matches anything except null/undefined
 })
 

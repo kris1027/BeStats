@@ -9,7 +9,7 @@ Tags label tests so you can filter what runs and apply shared options (timeout, 
 
 ## Defining Tags
 
-Tags **must be declared in config** — using an undefined tag throws unless `strictTags: false`. Each tag can carry options applied to every test marked with it:
+Tags **must be declared in config** — using an undefined tag throws unless `strictTags: false`, so every tag the examples below apply is declared here. Each tag can carry options applied to every test marked with it:
 
 ```ts
 // vitest.config.ts
@@ -19,6 +19,9 @@ export default defineConfig({
   test: {
     tags: [
       { name: 'frontend', description: 'Frontend tests.' },
+      { name: 'backend', description: 'Backend tests.' },
+      { name: 'validation', description: 'Input validation.' },
+      { name: 'admin/pages/dashboard', description: 'Dashboard module.' },
       { name: 'db', description: 'Database queries.', timeout: 60_000 },
       {
         name: 'flaky',
@@ -39,7 +42,7 @@ import 'vitest'
 
 declare module 'vitest' {
   interface TestTags {
-    tags: 'frontend' | 'backend' | 'db' | 'flaky'
+    tags: 'frontend' | 'backend' | 'validation' | 'db' | 'flaky'
   }
 }
 ```

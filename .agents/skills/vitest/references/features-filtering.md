@@ -30,8 +30,8 @@ vitest src/user.test.ts:25
 vitest -t "login"
 vitest --testNamePattern "should.*work"
 
-# Regex patterns
-vitest -t "/user|auth/"
+# Regex patterns (the value is the pattern itself - no / delimiters)
+vitest -t "user|auth"
 ```
 
 ## Changed Files
@@ -200,7 +200,7 @@ vitest list --json          # JSON output
 
 - Use `-t` for test name pattern filtering
 - `--changed` runs only tests affected by changes
-- `--related` runs tests importing specific files
+- `vitest related` runs tests importing specific files
 - Tags provide semantic test grouping
 - Use `.only` for debugging, but configure CI to reject it
 - Watch mode has interactive filtering

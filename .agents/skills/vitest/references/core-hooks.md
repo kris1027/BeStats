@@ -89,8 +89,13 @@ import { aroundEach, test } from 'vitest'
 // Wrap each test in database transaction
 aroundEach(async (runTest) => {
   await db.beginTransaction()
-  await runTest() // Must be called!
-  await db.rollback()
+  try {
+    await runTest() // Must be called!
+  } finally {
+    // A failing test rejects here, so the rollback has to run either way -
+    // otherwise the transaction stays open and leaks into later tests.
+    await db.rollback()
+  }
 })
 
 test('insert user', async () => {

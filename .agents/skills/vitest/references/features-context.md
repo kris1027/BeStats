@@ -42,6 +42,7 @@ export const test = baseTest
     onCleanup(() => server.close()) // runs after test/scope ends
     return server
   })
+  .extend('debug', false)
 
 test('uses server', ({ config, server }) => {
   expect(server.url).toContain(String(config.port))
