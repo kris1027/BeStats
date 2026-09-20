@@ -1,7 +1,7 @@
 # 0003. Lint, format and test tooling
 
 **Date**: 2026-09-20
-**Status**: In Progress
+**Status**: Accepted
 
 Scope feature: [2. Coding standards and tooling](../scope/scope.md) · Beta tier
 
@@ -363,7 +363,7 @@ goes through the same checks.
 - [ ] The `vitest` skill is installed but not yet listed in `AGENTS.md` section 4. It is project wide, so it belongs in root `AGENTS.md`, not a nested one.
 - [ ] Revisit a React Testing Library skill at feature 5, when real components exist. The two candidates found today are unconfirmed and lightly installed.
 - [ ] Decide a coverage threshold once the domain rule tests exist, if drift becomes a real problem. Deliberately deferred, not forgotten.
-- [ ] `/test` stores its framework choice in a preferences file. Record Vitest there on the first run so it does not ask again.
+- [x] `/test` stores its framework choice in a preferences file. Recorded on 2026-09-20 in `test-preferences.json` at the project root: Vitest, pnpm, tests colocated, and the two file name rule.
 
 ## References
 

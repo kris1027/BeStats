@@ -14,7 +14,7 @@ _The stack, tooling and product rules (ratings, progress, statuses, security) li
 | # | Feature | Phase | Status |
 |---|---------|-------|--------|
 | 1 | Stack and scaffold | Foundation | done |
-| 2 | Coding standards and tooling | Foundation | in-progress |
+| 2 | Coding standards and tooling | Foundation | done |
 | 3 | Data model and security policies | Foundation | in-progress |
 | 4 | TMDB integration module | Foundation | in-progress |
 | 5 | Design system and UI foundation | Foundation | planned |
@@ -42,13 +42,13 @@ Set up the stack defined in `AGENTS.md` section 6. Today only a bare Next.js app
 - [x] Finish the scaffold: `/develop stack and scaffold`
 Code in `app/`, `lib/env.ts`, `lib/supabase/`, `proxy.ts`
 
-### 2. Coding standards and tooling · in-progress
+### 2. Coding standards and tooling · done
 Capture conventions from the real project, then install the checks every later slice relies on (type check, lint and format, test runner). The tool choices (Biome replacing ESLint) are in `AGENTS.md` section 6.
 **Done when:** `AGENTS.md` matches the installed tooling, ESLint is removed, and type check, Biome and a test runner run clean.
 - [x] Capture conventions and tooling choices: `/audit`
 - [x] Design it (spec): `/architect coding standards and tooling`
 - [x] Install the tooling: `/develop tooling`
-- [ ] Check it runs clean: `/test`
+- [x] Check it runs clean: `/test`
 Code in `biome.json`, `vitest.config.ts`, `vitest.setup.ts`, `.github/workflows/checks.yml`, `supabase/tests/`
 spec [0003](../specs/0003-lint-format-and-test-tooling.md)
 
