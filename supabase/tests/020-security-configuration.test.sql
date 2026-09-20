@@ -7,7 +7,7 @@
 -- only place the full requirement is actually proven.
 
 begin;
-select plan(11);
+select plan(12);
 
 -- Row level security enabled AND forced. Forced is the half nothing else
 -- checks: without it the rules do not apply to the table owner.
@@ -120,7 +120,7 @@ select is(
 select is(
   (
     select count(*)
-    from information_schema.role_table_grants
+    from information_schema.table_privileges
     where table_schema = 'public'
       and table_name in ('user_movie_state', 'user_show_state', 'user_episode_state')
       and grantee in ('anon', 'PUBLIC')
@@ -145,7 +145,7 @@ select is(
 select is(
   (
     select count(*)
-    from information_schema.role_table_grants
+    from information_schema.table_privileges
     where table_schema = 'public'
       and table_name in ('user_movie_state', 'user_show_state', 'user_episode_state')
       and grantee = 'authenticated'
@@ -153,6 +153,18 @@ select is(
   ),
   0::bigint,
   'authenticated holds nothing beyond select, insert, update and delete'
+);
+select is(
+  (
+    select count(distinct (table_name, privilege_type))
+    from information_schema.table_privileges
+    where table_schema = 'public'
+      and table_name in ('user_movie_state', 'user_show_state', 'user_episode_state')
+      and grantee = 'authenticated'
+      and privilege_type in ('SELECT', 'INSERT', 'UPDATE', 'DELETE')
+  ),
+  12::bigint,
+  'authenticated holds all four of select, insert, update and delete on every table'
 );
 
 select * from finish();
