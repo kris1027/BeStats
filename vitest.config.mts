@@ -1,4 +1,3 @@
-import tsconfigPaths from "vite-tsconfig-paths";
 import { defineConfig } from "vitest/config";
 
 /**
@@ -7,11 +6,17 @@ import { defineConfig } from "vitest/config";
  * jsdom. Spec 0003 fixes the file naming: `*.test.ts` is node, `*.test.tsx` is
  * jsdom, and any other name silently matches no project.
  *
- * `tsconfigPaths` is registered at the top level so BOTH projects resolve the
- * `@/*` alias that AGENTS.md requires; Vite does not read it from tsconfig.json.
+ * `resolve.tsconfigPaths` is what makes the `@/*` alias AGENTS.md requires
+ * resolve in BOTH projects; Vite does not read the alias from tsconfig.json on
+ * its own, and it defaults to false. Spec 0003 specified the
+ * `vite-tsconfig-paths` plugin for this, which Vite 8 replaced with this native
+ * option and now warns about. Being top level `resolve` rather than a per
+ * project setting is what keeps it applying to node and jsdom alike.
  */
 export default defineConfig({
-  plugins: [tsconfigPaths()],
+  resolve: {
+    tsconfigPaths: true,
+  },
   test: {
     coverage: {
       provider: "v8",

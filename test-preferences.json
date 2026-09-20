@@ -1,0 +1,16 @@
+{
+  "tool": "vitest",
+  "additionalTools": [
+    "@testing-library/react",
+    "@testing-library/jest-dom",
+    "@testing-library/dom",
+    "jsdom",
+    "vite-tsconfig-paths",
+    "@vitest/coverage-v8"
+  ],
+  "e2eTool": null,
+  "testDir": "colocated",
+  "filePattern": "*.test.ts (node project) / *.test.tsx (jsdom project)",
+  "packageManager": "pnpm",
+  "notes": "Decided in docs/specs/0003-lint-format-and-test-tooling.md. Exactly two file names are run: *.test.ts in the node project, *.test.tsx in the jsdom project. Anything else is skipped in silence. globals is off, so import describe/it/expect from vitest. Database policy tests are pgTAP under supabase/tests/*.test.sql, run by pnpm test:db."
+}
