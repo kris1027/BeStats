@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844" fill="none">
+<title>BeStats — Mobile sign in</title>
+<desc>Editable mobile sign-in page design with Google authentication option and login and password fields. Black background and glass surfaces. Static design, not connected to authentication.</desc>
+<defs>
+    <linearGradient id="glass" x1="0" y1="0" x2="0.2" y2="1">
+      <stop stop-color="#FFFFFF" stop-opacity=".18"/>
+      <stop offset=".45" stop-color="#D5D9F1" stop-opacity=".055"/>
+      <stop offset="1" stop-color="#B3BCD8" stop-opacity=".10"/>
+    </linearGradient>
+    <linearGradient id="glass-edge" x1="0" y1="0" x2=".25" y2="1">
+      <stop stop-color="#FFFFFF" stop-opacity=".62"/>
+      <stop offset=".42" stop-color="#FFFFFF" stop-opacity=".10"/>
+      <stop offset="1" stop-color="#E2E9FF" stop-opacity=".26"/>
+    </linearGradient>
+    <linearGradient id="selected-glass" x1="0" y1="0" x2=".15" y2="1">
+      <stop stop-color="#FFFFFF" stop-opacity=".38"/>
+      <stop offset=".52" stop-color="#EFF2FF" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity=".26"/>
+    </linearGradient>
+    <filter id="glass-shadow" x="-15%" y="-40%" width="130%" height="200%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#060A19" flood-opacity=".22"/>
+    </filter>
+  </defs>
+<rect id="page-background" width="390" height="844" fill="#000000"/>
+<g id="sign-in-panel">
+<rect x="16" y="76" width="358" height="666" rx="28" fill="#08090C"/>
+<rect x="16" y="76" width="358" height="666" rx="28" fill="url(#glass)" stroke="url(#glass-edge)" stroke-width="1.2"/>
+<text x="195" y="147" text-anchor="middle" fill="#F6F7F8" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="700" letter-spacing="-1">Welcome back</text>
+<text x="195" y="180" text-anchor="middle" fill="#AFB4C2" font-family="Inter, Arial, sans-serif" font-size="14">Sign in to keep track of what you watch.</text>
+<g id="google-sign-in-button">
+<rect x="36" y="220" width="318" height="56" rx="28" fill="url(#glass)" stroke="url(#glass-edge)"/>
+<g id="google-logo" transform="translate(76 236)">
+<path fill="#4285F4" d="M21.6 12.23c0-.71-.06-1.39-.18-2.05H12v3.88h5.38a4.6 4.6 0 0 1-2 3.02v2.51h3.23c1.89-1.74 2.99-4.3 2.99-7.36Z"/>
+<path fill="#34A853" d="M12 22c2.7 0 4.96-.9 6.61-2.41l-3.23-2.51c-.9.6-2.04.97-3.38.97-2.6 0-4.81-1.76-5.6-4.12H3.07v2.59A10 10 0 0 0 12 22Z"/>
+<path fill="#FBBC05" d="M6.4 13.93a6 6 0 0 1 0-3.86V7.48H3.07a10 10 0 0 0 0 9.04l3.33-2.59Z"/>
+<path fill="#EA4335" d="M12 5.95c1.47 0 2.79.51 3.82 1.51l2.87-2.87A9.6 9.6 0 0 0 12 2a10 10 0 0 0-8.93 5.48l3.33 2.59C7.19 7.71 9.4 5.95 12 5.95Z"/>
+</g>
+<text x="113" y="254" fill="#F6F7F8" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="600">Continue with Google</text>
+</g>
+<g id="authentication-divider"><path d="M36 315H130M260 315H354" stroke="#FFFFFF" stroke-opacity=".14"/><text x="195" y="320" text-anchor="middle" fill="#A8ADBC" font-family="Inter, Arial, sans-serif" font-size="13">or use your login</text></g>
+<g id="login-field">
+<text x="36" y="359" fill="#E2E5EF" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="600">Login</text>
+<rect x="36" y="373" width="318" height="56" rx="16" fill="url(#glass)" stroke="url(#glass-edge)"/>
+<text x="54" y="407" fill="#A8ADBC" font-family="Inter, Arial, sans-serif" font-size="16">Email or username</text>
+</g>
+<g id="password-field">
+<text x="36" y="463" fill="#E2E5EF" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="600">Password</text>
+<rect x="36" y="477" width="318" height="56" rx="16" fill="url(#glass)" stroke="url(#glass-edge)"/>
+<text x="54" y="511" fill="#A8ADBC" font-family="Inter, Arial, sans-serif" font-size="16">Enter your password</text>
+<g id="show-password" stroke="#CED1DC" stroke-width="1.7"><path d="M312 505s5-7 11-7 11 7 11 7-5 7-11 7-11-7-11-7Z"/><circle cx="323" cy="505" r="3"/></g>
+</g>
+<text id="forgot-password-link" x="354" y="563" text-anchor="end" fill="#D7DBE6" font-family="Inter, Arial, sans-serif" font-size="14">Forgot password?</text>
+<g id="submit-button"><rect x="36" y="597" width="318" height="56" rx="28" fill="url(#selected-glass)" stroke="url(#glass-edge)" stroke-width="1.2"/><text x="195" y="632" text-anchor="middle" fill="#FFFFFF" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="700">Sign in</text></g>
+<text x="195" y="696" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="14"><tspan fill="#A8ADBC">New to BeStats? </tspan><tspan fill="#F6F7F8" font-weight="600">Create an account</tspan></text>
+</g>
+</svg>
