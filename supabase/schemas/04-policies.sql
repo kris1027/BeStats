@@ -34,6 +34,15 @@ revoke all on table public.user_movie_state from anon, public;
 revoke all on table public.user_show_state from anon, public;
 revoke all on table public.user_episode_state from anon, public;
 
+-- `authenticated` is revoked from as well, then granted back only the four
+-- commands. The same default privileges that reach `anon` also hand
+-- `authenticated` TRUNCATE, MAINTAIN, TRIGGER and REFERENCES, and a bare
+-- `grant` adds to those rather than replacing them. TRUNCATE is the dangerous
+-- one: it empties a table without consulting row level security at all.
+revoke all on table public.user_movie_state from authenticated;
+revoke all on table public.user_show_state from authenticated;
+revoke all on table public.user_episode_state from authenticated;
+
 grant select, insert, update, delete on table public.user_movie_state to authenticated;
 grant select, insert, update, delete on table public.user_show_state to authenticated;
 grant select, insert, update, delete on table public.user_episode_state to authenticated;
@@ -117,6 +126,9 @@ revoke all on function public.set_status_changed_at() from public, anon, authent
 -- does not track grants that come from Supabase's default privileges, so the
 -- revokes above generate no SQL of their own. Without them written into the
 -- migration by hand, `anon` ends up with full read and write on all three
--- tables the moment they are created. The generated migration was corrected by
--- hand for exactly this, and the pgTAP suite asserts the outcome so a future
--- regeneration cannot quietly undo it.
+-- tables the moment they are created, and `authenticated` keeps TRUNCATE. The
+-- generated migration was corrected by hand for exactly this, and the pgTAP
+-- suite asserts the outcome so a future regeneration cannot quietly undo it.
+-- Both revokes are written here anyway, so the next person regenerating the
+-- migration reads the intent from the declarative source rather than having to
+-- rediscover it from the old migration's diff.

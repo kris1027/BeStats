@@ -11,6 +11,10 @@ import { describe, expect, it } from "vitest";
  * `/check verify` greps for this by hand. This locks the same check into the
  * suite, because the failure it guards against arrives quietly, in a later
  * feature, long after anyone thinks to run the grep again.
+ *
+ * The scan covers the repo root as well as the scanned directories. `proxy.ts`
+ * sits at the root and builds a Supabase client on every request, so leaving
+ * the root out would have left the most exposed file in the project unchecked.
  */
 
 /** Built from fragments so this file does not match its own search. */
@@ -36,18 +40,35 @@ function filesUnder(dir: string): string[] {
   return found;
 }
 
-function offenders(needle: string): string[] {
-  const paths = [...SCANNED_DIRS.flatMap(filesUnder), ...SCANNED_FILES].filter(
-    (path) => !path.endsWith(".test.ts"),
-  );
+/**
+ * Scannable files sitting at the repo root, not under any scanned directory.
+ * `proxy.ts` lives here and builds a Supabase client on every request
+ * (AGENTS.md, "Commands and repo facts"), so a root-only scan is not padding:
+ * it is the single most request-facing file in the project.
+ */
+function rootFiles(): string[] {
+  return readdirSync(".")
+    .filter((entry) => !entry.startsWith("."))
+    .filter((entry) => !statSync(entry).isDirectory())
+    .filter((entry) => SCANNED_EXTENSIONS.has(extname(entry)));
+}
 
-  return paths.filter((path) =>
+function scannedPaths(): string[] {
+  return [
+    ...SCANNED_DIRS.flatMap(filesUnder),
+    ...rootFiles(),
+    ...SCANNED_FILES,
+  ].filter((path) => !path.endsWith(".test.ts") && !path.endsWith(".test.tsx"));
+}
+
+function offenders(needle: string): string[] {
+  return scannedPaths().filter((path) =>
     readFileSync(path, "utf8").toLowerCase().includes(needle),
   );
 }
 
 describe("the service role boundary", () => {
-  it("never names the service role in app, lib, scripts or .env.example", () => {
+  it("never names the service role in app, lib, scripts, the repo root or .env.example", () => {
     expect(offenders(FORBIDDEN)).toEqual([]);
   });
 
@@ -56,6 +77,10 @@ describe("the service role boundary", () => {
   });
 
   it("scans a real set of files, so an empty result means something", () => {
-    expect(SCANNED_DIRS.flatMap(filesUnder).length).toBeGreaterThan(5);
+    expect(scannedPaths().length).toBeGreaterThan(5);
+  });
+
+  it("scans the request-facing root files, proxy.ts above all", () => {
+    expect(scannedPaths()).toContain("proxy.ts");
   });
 });

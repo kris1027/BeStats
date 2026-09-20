@@ -14,7 +14,7 @@ All of this needs the local stack running. Start it with `pnpm exec supabase sta
 - [x] `pnpm typecheck` → passes → AC-14
 - [x] `pnpm lint` → passes → AC-14
 - [x] Stop the local stack, then `pnpm build` → succeeds with no database reachable → AC-14
-- [x] `git grep -n -iE "service_role|sb_secret" -- lib app scripts .env.example` → no match outside skill documentation → AC-15
+- [x] `git grep -n -iE "service_role|sb_secret" -- lib app scripts .env.example ':(glob)*.ts' ':(glob)*.mjs'` → no match outside skill documentation → AC-15. The two root globs matter: `proxy.ts` builds a Supabase client on every request, and an earlier version of this step missed it.
 - [x] After `pnpm build`, `grep -r "service_role\|sb_secret" .next/static` → no match → AC-15
 
 ## Database checks (psql through the running container)
