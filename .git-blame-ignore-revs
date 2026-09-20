@@ -1,0 +1,8 @@
+# Revisions to skip when reading `git blame`, so a whole file style change never
+# hides who last changed a line for a real reason.
+#
+# Turn it on locally once:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+#
+# Add the hash of the Biome formatting pass commit below once it is committed
+# (spec 0003, rollout step 4). One hash per line, with a comment saying what it was.
