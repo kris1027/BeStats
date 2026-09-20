@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2968" height="184" viewBox="0 0 2968 184" fill="none">
+  <title>BeStats — Desktop navbar, signed in</title>
+  <desc>Signed-in desktop navbar on black with translucent glass controls, library navigation, profile and Sign out. Editable vector shapes and text, with a K account initial in the profile button.</desc>
+  <defs>
+    <linearGradient id="glass" x1="0" y1="0" x2="0.2" y2="1">
+      <stop stop-color="#FFFFFF" stop-opacity=".18"/>
+      <stop offset=".45" stop-color="#D5D9F1" stop-opacity=".055"/>
+      <stop offset="1" stop-color="#B3BCD8" stop-opacity=".10"/>
+    </linearGradient>
+    <linearGradient id="glass-edge" x1="0" y1="0" x2=".25" y2="1">
+      <stop stop-color="#FFFFFF" stop-opacity=".62"/>
+      <stop offset=".42" stop-color="#FFFFFF" stop-opacity=".10"/>
+      <stop offset="1" stop-color="#E2E9FF" stop-opacity=".26"/>
+    </linearGradient>
+    <linearGradient id="selected-glass" x1="0" y1="0" x2=".15" y2="1">
+      <stop stop-color="#FFFFFF" stop-opacity=".38"/>
+      <stop offset=".52" stop-color="#EFF2FF" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity=".26"/>
+    </linearGradient>
+    <filter id="glass-shadow" x="-15%" y="-40%" width="130%" height="200%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#060A19" flood-opacity=".22"/>
+    </filter>
+    </defs>
+  <rect id="black-background" width="2968" height="184" fill="#000000"/>
+  <g transform="translate(0 8)">
+  <g id="brand"><text x="22" y="59" fill="#F6F5F8" font-family="Inter, Arial, sans-serif" font-size="32" font-weight="800" letter-spacing="-.8">BeStats</text></g>
+  <g id="content-type-tabs">
+    <rect x="211" y="14" width="323" height="69" rx="34.5" fill="url(#glass)" stroke="url(#glass-edge)" stroke-width="1.5" filter="url(#glass-shadow)"/>
+    <rect x="221" y="24" width="150" height="48" rx="24" fill="url(#selected-glass)" stroke="url(#glass-edge)" stroke-width="1"/>
+    <text x="296" y="56" fill="#EEEFF2" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="23" font-weight="600" letter-spacing=".7">SHOWS</text>
+    <text x="447" y="56" fill="#CED1DC" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="23" font-weight="600" letter-spacing=".7">MOVIES</text>
+  </g>
+  <g id="search-field">
+    <rect x="567" y="14" width="519" height="69" rx="34.5" fill="url(#glass)" stroke="url(#glass-edge)" stroke-width="1.5" filter="url(#glass-shadow)"/>
+    <g id="search-icon" stroke="#D0D4E1" stroke-width="3" stroke-linecap="round"><circle cx="610" cy="47" r="11"/><path d="m618 55 7 7"/></g>
+    <text x="644" y="58" fill="#B6BAC8" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="400" letter-spacing=".2">Search shows</text>
+  </g>
+  </g>
+  <g id="library-navigation">
+    <rect x="1152" y="16" width="658" height="81" rx="40.5" fill="url(#glass)" stroke="url(#glass-edge)" stroke-width="1.5" filter="url(#glass-shadow)"/>
+    <text x="1264" y="66" text-anchor="middle" fill="#D7D9E0" font-size="29" font-family="Inter, Arial, sans-serif" font-weight="700">Watchlist</text>
+    <text x="1483" y="66" text-anchor="middle" fill="#D7D9E0" font-size="29" font-family="Inter, Arial, sans-serif" font-weight="700">Upcoming</text>
+    <text x="1702" y="66" text-anchor="middle" fill="#D7D9E0" font-size="29" font-family="Inter, Arial, sans-serif" font-weight="700">Watched</text>
+  </g>
+  <g id="profile-button">
+    <rect x="2513" y="22" width="225" height="69" rx="34.5" fill="url(#glass)" stroke="url(#glass-edge)" stroke-width="1.5" filter="url(#glass-shadow)"/>
+    <g id="profile-initial">
+      <circle cx="2547" cy="56" r="25" fill="url(#selected-glass)" stroke="url(#glass-edge)" stroke-width="1"/>
+      <text x="2547" y="65" text-anchor="middle" fill="#F6F7F8" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="700">K</text>
+    </g>
+    <text x="2588" y="66" fill="#F6F7F8" font-size="29" font-family="Inter, Arial, sans-serif" font-weight="700">kris1027</text>
+  </g>
+  <g id="sign-out-button">
+    <rect x="2764" y="22" width="174" height="69" rx="34.5" fill="url(#glass)" stroke="url(#glass-edge)" stroke-width="1.5" filter="url(#glass-shadow)"/>
+    <text x="2851" y="66" text-anchor="middle" fill="#F6F7F8" font-size="26" font-family="Inter, Arial, sans-serif" font-weight="700">Sign out</text>
+  </g>
+</svg>

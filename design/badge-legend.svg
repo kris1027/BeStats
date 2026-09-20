@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1640" height="114" viewBox="0 0 1640 114" fill="none">
+<title>BeStats — Badge legend</title>
+<desc>Editable legend for TMDB rating, Your Score, Planned, Plan, Stop watching and Watch again. Vector icons and editable text on black.</desc>
+<rect id="background" width="1640" height="114" fill="#000000"/>
+<g font-family="Inter, Arial, sans-serif" font-size="28" font-weight="400" fill="#A5ADB3">
+<g id="tmdb-rating"><polygon points="118.00,52.00 122.11,60.34 131.31,61.67 124.66,68.16 126.23,77.33 118.00,73.00 109.77,77.33 111.34,68.16 104.69,61.67 113.89,60.34" fill="#FFC526" stroke="#FFC526" stroke-width="2" stroke-linejoin="round"/><text x="150" y="76">TMDB rating</text></g>
+<g id="your-score"><polygon points="400.00,52.00 404.11,60.34 413.31,61.67 406.66,68.16 408.23,77.33 400.00,73.00 391.77,77.33 393.34,68.16 386.69,61.67 395.89,60.34" fill="#50C6E5" stroke="#50C6E5" stroke-width="2" stroke-linejoin="round"/><text x="432" y="76">Your Score</text></g>
+<g id="planned"><path d="M647 54H661A2 2 0 0 1 663 56V79L654 73L645 79V56A2 2 0 0 1 647 54Z" fill="#29CEA3"/><path d="m649.5 63.5 3 3 5-5" stroke="#06251D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><text x="686" y="76">Planned</text></g>
+<g id="plan"><path d="M869 54H883A2 2 0 0 1 885 56V77A1 1 0 0 1 883.5 77.8L876 73.5L868.5 77.8A1 1 0 0 1 867 77V56A2 2 0 0 1 869 54Z" fill="none" stroke="#F6F7F8" stroke-width="2.5" stroke-linejoin="round"/><text x="909" y="76">Plan</text></g>
+<g id="stop-watching"><circle cx="1043" cy="66" r="13" fill="none" stroke="#F6F7F8" stroke-width="2.5"/><rect x="1039" y="62" width="8" height="8" rx="1" fill="none" stroke="#F6F7F8" stroke-width="2.3"/><text x="1075" y="76">Stop watching</text></g>
+<g id="watch-again"><circle cx="1350" cy="66" r="13" fill="none" stroke="#F6F7F8" stroke-width="2.5"/><path d="m1346 60 10 6-10 6Z" fill="none" stroke="#F6F7F8" stroke-width="2.3" stroke-linejoin="round"/><text x="1382" y="76">Watch again</text></g>
+</g></svg>

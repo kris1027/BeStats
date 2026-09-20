@@ -68,6 +68,16 @@ All product copy is English. Prefer English TMDB metadata; use available origina
 
 Use installed skills when they genuinely apply. Do not copy the original learning platform's Sanity-specific skills or dependencies into this project.
 
+These skills are installed in this repository. They live in `.agents/skills/`, and `.claude/skills/` holds symlinks to the same folders, so both tools read one copy. `skills-lock.json` pins their sources. Load only the ones a task needs.
+
+- [next-cache-components-adoption](.agents/skills/next-cache-components-adoption/): `vercel/next.js`, turning on Cache Components and fixing the routes it flags.
+- [next-cache-components-optimizer](.agents/skills/next-cache-components-optimizer/): `vercel/next.js`, driving one route to instant navigation and guarding it with a test.
+- [next-dev-loop](.agents/skills/next-dev-loop/): `vercel/next.js`, verifying a change in the running app, not just in the type checker.
+- [next-partial-prefetching-adoption](.agents/skills/next-partial-prefetching-adoption/): `vercel/next.js`, turning on Partial Prefetching and working through its insights.
+- [next-partial-prefetching-optimizer](.agents/skills/next-partial-prefetching-optimizer/): `vercel/next.js`, choosing what each client navigation prefetches.
+- [supabase](.agents/skills/supabase/): `supabase/agent-skills`, anything touching Supabase (Auth, database, SSR clients, CLI, debugging).
+- [supabase-postgres-best-practices](.agents/skills/supabase-postgres-best-practices/): `supabase/agent-skills`, read before writing schema, migrations, RLS policies, or indexes.
+
 For implementation details, use the documentation matching the installed versions of Next.js, Supabase, Tailwind CSS, and shadcn/ui. Consult official TMDB documentation for supported endpoints, filters, pagination, attribution, and usage requirements.
 
 Inspect the repository and package versions before relying on framework conventions. Verify current provider setup requirements during implementation rather than hardcoding assumptions into the application.
@@ -100,8 +110,10 @@ Supabase Auth may use its supported browser client with a public key. TMDB crede
 - TMDB API for movie, TV, cast, season, and episode metadata.
 - Vercel for the Next.js deployment.
 - Supabase Cloud for the database and authentication.
+- Biome for linting and formatting. It replaces ESLint (installed today) in scope feature 2; until then `pnpm lint` still runs ESLint. Do not add Prettier.
+- pnpm as the package manager.
 
-Choose compatible supported package versions at implementation time and commit the lockfile. Use the package manager already established in the repository.
+This section is the only place the stack is defined. Installed versions live in `package.json`; check it instead of trusting a list here. Choose compatible supported package versions at implementation time and commit the lockfile.
 
 ## 7. Decisions already made
 
@@ -223,7 +235,7 @@ Validate IDs, media types, ratings, statuses, pagination, and filter inputs. Han
 - Include TMDB attribution and branding required by its current terms. Verify those requirements before release.
 - Configure Supabase Auth redirects and Google OAuth for local and deployed environments. Verify email confirmation and password recovery delivery before production use.
 - Keep schema changes reproducible through migrations. Avoid dashboard-only schema changes that are absent from version control.
-- Deploy the web application to Vercel and use Supabase Cloud for authentication and persistence. Verify environment variables and target projects before deploying or applying migrations.
+- Verify environment variables and target projects before deploying or applying migrations (hosting is defined in section 6).
 - A normal build request does not bypass the approval workflow. Include deployment and remote migrations explicitly in a plan when they are part of the requested work.
 
 ## 13. Checks and acceptance criteria
@@ -261,3 +273,19 @@ If credentials, provider configuration, or reference designs prevent a check, re
 Keep the scope small. Follow the designs. Use TMDB for catalog metadata and Supabase for private user state. Preserve the distinction between ratings, watched progress, and tracking status. Never invent unavailable data.
 
 Inspect the code and current documentation, record material decisions in `prompts/`, obtain approval before coding, run the relevant checks, and provide clear verification steps.
+
+## Build approach
+
+Tracer Bullet: prove the whole pipe works with one thin real thread, then thicken one strand at a time, always end to end. Mirrored from the scope header in `docs/scope/scope.md`.
+
+## Commands and repo facts
+
+- Imports use the `@/*` alias, which maps to the repo root (set in `tsconfig.json`). Prefer it over long relative paths.
+- Scripts: `pnpm dev`, `pnpm build`, `pnpm start`, `pnpm lint`. There is no `test` or `typecheck` script yet; add them with the test runner.
+- Supabase, Zod, and shadcn/ui are not installed yet (scope feature 1).
+- Routes live in `app/` at the repo root (there is no `src/` directory). `design/`, `prompts/`, and `supabase/` do not exist yet; create them when needed.
+- `.gitignore` ignores `.env*`, which also hides `.env.example`. Add a `!.env.example` exception before committing it, as section 11 requires.
+
+## Context files
+
+- [docs/scope/scope.md](docs/scope/scope.md) (living feature list and status, owned by /scope; the stack and rules stay here in AGENTS.md)

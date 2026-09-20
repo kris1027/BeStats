@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="808" height="220" viewBox="0 0 808 220" fill="none">
+<title>BeStats — Mobile navbar, signed out</title>
+<desc>Signed-out mobile navigation on black with glass search and Sign in buttons, and Shows and Movies tabs. Editable vector shapes and text.</desc>
+<defs>
+    <linearGradient id="glass" x1="0" y1="0" x2="0.2" y2="1">
+      <stop stop-color="#FFFFFF" stop-opacity=".18"/>
+      <stop offset=".45" stop-color="#D5D9F1" stop-opacity=".055"/>
+      <stop offset="1" stop-color="#B3BCD8" stop-opacity=".10"/>
+    </linearGradient>
+    <linearGradient id="glass-edge" x1="0" y1="0" x2=".25" y2="1">
+      <stop stop-color="#FFFFFF" stop-opacity=".62"/>
+      <stop offset=".42" stop-color="#FFFFFF" stop-opacity=".10"/>
+      <stop offset="1" stop-color="#E2E9FF" stop-opacity=".26"/>
+    </linearGradient>
+    <linearGradient id="selected-glass" x1="0" y1="0" x2=".15" y2="1">
+      <stop stop-color="#FFFFFF" stop-opacity=".38"/>
+      <stop offset=".52" stop-color="#EFF2FF" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity=".26"/>
+    </linearGradient>
+    <filter id="glass-shadow" x="-15%" y="-40%" width="130%" height="200%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#060A19" flood-opacity=".22"/>
+    </filter>
+    </defs>
+<rect id="background" width="808" height="220" fill="#000000"/>
+<g id="brand"><text x="34" y="69" fill="#F6F7F8" font-family="Inter, Arial, sans-serif" font-size="32" font-weight="800" letter-spacing="-.8">BeStats</text></g>
+<g id="search-button">
+<circle cx="490" cy="58" r="35" fill="url(#glass)" stroke="url(#glass-edge)" stroke-width="1.5"/>
+<circle cx="488" cy="56" r="12" stroke="#F6F7F8" stroke-width="3"/>
+<path d="m497 65 7 7" stroke="#F6F7F8" stroke-width="3" stroke-linecap="round"/>
+</g>
+<g id="sign-in-button">
+<rect x="618" y="23" width="154" height="70" rx="35" fill="url(#glass)" stroke="url(#glass-edge)" stroke-width="1.5"/>
+<text x="695" y="68" text-anchor="middle" fill="#F6F7F8" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700">Sign in</text>
+</g>
+<g id="content-type-tabs">
+<rect x="244" y="115" width="320" height="69" rx="34.5" fill="url(#glass)" stroke="url(#glass-edge)" stroke-width="1.5"/>
+<rect x="253" y="126" width="148" height="48" rx="24" fill="url(#selected-glass)" stroke="url(#glass-edge)" stroke-width="1"/>
+<text x="327" y="158" text-anchor="middle" fill="#F6F7F8" font-family="Inter, Arial, sans-serif" font-size="23" font-weight="600" letter-spacing=".7">SHOWS</text>
+<text x="479" y="158" text-anchor="middle" fill="#CED1DC" font-family="Inter, Arial, sans-serif" font-size="23" font-weight="600" letter-spacing=".7">MOVIES</text>
+</g>
+</svg>

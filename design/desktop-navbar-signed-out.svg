@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2964" height="112" viewBox="0 0 2964 112" fill="none">
+  <title>BeStats — Desktop navbar, signed out</title>
+  <desc>Editable desktop navigation with BeStats wordmark, selected Shows tab, Movies tab, show search field, and Sign in button. Transparent canvas with glass gradients and luminous rims tuned for a black background. Glass appearance is simulated; live backdrop blur should be applied in the target design or application.</desc>
+  <defs>
+    <linearGradient id="glass" x1="0" y1="0" x2="0.2" y2="1">
+      <stop stop-color="#FFFFFF" stop-opacity=".18"/>
+      <stop offset=".45" stop-color="#D5D9F1" stop-opacity=".055"/>
+      <stop offset="1" stop-color="#B3BCD8" stop-opacity=".10"/>
+    </linearGradient>
+    <linearGradient id="glass-edge" x1="0" y1="0" x2=".25" y2="1">
+      <stop stop-color="#FFFFFF" stop-opacity=".62"/>
+      <stop offset=".42" stop-color="#FFFFFF" stop-opacity=".10"/>
+      <stop offset="1" stop-color="#E2E9FF" stop-opacity=".26"/>
+    </linearGradient>
+    <linearGradient id="selected-glass" x1="0" y1="0" x2=".15" y2="1">
+      <stop stop-color="#FFFFFF" stop-opacity=".38"/>
+      <stop offset=".52" stop-color="#EFF2FF" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity=".26"/>
+    </linearGradient>
+    <filter id="glass-shadow" x="-15%" y="-40%" width="130%" height="200%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#060A19" flood-opacity=".22"/>
+    </filter>
+  </defs>
+  <rect width="2964" height="112" fill="#000000"/>
+  <g id="brand"><text x="22" y="59" fill="#F6F5F8" font-family="Inter, Arial, sans-serif" font-size="32" font-weight="800" letter-spacing="-.8">BeStats</text></g>
+  <g id="content-type-tabs">
+    <rect x="211" y="14" width="323" height="69" rx="34.5" fill="url(#glass)" stroke="url(#glass-edge)" stroke-width="1.5" filter="url(#glass-shadow)"/>
+    <rect x="221" y="24" width="150" height="48" rx="24" fill="url(#selected-glass)" stroke="url(#glass-edge)" stroke-width="1"/>
+    <text x="296" y="56" fill="#EEEFF2" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="23" font-weight="600" letter-spacing=".7">SHOWS</text>
+    <text x="447" y="56" fill="#CED1DC" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="23" font-weight="600" letter-spacing=".7">MOVIES</text>
+  </g>
+  <g id="search-field">
+    <rect x="567" y="14" width="519" height="69" rx="34.5" fill="url(#glass)" stroke="url(#glass-edge)" stroke-width="1.5" filter="url(#glass-shadow)"/>
+    <g id="search-icon" stroke="#D0D4E1" stroke-width="3" stroke-linecap="round"><circle cx="610" cy="47" r="11"/><path d="m618 55 7 7"/></g>
+    <text x="644" y="58" fill="#B6BAC8" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="400" letter-spacing=".2">Search shows</text>
+  </g>
+  <g id="sign-in-button">
+    <rect x="2781" y="14" width="154" height="69" rx="34.5" fill="url(#glass)" stroke="url(#glass-edge)" stroke-width="1.5" filter="url(#glass-shadow)"/>
+    <text x="2858" y="57" fill="#F6F7F8" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="25" font-weight="700">Sign in</text>
+  </g>
+</svg>
