@@ -64,7 +64,7 @@ The costliest thing to redo. Movie state, TV tracking state, episode state and c
   - [x] Seed fixture, pgTAP suite, generated types with a drift check, service role absence confirmed — AC-3 to AC-6, AC-10 to AC-15
 - [x] Verify it: `/check verify data model and security policies`
 - [x] Test it: `/test data model and security policies`
-- [ ] Review it (fresh model): `/check review data model and security policies`
+- [x] Review it (fresh model): `/check review data model and security policies`
 - [ ] Document it: `/document data model and security policies`
 Code in `supabase/schemas/`, `supabase/migrations/`, `supabase/seed.sql`, `supabase/tests/`, `lib/supabase/database.types.ts`, `scripts/db-types-check.sh`
 spec [0001](../specs/0001-user-tracking-schema-and-rls/index.md)
