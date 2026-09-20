@@ -9,7 +9,7 @@
     "lint": "biome check",
     "lint:ci": "biome ci --error-on-warnings",
     "format": "biome check --write",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",

@@ -8,6 +8,9 @@ on:
 
 permissions:
   contents: read
+  # dorny/paths-filter reads the pull request's changed files through the REST
+  # API. A public repository allows that read today, but a private one would not.
+  pull-requests: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
