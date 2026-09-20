@@ -44,6 +44,17 @@ const publicEnvSchema = z.object({
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;
 
+/**
+ * Reads and validates the public environment variables.
+ *
+ * Call this wherever a Supabase client is created rather than reading
+ * `process.env` directly, so a bad configuration surfaces in one place with a
+ * message that names the offending variable.
+ *
+ * @returns The validated public environment.
+ * @throws If a variable is missing or malformed. The message names each
+ * offending variable and never includes its value, so it is safe in a log.
+ */
 export function getPublicEnv(): PublicEnv {
   const parsed = publicEnvSchema.safeParse({
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
