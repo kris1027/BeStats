@@ -13,8 +13,8 @@ _The stack, tooling and product rules (ratings, progress, statuses, security) li
 
 | # | Feature | Phase | Status |
 |---|---------|-------|--------|
-| 1 | Stack and scaffold | Foundation | in-progress |
-| 2 | Coding standards and tooling | Foundation | planned |
+| 1 | Stack and scaffold | Foundation | done |
+| 2 | Coding standards and tooling | Foundation | done |
 | 3 | Data model and security policies | Foundation | in-progress |
 | 4 | TMDB integration module | Foundation | in-progress |
 | 5 | Design system and UI foundation | Foundation | planned |
@@ -36,18 +36,21 @@ _The stack, tooling and product rules (ratings, progress, statuses, security) li
 
 ## Foundations
 
-### 1. Stack and scaffold · in-progress
+### 1. Stack and scaffold · done
 Set up the stack defined in `AGENTS.md` section 6. Today only a bare Next.js app with Tailwind exists; Supabase clients, shadcn/ui, Zod and `.env.example` are missing.
 **Done when:** TypeScript stays in strict mode (already on in `tsconfig.json`), and the app boots and builds with Supabase client setup, shadcn/ui, Zod and a committed `.env.example` with placeholders, and no secret can reach the browser bundle.
 - [x] Finish the scaffold: `/develop stack and scaffold`
 Code in `app/`, `lib/env.ts`, `lib/supabase/`, `proxy.ts`
 
-### 2. Coding standards and tooling
+### 2. Coding standards and tooling · done
 Capture conventions from the real project, then install the checks every later slice relies on (type check, lint and format, test runner). The tool choices (Biome replacing ESLint) are in `AGENTS.md` section 6.
 **Done when:** `AGENTS.md` matches the installed tooling, ESLint is removed, and type check, Biome and a test runner run clean.
-- [ ] Capture conventions and tooling choices: `/audit`
-- [ ] Install the tooling: `/develop tooling`
-- [ ] Check it runs clean: `/test`
+- [x] Capture conventions and tooling choices: `/audit`
+- [x] Design it (spec): `/architect coding standards and tooling`
+- [x] Install the tooling: `/develop tooling`
+- [x] Check it runs clean: `/test`
+Code in `biome.json`, `vitest.config.ts`, `vitest.setup.ts`, `.github/workflows/checks.yml`, `supabase/tests/`
+spec [0003](../specs/0003-lint-format-and-test-tooling.md)
 
 ### 3. Data model and security policies · in-progress · GA
 The costliest thing to redo. Movie state, TV tracking state, episode state and catalog identity (media type plus TMDB ID), with constraints and row level security from the first migration.

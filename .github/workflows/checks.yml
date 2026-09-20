@@ -1,0 +1,73 @@
+name: checks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  # dorny/paths-filter reads the pull request's changed files through the REST
+  # API. A public repository allows that read today, but a private one would not.
+  pull-requests: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # The fast checks. No database, no secrets and no TMDB token: every unit test
+  # runs from fixtures. The build is here because AGENTS.md section 13 requires a
+  # production build whenever routes, configuration, dependencies or server code
+  # change, which is most changes.
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm typecheck
+
+      - run: pnpm lint:ci
+
+      - run: pnpm test
+
+      - run: pnpm build
+
+  # Spec 0003 gates this on supabase/** so it stays quiet, and cannot fail, on a
+  # change that touches no database file. The gate is per job rather than on the
+  # trigger, because a workflow level `paths:` filter would silence the fast
+  # checks too. The pgtap extension is enabled by a migration feature 3 owns.
+  database:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dorny/paths-filter@v4
+        id: changes
+        with:
+          filters: |
+            supabase:
+              - 'supabase/**'
+
+      - uses: supabase/setup-cli@v3
+        if: steps.changes.outputs.supabase == 'true'
+        with:
+          version: 2.117.0
+
+      - name: Start the local Supabase stack
+        if: steps.changes.outputs.supabase == 'true'
+        run: supabase start
+
+      - name: Run the pgTAP suite
+        if: steps.changes.outputs.supabase == 'true'
+        run: supabase test db

@@ -285,6 +285,17 @@ Tracer Bullet: prove the whole pipe works with one thin real thread, then thicke
 - Supabase, Zod, and shadcn/ui are not installed yet (scope feature 1).
 - Routes live in `app/` at the repo root (there is no `src/` directory). `design/`, `prompts/`, and `supabase/` do not exist yet; create them when needed.
 - `.gitignore` ignores `.env*`, which also hides `.env.example`. Add a `!.env.example` exception before committing it, as section 11 requires.
+- Middleware lives in `proxy.ts` at the repo root and exports `proxy`. Next.js 16 renamed it; a `middleware.ts` would be ignored.
+- Supabase clients: `lib/supabase/client.ts` for the browser, `lib/supabase/server.ts` for Server Components, Server Actions and Route Handlers. The server client is async (`cookies()` is async in Next.js 16) and is created per request, never reused across requests.
+- Read public environment values through `getPublicEnv()` in `lib/env.ts`, never `process.env` directly. It validates with Zod, lazily, so a build with no Supabase project configured still succeeds.
+- shadcn/ui is configured in `components.json`: style `base-nova`, base color neutral, components land in `components/ui/`, icons from `lucide-react`, primitives from `@base-ui/react` (not Radix). `cn` is re-exported by `lib/utils.ts` from the `cn` package.
+- Tailwind v4 is CSS first: the theme lives in `app/globals.css` under `@theme inline`. There is no `tailwind.config.*` file.
+- `pnpm-workspace.yaml` exists only to pin `allowBuilds`. This is a single package repo, not a monorepo.
+
+## Code conventions
+
+- Work on a `feat/<slug>` branch off `main`, write conventional commit subjects (`feat(supabase): ...`), and merge through a pull request.
+- Exported functions carry a JSDoc block that says why the code is shaped the way it is, citing the `AGENTS.md` section when a rule governs it. Comments explain reasons, not mechanics.
 
 ## Context files
 
