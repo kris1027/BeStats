@@ -22,9 +22,9 @@ All of this needs the local stack running. Start it with `pnpm exec supabase sta
 Run each with:
 `docker exec -i supabase_db_BeStats psql -U postgres -d postgres -c "<sql>"`
 
-- [ ] `select relname, relrowsecurity, relforcerowsecurity from pg_class where relname like 'user\_%\_state';` → all three rows show `t` and `t`. Forced is the half the advisors do not check → AC-2
-- [ ] `select tablename, cmd, roles, with_check is not null from pg_policies where schemaname='public';` → twelve rows, four per table, one per command, every one `{authenticated}`, and each UPDATE row showing a with check clause → AC-2, AC-5
-- [ ] `select grantee, table_name, privilege_type from information_schema.role_table_grants where table_schema='public' and table_name like 'user\_%\_state';` → `anon` and `PUBLIC` appear nowhere; `authenticated` shows exactly SELECT, INSERT, UPDATE, DELETE and no TRUNCATE → AC-4
+- [ ] `select relname, relrowsecurity, relforcerowsecurity from pg_class where relname in ('user_movie_state','user_show_state','user_episode_state');` → all three rows show `t` and `t`. Forced is the half the advisors do not check → AC-2
+- [ ] `select tablename, cmd, roles, with_check is not null from pg_policies where schemaname='public' and tablename in ('user_movie_state','user_show_state','user_episode_state');` → twelve rows, four per table, one per command, every one `{authenticated}`, and each UPDATE row showing a with check clause → AC-2, AC-5
+- [ ] `select grantee, table_name, privilege_type from information_schema.role_table_grants where table_schema='public' and table_name in ('user_movie_state','user_show_state','user_episode_state');` → `anon` and `PUBLIC` appear nowhere; `authenticated` shows exactly SELECT, INSERT, UPDATE, DELETE and no TRUNCATE → AC-4
 
   This is the one that catches the trap. Supabase's default privileges grant `anon`
   full access the moment a table is created, and the declarative diff engine does
@@ -35,7 +35,7 @@ Run each with:
 
 One per row of the spec's Value sourcing table, exercising the edge that breaks if the source is wrong.
 
-- [ ] Acting as user A (`set local request.jwt.claims` plus `set local role authenticated`), insert a row with `user_id` set to user B → refused with `42501`. The owner comes from the session, never from a client field → AC-3
+- [ ] Acting as user A (`set local request.jwt.claims` plus `set local role authenticated`), insert a row with `user_id` set to user B → refused with `42501`. The client does supply `user_id`; the insert policy is what forces it to match the authenticated user, so a forged owner is rejected rather than trusted. The application write path additionally takes the value from the verified session and never from a request field → AC-3
 - [ ] As user A, update your own row setting `user_id` to user B → refused with `42501`. Without the update policy's with check clause this would silently move the row → AC-5
 - [ ] Insert a row with an explicit old `updated_at`, then update any other column → `updated_at` jumps to now without the write path setting it → AC-12
 - [ ] On the same row, update `status_source` only → `status_changed_at` does not move. Then update `status` → it does move → AC-12

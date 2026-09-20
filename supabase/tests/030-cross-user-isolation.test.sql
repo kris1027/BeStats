@@ -77,16 +77,14 @@ select throws_ok(
 );
 
 -- Updating and deleting someone else's rows affects nothing. These do not
--- raise: the rows are invisible, so the statement matches zero rows. A count
--- of zero affected rows is therefore the assertion.
+-- raise: the rows are invisible, so each statement simply matches zero rows.
+--
+-- Note that the proof has to come after `reset role` below. Asserting from
+-- inside user A's session that user B's row is unchanged would be a tautology,
+-- because user A cannot see that row either way, so the query would return
+-- nothing whether the update had worked or not.
 update public.user_movie_state set rating = 1
   where user_id = '22222222-2222-2222-2222-222222222222';
-select is(
-  (select count(*) from public.user_movie_state
-   where user_id = '22222222-2222-2222-2222-222222222222' and rating = 1),
-  0::bigint,
-  'user A update aimed at user B movie rows changes nothing'
-);
 
 update public.user_show_state set status = 'dropped'
   where user_id = '22222222-2222-2222-2222-222222222222';
@@ -106,6 +104,12 @@ select is(
    where user_id = '22222222-2222-2222-2222-222222222222'),
   1::bigint,
   'user B movie row survived user A delete attempt'
+);
+select is(
+  (select rating from public.user_movie_state
+   where user_id = '22222222-2222-2222-2222-222222222222' and movie_id = 603),
+  null::smallint,
+  'user B movie rating was not changed by user A update attempt'
 );
 select is(
   (select count(*) from public.user_show_state
