@@ -47,8 +47,9 @@ Capture conventions from the real project, then install the checks every later s
 **Done when:** `AGENTS.md` matches the installed tooling, ESLint is removed, and type check, Biome and a test runner run clean.
 - [x] Capture conventions and tooling choices: `/audit`
 - [x] Design it (spec): `/architect coding standards and tooling`
-- [ ] Install the tooling: `/develop tooling`
+- [x] Install the tooling: `/develop tooling`
 - [ ] Check it runs clean: `/test`
+Code in `biome.json`, `vitest.config.ts`, `vitest.setup.ts`, `.github/workflows/checks.yml`, `supabase/tests/`
 spec [0003](../specs/0003-lint-format-and-test-tooling.md)
 
 ### 3. Data model and security policies · in-progress · GA

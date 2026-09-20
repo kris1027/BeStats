@@ -1,7 +1,7 @@
 # 0003. Lint, format and test tooling
 
 **Date**: 2026-09-20
-**Status**: Proposed
+**Status**: In Progress
 
 Scope feature: [2. Coding standards and tooling](../scope/scope.md) · Beta tier
 
@@ -348,7 +348,15 @@ goes through the same checks.
 
 ## Follow-up
 
-- [ ] Before deleting ESLint, run Biome and `eslint-config-next` over the same files once and record the result here: whether the installed Biome has a `next` linter domain, and which `next/core-web-vitals` rules still have no equivalent. If a Next.js specific rule is lost and matters (image, script or link rules most likely), say so and decide consciously rather than by default. This is the premise note above, made actionable, and this checkbox is the agreed home for the answer.
+- [x] **Measured on 2026-09-20, during `/develop tooling`. Biome 2.5.14 does have a `next` linter domain**, and `domains: { "next": "recommended" }` activates it: `noImgElement` fires on a raw `<img>` with the domain on and is silent with it off, which is the proof the domain is live rather than merely present in the schema. Running both linters over the current files produced no rule findings from either (the repository is small and clean), so the comparison below is rule by rule against the 22 `@next/next` rules that `eslint-config-next/core-web-vitals` plus `/typescript` actually enable here, read from `eslint --print-config`.
+
+  **Covered by Biome (11 of 22)**: `google-font-display` (`useGoogleFontDisplay`), `google-font-preconnect` (`useGoogleFontPreconnect`), `inline-script-id` (`useInlineScriptId`), `no-async-client-component` (`noNextAsyncClientComponent`), `no-before-interactive-script-outside-document` (`noBeforeInteractiveScriptOutsideDocument`), `no-document-import-in-page` (`noDocumentImportInPage`), `no-head-element` (`noHeadElement`), `no-head-import-in-document` (`noHeadImportInDocument`), `no-img-element` (`noImgElement`), `no-sync-scripts` (`noSyncScripts`), `no-unwanted-polyfillio` (`noUnwantedPolyfillio`). Biome also adds `useImageSize` and `useRequiredScripts`, which ESLint did not have.
+
+  **No Biome equivalent (11 of 22), of which 8 cannot fire in this project.** Dead here because they are Pages Router or `pages/_document` rules and this app is App Router only with no `pages/` directory: `no-duplicate-head`, `no-script-component-in-head`, `no-styled-jsx-in-document`, `no-title-in-document-head`, `no-html-link-for-pages`, `no-typos` (it checks `getServerSideProps` and friends), plus the rare `no-assign-module-variable` and `next-script-for-ga` (no analytics script exists, and nothing plans one).
+
+  **The real loss is two link rules**: `no-css-tags` (a raw `<link rel="stylesheet">` instead of importing the stylesheet) and `no-page-custom-font` (a custom font `<link>` in a page rather than the root layout, which costs a render blocking request per page). Both are exactly the "link rules" the premise note guessed at, both are performance rules, and neither has a Biome equivalent in 2.5.14. `no-location-assign-relative-destination` is a third, minor, and about a relative `location.assign`.
+
+  **Decision, made consciously rather than by default**: delete ESLint. The image and script rules the premise note worried most about are all covered. What goes is two font and stylesheet placement rules that would only fire if someone hand wrote a `<link>` tag, which this project has no reason to do (Tailwind v4 owns the stylesheet through `app/globals.css`, and `next/font` is the documented way to load fonts). If a hand written `<link>` ever appears, the cost is a slower page, not a broken or insecure one. Worth rechecking at feature 5 (Design system and UI foundation), when fonts are actually chosen, and again on any Biome upgrade that adds `next` domain rules.
 - [ ] Verify the pgTAP user impersonation form against the `supabase` skill and the installed CLI before feature 3 writes real policy tests. The JSON claims blob shown in the standard is the form to confirm; an older single claim form also exists in circulation and picking the wrong one produces a test that passes while proving nothing.
 - [ ] Pin the `$schema` URL in `biome.json` to the installed Biome version, and re-pin it on every Biome upgrade. They drift silently, and a mismatched schema means the editor validates against rules the CLI is not running.
 - [ ] Biome has no usable Agent Skill. The `biomejs/biome` repository's skills (`parser-development`, `lint-rule-development`, `formatter-development`) are for contributing to Biome itself, not for using it, so nothing was installed. Revisit if an official usage skill appears.
