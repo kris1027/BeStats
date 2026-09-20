@@ -12,24 +12,43 @@ import { describe, expect, it } from "vitest";
  * suite, because the failure it guards against arrives quietly, in a later
  * feature, long after anyone thinks to run the grep again.
  *
- * The scan covers the repo root as well as the scanned directories. `proxy.ts`
- * sits at the root and builds a Supabase client on every request, so leaving
- * the root out would have left the most exposed file in the project unchecked.
+ * The scan walks the whole repository rather than a list of directories. An
+ * allow-list of directories is the wrong shape for a boundary check: the leak
+ * this guards against arrives in whichever directory a later feature creates,
+ * and a directory nobody remembered to add is exactly where it would sit.
+ * Exclusions are therefore explicit and narrow — documentation, design
+ * references, generated output and the tests themselves, none of which ship in
+ * a request path.
  */
 
 /** Built from fragments so this file does not match its own search. */
 const FORBIDDEN = ["service", "role"].join("_");
 const FORBIDDEN_KEY_PREFIX = ["sb", "secret"].join("_");
 
-const SCANNED_DIRS = ["app", "lib", "scripts"];
+/**
+ * Directories skipped at any depth. Dependencies and generated output are not
+ * ours to police; documentation, design references and fixtures are prose and
+ * sample data that never reach a request. Everything else in the repository is
+ * scanned, including directories that do not exist yet.
+ */
+const EXCLUDED_DIRS = new Set([
+  "node_modules",
+  "coverage",
+  "docs",
+  "design",
+  "public",
+  "fixtures",
+  "__fixtures__",
+]);
+/** Dotted, so the directory walk skips it; scanned by name instead. */
 const SCANNED_FILES = [".env.example"];
 const SCANNED_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".mjs", ".sh", ""]);
 
-/** Every scannable file under a directory, recursively, skipping build output. */
+/** Every scannable file under a directory, recursively. */
 function filesUnder(dir: string): string[] {
   const found: string[] = [];
   for (const entry of readdirSync(dir)) {
-    if (entry === "node_modules" || entry.startsWith(".")) continue;
+    if (EXCLUDED_DIRS.has(entry) || entry.startsWith(".")) continue;
     const path = join(dir, entry);
     if (statSync(path).isDirectory()) {
       found.push(...filesUnder(path));
@@ -40,25 +59,15 @@ function filesUnder(dir: string): string[] {
   return found;
 }
 
-/**
- * Scannable files sitting at the repo root, not under any scanned directory.
- * `proxy.ts` lives here and builds a Supabase client on every request
- * (AGENTS.md, "Commands and repo facts"), so a root-only scan is not padding:
- * it is the single most request-facing file in the project.
- */
-function rootFiles(): string[] {
-  return readdirSync(".")
-    .filter((entry) => !entry.startsWith("."))
-    .filter((entry) => !statSync(entry).isDirectory())
-    .filter((entry) => SCANNED_EXTENSIONS.has(extname(entry)));
+/** A test file names the thing it forbids, so scanning one is a false alarm. */
+function isTest(path: string): boolean {
+  return /\.(test|spec)\.[cm]?[jt]sx?$/.test(path);
 }
 
 function scannedPaths(): string[] {
-  return [
-    ...SCANNED_DIRS.flatMap(filesUnder),
-    ...rootFiles(),
-    ...SCANNED_FILES,
-  ].filter((path) => !path.endsWith(".test.ts") && !path.endsWith(".test.tsx"));
+  return [...filesUnder("."), ...SCANNED_FILES]
+    .map((path) => (path.startsWith("./") ? path.slice(2) : path))
+    .filter((path) => !isTest(path));
 }
 
 function offenders(needle: string): string[] {
@@ -68,7 +77,7 @@ function offenders(needle: string): string[] {
 }
 
 describe("the service role boundary", () => {
-  it("never names the service role in app, lib, scripts, the repo root or .env.example", () => {
+  it("never names the service role anywhere in the repository or .env.example", () => {
     expect(offenders(FORBIDDEN)).toEqual([]);
   });
 
