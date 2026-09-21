@@ -161,3 +161,59 @@ Because the two sign in artboards are unambiguously 1x, they are the reference f
 **Type**: Inter throughout, weights 400, 600, 700 and 800. Negative tracking on headings and the brand, around -1. Positive tracking on small uppercase labels, 0.7 on tab labels and 2 on the RESULTS heading.
 
 **Badge vocabulary**, from `badge-legend.svg` and the page files: TMDB rating (amber star plus value), Your Score (cyan star plus value), Planned (filled green bookmark with a check), Plan (outline bookmark), Stop watching (square in a circle), Watch again (play in a circle), Next episode (TV icon plus `S1E1`), Release date (calendar icon plus a date). Two ship with this feature; the rest ship with the features that own their behaviour.
+
+## Build time contrast audit (AC-7)
+
+Re-run by `/develop` against the pairs the shipped UI actually uses, rather
+than the pairs `design/` draws, because the build introduced surfaces the
+references never covered: the state panel's muted icon circle, the panel and
+sheet plates under glass, and a destructive colour that has no reference value
+at all.
+
+Each glass backdrop below is the brightest point of the gradient (white at 18%)
+composited over its own plate, which is the worst case for anything sitting on
+it.
+
+| Foreground | Backdrop | Ratio | Verdict |
+|---|---|---|---|
+| `#F6F7F8` foreground | plated glass, control `#3B3E40` | 10.05 | passes |
+| `#F6F7F8` foreground | plated glass, panel `#343538` | 11.43 | passes |
+| `#F6F7F8` foreground | plated glass, sheet `#353639` | 11.26 | passes |
+| `#F6F7F8` foreground | plated glass, score `#383E42` | 10.11 | passes |
+| `#A8ADBC` muted | plated glass, panel `#343538` | 5.47 | passes |
+| `#A8ADBC` muted | `--muted` circle `#17181A` | 7.93 | passes |
+| `#CED1DC` unselected tab | plated glass, control | 7.07 | passes |
+| `#FFC526` TMDB star | plated glass, control | 6.81 | passes |
+| `#50C6E5` score star | plated glass, score | 5.45 | passes |
+| `#29CEA3` Planned mark | plated glass, control | 5.36 | passes |
+| `#F6F7F8` focus ring | plated glass, control | 10.05 | passes |
+
+**The one adjustment.** `--destructive` has no value in `design/`, which draws
+no error state. The first pick, `#F87171`, measured **3.90:1** on plated glass
+and failed AA for body text. It was raised to the nearest lighter red that
+clears the bar, `#FB8A8A`, at **4.67:1** (11.06:1 on flat black). No value taken
+from `design/` needed adjusting, which matches the original audit's finding.
+
+## Values the build settled that the spec left as inferences
+
+Recorded here so the next feature reads them rather than re-deriving them.
+
+- **The navbar type scale.** The spec flagged the navbar artboards' 2x
+  inference for visual confirmation. Confirmed at 1440 and 390 in the running
+  app, with two corrections: the brand renders at 20px rather than the inferred
+  16px (16px reads as body copy next to the tab control, not as a wordmark),
+  and the tab labels at 12px rather than 11.5px.
+- **Badge and control sizing does not scale with the card.** The artboards
+  imply a badge at 25% of the poster's width, which at the AC-9 six column
+  layout would be a 21px tall pill. Badges are fixed at 28px tall instead, and
+  the poster caption at 14px, because a proportional rule produces unreadable
+  text at the narrow end of the grid.
+- **Touch heights diverge from the mobile artboards.** The mobile references
+  draw 35px controls, below the 44px target AGENTS.md section 3 asks for. The
+  shell uses 44px on mobile and 36px on desktop, which is the `touch` and `sm`
+  split in `buttonVariants`.
+- **Glass is not used at poster scale.** The glass gradient stretched over a
+  2:3 frame reads as a deliberate ramp rather than an absence, so the missing
+  poster fallback and the skeletons use the flat plate with the rim. This is
+  what the `rim` utility exists for; `design/` only ever puts glass on short
+  surfaces.

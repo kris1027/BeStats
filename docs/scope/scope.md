@@ -88,14 +88,15 @@ spec [0002](../specs/0002-tmdb-integration-module/index.md)
 Base components adapted from the reference designs, plus loading, empty, error and missing image patterns. The sixteen references now exist in `design/`.
 **Done when:** base components match `design/`, work by keyboard with visible focus, and cover the shared loading, empty and error states on desktop and mobile.
 - [x] Design it (spec): `/architect design system and UI foundation`
-- [ ] Build it: `/develop design system and UI foundation`
-  - [ ] Theme foundation: one black palette, Inter, the shadcn remap, product tokens, glass utilities with the rounded rim technique, focus ring — AC-1 to AC-4, AC-6
-  - [ ] The thin thread end to end: root layout, sticky blurred navbar, the `/` redirect, placeholder `/shows` and `/movies`, verified in the running app — AC-13, AC-16, AC-17, AC-18
-  - [ ] Shell thickened and primitives adapted: mobile navbar, tab links, the menu dialog sheet, the generated shadcn components — AC-14, AC-15
-  - [ ] Content pieces: the glass pill and its two badges, poster card with the missing image fallback, the grid, the state panel, the skeletons — AC-5, AC-8 to AC-12
-  - [ ] Proof: contrast audit recorded, showcase route with its production guard, accessibility tests, full checks — AC-7, AC-19 to AC-21
+- [x] Build it: `/develop design system and UI foundation`
+  - [x] Theme foundation: one black palette, Inter, the shadcn remap, product tokens, glass utilities with the rounded rim technique, focus ring — AC-1 to AC-4, AC-6
+  - [x] The thin thread end to end: root layout, sticky blurred navbar, the `/` redirect, placeholder `/shows` and `/movies`, verified in the running app — AC-13, AC-16, AC-17, AC-18
+  - [x] Shell thickened and primitives adapted: mobile navbar, tab links, the menu dialog sheet, the generated shadcn components — AC-14, AC-15
+  - [x] Content pieces: the glass pill and its two badges, poster card with the missing image fallback, the grid, the state panel, the skeletons — AC-5, AC-8 to AC-12
+  - [x] Proof: contrast audit recorded, showcase route with its production guard, accessibility tests, full checks — AC-7, AC-19 to AC-21
 - [ ] Verify it: `/check verify design system and UI foundation`
-- [ ] Test it: `/test design system and UI foundation`
+- [x] Test it: `/test design system and UI foundation`
+Code in `app/globals.css`, `app/layout.tsx`, `app/{shows,movies,showcase}/`, `components/`, `next.config.ts`
 spec [0004](../specs/0004-design-system-and-ui-foundation/index.md)
 
 ## Slice 1: Core movie loop
