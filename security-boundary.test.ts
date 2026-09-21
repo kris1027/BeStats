@@ -93,3 +93,38 @@ describe("the service role boundary", () => {
     expect(scannedPaths()).toContain("proxy.ts");
   });
 });
+
+/**
+ * Spec 0002 AC-2 and AC-3: the TMDB token is server only, and only the TMDB
+ * module's own environment reader touches it.
+ *
+ * The build proves the strong half of this (a Client Component that imports
+ * `lib/tmdb` fails to compile, and the token appears nowhere in the client
+ * bundle). This locks in the half a build cannot catch: a later feature reading
+ * `process.env.TMDB_READ_ACCESS_TOKEN` somewhere else, or giving it a
+ * `NEXT_PUBLIC_` prefix, which would inline it into the browser bundle.
+ */
+const TMDB_TOKEN_VARIABLE = "TMDB_READ_ACCESS_TOKEN";
+
+/**
+ * The only files allowed to name the variable: the reader itself, the opt in
+ * live check that needs a real credential, and the committed example file.
+ */
+const TMDB_TOKEN_READERS = new Set([
+  "lib/tmdb/env.ts",
+  "lib/tmdb/tmdb.live.ts",
+  ".env.example",
+]);
+
+describe("the TMDB token boundary", () => {
+  it("is read only by the TMDB module's own environment reader", () => {
+    const named = offenders(TMDB_TOKEN_VARIABLE.toLowerCase()).filter(
+      (path) => !TMDB_TOKEN_READERS.has(path),
+    );
+    expect(named).toEqual([]);
+  });
+
+  it("is never given a NEXT_PUBLIC_ prefix, which would publish it", () => {
+    expect(offenders("next_public_tmdb")).toEqual([]);
+  });
+});
