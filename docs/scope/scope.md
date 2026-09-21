@@ -17,7 +17,7 @@ _The stack, tooling and product rules (ratings, progress, statuses, security) li
 | 2 | Coding standards and tooling | Foundation | done |
 | 3 | Data model and security policies | Foundation | done |
 | 4 | TMDB integration module | Foundation | done |
-| 5 | Design system and UI foundation | Foundation | planned |
+| 5 | Design system and UI foundation | Foundation | in-progress |
 | 6 | Authentication | Slice 1 | planned |
 | 7 | Movie page | Slice 1 | planned |
 | 8 | Movie tracking | Slice 1 | planned |
@@ -84,10 +84,19 @@ A server only module for authenticated TMDB requests: normalized responses, cach
 Code in `lib/tmdb/`, `next.config.ts`, `vitest.live.mts`, `security-boundary.test.ts`
 spec [0002](../specs/0002-tmdb-integration-module/index.md)
 
-### 5. Design system and UI foundation · needs a decision
-Base components adapted from the reference designs, plus loading, empty, error and missing image patterns. Waits on `design/`.
+### 5. Design system and UI foundation · in-progress
+Base components adapted from the reference designs, plus loading, empty, error and missing image patterns. The sixteen references now exist in `design/`.
 **Done when:** base components match `design/`, work by keyboard with visible focus, and cover the shared loading, empty and error states on desktop and mobile.
-- [ ] Design it (spec): `/architect design system and UI foundation`
+- [x] Design it (spec): `/architect design system and UI foundation`
+- [ ] Build it: `/develop design system and UI foundation`
+  - [ ] Theme foundation: one black palette, Inter, the shadcn remap, product tokens, glass utilities with the rounded rim technique, focus ring — AC-1 to AC-4, AC-6
+  - [ ] The thin thread end to end: root layout, sticky blurred navbar, the `/` redirect, placeholder `/shows` and `/movies`, verified in the running app — AC-13, AC-16, AC-17, AC-18
+  - [ ] Shell thickened and primitives adapted: mobile navbar, tab links, the menu dialog sheet, the generated shadcn components — AC-14, AC-15
+  - [ ] Content pieces: the glass pill and its two badges, poster card with the missing image fallback, the grid, the state panel, the skeletons — AC-5, AC-8 to AC-12
+  - [ ] Proof: contrast audit recorded, showcase route with its production guard, accessibility tests, full checks — AC-7, AC-19 to AC-21
+- [ ] Verify it: `/check verify design system and UI foundation`
+- [ ] Test it: `/test design system and UI foundation`
+spec [0004](../specs/0004-design-system-and-ui-foundation/index.md)
 
 ## Slice 1: Core movie loop
 
