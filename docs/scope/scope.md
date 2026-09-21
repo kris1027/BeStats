@@ -16,7 +16,7 @@ _The stack, tooling and product rules (ratings, progress, statuses, security) li
 | 1 | Stack and scaffold | Foundation | done |
 | 2 | Coding standards and tooling | Foundation | done |
 | 3 | Data model and security policies | Foundation | done |
-| 4 | TMDB integration module | Foundation | in-progress |
+| 4 | TMDB integration module | Foundation | done |
 | 5 | Design system and UI foundation | Foundation | planned |
 | 6 | Authentication | Slice 1 | planned |
 | 7 | Movie page | Slice 1 | planned |
@@ -69,7 +69,7 @@ The costliest thing to redo. Movie state, TV tracking state, episode state and c
 Code in `supabase/schemas/`, `supabase/migrations/`, `supabase/seed.sql`, `supabase/tests/`, `lib/supabase/database.types.ts`, `scripts/db-types-check.sh`
 spec [0001](../specs/0001-user-tracking-schema-and-rls/index.md)
 
-### 4. TMDB integration module · in-progress
+### 4. TMDB integration module · done
 A server only module for authenticated TMDB requests: normalized responses, caching with a refresh policy, rate limit and failure handling, English first metadata.
 **Done when:** movie, TV, season and episode data load through one server module, the token never reaches the browser, and a TMDB failure returns a handled error, not a crash.
 - [x] Design it (spec): `/architect TMDB integration module`

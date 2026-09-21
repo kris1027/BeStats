@@ -281,8 +281,8 @@ Tracer Bullet: prove the whole pipe works with one thin real thread, then thicke
 ## Commands and repo facts
 
 - Imports use the `@/*` alias, which maps to the repo root (set in `tsconfig.json`). Prefer it over long relative paths.
-- Scripts: `pnpm dev`, `pnpm build`, `pnpm start`, `pnpm lint`. There is no `test` or `typecheck` script yet; add them with the test runner.
-- Supabase, Zod, and shadcn/ui are not installed yet (scope feature 1).
+- Scripts: `pnpm dev`, `pnpm build`, `pnpm start`, `pnpm typecheck`, `pnpm lint`, `pnpm lint:ci`, `pnpm format`, `pnpm test`, `pnpm test:db`, `pnpm tmdb:live`, `pnpm db:types`, `pnpm db:types:check`.
+- Supabase, Zod, shadcn/ui and `server-only` are installed. `zod` validates every external input; `server-only` is what makes a Client Component import of a server module a build failure.
 - Routes live in `app/` at the repo root (there is no `src/` directory). `design/`, `prompts/`, and `supabase/` do not exist yet; create them when needed.
 - `.gitignore` ignores `.env*`, which also hides `.env.example`. Add a `!.env.example` exception before committing it, as section 11 requires.
 - Middleware lives in `proxy.ts` at the repo root and exports `proxy`. Next.js 16 renamed it; a `middleware.ts` would be ignored.
@@ -291,6 +291,9 @@ Tracer Bullet: prove the whole pipe works with one thin real thread, then thicke
 - shadcn/ui is configured in `components.json`: style `base-nova`, base color neutral, components land in `components/ui/`, icons from `lucide-react`, primitives from `@base-ui/react` (not Radix). `cn` is re-exported by `lib/utils.ts` from the `cn` package.
 - Tailwind v4 is CSS first: the theme lives in `app/globals.css` under `@theme inline`. There is no `tailwind.config.*` file.
 - `pnpm-workspace.yaml` exists only to pin `allowBuilds`. This is a single package repo, not a monorepo.
+- `cacheComponents: true` is on in `next.config.ts`. Every route must be prerenderable or opt out with `export const instant = false`, and every cached read calls `cacheLife` inside its own `use cache` scope. A rejection thrown inside a cached scope loses its class and its fields, so return a plain result and rebuild the error outside the scope.
+- The TMDB token is server only. Only `lib/tmdb/env.ts` may read `TMDB_READ_ACCESS_TOKEN`, and `security-boundary.test.ts` fails if any other file names it or gives it a `NEXT_PUBLIC_` prefix, the same rule the Supabase service role key carries.
+- TMDB images render through `next/image`; `image.tmdb.org` is the one allowed remote pattern.
 
 ## Code conventions
 
@@ -300,3 +303,4 @@ Tracer Bullet: prove the whole pipe works with one thin real thread, then thicke
 ## Context files
 
 - [docs/scope/scope.md](docs/scope/scope.md) (living feature list and status, owned by /scope; the stack and rules stay here in AGENTS.md)
+- [lib/tmdb/AGENTS.md](lib/tmdb/AGENTS.md): the server only TMDB module, its cache and error conventions, and how to run the live check

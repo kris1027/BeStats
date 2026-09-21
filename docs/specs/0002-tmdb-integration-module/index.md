@@ -1,7 +1,7 @@
 # 0002. TMDB integration module
 
 **Date**: 2026-09-20
-**Status**: In Progress
+**Status**: Accepted
 
 Scope feature: [4. TMDB integration module](../../scope/scope.md) · Beta tier
 
