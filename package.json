@@ -14,6 +14,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:db": "supabase test db",
+    "tmdb:live": "vitest run --config vitest.live.mts",
     "db:types": "supabase gen types typescript --local --schema public > lib/supabase/database.types.ts",
     "db:types:check": "./scripts/db-types-check.sh"
   },

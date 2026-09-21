@@ -1,0 +1,41 @@
+{
+  "page": 1,
+  "results": [
+    {
+      "adult": false,
+      "backdrop_path": "/c6OLXfKAk5BKeR6broC8pYiCquX.jpg",
+      "genre_ids": [18, 53],
+      "id": 550,
+      "title": "Fight Club",
+      "original_language": "en",
+      "original_title": "Fight Club",
+      "overview": "A ticking-time-bomb insomniac and a slippery soap salesman channel primal male aggression into a shocking new form of therapy. Their concept catches on, with underground \"fight clubs\" forming in every town, until an eccentric gets in the way and ignites an out-of-control spiral toward oblivion.",
+      "popularity": 51.1733,
+      "poster_path": "/jSziioSwPVrOy9Yow3XhWIBDjq1.jpg",
+      "release_date": "1999-10-15",
+      "softcore": false,
+      "video": false,
+      "vote_average": 8.437,
+      "vote_count": 32891
+    },
+    {
+      "adult": false,
+      "backdrop_path": "/nlDmuxSjJS1Fi2FgVToPm9ytm5S.jpg",
+      "genre_ids": [28, 18, 53],
+      "id": 1213076,
+      "title": "Fight Club",
+      "original_language": "ta",
+      "original_title": "Fight Club",
+      "overview": "A young boy Selva chasing his football sports dreams suffers a major setback, grows into an angry young man who is drawn into conflicts by evil forces involving him and his family, which he must navigate and reform.",
+      "popularity": 1.7955,
+      "poster_path": "/1h6t9nCYVWOLRskB35K51payMok.jpg",
+      "release_date": "2023-12-15",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.6,
+      "vote_count": 16
+    }
+  ],
+  "total_pages": 4,
+  "total_results": 62
+}

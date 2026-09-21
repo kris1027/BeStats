@@ -1,0 +1,186 @@
+{
+  "adult": false,
+  "backdrop_path": "/c6OLXfKAk5BKeR6broC8pYiCquX.jpg",
+  "belongs_to_collection": null,
+  "budget": 63000000,
+  "genres": [
+    {
+      "id": 18,
+      "name": "Drama"
+    },
+    {
+      "id": 53,
+      "name": "Thriller"
+    }
+  ],
+  "homepage": "https://www.20thcenturystudios.com/movies/fight-club",
+  "id": 550,
+  "imdb_id": "tt0137523",
+  "origin_country": ["US"],
+  "original_language": "en",
+  "original_title": "Fight Club",
+  "overview": "A ticking-time-bomb insomniac and a slippery soap salesman channel primal male aggression into a shocking new form of therapy. Their concept catches on, with underground \"fight clubs\" forming in every town, until an eccentric gets in the way and ignites an out-of-control spiral toward oblivion.",
+  "popularity": 51.1733,
+  "poster_path": "/jSziioSwPVrOy9Yow3XhWIBDjq1.jpg",
+  "production_companies": [
+    {
+      "id": 711,
+      "logo_path": "/tEiIH5QesdheJmDAqQwvtN60727.png",
+      "name": "Fox 2000 Pictures",
+      "origin_country": "US"
+    },
+    {
+      "id": 508,
+      "logo_path": "/4sGWXoboEkWPphI6es6rTmqkCBh.png",
+      "name": "Regency Enterprises",
+      "origin_country": "US"
+    },
+    {
+      "id": 4700,
+      "logo_path": "/A32wmjrs9Psf4zw0uaixF0GXfxq.png",
+      "name": "Linson Entertainment",
+      "origin_country": "US"
+    },
+    {
+      "id": 25,
+      "logo_path": "/nM2MfoMqzJQRiSynsDabOtFKetD.png",
+      "name": "20th Century Fox",
+      "origin_country": "US"
+    },
+    {
+      "id": 20555,
+      "logo_path": "/hD8yEGUBlHOcfHYbujp71vD8gZp.png",
+      "name": "Taurus Film",
+      "origin_country": "DE"
+    }
+  ],
+  "production_countries": [
+    {
+      "iso_3166_1": "DE",
+      "name": "Germany"
+    },
+    {
+      "iso_3166_1": "US",
+      "name": "United States of America"
+    }
+  ],
+  "release_date": "1999-10-15",
+  "revenue": 100853753,
+  "runtime": 139,
+  "softcore": false,
+  "spoken_languages": [
+    {
+      "english_name": "English",
+      "iso_639_1": "en",
+      "name": "English"
+    }
+  ],
+  "status": "Released",
+  "tagline": "Mischief. Mayhem. Soap.",
+  "title": "Fight Club",
+  "video": false,
+  "vote_average": 8.437,
+  "vote_count": 32892,
+  "credits": {
+    "cast": [
+      {
+        "adult": false,
+        "gender": 2,
+        "id": 819,
+        "known_for_department": "Acting",
+        "name": "Edward Norton",
+        "original_name": "Edward Norton",
+        "popularity": 6.2072,
+        "profile_path": "/8nytsqL59SFJTVYVrN72k6qkGgJ.jpg",
+        "cast_id": 4,
+        "character": "Narrator",
+        "credit_id": "52fe4250c3a36847f80149f3",
+        "order": 0
+      },
+      {
+        "adult": false,
+        "gender": 2,
+        "id": 287,
+        "known_for_department": "Acting",
+        "name": "Brad Pitt",
+        "original_name": "Brad Pitt",
+        "popularity": 12.2632,
+        "profile_path": "/ajNaPmXVVMJFg9GWmu6MJzTaXdV.jpg",
+        "cast_id": 5,
+        "character": "Tyler Durden",
+        "credit_id": "52fe4250c3a36847f80149f7",
+        "order": 1
+      },
+      {
+        "adult": false,
+        "gender": 1,
+        "id": 1283,
+        "known_for_department": "Acting",
+        "name": "Helena Bonham Carter",
+        "original_name": "Helena Bonham Carter",
+        "popularity": 4.6595,
+        "profile_path": "/hJMbNSPJ2PCahsP3rNEU39C8GWU.jpg",
+        "cast_id": 285,
+        "character": "Marla Singer",
+        "credit_id": "631f0de8bd32090082733691",
+        "order": 2
+      },
+      {
+        "adult": false,
+        "gender": 2,
+        "id": 7470,
+        "known_for_department": "Acting",
+        "name": "Meat Loaf",
+        "original_name": "Meat Loaf",
+        "popularity": 1.9089,
+        "profile_path": "/1zkohpaG3my4qQAZGVgzgPuXwZ6.jpg",
+        "cast_id": 7,
+        "character": "Robert Paulson",
+        "credit_id": "52fe4250c3a36847f80149ff",
+        "order": 3
+      },
+      {
+        "adult": false,
+        "gender": 2,
+        "id": 7499,
+        "known_for_department": "Acting",
+        "name": "Jared Leto",
+        "original_name": "Jared Leto",
+        "popularity": 4.3579,
+        "profile_path": "/ca3x0OfIKbJppZh8S1Alx3GfUZO.jpg",
+        "cast_id": 286,
+        "character": "Angel Face",
+        "credit_id": "631f0e29ce9e91007f757d86",
+        "order": 4
+      }
+    ],
+    "crew": [
+      {
+        "adult": false,
+        "gender": 2,
+        "id": 7468,
+        "known_for_department": "Writing",
+        "name": "Chuck Palahniuk",
+        "original_name": "Chuck Palahniuk",
+        "popularity": 0.6814,
+        "profile_path": "/r8WZhWea6RXCNO7HXvvB4lWYxzu.jpg",
+        "credit_id": "52fe4250c3a36847f8014a4d",
+        "department": "Writing",
+        "job": "Novel"
+      },
+      {
+        "adult": false,
+        "gender": 2,
+        "id": 7474,
+        "known_for_department": "Production",
+        "name": "Ross Grayson Bell",
+        "original_name": "Ross Grayson Bell",
+        "popularity": 0.4491,
+        "profile_path": null,
+        "credit_id": "52fe4250c3a36847f8014a05",
+        "department": "Production",
+        "job": "Producer"
+      }
+    ]
+  }
+}
