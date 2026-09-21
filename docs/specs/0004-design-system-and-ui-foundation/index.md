@@ -1,7 +1,7 @@
 # 0004. Design system and UI foundation
 
 **Date**: 2026-09-21
-**Status**: In Progress
+**Status**: Accepted
 
 Scope feature: [5. Design system and UI foundation](../../scope/scope.md) · Beta tier
 

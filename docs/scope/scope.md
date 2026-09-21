@@ -17,7 +17,7 @@ _The stack, tooling and product rules (ratings, progress, statuses, security) li
 | 2 | Coding standards and tooling | Foundation | done |
 | 3 | Data model and security policies | Foundation | done |
 | 4 | TMDB integration module | Foundation | done |
-| 5 | Design system and UI foundation | Foundation | in-progress |
+| 5 | Design system and UI foundation | Foundation | done |
 | 6 | Authentication | Slice 1 | planned |
 | 7 | Movie page | Slice 1 | planned |
 | 8 | Movie tracking | Slice 1 | planned |
@@ -84,7 +84,7 @@ A server only module for authenticated TMDB requests: normalized responses, cach
 Code in `lib/tmdb/`, `next.config.ts`, `vitest.live.mts`, `security-boundary.test.ts`
 spec [0002](../specs/0002-tmdb-integration-module/index.md)
 
-### 5. Design system and UI foundation · in-progress
+### 5. Design system and UI foundation · done
 Base components adapted from the reference designs, plus loading, empty, error and missing image patterns. The sixteen references now exist in `design/`.
 **Done when:** base components match `design/`, work by keyboard with visible focus, and cover the shared loading, empty and error states on desktop and mobile.
 - [x] Design it (spec): `/architect design system and UI foundation`
@@ -94,7 +94,7 @@ Base components adapted from the reference designs, plus loading, empty, error a
   - [x] Shell thickened and primitives adapted: mobile navbar, tab links, the menu dialog sheet, the generated shadcn components — AC-14, AC-15
   - [x] Content pieces: the glass pill and its two badges, poster card with the missing image fallback, the grid, the state panel, the skeletons — AC-5, AC-8 to AC-12
   - [x] Proof: contrast audit recorded, showcase route with its production guard, accessibility tests, full checks — AC-7, AC-19 to AC-21
-- [ ] Verify it: `/check verify design system and UI foundation`
+- [x] Verify it: `/check verify design system and UI foundation`
 - [x] Test it: `/test design system and UI foundation`
 Code in `app/globals.css`, `app/layout.tsx`, `app/{shows,movies,showcase}/`, `components/`, `next.config.ts`
 spec [0004](../specs/0004-design-system-and-ui-foundation/index.md)
