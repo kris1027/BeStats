@@ -12,6 +12,18 @@ import type { NextConfig } from "next";
  */
 const nextConfig: NextConfig = {
   cacheComponents: true,
+  /**
+   * `/` sends people to `/shows` (spec 0004, AC-17).
+   *
+   * In the routing layer rather than a Server Component, so nothing renders and
+   * the question of whether a redirecting component counts as prerendered under
+   * `cacheComponents` never arises. Temporary rather than permanent, because a
+   * browser caches a 308 effectively forever and a real home page later would
+   * be fighting it.
+   */
+  async redirects() {
+    return [{ source: "/", destination: "/shows", permanent: false }];
+  },
   images: {
     remotePatterns: [
       {
