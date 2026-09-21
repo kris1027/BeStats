@@ -9,11 +9,11 @@
 Both major findings are fixed. Each one carries a **Resolved** line below saying what changed.
 Checks run after the fixes, all green: `pnpm test` (9 passed), `pnpm lint`, `tsc --noEmit`,
 `supabase db reset`, `supabase db schema declarative sync --no-apply` (no schema changes found,
-no migration emitted), `pnpm test:db` (85 pgTAP assertions, PASS), `pnpm build`.
+no migration emitted), `pnpm test:db` (86 pgTAP assertions, PASS), `pnpm build`.
 
 ## Summary
 
-This change lands spec 0001's three user-tracking tables (`user_movie_state`, `user_show_state`, `user_episode_state`), the two enum types, the timestamp-maintenance triggers, twelve RLS policies, generated TypeScript types, and a thorough pgTAP suite (four files, 84 assertions) plus two Vitest guards for the type shape and the service-role boundary. The SQL is careful and well commented — the hand-corrected grant/revoke section in the migration in particular documents a real Supabase gotcha (default privileges silently handing `anon`/`authenticated` more than intended) and the pgTAP suite proves it behaviourally, not just by inspection. The main problems are two coverage gaps in the very mechanisms meant to lock in AC-4 and AC-15 going forward: the declarative schema file doesn't carry the same privilege fix the migration hand-applies, and the new service-role regression test (plus its documented manual-grep counterpart) never scans the repo-root application files, including the one file (`proxy.ts`) that already wires up a Supabase client on every request.
+This change lands spec 0001's three user-tracking tables (`user_movie_state`, `user_show_state`, `user_episode_state`), the two enum types, the timestamp-maintenance triggers, twelve RLS policies, generated TypeScript types, and a thorough pgTAP suite (four feature files, 85 assertions; 86 with the smoke test) plus two Vitest guards for the type shape and the service-role boundary. The SQL is careful and well commented — the hand-corrected grant/revoke section in the migration in particular documents a real Supabase gotcha (default privileges silently handing `anon`/`authenticated` more than intended) and the pgTAP suite proves it behaviourally, not just by inspection. The main problems are two coverage gaps in the very mechanisms meant to lock in AC-4 and AC-15 going forward: the declarative schema file doesn't carry the same privilege fix the migration hand-applies, and the new service-role regression test (plus its documented manual-grep counterpart) never scans the repo-root application files, including the one file (`proxy.ts`) that already wires up a Supabase client on every request.
 
 ## Major
 
