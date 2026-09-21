@@ -73,14 +73,15 @@ spec [0001](../specs/0001-user-tracking-schema-and-rls/index.md)
 A server only module for authenticated TMDB requests: normalized responses, caching with a refresh policy, rate limit and failure handling, English first metadata.
 **Done when:** movie, TV, season and episode data load through one server module, the token never reaches the browser, and a TMDB failure returns a handled error, not a crash.
 - [x] Design it (spec): `/architect TMDB integration module`
-- [ ] Build it: `/develop TMDB integration module`
-  - [ ] Packages, `.env.example`, the `cacheComponents` flag and the module skeleton with `server-only` — AC-1, AC-2, AC-4, AC-20, AC-22
-  - [ ] Request client: Bearer auth, timeout, typed errors, bounded retry, structured logging, image URLs — AC-3, AC-10 to AC-12, AC-20, AC-21, AC-26, AC-27
-  - [ ] The movie thread end to end, verified in the running app, with its fixture tests and the secret boundary proven — AC-5 to AC-9, AC-13, AC-23, AC-2
-  - [ ] TV, seasons and specials, the bounded batch helpers, and `getShowEpisodes` with its completeness flag — AC-14, AC-15, AC-19, AC-25
-  - [ ] Search, discover, genres, the barrel, the full fixture suite, the opt in live check and the final build — AC-7, AC-16 to AC-18, AC-23, AC-24
+- [x] Build it: `/develop TMDB integration module`
+  - [x] Packages, `.env.example`, the `cacheComponents` flag and the module skeleton with `server-only` — AC-1, AC-2, AC-4, AC-20, AC-22
+  - [x] Request client: Bearer auth, timeout, typed errors, bounded retry, structured logging, image URLs — AC-3, AC-10 to AC-12, AC-20, AC-21, AC-26, AC-27
+  - [x] The movie thread end to end, verified in the running app, with its fixture tests and the secret boundary proven — AC-5 to AC-9, AC-13, AC-23, AC-2
+  - [x] TV, seasons and specials, the bounded batch helpers, and `getShowEpisodes` with its completeness flag — AC-14, AC-15, AC-19, AC-25
+  - [x] Search, discover, genres, the barrel, the full fixture suite, the opt in live check and the final build — AC-7, AC-16 to AC-18, AC-23, AC-24
 - [ ] Verify it: `/check verify TMDB integration module`
 - [ ] Test it: `/test TMDB integration module`
+Code in `lib/tmdb/`, `next.config.ts`, `vitest.live.mts`, `security-boundary.test.ts`
 spec [0002](../specs/0002-tmdb-integration-module/index.md)
 
 ### 5. Design system and UI foundation · needs a decision
