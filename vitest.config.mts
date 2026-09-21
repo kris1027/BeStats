@@ -1,4 +1,17 @@
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
+
+/**
+ * `server-only` is a marker package whose main entry throws the moment it is
+ * imported; only Next's `react-server` condition resolves it to the empty
+ * module. Vitest resolves the default condition and externalizes the package,
+ * so the alias points straight at the empty file instead. Without it every test
+ * of a server module would fail at import time on the very guard that keeps the
+ * TMDB token off the browser (spec 0002, AC-2).
+ */
+const SERVER_ONLY_STUB = fileURLToPath(
+  new URL("./node_modules/server-only/empty.js", import.meta.url),
+);
 
 /**
  * Two projects, one runner. Pure logic (ratings, progress, TMDB normalization)
@@ -30,6 +43,16 @@ export default defineConfig({
     },
     projects: [
       {
+        // `server-only` is a marker package whose default export throws on
+        // import; only the `react-server` condition, which Next sets for Server
+        // Components, resolves it to an empty module. Without this condition
+        // every test of a server module would fail at import time on the very
+        // guard that keeps the TMDB token off the browser (spec 0002, AC-2).
+        resolve: {
+          alias: {
+            "server-only": SERVER_ONLY_STUB,
+          },
+        },
         test: {
           name: "unit",
           environment: "node",

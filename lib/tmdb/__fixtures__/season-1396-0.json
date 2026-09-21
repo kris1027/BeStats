@@ -1,0 +1,259 @@
+{
+  "_id": "525423c9760ee31328001f52",
+  "air_date": "2009-02-17",
+  "episodes": [
+    {
+      "air_date": "2009-02-17",
+      "episode_number": 1,
+      "episode_type": "standard",
+      "id": 62131,
+      "name": "Good Cop / Bad Cop",
+      "overview": "Season 1 Minisode 1: Hank and Marie celebrate Valentine's Day.",
+      "production_code": "",
+      "runtime": 3,
+      "season_number": 0,
+      "show_id": 1396,
+      "still_path": "/t729tFVXPetnJlJ2VsUZQz0rX6v.jpg",
+      "vote_average": 7.8,
+      "vote_count": 5,
+      "crew": [
+        {
+          "department": "Directing",
+          "job": "Director",
+          "credit_id": "525423cb760ee3132800227c",
+          "adult": false,
+          "gender": 2,
+          "id": 29924,
+          "known_for_department": "Writing",
+          "name": "John Shiban",
+          "original_name": "John Shiban",
+          "popularity": 0.8847,
+          "profile_path": "/rdmBnBQnxAab2FE2CP6A6hGnUXT.jpg"
+        },
+        {
+          "job": "Writer",
+          "department": "Writing",
+          "credit_id": "525423ce760ee3132800261a",
+          "adult": false,
+          "gender": 1,
+          "id": 1223203,
+          "known_for_department": "Writing",
+          "name": "Gennifer Hutchison",
+          "original_name": "Gennifer Hutchison",
+          "popularity": 0.8894,
+          "profile_path": "/b9aW3OIGhVOv7m8QdIzX87Bs4hl.jpg"
+        },
+        {
+          "job": "Writer",
+          "department": "Writing",
+          "credit_id": "653bcf19719aeb00fe3bf9e6",
+          "adult": false,
+          "gender": 1,
+          "id": 3787071,
+          "known_for_department": "Writing",
+          "name": "Suzanne Potts",
+          "original_name": "Suzanne Potts",
+          "popularity": 0.2649,
+          "profile_path": "/zuepGXUogJKEiqNJjIcsGfSe8V6.jpg"
+        }
+      ],
+      "guest_stars": [
+        {
+          "character": "Hank Schrader",
+          "credit_id": "52542283760ee3132800187b",
+          "order": 4,
+          "adult": false,
+          "gender": 2,
+          "id": 14329,
+          "known_for_department": "Acting",
+          "name": "Dean Norris",
+          "original_name": "Dean Norris",
+          "popularity": 3.9606,
+          "profile_path": "/mKRrEbsxAX3ro700HsViFArRM7l.jpg"
+        },
+        {
+          "character": "Marie Schrader",
+          "credit_id": "52542283760ee31328001891",
+          "order": 5,
+          "adult": false,
+          "gender": 1,
+          "id": 1217934,
+          "known_for_department": "Acting",
+          "name": "Betsy Brandt",
+          "original_name": "Betsy Brandt",
+          "popularity": 2.1125,
+          "profile_path": "/xAnuzyjdMbQq9L1c4JNwXL52Wm4.jpg"
+        }
+      ]
+    },
+    {
+      "air_date": "2009-02-17",
+      "episode_number": 2,
+      "episode_type": "standard",
+      "id": 62133,
+      "name": "Wedding Day",
+      "overview": "Season 1 Minisode 2: Hank and Walt have a discussion on Hank and Marie's wedding day.",
+      "production_code": "",
+      "runtime": 5,
+      "season_number": 0,
+      "show_id": 1396,
+      "still_path": "/wT62P6ZnjKgZXk0M5hHl4e5zSjB.jpg",
+      "vote_average": 9.7,
+      "vote_count": 3,
+      "crew": [
+        {
+          "department": "Directing",
+          "job": "Director",
+          "credit_id": "525423cb760ee3132800227c",
+          "adult": false,
+          "gender": 2,
+          "id": 29924,
+          "known_for_department": "Writing",
+          "name": "John Shiban",
+          "original_name": "John Shiban",
+          "popularity": 0.8847,
+          "profile_path": "/rdmBnBQnxAab2FE2CP6A6hGnUXT.jpg"
+        },
+        {
+          "job": "Writer",
+          "department": "Writing",
+          "credit_id": "525423ce760ee3132800261a",
+          "adult": false,
+          "gender": 1,
+          "id": 1223203,
+          "known_for_department": "Writing",
+          "name": "Gennifer Hutchison",
+          "original_name": "Gennifer Hutchison",
+          "popularity": 0.8894,
+          "profile_path": "/b9aW3OIGhVOv7m8QdIzX87Bs4hl.jpg"
+        },
+        {
+          "job": "Writer",
+          "department": "Writing",
+          "credit_id": "653bcf95564ec7013c205f77",
+          "adult": false,
+          "gender": 1,
+          "id": 1831876,
+          "known_for_department": "Writing",
+          "name": "Kate Powers",
+          "original_name": "Kate Powers",
+          "popularity": 0.4922,
+          "profile_path": null
+        }
+      ],
+      "guest_stars": [
+        {
+          "character": "Walter White",
+          "credit_id": "52542282760ee313280017f9",
+          "order": 0,
+          "adult": false,
+          "gender": 2,
+          "id": 17419,
+          "known_for_department": "Acting",
+          "name": "Bryan Cranston",
+          "original_name": "Bryan Cranston",
+          "popularity": 7.045,
+          "profile_path": "/7Jahy5LZX2Fo8fGJltMreAI49hC.jpg"
+        },
+        {
+          "character": "Hank Schrader",
+          "credit_id": "52542283760ee3132800187b",
+          "order": 4,
+          "adult": false,
+          "gender": 2,
+          "id": 14329,
+          "known_for_department": "Acting",
+          "name": "Dean Norris",
+          "original_name": "Dean Norris",
+          "popularity": 3.9606,
+          "profile_path": "/mKRrEbsxAX3ro700HsViFArRM7l.jpg"
+        }
+      ]
+    },
+    {
+      "air_date": "2009-02-17",
+      "episode_number": 3,
+      "episode_type": "standard",
+      "id": 62132,
+      "name": "TwaüghtHammër",
+      "overview": "Season 1 Minisode 3: Jesse explains the origins of his band, TwaüghtHammër.",
+      "production_code": "",
+      "runtime": 5,
+      "season_number": 0,
+      "show_id": 1396,
+      "still_path": "/gUHAqFw3Ptzya96JFFE9xVfMjze.jpg",
+      "vote_average": 8.3,
+      "vote_count": 3,
+      "crew": [
+        {
+          "department": "Directing",
+          "job": "Director",
+          "credit_id": "525423cb760ee3132800227c",
+          "adult": false,
+          "gender": 2,
+          "id": 29924,
+          "known_for_department": "Writing",
+          "name": "John Shiban",
+          "original_name": "John Shiban",
+          "popularity": 0.8847,
+          "profile_path": "/rdmBnBQnxAab2FE2CP6A6hGnUXT.jpg"
+        },
+        {
+          "job": "Writer",
+          "department": "Writing",
+          "credit_id": "525423ce760ee3132800261a",
+          "adult": false,
+          "gender": 1,
+          "id": 1223203,
+          "known_for_department": "Writing",
+          "name": "Gennifer Hutchison",
+          "original_name": "Gennifer Hutchison",
+          "popularity": 0.8894,
+          "profile_path": "/b9aW3OIGhVOv7m8QdIzX87Bs4hl.jpg"
+        }
+      ],
+      "guest_stars": [
+        {
+          "character": "Jesse Pinkman",
+          "credit_id": "52542282760ee31328001845",
+          "order": 1,
+          "adult": false,
+          "gender": 2,
+          "id": 84497,
+          "known_for_department": "Acting",
+          "name": "Aaron Paul",
+          "original_name": "Aaron Paul",
+          "popularity": 3.871,
+          "profile_path": "/8Ac9uuoYwZoYVAIJfRLzzLsGGJn.jpg"
+        },
+        {
+          "character": "Badger",
+          "credit_id": "52744535760ee3572209100e",
+          "order": 658,
+          "adult": false,
+          "gender": 2,
+          "id": 191202,
+          "known_for_department": "Acting",
+          "name": "Matt Jones",
+          "original_name": "Matt Jones",
+          "popularity": 2.3287,
+          "profile_path": "/x13vFDaJHY1CxNvSPWujYe12bMc.jpg"
+        }
+      ]
+    }
+  ],
+  "name": "Specials",
+  "networks": [
+    {
+      "id": 174,
+      "logo_path": "/pmvRmATOCaDykE6JrVoeYxlFHw3.png",
+      "name": "AMC",
+      "origin_country": "US"
+    }
+  ],
+  "overview": "",
+  "id": 3577,
+  "poster_path": "/4RaIvSQgHHHPfaI1jFqaMR8UJWM.jpg",
+  "season_number": 0,
+  "vote_average": 0.0
+}

@@ -15,8 +15,8 @@ _The stack, tooling and product rules (ratings, progress, statuses, security) li
 |---|---------|-------|--------|
 | 1 | Stack and scaffold | Foundation | done |
 | 2 | Coding standards and tooling | Foundation | done |
-| 3 | Data model and security policies | Foundation | in-progress |
-| 4 | TMDB integration module | Foundation | in-progress |
+| 3 | Data model and security policies | Foundation | done |
+| 4 | TMDB integration module | Foundation | done |
 | 5 | Design system and UI foundation | Foundation | planned |
 | 6 | Authentication | Slice 1 | planned |
 | 7 | Movie page | Slice 1 | planned |
@@ -52,7 +52,7 @@ Capture conventions from the real project, then install the checks every later s
 Code in `biome.json`, `vitest.config.ts`, `vitest.setup.ts`, `.github/workflows/checks.yml`, `supabase/tests/`
 spec [0003](../specs/0003-lint-format-and-test-tooling.md)
 
-### 3. Data model and security policies · in-progress · GA
+### 3. Data model and security policies · done · GA
 The costliest thing to redo. Movie state, TV tracking state, episode state and catalog identity (media type plus TMDB ID), with constraints and row level security from the first migration.
 **Done when:** migrations create every table with ownership, uniqueness and rating bounds; RLS blocks any cross user read or write; repeated writes never duplicate rows.
 - [x] Design it (spec): `/architect data model and security policies`
@@ -69,18 +69,19 @@ The costliest thing to redo. Movie state, TV tracking state, episode state and c
 Code in `supabase/schemas/`, `supabase/migrations/`, `supabase/seed.sql`, `supabase/tests/`, `lib/supabase/database.types.ts`, `scripts/db-types-check.sh`
 spec [0001](../specs/0001-user-tracking-schema-and-rls/index.md)
 
-### 4. TMDB integration module · in-progress
+### 4. TMDB integration module · done
 A server only module for authenticated TMDB requests: normalized responses, caching with a refresh policy, rate limit and failure handling, English first metadata.
 **Done when:** movie, TV, season and episode data load through one server module, the token never reaches the browser, and a TMDB failure returns a handled error, not a crash.
 - [x] Design it (spec): `/architect TMDB integration module`
-- [ ] Build it: `/develop TMDB integration module`
-  - [ ] Packages, `.env.example`, the `cacheComponents` flag and the module skeleton with `server-only` — AC-1, AC-2, AC-4, AC-20, AC-22
-  - [ ] Request client: Bearer auth, timeout, typed errors, bounded retry, structured logging, image URLs — AC-3, AC-10 to AC-12, AC-20, AC-21, AC-26, AC-27
-  - [ ] The movie thread end to end, verified in the running app, with its fixture tests and the secret boundary proven — AC-5 to AC-9, AC-13, AC-23, AC-2
-  - [ ] TV, seasons and specials, the bounded batch helpers, and `getShowEpisodes` with its completeness flag — AC-14, AC-15, AC-19, AC-25
-  - [ ] Search, discover, genres, the barrel, the full fixture suite, the opt in live check and the final build — AC-7, AC-16 to AC-18, AC-23, AC-24
-- [ ] Verify it: `/check verify TMDB integration module`
-- [ ] Test it: `/test TMDB integration module`
+- [x] Build it: `/develop TMDB integration module`
+  - [x] Packages, `.env.example`, the `cacheComponents` flag and the module skeleton with `server-only` — AC-1, AC-2, AC-4, AC-20, AC-22
+  - [x] Request client: Bearer auth, timeout, typed errors, bounded retry, structured logging, image URLs — AC-3, AC-10 to AC-12, AC-20, AC-21, AC-26, AC-27
+  - [x] The movie thread end to end, verified in the running app, with its fixture tests and the secret boundary proven — AC-5 to AC-9, AC-13, AC-23, AC-2
+  - [x] TV, seasons and specials, the bounded batch helpers, and `getShowEpisodes` with its completeness flag — AC-14, AC-15, AC-19, AC-25
+  - [x] Search, discover, genres, the barrel, the full fixture suite, the opt in live check and the final build — AC-7, AC-16 to AC-18, AC-23, AC-24
+- [x] Verify it: `/check verify TMDB integration module`
+- [x] Test it: `/test TMDB integration module`
+Code in `lib/tmdb/`, `next.config.ts`, `vitest.live.mts`, `security-boundary.test.ts`
 spec [0002](../specs/0002-tmdb-integration-module/index.md)
 
 ### 5. Design system and UI foundation · needs a decision
