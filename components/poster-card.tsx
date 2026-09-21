@@ -82,7 +82,15 @@ function PosterCard({
               className="size-8 text-muted-foreground"
               aria-hidden="true"
             />
-            <span className="line-clamp-3 text-xs text-muted-foreground">
+            {/*
+             * Hidden from assistive technology on purpose. The caption link
+             * below already carries the title, so leaving this readable makes
+             * a screen reader announce it twice on every card with no artwork.
+             */}
+            <span
+              aria-hidden="true"
+              className="line-clamp-3 text-xs text-muted-foreground"
+            >
               {title}
             </span>
           </div>

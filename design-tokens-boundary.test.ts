@@ -37,7 +37,12 @@ const EXCLUDED_DIRS = new Set([
   "__fixtures__",
 ]);
 
-const SCANNED_EXTENSIONS = new Set([".ts", ".tsx"]);
+/**
+ * Every extension a colour value could reach the browser through, not just the
+ * component ones. A second stylesheet, or a config file that hands a colour to
+ * a plugin, breaks the rule exactly as a hardcoded hex in a component does.
+ */
+const SCANNED_EXTENSIONS = new Set([".ts", ".tsx", ".css", ".mjs", ".js"]);
 
 /** Every scannable file under a directory, recursively. */
 function filesUnder(dir: string): string[] {
@@ -54,11 +59,16 @@ function filesUnder(dir: string): string[] {
   return found;
 }
 
-/** Paths whose own subject is the rule, so a mention there is not a breach. */
-const SELF_REFERENTIAL = /(^|\/)design-tokens-boundary\.test\.ts$/;
+/**
+ * Paths the colour rule does not apply to: this file, whose own subject is the
+ * rule, and `globals.css`, which is the one place a colour value may be
+ * written (AGENTS.md, the Tailwind v4 note).
+ */
+const EXEMPT_FROM_COLOUR_RULE =
+  /(^|\/)(design-tokens-boundary\.test\.ts|app\/globals\.css)$/;
 
 const SOURCE_FILES = filesUnder(".").filter(
-  (path) => !SELF_REFERENTIAL.test(path),
+  (path) => !EXEMPT_FROM_COLOUR_RULE.test(path),
 );
 
 const GLOBALS_CSS = readFileSync("app/globals.css", "utf8");
@@ -86,11 +96,16 @@ describe("typeface boundary (AC-2)", () => {
 
 describe("colour boundary (AC-3, AC-4)", () => {
   /**
-   * Any hex literal at all, not just today's brand values. Naming the six
+   * Any colour literal at all, not just today's brand values. Naming the six
    * current colours would pass the moment someone pastes a seventh, which is
    * the way this rule actually erodes.
+   *
+   * Functional notation counts too. `globals.css` already writes one
+   * (`--border`), so a component reaching for `rgb(...)` instead of a hex is a
+   * realistic way past a hex only grep rather than a hypothetical one.
    */
-  const HEX_LITERAL = /#[0-9a-f]{3,8}\b/gi;
+  const COLOUR_LITERAL =
+    /#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\(/gi;
 
   /**
    * The showcase deliberately builds a light, non brand swatch as a data URI
@@ -102,11 +117,12 @@ describe("colour boundary (AC-3, AC-4)", () => {
   it("keeps every colour value in globals.css and out of the components", () => {
     const offenders = SOURCE_FILES.flatMap((path) => {
       const allowed = ALLOWED.get(path.replace(/^\.\//, "")) ?? [];
-      const found = readFileSync(path, "utf8").match(HEX_LITERAL) ?? [];
+      const found = readFileSync(path, "utf8").match(COLOUR_LITERAL) ?? [];
       const unexpected = found.filter(
-        (hex) => !allowed.some((ok) => ok.toLowerCase() === hex.toLowerCase()),
+        (value) =>
+          !allowed.some((ok) => ok.toLowerCase() === value.toLowerCase()),
       );
-      return unexpected.map((hex) => `${path}: ${hex}`);
+      return unexpected.map((value) => `${path}: ${value}`);
     });
 
     expect(offenders).toEqual([]);

@@ -80,7 +80,7 @@ One step per row of the spec's Value sourcing table, exercising the edge that
 breaks if the source is wrong.
 
 - [ ] Selected media tab comes from the pathname: open `/movies` in a fresh tab with JavaScript throttled → MOVIES is already selected in the server rendered HTML → AC-14
-- [ ] Poster URL comes from `imageUrl` in `lib/tmdb/images.ts`: pass a raw TMDB path instead of an absolute URL → `next/image` rejects it rather than rendering a broken image → AC-8
+- [ ] Poster URL comes from `imageUrl` in `lib/tmdb/images.ts`: confirm each caller passes `PosterCard` the absolute URL `imageUrl` returns, then pass a raw TMDB path instead → `next/image` treats it as a local file and the optimiser fails the request, which is why the conversion belongs at the caller → AC-8
 - [ ] Poster dimensions come from the aspect ratio, not fixed pixels: render the same card at 390px and at 1440px → the frame stays 2:3 at both → AC-8
 - [ ] The rim comes from the two layer technique: set a large `border-radius` on a glass surface → the rim follows it rather than squaring off → AC-3
 - [ ] Blur comes from `--blur-glass`: change it in `globals.css` → the navbar and the menu backdrop both change, and nothing else does → AC-16
