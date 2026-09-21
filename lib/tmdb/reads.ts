@@ -3,6 +3,7 @@ import { cacheLife } from "next/cache";
 import { fetchMoviesByIds, fetchTvShowsByIds } from "./batch";
 import { fetchMovieGenres, fetchTvGenres } from "./genres";
 import { fetchMovie } from "./movies";
+import { type TmdbResult, toFailure, unwrap } from "./result";
 import {
   fetchDiscoverMovies,
   fetchDiscoverTvShows,
@@ -29,7 +30,7 @@ import type {
  * The cached half of every TMDB read: thin `use cache` wrappers over the inner
  * functions that do the work.
  *
- * Two things live in this one file on purpose.
+ * Three things live in this one file on purpose.
  *
  * **The split** (spec 0002, AC-23). The request, validation and normalization
  * logic sits in the inner modules, so the test suite calls it directly and does
@@ -44,106 +45,264 @@ import type {
  * indefinitely cached catalog), `minutes` for query shaped reads with little
  * reuse, and `max` for genre lists that are effectively static.
  *
+ * **The failure envelope** (AC-10, AC-19, AC-26). Each read is a pair: a cached
+ * function that returns a `TmdbResult` and never throws a `TmdbError`, and an
+ * exported wrapper that unwraps it. A rejection crossing a cache boundary is
+ * serialized into a plain `Error`, which strips the `TmdbError` prototype and
+ * its `kind`, so returning the failure and rebuilding it outside the scope is
+ * what keeps `isTmdbNotFound` and the `not_found` branch in `batch.ts` working.
+ * See `result.ts`. A failed read takes the `minutes` profile rather than the
+ * success profile, so a timeout or a rate limit is retried soon instead of
+ * being pinned for days, while still absorbing a burst of requests for a title
+ * TMDB really has deleted.
+ *
  * No cached scope here reads a cookie, a header or a search param, so nothing
  * user specific can land in a shared cache (AGENTS.md section 11).
  */
 
-export async function getMovie(id: number): Promise<Movie> {
+/** The lifetime a failed read takes, short enough that an outage self heals. */
+const FAILURE_PROFILE = "minutes";
+
+async function getMovieCached(id: number): Promise<TmdbResult<Movie>> {
   "use cache";
-  cacheLife("days");
-  return fetchMovie(id);
+  try {
+    const value = await fetchMovie(id);
+    cacheLife("days");
+    return { ok: true, value };
+  } catch (error) {
+    cacheLife(FAILURE_PROFILE);
+    return { ok: false, failure: toFailure(error) };
+  }
+}
+
+export async function getMovie(id: number): Promise<Movie> {
+  return unwrap(await getMovieCached(id));
+}
+
+async function getTvShowCached(id: number): Promise<TmdbResult<TvShow>> {
+  "use cache";
+  try {
+    const value = await fetchTvShow(id);
+    cacheLife("days");
+    return { ok: true, value };
+  } catch (error) {
+    cacheLife(FAILURE_PROFILE);
+    return { ok: false, failure: toFailure(error) };
+  }
 }
 
 export async function getTvShow(id: number): Promise<TvShow> {
+  return unwrap(await getTvShowCached(id));
+}
+
+async function getSeasonCached(
+  showId: number,
+  seasonNumber: number,
+): Promise<TmdbResult<SeasonDetail>> {
   "use cache";
-  cacheLife("days");
-  return fetchTvShow(id);
+  try {
+    const value = await fetchSeason(showId, seasonNumber);
+    cacheLife("hours");
+    return { ok: true, value };
+  } catch (error) {
+    cacheLife(FAILURE_PROFILE);
+    return { ok: false, failure: toFailure(error) };
+  }
 }
 
 export async function getSeason(
   showId: number,
   seasonNumber: number,
 ): Promise<SeasonDetail> {
-  "use cache";
-  cacheLife("hours");
-  return fetchSeason(showId, seasonNumber);
+  return unwrap(await getSeasonCached(showId, seasonNumber));
 }
 
 /**
  * Reuses the cached show and season wrappers, so a season already fetched for a
  * page is not fetched a second time for the progress calculation.
  */
-export async function getShowEpisodes(showId: number): Promise<ShowEpisodes> {
+async function getShowEpisodesCached(
+  showId: number,
+): Promise<TmdbResult<ShowEpisodes>> {
   "use cache";
-  cacheLife("hours");
-  return fetchShowEpisodes(showId, {
-    readTvShow: getTvShow,
-    readSeason: getSeason,
-  });
+  try {
+    const value = await fetchShowEpisodes(showId, {
+      readTvShow: getTvShow,
+      readSeason: getSeason,
+    });
+    cacheLife("hours");
+    return { ok: true, value };
+  } catch (error) {
+    cacheLife(FAILURE_PROFILE);
+    return { ok: false, failure: toFailure(error) };
+  }
+}
+
+export async function getShowEpisodes(showId: number): Promise<ShowEpisodes> {
+  return unwrap(await getShowEpisodesCached(showId));
+}
+
+async function searchMoviesCached(
+  query: string,
+  options: SearchOptions,
+): Promise<TmdbResult<Paged<MovieSummary>>> {
+  "use cache";
+  try {
+    const value = await fetchSearchMovies(query, options);
+    cacheLife("minutes");
+    return { ok: true, value };
+  } catch (error) {
+    cacheLife(FAILURE_PROFILE);
+    return { ok: false, failure: toFailure(error) };
+  }
 }
 
 export async function searchMovies(
   query: string,
   options: SearchOptions = {},
 ): Promise<Paged<MovieSummary>> {
+  return unwrap(await searchMoviesCached(query, options));
+}
+
+async function searchTvShowsCached(
+  query: string,
+  options: SearchOptions,
+): Promise<TmdbResult<Paged<TvShowSummary>>> {
   "use cache";
-  cacheLife("minutes");
-  return fetchSearchMovies(query, options);
+  try {
+    const value = await fetchSearchTvShows(query, options);
+    cacheLife("minutes");
+    return { ok: true, value };
+  } catch (error) {
+    cacheLife(FAILURE_PROFILE);
+    return { ok: false, failure: toFailure(error) };
+  }
 }
 
 export async function searchTvShows(
   query: string,
   options: SearchOptions = {},
 ): Promise<Paged<TvShowSummary>> {
+  return unwrap(await searchTvShowsCached(query, options));
+}
+
+async function discoverMoviesCached(
+  options: DiscoverOptions,
+): Promise<TmdbResult<Paged<MovieSummary>>> {
   "use cache";
-  cacheLife("minutes");
-  return fetchSearchTvShows(query, options);
+  try {
+    const value = await fetchDiscoverMovies(options);
+    cacheLife("minutes");
+    return { ok: true, value };
+  } catch (error) {
+    cacheLife(FAILURE_PROFILE);
+    return { ok: false, failure: toFailure(error) };
+  }
 }
 
 export async function discoverMovies(
   options: DiscoverOptions = {},
 ): Promise<Paged<MovieSummary>> {
+  return unwrap(await discoverMoviesCached(options));
+}
+
+async function discoverTvShowsCached(
+  options: DiscoverOptions,
+): Promise<TmdbResult<Paged<TvShowSummary>>> {
   "use cache";
-  cacheLife("minutes");
-  return fetchDiscoverMovies(options);
+  try {
+    const value = await fetchDiscoverTvShows(options);
+    cacheLife("minutes");
+    return { ok: true, value };
+  } catch (error) {
+    cacheLife(FAILURE_PROFILE);
+    return { ok: false, failure: toFailure(error) };
+  }
 }
 
 export async function discoverTvShows(
   options: DiscoverOptions = {},
 ): Promise<Paged<TvShowSummary>> {
+  return unwrap(await discoverTvShowsCached(options));
+}
+
+async function getMovieGenresCached(): Promise<TmdbResult<Genre[]>> {
   "use cache";
-  cacheLife("minutes");
-  return fetchDiscoverTvShows(options);
+  try {
+    const value = await fetchMovieGenres();
+    cacheLife("max");
+    return { ok: true, value };
+  } catch (error) {
+    cacheLife(FAILURE_PROFILE);
+    return { ok: false, failure: toFailure(error) };
+  }
 }
 
 export async function getMovieGenres(): Promise<Genre[]> {
+  return unwrap(await getMovieGenresCached());
+}
+
+async function getTvGenresCached(): Promise<TmdbResult<Genre[]>> {
   "use cache";
-  cacheLife("max");
-  return fetchMovieGenres();
+  try {
+    const value = await fetchTvGenres();
+    cacheLife("max");
+    return { ok: true, value };
+  } catch (error) {
+    cacheLife(FAILURE_PROFILE);
+    return { ok: false, failure: toFailure(error) };
+  }
 }
 
 export async function getTvGenres(): Promise<Genre[]> {
-  "use cache";
-  cacheLife("max");
-  return fetchTvGenres();
+  return unwrap(await getTvGenresCached());
 }
 
 /**
  * Batched reads share the detail profile, and pass the cached single title
  * readers down so a title already on a page costs nothing here.
+ *
+ * The readers passed down are the exported wrappers, not the cached functions,
+ * because `batch.ts` sorts a missing title from a systemic failure by testing
+ * `error.kind`. That test only works on an error rebuilt on this side of the
+ * boundary (AC-19).
  */
+async function getMoviesByIdsCached(
+  ids: readonly number[],
+): Promise<TmdbResult<BatchResult<MovieSummary>>> {
+  "use cache";
+  try {
+    const value = await fetchMoviesByIds(ids, getMovie);
+    cacheLife("days");
+    return { ok: true, value };
+  } catch (error) {
+    cacheLife(FAILURE_PROFILE);
+    return { ok: false, failure: toFailure(error) };
+  }
+}
+
 export async function getMoviesByIds(
   ids: readonly number[],
 ): Promise<BatchResult<MovieSummary>> {
+  return unwrap(await getMoviesByIdsCached(ids));
+}
+
+async function getTvShowsByIdsCached(
+  ids: readonly number[],
+): Promise<TmdbResult<BatchResult<TvShowSummary>>> {
   "use cache";
-  cacheLife("days");
-  return fetchMoviesByIds(ids, getMovie);
+  try {
+    const value = await fetchTvShowsByIds(ids, getTvShow);
+    cacheLife("days");
+    return { ok: true, value };
+  } catch (error) {
+    cacheLife(FAILURE_PROFILE);
+    return { ok: false, failure: toFailure(error) };
+  }
 }
 
 export async function getTvShowsByIds(
   ids: readonly number[],
 ): Promise<BatchResult<TvShowSummary>> {
-  "use cache";
-  cacheLife("days");
-  return fetchTvShowsByIds(ids, getTvShow);
+  return unwrap(await getTvShowsByIdsCached(ids));
 }
