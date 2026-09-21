@@ -66,7 +66,7 @@ primitive and state in one place, so most visual steps below happen there.
 - [ ] Follow a link to an anchored heading → the heading is not hidden behind the sticky bar → AC-13
 - [ ] Click MOVIES → the URL becomes `/movies`, MOVIES lights up and carries `aria-current="page"`; press the browser back button → SHOWS lights up again with no stale state → AC-14
 - [ ] Open `/movies/anything` directly → MOVIES is still selected, which proves selection comes from the path and not from client state → AC-14
-- [ ] On `/showcase` under *Overlays*, open the menu with Enter → focus lands inside the sheet; Tab cycles without leaving it; the page behind does not scroll; Escape closes it and focus returns to the menu button → AC-15
+- [x] On `/showcase` under *Overlays*, open the menu with Enter → focus lands inside the sheet; Tab cycles without leaving it; the page behind does not scroll; Escape closes it and focus returns to the menu button → AC-15 (Tab containment and scroll lock confirmed in a real browser; focus entry, Escape and focus return also asserted in `mobile-menu-sheet.test.tsx`)
 - [ ] With the sheet open, inspect the page behind → it is hidden from assistive technology (`aria-hidden` or `inert`) → AC-15
 - [ ] Inspect the navbar and the menu backdrop → both carry a 16px backdrop blur with no saturation change; a glass pill on flat black carries none → AC-16
 
