@@ -1,7 +1,7 @@
 # 0001. User tracking schema and Row Level Security
 
 **Date**: 2026-09-20
-**Status**: In Progress
+**Status**: Accepted
 
 Scope feature: [3. Data model and security policies](../../scope/scope.md) · GA tier
 
