@@ -165,8 +165,12 @@ site_url = "http://localhost:3000"
 # The callback path itself, plus a wildcard for the `next` variants it redirects
 # on to. The bare origin alone is not enough: Supabase matches the full URL.
 additional_redirect_urls = ["http://localhost:3000/auth/callback", "http://localhost:3000/**"]
-# How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
-jwt_expiry = 3600
+# Spec 0005 AC-8: the access token lifetime is the longest a revoked session
+# keeps working anywhere the token is checked locally, which is our navbar and
+# private pages through getClaims(), and Row Level Security for a direct API
+# call. Ten minutes instead of the 3600 default bounds that window. The hosted
+# project sets this separately and must match it (feature 20).
+jwt_expiry = 600
 # JWT issuer URL. If not set, defaults to auth.external_url.
 # jwt_issuer = ""
 # Path to JWT signing key. DO NOT commit your signing keys file to git.
