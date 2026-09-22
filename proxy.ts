@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { isPrivatePath } from "@/lib/auth/private-paths";
 import { getPublicEnv } from "@/lib/env";
+import { sessionCookieOptions } from "@/lib/supabase/cookie-options";
 
 let warnedAboutMissingConfig = false;
 
@@ -54,6 +55,9 @@ export async function proxy(request: NextRequest) {
     env.NEXT_PUBLIC_SUPABASE_URL,
     env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     {
+      // The same flags the server client writes, so a refresh here never
+      // rewrites the session cookie without `HttpOnly` (spec 0005, AC-25).
+      cookieOptions: sessionCookieOptions(),
       cookies: {
         getAll() {
           return request.cookies.getAll();

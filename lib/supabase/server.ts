@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 import { getPublicEnv } from "@/lib/env";
+import { sessionCookieOptions } from "@/lib/supabase/cookie-options";
 import type { Database } from "@/lib/supabase/database.types";
 
 /**
@@ -19,6 +20,9 @@ import type { Database } from "@/lib/supabase/database.types";
  * Typed with the generated `Database`, so every read and write of the tracking
  * tables is checked against the real schema. Regenerate with `pnpm db:types`
  * after any schema change; `pnpm db:types:check` fails when the two drift.
+ *
+ * Its cookies are `HttpOnly` through `sessionCookieOptions()`, the same
+ * definition the proxy uses (spec 0005, AC-25).
  */
 export async function createClient() {
   const env = getPublicEnv();
@@ -28,6 +32,7 @@ export async function createClient() {
     env.NEXT_PUBLIC_SUPABASE_URL,
     env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     {
+      cookieOptions: sessionCookieOptions(),
       cookies: {
         getAll() {
           return cookieStore.getAll();
