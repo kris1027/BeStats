@@ -45,7 +45,15 @@ async function AccountSlot() {
         >
           {avatarLetter(user.email)}
         </span>
-        <span className="max-w-[12ch] truncate">{displayName(user.email)}</span>
+        {/*
+         * The mobile artboard draws only the letter. With the name beside it a
+         * long address pushed Sign out past a 390px viewport, so below `md`
+         * the name is kept for screen readers only, which also keeps the link
+         * from being named by nothing but an aria-hidden letter.
+         */}
+        <span className="sr-only md:not-sr-only md:max-w-[12ch] md:truncate">
+          {displayName(user.email)}
+        </span>
       </ButtonLink>
 
       <form action={signOutAction}>
