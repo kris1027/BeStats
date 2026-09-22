@@ -50,8 +50,11 @@ called **unknown** below.
 ## Recovery and change
 
 - [x] Request a reset for **A**, open the link in the test inbox → lands on `/reset-password` with a recovery session → AC-7
-- [ ] Open `/reset-password` directly with no recovery session → refused, sent to `/forgot-password` or `/sign-in`, not a blank form → AC-7
-- [x] Set a new password → signed in, redirected to `/account`. Sign out, sign in with the old password → refused. Sign in with the new one → succeeds → AC-8
+- [ ] Open `/reset-password` directly with no recovery session → the form renders, which is deliberate: the page reads no session, so it stays prerendered, and the action is the gate. Submit it → refused with the session expired copy, a `Request a new reset link` link, no write, and no success state → AC-7, AC-24
+- [ ] Sign in normally, then open `/reset-password` with that ordinary session and submit a new password → refused the same way, and the old password still signs in. This is the takeover path: without it, the current password check on `/account` can be walked around → AC-24
+- [ ] Set a new password → sent to `/sign-in` with a plain confirmation, not to `/account`, and not signed in. Sign in with the old password → refused. Sign in with the new one → succeeds → AC-8
+- [ ] Before that reset, sign in as **A** in a second browser. After the reset, refresh the second browser → signed out there too, because the reset ends every session → AC-8
+- [ ] Open the recovery link, set a password, then return to `/reset-password` in the same browser and try to set another → refused, because the session was spent. Without this the same link keeps setting passwords for the life of its session → AC-24
 - [x] On `/account`, change the password with the correct current password → succeeds. Try again with a wrong current password → refused, the password is unchanged → AC-16
 - [ ] The change password form's rendering condition is covered by a unit test, not a browser step. No provider only account can exist until feature 20 adds Google, so the negative branch is untestable here and must be reported that way rather than ticked → AC-16
 - [ ] Exceed the sign in rate limit by repeatedly submitting a wrong current password on `/account` → the limit fires, confirming the shared bucket is real → AC-16, AC-18
@@ -82,8 +85,8 @@ called **unknown** below.
 ## Navbar and rendering
 
 - [x] Signed out, load `/shows` → the navbar shows Sign in; no signed in state is painted at any point → AC-13
-- [ ] Signed in, load `/shows` → the account area shows the avatar letter, the display name taken from the part of the address before the `@`, and Sign out. Confirm with JavaScript disabled that the signed in state is still correct, which proves it is server rendered → AC-13
-- [ ] Signed in on mobile width, open the menu sheet → the account block and Sign out appear there, matching `mobile-menu-open.svg` → AC-13, AC-21
+- [ ] Signed in, load `/shows` → the account area shows the avatar letter, the display name taken from the part of the address before the `@`, and Sign out. Fetch the same URL with the session cookie and read the raw HTML: the name and Sign out are in it, which is what proves the server produced them. Do not prove this with scripting switched off; the slot is a streamed Suspense chunk, so with no JavaScript the skeleton is all that shows, and that is accepted (AC-13, and see Consequences) → AC-13
+- [ ] Signed in on mobile width → the account block and Sign out sit inline in the bar. There is no menu button and no sheet; `mobile-menu-open.svg` belongs to feature 9, which wires `MobileMenuSheet` in once Watchlist, Upcoming and Watched exist → AC-13, AC-21
 - [x] In `pnpm build` output, `/shows` and `/movies` are static, and the layout purity test passes, so the account slot is provably the only per request read in the shell → AC-14
 
 ## Interface and accessibility
@@ -214,3 +217,21 @@ AC-2 timing, twenty runs interleaved: fresh addresses 1242 to 1256ms, A's existi
   token stayed acceptable to the auth server until expiry. AC-17 is proven for a missing cookie, not
   for a server side revoke.
 - A failed sign up clears the email field, so the address has to be typed again.
+
+---
+
+# Settled by /architect · 2026-09-22
+
+The four failures above were taken through `/architect` the same day. Three were the checklist expecting
+something the build had deliberately not done, and those steps are rewritten above; one was a real hole, and it
+became a new acceptance criterion. Nothing here is ticked, because the fix is not built yet.
+
+- **The recovery form accepted any session.** Signing in normally and submitting `/reset-password` set a new
+  password with no current password asked for, proven in a browser: the old password stopped authenticating.
+  Now **AC-24**, gated on the `amr` claim, with two new steps under _Recovery and change_. Build plan step 7.
+- **`next` dropped on the sign in to sign up detour.** Also build plan step 7. Its step above stays as written.
+- **`/reset-password` renders with no recovery session**: accepted, the action is the gate. Step rewritten.
+- **No account control with scripting off**: accepted, the markup is server produced. Step rewritten to prove it
+  from the served HTML.
+- **The mobile menu sheet**: moved to feature 9 with the links that fill it. Step rewritten to describe the bar
+  as it actually is.

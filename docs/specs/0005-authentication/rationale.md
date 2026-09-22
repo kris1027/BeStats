@@ -123,3 +123,77 @@ The weakest remaining point is recorded honestly in Consequences: the second gua
 ### The rate limit question
 
 Supabase's auth rate limits are project configuration, not code, and the numbers differ between a local stack and a cloud project. What they measure is fixed by Supabase and not by us: `sign_in_sign_ups` counts per five minute interval per IP address, and there is no per address sign in limit to configure, so AC-18 names the buckets that exist rather than the ones an earlier draft wished for. Leaked password protection is not in this file at all; it is a hosted dashboard setting, which is why AC-9's breach branch cannot be proven locally. The verify steps therefore read the configured values rather than asserting a constant, so the check stays true when feature 20 sets the cloud project up.
+
+### What the verify run changed, 2026-09-22
+
+`/check verify` ran the whole checklist against a production build on the local stack and found four steps that
+did not pass. Three were the checklist expecting something the build had deliberately not done, and one was a
+real hole. All four were settled here rather than left in the verify file as open failures.
+
+**The recovery form accepted any session.** `resetPasswordAction` checked only that a session existed, not that it
+came from a recovery link, and `secure_password_change` is `false`, so Supabase did not ask either. Signing in
+normally, opening `/reset-password` and setting a new password worked: the old password stopped authenticating
+and the new one started, with the current password never asked for. That makes AC-16's current password check on
+`/account` decorative, since anyone holding a session cookie can take the same account over through the other
+form. The spec's own API table already said this action needs a recovery session, so the code had drifted from
+the spec rather than the spec being unclear.
+
+The gate chosen is the `amr` claim, which the same `getClaims()` call already returns: a recovery exchange
+produces `[{ method: "recovery" }]` and an ordinary sign in produces `[{ method: "password" }]`, both confirmed by
+decoding real tokens from the installed version. It costs no extra network call, needs no configuration kept in
+step between the local stack and the cloud project, and lives in the action, which this design already treats as
+the boundary. Turning on `secure_password_change` was the runner up: it puts the rule in the platform, which is
+stronger, but it also changes what `changePasswordAction` has to do and is a second setting to mirror in the
+hosted project. It is enrolled as feature 20 hardening behind our own check, not instead of it.
+
+**`/reset-password` opened directly still renders its form.** The page reads no session on purpose, which is what
+keeps it prerendered, and the action refuses the write. With AC-24 in place that refusal is now a real gate, so
+the verify step was rewritten to expect the refusal it actually gets, plus the offer of a fresh reset link, rather
+than a redirect. A redirect would have cost the route its prerender to improve a case that ends safely either way.
+
+**With scripting off the navbar shows neither state.** The account slot is streamed inside a Suspense boundary, so
+a browser with no JavaScript keeps the fallback skeleton. The markup is genuinely server produced, which is what
+AC-13 asks for, and the served HTML proves it, so the step now proves it from the HTML instead of from a scripting
+off render. Dropping the boundary would fix the no JavaScript navbar and cost `/shows` and `/movies` their
+prerendered shells, which is a bad trade for a case where `/account` itself still works. A `<noscript>` Sign in
+link was weighed and refused: it would show Sign in to a signed in visitor with no script there to correct it.
+
+**There is no menu sheet to open.** The step assumed the mobile navbar opens the sheet the artboards draw, and it
+does not; `MobileMenuSheet` is wired only into `/showcase`. The sheet's contents are Watchlist, Upcoming and
+Watched, which belong to feature 9, so the step moved there with them, and the missing menu button is now recorded
+in Consequences as a deliberate deviation rather than being left to look like an oversight.
+
+### What the cross check added, 2026-09-22
+
+A fresh model read the updated spec against the code. It found four things; the first changed a criterion.
+
+**The gate covered the moment, not the session.** AC-24 as first written checked `amr` at submission time and said
+nothing about what becomes of the recovery session afterwards. `amr` is a property of the session, not of the
+request, so it keeps reading `recovery` through every background refresh. Reproduced in a browser: open one
+recovery link, set a password, return to `/reset-password` in the same tab, set another, and the second one takes,
+with no current password asked either time. On a shared device that is a standing takeover capability that
+outlives the reset it was issued for.
+
+The fix chosen is to spend the session: a successful reset signs out globally and sends the person to `/sign-in`.
+Ending every session is also the right thing for a recovery, since it removes anyone else already inside the
+account. It costs one password entry and it rewrote AC-8, which had promised the person stays signed in. Signing
+out this browser only was the runner up, and was refused because it leaves a stolen session alive on the one
+account where someone is actively proving they lost control. Keeping them signed in and refusing a second reset
+was refused because the only places to record "this session already spent its reset" are a cookie the browser can
+delete or a new table this feature deliberately does not add.
+
+**No home was named for the check.** The project has no mocking pattern; every test in `lib/auth/` covers a pure
+function, which is why AC-16's rendering condition became `hasPasswordIdentity` in `lib/auth/identity.ts`. The
+spec asked for a unit test over the claim shapes without naming anything to test, so the gate would have been
+written inline and then been untestable. `isRecoverySession()` now lives beside its sibling, and `identity.ts` and
+`supabase-error.ts` were backfilled into the Supporting modules list, where both were missing despite existing.
+
+**The `next` fix was not one line.** Both cross links sit in the panel footer, outside the Suspense boundary that
+streams the form, which is exactly what keeps the card and footer prerendered; each page's doc comment says so.
+Reading `searchParams` for the footer therefore forces a structural choice the spec had not made. The footer now
+gets its own boundary with the un parameterised link as its fallback, which looks identical, so nothing shifts and
+the card stays static.
+
+**The claim shape was under specified.** The installed SDK types `amr` as `AMREntry[] | string[] | undefined`.
+Decoded tokens from this version use the object form, but the pure function takes all of it and treats absent,
+empty and unknown as not a recovery session, so the failure direction is refusal.

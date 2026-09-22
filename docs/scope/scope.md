@@ -105,14 +105,15 @@ The thin real thread: browse a movie, sign in, track it, see it in your list. Ev
 
 ### 6. Authentication · in-progress · GA
 Email and password sign in, email verification, sign out, password recovery, and session handling that private routes can trust. Google sign in moved to feature 20 with the rest of the provider setup, because it cannot be verified without a Google OAuth client.
-**Done when:** a visitor can sign up, verify their address, sign in, sign out and recover a password; private routes reject signed out visitors at both the redirect and the server; and the forms never reveal whether an address has an account.
+**Done when:** a visitor can sign up, verify their address, sign in, sign out and recover a password; private routes reject signed out visitors at both the redirect and the server; a new password can be set without the current one only from a recovery link; and the forms never reveal whether an address has an account.
 - [x] Design it (spec): `/architect authentication`
-- [x] Build it: `/develop authentication`
+- [ ] Build it: `/develop authentication`
   - [x] Configuration and shared rules: the site URL variable, the `[auth]` block, and the shared schemas, action state, path guard, message and log modules — AC-9, AC-11, AC-18, AC-23
   - [x] The thin thread end to end: sign in, sign out, the private account page, the proxy guard and `requireUser`, verified in the running app — AC-4, AC-5, AC-10, AC-12, AC-15
   - [x] The navbar account slot inside its Suspense boundary, passed into both navbar forms, with the layout purity test — AC-13, AC-14
   - [x] The sign up strand: sign up, check email with resend, the callback, and the neutral existing address branch — AC-1, AC-2, AC-3, AC-6
   - [x] The recovery strand and change password, then hardening and proof: expired sessions, noindex, logging, the test suite, accessibility and the bundle check — AC-7, AC-8, AC-16, AC-17, AC-19 to AC-22
+  - [ ] Corrections from the verify run: gate `resetPasswordAction` on a recovery session, spend that session on one reset by signing out globally, and carry `next` through the two cross links between sign in and sign up — AC-24, AC-8, AC-10
 - [ ] Verify it: `/check verify authentication`
 - [ ] Test it: `/test authentication`
 - [ ] Review it (fresh model): `/check review authentication`
@@ -131,8 +132,8 @@ On the movie page, a signed in user can add to the watchlist, mark watched and r
 - [ ] Design it (spec): `/architect movie tracking`
 
 ### 9. Watchlist and movie history · needs a decision
-Private view of the watchlist and watched movies, with empty and signed out states. TV entries join it in feature 14.
-**Done when:** a signed in user sees their own watchlist and watched movies with personal ratings labeled apart from TMDB ratings; a signed out visitor is sent to sign in.
+Private view of the watchlist and watched movies, with empty and signed out states. TV entries join it in feature 14. This feature also inherits the mobile menu sheet from feature 6: `MobileMenuSheet` exists but is wired only into `/showcase`, and the sheet `mobile-menu-open.svg` draws holds the Watchlist, Upcoming and Watched links that arrive here, so the menu button and the sheet belong with them (spec [0005](../specs/0005-authentication/index.md), Consequences).
+**Done when:** a signed in user sees their own watchlist and watched movies with personal ratings labeled apart from TMDB ratings; a signed out visitor is sent to sign in; and, signed in at mobile width, the menu button opens a sheet holding those links plus the account block and Sign out, matching `mobile-menu-open.svg`.
 - [ ] Design it (spec): `/architect watchlist and movie history`
 
 ## Slice 2: TV show page
