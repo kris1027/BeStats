@@ -17,10 +17,10 @@ called **unknown** below.
 - [ ] `pnpm build` → `/shows` and `/movies` still listed as static; the auth pages may be dynamic → AC-14
 - [ ] `grep -rn "NEXT_PUBLIC_SITE_URL" --include="*.ts" --include="*.tsx" . | grep -v "lib/env.ts"` → no matches, the value is only read through `getPublicEnv()`
 - [ ] `grep -n "minimum_password_length\|enable_confirmations\|site_url\|additional_redirect_urls" supabase/config.toml` → length is `8`, confirmations `true`, site URL matches `NEXT_PUBLIC_SITE_URL`, and the allow list covers `/auth/callback`, not just the bare origin → AC-9, AC-23
-- [ ] `grep -n "rate_limit" supabase/config.toml` → thirty sign in attempts per hour per address and two emails per hour, the numbers AC-18 names. A different number fails this step → AC-18
+- [ ] `grep -n "sign_in_sign_ups\|email_sent" supabase/config.toml` → `sign_in_sign_ups = 30`, counted per five minute interval per IP address, and `email_sent = 2` per hour, the numbers AC-18 names. A different number fails this step → AC-18
 - [ ] `grep -rn "cookies()\|headers()\|draftMode()\|createClient" app/layout.tsx components/layout/` → the account slot module is the only match → AC-14
 - [ ] `grep -n "scope" app/\(auth\)/actions.ts` → `signOutAction` passes `scope: "local"` explicitly → AC-15
-- [ ] Confirm the machine has outbound network access before the AC-9 breach step. Leaked password screening reaches HaveIBeenPwned from the Auth container, so offline it cannot be checked and must be reported unverified rather than passed → AC-9
+- [ ] `grep -in "leaked\|pwned" supabase/config.toml` → comment only, no setting. Leaked password protection has no config key and does not run on the local stack, so AC-9's breach step below is reported unverified here and is checkable only against the hosted project once feature 20 switches it on → AC-9
 - [ ] `pnpm build && pnpm start -p 3100`, then `grep -rl "SERVICE_ROLE\|sb-.*-auth-token\|eyJ" .next/static` → no matches → AC-22
 - [ ] Same server: view source on `/sign-in` → the publishable key may appear, no access or refresh token does → AC-22
 - [ ] Same server: `curl -s localhost:3100/sign-in | grep -i "noindex"` → present, and the same on `/sign-up`, `/forgot-password`, `/reset-password`, `/check-email`, `/account` → AC-20
@@ -36,7 +36,7 @@ called **unknown** below.
 
 ## Neutral messaging
 
-- [ ] Sign up again with **A**'s address, which already exists → the screen is identical to a fresh sign up: same redirect to `/check-email`, same wording, nothing says the address is taken. Confirm the test inbox receives nothing, which is the behaviour being hidden → AC-2
+- [ ] Sign up again with **A**'s address, which already exists → Supabase answers 422 `user_already_exists`, and the screen is identical to a fresh sign up: same redirect to `/check-email`, same wording, nothing says the address is taken. Confirm the test inbox receives nothing, which is the behaviour being hidden → AC-2
 - [ ] Time it: ten sign ups with fresh addresses and ten with **A**'s address, recording each response time. The two ranges must overlap. Record both ranges here → AC-2
 - [ ] Sign in as **A** with the wrong password, then with the **unknown** address → both show one identical message that names neither the address nor which field was wrong → AC-5
 - [ ] Request a password reset for **A**, then for **unknown** → both show the same confirmation, and neither reveals which one exists → AC-7
@@ -44,7 +44,7 @@ called **unknown** below.
 ## Password rules
 
 - [ ] Sign up with a seven character password → refused, the message names the eight character rule, no user is created → AC-9
-- [ ] Sign up with a well known breached password such as `password123` → refused, the message says the password has appeared in a breach, no user is created → AC-9
+- [ ] Sign up with a well known breached password such as `password123` → on the hosted project with leaked password protection on, refused with a message saying the password has appeared in a breach, and no user is created. On the local stack the check does not exist, so record this step unverified rather than passed → AC-9
 - [ ] Repeat both on `/reset-password` and on the change password form on `/account` → same refusals, and the existing password is unchanged → AC-9, AC-16
 
 ## Recovery and change
@@ -76,8 +76,8 @@ called **unknown** below.
 
 ## Rate limits
 
-- [ ] Exceed the configured failed sign in limit for one address → the form says the limit was reached and to try again later, not a generic failure → AC-18
-- [ ] Exceed the configured email send limit using the resend control → same, an honest message → AC-18
+- [ ] Exceed `sign_in_sign_ups` from one IP address, thirty attempts inside five minutes → the form says the limit was reached and to try again later, not a generic failure. The bucket is per IP, so spreading the attempts over several addresses does not avoid it, and concentrating them on one address does not trip it any sooner → AC-18
+- [ ] Exceed `email_sent`, two inside an hour, using the resend control → same, an honest message. This limit only bites once SMTP is configured → AC-18
 
 ## Navbar and rendering
 
@@ -145,12 +145,12 @@ One step per row of the spec's value sourcing table, exercising the edge that br
 - [x] `/account` address comes from `auth.users.email` via `getUser()` → shows `verify2@example.com` after the address is confirmed
 - [x] The change password form's presence comes from an identity with provider `email` → unit tested for email only, Google only, both, empty and absent, because a provider only account cannot exist until feature 20 → AC-16
 - [x] `signInAction`'s landing path comes from `next`, validated → the four hostile values above all fall back to `/shows`
-- [x] `signUpAction`'s already registered signal → **not** the empty `identities` array the spec names. The installed Supabase returns `422 user_already_exists`. Both are handled; the 422 is the one that actually fires → AC-2
+- [x] `signUpAction`'s already registered signal → `422 user_already_exists`, which is what the installed Supabase returns and what AC-2 now names. The empty `identities` array is handled too, for versions that obfuscate instead; the 422 is the one that actually fires → AC-2
 - [x] The confirmation and recovery link base comes from `NEXT_PUBLIC_SITE_URL` → the emailed links carry `redirect_to=http%3A%2F%2Flocalhost%3A3000%2Fauth%2Fcallback` → AC-23
 - [x] `/check-email`'s displayed address is echoed only after passing `emailSchema` → a non address query value renders no address rather than arbitrary text
 
 ## Not verified, and why
 
-- **AC-9's breach branch.** Leaked password protection has no `supabase/config.toml` key: it is a dashboard setting on the hosted project (Authentication > Providers > Email) and is unavailable on the local stack. The code classifies and reports the outcome; the setting itself belongs to feature 20.
-- **AC-18's rate limits.** Configured at the numbers the spec names, but the knobs do not measure what AC-18 says: `sign_in_sign_ups` is per five minutes per IP address, not per hour per address, and Supabase exposes no per address sign in limit. Not exercised to exhaustion.
+- **AC-9's breach branch.** Leaked password protection has no `supabase/config.toml` key: it is a dashboard setting on the hosted project (Authentication > Providers > Email) and is unavailable on the local stack. AC-9 now says so. The code classifies and reports the outcome; switching the setting on, and verifying this branch, belongs to feature 20.
+- **AC-18's rate limits.** Configured at the numbers the spec names, and AC-18 now states what the knobs actually measure: `sign_in_sign_ups` per five minute interval per IP address, `email_sent` per hour. Not exercised to exhaustion.
 - **Real email deliverability.** Proven against the local test inbox only, as the spec says. Feature 20 owns the real thing.
