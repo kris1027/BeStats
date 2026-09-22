@@ -18,7 +18,7 @@ _The stack, tooling and product rules (ratings, progress, statuses, security) li
 | 3 | Data model and security policies | Foundation | done |
 | 4 | TMDB integration module | Foundation | done |
 | 5 | Design system and UI foundation | Foundation | done |
-| 6 | Authentication | Slice 1 | planned |
+| 6 | Authentication | Slice 1 | in-progress |
 | 7 | Movie page | Slice 1 | planned |
 | 8 | Movie tracking | Slice 1 | planned |
 | 9 | Watchlist and movie history | Slice 1 | planned |
@@ -103,10 +103,21 @@ spec [0004](../specs/0004-design-system-and-ui-foundation/index.md)
 
 The thin real thread: browse a movie, sign in, track it, see it in your list. Every layer is real, breadth is deferred.
 
-### 6. Authentication · needs a decision · GA
-Email and password and Google sign in, email verification, sign out, password recovery, and session handling that private routes can trust.
-**Done when:** a visitor can sign up, verify, sign in with either method, sign out and recover a password; private routes reject signed out visitors.
-- [ ] Design it (spec): `/architect authentication`
+### 6. Authentication · in-progress · GA
+Email and password sign in, email verification, sign out, password recovery, and session handling that private routes can trust. Google sign in moved to feature 20 with the rest of the provider setup, because it cannot be verified without a Google OAuth client.
+**Done when:** a visitor can sign up, verify their address, sign in, sign out and recover a password; private routes reject signed out visitors at both the redirect and the server; and the forms never reveal whether an address has an account.
+- [x] Design it (spec): `/architect authentication`
+- [ ] Build it: `/develop authentication`
+  - [ ] Configuration and shared rules: the site URL variable, the `[auth]` block, and the shared schemas, action state, path guard, message and log modules — AC-9, AC-11, AC-18, AC-23
+  - [ ] The thin thread end to end: sign in, sign out, the private account page, the proxy guard and `requireUser`, verified in the running app — AC-4, AC-5, AC-10, AC-12, AC-15
+  - [ ] The navbar account slot inside its Suspense boundary, passed into both navbar forms, with the layout purity test — AC-13, AC-14
+  - [ ] The sign up strand: sign up, check email with resend, the callback, and the neutral existing address branch — AC-1, AC-2, AC-3, AC-6
+  - [ ] The recovery strand and change password, then hardening and proof: expired sessions, noindex, logging, the test suite, accessibility and the bundle check — AC-7, AC-8, AC-16, AC-17, AC-19 to AC-22
+- [ ] Verify it: `/check verify authentication`
+- [ ] Test it: `/test authentication`
+- [ ] Review it (fresh model): `/check review authentication`
+- [ ] Document it: `/document authentication`
+spec [0005](../specs/0005-authentication/index.md)
 
 ### 7. Movie page · needs a decision
 Public movie detail page with poster, overview, cast, genres and the TMDB community rating, clearly labeled as TMDB. Also the first landing view to reach a movie.
@@ -189,14 +200,15 @@ Run the full `AGENTS.md` section 13 checklist with two test users, including dir
 - [ ] Test it: `/test security and acceptance verification`
 
 ### 20. Deploy and provider setup · needs a decision · GA
-Vercel deployment, Supabase Cloud project, Google OAuth and auth redirects for local and deployed environments, verified email delivery. Remote migrations and deployment need your explicit approval in the plan.
-**Done when:** the deployed app signs users in with Google and email, recovery and confirmation emails arrive, and environment variables target the intended projects.
+Vercel deployment, Supabase Cloud project, Google OAuth and auth redirects for local and deployed environments, verified email delivery. Also restores the Google button and its divider to the sign in and sign up pages, in the slot spec 0005 reserves. Remote migrations and deployment need your explicit approval in the plan.
+**Done when:** the deployed app signs users in with Google and with email, the Google button is back on the sign in and sign up pages and works, recovery and confirmation emails arrive at a real mailbox, and environment variables target the intended projects.
 - [ ] Design it (spec): `/architect deploy and provider setup`
 
 ## Deferred
 Out of scope for the current build pass, kept so the plan stays honest.
 - **Public profiles and social features**: ruled out of the MVP by `AGENTS.md`
 - **Error monitoring and product analytics**: not selected for this pass
+- **Account deletion**: from spec 0005. Undesigned, and it needs an elevated server side call that nothing else in the app uses, so it deserves its own decision before it is built
 
 ## Legend
 
