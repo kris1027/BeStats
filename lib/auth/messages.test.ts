@@ -7,6 +7,8 @@ import {
   authMessage,
   RESEND_REQUESTED_MESSAGE,
   RESET_REQUESTED_MESSAGE,
+  SIGN_IN_NOTICE,
+  SIGN_IN_NOTICES,
 } from "./messages";
 import { signInSchema } from "./schemas";
 
@@ -85,5 +87,34 @@ describe("fromZodError()", () => {
     const state = fromZodError(result.error);
     // One string, not a joined list: three messages under one input is noise.
     expect(typeof state.fieldErrors?.email).toBe("string");
+  });
+});
+
+/**
+ * covers: spec 0005, AC-8
+ *
+ * `/sign-in?notice=` is a public link anyone can hand out, so the query string
+ * carries only a key and the copy comes from this table. These pin the table
+ * to the keys the actions emit, so a renamed key cannot leave a reset landing
+ * on a bare sign in page.
+ */
+describe("sign in notices (AC-8)", () => {
+  it("has copy for every key an action can send", () => {
+    for (const key of Object.values(SIGN_IN_NOTICE)) {
+      expect(SIGN_IN_NOTICES[key]).toEqual(expect.any(String));
+      expect(SIGN_IN_NOTICES[key].length).toBeGreaterThan(0);
+    }
+  });
+
+  it("uses keys that survive a query string unencoded", () => {
+    for (const key of Object.values(SIGN_IN_NOTICE)) {
+      expect(encodeURIComponent(key)).toBe(key);
+    }
+  });
+
+  it("tells the person to sign in with the new password after a reset", () => {
+    const copy = SIGN_IN_NOTICES[SIGN_IN_NOTICE.passwordReset];
+    expect(copy).toMatch(/new password/i);
+    expect(copy).toMatch(/sign in/i);
   });
 });

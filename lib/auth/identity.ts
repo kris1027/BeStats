@@ -40,3 +40,33 @@ export function hasPasswordIdentity(
 ): boolean {
   return identities?.some((identity) => identity.provider === "email") ?? false;
 }
+
+/**
+ * Whether this session came from a password recovery link (spec 0005, AC-24).
+ *
+ * `/reset-password` sets a password without asking for the current one, so it
+ * must accept only the session a recovery link creates. Without this, anyone
+ * holding an ordinary session cookie could set a new password there and the
+ * current password check on `/account` (AC-16) would be decorative.
+ *
+ * Fails closed. Only the object form the installed Auth server actually issues,
+ * `[{ method: "recovery", timestamp }]`, passes, and every entry must say
+ * `recovery`. An absent or empty claim, any other method, and the bare string
+ * form the SDK's type also allows (`["recovery"]`) are all refused: a shape the
+ * server was never seen to send is not one to trust with a password write.
+ *
+ * Takes the claim rather than a client, so it is testable as a pure function,
+ * the same reason `hasPasswordIdentity` lives here.
+ */
+export function isRecoverySession(amr: unknown): boolean {
+  return (
+    Array.isArray(amr) &&
+    amr.length > 0 &&
+    amr.every(
+      (entry) =>
+        typeof entry === "object" &&
+        entry !== null &&
+        (entry as { method?: unknown }).method === "recovery",
+    )
+  );
+}

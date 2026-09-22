@@ -9,12 +9,14 @@ import {
   fromZodError,
   success,
 } from "@/lib/auth/action-state";
+import { isRecoverySession } from "@/lib/auth/identity";
 import { AUTH_EVENT, logAuthEvent } from "@/lib/auth/log";
 import {
   AUTH_OUTCOME,
   type AuthOutcome,
   RESEND_REQUESTED_MESSAGE,
   RESET_REQUESTED_MESSAGE,
+  SIGN_IN_NOTICE,
 } from "@/lib/auth/messages";
 import { safeNextPath } from "@/lib/auth/next-path";
 import {
@@ -296,11 +298,18 @@ export async function requestPasswordResetAction(
 }
 
 /**
- * Sets a new password from a recovery session (AC-8).
+ * Sets a new password from a recovery session (AC-8, AC-24).
  *
- * Requires the recovery session the callback established. Without one this
- * refuses rather than silently doing nothing, so a stale or shared
- * `/reset-password` tab cannot look like it worked.
+ * Requires a session that came from a recovery link, not merely a session. An
+ * ordinary signed in session is refused, because this form never asks for the
+ * current password; accepting one would let a stolen cookie walk around the
+ * check `/account` makes (AC-16). The refusal reuses the session expired
+ * outcome, so the form's existing offer of a fresh reset link applies.
+ *
+ * A successful reset spends the session by signing out globally. `amr` keeps
+ * saying `recovery` for the life of the session, so without this one link
+ * could set a second password, and a third. Ending every session is also what
+ * someone recovering an account wants: it removes anyone else already inside.
  */
 export async function resetPasswordAction(
   _previous: AuthActionState,
@@ -322,7 +331,7 @@ export async function resetPasswordAction(
   const supabase = await createClient();
   const { data: claims } = await supabase.auth.getClaims();
 
-  if (!claims?.claims?.sub) {
+  if (!claims?.claims?.sub || !isRecoverySession(claims.claims.amr)) {
     logAuthEvent(
       AUTH_EVENT.resetPassword,
       "refused",
@@ -341,5 +350,19 @@ export async function resetPasswordAction(
     return failure(outcome, passwordFieldFor(outcome));
   }
 
-  redirect("/account");
+  // The password is already saved, so a failed sign out does not undo the
+  // reset. It is recorded rather than shown: telling the person their new
+  // password failed would be false.
+  const { error: signOutError } = await supabase.auth.signOut({
+    scope: "global",
+  });
+  if (signOutError) {
+    logAuthEvent(
+      AUTH_EVENT.resetPassword,
+      "error",
+      classifyAuthError(signOutError),
+    );
+  }
+
+  redirect(`/sign-in?notice=${SIGN_IN_NOTICE.passwordReset}`);
 }

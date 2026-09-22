@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { avatarLetter, displayName, hasPasswordIdentity } from "./identity";
+import {
+  avatarLetter,
+  displayName,
+  hasPasswordIdentity,
+  isRecoverySession,
+} from "./identity";
 
 /**
  * covers: spec 0005, AC-13, AC-16
@@ -59,5 +64,40 @@ describe("the change password form's rendering condition (AC-16)", () => {
     expect(hasPasswordIdentity(undefined)).toBe(false);
     expect(hasPasswordIdentity(null)).toBe(false);
     expect(hasPasswordIdentity([])).toBe(false);
+  });
+});
+
+/**
+ * covers: spec 0005, AC-24
+ *
+ * `/reset-password` sets a password without the current one, so it must accept
+ * only a session a recovery link created. Every shape but the one the Auth
+ * server was seen to issue is refused, so an ordinary signed in session cannot
+ * walk around the current password check on `/account`.
+ */
+describe("the recovery session gate (AC-24)", () => {
+  it("accepts the session a recovery link creates", () => {
+    expect(
+      isRecoverySession([{ method: "recovery", timestamp: 1_758_500_000 }]),
+    ).toBe(true);
+  });
+
+  it.each([
+    [
+      "an ordinary password session",
+      [{ method: "password", timestamp: 1_758_500_000 }],
+    ],
+    ["the bare string form", ["recovery"]],
+    ["an empty claim", []],
+    ["a missing claim", undefined],
+    [
+      "a recovery entry beside another method",
+      [
+        { method: "recovery", timestamp: 1_758_500_000 },
+        { method: "password", timestamp: 1_758_400_000 },
+      ],
+    ],
+  ])("refuses %s", (_label, amr) => {
+    expect(isRecoverySession(amr)).toBe(false);
   });
 });

@@ -31,19 +31,15 @@ import { signInAction } from "../actions";
 function SignInForm({
   next,
   initialError,
+  initialNotice,
 }: {
   next?: string;
   initialError?: string;
+  initialNotice?: string;
 }) {
   const [state, formAction] = useActionState<AuthActionState, FormData>(
     signInAction,
-    initialError
-      ? {
-          status: "error",
-          message: initialError,
-          outcome: AUTH_OUTCOME.invalidLink,
-        }
-      : IDLE_STATE,
+    initialState(initialError, initialNotice),
   );
 
   return (
@@ -96,6 +92,27 @@ function SignInForm({
       <AuthSubmitButton pendingLabel="Signing in…">Sign in</AuthSubmitButton>
     </form>
   );
+}
+
+/**
+ * What the form shows before anything is submitted.
+ *
+ * An error from the callback wins over a notice, because if both somehow
+ * arrive the one asking the person to act is the one they need to see.
+ */
+function initialState(
+  initialError: string | undefined,
+  initialNotice: string | undefined,
+): AuthActionState {
+  if (initialError) {
+    return {
+      status: "error",
+      message: initialError,
+      outcome: AUTH_OUTCOME.invalidLink,
+    };
+  }
+  if (initialNotice) return { status: "success", message: initialNotice };
+  return IDLE_STATE;
 }
 
 export { SignInForm };

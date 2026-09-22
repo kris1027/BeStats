@@ -12,12 +12,13 @@ import { AUTH_OUTCOME } from "@/lib/auth/messages";
 import { resetPasswordAction } from "../actions";
 
 /**
- * The form that sets a new password from a recovery session (spec 0005, AC-8).
+ * The form that sets a new password from a recovery session (spec 0005, AC-8,
+ * AC-24).
  *
- * The action refuses without a recovery session rather than appearing to
+ * The action refuses anything but a recovery session rather than appearing to
  * succeed, and offers the way back to request a fresh link. A recovery link is
- * single use and expires, so landing here with a dead one is the common case,
- * not the rare one.
+ * single use, expires, and is spent by a successful reset, so landing here
+ * without a live one is the common case, not the rare one.
  */
 function ResetPasswordForm() {
   const [state, formAction] = useActionState<AuthActionState, FormData>(

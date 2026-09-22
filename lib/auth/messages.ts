@@ -80,6 +80,25 @@ export const RESET_REQUESTED_MESSAGE =
 export const RESEND_REQUESTED_MESSAGE =
   "If that address needs confirming, a new link is on its way.";
 
+/**
+ * The confirmations `/sign-in` can show when another flow sends someone there
+ * (spec 0005, AC-8).
+ *
+ * The query string carries only a key from this table and the page looks the
+ * copy up, for the same reason `error` works that way: rendering the query
+ * string itself would let anyone put arbitrary text on the sign in page.
+ */
+export const SIGN_IN_NOTICE = {
+  passwordReset: "password-reset",
+} as const;
+
+export type SignInNotice = (typeof SIGN_IN_NOTICE)[keyof typeof SIGN_IN_NOTICE];
+
+export const SIGN_IN_NOTICES: Record<SignInNotice, string> = {
+  [SIGN_IN_NOTICE.passwordReset]:
+    "Your new password is saved and every session has been signed out. Sign in with your new password.",
+};
+
 /** Looks up the copy for an outcome. */
 export function authMessage(outcome: AuthOutcome): string {
   return AUTH_MESSAGES[outcome];

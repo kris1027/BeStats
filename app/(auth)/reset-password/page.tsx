@@ -22,7 +22,7 @@ export default function ResetPasswordPage() {
   return (
     <AuthPanel
       title="Set a new password"
-      description="Choose a new password for your account. You will be signed in once it is saved."
+      description="Choose a new password for your account. Saving it signs you out everywhere, then you sign in with the new one."
     >
       <ResetPasswordForm />
     </AuthPanel>
