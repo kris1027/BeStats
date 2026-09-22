@@ -1,7 +1,7 @@
 # 0005. Authentication with Supabase email and password
 
 **Date**: 2026-09-22
-**Status**: Proposed
+**Status**: In Progress
 
 Scope feature: [6. Authentication](../../scope/scope.md) · GA tier
 

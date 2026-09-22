@@ -97,3 +97,60 @@ called **unknown** below.
 ## Logging
 
 - [ ] Sign in wrongly, sign up, reset a password, and open a confirmation link, watching the server output → no password, token, cookie value or raw Supabase error object appears in any line → AC-19
+
+---
+
+# Build run · /develop · 2026-09-22
+
+_Appended by `/develop`. The steps above are the design time checklist. These are the ones actually run against the local Supabase stack and a real browser during the build, with their results. `/check verify` should re-run them independently._
+
+Setup used: `supabase start` with the stack **restarted** (`supabase stop --no-backup` first), because `supabase start` reuses a running auth container and silently keeps the old `[auth]` config. Confirm with `docker exec supabase_auth_BeStats env | grep PASSWORD_MIN` → `8`, not `6`. The app was run against the local stack by setting `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and `NEXT_PUBLIC_SITE_URL` in the shell, which take precedence over `.env.local`. `.env.local` points at the **cloud** project, where none of the `config.toml` settings apply.
+
+## Commands
+
+- [x] `pnpm typecheck` → passes
+- [x] `pnpm lint:ci` → passes, no warnings
+- [x] `pnpm test` → 226 passed, 30 files
+- [x] `pnpm build` → `/shows` and `/movies` both listed as partial prerender (static shell); `/account` is dynamic by its `export const instant = false` → AC-14
+- [x] `grep -rl "service_role\|sb_secret\|TMDB_READ_ACCESS_TOKEN" .next/static/` → no matches. No `eyJhbGciOi` token literal either → AC-22
+
+## UI / manual
+
+- [x] Sign up with a new address → lands on `/check-email?email=<address>` with a resend control; the message arrives in the test inbox → AC-1
+- [x] Sign up with an address that already has an account → lands on `/check-email` identically. Timed ten runs of each: taken 1272 to 1301ms, new 1284 to 1296ms, ranges overlap → AC-2
+- [x] Open the confirmation link → signed in, lands on the validated `next` (`/shows`); navbar shows the avatar letter, the name and Sign out → AC-3, AC-13
+- [x] Open the same link a second time → `/sign-in` with "That link has expired or has already been used", no session → AC-3
+- [x] Sign in with the right password → session created, lands on `next` or `/shows` → AC-4
+- [x] Wrong password and an unknown address → one identical message, "Those details did not match an account", naming neither the address nor the field → AC-5
+- [x] Sign in on an unconfirmed address with the correct password → refused, says the address needs confirming, offers the resend link, no session → AC-6
+- [x] Request a reset for a known and an unknown address → identical copy both ways. The emailed link lands on `/reset-password` and nowhere else → AC-7
+- [x] Set a new password → signed in, lands on `/account`; the previous password no longer signs in → AC-8
+- [x] Password of five characters → refused, field marked `aria-invalid`, message "Your password needs at least 8 characters" bound by `aria-describedby` → AC-9, AC-21
+- [x] Signed out request for `/account` and `/watchlist` → `307` to `/sign-in?next=%2Faccount` / `%2Fwatchlist`; signing in lands on that exact path → AC-10
+- [x] `next` set to `https://evil.example`, `//evil.example`, `/\evil.example` and `shows` → every one lands on `/shows` → AC-11
+- [x] **Proxy matcher replaced with a path that matches nothing**, then `/account` requested with no cookie and with a forged cookie → both still redirect and render no private data. Restore the matcher afterwards → AC-12
+- [x] Navbar signed out shows Sign in; signed in shows `V`, `verify2` and Sign out, both produced on the server → AC-13
+- [x] Sign out in browser 1 → browser 2, signed in to the same account, stays signed in → AC-15
+- [x] `/account` renders the change password form for an email account; wrong current password is refused and marks that field; the right one succeeds → AC-16
+- [x] Expire only the `sb-` cookies between rendering the change password form and submitting it → visible error "Your session has ended, so nothing was saved", a `Sign in again` link to `/sign-in?next=%2Faccount`, no success state, and the old password still works → AC-17
+- [x] `<meta name="robots" content="noindex, nofollow">` on `/sign-in`, `/sign-up`, `/check-email`, `/reset-password` and `/account` → AC-20
+- [x] Every auth log line emitted during the whole run is exactly `{event, result, outcome}`; no password, token, cookie, link or address in any of them → AC-19
+- [x] Sign in at 390px wide → matches `design/mobile-sign-in-page.svg` for card, type scale and spacing, Google button deliberately absent → AC-21
+
+## Value sourcing
+
+One step per row of the spec's value sourcing table, exercising the edge that breaks if the source is wrong.
+
+- [x] Navbar name and avatar letter come from the address at render time → `verify2@example.com` renders `verify2` and `V`. Unit tested for `a@`, `7even@` and an empty address → AC-13
+- [x] `/account` address comes from `auth.users.email` via `getUser()` → shows `verify2@example.com` after the address is confirmed
+- [x] The change password form's presence comes from an identity with provider `email` → unit tested for email only, Google only, both, empty and absent, because a provider only account cannot exist until feature 20 → AC-16
+- [x] `signInAction`'s landing path comes from `next`, validated → the four hostile values above all fall back to `/shows`
+- [x] `signUpAction`'s already registered signal → **not** the empty `identities` array the spec names. The installed Supabase returns `422 user_already_exists`. Both are handled; the 422 is the one that actually fires → AC-2
+- [x] The confirmation and recovery link base comes from `NEXT_PUBLIC_SITE_URL` → the emailed links carry `redirect_to=http%3A%2F%2Flocalhost%3A3000%2Fauth%2Fcallback` → AC-23
+- [x] `/check-email`'s displayed address is echoed only after passing `emailSchema` → a non address query value renders no address rather than arbitrary text
+
+## Not verified, and why
+
+- **AC-9's breach branch.** Leaked password protection has no `supabase/config.toml` key: it is a dashboard setting on the hosted project (Authentication > Providers > Email) and is unavailable on the local stack. The code classifies and reports the outcome; the setting itself belongs to feature 20.
+- **AC-18's rate limits.** Configured at the numbers the spec names, but the knobs do not measure what AC-18 says: `sign_in_sign_ups` is per five minutes per IP address, not per hour per address, and Supabase exposes no per address sign in limit. Not exercised to exhaustion.
+- **Real email deliverability.** Proven against the local test inbox only, as the spec says. Feature 20 owns the real thing.

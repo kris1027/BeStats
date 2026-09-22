@@ -107,16 +107,17 @@ The thin real thread: browse a movie, sign in, track it, see it in your list. Ev
 Email and password sign in, email verification, sign out, password recovery, and session handling that private routes can trust. Google sign in moved to feature 20 with the rest of the provider setup, because it cannot be verified without a Google OAuth client.
 **Done when:** a visitor can sign up, verify their address, sign in, sign out and recover a password; private routes reject signed out visitors at both the redirect and the server; and the forms never reveal whether an address has an account.
 - [x] Design it (spec): `/architect authentication`
-- [ ] Build it: `/develop authentication`
-  - [ ] Configuration and shared rules: the site URL variable, the `[auth]` block, and the shared schemas, action state, path guard, message and log modules — AC-9, AC-11, AC-18, AC-23
-  - [ ] The thin thread end to end: sign in, sign out, the private account page, the proxy guard and `requireUser`, verified in the running app — AC-4, AC-5, AC-10, AC-12, AC-15
-  - [ ] The navbar account slot inside its Suspense boundary, passed into both navbar forms, with the layout purity test — AC-13, AC-14
-  - [ ] The sign up strand: sign up, check email with resend, the callback, and the neutral existing address branch — AC-1, AC-2, AC-3, AC-6
-  - [ ] The recovery strand and change password, then hardening and proof: expired sessions, noindex, logging, the test suite, accessibility and the bundle check — AC-7, AC-8, AC-16, AC-17, AC-19 to AC-22
+- [x] Build it: `/develop authentication`
+  - [x] Configuration and shared rules: the site URL variable, the `[auth]` block, and the shared schemas, action state, path guard, message and log modules — AC-9, AC-11, AC-18, AC-23
+  - [x] The thin thread end to end: sign in, sign out, the private account page, the proxy guard and `requireUser`, verified in the running app — AC-4, AC-5, AC-10, AC-12, AC-15
+  - [x] The navbar account slot inside its Suspense boundary, passed into both navbar forms, with the layout purity test — AC-13, AC-14
+  - [x] The sign up strand: sign up, check email with resend, the callback, and the neutral existing address branch — AC-1, AC-2, AC-3, AC-6
+  - [x] The recovery strand and change password, then hardening and proof: expired sessions, noindex, logging, the test suite, accessibility and the bundle check — AC-7, AC-8, AC-16, AC-17, AC-19 to AC-22
 - [ ] Verify it: `/check verify authentication`
 - [ ] Test it: `/test authentication`
 - [ ] Review it (fresh model): `/check review authentication`
 - [ ] Document it: `/document authentication`
+code in [lib/auth/](../../lib/auth/), [app/(auth)/](<../../app/(auth)/>), [app/account/](../../app/account/), [app/auth/callback/](../../app/auth/callback/), [components/auth/](../../components/auth/)
 spec [0005](../specs/0005-authentication/index.md)
 
 ### 7. Movie page · needs a decision
