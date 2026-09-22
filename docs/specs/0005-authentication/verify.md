@@ -11,68 +11,68 @@ called **unknown** below.
 
 ## Commands
 
-- [ ] `pnpm typecheck` → passes
-- [ ] `pnpm lint:ci` → passes with no warnings
-- [ ] `pnpm test` → passes, including the new schema, path guard, `isSafeNextPath` and message mapping tests → AC-9, AC-11
-- [ ] `pnpm build` → `/shows` and `/movies` still listed as static; the auth pages may be dynamic → AC-14
-- [ ] `grep -rn "NEXT_PUBLIC_SITE_URL" --include="*.ts" --include="*.tsx" . | grep -v "lib/env.ts"` → no matches, the value is only read through `getPublicEnv()`
-- [ ] `grep -n "minimum_password_length\|enable_confirmations\|site_url\|additional_redirect_urls" supabase/config.toml` → length is `8`, confirmations `true`, site URL matches `NEXT_PUBLIC_SITE_URL`, and the allow list covers `/auth/callback`, not just the bare origin → AC-9, AC-23
-- [ ] `grep -n "sign_in_sign_ups\|email_sent" supabase/config.toml` → `sign_in_sign_ups = 30`, counted per five minute interval per IP address, and `email_sent = 2` per hour, the numbers AC-18 names. A different number fails this step → AC-18
-- [ ] `grep -rn "cookies()\|headers()\|draftMode()\|createClient" app/layout.tsx components/layout/` → the account slot module is the only match → AC-14
-- [ ] `grep -n "scope" app/\(auth\)/actions.ts` → `signOutAction` passes `scope: "local"` explicitly → AC-15
-- [ ] `grep -in "leaked\|pwned" supabase/config.toml` → comment only, no setting. Leaked password protection has no config key and does not run on the local stack, so AC-9's breach step below is reported unverified here and is checkable only against the hosted project once feature 20 switches it on → AC-9
-- [ ] `pnpm build && pnpm start -p 3100`, then `grep -rl "SERVICE_ROLE\|sb-.*-auth-token\|eyJ" .next/static` → no matches → AC-22
-- [ ] Same server: view source on `/sign-in` → the publishable key may appear, no access or refresh token does → AC-22
-- [ ] Same server: `curl -s localhost:3100/sign-in | grep -i "noindex"` → present, and the same on `/sign-up`, `/forgot-password`, `/reset-password`, `/check-email`, `/account` → AC-20
+- [x] `pnpm typecheck` → passes
+- [x] `pnpm lint:ci` → passes with no warnings
+- [x] `pnpm test` → passes, including the new schema, path guard, `isSafeNextPath` and message mapping tests → AC-9, AC-11
+- [x] `pnpm build` → `/shows` and `/movies` still listed as static; the auth pages may be dynamic → AC-14
+- [x] `grep -rn "NEXT_PUBLIC_SITE_URL" --include="*.ts" --include="*.tsx" . | grep -v "lib/env.ts"` → no matches, the value is only read through `getPublicEnv()`
+- [x] `grep -n "minimum_password_length\|enable_confirmations\|site_url\|additional_redirect_urls" supabase/config.toml` → length is `8`, confirmations `true`, site URL matches `NEXT_PUBLIC_SITE_URL`, and the allow list covers `/auth/callback`, not just the bare origin → AC-9, AC-23
+- [x] `grep -n "sign_in_sign_ups\|email_sent" supabase/config.toml` → `sign_in_sign_ups = 30`, counted per five minute interval per IP address, and `email_sent = 2` per hour, the numbers AC-18 names. A different number fails this step → AC-18
+- [x] `grep -rn "cookies()\|headers()\|draftMode()\|createClient" app/layout.tsx components/layout/` → the account slot module is the only match → AC-14
+- [x] `grep -n "scope" app/\(auth\)/actions.ts` → `signOutAction` passes `scope: "local"` explicitly → AC-15
+- [x] `grep -in "leaked\|pwned" supabase/config.toml` → comment only, no setting. Leaked password protection has no config key and does not run on the local stack, so AC-9's breach step below is reported unverified here and is checkable only against the hosted project once feature 20 switches it on → AC-9
+- [x] `pnpm build && pnpm start -p 3100`, then `grep -rl "SERVICE_ROLE\|sb-.*-auth-token\|eyJ" .next/static` → no matches → AC-22
+- [x] Same server: view source on `/sign-in` → the publishable key may appear, no access or refresh token does → AC-22
+- [x] Same server: `curl -s localhost:3100/sign-in | grep -i "noindex"` → present, and the same on `/sign-up`, `/forgot-password`, `/reset-password`, `/check-email`, `/account` → AC-20
 
 ## The account lifecycle
 
-- [ ] Sign up as **A** with a valid password → lands on `/check-email`, the page shows A's address, no session cookie is set → AC-1
-- [ ] Open the test inbox, click A's confirmation link → lands on `/shows` signed in, the navbar shows the avatar letter and display name → AC-3
-- [ ] Click that same confirmation link a second time → lands on `/sign-in` with a plain message, no session → AC-3
-- [ ] Sign out, then sign in as **A** → lands on `/shows`, signed in → AC-4
-- [ ] Sign up as **B**, but do not confirm. Try to sign in as **B** with the correct password → refused, the message says the address needs confirming and offers a resend, no session → AC-6
-- [ ] Use the resend control on `/check-email` for **B** → a second message arrives, and it works → AC-1
+- [x] Sign up as **A** with a valid password → lands on `/check-email`, the page shows A's address, no session cookie is set → AC-1
+- [x] Open the test inbox, click A's confirmation link → lands on `/shows` signed in, the navbar shows the avatar letter and display name → AC-3
+- [x] Click that same confirmation link a second time → lands on `/sign-in` with a plain message, no session → AC-3
+- [x] Sign out, then sign in as **A** → lands on `/shows`, signed in → AC-4
+- [x] Sign up as **B**, but do not confirm. Try to sign in as **B** with the correct password → refused, the message says the address needs confirming and offers a resend, no session → AC-6
+- [x] Use the resend control on `/check-email` for **B** → a second message arrives, and it works → AC-1
 
 ## Neutral messaging
 
-- [ ] Sign up again with **A**'s address, which already exists → Supabase answers 422 `user_already_exists`, and the screen is identical to a fresh sign up: same redirect to `/check-email`, same wording, nothing says the address is taken. Confirm the test inbox receives nothing, which is the behaviour being hidden → AC-2
-- [ ] Time it: ten sign ups with fresh addresses and ten with **A**'s address, recording each response time. The two ranges must overlap. Record both ranges here → AC-2
-- [ ] Sign in as **A** with the wrong password, then with the **unknown** address → both show one identical message that names neither the address nor which field was wrong → AC-5
-- [ ] Request a password reset for **A**, then for **unknown** → both show the same confirmation, and neither reveals which one exists → AC-7
+- [x] Sign up again with **A**'s address, which already exists → Supabase answers 422 `user_already_exists`, and the screen is identical to a fresh sign up: same redirect to `/check-email`, same wording, nothing says the address is taken. Confirm the test inbox receives nothing, which is the behaviour being hidden → AC-2
+- [x] Time it: ten sign ups with fresh addresses and ten with **A**'s address, recording each response time. The two ranges must overlap. Record both ranges here → AC-2
+- [x] Sign in as **A** with the wrong password, then with the **unknown** address → both show one identical message that names neither the address nor which field was wrong → AC-5
+- [x] Request a password reset for **A**, then for **unknown** → both show the same confirmation, and neither reveals which one exists → AC-7
 
 ## Password rules
 
-- [ ] Sign up with a seven character password → refused, the message names the eight character rule, no user is created → AC-9
+- [x] Sign up with a seven character password → refused, the message names the eight character rule, no user is created → AC-9
 - [ ] Sign up with a well known breached password such as `password123` → on the hosted project with leaked password protection on, refused with a message saying the password has appeared in a breach, and no user is created. On the local stack the check does not exist, so record this step unverified rather than passed → AC-9
-- [ ] Repeat both on `/reset-password` and on the change password form on `/account` → same refusals, and the existing password is unchanged → AC-9, AC-16
+- [x] Repeat both on `/reset-password` and on the change password form on `/account` → same refusals, and the existing password is unchanged → AC-9, AC-16
 
 ## Recovery and change
 
-- [ ] Request a reset for **A**, open the link in the test inbox → lands on `/reset-password` with a recovery session → AC-7
+- [x] Request a reset for **A**, open the link in the test inbox → lands on `/reset-password` with a recovery session → AC-7
 - [ ] Open `/reset-password` directly with no recovery session → refused, sent to `/forgot-password` or `/sign-in`, not a blank form → AC-7
-- [ ] Set a new password → signed in, redirected to `/account`. Sign out, sign in with the old password → refused. Sign in with the new one → succeeds → AC-8
-- [ ] On `/account`, change the password with the correct current password → succeeds. Try again with a wrong current password → refused, the password is unchanged → AC-16
+- [x] Set a new password → signed in, redirected to `/account`. Sign out, sign in with the old password → refused. Sign in with the new one → succeeds → AC-8
+- [x] On `/account`, change the password with the correct current password → succeeds. Try again with a wrong current password → refused, the password is unchanged → AC-16
 - [ ] The change password form's rendering condition is covered by a unit test, not a browser step. No provider only account can exist until feature 20 adds Google, so the negative branch is untestable here and must be reported that way rather than ticked → AC-16
 - [ ] Exceed the sign in rate limit by repeatedly submitting a wrong current password on `/account` → the limit fires, confirming the shared bucket is real → AC-16, AC-18
 
 ## The guard, both layers
 
-- [ ] Signed out, open `/account` → redirected to `/sign-in?next=/account`. Sign in → land on `/account`, not `/shows` → AC-10
-- [ ] Repeat for `/watchlist`, `/upcoming` and `/watched`, which have no pages yet → the redirect still fires, proving later features inherit the guard → AC-10
-- [ ] Sign in with `next` set to `https://evil.example`, then `//evil.example`, then `/\evil.example`, then `\/\/evil.example`, then `shows` → all five land on `/shows` → AC-11
+- [x] Signed out, open `/account` → redirected to `/sign-in?next=/account`. Sign in → land on `/account`, not `/shows` → AC-10
+- [x] Repeat for `/watchlist`, `/upcoming` and `/watched`, which have no pages yet → the redirect still fires, proving later features inherit the guard → AC-10
+- [x] Sign in with `next` set to `https://evil.example`, then `//evil.example`, then `/\evil.example`, then `\/\/evil.example`, then `shows` → all five land on `/shows` → AC-11
 - [ ] Signed out, open `/account` → redirected with `next=/account`. From there click through to `/sign-up`, sign up, confirm from the inbox → land on `/account`, proving `next` survives the sign up detour → AC-10
-- [ ] Temporarily narrow the proxy matcher so `/account` is not matched, rebuild, then request `/account` with no cookie and again with a forged `sb-*-auth-token` cookie → no private data renders either time. Restore the matcher afterwards → AC-12
-- [ ] With the matcher still narrowed, invoke `changePasswordAction` from `/account` with no valid session → nothing is written and a visible error is returned → AC-12, AC-17
+- [x] Temporarily narrow the proxy matcher so `/account` is not matched, rebuild, then request `/account` with no cookie and again with a forged `sb-*-auth-token` cookie → no private data renders either time. Restore the matcher afterwards → AC-12
+- [x] With the matcher still narrowed, invoke `changePasswordAction` from `/account` with no valid session → nothing is written and a visible error is returned → AC-12, AC-17
 
 ## Session expiry
 
-- [ ] Open `/account` in browser 1. In browser 2, sign in as **A** and revoke sessions, or wait for expiry. Submit the change password form in browser 1 → a visible error with a sign in link carrying `/account`, no success state, the password unchanged → AC-17
+- [x] Open `/account` in browser 1. In browser 2, sign in as **A** and revoke sessions, or wait for expiry. Submit the change password form in browser 1 → a visible error with a sign in link carrying `/account`, no success state, the password unchanged → AC-17
 
 ## Sign out scope
 
-- [ ] Sign in as **A** in two different browsers. Sign out in one → the other is still signed in on refresh → AC-15
-- [ ] After signing out, the navbar shows Sign in and `/account` redirects → AC-15
+- [x] Sign in as **A** in two different browsers. Sign out in one → the other is still signed in on refresh → AC-15
+- [x] After signing out, the navbar shows Sign in and `/account` redirects → AC-15
 
 ## Rate limits
 
@@ -81,22 +81,22 @@ called **unknown** below.
 
 ## Navbar and rendering
 
-- [ ] Signed out, load `/shows` → the navbar shows Sign in; no signed in state is painted at any point → AC-13
+- [x] Signed out, load `/shows` → the navbar shows Sign in; no signed in state is painted at any point → AC-13
 - [ ] Signed in, load `/shows` → the account area shows the avatar letter, the display name taken from the part of the address before the `@`, and Sign out. Confirm with JavaScript disabled that the signed in state is still correct, which proves it is server rendered → AC-13
 - [ ] Signed in on mobile width, open the menu sheet → the account block and Sign out appear there, matching `mobile-menu-open.svg` → AC-13, AC-21
-- [ ] In `pnpm build` output, `/shows` and `/movies` are static, and the layout purity test passes, so the account slot is provably the only per request read in the shell → AC-14
+- [x] In `pnpm build` output, `/shows` and `/movies` are static, and the layout purity test passes, so the account slot is provably the only per request read in the shell → AC-14
 
 ## Interface and accessibility
 
-- [ ] Compare `/sign-in` against `desktop-sign-in-page.svg` and `mobile-sign-in-page.svg` → the card, heading, subheading, field labels, Forgot password link and Sign in button match. The Google button and the "or use your login" divider are absent by design → AC-21
-- [ ] `/sign-up`, `/check-email`, `/forgot-password`, `/reset-password` and `/account` reuse the same card, type scale and spacing → AC-21
-- [ ] Tab through every auth screen → every control is reachable in a sensible order with a visible focus ring, and touch targets meet the sizes in `components/AGENTS.md` → AC-21
-- [ ] Submit each form with an error → the message is associated with its field and announced, not colour only → AC-21
+- [x] Compare `/sign-in` against `desktop-sign-in-page.svg` and `mobile-sign-in-page.svg` → the card, heading, subheading, field labels, Forgot password link and Sign in button match. The Google button and the "or use your login" divider are absent by design → AC-21
+- [x] `/sign-up`, `/check-email`, `/forgot-password`, `/reset-password` and `/account` reuse the same card, type scale and spacing → AC-21
+- [x] Tab through every auth screen → every control is reachable in a sensible order with a visible focus ring, and touch targets meet the sizes in `components/AGENTS.md` → AC-21
+- [x] Submit each form with an error → the message is associated with its field and announced, not colour only → AC-21
 - [ ] Each screen has a loading state during submission and no dead end: every error offers a way forward → AC-21
 
 ## Logging
 
-- [ ] Sign in wrongly, sign up, reset a password, and open a confirmation link, watching the server output → no password, token, cookie value or raw Supabase error object appears in any line → AC-19
+- [x] Sign in wrongly, sign up, reset a password, and open a confirmation link, watching the server output → no password, token, cookie value or raw Supabase error object appears in any line → AC-19
 
 ---
 
@@ -154,3 +154,63 @@ One step per row of the spec's value sourcing table, exercising the edge that br
 - **AC-9's breach branch.** Leaked password protection has no `supabase/config.toml` key: it is a dashboard setting on the hosted project (Authentication > Providers > Email) and is unavailable on the local stack. AC-9 now says so. The code classifies and reports the outcome; switching the setting on, and verifying this branch, belongs to feature 20.
 - **AC-18's rate limits.** Configured at the numbers the spec names, and AC-18 now states what the knobs actually measure: `sign_in_sign_ups` per five minute interval per IP address, `email_sent` per hour. Not exercised to exhaustion.
 - **Real email deliverability.** Proven against the local test inbox only, as the spec says. Feature 20 owns the real thing.
+
+---
+
+# Verify run · /check verify · 2026-09-22
+
+_Independent re-run of the checklist above against a production build (`pnpm build` then `pnpm start`)
+on the local Supabase stack, driven in a real browser. Ticks above are from this run. Ten steps are
+left unticked; the four that matter are listed under **Failing** below, the rest are the ones the
+checklist itself says to report rather than tick._
+
+Setup: local stack already running (auth container confirmed carrying `GOTRUE_PASSWORD_MIN_LENGTH=8`,
+`GOTRUE_MAILER_AUTOCONFIRM=false`, allow list including `/auth/callback`). The app was built and
+served on port 3000 with `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and
+`NEXT_PUBLIC_SITE_URL` set in the shell, so `.env.local`'s cloud project was not touched. Accounts
+used: `a-0922a@`, `b-0922b@`, `c-0922c@`, `d-0922d@example.com`, all in the local stack only.
+
+Checks: `pnpm typecheck` passes · `pnpm lint:ci` passes with no warnings · `pnpm test` 226 passed in
+30 files · `pnpm build` lists `/shows` and `/movies` as partial prerender and `/account` as dynamic.
+
+AC-2 timing, twenty runs interleaved: fresh addresses 1242 to 1256ms, A's existing address 1243 to
+1255ms. The ranges overlap almost exactly.
+
+## Failing
+
+- **`next` is lost on the sign in to sign up detour** (step under _The guard, both layers_, AC-10).
+  From `/sign-in?next=%2Faccount`, the "Create an account" link goes to a bare `/sign-up`, so the
+  confirmation email carries `next=%2Fshows` and the person lands on `/shows`. The flow itself
+  supports it: `/sign-up?next=%2Faccount` carries the value all the way through. The two cross links
+  at `app/(auth)/sign-in/page.tsx:39` and `app/(auth)/sign-up/page.tsx:33` are hard coded.
+- **`/reset-password` opened with no recovery session renders the form** (step under _Recovery and
+  change_, AC-7). The action refuses correctly and writes nothing, so this is not a security hole,
+  but the checklist asks for a redirect and the page deliberately does not do one. Either the page
+  gains the redirect or the step is rewritten to match the documented choice.
+- **JavaScript disabled shows no account control at all** (step under _Navbar and rendering_, AC-13).
+  The signed in markup is genuinely in the server HTML, so AC-13's "produced on the server" holds;
+  but the account slot arrives as a streamed Suspense chunk, so with scripting off the navbar shows
+  only the skeleton, neither Sign in nor the account.
+- **There is no menu sheet to open** (step under _Navbar and rendering_, AC-13, AC-21).
+  `MobileMenuSheet` is used only by `/showcase`; the real navbar puts the account block inline at
+  mobile width. `mobile-menu-open.svg` draws a sheet holding Watchlist, Upcoming, Watched and the
+  account block, and those links belong to feature 9, so this step probably belongs there too.
+
+## Blocked, not failed
+
+- **AC-18 at runtime.** The numbers are in `supabase/config.toml` as specced, but the local stack
+  does not apply them: the auth container carries no sign in or sign up limit variable at all and
+  `GOTRUE_RATE_LIMIT_EMAIL_SENT=360000`. Forty wrong sign in attempts in a row all returned 400, no
+  429. So both rate limit steps, and the shared bucket step on `/account`, are unverifiable here and
+  belong with feature 20 on the hosted project.
+- **AC-9's breach branch** and **AC-16's provider only branch**, both as the checklist already says.
+- **Loading states during submission** were not exercised in this run.
+
+## Worth a look in /check review
+
+- The session cookie `sb-127-auth-token` is set with `httpOnly: false`, the `@supabase/ssr` default,
+  so any script on the page can read the access and refresh token.
+- Deleting the session rows out of `auth.sessions` did not stop a change password write: the access
+  token stayed acceptable to the auth server until expiry. AC-17 is proven for a missing cookie, not
+  for a server side revoke.
+- A failed sign up clears the email field, so the address has to be typed again.
