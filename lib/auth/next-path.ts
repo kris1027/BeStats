@@ -15,6 +15,11 @@
  * relative value (`shows`) which would resolve against whatever page is
  * current. Anything rejected falls back to `/shows` at the call site.
  *
+ * Control characters are refused outright, before the slash checks. The URL
+ * parser silently deletes tab, line feed and carriage return wherever they
+ * appear, so `/\t/evil.example` passes a character by character check and
+ * then resolves to `//evil.example`. No real BeStats path contains one.
+ *
  * @param value The candidate path, usually straight off a query string.
  * @returns Whether it may be used as a redirect target.
  */
@@ -23,6 +28,8 @@ export function isSafeNextPath(
 ): value is string {
   if (typeof value !== "string" || value.length === 0) return false;
   if (value[0] !== "/") return false;
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: matching them is the point.
+  if (/[\u0000-\u001F\u007F]/.test(value)) return false;
 
   // A single slash on its own is the site root, which is safe.
   if (value.length === 1) return true;

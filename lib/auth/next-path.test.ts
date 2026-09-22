@@ -35,10 +35,31 @@ describe("isSafeNextPath (AC-11)", () => {
     ["/\\evil.example", "a backslash the browser normalises to //"],
     ["\\/\\/evil.example", "the doubled backslash form"],
     ["\\\\evil.example", "a UNC style path"],
+    ["/\t/evil.example", "a tab the URL parser strips, leaving //"],
+    ["/\n/evil.example", "a line feed the URL parser strips"],
+    ["/\r/evil.example", "a carriage return the URL parser strips"],
+    ["/\t\\evil.example", "a stripped tab hiding a backslash"],
+    ["/shows\u0000", "a null character"],
     ["shows", "a bare relative value"],
     ["", "an empty string"],
   ])("rejects %s (%s)", (value) => {
     expect(isSafeNextPath(value)).toBe(false);
+  });
+
+  // Every accepted value must still resolve to this site once the URL parser
+  // has cleaned it up, which is what the callback route does with it.
+  it.each([
+    "/shows",
+    "/",
+    "/watchlist?filter=planned",
+    "/\t/evil.example",
+    "/\t\\evil.example",
+    "/\n/evil.example",
+  ])("never resolves %s off site when accepted", (value) => {
+    const origin = "http://localhost:3000";
+    if (isSafeNextPath(value)) {
+      expect(new URL(value, origin).origin).toBe(origin);
+    }
   });
 
   it("rejects an absent value rather than throwing", () => {
