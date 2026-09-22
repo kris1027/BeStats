@@ -197,3 +197,99 @@ the card stays static.
 **The claim shape was under specified.** The installed SDK types `amr` as `AMREntry[] | string[] | undefined`.
 Decoded tokens from this version use the object form, but the pure function takes all of it and treats absent,
 empty and unknown as not a recovery session, so the failure direction is refusal.
+
+### How long a revoked session keeps working, 2026-09-22
+
+Verify run 2 found that after a reset signs out globally, a second browser still renders as signed in. It cannot
+change anything through Auth, which answers `403 session_not_found`, but the navbar and `/account` both resolve the
+user through `getClaims()`, which checks the access token's signature and expiry locally and never asks Auth
+whether the session still exists. So the second browser looks signed in until its token expires, which was up to
+`jwt_expiry = 3600` seconds. The checklist step expecting it to be signed out on the next refresh could not pass.
+
+The first thing worth knowing is that this is not only about what the page shows. PostgREST, which serves every
+table read and write behind Row Level Security, also accepts any unexpired token with a valid signature. So anyone
+who copied the access token can keep reading and writing that account's rows directly, whatever our pages do.
+The session cookie is readable by script (`httpOnly: false`, the `@supabase/ssr` default), which makes copying it
+the realistic threat a reset is meant to end. (At the time. The fresh model review on the same day made the cookie `HttpOnly`,
+AC-25; copying a token by other means, such as malware or a shared machine, is what the window still bounds.)
+
+Options weighed:
+
+- **Shorten the token lifetime to 600 seconds and state the window in AC-8 (chosen).** It is the only option that
+  bounds the direct API window as well as the screen, it needs one configuration value and no code, and it keeps
+  the design's choice of a local check. Cost: a refresh every ten minutes per active session instead of every hour,
+  which the proxy already performs. Much shorter lifetimes multiply refresh traffic and make small clock differences between servers matter, so ten minutes is a middle value rather than the floor.
+- **`getUser()` on every render.** The second browser would read signed out on its next refresh, and Server Actions
+  would notice a revoke. Refused because the navbar slot renders on every page, catalog included, so it adds a round
+  trip to Auth to every page view, and it still leaves the direct API window at a full token lifetime. It fixes the
+  appearance, not the exposure.
+- **Both.** The screen updates at once and the API window is ten minutes. Refused as the highest cost for a gain,
+  the immediate repaint, that matters little when writes are already refused.
+- **Only rewrite AC-8, keep 3600.** Honest, but an hour of API access after someone recovered their account
+  specifically to shut an intruder out is too long when shortening it is one line.
+
+Why the bound is the token's own lifetime and not more, checked against the installed auth-js 2.116: the client
+refreshes a session only once it is within a 90 second margin of `exp` (`EXPIRY_MARGIN_MS`, three ticks of 30
+seconds). If that refresh fails while the access token is still unexpired, the SDK keeps serving the old session
+rather than signing out early; once `exp` passes, there is nothing to keep, and the next request renders signed out.
+So the window ends at the token's real `exp`, at most 600 seconds after it was issued. A later auth-js version could
+change that behaviour, which is why the verify step checks the outcome in a browser rather than trusting this note.
+
+A session check inside the database (policies or a PostgREST pre request hook comparing the token's `session_id`
+against `auth.sessions`) would close the window entirely. It is recorded in Consequences as the fix to reach for if
+the private data here ever becomes sensitive, not built now: it adds a lookup to every policy evaluation and a
+dependency on the auth schema for a watch tracking app.
+
+### Steps the local stack cannot run (verify run 3, 2026-09-22)
+
+Verify run 3 passed every step it could run and left five blocked: the breach refusal (AC-9), the Google only
+account on `/account` (AC-16), and three rate limit steps (AC-16, AC-18). Each needs something only the hosted
+project has: leaked password protection, a Google identity, or rate limits the local Auth container actually
+applies. Run 1 showed the last one plainly: forty wrong sign ins in a row, every one a 400, never a 429.
+
+Options weighed:
+
+- **Move the runtime steps to feature 20 and add mapping tests here (chosen).** Feature 20 stands up the hosted
+  project, so it is the first place these steps can run at all. What this feature owns is our half: turning the
+  error Supabase sends into the right message. Today that half is only partly tested (the copy renders, but nothing
+  proves a 429 or a breach refusal reaches it), so four cases in `supabase-error.test.ts` close the gap cheaply.
+- **Move them with no new tests.** Cheaper, but the classifier's 429 and `pwned` branches would stay unproven by
+  anything until feature 20, and the breach branch matches on message text, the most fragile kind of check.
+- **Keep them here.** Honest, but feature 6 would sit blocked until feature 20, holding up `/test` and the fresh
+  model review for work this feature cannot do.
+
+Settling this turned up a real bug. `classifyAuthError` spots a breach by matching `pwned|breach|leaked` in the
+message, but the installed Auth server's refusal reads "Password is known to be weak and easy to guess, please
+choose a different one." (found in the running container's binary), so a breached password would show the eight
+character copy. The reliable signal is the `reasons` list auth-js attaches to `AuthWeakPasswordError`, where a
+breach is `pwned`. Step 9 switches to it, and the new test uses the server's real wording so a regression to
+message matching fails.
+
+### The session cookie was readable by script (fresh model review, 2026-09-22)
+
+The review found that neither `createServerClient` call passed `cookieOptions`, so both fell back to
+`@supabase/ssr`'s `DEFAULT_COOKIE_OPTIONS`, whose `httpOnly` is `false` (read from the installed package,
+`dist/module/utils/constants.js`). Verify runs 1 and 3 had both noticed the flag and left it for review. The spec's
+own Consequences said a cross site scripting bug could not steal a session, and as shipped it could, through
+`document.cookie`.
+
+Options weighed:
+
+- **Make the cookie `HttpOnly`, and `Secure` on an `https` site URL (chosen).** It makes the stated guarantee true
+  with one shared options object and no change to any flow, because every read and write of the session already
+  happens on the server: Server Actions, the callback Route Handler and the proxy. The library default of `false`
+  exists for apps that use the browser client, and this one chose not to (Option 2). Cost: the browser client in
+  `lib/supabase/client.ts` cannot see a session, which nothing needs today.
+- **Keep the default and correct the claim.** Honest, and it keeps the browser client usable, but it leaves the
+  refresh token, which lives far longer than the ten minute access token, one script injection away from a copy
+  that survives the page. That is the most valuable thing in the cookie, and nothing in the design needs it exposed.
+
+`Secure` is derived from `NEXT_PUBLIC_SITE_URL` rather than from `NODE_ENV`. A production build served on
+`http://localhost:3000` would otherwise set a `Secure` cookie that some browsers refuse over plain `http`, and the
+deployed origin, which is always `https`, would get the flag regardless of how the build was made.
+
+The same review found the open redirect that AC-11 now names. `isSafeNextPath` judged the raw characters, but the
+URL parser deletes tab, line feed and carriage return before it resolves, so `/\t/evil.example` became
+`//evil.example`. `/debug` fixed it the same day by refusing every control character; the criterion was widened to
+match, since a path with a control character in it is never a real BeStats path.
+
