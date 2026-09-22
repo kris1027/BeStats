@@ -155,11 +155,16 @@ max_indexes = 5
 enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
 # in emails.
-site_url = "http://127.0.0.1:3000"
+# Spec 0005 AC-23: this must equal NEXT_PUBLIC_SITE_URL exactly, because that is
+# what the Server Actions pass as emailRedirectTo / redirectTo and Supabase
+# matches the whole redirect URL against this list, not just the origin.
+site_url = "http://localhost:3000"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["https://127.0.0.1:3000"]
+# The callback path itself, plus a wildcard for the `next` variants it redirects
+# on to. The bare origin alone is not enough: Supabase matches the full URL.
+additional_redirect_urls = ["http://localhost:3000/auth/callback", "http://localhost:3000/**"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to auth.external_url.
@@ -178,10 +183,22 @@ enable_anonymous_sign_ins = false
 # Allow/disallow testing manual linking of accounts
 enable_manual_linking = false
 # Passwords shorter than this value will be rejected as weak. Minimum 6, recommended 8 or more.
-minimum_password_length = 6
+# Spec 0005 AC-9. Kept equal to MINIMUM_PASSWORD_LENGTH in lib/auth/schemas.ts;
+# the Zod check saves a round trip, this is what actually enforces it.
+minimum_password_length = 8
 # Passwords that do not meet the following requirements will be rejected as weak. Supported values
 # are: `letters_digits`, `lower_upper_letters_digits`, `lower_upper_letters_digits_symbols`
+# Left empty on purpose (spec 0005): composition rules push people towards
+# predictable substitutions without adding real strength. The breach check is
+# what carries the weight.
 password_requirements = ""
+
+# Leaked password protection (the HaveIBeenPwned check AC-9 names) has no
+# config.toml key: it is a dashboard setting on the hosted project, under
+# Authentication > Providers > Email, and is not available on the local CLI
+# stack at all. So AC-9's breach branch cannot be exercised locally. The code
+# still classifies and reports the outcome; turning the setting on belongs to
+# feature 20 with the rest of the cloud project setup.
 
 # Configure passkey sign-ins.
 # [auth.passkey]
@@ -194,6 +211,12 @@ password_requirements = ""
 # rp_origins = ["http://127.0.0.1:3000"]
 
 [auth.rate_limit]
+# Spec 0005 AC-18 names two numbers: thirty sign in attempts and two emails.
+# Both are set below. Note what the knobs actually measure, which is not what
+# AC-18 says: `email_sent` is per hour and needs SMTP configured, and
+# `sign_in_sign_ups` is per five minutes per IP address, not per hour per
+# address. Supabase exposes no per-address sign in limit, so AC-18's wording
+# needs correcting rather than the configuration.
 # Number of emails that can be sent per hour. Requires auth.email.smtp to be enabled.
 email_sent = 2
 # Number of SMS messages that can be sent per hour. Requires auth.sms to be enabled.
@@ -203,6 +226,9 @@ anonymous_users = 30
 # Number of sessions that can be refreshed in a 5 minute interval per IP address.
 token_refresh = 150
 # Number of sign up and sign-in requests that can be made in a 5 minute interval per IP address (excludes anonymous users).
+# Spec 0005 AC-18. This is also the bucket `changePasswordAction` draws on when
+# it re-checks the current password, which is deliberate: it limits guessing at
+# the current password too.
 sign_in_sign_ups = 30
 # Number of OTP / Magic link verifications that can be made in a 5 minute interval per IP address.
 token_verifications = 30
@@ -222,7 +248,9 @@ enable_signup = true
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
 # If enabled, users need to confirm their email address before signing in.
-enable_confirmations = false
+# Spec 0005 AC-1 and AC-6: sign up must create no session, and an unconfirmed
+# address must be refused at sign in. Both depend on this being true.
+enable_confirmations = true
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
 secure_password_change = false
 # Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.

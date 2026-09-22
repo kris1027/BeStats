@@ -40,6 +40,20 @@ const publicEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z
     .string()
     .min(1, "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY is missing"),
+  // The absolute origin Supabase builds confirmation and recovery links from
+  // (spec 0005, AC-23). It has to be absolute because it is baked into an email
+  // that opens in a browser with no notion of this app's origin, and it has to
+  // match the Supabase redirect allow list exactly or Supabase refuses the
+  // redirect. Public because the sign in and sign up forms pass it through, and
+  // an origin is not a secret.
+  NEXT_PUBLIC_SITE_URL: z
+    .url(
+      "NEXT_PUBLIC_SITE_URL must be an absolute URL, for example http://localhost:3000",
+    )
+    // A trailing slash would produce `https://site.example//auth/callback`,
+    // which no longer matches the allow list entry, so normalise it away rather
+    // than let the mismatch surface as an opaque Supabase redirect refusal.
+    .transform((value) => value.replace(/\/+$/, "")),
 });
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;
@@ -60,6 +74,7 @@ export function getPublicEnv(): PublicEnv {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
   });
 
   if (!parsed.success) {
