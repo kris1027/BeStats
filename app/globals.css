@@ -2,27 +2,23 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
+/*
+ * One palette, no light theme, no `.dark` variant (spec 0004, AC-1).
+ *
+ * Every one of the sixteen references in `design/` is drawn on pure black, so a
+ * light palette here would be a half maintained theme nothing renders. Deleting
+ * it makes the absence honest: adding light later is a restructure, which is the
+ * tradeoff spec 0004 accepted.
+ */
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+  --font-sans: var(--font-inter);
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --font-heading: var(--font-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
+
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -39,6 +35,7 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -48,82 +45,271 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-:root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+/*
+ * Product tokens: the values `design/` actually uses (spec 0004, AC-4).
+ *
+ * These sit in `@theme` rather than `:root` so Tailwind generates real
+ * utilities for them (`text-rating-tmdb`, `bg-glass-plate-panel`,
+ * `rounded-panel`, `backdrop-blur-glass`). AC-4 forbids writing any of these
+ * values as a literal anywhere else, so this block is the only place they
+ * appear.
+ */
+@theme {
+  /* The three colours that carry meaning. Nothing else may borrow them. */
+  --color-rating-tmdb: #ffc526;
+  --color-score-personal: #50c6e5;
+  --color-status-planned: #29cea3;
+  --color-status-planned-mark: #06251d;
+
+  /*
+   * The opaque plates painted under every glass surface. Glass alone over a
+   * light poster drops near white text to 1.59:1, so the plate is doing the
+   * legibility work, not the gradient (spec 0004, AC-5).
+   */
+  --color-glass-plate: #101416;
+  --color-glass-plate-panel: #08090c;
+  --color-glass-plate-sheet: #090a0d;
+  --color-glass-plate-score: #0c1419;
+
+  /* Text greys from the references, beyond the shadcn semantic set. */
+  --color-text-label: #e2e5ef;
+  --color-text-link: #d7d9e0;
+  --color-text-secondary: #ced1dc;
+  --color-text-legend: #a5adb3;
+
+  /* Panels and sheets sit above the card radius (`--radius`). */
+  --radius-panel: 1.5rem;
+
+  /*
+   * 16px, no saturation adjustment. `design/` supplies no blur at all: every
+   * file states the glass is simulated, so this is the one value spec 0004
+   * settles rather than reads (AC-16).
+   */
+  --blur-glass: 16px;
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+:root {
+  color-scheme: dark;
+
+  /* shadcn's semantic tokens, remapped onto the black palette (AC-4). */
+  --background: #000000;
+  --foreground: #f6f7f8;
+  --card: #101416;
+  --card-foreground: #f6f7f8;
+  --popover: #090a0d;
+  --popover-foreground: #f6f7f8;
+  --primary: #f6f7f8;
+  --primary-foreground: #000000;
+  --secondary: #17181a;
+  --secondary-foreground: #f6f7f8;
+  --muted: #17181a;
+  --muted-foreground: #a8adbc;
+  --accent: #17181a;
+  --accent-foreground: #f6f7f8;
+  /*
+   * `design/` draws no error state, so this is the one shadcn token with no
+   * reference value. It carries no product meaning and is not one of the three
+   * colours above.
+   *
+   * The first pick, `#F87171`, measured 3.90:1 against the brightest point of
+   * the glass gradient over the control plate, which fails AA for body text.
+   * Raised to the nearest lighter red that clears it at 4.67:1 (AC-7, and
+   * recorded in the spec's `rationale.md`).
+   */
+  --destructive: #fb8a8a;
+  --border: rgb(255 255 255 / 12%);
+  --input: rgb(255 255 255 / 14%);
+  /*
+   * Focus is near white, deliberately not the cyan. All three saturated
+   * colours carry meaning and AGENTS.md section 9 needs personal and community
+   * ratings kept distinct, so spending cyan on focus would erode exactly that
+   * distinction. Near white is also the only colour guaranteed visible over
+   * black, over glass and over arbitrary poster artwork (AC-6).
+   */
+  --ring: #f6f7f8;
+
+  --radius: 0.75rem;
+}
+
+/*
+ * The glass system (spec 0004, AC-3).
+ *
+ * Three gradients and one shadow, defined once. The rim is the hard part: every
+ * reference draws it as an SVG stroke with a gradient on a rounded shape, and
+ * the obvious CSS translation (`border-image`) ignores `border-radius`, so it
+ * would square off every pill. The technique that works is a two layer
+ * background over a transparent border: fill and plate clipped to `padding-box`,
+ * rim gradient clipped to `border-box`.
+ *
+ * `glass` and `glass-selected` own that stack; `glass-rim` and the plate
+ * utilities feed it through custom properties, which resolve on the element
+ * regardless of the order the classes are written in. The plate is deliberately
+ * NOT applied by `glass` itself, so the showcase can render the unreadable
+ * plate-less case beside the correct one (AC-5).
+ */
+
+@utility glass {
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(
+      169deg,
+      rgb(255 255 255 / 0.18) 0%,
+      rgb(213 217 241 / 0.055) 45%,
+      rgb(179 188 216 / 0.1) 100%
+    )
+    padding-box,
+    linear-gradient(
+      var(--glass-plate, transparent) 0%,
+      var(--glass-plate, transparent) 100%
+    )
+    padding-box,
+    var(--glass-rim, none) border-box;
+}
+
+@utility glass-selected {
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(
+      172deg,
+      rgb(255 255 255 / 0.38) 0%,
+      rgb(239 242 255 / 0.18) 52%,
+      rgb(255 255 255 / 0.26) 100%
+    )
+    padding-box,
+    linear-gradient(
+      var(--glass-plate, transparent) 0%,
+      var(--glass-plate, transparent) 100%
+    )
+    padding-box,
+    var(--glass-rim, none) border-box;
+}
+
+/*
+ * A plated surface with the rim but no glass gradient: the missing poster
+ * fallback and the loading skeletons, which are the surfaces that should read
+ * as an absence rather than as content.
+ *
+ * Same two layer technique as `glass`, minus the fill. It depends on the plate
+ * being opaque: `background-clip: border-box` paints across the whole element,
+ * not just the border, so it is the plate on `padding-box` above it that
+ * reduces the rim to a ring. Without a plate this floods.
+ */
+@utility plate-rim {
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(
+      var(--glass-plate, transparent) 0%,
+      var(--glass-plate, transparent) 100%
+    )
+    padding-box,
+    var(--glass-rim, none) border-box;
+}
+
+/*
+ * The rim alone, over artwork: the poster frame in
+ * `design/show-movie-card.svg`, which is a bare gradient stroke on a photo.
+ *
+ * There is no plate to reduce the gradient to a ring here, so this masks the
+ * padding box out instead and paints only the border ring. That also means the
+ * mask clips everything the element paints, so this belongs on an empty
+ * decorative overlay and never on an element with content or a background of
+ * its own. A poster frame uses it exactly that way: the rim is a background
+ * layer, which would otherwise sit underneath the `<img>` and vanish.
+ */
+@utility rim {
+  border: 1.5px solid transparent;
+  background: var(--glass-rim, none) border-box;
+  mask:
+    linear-gradient(#000 0 0) padding-box,
+    linear-gradient(#000 0 0) border-box;
+  mask-composite: exclude;
+}
+
+@utility glass-rim {
+  --glass-rim: linear-gradient(
+    166deg,
+    rgb(255 255 255 / 0.62) 0%,
+    rgb(255 255 255 / 0.1) 42%,
+    rgb(226 233 255 / 0.26) 100%
+  );
+}
+
+/* The personal score badge is the one surface with a coloured rim. */
+@utility glass-rim-score {
+  --glass-rim: linear-gradient(
+    166deg,
+    rgb(80 198 229 / 0.65) 0%,
+    rgb(80 198 229 / 0.65) 100%
+  );
+}
+
+@utility glass-plate {
+  --glass-plate: var(--color-glass-plate);
+}
+
+@utility glass-plate-panel {
+  --glass-plate: var(--color-glass-plate-panel);
+}
+
+@utility glass-plate-sheet {
+  --glass-plate: var(--color-glass-plate-sheet);
+}
+
+@utility glass-plate-score {
+  --glass-plate: var(--color-glass-plate-score);
+}
+
+/*
+ * `feDropShadow dy=5 stdDeviation=5` in the references. An SVG standard
+ * deviation of 5 is roughly a 10px CSS blur radius, which is the conversion
+ * used here.
+ */
+@utility glass-shadow {
+  box-shadow: 0 5px 10px rgb(6 10 25 / 0.22);
+}
+
+/*
+ * Loading pulse, 2 seconds ease in out, cut entirely under reduced motion
+ * rather than merely slowed: a permanently animating page is the thing the
+ * setting exists to prevent (AC-12).
+ */
+@keyframes bestats-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@utility skeleton-pulse {
+  animation: bestats-pulse 2s ease-in-out infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
+
+  /*
+   * `:focus-visible` only, so a mouse click leaves no ring behind while every
+   * keyboard user keeps one (AC-6). 2px at 2px offset, on the near white
+   * `--ring` token.
+   */
+  *:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
   body {
     @apply bg-background text-foreground;
   }
+
   html {
     @apply font-sans;
   }
