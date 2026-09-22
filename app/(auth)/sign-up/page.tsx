@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Suspense } from "react";
 
+import { AuthCrossLink } from "@/components/auth/auth-cross-link";
 import { AuthPanel } from "@/components/auth/auth-panel";
 import { Skeleton } from "@/components/skeleton";
 import { isSafeNextPath } from "@/lib/auth/next-path";
@@ -16,7 +16,8 @@ export const metadata: Metadata = {
  *
  * Shell static, form behind a Suspense boundary, for the same reason as
  * `/sign-in`: the form needs the `next` value from the query string, and
- * reading it makes a component request scoped.
+ * reading it makes a component request scoped. The footer link carries `next`
+ * back to sign in through its own boundary, for the same reason (AC-10).
  *
  * The Google button the sign in artboard draws is absent here too. Feature 20
  * restores it to both pages in the slot this leaves above the fields.
@@ -29,12 +30,9 @@ export default function SignUpPage({ searchParams }: PageProps<"/sign-up">) {
       footer={
         <>
           Already have an account?{" "}
-          <Link
-            href="/sign-in"
-            className="rounded-sm font-semibold text-foreground hover:underline"
-          >
+          <AuthCrossLink href="/sign-in" searchParams={searchParams}>
             Sign in
-          </Link>
+          </AuthCrossLink>
         </>
       }
     >
