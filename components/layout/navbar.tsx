@@ -1,7 +1,7 @@
 import Link from "next/link";
+import type * as React from "react";
 
 import { MediaTypeTabs } from "@/components/layout/media-type-tabs";
-import { ButtonLink } from "@/components/ui/button";
 
 /**
  * The sticky top navigation, in its signed out form (spec 0004, AC-13).
@@ -16,13 +16,16 @@ import { ButtonLink } from "@/components/ui/button";
  * underneath (AC-16). `scroll-padding-top` on the root layout keeps an
  * anchored heading from landing behind it.
  *
- * Two things the references draw are deliberately absent. The search field
- * belongs to feature 11 and a non working search box would be a false
- * affordance, so its slot is left out rather than faked. The signed in form,
- * with the account initial and the menu, belongs to feature 6; the menu sheet
- * primitive it will use already ships in `mobile-menu-sheet.tsx`.
+ * The search field the references draw is deliberately absent: it belongs to
+ * feature 11 and a non working search box would be a false affordance.
+ *
+ * The account control is passed in rather than rendered here (spec 0005,
+ * AC-14). It is the only part of the shell that reads the session, so it lives
+ * behind its own Suspense boundary in `app/layout.tsx`; rendering it inside this
+ * component would make the whole navbar request scoped and pull `/shows` and
+ * `/movies` out of the prerendered static shell.
  */
-function Navbar() {
+function Navbar({ accountSlot }: { accountSlot: React.ReactNode }) {
   return (
     <header className="sticky top-0 z-30 w-full border-b border-border bg-background/70 backdrop-blur-glass">
       <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:gap-6 md:py-2.5">
@@ -34,17 +37,13 @@ function Navbar() {
             BeStats
           </Link>
 
-          <ButtonLink size="touch" href="/sign-in" className="md:hidden">
-            Sign in
-          </ButtonLink>
+          <div className="md:hidden">{accountSlot}</div>
         </div>
 
         <MediaTypeTabs className="self-center md:self-auto" />
 
         <div className="hidden md:flex md:flex-1 md:justify-end">
-          <ButtonLink size="sm" href="/sign-in">
-            Sign in
-          </ButtonLink>
+          {accountSlot}
         </div>
       </div>
     </header>
