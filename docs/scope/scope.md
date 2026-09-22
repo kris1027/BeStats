@@ -107,17 +107,20 @@ The thin real thread: browse a movie, sign in, track it, see it in your list. Ev
 Email and password sign in, email verification, sign out, password recovery, and session handling that private routes can trust. Google sign in moved to feature 20 with the rest of the provider setup, because it cannot be verified without a Google OAuth client.
 **Done when:** a visitor can sign up, verify their address, sign in, sign out and recover a password; private routes reject signed out visitors at both the redirect and the server; a new password can be set without the current one only from a recovery link; and the forms never reveal whether an address has an account.
 - [x] Design it (spec): `/architect authentication`
-- [ ] Build it: `/develop authentication`
+- [x] Build it: `/develop authentication`
   - [x] Configuration and shared rules: the site URL variable, the `[auth]` block, and the shared schemas, action state, path guard, message and log modules — AC-9, AC-11, AC-18, AC-23
   - [x] The thin thread end to end: sign in, sign out, the private account page, the proxy guard and `requireUser`, verified in the running app — AC-4, AC-5, AC-10, AC-12, AC-15
   - [x] The navbar account slot inside its Suspense boundary, passed into both navbar forms, with the layout purity test — AC-13, AC-14
   - [x] The sign up strand: sign up, check email with resend, the callback, and the neutral existing address branch — AC-1, AC-2, AC-3, AC-6
   - [x] The recovery strand and change password, then hardening and proof: expired sessions, noindex, logging, the test suite, accessibility and the bundle check — AC-7, AC-8, AC-16, AC-17, AC-19 to AC-22
-  - [ ] Corrections from the verify run: gate `resetPasswordAction` on a recovery session, spend that session on one reset by signing out globally, and carry `next` through the two cross links between sign in and sign up — AC-24, AC-8, AC-10
-- [ ] Verify it: `/check verify authentication`
-- [ ] Test it: `/test authentication`
-- [ ] Review it (fresh model): `/check review authentication`
-- [ ] Document it: `/document authentication`
+  - [x] Corrections from the verify run: gate `resetPasswordAction` on a recovery session, spend that session on one reset by signing out globally, and carry `next` through the two cross links between sign in and sign up — AC-24, AC-8, AC-10
+  - [x] The revocation window from verify run 2: `jwt_expiry = 600` on the local stack, confirmed on a restarted stack, so a revoked session stops working within ten minutes — AC-8
+  - [x] The mapping tests from verify run 3, plus classifying a breach by `reasons` not message text: a 429 and an `over_email_send_rate_limit` error classify as rate limited, a breach refusal as breached, a length refusal as too short. The five steps the local stack cannot run move to feature 20 — AC-9, AC-18
+  - [x] Corrections from the fresh model review: the session cookies become `HttpOnly` (and `Secure` on an `https` site URL) through one shared options function, guarded by a boundary test; the control character fix to `next` already landed through /debug — AC-25, AC-11
+- [x] Verify it: `/check verify authentication`
+- [x] Test it: `/test authentication`
+- [x] Review it (fresh model): `/check review authentication`
+- [x] Document it: `/document authentication`
 code in [lib/auth/](../../lib/auth/), [app/(auth)/](<../../app/(auth)/>), [app/account/](../../app/account/), [app/auth/callback/](../../app/auth/callback/), [components/auth/](../../components/auth/)
 spec [0005](../specs/0005-authentication/index.md)
 
@@ -202,7 +205,7 @@ Run the full `AGENTS.md` section 13 checklist with two test users, including dir
 - [ ] Test it: `/test security and acceptance verification`
 
 ### 20. Deploy and provider setup · needs a decision · GA
-Vercel deployment, Supabase Cloud project, Google OAuth and auth redirects for local and deployed environments, verified email delivery. Also restores the Google button and its divider to the sign in and sign up pages, in the slot spec 0005 reserves. Remote migrations and deployment need your explicit approval in the plan.
+Vercel deployment, Supabase Cloud project, Google OAuth and auth redirects for local and deployed environments, verified email delivery. Also restores the Google button and its divider to the sign in and sign up pages, in the slot spec 0005 reserves, and runs the five authentication verify steps the local stack cannot: the breach refusal, the Google only account on `/account`, and the three rate limit steps. Remote migrations and deployment need your explicit approval in the plan.
 **Done when:** the deployed app signs users in with Google and with email, the Google button is back on the sign in and sign up pages and works, recovery and confirmation emails arrive at a real mailbox, and environment variables target the intended projects.
 - [ ] Design it (spec): `/architect deploy and provider setup`
 
