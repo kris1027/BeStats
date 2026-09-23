@@ -192,8 +192,9 @@ export const config = {
     /*
      * Every path except the ones Next.js serves as static assets, plus common
      * image files. Without this the proxy would run for every CSS, JS and image
-     * request too.
+     * request too. `/movies/` is never an image, so `/movies/550.jpg` still
+     * reaches the malformed id rule and gets its 404 (spec 0006, AC-8).
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|(?!movies/).*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)",
   ],
 };

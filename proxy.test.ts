@@ -1,6 +1,9 @@
 import { readFileSync } from "node:fs";
+import { unstable_doesMiddlewareMatch } from "next/experimental/testing/server";
 import { NextRequest } from "next/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
+
+import { config } from "./proxy";
 
 /**
  * covers: spec 0005, AC-10, AC-17
@@ -127,6 +130,7 @@ describe("the proxy's movie id rule", () => {
     "/movies/0",
     "/movies/-2",
     "/movies/2147483648",
+    "/movies/550.jpg",
   ])("answers %s with a 404 rewrite", async (path) => {
     const response = await run(path);
 
@@ -166,5 +170,35 @@ describe("the proxy's movie id rule", () => {
     expect(PROXY.indexOf("malformedMovieResponse(request)")).toBeLessThan(
       PROXY.indexOf("publicEnvProblems()"),
     );
+  });
+});
+
+/**
+ * covers: spec 0006, AC-8
+ *
+ * The matcher decides whether the proxy runs at all, so a movie path that
+ * looks like an image file must still reach the malformed id rule, while real
+ * static files keep skipping the proxy.
+ */
+describe("the proxy matcher", () => {
+  function matches(url: string) {
+    return unstable_doesMiddlewareMatch({ config, url });
+  }
+
+  it.each(["/movies/550.jpg", "/movies/550.png", "/movies/x.svg"])(
+    "runs for %s so it can answer 404",
+    (url) => {
+      expect(matches(url)).toBe(true);
+    },
+  );
+
+  it.each([
+    "/_next/static/chunks/app.js",
+    "/_next/image",
+    "/favicon.ico",
+    "/logo.svg",
+    "/images/poster.webp",
+  ])("skips the static file %s", (url) => {
+    expect(matches(url)).toBe(false);
   });
 });
