@@ -1,7 +1,11 @@
 import Link from "next/link";
 import type * as React from "react";
+import { Suspense } from "react";
 
-import { MediaTypeTabs } from "@/components/layout/media-type-tabs";
+import {
+  MediaTypeTabs,
+  MediaTypeTabsView,
+} from "@/components/layout/media-type-tabs";
 
 /**
  * The sticky top navigation, in its signed out form (spec 0004, AC-13).
@@ -40,7 +44,22 @@ function Navbar({ accountSlot }: { accountSlot: React.ReactNode }) {
           <div className="md:hidden">{accountSlot}</div>
         </div>
 
-        <MediaTypeTabs className="self-center md:self-auto" />
+        {/*
+         * The boundary only ever suspends on a route with a dynamic param,
+         * where the pathname is unknown at prerender time (spec 0006, AC-11).
+         * Its fallback is the same control with nothing lit, so the shell
+         * keeps the tabs and the bar does not change size.
+         */}
+        <Suspense
+          fallback={
+            <MediaTypeTabsView
+              pathname={null}
+              className="self-center md:self-auto"
+            />
+          }
+        >
+          <MediaTypeTabs className="self-center md:self-auto" />
+        </Suspense>
 
         <div className="hidden md:flex md:flex-1 md:justify-end">
           {accountSlot}
