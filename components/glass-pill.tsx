@@ -1,6 +1,28 @@
 import { cn } from "cn";
 import type * as React from "react";
 
+/** The two pill tones. */
+type GlassPillTone = "neutral" | "score";
+
+/**
+ * The pill recipe, without a size: plate, glass and rim, fully rounded, bold
+ * 13px text.
+ *
+ * Exported so the tracking buttons in `components/tracking/` wear exactly the
+ * same shell as the badges at a touch friendly height, instead of deriving the
+ * recipe a second time and drifting from it (spec 0007, movie page row).
+ *
+ * @param tone `score` is the personal rating look; see `GlassPill`.
+ */
+function glassPillClassName(tone: GlassPillTone = "neutral"): string {
+  return cn(
+    "glass glass-shadow inline-flex items-center gap-1.5 rounded-full text-[13px] leading-none font-bold text-foreground",
+    tone === "score"
+      ? "glass-rim-score glass-plate-score"
+      : "glass-rim glass-plate",
+  );
+}
+
 /**
  * The badge shell: plate, then glass, then rim, fully rounded.
  *
@@ -27,18 +49,12 @@ function GlassPill({
    * which is the only coloured rim in the system. It exists so a personal
    * score is never mistaken for a TMDB community rating (AGENTS.md section 9).
    */
-  tone?: "neutral" | "score";
+  tone?: GlassPillTone;
 }) {
   return (
     <span
       data-slot="glass-pill"
-      className={cn(
-        "glass glass-shadow inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[13px] leading-none font-bold text-foreground",
-        tone === "score"
-          ? "glass-rim-score glass-plate-score"
-          : "glass-rim glass-plate",
-        className,
-      )}
+      className={cn(glassPillClassName(tone), "h-7 px-2.5", className)}
       {...props}
     >
       {icon ? (
@@ -51,4 +67,4 @@ function GlassPill({
   );
 }
 
-export { GlassPill };
+export { GlassPill, type GlassPillTone, glassPillClassName };

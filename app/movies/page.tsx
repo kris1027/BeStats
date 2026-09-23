@@ -8,6 +8,7 @@ import { TmdbRatingBadge } from "@/components/rating-badges";
 import { RetryLink } from "@/components/retry-link";
 import { PosterCardSkeleton } from "@/components/skeleton";
 import { StatePanel } from "@/components/state-panel";
+import { CardBookmark } from "@/components/tracking/card-bookmark";
 import { ButtonLink } from "@/components/ui/button";
 import { lastReachablePage, parsePageParam } from "@/lib/catalog/pages";
 import { discoverMovies, TmdbError } from "@/lib/tmdb";
@@ -36,7 +37,8 @@ function pageHref(page: number): string {
  * The heading is static and prerendered; the grid needs the `page` search
  * parameter, so it streams inside the Suspense boundary behind a grid of
  * skeleton cards at the same footprint (AC-11). No session is read here
- * (AC-13).
+ * (AC-13); each card's bookmark from spec 0007 reads it inside its own
+ * Suspense boundary in `components/tracking/`, one query for the whole grid.
  */
 export default function MoviesPage({ searchParams }: PageProps<"/movies">) {
   return (
@@ -85,6 +87,8 @@ async function PopularMovies({
   const lastPage = lastReachablePage(result.totalPages);
   if (page > lastPage) return <NoSuchPage />;
 
+  const gridMovieIds = result.results.map((movie) => movie.id);
+
   return (
     <div className="flex flex-col gap-10">
       <PosterGrid aria-label={`Popular movies, page ${page}`}>
@@ -95,6 +99,16 @@ async function PopularMovies({
               posterUrl={movie.posterUrl}
               href={`/movies/${movie.id}`}
               badge={<TmdbRatingBadge value={movie.tmdbRating} />}
+              controls={
+                <Suspense fallback={null}>
+                  <CardBookmark
+                    movieId={movie.id}
+                    title={movie.title}
+                    gridMovieIds={gridMovieIds}
+                    returnPath={pageHref(page)}
+                  />
+                </Suspense>
+              }
               priority={index < EAGER_POSTERS}
             />
           </li>

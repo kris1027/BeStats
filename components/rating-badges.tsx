@@ -1,6 +1,7 @@
 import { StarIcon } from "lucide-react";
 
 import { GlassPill } from "@/components/glass-pill";
+import { formatPersonalScore } from "@/lib/format";
 
 /**
  * Community and personal ratings must never be confused for one another
@@ -56,11 +57,7 @@ function PersonalScoreBadge({ value }: { value: number | null }) {
       }
     >
       <span className="sr-only">Your score </span>
-      {value === null
-        ? "Not rated"
-        : Number.isInteger(value)
-          ? String(value)
-          : value.toFixed(1)}
+      {formatPersonalScore(value)}
     </GlassPill>
   );
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  formatPersonalScore,
   formatRuntime,
   formatVoteCount,
   languageName,
@@ -85,5 +86,30 @@ describe("truncateAtWord · covers spec 0006 AC-12", () => {
     const result = truncateAtWord("x".repeat(200), 160);
     expect(result).toBe(`${"x".repeat(159)}…`);
     expect(result.length).toBe(160);
+  });
+});
+
+describe("formatPersonalScore · covers spec 0007 AC-10", () => {
+  it("reads Not rated when there is no score, never zero", () => {
+    expect(formatPersonalScore(null)).toBe("Not rated");
+  });
+
+  it.each([
+    [1, "1"],
+    [8, "8"],
+    [10, "10"],
+  ])("shows the integer score %s with no decimal", (value, expected) => {
+    expect(formatPersonalScore(value)).toBe(expected);
+  });
+
+  it("rounds a calculated average to one decimal for display only", () => {
+    expect(formatPersonalScore(7.25)).toBe("7.3");
+    expect(formatPersonalScore(6.666)).toBe("6.7");
+  });
+
+  it("keeps a one decimal average that rounds to a whole number as x.0", () => {
+    // 7.96 is an average, not an integer score, so it keeps the decimal that
+    // tells the two apart.
+    expect(formatPersonalScore(7.96)).toBe("8.0");
   });
 });

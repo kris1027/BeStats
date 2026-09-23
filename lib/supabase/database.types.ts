@@ -110,7 +110,42 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      mark_movie_watched: {
+        Args: { p_movie_id: number }
+        Returns: {
+          created_at: string
+          in_watchlist: boolean
+          movie_id: number
+          rating: number | null
+          updated_at: string
+          user_id: string
+          watched_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "user_movie_state"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      rate_movie: {
+        Args: { p_movie_id: number; p_rating: number }
+        Returns: {
+          created_at: string
+          in_watchlist: boolean
+          movie_id: number
+          rating: number | null
+          updated_at: string
+          user_id: string
+          watched_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "user_movie_state"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       status_source: "user" | "system"

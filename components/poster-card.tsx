@@ -106,6 +106,11 @@ function PosterCard({
          * below, so a tracking control stays clickable while the rest of the
          * card navigates. Blur is applied here and nowhere else on the card:
          * these are the only pieces that overlap artwork (AC-16).
+         *
+         * The control row spans the full poster width, so it lets clicks pass
+         * through and only its children catch them. Otherwise the empty space
+         * between and around the controls would swallow clicks meant for the
+         * link.
          */}
         {badge ? (
           <div className="absolute top-2.5 right-2.5 z-20 rounded-full backdrop-blur-glass">
@@ -114,7 +119,7 @@ function PosterCard({
         ) : null}
 
         {controls ? (
-          <div className="absolute inset-x-2.5 bottom-2.5 z-20 flex items-center justify-between gap-2">
+          <div className="absolute inset-x-2.5 bottom-2.5 z-20 flex pointer-events-none items-center justify-between gap-2 *:pointer-events-auto">
             {controls}
           </div>
         ) : null}

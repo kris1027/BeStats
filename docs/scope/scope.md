@@ -20,7 +20,7 @@ _The stack, tooling and product rules (ratings, progress, statuses, security) li
 | 5 | Design system and UI foundation | Foundation | done |
 | 6 | Authentication | Slice 1 | done |
 | 7 | Movie page | Slice 1 | done |
-| 8 | Movie tracking | Slice 1 | planned |
+| 8 | Movie tracking | Slice 1 | in-progress |
 | 9 | Watchlist and movie history | Slice 1 | planned |
 | 10 | TV show page | Slice 2 | planned |
 | 11 | Search and filters | Slice 3 | planned |
@@ -141,10 +141,22 @@ Public movie detail page with poster, overview, cast, genres and the TMDB commun
 code in [app/movies/](../../app/movies/), [components/movie/](../../components/movie/), [lib/catalog/](../../lib/catalog/), [lib/format.ts](../../lib/format.ts), [lib/tmdb/](../../lib/tmdb/), [proxy.ts](../../proxy.ts)
 spec [0006](../specs/0006-movie-page/index.md)
 
-### 8. Movie tracking · needs a decision · GA
-On the movie page, a signed in user can add to the watchlist, mark watched and rate from 1 to 10. Watched and rating stay separate.
+### 8. Movie tracking · in-progress · GA
+On the movie page, a signed in user can add to the watchlist, mark watched and rate from 1 to 10. Watched and rating stay separate. The `/movies` grid cards also get the Plan bookmark (spec 0007).
 **Done when:** watchlist, watched and rating survive reload and a second session; removing watched keeps the rating; failed writes show an error, not a false success.
-- [ ] Design it (spec): `/architect movie tracking`
+- [x] Design it (spec): `/architect movie tracking`
+- [x] Build it: `/develop movie tracking`
+  - [x] The thin thread: the watchlist pill on the movie page end to end (Sonner, `lib/tracking`, `setMovieWatchlist`, the Suspense slot, optimistic rollback and toasts, the amended request scope test), verified with two browsers — AC-1 to AC-3, AC-11 to AC-14, AC-19, AC-21
+  - [x] The migration: `mark_movie_watched` and `rate_movie` as invoker functions with grants, types and pgTAP — AC-4, AC-8, AC-15, AC-18
+  - [x] Watched pill, score pill and the hand built 1 to 10 picker — AC-1, AC-4 to AC-10
+  - [x] The card bookmark on the `/movies` grid with one batched read — AC-2, AC-6, AC-16
+  - [x] Failure and edge states plus proof: read failure, rapid clicks, Back after `refresh()`, mobile, tests and checks — AC-15, AC-17, AC-20 to AC-22
+- [x] Verify it: `/check verify movie tracking`
+- [x] Test it: `/test movie tracking`
+- [x] Review it (fresh model): `/check review movie tracking`
+- [x] Document it: `/document movie tracking`
+Code in `app/movies/actions.ts`, `lib/tracking/`, `components/tracking/`, `supabase/schemas/05-functions.sql`
+spec [0007](../specs/0007-movie-tracking/index.md)
 
 ### 9. Watchlist and movie history · needs a decision
 Private view of the watchlist and watched movies, with empty and signed out states. TV entries join it in feature 14. This feature also inherits the mobile menu sheet from feature 6: `MobileMenuSheet` exists but is wired only into `/showcase`, and the sheet `mobile-menu-open.svg` draws holds the Watchlist, Upcoming and Watched links that arrive here, so the menu button and the sheet belong with them (spec [0005](../specs/0005-authentication/index.md), Consequences).

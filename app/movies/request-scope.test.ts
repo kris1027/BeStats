@@ -3,12 +3,23 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 /**
- * covers: spec 0006, AC-13
+ * covers: spec 0006, AC-13, as amended by spec 0007, AC-19
  *
  * The movie routes are public catalog pages served from a prerendered shell
  * and a shared cache. One `cookies()` call or Supabase client in them would
  * make them request scoped and risk a user specific value reaching a cached
  * scope, silently. So the source is scanned, like `app/layout-purity.test.ts`.
+ *
+ * Spec 0007 moved the one legitimate request scoped read, the tracking state,
+ * into `components/tracking/`, rendered inside its own Suspense boundaries.
+ * Route and `components/movie` files may import from there, but still reach
+ * for no request API or Supabase client directly. `app/movies/actions.ts` is
+ * exempt: a Server Action is a POST handler, not render code.
+ *
+ * The real leak risk is a `"use cache"` scope anywhere near private state, so
+ * no file in `components/tracking/` or `lib/tracking/` may contain one. That
+ * request scoped reads sit inside Suspense is enforced by the build itself
+ * under `cacheComponents`, so this test does not try to.
  */
 const FORBIDDEN = [
   "cookies(",
@@ -18,6 +29,9 @@ const FORBIDDEN = [
   "@/lib/auth/user",
 ];
 
+/** The Server Actions file: request scoped by nature, and never rendered. */
+const ACTIONS = "app/movies/actions.ts";
+
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
     const path = join(dir, name);
@@ -26,11 +40,11 @@ function sourceFiles(dir: string): string[] {
   });
 }
 
-describe("the movie routes read no request scoped value (AC-13)", () => {
+describe("the movie routes read no request scoped value directly (AC-13)", () => {
   const files = [
     ...sourceFiles("app/movies"),
     ...sourceFiles("components/movie"),
-  ];
+  ].filter((path) => path !== ACTIONS);
 
   it("finds the route files", () => {
     expect(files).toContain("app/movies/page.tsx");
@@ -48,5 +62,33 @@ describe("the movie routes read no request scoped value (AC-13)", () => {
     for (const path of ["app/movies/page.tsx", "app/movies/[id]/page.tsx"]) {
       expect(readFileSync(path, "utf8")).not.toMatch(/instant\s*=\s*false/);
     }
+  });
+});
+
+describe("private tracking state never enters a cache scope (spec 0007, AC-19)", () => {
+  const files = [
+    ...sourceFiles("components/tracking"),
+    ...sourceFiles("lib/tracking"),
+    ACTIONS,
+  ];
+
+  it("finds the tracking files", () => {
+    expect(files).toContain(join("lib/tracking/movie-state.ts"));
+    expect(files).toContain(
+      join("components/tracking/movie-tracking-slot.tsx"),
+    );
+  });
+
+  it.each(files)("%s declares no use cache scope", (path) => {
+    expect(readFileSync(path, "utf8")).not.toMatch(/["']use cache/);
+  });
+
+  it("keeps each tracking read behind its own Suspense boundary", () => {
+    expect(readFileSync("app/movies/[id]/page.tsx", "utf8")).toMatch(
+      /<Suspense fallback=\{null\}>\s*<MovieTrackingSlot/,
+    );
+    expect(readFileSync("app/movies/page.tsx", "utf8")).toMatch(
+      /<Suspense fallback=\{null\}>\s*<CardBookmark/,
+    );
   });
 });

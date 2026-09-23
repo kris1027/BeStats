@@ -8,7 +8,7 @@ TMDB supplies catalog metadata. Supabase stores accounts and private user data. 
 
 ## Development status
 
-**In development — not a finished product.** The scaffold, automated checks, database schema and ownership policies, and server-only TMDB integration are implemented on `main`. The user-facing discovery, authentication, tracking, and rating flows are still planned. Starting the app currently opens a starter page.
+**In development — not a finished product.** The foundations (scaffold, checks, database schema and ownership policies, server-only TMDB integration, design system), email/password authentication, the public movie catalog and movie pages are implemented. Movie tracking (watchlist, watched, personal rating) is being built. TV, search, and Up Next are still planned.
 
 The project follows a thin end-to-end approach: finish the core movie loop before expanding into TV progress, search, and Up Next. See the [scope and roadmap](docs/scope/scope.md) for the feature breakdown and [specifications](docs/specs/) for decisions already made.
 
@@ -34,7 +34,11 @@ pnpm exec supabase start
 pnpm exec supabase status
 ```
 
-The first start downloads the required container images. Copy the local **project URL** and **publishable key** into the corresponding entries in `.env.local`. Use the project root URL, without `/rest/v1/`, and do not use a secret key in the public key field. Local Studio is available at [127.0.0.1:54323](http://127.0.0.1:54323).
+The first start downloads the required container images and applies the migrations and the local seed. Local Studio is available at [127.0.0.1:54323](http://127.0.0.1:54323), and Mailpit, which catches confirmation and recovery emails, at [127.0.0.1:54324](http://127.0.0.1:54324).
+
+You do not need to copy the local keys into `.env.local`: `pnpm dev:docker` (below) reads them from `supabase status` for you. If you prefer plain `pnpm dev` against the local stack, copy the local **project URL** and **publishable key** into `.env.local`. Use the project root URL, without `/rest/v1/`, and do not use a secret key in the public key field.
+
+To start the database again from the migrations and seed, run `pnpm exec supabase db reset`. It erases local data only.
 
 See the [official Supabase local-development guide](https://supabase.com/docs/guides/local-development/cli/getting-started) for container-runtime setup. These commands start local services; they do not deploy or migrate a cloud project.
 
@@ -43,16 +47,32 @@ See the [official Supabase local-development guide](https://supabase.com/docs/gu
 For live catalog requests, replace the TMDB token placeholder in `.env.local` with your API Read Access Token, as described in the example file. It stays server-only.
 
 ```sh
-pnpm dev
+pnpm dev:docker
 ```
 
-Open [localhost:3000](http://localhost:3000). The current starter page does not demonstrate the planned sign-in or tracking flows.
+This runs the development server against the local Supabase stack, starting it first if it is not running. It exports the local URL, the publishable key and a site URL of `http://localhost:3000` for this process only, and they take precedence over `.env.local`; everything else, such as the TMDB token, still comes from `.env.local`. Extra arguments go to `next dev`. A port other than 3000 is refused, because the local auth redirect allow list in `supabase/config.toml` only covers that origin.
+
+Use plain `pnpm dev` when `.env.local` points at the project you want, such as a cloud project. A cloud project must have the migrations in [supabase/migrations/](supabase/migrations/) applied, otherwise every tracking read fails and the server logs `movie_tracking.read refused db_error`.
+
+Open [localhost:3000](http://localhost:3000). `/` redirects to `/shows`; the movie catalog is at `/movies`.
+
+#### Local test accounts
+
+The seed creates two confirmed users on the local stack, used by the database tests and handy for trying sign-in and tracking:
+
+| Email | Password |
+| --- | --- |
+| `user-a@example.test` | `password-a` |
+| `user-b@example.test` | `password-b` |
+
+They exist only locally and are never applied to a deployed project.
 
 ## Everyday commands
 
 | Command | Purpose |
 | --- | --- |
-| `pnpm dev` | Start the development server. |
+| `pnpm dev` | Start the development server with the settings in `.env.local`. |
+| `pnpm dev:docker` | Start the development server against the local Supabase stack. |
 | `pnpm typecheck` | Generate route types and check TypeScript. |
 | `pnpm lint:ci` | Check formatting and lint rules without changing files. |
 | `pnpm format` | Apply Biome formatting and fixes. |

@@ -68,3 +68,18 @@ export function truncateAtWord(text: string, max: number): string {
   const cut = lastSpace > 0 ? head.slice(0, lastSpace) : head;
   return `${cut.replace(TRAILING_CUT, "") || cut}…`;
 }
+
+/**
+ * A personal score as the badge shows it: "Not rated" for none, an integer
+ * with no decimal (`8`, never `8.0`), a calculated average to one decimal
+ * (AGENTS.md section 9, spec 0007 AC-10).
+ *
+ * Shared by `PersonalScoreBadge` and the movie page score pill, so the two can
+ * never format the same score differently.
+ *
+ * @param value The score, or null when there is none.
+ */
+export function formatPersonalScore(value: number | null): string {
+  if (value === null) return "Not rated";
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}

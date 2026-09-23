@@ -8,6 +8,7 @@ import { MovieHero } from "@/components/movie/movie-hero";
 import { MovieOverview } from "@/components/movie/movie-overview";
 import { RetryLink } from "@/components/retry-link";
 import { StatePanel } from "@/components/state-panel";
+import { MovieTrackingSlot } from "@/components/tracking/movie-tracking-slot";
 import { parseMovieId } from "@/lib/catalog/ids";
 import { truncateAtWord } from "@/lib/format";
 
@@ -56,8 +57,10 @@ export async function generateMetadata({
  * without calling TMDB (AC-11). Everything that needs the id streams inside
  * the boundary.
  *
- * Nothing here reads a cookie, a header or a session (AC-13). Tracking controls
- * are feature 8's, and this page leaves them their place in `MovieHero`.
+ * Nothing here reads a cookie, a header or a session (AC-13). The one request
+ * scoped piece is the tracking slot from spec 0007, which lives in
+ * `components/tracking/` and streams inside its own Suspense boundary, so the
+ * catalog content never waits on the session.
  */
 export default function MoviePage({ params }: PageProps<"/movies/[id]">) {
   return (
@@ -107,6 +110,11 @@ async function MovieDetail({
         genres={movie.genres}
         tmdbRating={movie.tmdbRating}
         tmdbVoteCount={movie.tmdbVoteCount}
+        tracking={
+          <Suspense fallback={null}>
+            <MovieTrackingSlot movieId={id} title={movie.title} />
+          </Suspense>
+        }
       />
 
       <section
