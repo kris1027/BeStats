@@ -117,7 +117,7 @@ Email and password sign in, email verification, sign out, password recovery, and
   - [x] The revocation window from verify run 2: `jwt_expiry = 600` on the local stack, confirmed on a restarted stack, so a revoked session stops working within ten minutes — AC-8
   - [x] The mapping tests from verify run 3, plus classifying a breach by `reasons` not message text: a 429 and an `over_email_send_rate_limit` error classify as rate limited, a breach refusal as breached, a length refusal as too short. The five steps the local stack cannot run move to feature 20 — AC-9, AC-18
   - [x] Corrections from the fresh model review: the session cookies become `HttpOnly` (and `Secure` on an `https` site URL) through one shared options function, guarded by a boundary test; the control character fix to `next` already landed through /debug — AC-25, AC-11
-- [x] Verify it: `/check verify authentication`
+- [ ] Verify it: `/check verify authentication` (the session cookie flag steps in `verify.md`, AC-25, have not had a verify run yet)
 - [x] Test it: `/test authentication`
 - [x] Review it (fresh model): `/check review authentication`
 - [x] Document it: `/document authentication`

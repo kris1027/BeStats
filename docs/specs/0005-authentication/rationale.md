@@ -122,7 +122,7 @@ The weakest remaining point is recorded honestly in Consequences: the second gua
 
 ### The rate limit question
 
-Supabase's auth rate limits are project configuration, not code, and the numbers differ between a local stack and a cloud project. What they measure is fixed by Supabase and not by us: `sign_in_sign_ups` counts per five minute interval per IP address, and there is no per address sign in limit to configure, so AC-18 names the buckets that exist rather than the ones an earlier draft wished for. Leaked password protection is not in this file at all; it is a hosted dashboard setting, which is why AC-9's breach branch cannot be proven locally. The verify steps therefore read the configured values rather than asserting a constant, so the check stays true when feature 20 sets the cloud project up.
+Supabase's auth rate limits are project configuration, not code, and the numbers differ between a local stack and a cloud project. What they measure is fixed by Supabase and not by us: `sign_in_sign_ups` counts per five minute interval per IP address, and there is no per address sign in limit to configure, so AC-18 names the buckets that exist rather than the ones an earlier draft wished for. Leaked password protection is not in this file at all; it is a hosted dashboard setting, which is why AC-9's breach branch cannot be proven locally. The verify steps therefore read `supabase/config.toml` and require the numbers AC-18 names, `sign_in_sign_ups = 30` and `email_sent = 2`; a different number fails them. Feature 20 must set the hosted project to the same values before it runs the rate limit steps moved there.
 
 ### What the verify run changed, 2026-09-22
 

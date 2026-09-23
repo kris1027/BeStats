@@ -11,7 +11,8 @@ sign up, sign in, sign out, password reset and change, the `/auth/callback` rout
 private `/account` page, the navbar account slot, and the `requireUser()`/proxy double guard. The
 work is unusually well documented (JSDoc explaining *why*, not just *what*) and the neutral-message,
 recovery-session-gate and layout-purity guarantees are genuinely well tested. `pnpm typecheck`,
-`pnpm lint:ci`, `pnpm test` (279/279) and `pnpm build` all pass as claimed in `verify.md`. However,
+`pnpm lint:ci` and `pnpm build` pass as claimed in `verify.md`. `pnpm test` passed 279/279 in this
+review's run, which is not the count `verify.md` records: its last run lists 239. However,
 the redirect-safety check the whole feature leans on for its open-redirect defense (AC-11) has a
 concrete bypass using tab/CR/LF characters, confirmed reproducible end to end against the actual
 `/auth/callback` redirect construction — that alone blocks merge. A second, cheaper-to-fix gap
