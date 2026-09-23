@@ -391,26 +391,50 @@ and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` set to the local stack for that one p
 
 ## UI / manual
 
-- [ ] Sign in at `/sign-in?next=%2Faccount` → lands on `/account`; the `Set-Cookie` for `sb-127-auth-token` on the
+- [x] Sign in at `/sign-in?next=%2Faccount` → lands on `/account`; the `Set-Cookie` for `sb-127-auth-token` on the
   POST shows `HttpOnly; SameSite=lax`, and `document.cookie` is empty on `/account` and on `/shows` → AC-25
-- [ ] Signed in, move the session's `expires_at` into the past and load `/account` → the page renders signed in,
+- [x] Signed in, move the session's `expires_at` into the past and load `/account` → the page renders signed in,
   the access token has rotated, and the proxy's `Set-Cookie` on that GET carries `HttpOnly` → AC-25
-- [ ] Sign out → the removal cookie (`Max-Age=0`) also carries `HttpOnly`, no `sb-` cookie remains, and
+- [x] Sign out → the removal cookie (`Max-Age=0`) also carries `HttpOnly`, no `sb-` cookie remains, and
   `/account` redirects to `/sign-in?next=%2Faccount` → AC-25
-- [ ] Request a reset at `/forgot-password` → every code verifier cookie on that POST carries `HttpOnly`. Open the
+- [x] Request a reset at `/forgot-password` → every code verifier cookie on that POST carries `HttpOnly`. Open the
   link from Mailpit → `/auth/callback` sets `sb-127-auth-token` with `HttpOnly`, lands on `/reset-password`, and
   saving a new password lands on `/sign-in` with the reset notice → AC-25, AC-8
-- [ ] Sign up a new address → the code verifier cookies are `HttpOnly`. Open the confirmation link → lands on
+- [x] Sign up a new address → the code verifier cookies are `HttpOnly`. Open the confirmation link → lands on
   `/shows` signed in, with an `HttpOnly` session cookie and an empty `document.cookie` → AC-25
 
 ## Commands
 
-- [ ] `pnpm vitest run lib/supabase` → `cookie-options.test.ts` proves `secure` is false on an `http` site URL and
+- [x] `pnpm vitest run lib/supabase` → `cookie-options.test.ts` proves `secure` is false on an `http` site URL and
   true on an `https` one; `cookie-boundary.test.ts` passes → AC-25
-- [ ] Temporarily drop `cookieOptions: sessionCookieOptions()` from `proxy.ts`, or the `options` argument from its
+- [x] Temporarily drop `cookieOptions: sessionCookieOptions()` from `proxy.ts`, or the `options` argument from its
   `response.cookies.set`, then run `cookie-boundary.test.ts` → it fails. Restore the file afterwards → AC-25
 
 ## Acceptance-criteria coverage
 
 - AC-25 is covered by every step above. The `Secure` half on a real `https` origin is carried by feature 20's
   verify (spec 0005, Consequences).
+
+---
+
+# Verify run 6 · /check verify · 2026-09-23
+
+_The seven session cookie flag steps above, run against the local stack (`jwt_expiry = 600` confirmed in the
+Auth container) with a production like cookie jar cleared before each flow. Verdict: PASS. All seven ticked._
+
+- Every `sb-` `Set-Cookie` observed carried `HttpOnly; SameSite=lax`: the three code verifier cookies on the
+  sign up and forgot password POSTs, the session cookie from both callback shapes (confirmation and recovery),
+  the sign in POST, the proxy refresh on `GET /account`, and every `Max-Age=0` removal on sign out and reset.
+- `document.cookie` was `""` on `/shows` after confirmation, on `/account` and `/shows` after sign in, and on
+  `/reset-password`.
+- With `expires_at` moved one minute into the past, `GET /account` rendered the address, the access token
+  rotated, and the new `expires_at` was in the future.
+- After the reset: landed on `/sign-in?notice=password-reset` with the reset notice, no `sb-` cookie left, the old
+  password refused and the new one signed in.
+- `pnpm vitest run lib/supabase`: 12 passed. Dropping `cookieOptions` from `proxy.ts`, and separately the
+  `options` argument from its `response.cookies.set`, each failed exactly one `cookie-boundary.test.ts` case.
+  `proxy.ts` restored, working tree clean.
+
+Worth a look: the `-flow-<id>-code-verifier` and `-flows-code-verifier` cookies the library writes are not
+cleared by the callback, only by the next sign out. They are `HttpOnly` and short lived in practice, but they
+linger for the session.
