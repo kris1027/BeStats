@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { isTmdbNotFound, TmdbError } from "./errors";
-import { toFailure, unwrap } from "./result";
+import { failureProfile, toFailure, unwrap } from "./result";
 
 /**
  * Regression cover for the `use cache` boundary bug.
@@ -87,5 +87,19 @@ describe("TMDB failure envelope", () => {
     const value = { id: 550, title: "Fight Club" };
 
     expect(unwrap({ ok: true, value })).toBe(value);
+  });
+});
+
+describe("failureProfile", () => {
+  it("caches a transient failure for seconds, so a retry really retries · covers spec 0006 AC-10", () => {
+    expect(failureProfile("timeout")).toBe("seconds");
+    expect(failureProfile("rate_limited")).toBe("seconds");
+    expect(failureProfile("upstream")).toBe("seconds");
+  });
+
+  it("caches a settled failure for minutes · covers spec 0006 AC-10", () => {
+    expect(failureProfile("not_found")).toBe("minutes");
+    expect(failureProfile("unauthorized")).toBe("minutes");
+    expect(failureProfile("bad_response")).toBe("minutes");
   });
 });

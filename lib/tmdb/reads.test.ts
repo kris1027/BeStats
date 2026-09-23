@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import genresFixture from "./__fixtures__/genres-movie.json";
 import { installFetchMock, restoreFetchMock } from "./__fixtures__/helpers";
 import movieFixture from "./__fixtures__/movie-550.json";
+import movieNoEnglishFixture from "./__fixtures__/movie-427311.json";
 import searchFixture from "./__fixtures__/search-movie.json";
 import season0Fixture from "./__fixtures__/season-1396-0.json";
 import season1Fixture from "./__fixtures__/season-1396-1.json";
@@ -28,7 +29,7 @@ import { fetchSeason, fetchTvShow } from "./tv";
 afterEach(restoreFetchMock);
 
 describe("fetchMovie", () => {
-  it("normalizes a movie in exactly one request, with credits appended", async () => {
+  it("normalizes a movie in exactly one request, with credits and translations appended", async () => {
     const fetchMock = installFetchMock([{ body: movieFixture }]);
 
     const movie = await fetchMovie(550);
@@ -36,7 +37,7 @@ describe("fetchMovie", () => {
     expect(fetchMock.attempts).toBe(1);
     expect(fetchMock.url().pathname).toBe("/3/movie/550");
     expect(fetchMock.url().searchParams.get("append_to_response")).toBe(
-      "credits",
+      "credits,translations",
     );
     expect(movie.title).toBe("Fight Club");
     expect(movie.releaseDate).toBe("1999-10-15");
@@ -77,6 +78,7 @@ describe("fetchMovie", () => {
           release_date: "",
           genres: [],
           credits: { cast: [] },
+          translations: { translations: [] },
         },
       },
     ]);
@@ -110,6 +112,75 @@ describe("fetchMovie", () => {
 
     expect(movie.cast).toHaveLength(cast.length);
     expect(movie.cast[0]?.name).toBe("Edward Norton");
+  });
+
+  it("keeps an English overview and marks it as English · covers spec 0006 AC-5", async () => {
+    installFetchMock([{ body: movieFixture }]);
+
+    const movie = await fetchMovie(550);
+
+    expect(movie.overview).toMatch(/^A ticking-time-bomb insomniac/);
+    expect(movie.overviewLanguage).toBe("en");
+  });
+
+  it("falls back to the original language overview when English is empty · covers spec 0006 AC-5", async () => {
+    installFetchMock([{ body: movieNoEnglishFixture }]);
+
+    const movie = await fetchMovie(427311);
+
+    expect(movieNoEnglishFixture.overview).toBe("");
+    expect(movie.overview).toMatch(/^Pendant quatre ans/);
+    expect(movie.overviewLanguage).toBe("fr");
+  });
+
+  it("never falls back to a language other than the original · covers spec 0006 AC-5", async () => {
+    installFetchMock([
+      {
+        body: {
+          ...movieNoEnglishFixture,
+          translations: {
+            translations: [
+              { iso_639_1: "de", data: { overview: "Ein deutscher Text." } },
+              { iso_639_1: "fr", data: { overview: "   " } },
+            ],
+          },
+        },
+      },
+    ]);
+
+    const movie = await fetchMovie(427311);
+
+    expect(movie.overview).toBeNull();
+    expect(movie.overviewLanguage).toBeNull();
+  });
+
+  it("drops a malformed translation without failing the read · covers spec 0006 AC-5", async () => {
+    const translations = movieNoEnglishFixture.translations.translations;
+    installFetchMock([
+      {
+        body: {
+          ...movieNoEnglishFixture,
+          translations: {
+            translations: [{ iso_639_1: 42 }, "nonsense", ...translations],
+          },
+        },
+      },
+    ]);
+
+    const movie = await fetchMovie(427311);
+
+    expect(movie.overviewLanguage).toBe("fr");
+    expect(movie.overview).toMatch(/^Pendant quatre ans/);
+  });
+
+  it("reads the adult flag, treating a missing flag as false · covers spec 0006 AC-9", async () => {
+    installFetchMock([
+      { body: { ...movieFixture, adult: true } },
+      { body: { ...movieFixture, adult: undefined } },
+    ]);
+
+    expect((await fetchMovie(550)).adult).toBe(true);
+    expect((await fetchMovie(550)).adult).toBe(false);
   });
 
   it("raises bad_response when the title is missing, returning nothing partial", async () => {

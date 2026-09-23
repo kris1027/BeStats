@@ -68,3 +68,26 @@ export function unwrap<T>(result: TmdbResult<T>): T {
   const { kind, endpoint, message, status } = result.failure;
   throw new TmdbError(kind, endpoint, message, status);
 }
+
+/**
+ * The lifetime a failed read is cached for, by kind (spec 0006, AC-10).
+ *
+ * A transient failure (a timeout, a rate limit, a TMDB 5xx) gets `seconds`, so
+ * the "Try again" a page offers actually retries once TMDB recovers instead of
+ * replaying the cached failure for minutes. A settled answer (a title TMDB does
+ * not have, a bad credential, a payload that fails validation) gets `minutes`,
+ * which still absorbs a burst of requests for a deleted title. Every cached
+ * read in `reads.ts` uses this, so the rule stays one rule.
+ */
+export function failureProfile(kind: TmdbErrorKind): "seconds" | "minutes" {
+  switch (kind) {
+    case "timeout":
+    case "rate_limited":
+    case "upstream":
+      return "seconds";
+    case "not_found":
+    case "unauthorized":
+    case "bad_response":
+      return "minutes";
+  }
+}
