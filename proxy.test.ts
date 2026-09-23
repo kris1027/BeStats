@@ -1,6 +1,9 @@
 import { readFileSync } from "node:fs";
+import { unstable_doesMiddlewareMatch } from "next/experimental/testing/server";
 import { NextRequest } from "next/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
+
+import { config } from "./proxy";
 
 /**
  * covers: spec 0005, AC-10, AC-17
@@ -87,5 +90,115 @@ describe("the proxy with incomplete auth configuration", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("location")).toBeNull();
+  });
+});
+
+/**
+ * covers: spec 0006, AC-8
+ *
+ * Run for real: a malformed movie id must be a 404 decided here, before any
+ * Supabase or TMDB call and whether or not auth is configured, because the
+ * movie page streams its shell first and cannot change the status afterwards.
+ */
+describe("the proxy's movie id rule", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+  });
+
+  async function run(path: string) {
+    for (const name of [
+      "NEXT_PUBLIC_SUPABASE_URL",
+      "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+      "NEXT_PUBLIC_SITE_URL",
+    ]) {
+      vi.stubEnv(name, undefined);
+    }
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    const { proxy } = await import("./proxy");
+    const response = await proxy(new NextRequest(`http://localhost${path}`));
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+    return response;
+  }
+
+  it.each([
+    "/movies/abc",
+    "/movies/0123",
+    "/movies/0",
+    "/movies/-2",
+    "/movies/2147483648",
+    "/movies/550.jpg",
+  ])("answers %s with a 404 rewrite", async (path) => {
+    const response = await run(path);
+
+    expect(response.status).toBe(404);
+    expect(response.headers.get("x-middleware-rewrite")).toContain(
+      "/_movie-not-found",
+    );
+  });
+
+  it.each(["/movies/%2B550", "/movies/%20550", "/movies/%E0%A4%A"])(
+    "decodes %s before judging it, and answers 404",
+    async (path) => {
+      const response = await run(path);
+
+      expect(response.status).toBe(404);
+    },
+  );
+
+  it("lets a percent encoded canonical id through", async () => {
+    const response = await run("/movies/%35%35%30");
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-middleware-rewrite")).toBeNull();
+  });
+
+  it.each(["/movies/550", "/movies", "/movies/550/extra", "/shows/abc"])(
+    "lets %s through untouched",
+    async (path) => {
+      const response = await run(path);
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get("x-middleware-rewrite")).toBeNull();
+    },
+  );
+
+  it("decides before the auth configuration check", () => {
+    expect(PROXY.indexOf("malformedMovieResponse(request)")).toBeLessThan(
+      PROXY.indexOf("publicEnvProblems()"),
+    );
+  });
+});
+
+/**
+ * covers: spec 0006, AC-8
+ *
+ * The matcher decides whether the proxy runs at all, so a movie path that
+ * looks like an image file must still reach the malformed id rule, while real
+ * static files keep skipping the proxy.
+ */
+describe("the proxy matcher", () => {
+  function matches(url: string) {
+    return unstable_doesMiddlewareMatch({ config, url });
+  }
+
+  it.each(["/movies/550.jpg", "/movies/550.png", "/movies/x.svg"])(
+    "runs for %s so it can answer 404",
+    (url) => {
+      expect(matches(url)).toBe(true);
+    },
+  );
+
+  it.each([
+    "/_next/static/chunks/app.js",
+    "/_next/image",
+    "/favicon.ico",
+    "/logo.svg",
+    "/images/poster.webp",
+  ])("skips the static file %s", (url) => {
+    expect(matches(url)).toBe(false);
   });
 });

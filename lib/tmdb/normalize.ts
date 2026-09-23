@@ -14,6 +14,7 @@ import {
   type RawSeasonSummary,
   type RawTvShow,
   type RawTvSummary,
+  translationSchema,
 } from "./schemas";
 import type {
   CastMember,
@@ -86,11 +87,13 @@ export function normalizeCast(
   items: unknown[] | null | undefined,
 ): CastMember[] {
   const cast: CastMember[] = [];
-  for (const item of items ?? []) {
+  for (const [index, item] of (items ?? []).entries()) {
     const parsed = castMemberSchema.safeParse(item);
     if (!parsed.success) continue;
     cast.push({
       personId: parsed.data.id,
+      // TMDB always sends one today; the position keeps the key unique if not.
+      creditId: parsed.data.credit_id ?? `${parsed.data.id}-${index}`,
       name: parsed.data.name,
       character: parsed.data.character ?? "",
       profileUrl: imageUrl(parsed.data.profile_path, PROFILE_SIZE),
@@ -114,9 +117,44 @@ export function normalizeMovieSummary(raw: RawMovieSummary): MovieSummary {
   };
 }
 
+/**
+ * The overview a movie page shows, and the language it is written in.
+ *
+ * English first, because the product is in English (AGENTS.md section 3). When
+ * TMDB has no English overview, the original language is the one translation
+ * that is authored rather than translated, so it is the honest fallback; any
+ * other language would be a guess. The first matching entry wins, which keeps
+ * the choice stable across reads. A translation that does not parse is dropped,
+ * the same rule as a malformed credit (spec 0006, AC-5).
+ */
+export function resolveOverview(
+  englishOverview: string | null | undefined,
+  originalLanguage: string,
+  translations: unknown[] | null | undefined,
+): { overview: string | null; overviewLanguage: string | null } {
+  const english = textOrNull(englishOverview);
+  if (english) return { overview: english, overviewLanguage: "en" };
+
+  for (const item of translations ?? []) {
+    const parsed = translationSchema.safeParse(item);
+    if (!parsed.success) continue;
+    if (parsed.data.iso_639_1 !== originalLanguage) continue;
+    const overview = textOrNull(parsed.data.data?.overview);
+    if (overview) return { overview, overviewLanguage: originalLanguage };
+  }
+
+  return { overview: null, overviewLanguage: null };
+}
+
 export function normalizeMovie(raw: RawMovie): Movie {
   return {
     ...normalizeMovieSummary(raw),
+    ...resolveOverview(
+      raw.overview,
+      raw.original_language,
+      raw.translations?.translations,
+    ),
+    adult: raw.adult ?? false,
     backdropUrl: imageUrl(raw.backdrop_path, BACKDROP_SIZE),
     originalTitle: raw.original_title,
     originalLanguage: raw.original_language,

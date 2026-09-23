@@ -23,6 +23,8 @@ function movie(id: number): Movie {
     releaseDate: null,
     releaseYear: null,
     overview: null,
+    overviewLanguage: null,
+    adult: false,
     tmdbRating: null,
     tmdbVoteCount: 0,
     backdropUrl: null,

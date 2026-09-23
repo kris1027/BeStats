@@ -3,7 +3,13 @@ import { cacheLife } from "next/cache";
 import { fetchMoviesByIds, fetchTvShowsByIds } from "./batch";
 import { fetchMovieGenres, fetchTvGenres } from "./genres";
 import { fetchMovie } from "./movies";
-import { type TmdbResult, toFailure, unwrap } from "./result";
+import {
+  failureProfile,
+  type TmdbFailure,
+  type TmdbResult,
+  toFailure,
+  unwrap,
+} from "./result";
 import {
   fetchDiscoverMovies,
   fetchDiscoverTvShows,
@@ -51,17 +57,26 @@ import type {
  * serialized into a plain `Error`, which strips the `TmdbError` prototype and
  * its `kind`, so returning the failure and rebuilding it outside the scope is
  * what keeps `isTmdbNotFound` and the `not_found` branch in `batch.ts` working.
- * See `result.ts`. A failed read takes the `minutes` profile rather than the
- * success profile, so a timeout or a rate limit is retried soon instead of
- * being pinned for days, while still absorbing a burst of requests for a title
- * TMDB really has deleted.
+ * See `result.ts`. A failed read never takes the success profile: see
+ * `failureProfile` for which lifetime each kind of failure gets.
  *
  * No cached scope here reads a cookie, a header or a search param, so nothing
  * user specific can land in a shared cache (AGENTS.md section 11).
  */
 
-/** The lifetime a failed read takes, short enough that an outage self heals. */
-const FAILURE_PROFILE = "minutes";
+/**
+ * Sets the lifetime of a failed read, from `failureProfile` (spec 0006,
+ * AC-10). Called inside each cached scope, so the profile still lands on that
+ * scope's entry. The branch exists because `cacheLife` is typed per profile
+ * name and will not take a union.
+ */
+function cacheFailure(failure: TmdbFailure): void {
+  if (failureProfile(failure.kind) === "seconds") {
+    cacheLife("seconds");
+  } else {
+    cacheLife("minutes");
+  }
+}
 
 async function getMovieCached(id: number): Promise<TmdbResult<Movie>> {
   "use cache";
@@ -70,8 +85,9 @@ async function getMovieCached(id: number): Promise<TmdbResult<Movie>> {
     cacheLife("days");
     return { ok: true, value };
   } catch (error) {
-    cacheLife(FAILURE_PROFILE);
-    return { ok: false, failure: toFailure(error) };
+    const failure = toFailure(error);
+    cacheFailure(failure);
+    return { ok: false, failure };
   }
 }
 
@@ -86,8 +102,9 @@ async function getTvShowCached(id: number): Promise<TmdbResult<TvShow>> {
     cacheLife("days");
     return { ok: true, value };
   } catch (error) {
-    cacheLife(FAILURE_PROFILE);
-    return { ok: false, failure: toFailure(error) };
+    const failure = toFailure(error);
+    cacheFailure(failure);
+    return { ok: false, failure };
   }
 }
 
@@ -105,8 +122,9 @@ async function getSeasonCached(
     cacheLife("hours");
     return { ok: true, value };
   } catch (error) {
-    cacheLife(FAILURE_PROFILE);
-    return { ok: false, failure: toFailure(error) };
+    const failure = toFailure(error);
+    cacheFailure(failure);
+    return { ok: false, failure };
   }
 }
 
@@ -133,8 +151,9 @@ async function getShowEpisodesCached(
     cacheLife("hours");
     return { ok: true, value };
   } catch (error) {
-    cacheLife(FAILURE_PROFILE);
-    return { ok: false, failure: toFailure(error) };
+    const failure = toFailure(error);
+    cacheFailure(failure);
+    return { ok: false, failure };
   }
 }
 
@@ -152,8 +171,9 @@ async function searchMoviesCached(
     cacheLife("minutes");
     return { ok: true, value };
   } catch (error) {
-    cacheLife(FAILURE_PROFILE);
-    return { ok: false, failure: toFailure(error) };
+    const failure = toFailure(error);
+    cacheFailure(failure);
+    return { ok: false, failure };
   }
 }
 
@@ -174,8 +194,9 @@ async function searchTvShowsCached(
     cacheLife("minutes");
     return { ok: true, value };
   } catch (error) {
-    cacheLife(FAILURE_PROFILE);
-    return { ok: false, failure: toFailure(error) };
+    const failure = toFailure(error);
+    cacheFailure(failure);
+    return { ok: false, failure };
   }
 }
 
@@ -195,8 +216,9 @@ async function discoverMoviesCached(
     cacheLife("minutes");
     return { ok: true, value };
   } catch (error) {
-    cacheLife(FAILURE_PROFILE);
-    return { ok: false, failure: toFailure(error) };
+    const failure = toFailure(error);
+    cacheFailure(failure);
+    return { ok: false, failure };
   }
 }
 
@@ -215,8 +237,9 @@ async function discoverTvShowsCached(
     cacheLife("minutes");
     return { ok: true, value };
   } catch (error) {
-    cacheLife(FAILURE_PROFILE);
-    return { ok: false, failure: toFailure(error) };
+    const failure = toFailure(error);
+    cacheFailure(failure);
+    return { ok: false, failure };
   }
 }
 
@@ -233,8 +256,9 @@ async function getMovieGenresCached(): Promise<TmdbResult<Genre[]>> {
     cacheLife("max");
     return { ok: true, value };
   } catch (error) {
-    cacheLife(FAILURE_PROFILE);
-    return { ok: false, failure: toFailure(error) };
+    const failure = toFailure(error);
+    cacheFailure(failure);
+    return { ok: false, failure };
   }
 }
 
@@ -249,8 +273,9 @@ async function getTvGenresCached(): Promise<TmdbResult<Genre[]>> {
     cacheLife("max");
     return { ok: true, value };
   } catch (error) {
-    cacheLife(FAILURE_PROFILE);
-    return { ok: false, failure: toFailure(error) };
+    const failure = toFailure(error);
+    cacheFailure(failure);
+    return { ok: false, failure };
   }
 }
 
@@ -276,8 +301,9 @@ async function getMoviesByIdsCached(
     cacheLife("days");
     return { ok: true, value };
   } catch (error) {
-    cacheLife(FAILURE_PROFILE);
-    return { ok: false, failure: toFailure(error) };
+    const failure = toFailure(error);
+    cacheFailure(failure);
+    return { ok: false, failure };
   }
 }
 
@@ -296,8 +322,9 @@ async function getTvShowsByIdsCached(
     cacheLife("days");
     return { ok: true, value };
   } catch (error) {
-    cacheLife(FAILURE_PROFILE);
-    return { ok: false, failure: toFailure(error) };
+    const failure = toFailure(error);
+    cacheFailure(failure);
+    return { ok: false, failure };
   }
 }
 

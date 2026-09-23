@@ -14,6 +14,11 @@ export type Genre = {
 
 export type CastMember = {
   personId: number;
+  /**
+   * Unique per credit. `personId` is not: TMDB lists an actor once per role,
+   * so it is what a list of credits keys on.
+   */
+  creditId: string;
   name: string;
   character: string;
   profileUrl: string | null;
@@ -40,7 +45,21 @@ export type MovieSummary = {
   tmdbVoteCount: number;
 };
 
-export type Movie = MovieSummary & {
+export type Movie = Omit<MovieSummary, "overview"> & {
+  /**
+   * TMDB's adult flag. Discover already excludes adult titles, but a detail
+   * read by id does not, so the page checks this and answers not found
+   * (spec 0006, AC-9). A missing flag is `false`.
+   */
+  adult: boolean;
+  /**
+   * The overview a page should show: English when TMDB has one, otherwise the
+   * translation in the movie's original language, otherwise null. Never a
+   * machine translation and never placeholder text (spec 0006, AC-5).
+   */
+  overview: string | null;
+  /** ISO 639-1 code of `overview` (`"en"` for English), null with no overview. */
+  overviewLanguage: string | null;
   backdropUrl: string | null;
   originalTitle: string;
   originalLanguage: string;

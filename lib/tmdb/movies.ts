@@ -11,8 +11,9 @@ import { assertId } from "./validation";
  * This is the inner half of the two function split spec 0002's AC-23 requires:
  * the request, validation and normalization live here so the test suite can
  * call them directly, and the `use cache` wrapper in `reads.ts` is what pages
- * import. `credits` is appended so the cast arrives in the same round trip,
- * which is the one HTTP request AC-6 asks for.
+ * import. `credits` and `translations` are appended so the cast and the
+ * original language overview arrive in the same round trip, which is the one
+ * HTTP request AC-6 asks for (translations added by spec 0006, AC-5).
  *
  * @param id TMDB movie id.
  * @returns The normalized movie.
@@ -23,7 +24,7 @@ export async function fetchMovie(id: number): Promise<Movie> {
   assertId(id, endpoint);
   const raw = await tmdbRequest(
     endpoint,
-    { append_to_response: "credits" },
+    { append_to_response: "credits,translations" },
     movieSchema,
   );
   return normalizeMovie(raw);

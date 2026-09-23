@@ -16,6 +16,11 @@ import { usePathname } from "next/navigation";
  * `usePathname` is the only reason this is a Client Component. It reads no
  * server dynamic API, so the shell around it stays in the static shell under
  * `cacheComponents` and the routes still prerender (AC-18).
+ *
+ * On a route with a dynamic param (`/movies/[id]`, spec 0006) the pathname is
+ * not known at prerender time, so `usePathname` suspends there. `Navbar` wraps
+ * this in a Suspense boundary whose fallback is `MediaTypeTabsView` with no
+ * pathname: the same control, nothing lit, at the same footprint.
  */
 const TABS = [
   { href: "/shows", label: "SHOWS" },
@@ -23,8 +28,20 @@ const TABS = [
 ] as const;
 
 function MediaTypeTabs({ className }: { className?: string }) {
-  const pathname = usePathname();
+  return <MediaTypeTabsView pathname={usePathname()} className={className} />;
+}
 
+/**
+ * The tabs for a known pathname, or with no tab lit when `pathname` is null,
+ * which is the prerendered fallback on a dynamic route.
+ */
+function MediaTypeTabsView({
+  pathname,
+  className,
+}: {
+  pathname: string | null;
+  className?: string;
+}) {
   return (
     <nav
       aria-label="Media type"
@@ -35,7 +52,8 @@ function MediaTypeTabs({ className }: { className?: string }) {
     >
       {TABS.map((tab) => {
         const selected =
-          pathname === tab.href || pathname.startsWith(`${tab.href}/`);
+          pathname !== null &&
+          (pathname === tab.href || pathname.startsWith(`${tab.href}/`));
 
         return (
           <Link
@@ -57,4 +75,4 @@ function MediaTypeTabs({ className }: { className?: string }) {
   );
 }
 
-export { MediaTypeTabs };
+export { MediaTypeTabs, MediaTypeTabsView };

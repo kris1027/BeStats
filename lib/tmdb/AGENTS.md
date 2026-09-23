@@ -32,7 +32,10 @@ feature 4. Runtime steps live in that spec's `verify.md`.
   (`result.ts`) and the wrapper rebuilds the error outside the scope. Never
   throw a `TmdbError` from inside a cached scope.
 - **Lifetimes are explicit**: `days` for detail, `hours` for a season, `minutes`
-  for query shaped reads and for any cached failure, `max` for genre lists.
+  for query shaped reads, `max` for genre lists. A cached failure takes
+  `failureProfile(kind)` from `result.ts`: `seconds` for `timeout`,
+  `rate_limited` and `upstream` (so a retry really retries), `minutes` for the
+  rest.
 - **Nothing user specific enters a cached scope.** No `cookies()`, no
   `headers()`, no search params in this folder.
 - **No Zod schema is `.strict()`.** TMDB adds keys freely and an unknown key
@@ -42,11 +45,20 @@ feature 4. Runtime steps live in that spec's `verify.md`.
   zero, never placeholder text, never today's date.
 - **Required means the page is wrong without it.** A missing required top level
   field raises `bad_response` with nothing partial. Inside an array, a
-  malformed cast member is dropped; an episode is never dropped, because a
+  malformed cast member or translation is dropped; an episode is never dropped, because a
   missing episode would corrupt the progress counts features 14 to 16 derive.
   Only an episode's `id`, `seasonNumber` and `episodeNumber` are required.
+- **Key a cast list on `creditId`, never `personId`.** TMDB can list one actor
+  once per role, so `personId` repeats within a list; `creditId` is TMDB's
+  `credit_id`, unique per role.
 - **The token is read in `env.ts` and nowhere else.** It travels as a Bearer
   header, never in a URL, a log line or an error message.
+- **A detail read by id does not exclude adult titles.** Discover sends
+  `include_adult=false`, but `getMovie` can return one, so a page checks
+  `movie.adult` and answers not found (spec 0006, AC-9).
+- **`Movie.overview` is English, else the original language translation, else
+  null**, with `overviewLanguage` naming which. Never another language
+  (`resolveOverview` in `normalize.ts`, spec 0006, AC-5).
 - **Errors carry a `kind`**, never a bare status. Pages branch through
   `isTmdbNotFound`, not through a hand rolled catch.
 - Adding a field the app needs is a three place change: `schemas.ts`,

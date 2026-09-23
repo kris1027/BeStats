@@ -32,6 +32,7 @@ export const genreListSchema = z.object({
  */
 export const castMemberSchema = z.object({
   id: z.number(),
+  credit_id: z.string().nullish(),
   name: z.string(),
   character: z.string().nullish(),
   profile_path: nullableString,
@@ -55,7 +56,28 @@ export const movieSummarySchema = z.object({
   vote_count: nullableNumber,
 });
 
+/**
+ * One translation. Parsed per item, like a credit, so one malformed language
+ * entry drops that entry rather than failing the whole movie (spec 0006).
+ */
+export const translationSchema = z.object({
+  iso_639_1: z.string(),
+  data: z
+    .object({
+      overview: nullableString,
+    })
+    .nullish(),
+});
+
+/** Translations arrive as unknown items so one bad entry can be dropped. */
+const translationsSchema = z
+  .object({
+    translations: z.array(z.unknown()).nullish(),
+  })
+  .nullish();
+
 export const movieSchema = movieSummarySchema.extend({
+  adult: z.boolean().nullish(),
   backdrop_path: nullableString,
   original_title: z.string(),
   original_language: z.string(),
@@ -63,6 +85,7 @@ export const movieSchema = movieSummarySchema.extend({
   runtime: nullableNumber,
   genres: z.array(genreSchema).nullish(),
   credits: creditsSchema,
+  translations: translationsSchema,
 });
 
 export const tvSummarySchema = z.object({
