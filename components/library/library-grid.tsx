@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { startTransition, useOptimistic, useRef } from "react";
+import { startTransition, useEffect, useOptimistic, useRef } from "react";
 import { toast } from "sonner";
 
 import {
@@ -77,6 +77,22 @@ function LibraryGrid({
   );
 
   /**
+   * The removal that sent the focus to the heading expecting a remount. If
+   * this grid instead receives a refreshed page without that movie, the page
+   * did not redirect (later pages moved up), so the new heading must not
+   * take the focus on some later visit.
+   */
+  const headingFocusFor = useRef<number | null>(null);
+  useEffect(() => {
+    const movieId = headingFocusFor.current;
+    if (movieId === null || items.some((item) => item.movieId === movieId)) {
+      return;
+    }
+    headingFocusFor.current = null;
+    cancelLibraryHeadingFocus(movieId);
+  }, [items]);
+
+  /**
    * Focus leaves the card before it disappears: to the next card's title
    * link, else the previous card's, else the heading. A card with no title
    * link (a missing title) takes the focus on its remove button (AC-16).
@@ -86,7 +102,9 @@ function LibraryGrid({
     const target = visible[index + 1] ?? visible[index - 1];
 
     if (!target) {
-      focusLibraryHeading({ remounts: page > 1 });
+      const remountFor = page > 1 ? movieId : null;
+      headingFocusFor.current = remountFor;
+      focusLibraryHeading({ remountFor });
       return;
     }
 
@@ -153,7 +171,10 @@ function LibraryGrid({
           : setMovieWatched(item.movieId, false),
       );
       if (error) {
-        cancelLibraryHeadingFocus();
+        if (headingFocusFor.current === item.movieId) {
+          headingFocusFor.current = null;
+        }
+        cancelLibraryHeadingFocus(item.movieId);
         onError(error, item.movieId);
         return;
       }

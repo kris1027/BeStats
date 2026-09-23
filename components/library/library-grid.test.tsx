@@ -410,6 +410,35 @@ describe("focus after a removal (AC-16)", () => {
     expect(screen.getByRole("heading", { name: "Heading" })).not.toHaveFocus();
   });
 
+  it("leaves a later mount alone when later pages moved up instead of a redirect", async () => {
+    const user = userEvent.setup();
+    const view = render(grid("watchlist", [item(21)], 2));
+    await user.click(
+      screen.getByRole("button", { name: "Remove Movie 21 from Watchlist" }),
+    );
+    view.rerender(grid("watchlist", [item(41)], 2));
+    await settleNext({ ok: true });
+
+    remount(view, [item(1)]);
+    expect(screen.getByRole("heading", { name: "Heading" })).not.toHaveFocus();
+  });
+
+  it("keeps the remount focus when a different removal fails", async () => {
+    const user = userEvent.setup();
+    const view = render(grid("watchlist", [item(21), item(22)], 2));
+    await user.click(
+      screen.getByRole("button", { name: "Remove Movie 21 from Watchlist" }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Remove Movie 22 from Watchlist" }),
+    );
+    await settleNext({ ok: false, error: "write_failed" });
+    await settleNext({ ok: true });
+
+    remount(view, [item(1)]);
+    expect(screen.getByRole("heading", { name: "Heading" })).toHaveFocus();
+  });
+
   it("moves to a missing title's remove button, which has no link", async () => {
     const user = userEvent.setup();
     render(grid("watchlist", [item(1), item(2, { title: null })]));
