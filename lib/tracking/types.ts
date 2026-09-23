@@ -30,7 +30,12 @@ export type MovieTrackingError =
   | "session_expired"
   | "not_found"
   | "tmdb_unavailable"
-  | "write_failed";
+  | "write_failed"
+  /**
+   * An Undo the database refused (spec 0008, AC-6, AC-7): the row was already
+   * restored, changed too long ago, or never had the value to put back.
+   */
+  | "undo_expired";
 
 /**
  * What every action returns. No state comes back: the controls converge on the

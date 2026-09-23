@@ -11,6 +11,10 @@ import type { MovieTrackingError } from "./types";
  * offending row, so the object is dropped here and never reaches a log line or
  * the browser (AC-21).
  *
+ * `P0002` (`no_data_found`) is what the two restore functions raise when no
+ * row matches, so a refused Undo reaches the user as `undo_expired` rather than
+ * a silent success (spec 0008, AC-6, AC-7).
+ *
  * `PGRST301` and `PGRST303` are an expired or invalid JWT: the session lapsed
  * between the claims check and the write, so the person is asked to sign in
  * again (AC-12). `42501` is a missing grant or a policy refusal, which a
@@ -24,6 +28,8 @@ export function classifyTrackingError(error: { code?: string | null }): {
   outcome: TrackingOutcome;
 } {
   switch (error.code) {
+    case "P0002":
+      return { error: "undo_expired", outcome: "undo_expired" };
     case "PGRST301":
     case "PGRST303":
       return { error: "session_expired", outcome: "session_expired" };

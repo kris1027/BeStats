@@ -31,3 +31,19 @@ export const ratingInputSchema = z.object({
   movieId: movieIdSchema,
   rating: ratingSchema.nullable(),
 });
+
+/** Undo on the watchlist page takes nothing but the movie (spec 0008). */
+export const restoreWatchlistInputSchema = z.object({
+  movieId: movieIdSchema,
+});
+
+/**
+ * Undo on the watched page also carries the watched time the page rendered.
+ * It must be a full ISO timestamp with an offset, as PostgREST returned it, so
+ * nothing is guessed about the time zone. `restore_movie_watched` still bounds
+ * it to the past (spec 0008, AC-7).
+ */
+export const restoreWatchedInputSchema = z.object({
+  movieId: movieIdSchema,
+  watchedAt: z.iso.datetime({ offset: true }),
+});
