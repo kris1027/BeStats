@@ -54,6 +54,7 @@ export type Database = {
           updated_at: string
           user_id: string
           watched_at: string | null
+          watchlisted_at: string | null
         }
         Insert: {
           created_at?: string
@@ -63,6 +64,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           watched_at?: string | null
+          watchlisted_at?: string | null
         }
         Update: {
           created_at?: string
@@ -72,6 +74,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           watched_at?: string | null
+          watchlisted_at?: string | null
         }
         Relationships: []
       }
@@ -120,6 +123,7 @@ export type Database = {
           updated_at: string
           user_id: string
           watched_at: string | null
+          watchlisted_at: string | null
         }
         SetofOptions: {
           from: "*"
@@ -138,6 +142,7 @@ export type Database = {
           updated_at: string
           user_id: string
           watched_at: string | null
+          watchlisted_at: string | null
         }
         SetofOptions: {
           from: "*"
@@ -145,6 +150,14 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      restore_movie_watched: {
+        Args: { p_movie_id: number; p_watched_at: string }
+        Returns: undefined
+      }
+      restore_movie_watchlist: {
+        Args: { p_movie_id: number }
+        Returns: undefined
       }
     }
     Enums: {

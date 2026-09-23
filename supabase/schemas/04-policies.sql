@@ -116,11 +116,12 @@ create policy "Users delete their own episode state"
   to authenticated
   using ((select auth.uid()) = user_id);
 
--- Both trigger functions: Postgres grants EXECUTE to PUBLIC on every new
+-- Every trigger function: Postgres grants EXECUTE to PUBLIC on every new
 -- function, so narrow them here too. They return `trigger`, which Postgres
 -- refuses to call directly, so this is tidiness rather than a live hole.
 revoke all on function public.set_updated_at() from public, anon, authenticated;
 revoke all on function public.set_status_changed_at() from public, anon, authenticated;
+revoke all on function public.set_watchlisted_at() from public, anon, authenticated;
 
 -- Caveat worth knowing before you edit this file. The declarative diff engine
 -- does not track grants that come from Supabase's default privileges, so the

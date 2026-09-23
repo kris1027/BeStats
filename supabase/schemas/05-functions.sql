@@ -61,3 +61,87 @@ revoke all on function public.mark_movie_watched(integer) from public, anon, aut
 revoke all on function public.rate_movie(integer, smallint) from public, anon, authenticated;
 grant execute on function public.mark_movie_watched(integer) to authenticated;
 grant execute on function public.rate_movie(integer, smallint) to authenticated;
+
+-- Undo for the two private list pages (spec 0008, AC-6, AC-7).
+--
+-- Removing a card reuses the spec 0007 writes; these two put it back exactly
+-- as it was. Both are plpgsql rather than sql because a refused Undo must
+-- reach the user as a failure: a `language sql` update that matches nothing
+-- returns null, not an error, and the Server Action only inspects `error`. So
+-- when no row matches they raise `P0002` (`no_data_found`), which
+-- `classifyTrackingError` maps to `undo_expired`.
+--
+-- The same shape as the functions above: SECURITY INVOKER, so row level
+-- security applies inside them, an empty `search_path`, and an explicit
+-- `auth.uid()` filter. Neither ever inserts, so an Undo can never create a row.
+--
+-- The 10 minute window is measured from `updated_at`, which the removal itself
+-- set. Any later write to the row moves it forward. That is accepted: the
+-- window only limits a stale Undo, it is not a security boundary, and it can
+-- only ever restore the caller's own earlier value.
+
+-- Re-plans a movie at its old place. `watchlisted_at` was kept on unplan, and
+-- the transaction local setting is what tells `set_watchlisted_at` to keep it
+-- rather than stamp now(). It is switched off again straight away, so nothing
+-- later in the same transaction can take that branch by accident.
+create or replace function public.restore_movie_watchlist(p_movie_id integer)
+returns void
+language plpgsql
+volatile
+security invoker
+set search_path = ''
+as $$
+begin
+  perform set_config('bestats.restore_watchlist', 'on', true);
+
+  update public.user_movie_state
+  set in_watchlist = true
+  where user_id = auth.uid()
+    and movie_id = p_movie_id
+    and not in_watchlist
+    and watchlisted_at is not null
+    and updated_at > now() - interval '10 minutes';
+
+  if not found then
+    perform set_config('bestats.restore_watchlist', 'off', true);
+    raise exception 'undo_expired' using errcode = 'P0002';
+  end if;
+
+  perform set_config('bestats.restore_watchlist', 'off', true);
+end;
+$$;
+
+-- Marks a movie watched again at its original date, which the page rendered
+-- and the client passes back. It is the one client supplied time the schema
+-- stores, so it is bounded: never in the future, only for the caller's own
+-- row that is currently unwatched and was changed in the last 10 minutes. It
+-- never touches `in_watchlist` or `rating`.
+create or replace function public.restore_movie_watched(
+  p_movie_id integer,
+  p_watched_at timestamptz
+)
+returns void
+language plpgsql
+volatile
+security invoker
+set search_path = ''
+as $$
+begin
+  update public.user_movie_state
+  set watched_at = p_watched_at
+  where user_id = auth.uid()
+    and movie_id = p_movie_id
+    and watched_at is null
+    and p_watched_at <= now()
+    and updated_at > now() - interval '10 minutes';
+
+  if not found then
+    raise exception 'undo_expired' using errcode = 'P0002';
+  end if;
+end;
+$$;
+
+revoke all on function public.restore_movie_watchlist(integer) from public, anon, authenticated;
+revoke all on function public.restore_movie_watched(integer, timestamptz) from public, anon, authenticated;
+grant execute on function public.restore_movie_watchlist(integer) to authenticated;
+grant execute on function public.restore_movie_watched(integer, timestamptz) to authenticated;

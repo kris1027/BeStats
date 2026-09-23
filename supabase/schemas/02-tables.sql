@@ -22,12 +22,32 @@ create table public.user_movie_state (
   -- history entry, so no separate boolean can drift away from it.
   watched_at timestamptz,
   rating smallint,
+  -- When the movie was last planned, which is the watchlist page's order
+  -- (spec 0008). It is owned by `user_movie_state_set_watchlisted_at` in
+  -- `03-triggers.sql`, so no client can choose it. It means something only
+  -- while `in_watchlist` is true, and it is kept on unplan so Undo can put the
+  -- movie back in its old place.
+  watchlisted_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint user_movie_state_pkey primary key (user_id, movie_id),
   constraint user_movie_state_movie_id_check check (movie_id > 0),
-  constraint user_movie_state_rating_check check (rating between 1 and 10)
+  constraint user_movie_state_rating_check check (rating between 1 and 10),
+  -- A planned row always has a time to sort by.
+  constraint user_movie_state_watchlisted_at_check
+    check (not in_watchlist or watchlisted_at is not null)
 );
+
+-- The two private list pages (spec 0008), one per page. Each is partial, so
+-- it holds only the rows its page can show, and each ends in `movie_id`, the
+-- tiebreak, so the page order and the exact count come straight off the index.
+create index user_movie_state_watchlist_idx
+  on public.user_movie_state (user_id, watchlisted_at desc, movie_id)
+  where in_watchlist;
+
+create index user_movie_state_watched_idx
+  on public.user_movie_state (user_id, watched_at desc, movie_id)
+  where watched_at is not null;
 
 -- One row per person per TMDB show, holding exactly one status.
 create table public.user_show_state (
