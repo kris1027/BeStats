@@ -29,6 +29,10 @@ const publicEnvSchema = z.object({
     // every auth call, so reject a path outright rather than let it through.
     .refine(
       (value) => {
+        // Zod runs this even when the URL check above has already failed, and
+        // `new URL` would then throw a bare TypeError in place of the message
+        // naming the variable. The URL check reports that case on its own.
+        if (!URL.canParse(value)) return true;
         const path = new URL(value).pathname;
         return path === "" || path === "/";
       },
