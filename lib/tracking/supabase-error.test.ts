@@ -19,6 +19,13 @@ describe("classifyTrackingError", () => {
     },
   );
 
+  it("reports a refused Undo (P0002) as undo_expired (spec 0008, AC-6, AC-7)", () => {
+    expect(classifyTrackingError({ code: "P0002" })).toEqual({
+      error: "undo_expired",
+      outcome: "undo_expired",
+    });
+  });
+
   it("shows a policy refusal as a failed save but logs it as forbidden", () => {
     expect(classifyTrackingError({ code: "42501" })).toEqual({
       error: "write_failed",

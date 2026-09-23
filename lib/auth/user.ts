@@ -2,6 +2,7 @@ import "server-only";
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { cache } from "react";
 
 import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_SIGNED_IN_PATH, isSafeNextPath } from "./next-path";
@@ -34,9 +35,18 @@ export type SessionUser = {
  * Use this where signed out is a normal, renderable state: the navbar account
  * slot is the only such place today.
  *
+ * Memoized per request with React `cache()`, because the navbar renders two
+ * account slots and each private page calls `requireUser` too; without it
+ * every call builds its own client and verifies the claims again. `cache()`
+ * is scoped to one server render, so one user's session is never shared with
+ * another request, and outside a render (a Server Action) it simply calls
+ * through.
+ *
  * @returns The verified user, or null when there is no valid session.
  */
-export async function getOptionalUser(): Promise<SessionUser | null> {
+export const getOptionalUser = cache(readOptionalUser);
+
+async function readOptionalUser(): Promise<SessionUser | null> {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getClaims();
 

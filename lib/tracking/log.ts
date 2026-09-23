@@ -15,6 +15,9 @@ export const TRACKING_EVENT = {
   watched: "movie_tracking.watched",
   rate: "movie_tracking.rate",
   read: "movie_tracking.read",
+  listRead: "movie_tracking.list_read",
+  restoreWatchlist: "movie_tracking.restore_watchlist",
+  restoreWatched: "movie_tracking.restore_watched",
 } as const;
 
 export type TrackingEvent =

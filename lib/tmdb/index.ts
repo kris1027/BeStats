@@ -23,6 +23,7 @@ export {
   discoverTvShows,
   getMovie,
   getMovieGenres,
+  getMovieSummaries,
   getMoviesByIds,
   getSeason,
   getShowEpisodes,

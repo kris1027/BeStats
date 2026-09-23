@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
- * covers: spec 0007, AC-3 to AC-6, AC-8, AC-9, AC-12 to AC-14, AC-18, AC-21
+ * covers: spec 0007, AC-3 to AC-6, AC-8, AC-9, AC-12 to AC-14, AC-18, AC-21;
+ * spec 0008, AC-4, AC-6, AC-7, AC-19
  *
  * The session, TMDB and the database are the boundaries, so those are the
  * three things replaced. The fake Supabase client records every call, so each
@@ -43,9 +44,13 @@ const createClient = vi.fn(async () => ({
 }));
 vi.mock("@/lib/supabase/server", () => ({ createClient }));
 
-const { setMovieRating, setMovieWatched, setMovieWatchlist } = await import(
-  "./actions"
-);
+const {
+  restoreMovieWatched,
+  restoreMovieWatchlist,
+  setMovieRating,
+  setMovieWatched,
+  setMovieWatchlist,
+} = await import("./actions");
 
 const USER = { id: "user-a", email: "a@example.test" };
 const writes = () => calls.filter((call) => call.method !== "eq");
@@ -292,5 +297,159 @@ describe("database errors", () => {
   it("does not log a successful write", async () => {
     await setMovieWatchlist(550, true);
     expect(warn).not.toHaveBeenCalled();
+  });
+});
+
+describe("restoreMovieWatchlist (spec 0008)", () => {
+  it("re-plans through restore_movie_watchlist with only the id, and skips TMDB (AC-6)", async () => {
+    expect(await restoreMovieWatchlist(550)).toEqual({ ok: true });
+    expect(writes()).toEqual([
+      { method: "rpc", args: ["restore_movie_watchlist", { p_movie_id: 550 }] },
+    ]);
+    expect(loadMovie).not.toHaveBeenCalled();
+    expect(refresh).toHaveBeenCalledOnce();
+  });
+
+  it("reports a refused restore as undo_expired, with no refresh and no ids logged (AC-6, AC-19)", async () => {
+    result = {
+      data: null,
+      error: { code: "P0002", message: "undo_expired 550 user-a" },
+    };
+    expect(await restoreMovieWatchlist(550)).toEqual({
+      ok: false,
+      error: "undo_expired",
+    });
+    expect(refresh).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledWith(
+      "movie_tracking.restore_watchlist refused undo_expired",
+    );
+  });
+
+  it.each([0, -1, 1.5, Number.NaN])(
+    "refuses the id %s before any call (AC-4)",
+    async (id) => {
+      expect(await restoreMovieWatchlist(id)).toEqual({
+        ok: false,
+        error: "invalid_input",
+      });
+      expect(calls).toEqual([]);
+      expect(getOptionalUser).not.toHaveBeenCalled();
+    },
+  );
+
+  it("asks for sign in with no session, and writes nothing (AC-4)", async () => {
+    getOptionalUser.mockResolvedValue(null);
+    expect(await restoreMovieWatchlist(550)).toEqual({
+      ok: false,
+      error: "session_expired",
+    });
+    expect(calls).toEqual([]);
+  });
+
+  it("reports an expired JWT as session_expired", async () => {
+    result = { data: null, error: { code: "PGRST303" } };
+    expect(await restoreMovieWatchlist(550)).toEqual({
+      ok: false,
+      error: "session_expired",
+    });
+  });
+
+  it("reports a thrown client as write_failed", async () => {
+    createClient.mockRejectedValueOnce(new Error("offline 550"));
+    expect(await restoreMovieWatchlist(550)).toEqual({
+      ok: false,
+      error: "write_failed",
+    });
+    expect(warn).toHaveBeenCalledWith(
+      "movie_tracking.restore_watchlist refused db_error",
+    );
+  });
+});
+
+describe("restoreMovieWatched (spec 0008)", () => {
+  const WATCHED_AT = "2026-09-23T12:16:58.070024+00:00";
+
+  it("restores the exact watched time through restore_movie_watched (AC-7)", async () => {
+    expect(await restoreMovieWatched(550, WATCHED_AT)).toEqual({ ok: true });
+    expect(writes()).toEqual([
+      {
+        method: "rpc",
+        args: [
+          "restore_movie_watched",
+          { p_movie_id: 550, p_watched_at: WATCHED_AT },
+        ],
+      },
+    ]);
+    expect(loadMovie).not.toHaveBeenCalled();
+    expect(refresh).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    ["an empty string", ""],
+    ["a date with no time", "2026-09-23"],
+    ["a time with no offset", "2026-09-23T12:16:58"],
+    ["free text", "yesterday"],
+  ])("refuses %s before any call (AC-7)", async (_, watchedAt) => {
+    expect(await restoreMovieWatched(550, watchedAt)).toEqual({
+      ok: false,
+      error: "invalid_input",
+    });
+    expect(calls).toEqual([]);
+    expect(warn).toHaveBeenCalledWith(
+      "movie_tracking.restore_watched refused invalid_input",
+    );
+  });
+
+  it("reports a refused restore as undo_expired (AC-7)", async () => {
+    result = { data: null, error: { code: "P0002" } };
+    expect(await restoreMovieWatched(550, WATCHED_AT)).toEqual({
+      ok: false,
+      error: "undo_expired",
+    });
+    expect(refresh).not.toHaveBeenCalled();
+  });
+  it.each([0, -1, 1.5])(
+    "refuses the id %s before any call, even with a valid time (AC-4)",
+    async (id) => {
+      expect(await restoreMovieWatched(id, WATCHED_AT)).toEqual({
+        ok: false,
+        error: "invalid_input",
+      });
+      expect(calls).toEqual([]);
+      expect(getOptionalUser).not.toHaveBeenCalled();
+    },
+  );
+
+  it("asks for sign in with no session, and writes nothing (AC-4, AC-7)", async () => {
+    getOptionalUser.mockResolvedValue(null);
+    expect(await restoreMovieWatched(550, WATCHED_AT)).toEqual({
+      ok: false,
+      error: "session_expired",
+    });
+    expect(calls).toEqual([]);
+  });
+
+  it("shows a policy refusal as a failed save, logged with no ids (AC-4, AC-19)", async () => {
+    result = {
+      data: null,
+      error: { code: "42501", message: `user-a 550 ${WATCHED_AT}` },
+    };
+    expect(await restoreMovieWatched(550, WATCHED_AT)).toEqual({
+      ok: false,
+      error: "write_failed",
+    });
+    expect(refresh).not.toHaveBeenCalled();
+    for (const [line] of warn.mock.calls) {
+      expect(String(line)).not.toMatch(/user-a|550|2026/);
+    }
+  });
+
+  it("reports a thrown client as write_failed, with no refresh", async () => {
+    createClient.mockRejectedValueOnce(new Error("offline"));
+    expect(await restoreMovieWatched(550, WATCHED_AT)).toEqual({
+      ok: false,
+      error: "write_failed",
+    });
+    expect(refresh).not.toHaveBeenCalled();
   });
 });

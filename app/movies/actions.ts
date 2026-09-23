@@ -12,6 +12,8 @@ import {
 } from "@/lib/tracking/log";
 import {
   ratingInputSchema,
+  restoreWatchedInputSchema,
+  restoreWatchlistInputSchema,
   watchedInputSchema,
   watchlistInputSchema,
 } from "@/lib/tracking/schemas";
@@ -21,8 +23,8 @@ import type { MovieTrackingResult } from "@/lib/tracking/types";
 import { loadMovie } from "./[id]/load-movie";
 
 /**
- * The three movie tracking mutations, as Server Actions (spec 0007, API
- * surface).
+ * The movie tracking mutations, as Server Actions: the three from spec 0007,
+ * plus the two Undo restores the list pages add (spec 0008, API surface).
  *
  * Each takes a target value, never a toggle, so the same call twice gives the
  * same row and queued rapid clicks settle on the last one (AC-15). Each runs
@@ -208,5 +210,52 @@ export async function setMovieRating(
       .update({ rating: null })
       .eq("user_id", userId)
       .eq("movie_id", input.movieId),
+  );
+}
+
+/**
+ * Undo for a removal on the watchlist page: plans the movie again at its old
+ * place (spec 0008, AC-6).
+ *
+ * Only the movie id travels from the client. The old position is the stored
+ * `watchlisted_at`, which the database kept on unplan, and whether the Undo is
+ * still allowed is decided by `restore_movie_watchlist` in the same statement.
+ * A refusal comes back as `undo_expired`. It never creates a row, so it needs
+ * no TMDB check.
+ */
+export async function restoreMovieWatchlist(
+  movieId: number,
+): Promise<MovieTrackingResult> {
+  const event = TRACKING_EVENT.restoreWatchlist;
+  const input = parse(restoreWatchlistInputSchema, { movieId }, event);
+  if (!input) return { ok: false, error: "invalid_input" };
+
+  return runTrackingWrite(event, input.movieId, false, (supabase) =>
+    supabase.rpc("restore_movie_watchlist", { p_movie_id: input.movieId }),
+  );
+}
+
+/**
+ * Undo for a removal on the watched page: marks the movie watched again at the
+ * date the page showed (spec 0008, AC-7).
+ *
+ * `watchedAt` is the one client supplied value the schema stores. It is the
+ * user's own private date, and `restore_movie_watched` accepts it only in the
+ * past, only for the caller's own unwatched row, and only within 10 minutes of
+ * the removal. The rating and the bookmark are never touched.
+ */
+export async function restoreMovieWatched(
+  movieId: number,
+  watchedAt: string,
+): Promise<MovieTrackingResult> {
+  const event = TRACKING_EVENT.restoreWatched;
+  const input = parse(restoreWatchedInputSchema, { movieId, watchedAt }, event);
+  if (!input) return { ok: false, error: "invalid_input" };
+
+  return runTrackingWrite(event, input.movieId, false, (supabase) =>
+    supabase.rpc("restore_movie_watched", {
+      p_movie_id: input.movieId,
+      p_watched_at: input.watchedAt,
+    }),
   );
 }

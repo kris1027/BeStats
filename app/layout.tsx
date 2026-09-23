@@ -56,11 +56,12 @@ export const metadata: Metadata = {
  * through (spec 0007). It is a client boundary that reads no request state, so
  * it costs no route its static shell.
  *
- * `AccountSlot` is the one exception, and the Suspense boundary is what
- * contains it (spec 0005, AC-14). It reads the session, which is request
- * scoped; without the boundary that would make every route dynamic and cost
- * `/shows` and `/movies` their prerendered static shells. Inside it, only the
- * account control waits. Nothing else in this tree may read a cookie, a header
+ * `AccountSlot` is the one exception, and a Suspense boundary around each of
+ * its two instances, one per navbar layout, is what contains it (spec 0005,
+ * AC-14; spec 0008). It reads the session, which is request scoped; without
+ * the boundary that would make every route dynamic and cost `/shows` and
+ * `/movies` their prerendered static shells. Inside each, only the account
+ * control waits. Nothing else in this tree may read a cookie, a header
  * or a Supabase client, and `app/layout.test.ts` fails if it does.
  */
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -70,21 +71,23 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${inter.variable} h-full scroll-pt-36 md:scroll-pt-24`}
     >
       <body className="flex min-h-full flex-col antialiased">
+        {/*
+         * Each fallback is the signed out button's footprint, so the bar does
+         * not resize when the real control arrives. A skeleton rather than a
+         * Sign in button, because painting Sign in and then swapping it for an
+         * avatar is exactly the wrong-state-first flash AC-13 rules out.
+         */}
         <Navbar
-          accountSlot={
+          mobileAccountSlot={
             <Suspense
-              fallback={
-                /*
-                 * The signed out button's footprint, so the bar does not
-                 * resize when the real control arrives. A skeleton rather
-                 * than a Sign in button, because painting Sign in and then
-                 * swapping it for an avatar is exactly the wrong-state-first
-                 * flash AC-13 rules out.
-                 */
-                <Skeleton shape="pill" className="h-11 w-24 md:h-9" />
-              }
+              fallback={<Skeleton shape="pill" className="h-11 w-24" />}
             >
-              <AccountSlot />
+              <AccountSlot variant="mobile" />
+            </Suspense>
+          }
+          desktopAccountSlot={
+            <Suspense fallback={<Skeleton shape="pill" className="h-9 w-24" />}>
+              <AccountSlot variant="desktop" />
             </Suspense>
           }
         />

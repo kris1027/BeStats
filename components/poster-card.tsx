@@ -42,7 +42,12 @@ function PosterCard({
   title: string;
   /** Absolute TMDB URL from `imageUrl` in `lib/tmdb/images.ts`, or null. */
   posterUrl: string | null;
-  href: string;
+  /**
+   * Where the card leads. Left out only for a title TMDB no longer has
+   * (spec 0008, AC-11): there is no page to open, so the caption is plain text
+   * and the card has no link at all.
+   */
+  href?: string;
   /** Top right slot, typically a `TmdbRatingBadge`. */
   badge?: React.ReactNode;
   /** Bottom row slot for the tracking controls features 8 and 12 add. */
@@ -126,15 +131,20 @@ function PosterCard({
       </div>
 
       <h3 className="text-sm leading-snug text-foreground">
-        <Link href={href} className="rounded-sm hover:underline">
-          {/*
-           * The link covers the poster as well as the caption, so the whole
-           * card is clickable while the accessible name stays the title and
-           * the tab stop count stays one. The controls above sit on top of it.
-           */}
-          <span className="absolute inset-0 z-10" aria-hidden="true" />
-          {title}
-        </Link>
+        {href ? (
+          <Link href={href} className="rounded-sm hover:underline">
+            {/*
+             * The link covers the poster as well as the caption, so the whole
+             * card is clickable while the accessible name stays the title and
+             * the tab stop count stays one. The controls above sit on top of
+             * it.
+             */}
+            <span className="absolute inset-0 z-10" aria-hidden="true" />
+            {title}
+          </Link>
+        ) : (
+          title
+        )}
       </h3>
     </article>
   );

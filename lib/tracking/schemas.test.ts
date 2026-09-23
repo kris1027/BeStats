@@ -4,6 +4,8 @@ import {
   movieIdSchema,
   ratingInputSchema,
   ratingSchema,
+  restoreWatchedInputSchema,
+  restoreWatchlistInputSchema,
   watchedInputSchema,
   watchlistInputSchema,
 } from "./schemas";
@@ -60,5 +62,62 @@ describe("action input schemas", () => {
       user_id: "user-b",
     });
     expect(parsed).toEqual({ movieId: 550, inWatchlist: true });
+  });
+});
+
+describe("restoreWatchedInputSchema (spec 0008, AC-7)", () => {
+  it.each([
+    "2026-09-23T12:16:58.070024+00:00",
+    "2026-09-23T12:16:58Z",
+    "2026-09-23T14:16:58.1+02:00",
+  ])("accepts the PostgREST style timestamp %s", (watchedAt) => {
+    expect(
+      restoreWatchedInputSchema.safeParse({ movieId: 550, watchedAt }).success,
+    ).toBe(true);
+  });
+});
+
+describe("restoreWatchedInputSchema refusals (spec 0008, AC-7)", () => {
+  it.each([
+    ["a date with no time", "2026-09-23"],
+    ["a time with no offset", "2026-09-23T12:16:58"],
+    ["free text", "yesterday"],
+    ["a number", 1758629818000],
+  ])("refuses %s", (_, watchedAt) => {
+    expect(
+      restoreWatchedInputSchema.safeParse({ movieId: 550, watchedAt }).success,
+    ).toBe(false);
+  });
+
+  it("refuses a bad movie id even with a valid time", () => {
+    expect(
+      restoreWatchedInputSchema.safeParse({
+        movieId: 0,
+        watchedAt: "2026-09-23T12:16:58Z",
+      }).success,
+    ).toBe(false);
+  });
+});
+
+describe("restoreWatchlistInputSchema (spec 0008, AC-6)", () => {
+  it("takes the movie id alone", () => {
+    expect(restoreWatchlistInputSchema.parse({ movieId: 550 })).toEqual({
+      movieId: 550,
+    });
+  });
+
+  it("drops any extra field the client sends, such as a planned time", () => {
+    expect(
+      restoreWatchlistInputSchema.parse({
+        movieId: 550,
+        watchlistedAt: "2001-01-01T00:00:00Z",
+      }),
+    ).toEqual({ movieId: 550 });
+  });
+
+  it.each([0, -1, 1.5, "550", null])("refuses the id %j", (movieId) => {
+    expect(restoreWatchlistInputSchema.safeParse({ movieId }).success).toBe(
+      false,
+    );
   });
 });

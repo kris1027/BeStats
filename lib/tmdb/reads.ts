@@ -313,6 +313,24 @@ export async function getMoviesByIds(
   return unwrap(await getMoviesByIdsCached(ids));
 }
 
+/**
+ * The same batch with no cache entry of its own, only the per title entries
+ * underneath (spec 0008, AC-11, AC-17).
+ *
+ * A private list page asks for a different id set every time its owner plans,
+ * removes or undoes a movie, so a batch level entry keyed on that set would be
+ * written once and never read again, and would put a trace of one person's
+ * list into the shared cache as its key. Reading each title through the cached
+ * `getMovie` gives the same reuse with neither. Up to `TMDB_CONCURRENCY_LIMIT`
+ * titles are read at a time, and the `missingIds` and systemic failure rules
+ * are `fetchMoviesByIds`'s own.
+ */
+export async function getMovieSummaries(
+  ids: readonly number[],
+): Promise<BatchResult<MovieSummary>> {
+  return fetchMoviesByIds(ids, getMovie);
+}
+
 async function getTvShowsByIdsCached(
   ids: readonly number[],
 ): Promise<TmdbResult<BatchResult<TvShowSummary>>> {

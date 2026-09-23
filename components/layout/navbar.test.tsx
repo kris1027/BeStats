@@ -35,12 +35,22 @@ function ACCOUNT_SLOT() {
  */
 describe("Navbar", () => {
   it("is a banner landmark", () => {
-    render(<Navbar accountSlot={<ACCOUNT_SLOT />} />);
+    render(
+      <Navbar
+        mobileAccountSlot={<ACCOUNT_SLOT />}
+        desktopAccountSlot={<ACCOUNT_SLOT />}
+      />,
+    );
     expect(screen.getByRole("banner")).toBeInTheDocument();
   });
 
   it("sends the brand to /shows, the default landing route", () => {
-    render(<Navbar accountSlot={<ACCOUNT_SLOT />} />);
+    render(
+      <Navbar
+        mobileAccountSlot={<ACCOUNT_SLOT />}
+        desktopAccountSlot={<ACCOUNT_SLOT />}
+      />,
+    );
 
     expect(screen.getByRole("link", { name: "BeStats" })).toHaveAttribute(
       "href",
@@ -49,7 +59,12 @@ describe("Navbar", () => {
   });
 
   it("renders one tab control, not one per layout", () => {
-    render(<Navbar accountSlot={<ACCOUNT_SLOT />} />);
+    render(
+      <Navbar
+        mobileAccountSlot={<ACCOUNT_SLOT />}
+        desktopAccountSlot={<ACCOUNT_SLOT />}
+      />,
+    );
 
     expect(
       screen.getAllByRole("navigation", { name: "Media type" }),
@@ -59,7 +74,12 @@ describe("Navbar", () => {
   });
 
   it("renders the account slot it is given, in both layouts", () => {
-    render(<Navbar accountSlot={<ACCOUNT_SLOT />} />);
+    render(
+      <Navbar
+        mobileAccountSlot={<ACCOUNT_SLOT />}
+        desktopAccountSlot={<ACCOUNT_SLOT />}
+      />,
+    );
 
     // Two copies on purpose: one per layout, each hidden by CSS at the other
     // breakpoint. jsdom cannot apply that, so both are in the document here.
@@ -67,7 +87,12 @@ describe("Navbar", () => {
   });
 
   it("offers sign in, pointing at the sign in route", () => {
-    render(<Navbar accountSlot={<ACCOUNT_SLOT />} />);
+    render(
+      <Navbar
+        mobileAccountSlot={<ACCOUNT_SLOT />}
+        desktopAccountSlot={<ACCOUNT_SLOT />}
+      />,
+    );
 
     for (const link of screen.getAllByRole("link", { name: "Sign in" })) {
       expect(link).toHaveAttribute("href", "/sign-in");
@@ -75,7 +100,12 @@ describe("Navbar", () => {
   });
 
   it("leaves out the search field rather than faking one", () => {
-    render(<Navbar accountSlot={<ACCOUNT_SLOT />} />);
+    render(
+      <Navbar
+        mobileAccountSlot={<ACCOUNT_SLOT />}
+        desktopAccountSlot={<ACCOUNT_SLOT />}
+      />,
+    );
 
     // Feature 11 owns search; a dead search box would be a false affordance.
     expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
@@ -83,7 +113,12 @@ describe("Navbar", () => {
   });
 
   it("sticks to the top and blurs what scrolls underneath it", () => {
-    render(<Navbar accountSlot={<ACCOUNT_SLOT />} />);
+    render(
+      <Navbar
+        mobileAccountSlot={<ACCOUNT_SLOT />}
+        desktopAccountSlot={<ACCOUNT_SLOT />}
+      />,
+    );
 
     expect(screen.getByRole("banner")).toHaveClass(
       "sticky",

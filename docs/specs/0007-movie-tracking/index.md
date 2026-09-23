@@ -1,7 +1,7 @@
 # 0007. Movie tracking: watchlist, watched and personal rating
 
 **Date**: 2026-09-23
-**Status**: In Progress
+**Status**: Accepted
 
 Scope feature: [8. Movie tracking](../../scope/scope.md) · GA tier
 

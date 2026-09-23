@@ -65,10 +65,13 @@ describe("the movie routes read no request scoped value directly (AC-13)", () =>
   });
 });
 
-describe("private tracking state never enters a cache scope (spec 0007, AC-19)", () => {
+describe("private tracking state never enters a cache scope (spec 0007, AC-19; spec 0008, AC-17)", () => {
   const files = [
     ...sourceFiles("components/tracking"),
     ...sourceFiles("lib/tracking"),
+    ...sourceFiles("app/watchlist"),
+    ...sourceFiles("app/watched"),
+    ...sourceFiles("components/library"),
     ACTIONS,
   ];
 
@@ -77,6 +80,18 @@ describe("private tracking state never enters a cache scope (spec 0007, AC-19)",
     expect(files).toContain(
       join("components/tracking/movie-tracking-slot.tsx"),
     );
+    expect(files).toContain(join("app/watchlist/page.tsx"));
+    expect(files).toContain(join("app/watched/page.tsx"));
+    expect(files).toContain(join("lib/tracking/movie-lists.ts"));
+    expect(files).toContain(join("components/library/library-section.tsx"));
+  });
+
+  it("keeps each list page's private read behind its Suspense boundary (spec 0008, AC-12)", () => {
+    for (const path of ["app/watchlist/page.tsx", "app/watched/page.tsx"]) {
+      expect(readFileSync(path, "utf8")).toMatch(
+        /<Suspense fallback=\{<LibrarySkeleton \/>\}>\s*<LibrarySection/,
+      );
+    }
   });
 
   it.each(files)("%s declares no use cache scope", (path) => {

@@ -23,13 +23,25 @@ import {
  * The search field the references draw is deliberately absent: it belongs to
  * feature 11 and a non working search box would be a false affordance.
  *
- * The account control is passed in rather than rendered here (spec 0005,
- * AC-14). It is the only part of the shell that reads the session, so it lives
- * behind its own Suspense boundary in `app/layout.tsx`; rendering it inside this
- * component would make the whole navbar request scoped and pull `/shows` and
- * `/movies` out of the prerendered static shell.
+ * The account controls are passed in rather than rendered here (spec 0005,
+ * AC-14). They are the only part of the shell that reads the session, so each
+ * lives behind its own Suspense boundary in `app/layout.tsx`; rendering them
+ * inside this component would make the whole navbar request scoped and pull
+ * `/shows` and `/movies` out of the prerendered static shell.
+ *
+ * There are two slots, one per layout, because signed in they hold different
+ * things (spec 0008, AC-14, AC-15): the desktop row carries the library links,
+ * the account button and Sign out, while the mobile bar carries the avatar and
+ * the menu button whose sheet holds the rest. Each is hidden by CSS at the
+ * other breakpoint.
  */
-function Navbar({ accountSlot }: { accountSlot: React.ReactNode }) {
+function Navbar({
+  mobileAccountSlot,
+  desktopAccountSlot,
+}: {
+  mobileAccountSlot: React.ReactNode;
+  desktopAccountSlot: React.ReactNode;
+}) {
   return (
     <header className="sticky top-0 z-30 w-full border-b border-border bg-background/70 backdrop-blur-glass">
       <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:gap-6 md:py-2.5">
@@ -41,7 +53,7 @@ function Navbar({ accountSlot }: { accountSlot: React.ReactNode }) {
             BeStats
           </Link>
 
-          <div className="md:hidden">{accountSlot}</div>
+          <div className="md:hidden">{mobileAccountSlot}</div>
         </div>
 
         {/*
@@ -62,7 +74,7 @@ function Navbar({ accountSlot }: { accountSlot: React.ReactNode }) {
         </Suspense>
 
         <div className="hidden md:flex md:flex-1 md:justify-end">
-          {accountSlot}
+          {desktopAccountSlot}
         </div>
       </div>
     </header>
