@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
 import { isPrivatePath } from "@/lib/auth/private-paths";
+import { parseMovieId } from "@/lib/catalog/ids";
 import { getPublicEnv, publicEnvProblems } from "@/lib/env";
 import { sessionCookieOptions } from "@/lib/supabase/cookie-options";
 
@@ -32,6 +33,13 @@ const PATHNAME_HEADER = "x-pathname";
  * `middleware.ts` is deprecated.
  */
 export async function proxy(request: NextRequest) {
+  // A malformed movie id is a real 404, decided here because the movie page
+  // streams its shell first and by then the status is already 200 (spec 0006,
+  // AC-8). First, so it needs no auth configuration and makes no Supabase or
+  // TMDB call.
+  const malformedMovie = malformedMovieResponse(request);
+  if (malformedMovie) return malformedMovie;
+
   // The catalog is public, so an install whose auth configuration is missing
   // or incomplete should still serve pages. Warn once instead of failing every
   // request. Any actual auth call still throws loudly from `getPublicEnv`.
@@ -129,6 +137,41 @@ export async function proxy(request: NextRequest) {
   }
 
   return response;
+}
+
+/** One segment under `/movies`; deeper paths already match no route. */
+const MOVIE_PATH = /^\/movies\/([^/]+)$/;
+
+/**
+ * A path that matches no route, so rendering it renders `app/not-found.tsx`.
+ * Rewritten to rather than redirected to, so the address bar keeps the URL
+ * the visitor asked for.
+ */
+const NOT_FOUND_PATH = "/_movie-not-found";
+
+/**
+ * The 404 for `/movies/{segment}` when the segment is not a canonical movie
+ * id, or null for every other request. Shares `parseMovieId` with the page, so
+ * the proxy and the route cannot disagree about what a movie URL looks like.
+ *
+ * The status is set explicitly rather than left to the rewrite, so the answer
+ * is a 404 even if the rendered page would otherwise report 200.
+ */
+function malformedMovieResponse(request: NextRequest): NextResponse | null {
+  const match = MOVIE_PATH.exec(request.nextUrl.pathname);
+  if (!match) return null;
+
+  let segment: string;
+  try {
+    segment = decodeURIComponent(match[1]);
+  } catch {
+    segment = match[1];
+  }
+  if (parseMovieId(segment) !== null) return null;
+
+  return NextResponse.rewrite(new URL(NOT_FOUND_PATH, request.url), {
+    status: 404,
+  });
 }
 
 /**
