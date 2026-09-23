@@ -83,7 +83,7 @@ function SignInForm({
        */}
       {state.outcome === AUTH_OUTCOME.emailNotConfirmed ? (
         <Link
-          href="/check-email"
+          href={checkEmailHref(state.values?.email, next)}
           className="rounded-sm text-sm text-text-link hover:text-foreground hover:underline"
         >
           Send the confirmation link again
@@ -114,6 +114,21 @@ function initialState(
   }
   if (initialNotice) return { status: "success", message: initialNotice };
   return IDLE_STATE;
+}
+
+/**
+ * The resend page, carrying what the person already gave us.
+ *
+ * Without the address they would retype it, and without `next` confirming would
+ * land them on `/shows` rather than the page they were sent to sign in from
+ * (AC-6, AC-10). `/check-email` validates both again before using them.
+ */
+function checkEmailHref(email: string | undefined, next: string | undefined) {
+  const params = new URLSearchParams();
+  if (email) params.set("email", email);
+  if (next) params.set("next", next);
+  const query = params.toString();
+  return query ? `/check-email?${query}` : "/check-email";
 }
 
 export { SignInForm };

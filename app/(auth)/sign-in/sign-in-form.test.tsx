@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -7,6 +7,7 @@ import {
   SIGN_IN_NOTICE,
   SIGN_IN_NOTICES,
 } from "@/lib/auth/messages";
+import { signInAction } from "../actions";
 import { SignInForm } from "./sign-in-form";
 
 // The action runs on the server and pulls a Supabase client with it. The form
@@ -70,5 +71,39 @@ describe("SignInForm's first render", () => {
     expect(screen.getByLabelText("Email")).toBeEnabled();
     expect(screen.getByLabelText("Password")).toBeEnabled();
     expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled();
+  });
+});
+
+/**
+ * covers: spec 0005, AC-6, AC-10
+ *
+ * The resend link used to be a bare `/check-email`. Someone sent to sign in
+ * from a private page with an unconfirmed address had to retype it, and after
+ * confirming landed on `/shows` instead of the page they started from.
+ */
+describe("SignInForm's resend link for an unconfirmed address", () => {
+  it("carries the typed email and the next path to /check-email", async () => {
+    vi.mocked(signInAction).mockResolvedValue({
+      status: "error",
+      message: AUTH_MESSAGES[AUTH_OUTCOME.emailNotConfirmed],
+      outcome: AUTH_OUTCOME.emailNotConfirmed,
+      values: { email: "someone+tag@example.com" },
+    });
+
+    render(<SignInForm next="/account?tab=a" />);
+    const form = screen
+      .getByRole("button", { name: "Sign in" })
+      .closest("form");
+    if (!form) throw new Error("the sign in button is outside a form");
+    fireEvent.submit(form);
+
+    const link = await screen.findByRole("link", {
+      name: /confirmation link/i,
+    });
+    const href = new URL(link.getAttribute("href") ?? "", "http://x");
+
+    expect(href.pathname).toBe("/check-email");
+    expect(href.searchParams.get("email")).toBe("someone+tag@example.com");
+    expect(href.searchParams.get("next")).toBe("/account?tab=a");
   });
 });
