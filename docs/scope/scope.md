@@ -19,7 +19,7 @@ _The stack, tooling and product rules (ratings, progress, statuses, security) li
 | 4 | TMDB integration module | Foundation | done |
 | 5 | Design system and UI foundation | Foundation | done |
 | 6 | Authentication | Slice 1 | done |
-| 7 | Movie page | Slice 1 | planned |
+| 7 | Movie page | Slice 1 | done |
 | 8 | Movie tracking | Slice 1 | planned |
 | 9 | Watchlist and movie history | Slice 1 | planned |
 | 10 | TV show page | Slice 2 | planned |
@@ -124,10 +124,21 @@ Email and password sign in, email verification, sign out, password recovery, and
 code in [lib/auth/](../../lib/auth/), [app/(auth)/](<../../app/(auth)/>), [app/account/](../../app/account/), [app/auth/callback/](../../app/auth/callback/), [components/auth/](../../components/auth/)
 spec [0005](../specs/0005-authentication/index.md)
 
-### 7. Movie page · needs a decision
+### 7. Movie page · done
 Public movie detail page with poster, overview, cast, genres and the TMDB community rating, clearly labeled as TMDB. Also the first landing view to reach a movie.
 **Done when:** a signed out visitor can open a movie, see cast and metadata, and missing images or fields render a sensible fallback without invented content.
-- [ ] Design it (spec): `/architect movie page`
+- [x] Design it (spec): `/architect movie page`
+- [x] Build it: `/develop movie page`
+  - [x] The thin thread end to end: a streamed `/movies/[id]` and page 1 of the popular grid linking to it, verified in the running app and as prerendered shells in the build — AC-1, AC-3, AC-11
+  - [x] The TMDB module strand: `adult`, the original language overview from translations, and the failure lifetime split, with fixtures and tests — AC-5, AC-9, AC-10
+  - [x] The detail page thickened: backdrop hero, meta line, genre chips, rating block, cast row, skeletons, every missing data fallback, mobile layout and metadata — AC-3 to AC-7, AC-12, AC-14
+  - [x] Not found, failure and pagination: the id parser, the proxy 404, the soft 404 via `loadMovie`, retry panels, and the previous and next links with the page checks — AC-2, AC-8 to AC-10, AC-12
+  - [x] Proof: component tests, the request scoped API guard, typecheck, lint, test and build — AC-11, AC-13, AC-14
+- [x] Verify it: `/check verify movie page`
+- [x] Test it: `/test movie page`
+- [x] Document it: `/document movie page`
+code in [app/movies/](../../app/movies/), [components/movie/](../../components/movie/), [lib/catalog/](../../lib/catalog/), [lib/format.ts](../../lib/format.ts), [lib/tmdb/](../../lib/tmdb/), [proxy.ts](../../proxy.ts)
+spec [0006](../specs/0006-movie-page/index.md)
 
 ### 8. Movie tracking · needs a decision · GA
 On the movie page, a signed in user can add to the watchlist, mark watched and rate from 1 to 10. Watched and rating stay separate.
