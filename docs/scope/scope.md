@@ -135,6 +135,7 @@ Public movie detail page with poster, overview, cast, genres and the TMDB commun
   - [x] Not found, failure and pagination: the id parser, the proxy 404, the soft 404 via `loadMovie`, retry panels, and the previous and next links with the page checks — AC-2, AC-8 to AC-10, AC-12
   - [x] Proof: component tests, the request scoped API guard, typecheck, lint, test and build — AC-11, AC-13, AC-14
 - [x] Verify it: `/check verify movie page`
+  - [x] Follow-up: the cold cache spot check (one TMDB request for body plus metadata) and the reproducible transient failure retry in [verify.md](../specs/0006-movie-page/verify.md), both verified 2026-09-23
 - [x] Test it: `/test movie page`
 - [x] Document it: `/document movie page`
 code in [app/movies/](../../app/movies/), [components/movie/](../../components/movie/), [lib/catalog/](../../lib/catalog/), [lib/format.ts](../../lib/format.ts), [lib/tmdb/](../../lib/tmdb/), [proxy.ts](../../proxy.ts)
