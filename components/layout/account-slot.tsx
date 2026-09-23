@@ -2,6 +2,7 @@ import { signOutAction } from "@/app/(auth)/actions";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { avatarLetter, displayName } from "@/lib/auth/identity";
 import { getOptionalUser } from "@/lib/auth/user";
+import { publicEnvProblems } from "@/lib/env";
 
 /**
  * The only piece of the shared layout that reads the session (spec 0005, AC-13,
@@ -20,9 +21,15 @@ import { getOptionalUser } from "@/lib/auth/user";
  *
  * `MobileMenuSheet` is a Client Component, so it cannot import this directly;
  * the layout passes the rendered output in as children instead.
+ *
+ * With no valid auth configuration it renders the signed out state instead of
+ * reading the session. This slot is on every page, and the catalog is public,
+ * so a fresh clone with no `.env.local` must still serve `/shows` and `/movies`
+ * rather than fail in the layout. The sign in page itself still fails loudly
+ * when submitted, through `getPublicEnv()`.
  */
 async function AccountSlot() {
-  const user = await getOptionalUser();
+  const user = publicEnvProblems() ? null : await getOptionalUser();
 
   if (!user) {
     return (
