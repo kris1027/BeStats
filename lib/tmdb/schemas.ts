@@ -32,6 +32,7 @@ export const genreListSchema = z.object({
  */
 export const castMemberSchema = z.object({
   id: z.number(),
+  credit_id: z.string().nullish(),
   name: z.string(),
   character: z.string().nullish(),
   profile_path: nullableString,

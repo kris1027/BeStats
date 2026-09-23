@@ -38,7 +38,7 @@ function CastRow({ cast }: { cast: CastMember[] }) {
       <ul className="flex w-max gap-3 md:gap-4">
         {cast.slice(0, CAST_LIMIT).map((member) => (
           <li
-            key={member.personId}
+            key={member.creditId}
             className="flex w-[120px] shrink-0 flex-col gap-2 md:w-[140px]"
           >
             <div className="relative aspect-2/3 w-full overflow-hidden rounded-lg">

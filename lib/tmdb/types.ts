@@ -14,6 +14,11 @@ export type Genre = {
 
 export type CastMember = {
   personId: number;
+  /**
+   * Unique per credit. `personId` is not: TMDB lists an actor once per role,
+   * so it is what a list of credits keys on.
+   */
+  creditId: string;
   name: string;
   character: string;
   profileUrl: string | null;

@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { CastRow } from "@/components/movie/cast-row";
 import type { CastMember } from "@/lib/tmdb";
@@ -8,6 +8,7 @@ import type { CastMember } from "@/lib/tmdb";
 function member(index: number, overrides: Partial<CastMember> = {}) {
   return {
     personId: index,
+    creditId: `credit-${index}`,
     name: `Actor ${index}`,
     character: `Role ${index}`,
     profileUrl: `https://image.tmdb.org/t/p/w185/p${index}.jpg`,
@@ -58,5 +59,22 @@ describe("CastRow", () => {
       screen.getByText("TMDB lists no cast for this movie."),
     ).toBeInTheDocument();
     expect(screen.queryByRole("region")).toBeNull();
+  });
+
+  it("keeps one card per role when an actor plays several", () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    render(
+      <CastRow
+        cast={[
+          member(1, { creditId: "a", character: "Mandrake" }),
+          member(1, { creditId: "b", character: "Muffley", order: 2 }),
+        ]}
+      />,
+    );
+
+    expect(screen.getAllByRole("listitem")).toHaveLength(2);
+    const messages = error.mock.calls.map((call) => call.join(" "));
+    expect(messages.filter((m) => m.includes("same key"))).toEqual([]);
+    error.mockRestore();
   });
 });

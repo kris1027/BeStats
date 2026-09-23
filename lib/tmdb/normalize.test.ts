@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveOverview } from "./normalize";
+import { normalizeCast, resolveOverview } from "./normalize";
 
 /**
  * covers: spec 0006, AC-4, AC-5
@@ -64,5 +64,34 @@ describe("resolveOverview", () => {
     ]);
 
     expect(result).toEqual({ overview: null, overviewLanguage: null });
+  });
+});
+
+/**
+ * covers: spec 0006, AC-6
+ *
+ * TMDB lists an actor once per role (Peter Sellers three times in Dr.
+ * Strangelove), so the cast row keys on the credit, never the person.
+ */
+describe("normalizeCast", () => {
+  const credit = { id: 7, name: "Peter Sellers", profile_path: null };
+
+  it("keeps a distinct credit id for each role the same person plays", () => {
+    const cast = normalizeCast([
+      { ...credit, credit_id: "a", character: "Mandrake", order: 0 },
+      { ...credit, credit_id: "b", character: "Muffley", order: 1 },
+    ]);
+
+    expect(cast.map((member) => member.creditId)).toEqual(["a", "b"]);
+    expect(cast.map((member) => member.personId)).toEqual([7, 7]);
+  });
+
+  it("still gives each role its own id when TMDB sends none", () => {
+    const cast = normalizeCast([
+      { ...credit, order: 0 },
+      { ...credit, order: 1 },
+    ]);
+
+    expect(new Set(cast.map((member) => member.creditId)).size).toBe(2);
   });
 });

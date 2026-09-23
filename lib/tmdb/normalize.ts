@@ -87,11 +87,13 @@ export function normalizeCast(
   items: unknown[] | null | undefined,
 ): CastMember[] {
   const cast: CastMember[] = [];
-  for (const item of items ?? []) {
+  for (const [index, item] of (items ?? []).entries()) {
     const parsed = castMemberSchema.safeParse(item);
     if (!parsed.success) continue;
     cast.push({
       personId: parsed.data.id,
+      // TMDB always sends one today; the position keeps the key unique if not.
+      creditId: parsed.data.credit_id ?? `${parsed.data.id}-${index}`,
       name: parsed.data.name,
       character: parsed.data.character ?? "",
       profileUrl: imageUrl(parsed.data.profile_path, PROFILE_SIZE),

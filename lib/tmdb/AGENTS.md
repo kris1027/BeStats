@@ -48,6 +48,9 @@ feature 4. Runtime steps live in that spec's `verify.md`.
   malformed cast member or translation is dropped; an episode is never dropped, because a
   missing episode would corrupt the progress counts features 14 to 16 derive.
   Only an episode's `id`, `seasonNumber` and `episodeNumber` are required.
+- **Key a cast list on `creditId`, never `personId`.** TMDB can list one actor
+  once per role, so `personId` repeats within a list; `creditId` is TMDB's
+  `credit_id`, unique per role.
 - **The token is read in `env.ts` and nowhere else.** It travels as a Bearer
   header, never in a URL, a log line or an error message.
 - **A detail read by id does not exclude adult titles.** Discover sends
