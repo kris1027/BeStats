@@ -288,7 +288,7 @@ Tracer Bullet: prove the whole pipe works with one thin real thread, then thicke
 - `.gitignore` ignores `.env*`, which also hides `.env.example`. Add a `!.env.example` exception before committing it, as section 11 requires.
 - Middleware lives in `proxy.ts` at the repo root and exports `proxy`. Next.js 16 renamed it; a `middleware.ts` would be ignored.
 - Supabase clients: `lib/supabase/client.ts` for the browser, `lib/supabase/server.ts` for Server Components, Server Actions and Route Handlers. The server client is async (`cookies()` is async in Next.js 16) and is created per request, never reused across requests.
-- Read public environment values through `getPublicEnv()` in `lib/env.ts`, never `process.env` directly. It validates with Zod, lazily, so a build with no Supabase project configured still succeeds.
+- Read public environment values through `getPublicEnv()` in `lib/env.ts`, never `process.env` directly. It validates with Zod, lazily, so a build with no Supabase project configured still succeeds. Code that runs on every page (the proxy, the navbar account slot) calls `publicEnvProblems()` first and falls back to signed out, so a missing or partial auth configuration never takes the public catalog down; everything that performs an auth call still fails loudly through `getPublicEnv()`.
 - shadcn/ui is configured in `components.json`: style `base-nova`, base color neutral, components land in `components/ui/`, icons from `lucide-react`, primitives from `@base-ui/react` (not Radix). `cn` is re-exported by `lib/utils.ts` from the `cn` package.
 - Tailwind v4 is CSS first: the theme lives in `app/globals.css`, across `@theme inline`, `@theme`, `:root` and the `@utility` blocks. There is no `tailwind.config.*` file. That file is the only place a colour value may be written; `design-tokens-boundary.test.ts` fails the suite if one appears elsewhere. See [components/AGENTS.md](components/AGENTS.md).
 - `pnpm-workspace.yaml` exists only to pin `allowBuilds`. This is a single package repo, not a monorepo.
@@ -306,3 +306,4 @@ Tracer Bullet: prove the whole pipe works with one thin real thread, then thicke
 - [docs/scope/scope.md](docs/scope/scope.md) (living feature list and status, owned by /scope; the stack and rules stay here in AGENTS.md)
 - [lib/tmdb/AGENTS.md](lib/tmdb/AGENTS.md): the server only TMDB module, its cache and error conventions, and how to run the live check
 - [components/AGENTS.md](components/AGENTS.md): the UI foundation, the plate rule, the token and glass utility vocabulary, and the server by default policy for the shell
+- [lib/auth/AGENTS.md](lib/auth/AGENTS.md): the session boundary (`requireUser`, `getOptionalUser`), the private path registry, and the rules every auth form and Server Action follows
