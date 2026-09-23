@@ -25,7 +25,8 @@ import { publicEnvProblems } from "@/lib/env";
  * anywhere else in that tree.
  *
  * Signed in, the two layouts differ (spec 0008, AC-14, AC-15). The desktop bar
- * shows the library links, the account button and Sign out in a row. The
+ * shows the library links, the account button and Sign out in a row; below
+ * `lg` the account button drops its visible name so the row fits at `md`. The
  * mobile bar keeps only the avatar letter and a menu button; the menu sheet
  * holds the library links, the account row and Sign out, as
  * `design/mobile-menu-open.svg` draws it. `MobileMenuSheet` is a Client
@@ -96,9 +97,20 @@ async function AccountSlot({ variant }: { variant: "desktop" | "mobile" }) {
       <LibraryNav variant="bar" />
 
       <div className="flex items-center gap-2">
-        <ButtonLink size="touch" href="/account" className="h-9 gap-2.5 pl-1">
+        {/*
+         * Between `md` and `lg` the row has no room for the name beside the
+         * library links and the tabs, so the button shrinks to its avatar and
+         * the name stays as its accessible label.
+         */}
+        <ButtonLink
+          size="touch"
+          href="/account"
+          className="h-9 gap-2.5 px-1 lg:pr-5"
+        >
           <Avatar letter={letter} className="size-7" />
-          <span className="max-w-[12ch] truncate">{name}</span>
+          <span className="sr-only max-w-[12ch] truncate lg:not-sr-only">
+            {name}
+          </span>
         </ButtonLink>
 
         <form action={signOutAction}>
