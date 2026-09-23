@@ -50,7 +50,7 @@ For live catalog requests, replace the TMDB token placeholder in `.env.local` wi
 pnpm dev:docker
 ```
 
-This runs the development server against the local Supabase stack, starting it first if it is not running. It exports the local URL and publishable key for this process only, and they take precedence over `.env.local`; everything else, such as the TMDB token, still comes from `.env.local`. Extra arguments go to `next dev`, for example `pnpm dev:docker --port 3001`.
+This runs the development server against the local Supabase stack, starting it first if it is not running. It exports the local URL, the publishable key and a site URL of `http://localhost:3000` for this process only, and they take precedence over `.env.local`; everything else, such as the TMDB token, still comes from `.env.local`. Extra arguments go to `next dev`. A port other than 3000 is refused, because the local auth redirect allow list in `supabase/config.toml` only covers that origin.
 
 Use plain `pnpm dev` when `.env.local` points at the project you want, such as a cloud project. A cloud project must have the migrations in [supabase/migrations/](supabase/migrations/) applied, otherwise every tracking read fails and the server logs `movie_tracking.read refused db_error`.
 
