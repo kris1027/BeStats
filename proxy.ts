@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
 import { isPrivatePath } from "@/lib/auth/private-paths";
-import { getPublicEnv } from "@/lib/env";
+import { getPublicEnv, publicEnvProblems } from "@/lib/env";
 import { sessionCookieOptions } from "@/lib/supabase/cookie-options";
 
 let warnedAboutMissingConfig = false;
@@ -32,17 +32,20 @@ const PATHNAME_HEADER = "x-pathname";
  * `middleware.ts` is deprecated.
  */
 export async function proxy(request: NextRequest) {
-  // The catalog is public, so an install with no Supabase project configured
-  // should still serve pages. Warn once instead of failing every request. Any
-  // actual auth call still throws loudly from `getPublicEnv`.
-  if (
-    !process.env.NEXT_PUBLIC_SUPABASE_URL &&
-    !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-  ) {
+  // The catalog is public, so an install whose auth configuration is missing
+  // or incomplete should still serve pages. Warn once instead of failing every
+  // request. Any actual auth call still throws loudly from `getPublicEnv`.
+  //
+  // This asks the same schema `getPublicEnv` validates, not a hand picked list
+  // of variables. A narrower check here let an environment with the Supabase
+  // keys but no `NEXT_PUBLIC_SITE_URL` through, and `getPublicEnv` below then
+  // failed every request, public ones included.
+  const envProblems = publicEnvProblems();
+  if (envProblems) {
     if (!warnedAboutMissingConfig) {
       warnedAboutMissingConfig = true;
       console.warn(
-        "[proxy] Supabase is not configured, so sessions are not being refreshed. Copy .env.example to .env.local to enable authentication.",
+        `[proxy] Authentication is not configured, so sessions are not being refreshed. ${envProblems}. Copy .env.example to .env.local to enable it.`,
       );
     }
     return NextResponse.next({ request: withPathname(request) });

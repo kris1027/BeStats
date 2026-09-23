@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { NextRequest } from "next/server";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 /**
  * covers: spec 0005, AC-10, AC-17
@@ -44,5 +45,47 @@ describe("the proxy guard (AC-10, AC-17)", () => {
     // 14 and 15 register in.
     expect(PROXY).toContain('from "@/lib/auth/private-paths"');
     expect(PROXY).not.toMatch(/"\/watchlist"|"\/upcoming"|"\/watched"/);
+  });
+});
+
+/**
+ * covers: public catalog without auth configuration
+ *
+ * Run for real rather than read as source, because the bug was a mismatch
+ * between two checks, not the shape of either. With the Supabase keys set and
+ * the site URL missing, the proxy used to pass its own "not configured" check
+ * and then throw from `getPublicEnv()` on every request, `/shows` included.
+ */
+describe("the proxy with incomplete auth configuration", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+  });
+
+  it.each([
+    ["nothing configured", {}],
+    [
+      "the Supabase keys but no site URL",
+      {
+        NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321",
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_test",
+      },
+    ],
+  ])("still serves the public catalog with %s", async (_, env) => {
+    const values: Record<string, string> = env;
+    for (const name of [
+      "NEXT_PUBLIC_SUPABASE_URL",
+      "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+      "NEXT_PUBLIC_SITE_URL",
+    ]) {
+      vi.stubEnv(name, values[name]);
+    }
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const { proxy } = await import("./proxy");
+    const response = await proxy(new NextRequest("http://localhost/shows"));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("location")).toBeNull();
   });
 });

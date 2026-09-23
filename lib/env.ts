@@ -74,22 +74,50 @@ export type PublicEnv = z.infer<typeof publicEnvSchema>;
  * offending variable and never includes its value, so it is safe in a log.
  */
 export function getPublicEnv(): PublicEnv {
-  const parsed = publicEnvSchema.safeParse({
+  const parsed = parsePublicEnv();
+
+  if (!parsed.success) {
+    throw new Error(
+      `Invalid public environment configuration. ${describeProblems(parsed.error)}. Copy .env.example to .env.local and fill it in.`,
+    );
+  }
+
+  return parsed.data;
+}
+
+/**
+ * Says what is wrong with the public environment, without throwing.
+ *
+ * The catalog is public, so a missing or partial auth configuration must never
+ * take `/shows` or `/movies` down with it. The proxy and the navbar account
+ * slot run on every page, and they call this first so they can fall back to a
+ * signed out experience instead of failing the request. Everything that
+ * actually performs an auth call still goes through `getPublicEnv()` and fails
+ * loudly (spec 0005).
+ *
+ * It judges the same schema `getPublicEnv()` does, so the two can never
+ * disagree: a variable added to the schema is automatically part of this check.
+ *
+ * @returns Null when the configuration is valid, otherwise a message naming
+ * each offending variable and never its value, so it is safe in a log.
+ */
+export function publicEnvProblems(): string | null {
+  const parsed = parsePublicEnv();
+  return parsed.success ? null : describeProblems(parsed.error);
+}
+
+function parsePublicEnv() {
+  return publicEnvSchema.safeParse({
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
   });
+}
 
-  if (!parsed.success) {
-    // Report which variables are wrong, never their values.
-    const problems = parsed.error.issues
-      .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
-      .join("; ");
-    throw new Error(
-      `Invalid public environment configuration. ${problems}. Copy .env.example to .env.local and fill it in.`,
-    );
-  }
-
-  return parsed.data;
+/** Names which variables are wrong, never their values. */
+function describeProblems(error: z.ZodError): string {
+  return error.issues
+    .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+    .join("; ");
 }
