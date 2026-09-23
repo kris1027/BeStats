@@ -4,16 +4,16 @@ import { redirect } from "next/navigation";
 
 import {
   type AuthActionState,
-  type AuthField,
   failure,
   fromZodError,
+  keepEmail,
+  passwordFieldFor,
   success,
 } from "@/lib/auth/action-state";
 import { isRecoverySession } from "@/lib/auth/identity";
 import { AUTH_EVENT, logAuthEvent } from "@/lib/auth/log";
 import {
   AUTH_OUTCOME,
-  type AuthOutcome,
   RESEND_REQUESTED_MESSAGE,
   RESET_REQUESTED_MESSAGE,
   SIGN_IN_NOTICE,
@@ -75,20 +75,6 @@ function callbackUrl(params: Record<string, string>): string {
  */
 const SIGN_UP_PAD_MS = 1200;
 
-/**
- * Whether a password rule failure should be attached to the password input.
- *
- * Only the two rule failures belong to the field. A rate limit or an outage
- * does not, and marking the input for those would tell the person their
- * password is wrong when it is not.
- */
-function passwordFieldFor(outcome: AuthOutcome): AuthField[] {
-  return outcome === AUTH_OUTCOME.passwordTooShort ||
-    outcome === AUTH_OUTCOME.passwordBreached
-    ? ["password"]
-    : [];
-}
-
 async function padTo(startedAt: number, floorMs: number): Promise<void> {
   const remaining = floorMs - (Date.now() - startedAt);
   if (remaining > 0) {
@@ -118,7 +104,7 @@ export async function signUpAction(
 
   if (!parsed.success) {
     logAuthEvent(AUTH_EVENT.signUp, "refused", AUTH_OUTCOME.invalidInput);
-    return fromZodError(parsed.error);
+    return keepEmail(fromZodError(parsed.error), formData);
   }
 
   const { email, password, next } = parsed.data;
@@ -147,7 +133,7 @@ export async function signUpAction(
   if (error && !addressAlreadyRegistered) {
     const outcome = classifyAuthError(error);
     logAuthEvent(AUTH_EVENT.signUp, "refused", outcome);
-    return failure(outcome, passwordFieldFor(outcome));
+    return keepEmail(failure(outcome, passwordFieldFor(outcome)), formData);
   }
 
   // Both branches, never one. See SIGN_UP_PAD_MS: padding only the refusal
@@ -177,7 +163,7 @@ export async function resendConfirmationAction(
       "refused",
       AUTH_OUTCOME.invalidInput,
     );
-    return fromZodError(parsed.error);
+    return keepEmail(fromZodError(parsed.error), formData);
   }
 
   const nextPath = safeNextPath(formData.get("next")?.toString());
@@ -194,10 +180,11 @@ export async function resendConfirmationAction(
   if (error) {
     const outcome = classifyAuthError(error);
     logAuthEvent(AUTH_EVENT.resendConfirmation, "refused", outcome);
-    if (outcome === AUTH_OUTCOME.rateLimited) return failure(outcome);
+    if (outcome === AUTH_OUTCOME.rateLimited)
+      return keepEmail(failure(outcome), formData);
   }
 
-  return success(RESEND_REQUESTED_MESSAGE);
+  return keepEmail(success(RESEND_REQUESTED_MESSAGE), formData);
 }
 
 /**
@@ -219,7 +206,7 @@ export async function signInAction(
 
   if (!parsed.success) {
     logAuthEvent(AUTH_EVENT.signIn, "refused", AUTH_OUTCOME.invalidInput);
-    return fromZodError(parsed.error);
+    return keepEmail(fromZodError(parsed.error), formData);
   }
 
   const { email, password, next } = parsed.data;
@@ -233,7 +220,7 @@ export async function signInAction(
     // The unconfirmed case is the one exception to the neutral rule, and it is
     // safe: reaching it required the correct password, so the person asking
     // already knows the account exists.
-    return failure(outcome);
+    return keepEmail(failure(outcome), formData);
   }
 
   redirect(safeNextPath(next));
@@ -279,7 +266,7 @@ export async function requestPasswordResetAction(
       "refused",
       AUTH_OUTCOME.invalidInput,
     );
-    return fromZodError(parsed.error);
+    return keepEmail(fromZodError(parsed.error), formData);
   }
 
   const supabase = await createClient();
@@ -291,10 +278,11 @@ export async function requestPasswordResetAction(
   if (error) {
     const outcome = classifyAuthError(error);
     logAuthEvent(AUTH_EVENT.requestPasswordReset, "refused", outcome);
-    if (outcome === AUTH_OUTCOME.rateLimited) return failure(outcome);
+    if (outcome === AUTH_OUTCOME.rateLimited)
+      return keepEmail(failure(outcome), formData);
   }
 
-  return success(RESET_REQUESTED_MESSAGE);
+  return keepEmail(success(RESET_REQUESTED_MESSAGE), formData);
 }
 
 /**

@@ -1,5 +1,6 @@
 import {
   AuthApiError,
+  AuthPKCECodeVerifierMissingError,
   AuthSessionMissingError,
   AuthWeakPasswordError,
 } from "@supabase/supabase-js";
@@ -24,6 +25,23 @@ describe("classifyAuthError", () => {
       ),
     ).toBe(AUTH_OUTCOME.sessionExpired);
   });
+
+  it("treats a link opened in another browser as an invalid link", () => {
+    // The SDK throws this before any request when the verifier cookie is
+    // missing, which is what opening the email on a second device does.
+    expect(classifyAuthError(new AuthPKCECodeVerifierMissingError())).toBe(
+      AUTH_OUTCOME.invalidLink,
+    );
+  });
+
+  it.each(["flow_state_not_found", "flow_state_expired", "bad_code_verifier"])(
+    "treats the %s exchange refusal as an invalid link",
+    (code) => {
+      expect(classifyAuthError(new AuthApiError("refused", 400, code))).toBe(
+        AUTH_OUTCOME.invalidLink,
+      );
+    },
+  );
 
   it("keeps an unknown error unexpected", () => {
     expect(

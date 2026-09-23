@@ -37,7 +37,7 @@ function ResendForm({ email, next }: { email?: string; next?: string }) {
         type="email"
         autoComplete="email"
         placeholder="you@example.com"
-        defaultValue={email}
+        defaultValue={state.values?.email ?? email}
         error={state.fieldErrors?.email}
       />
 

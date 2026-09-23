@@ -41,6 +41,7 @@ function SignUpForm({ next }: { next?: string }) {
         type="email"
         autoComplete="email"
         placeholder="you@example.com"
+        defaultValue={state.values?.email}
         error={state.fieldErrors?.email}
       />
 

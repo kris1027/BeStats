@@ -4,6 +4,7 @@ import {
   type AuthActionState,
   failure,
   fromZodError,
+  passwordFieldFor,
   success,
 } from "@/lib/auth/action-state";
 import { AUTH_EVENT, logAuthEvent } from "@/lib/auth/log";
@@ -77,11 +78,12 @@ export async function changePasswordAction(
   if (currentPasswordError) {
     const outcome = classifyAuthError(currentPasswordError);
     logAuthEvent(AUTH_EVENT.changePassword, "refused", outcome);
-    // A rate limit here is about the limit, not the password, so it keeps its
-    // own message and does not mark the field.
-    return outcome === AUTH_OUTCOME.rateLimited
-      ? failure(outcome)
-      : failure(AUTH_OUTCOME.wrongCurrentPassword, ["currentPassword"]);
+    // Only a credentials refusal means the password was wrong. A rate limit or
+    // an outage keeps its own message and does not mark the field, so the
+    // person is never told a correct password is wrong.
+    return outcome === AUTH_OUTCOME.invalidCredentials
+      ? failure(AUTH_OUTCOME.wrongCurrentPassword, ["currentPassword"])
+      : failure(outcome);
   }
 
   const { error } = await supabase.auth.updateUser({
@@ -91,7 +93,7 @@ export async function changePasswordAction(
   if (error) {
     const outcome = classifyAuthError(error);
     logAuthEvent(AUTH_EVENT.changePassword, "refused", outcome);
-    return failure(outcome, ["password"]);
+    return failure(outcome, passwordFieldFor(outcome));
   }
 
   return success("Your password has been changed.");

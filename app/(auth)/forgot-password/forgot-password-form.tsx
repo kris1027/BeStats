@@ -14,7 +14,8 @@ import { requestPasswordResetAction } from "../actions";
  *
  * Shows the same confirmation whether or not the address has an account, which
  * is the only way the form is not an address lookup tool. The field is left
- * filled after submitting so a typo is visible and correctable.
+ * filled after submitting so a typo is visible and correctable: the action
+ * hands the email back, because React 19 resets the input once it returns.
  */
 function ForgotPasswordForm() {
   const [state, formAction] = useActionState<AuthActionState, FormData>(
@@ -32,6 +33,7 @@ function ForgotPasswordForm() {
         type="email"
         autoComplete="email"
         placeholder="you@example.com"
+        defaultValue={state.values?.email}
         error={state.fieldErrors?.email}
       />
 

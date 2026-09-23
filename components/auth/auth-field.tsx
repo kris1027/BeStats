@@ -1,6 +1,7 @@
 "use client";
 
 import { EyeIcon, EyeOffIcon } from "lucide-react";
+import type * as React from "react";
 import { useId, useState } from "react";
 
 import { Input } from "@/components/ui/input";
@@ -40,6 +41,26 @@ function AuthField({
   const [revealed, setRevealed] = useState(false);
 
   const isPassword = type === "password";
+
+  // Everything but a password is controlled here. React 19 resets a form's
+  // uncontrolled inputs once its action returns, and Base UI warns when an
+  // uncontrolled default changes after mount, so holding the value is what
+  // keeps a typed address on screen after a refusal. A new default handed back
+  // by the action (`AuthActionState.values`) replaces it. A password stays
+  // uncontrolled, so the reset still clears it.
+  const [value, setValue] = useState(defaultValue ?? "");
+  const [seenDefault, setSeenDefault] = useState(defaultValue);
+  if (defaultValue !== seenDefault) {
+    setSeenDefault(defaultValue);
+    setValue(defaultValue ?? "");
+  }
+  const valueProps = isPassword
+    ? {}
+    : {
+        value,
+        onChange: (event: React.ChangeEvent<HTMLInputElement>) =>
+          setValue(event.target.value),
+      };
   // The reveal swaps the input's type. It never renders the value anywhere
   // else, so nothing is copied into the DOM that was not already there.
   const resolvedType = isPassword && revealed ? "text" : type;
@@ -61,7 +82,7 @@ function AuthField({
           autoComplete={autoComplete}
           placeholder={placeholder}
           required={required}
-          defaultValue={defaultValue}
+          {...valueProps}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? errorId : undefined}
           className={isPassword ? "pr-14" : undefined}

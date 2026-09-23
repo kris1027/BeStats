@@ -27,6 +27,13 @@ export type AuthActionState = {
    * on an expired session) without string matching the message.
    */
   outcome?: AuthOutcome;
+  /**
+   * What was typed into the email field, handed back so the form can use it as
+   * `defaultValue`. React 19 resets a form's uncontrolled inputs once its
+   * action finishes, so without this every refusal empties the field. Only the
+   * email is ever carried; a password must never travel back to the page.
+   */
+  values?: { email?: string };
 };
 
 /** The state a form starts in, before anything has been submitted. */
@@ -61,6 +68,21 @@ export function failure(
 }
 
 /**
+ * Whether a password rule failure should be attached to the password input.
+ *
+ * Only the two rule failures belong to the field. A rate limit or an outage
+ * does not, and marking the input for those would tell the person their
+ * password is wrong when it is not. Shared by every action that sets a
+ * password, so the rule cannot drift between them.
+ */
+export function passwordFieldFor(outcome: AuthOutcome): AuthField[] {
+  return outcome === AUTH_OUTCOME.passwordTooShort ||
+    outcome === AUTH_OUTCOME.passwordBreached
+    ? ["password"]
+    : [];
+}
+
+/**
  * A success state with copy the caller chooses.
  *
  * Success copy is the one place a caller writes its own string, because the
@@ -69,6 +91,21 @@ export function failure(
  */
 export function success(message: string): AuthActionState {
   return { status: "success", message };
+}
+
+/**
+ * Carries the submitted email on a state, so the form keeps it after React
+ * resets the inputs (see `AuthActionState.values`).
+ *
+ * The raw submission is kept, not the parsed value, so an address that failed
+ * validation stays on screen for the person to correct.
+ */
+export function keepEmail(
+  state: AuthActionState,
+  formData: FormData,
+): AuthActionState {
+  const email = formData.get("email");
+  return typeof email === "string" ? { ...state, values: { email } } : state;
 }
 
 /**

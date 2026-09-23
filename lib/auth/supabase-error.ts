@@ -45,6 +45,14 @@ export function classifyAuthError(error: AuthError): AuthOutcome {
       return AUTH_OUTCOME.emailNotConfirmed;
     case "otp_expired":
     case "validation_failed":
+    // The `code` exchange only works in the browser that started the flow, so
+    // opening the email on another device lands here. That is a link problem,
+    // not an outage, and a sign up link has usually confirmed the address
+    // already by the time the exchange fails.
+    case "pkce_code_verifier_not_found":
+    case "flow_state_not_found":
+    case "flow_state_expired":
+    case "bad_code_verifier":
       return AUTH_OUTCOME.invalidLink;
     case "session_not_found":
     case "session_expired":

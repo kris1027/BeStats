@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { signOutAction } from "@/app/(auth)/actions";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { hasPasswordIdentity } from "@/lib/auth/identity";
 import { requireUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
@@ -46,13 +46,19 @@ export default async function AccountPage() {
   // The one network call on this page. `getClaims()` has already established
   // who this is, but the identities list is not in the JWT and AC-16 needs it.
   const supabase = await createClient();
-  const { data } = await supabase.auth.getUser();
+  const { data, error } = await supabase.auth.getUser();
+
+  // A failed lookup is not evidence of a provider only account. Hiding the
+  // form on that basis would quietly take the control away from an email
+  // user, so the failure gets its own state with a way to try again.
+  const identitiesUnavailable = Boolean(error) || !data.user;
 
   // A provider only account (Google, from feature 20) carries no `email`
   // identity and therefore has no password to change. That account cannot exist
   // yet, so this branch is covered by a unit test over the condition rather than
   // a browser step (AC-16).
-  const canChangePassword = hasPasswordIdentity(data.user?.identities);
+  const canChangePassword =
+    !identitiesUnavailable && hasPasswordIdentity(data.user?.identities);
 
   return (
     <div className="mx-auto flex w-full max-w-[480px] flex-col gap-6 py-4 md:py-8">
@@ -86,6 +92,20 @@ export default async function AccountPage() {
           </header>
 
           <ChangePasswordForm />
+        </section>
+      ) : null}
+
+      {identitiesUnavailable ? (
+        <section className="glass glass-rim glass-plate-panel glass-shadow flex flex-col gap-4 rounded-panel px-5 py-8 md:px-10 md:py-10">
+          <p
+            role="alert"
+            className="text-sm text-muted-foreground md:text-base"
+          >
+            We could not load your password settings. Please try again.
+          </p>
+          <ButtonLink size="touch" href="/account" className="self-start">
+            Try again
+          </ButtonLink>
         </section>
       ) : null}
     </div>
