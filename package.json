@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:docker": "./scripts/dev-docker.sh",
     "build": "next build",
     "start": "next start",
     "lint": "biome check",

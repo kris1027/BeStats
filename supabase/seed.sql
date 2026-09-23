@@ -7,12 +7,20 @@
 -- This file runs on `supabase db reset` against the local stack only. It is
 -- never applied to a deployed project.
 
--- User A: 11111111-1111-1111-1111-111111111111
--- User B: 22222222-2222-2222-2222-222222222222
+-- User A: 11111111-1111-1111-1111-111111111111, password `password-a`
+-- User B: 22222222-2222-2222-2222-222222222222, password `password-b`
+--
+-- Both can sign in to the app (`pnpm dev:docker`). That needs the eight token
+-- columns written as empty strings: GoTrue scans them into plain strings and
+-- fails every sign in with "converting NULL to string is unsupported" when
+-- they are left NULL, which is what an insert that omits them produces.
 insert into auth.users (
   instance_id, id, aud, role, email,
   encrypted_password, email_confirmed_at,
   raw_app_meta_data, raw_user_meta_data,
+  confirmation_token, recovery_token,
+  email_change, email_change_token_new, email_change_token_current,
+  phone_change, phone_change_token, reauthentication_token,
   created_at, updated_at
 )
 values
@@ -22,6 +30,7 @@ values
     'authenticated', 'authenticated', 'user-a@example.test',
     crypt('password-a', gen_salt('bf')), now(),
     '{"provider":"email","providers":["email"]}', '{}',
+    '', '', '', '', '', '', '', '',
     now(), now()
   ),
   (
@@ -30,6 +39,7 @@ values
     'authenticated', 'authenticated', 'user-b@example.test',
     crypt('password-b', gen_salt('bf')), now(),
     '{"provider":"email","providers":["email"]}', '{}',
+    '', '', '', '', '', '', '', '',
     now(), now()
   );
 

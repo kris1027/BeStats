@@ -281,7 +281,7 @@ Tracer Bullet: prove the whole pipe works with one thin real thread, then thicke
 ## Commands and repo facts
 
 - Imports use the `@/*` alias, which maps to the repo root (set in `tsconfig.json`). Prefer it over long relative paths.
-- Scripts: `pnpm dev`, `pnpm build`, `pnpm start`, `pnpm typecheck`, `pnpm lint`, `pnpm lint:ci`, `pnpm format`, `pnpm test`, `pnpm test:db`, `pnpm tmdb:live`, `pnpm db:types`, `pnpm db:types:check`.
+- Scripts: `pnpm dev`, `pnpm dev:docker` (the dev server against the local Supabase stack, see `scripts/dev-docker.sh`), `pnpm build`, `pnpm start`, `pnpm typecheck`, `pnpm lint`, `pnpm lint:ci`, `pnpm format`, `pnpm test`, `pnpm test:db`, `pnpm tmdb:live`, `pnpm db:types`, `pnpm db:types:check`.
 - Supabase, Zod, shadcn/ui and `server-only` are installed. `zod` validates every external input; `server-only` is what makes a Client Component import of a server module a build failure.
 - Routes live in `app/` at the repo root (there is no `src/` directory). `design/`, `supabase/` and `components/` exist; `prompts/` does not, create it when needed.
 - `/` is a temporary (307) redirect to `/shows`, declared in `redirects()` in `next.config.ts` rather than a Server Component, so nothing renders and no browser caches it permanently. There is no `app/page.tsx`.
