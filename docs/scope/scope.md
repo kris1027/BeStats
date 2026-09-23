@@ -18,7 +18,7 @@ _The stack, tooling and product rules (ratings, progress, statuses, security) li
 | 3 | Data model and security policies | Foundation | done |
 | 4 | TMDB integration module | Foundation | done |
 | 5 | Design system and UI foundation | Foundation | done |
-| 6 | Authentication | Slice 1 | in-progress |
+| 6 | Authentication | Slice 1 | done |
 | 7 | Movie page | Slice 1 | planned |
 | 8 | Movie tracking | Slice 1 | planned |
 | 9 | Watchlist and movie history | Slice 1 | planned |
@@ -103,7 +103,7 @@ spec [0004](../specs/0004-design-system-and-ui-foundation/index.md)
 
 The thin real thread: browse a movie, sign in, track it, see it in your list. Every layer is real, breadth is deferred.
 
-### 6. Authentication · in-progress · GA
+### 6. Authentication · done · GA
 Email and password sign in, email verification, sign out, password recovery, and session handling that private routes can trust. Google sign in moved to feature 20 with the rest of the provider setup, because it cannot be verified without a Google OAuth client.
 **Done when:** a visitor can sign up, verify their address, sign in, sign out and recover a password; private routes reject signed out visitors at both the redirect and the server; a new password can be set without the current one only from a recovery link; and the forms never reveal whether an address has an account.
 - [x] Design it (spec): `/architect authentication`
