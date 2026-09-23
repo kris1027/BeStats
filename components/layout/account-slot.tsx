@@ -1,4 +1,8 @@
+import { cn } from "cn";
+
 import { signOutAction } from "@/app/(auth)/actions";
+import { LibraryNav } from "@/components/layout/library-nav";
+import { MobileMenuSheet } from "@/components/layout/mobile-menu-sheet";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { avatarLetter, displayName } from "@/lib/auth/identity";
 import { getOptionalUser } from "@/lib/auth/user";
@@ -14,21 +18,29 @@ import { publicEnvProblems } from "@/lib/env";
  * Component even though everything it renders is small.
  *
  * It is also the *only* code in the layout tree allowed to read a request
- * scoped value. `app/layout.tsx` wraps it in a Suspense boundary so the rest of
- * the shell, and therefore `/shows` and `/movies`, stays in the prerendered
- * static shell under `cacheComponents`. `app/layout.test.ts` fails if a cookie,
- * header or Supabase client appears anywhere else in that tree.
+ * scoped value. `app/layout.tsx` wraps each of its two instances in a Suspense
+ * boundary so the rest of the shell, and therefore `/shows` and `/movies`,
+ * stays in the prerendered static shell under `cacheComponents`.
+ * `app/layout.test.ts` fails if a cookie, header or Supabase client appears
+ * anywhere else in that tree.
  *
- * `MobileMenuSheet` is a Client Component, so it cannot import this directly;
- * the layout passes the rendered output in as children instead.
+ * Signed in, the two layouts differ (spec 0008, AC-14, AC-15). The desktop bar
+ * shows the library links, the account button and Sign out in a row. The
+ * mobile bar keeps only the avatar letter and a menu button; the menu sheet
+ * holds the library links, the account row and Sign out, as
+ * `design/mobile-menu-open.svg` draws it. `MobileMenuSheet` is a Client
+ * Component, so this Server Component passes the rendered pieces in as
+ * children.
  *
  * With no valid auth configuration it renders the signed out state instead of
  * reading the session. This slot is on every page, and the catalog is public,
  * so a fresh clone with no `.env.local` must still serve `/shows` and `/movies`
  * rather than fail in the layout. The sign in page itself still fails loudly
  * when submitted, through `getPublicEnv()`.
+ *
+ * @param variant Which navbar layout this instance fills.
  */
-async function AccountSlot() {
+async function AccountSlot({ variant }: { variant: "desktop" | "mobile" }) {
   const user = publicEnvProblems() ? null : await getOptionalUser();
 
   if (!user) {
@@ -39,36 +51,78 @@ async function AccountSlot() {
     );
   }
 
-  return (
-    <div className="flex items-center gap-2">
-      <ButtonLink
-        size="touch"
-        href="/account"
-        className="gap-2.5 pl-1.5 md:h-9 md:pl-1"
-      >
-        <span
-          className="glass-selected glass-rim flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-bold text-foreground md:size-7"
-          aria-hidden="true"
-        >
-          {avatarLetter(user.email)}
-        </span>
-        {/*
-         * The mobile artboard draws only the letter. With the name beside it a
-         * long address pushed Sign out past a 390px viewport, so below `md`
-         * the name is kept for screen readers only, which also keeps the link
-         * from being named by nothing but an aria-hidden letter.
-         */}
-        <span className="sr-only md:not-sr-only md:max-w-[12ch] md:truncate">
-          {displayName(user.email)}
-        </span>
-      </ButtonLink>
+  const name = displayName(user.email);
+  const letter = avatarLetter(user.email);
 
-      <form action={signOutAction}>
-        <Button type="submit" size="touch" className="md:h-9 md:px-4">
-          Sign out
-        </Button>
-      </form>
+  if (variant === "mobile") {
+    return (
+      <div className="flex items-center gap-2">
+        <ButtonLink
+          href="/account"
+          size="icon-touch"
+          variant="ghost"
+          className="p-0"
+        >
+          <Avatar letter={letter} className="size-9" />
+          <span className="sr-only">{name}</span>
+        </ButtonLink>
+
+        <MobileMenuSheet>
+          <LibraryNav variant="sheet" />
+
+          <div className="flex items-center gap-3">
+            <ButtonLink
+              size="touch"
+              href="/account"
+              className="min-w-0 flex-1 justify-start gap-3 pl-1.5"
+            >
+              <Avatar letter={letter} className="size-8" />
+              <span className="truncate">{name}</span>
+            </ButtonLink>
+
+            <form action={signOutAction}>
+              <Button type="submit" size="touch">
+                Sign out
+              </Button>
+            </form>
+          </div>
+        </MobileMenuSheet>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-1 items-center justify-between gap-4">
+      <LibraryNav variant="bar" />
+
+      <div className="flex items-center gap-2">
+        <ButtonLink size="touch" href="/account" className="h-9 gap-2.5 pl-1">
+          <Avatar letter={letter} className="size-7" />
+          <span className="max-w-[12ch] truncate">{name}</span>
+        </ButtonLink>
+
+        <form action={signOutAction}>
+          <Button type="submit" size="touch" className="h-9 px-4">
+            Sign out
+          </Button>
+        </form>
+      </div>
     </div>
+  );
+}
+
+/** The avatar letter on the brighter selected glass, from both artboards. */
+function Avatar({ letter, className }: { letter: string; className: string }) {
+  return (
+    <span
+      className={cn(
+        "glass-selected glass-rim flex shrink-0 items-center justify-center rounded-full text-sm font-bold text-foreground",
+        className,
+      )}
+      aria-hidden="true"
+    >
+      {letter}
+    </span>
   );
 }
 

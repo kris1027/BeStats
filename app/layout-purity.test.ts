@@ -27,6 +27,9 @@ const LAYOUT_TREE = [
   "components/layout/navbar.tsx",
   "components/layout/media-type-tabs.tsx",
   "components/layout/mobile-menu-sheet.tsx",
+  // Rendered inside the account slot rather than the layout, but it sits in
+  // the shell on every page, so it is held to the same rule (spec 0008).
+  "components/layout/library-nav.tsx",
 ];
 
 /**
@@ -65,6 +68,11 @@ describe("the shared layout tree stays prerenderable (AC-14)", () => {
     // The boundary has to wrap the slot, not merely exist somewhere in the
     // file: an unwrapped slot loses the static shell just the same.
     expect(layout).toMatch(/<Suspense[\s\S]*?<AccountSlot[\s\S]*?<\/Suspense>/);
+    // Spec 0008 splits the slot in two, one per navbar layout. Each instance
+    // needs its own boundary.
+    expect(
+      layout.match(/<AccountSlot variant="\w+" \/>\s*<\/Suspense>/g),
+    ).toHaveLength(2);
   });
 
   it("is the account slot, and only it, that reads the session", () => {

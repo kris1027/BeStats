@@ -23,7 +23,7 @@ All values live in `app/globals.css`, split across four blocks: `@theme inline` 
 
 ## Conventions
 
-- **Server Components by default.** The only client boundaries are `layout/media-type-tabs.tsx`, `layout/mobile-menu-sheet.tsx`, and the three shadcn primitives that need state (`ui/dialog.tsx`, `ui/toggle.tsx`, `ui/toggle-group.tsx`). None reads a server dynamic API, so routes still prerender under `cacheComponents`. Adding a client boundary in the shell is a decision, not a convenience.
+- **Server Components by default.** The only client boundaries are `layout/media-type-tabs.tsx`, `layout/mobile-menu-sheet.tsx`, `layout/library-nav.tsx` (rendered only inside the request scoped `AccountSlot`, spec 0008), and the three shadcn primitives that need state (`ui/dialog.tsx`, `ui/toggle.tsx`, `ui/toggle-group.tsx`). None reads a server dynamic API, so routes still prerender under `cacheComponents`. Adding a client boundary in the shell is a decision, not a convenience.
 - **Selection comes from the pathname**, not client state. `MediaTypeTabs` reads `usePathname`. On a route with a dynamic param `usePathname` suspends at prerender time, so `Navbar` wraps the tabs in Suspense with `MediaTypeTabsView pathname={null}` (same control, nothing lit) as the fallback. Keep that boundary, or `/movies/[id]` loses its static shell (spec 0006).
 - **A retry is a full page load.** `RetryLink` is a plain `<a>`, not `next/link`, so the client router cache cannot replay the failure the visitor is retrying past (spec 0006, AC-10).
 - **Focus** is a 2px `#F6F7F8` outline at 2px offset on `:focus-visible` only, driven by `--ring` in the base layer. Do not restate it per component.

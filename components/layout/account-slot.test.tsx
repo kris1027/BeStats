@@ -35,7 +35,7 @@ describe("AccountSlot without auth configuration", () => {
       vi.stubEnv(name, undefined);
     }
 
-    render(await AccountSlot());
+    render(await AccountSlot({ variant: "desktop" }));
 
     expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute(
       "href",

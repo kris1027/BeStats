@@ -1,9 +1,9 @@
 import { CircleStopIcon, TvIcon } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import type * as React from "react";
 import { GlassPill } from "@/components/glass-pill";
+import { LibraryNav } from "@/components/layout/library-nav";
 import { MobileMenuSheet } from "@/components/layout/mobile-menu-sheet";
 import { PosterCard } from "@/components/poster-card";
 import { PosterGrid } from "@/components/poster-grid";
@@ -320,17 +320,7 @@ export default function ShowcasePage() {
       >
         <div className="flex flex-wrap items-center gap-3">
           <MobileMenuSheet>
-            <nav aria-label="Library" className="flex flex-col gap-1">
-              {["Watchlist", "Upcoming", "Watched"].map((label) => (
-                <Link
-                  key={label}
-                  href="/shows"
-                  className="rounded-lg px-2 py-3 text-lg font-bold text-foreground hover:text-text-secondary"
-                >
-                  {label}
-                </Link>
-              ))}
-            </nav>
+            <LibraryNav variant="sheet" />
           </MobileMenuSheet>
 
           <Dialog>
