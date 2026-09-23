@@ -12,6 +12,13 @@ import { Skeleton } from "@/components/skeleton";
 function MovieDetailSkeleton() {
   return (
     <div className="flex flex-col gap-10 md:gap-14">
+      {/*
+       * Every Skeleton is aria-hidden, so without this a screen reader hears
+       * nothing while the movie streams in.
+       */}
+      <p role="status" className="sr-only">
+        Loading movie details
+      </p>
       <div className="flex flex-col">
         <Skeleton
           shape="line"
@@ -53,7 +60,7 @@ function MovieDetailSkeleton() {
             <div
               // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders with no identity.
               key={index}
-              className="flex w-[120px] shrink-0 flex-col gap-2 md:w-[140px]"
+              className="flex w-30 shrink-0 flex-col gap-2 md:w-35"
             >
               <Skeleton shape="poster" />
               <Skeleton shape="line" className="w-3/4" />
