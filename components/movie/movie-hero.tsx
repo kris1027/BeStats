@@ -1,13 +1,21 @@
 import { cn } from "cn";
 import { FilmIcon } from "lucide-react";
 import Image from "next/image";
+import type * as React from "react";
 
 import { GlassPill } from "@/components/glass-pill";
 import { TmdbRatingBadge } from "@/components/rating-badges";
 import { formatRuntime, formatVoteCount } from "@/lib/format";
 import type { Movie } from "@/lib/tmdb";
 
-type MovieHeroProps = Pick<
+type MovieHeroProps = {
+  /**
+   * The tracking row from spec 0007, rendered under the rating block. The page
+   * passes a Suspense wrapped `MovieTrackingSlot`; this component reads no
+   * session itself, so it stays a plain catalog piece.
+   */
+  tracking?: React.ReactNode;
+} & Pick<
   Movie,
   | "title"
   | "tagline"
@@ -43,6 +51,7 @@ function MovieHero({
   genres,
   tmdbRating,
   tmdbVoteCount,
+  tracking,
 }: MovieHeroProps) {
   const meta = [
     releaseYear === null ? null : String(releaseYear),
@@ -121,14 +130,9 @@ function MovieHero({
           genres={genres}
           tmdbRating={tmdbRating}
           tmdbVoteCount={tmdbVoteCount}
+          tracking={tracking}
         />
       </div>
-
-      {/*
-       * The tracking controls from scope feature 8 go here, under the rating
-       * block. This feature renders no element for them at all (AC-7); feature
-       * 8 adds the slot with its own reserved height and skeleton.
-       */}
     </header>
   );
 }
@@ -168,17 +172,27 @@ function MoviePoster({ posterUrl }: { posterUrl: string | null }) {
   );
 }
 
-/** The meta line, the genre chips and the rating block. */
+/**
+ * The meta line, the genre chips, the rating block and, under it, the tracking
+ * row (spec 0007, AC-1).
+ *
+ * The tracking slot reserves no height and has no skeleton. Its Suspense
+ * fallback is `null`, so a visitor never sees a placeholder for controls they
+ * will not get; a signed in user sees the row appear once the read returns,
+ * which moves the Overview down once (spec 0007, Loading).
+ */
 function MovieFacts({
   meta,
   genres,
   tmdbRating,
   tmdbVoteCount,
+  tracking,
 }: {
   meta: string[];
   genres: Movie["genres"];
   tmdbRating: number | null;
   tmdbVoteCount: number;
+  tracking?: React.ReactNode;
 }) {
   return (
     <div className="col-span-2 mt-4 flex flex-col gap-3 sm:col-span-1 sm:col-start-2 sm:row-start-2 sm:mt-3">
@@ -211,6 +225,7 @@ function MovieFacts({
       ) : null}
 
       <TmdbRatingBlock value={tmdbRating} voteCount={tmdbVoteCount} />
+      {tracking}
     </div>
   );
 }

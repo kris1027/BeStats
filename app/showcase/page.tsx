@@ -1,4 +1,4 @@
-import { BookmarkIcon, CircleStopIcon, TvIcon } from "lucide-react";
+import { CircleStopIcon, TvIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -13,6 +13,11 @@ import {
 } from "@/components/rating-badges";
 import { PosterCardSkeleton, Skeleton } from "@/components/skeleton";
 import { StatePanel } from "@/components/state-panel";
+import {
+  PlanIcon,
+  PlannedIcon,
+  WatchedIcon,
+} from "@/components/tracking/tracking-icons";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import {
@@ -178,15 +183,11 @@ export default function ShowcasePage() {
           <PersonalScoreBadge value={9} />
           <PersonalScoreBadge value={null} />
           <GlassPill icon={<TvIcon aria-hidden="true" />}>S1E1</GlassPill>
-          <GlassPill
-            icon={
-              <BookmarkIcon
-                className="fill-status-planned text-status-planned"
-                aria-hidden="true"
-              />
-            }
-          >
-            Planned
+          <GlassPill icon={<PlannedIcon />}>Planned</GlassPill>
+          <GlassPill icon={<PlanIcon />}>Plan</GlassPill>
+          <GlassPill icon={<WatchedIcon filled />}>Watched</GlassPill>
+          <GlassPill icon={<WatchedIcon filled={false} />}>
+            Mark watched
           </GlassPill>
           <GlassPill icon={<CircleStopIcon aria-hidden="true" />}>
             Stop watching
@@ -194,8 +195,10 @@ export default function ShowcasePage() {
         </div>
         <p className="max-w-[65ch] text-sm text-muted-foreground">
           A TMDB badge with no value renders nothing; a personal score with no
-          value renders &ldquo;Not rated&rdquo;. The remaining legend badges
-          ship with the features that own their behaviour.
+          value renders &ldquo;Not rated&rdquo;. Plan, Planned and the watched
+          marks are the movie tracking marks from spec 0007, drawn from the
+          legend&rsquo;s own paths. The remaining legend badges ship with the
+          features that own their behaviour.
         </p>
       </Section>
 
@@ -259,7 +262,7 @@ export default function ShowcasePage() {
                     S2E3
                   </GlassPill>
                   <Button size="icon" aria-label="Add to watchlist">
-                    <BookmarkIcon className="size-4" aria-hidden="true" />
+                    <PlanIcon className="size-4" />
                   </Button>
                 </>
               }
