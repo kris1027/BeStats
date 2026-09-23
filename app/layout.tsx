@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { AccountSlot } from "@/components/layout/account-slot";
 import { Navbar } from "@/components/layout/navbar";
 import { Skeleton } from "@/components/skeleton";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 /**
@@ -51,6 +52,10 @@ export const metadata: Metadata = {
  * server dynamic API, so routes still prerender under `cacheComponents`
  * (spec 0004, AC-18).
  *
+ * `Toaster` is the Sonner region the tracking controls report failed saves
+ * through (spec 0007). It is a client boundary that reads no request state, so
+ * it costs no route its static shell.
+ *
  * `AccountSlot` is the one exception, and the Suspense boundary is what
  * contains it (spec 0005, AC-14). It reads the session, which is request
  * scoped; without the boundary that would make every route dynamic and cost
@@ -86,6 +91,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <main className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col px-4 py-8 md:py-12">
           {children}
         </main>
+        <Toaster />
       </body>
     </html>
   );
