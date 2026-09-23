@@ -25,8 +25,11 @@ import type { Database } from "@/lib/supabase/database.types";
  * definition the proxy uses (spec 0005, AC-25).
  */
 export async function createClient() {
-  const env = getPublicEnv();
+  // `cookies()` comes first so a prerender postpones here, before the env is
+  // validated. The other order throws during `pnpm build` on a machine with no
+  // Supabase project configured, which is exactly what CI is.
   const cookieStore = await cookies();
+  const env = getPublicEnv();
 
   return createServerClient<Database>(
     env.NEXT_PUBLIC_SUPABASE_URL,
