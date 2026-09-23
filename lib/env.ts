@@ -29,6 +29,10 @@ const publicEnvSchema = z.object({
     // every auth call, so reject a path outright rather than let it through.
     .refine(
       (value) => {
+        // Zod runs this even when the URL check above has already failed, and
+        // `new URL` would then throw a bare TypeError in place of the message
+        // naming the variable. The URL check reports that case on its own.
+        if (!URL.canParse(value)) return true;
         const path = new URL(value).pathname;
         return path === "" || path === "/";
       },
@@ -40,6 +44,20 @@ const publicEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z
     .string()
     .min(1, "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY is missing"),
+  // The absolute origin Supabase builds confirmation and recovery links from
+  // (spec 0005, AC-23). It has to be absolute because it is baked into an email
+  // that opens in a browser with no notion of this app's origin, and it has to
+  // match the Supabase redirect allow list exactly or Supabase refuses the
+  // redirect. Public because the sign in and sign up forms pass it through, and
+  // an origin is not a secret.
+  NEXT_PUBLIC_SITE_URL: z
+    .url(
+      "NEXT_PUBLIC_SITE_URL must be an absolute URL, for example http://localhost:3000",
+    )
+    // A trailing slash would produce `https://site.example//auth/callback`,
+    // which no longer matches the allow list entry, so normalise it away rather
+    // than let the mismatch surface as an opaque Supabase redirect refusal.
+    .transform((value) => value.replace(/\/+$/, "")),
 });
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;
@@ -56,21 +74,50 @@ export type PublicEnv = z.infer<typeof publicEnvSchema>;
  * offending variable and never includes its value, so it is safe in a log.
  */
 export function getPublicEnv(): PublicEnv {
-  const parsed = publicEnvSchema.safeParse({
-    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
-  });
+  const parsed = parsePublicEnv();
 
   if (!parsed.success) {
-    // Report which variables are wrong, never their values.
-    const problems = parsed.error.issues
-      .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
-      .join("; ");
     throw new Error(
-      `Invalid public environment configuration. ${problems}. Copy .env.example to .env.local and fill it in.`,
+      `Invalid public environment configuration. ${describeProblems(parsed.error)}. Copy .env.example to .env.local and fill it in.`,
     );
   }
 
   return parsed.data;
+}
+
+/**
+ * Says what is wrong with the public environment, without throwing.
+ *
+ * The catalog is public, so a missing or partial auth configuration must never
+ * take `/shows` or `/movies` down with it. The proxy and the navbar account
+ * slot run on every page, and they call this first so they can fall back to a
+ * signed out experience instead of failing the request. Everything that
+ * actually performs an auth call still goes through `getPublicEnv()` and fails
+ * loudly (spec 0005).
+ *
+ * It judges the same schema `getPublicEnv()` does, so the two can never
+ * disagree: a variable added to the schema is automatically part of this check.
+ *
+ * @returns Null when the configuration is valid, otherwise a message naming
+ * each offending variable and never its value, so it is safe in a log.
+ */
+export function publicEnvProblems(): string | null {
+  const parsed = parsePublicEnv();
+  return parsed.success ? null : describeProblems(parsed.error);
+}
+
+function parsePublicEnv() {
+  return publicEnvSchema.safeParse({
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+  });
+}
+
+/** Names which variables are wrong, never their values. */
+function describeProblems(error: z.ZodError): string {
+  return error.issues
+    .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+    .join("; ");
 }

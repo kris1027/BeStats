@@ -13,6 +13,10 @@ import type { Database } from "@/lib/supabase/database.types";
  * Typed with the generated `Database` so a query against a column that does not
  * exist fails at compile time rather than at runtime. AGENTS.md section 11
  * keeps this client to authentication only; it never reads the tracking tables.
+ *
+ * It cannot see the session: the server writes the session cookie `HttpOnly`,
+ * so `document.cookie` never holds it (spec 0005, AC-25). A feature that needs
+ * this client with a session has to reopen that criterion in its own spec.
  */
 export function createClient() {
   const env = getPublicEnv();

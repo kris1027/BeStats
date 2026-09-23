@@ -18,7 +18,7 @@ _The stack, tooling and product rules (ratings, progress, statuses, security) li
 | 3 | Data model and security policies | Foundation | done |
 | 4 | TMDB integration module | Foundation | done |
 | 5 | Design system and UI foundation | Foundation | done |
-| 6 | Authentication | Slice 1 | planned |
+| 6 | Authentication | Slice 1 | done |
 | 7 | Movie page | Slice 1 | planned |
 | 8 | Movie tracking | Slice 1 | planned |
 | 9 | Watchlist and movie history | Slice 1 | planned |
@@ -103,10 +103,26 @@ spec [0004](../specs/0004-design-system-and-ui-foundation/index.md)
 
 The thin real thread: browse a movie, sign in, track it, see it in your list. Every layer is real, breadth is deferred.
 
-### 6. Authentication · needs a decision · GA
-Email and password and Google sign in, email verification, sign out, password recovery, and session handling that private routes can trust.
-**Done when:** a visitor can sign up, verify, sign in with either method, sign out and recover a password; private routes reject signed out visitors.
-- [ ] Design it (spec): `/architect authentication`
+### 6. Authentication · done · GA
+Email and password sign in, email verification, sign out, password recovery, and session handling that private routes can trust. Google sign in moved to feature 20 with the rest of the provider setup, because it cannot be verified without a Google OAuth client.
+**Done when:** a visitor can sign up, verify their address, sign in, sign out and recover a password; private routes reject signed out visitors at both the redirect and the server; a new password can be set without the current one only from a recovery link; and the forms never reveal whether an address has an account.
+- [x] Design it (spec): `/architect authentication`
+- [x] Build it: `/develop authentication`
+  - [x] Configuration and shared rules: the site URL variable, the `[auth]` block, and the shared schemas, action state, path guard, message and log modules — AC-9, AC-11, AC-18, AC-23
+  - [x] The thin thread end to end: sign in, sign out, the private account page, the proxy guard and `requireUser`, verified in the running app — AC-4, AC-5, AC-10, AC-12, AC-15
+  - [x] The navbar account slot inside its Suspense boundary, passed into both navbar forms, with the layout purity test — AC-13, AC-14
+  - [x] The sign up strand: sign up, check email with resend, the callback, and the neutral existing address branch — AC-1, AC-2, AC-3, AC-6
+  - [x] The recovery strand and change password, then hardening and proof: expired sessions, noindex, logging, the test suite, accessibility and the bundle check — AC-7, AC-8, AC-16, AC-17, AC-19 to AC-22
+  - [x] Corrections from the verify run: gate `resetPasswordAction` on a recovery session, spend that session on one reset by signing out globally, and carry `next` through the two cross links between sign in and sign up — AC-24, AC-8, AC-10
+  - [x] The revocation window from verify run 2: `jwt_expiry = 600` on the local stack, confirmed on a restarted stack, so a revoked session stops working within ten minutes — AC-8
+  - [x] The mapping tests from verify run 3, plus classifying a breach by `reasons` not message text: a 429 and an `over_email_send_rate_limit` error classify as rate limited, a breach refusal as breached, a length refusal as too short. The five steps the local stack cannot run move to feature 20 — AC-9, AC-18
+  - [x] Corrections from the fresh model review: the session cookies become `HttpOnly` (and `Secure` on an `https` site URL) through one shared options function, guarded by a boundary test; the control character fix to `next` already landed through /debug — AC-25, AC-11
+- [x] Verify it: `/check verify authentication`
+- [x] Test it: `/test authentication`
+- [x] Review it (fresh model): `/check review authentication`
+- [x] Document it: `/document authentication`
+code in [lib/auth/](../../lib/auth/), [app/(auth)/](<../../app/(auth)/>), [app/account/](../../app/account/), [app/auth/callback/](../../app/auth/callback/), [components/auth/](../../components/auth/)
+spec [0005](../specs/0005-authentication/index.md)
 
 ### 7. Movie page · needs a decision
 Public movie detail page with poster, overview, cast, genres and the TMDB community rating, clearly labeled as TMDB. Also the first landing view to reach a movie.
@@ -119,8 +135,8 @@ On the movie page, a signed in user can add to the watchlist, mark watched and r
 - [ ] Design it (spec): `/architect movie tracking`
 
 ### 9. Watchlist and movie history · needs a decision
-Private view of the watchlist and watched movies, with empty and signed out states. TV entries join it in feature 14.
-**Done when:** a signed in user sees their own watchlist and watched movies with personal ratings labeled apart from TMDB ratings; a signed out visitor is sent to sign in.
+Private view of the watchlist and watched movies, with empty and signed out states. TV entries join it in feature 14. This feature also inherits the mobile menu sheet from feature 6: `MobileMenuSheet` exists but is wired only into `/showcase`, and the sheet `mobile-menu-open.svg` draws holds the Watchlist, Upcoming and Watched links that arrive here, so the menu button and the sheet belong with them (spec [0005](../specs/0005-authentication/index.md), Consequences).
+**Done when:** a signed in user sees their own watchlist and watched movies with personal ratings labeled apart from TMDB ratings; a signed out visitor is sent to sign in; and, signed in at mobile width, the menu button opens a sheet holding those links plus the account block and Sign out, matching `mobile-menu-open.svg`.
 - [ ] Design it (spec): `/architect watchlist and movie history`
 
 ## Slice 2: TV show page
@@ -189,14 +205,15 @@ Run the full `AGENTS.md` section 13 checklist with two test users, including dir
 - [ ] Test it: `/test security and acceptance verification`
 
 ### 20. Deploy and provider setup · needs a decision · GA
-Vercel deployment, Supabase Cloud project, Google OAuth and auth redirects for local and deployed environments, verified email delivery. Remote migrations and deployment need your explicit approval in the plan.
-**Done when:** the deployed app signs users in with Google and email, recovery and confirmation emails arrive, and environment variables target the intended projects.
+Vercel deployment, Supabase Cloud project, Google OAuth and auth redirects for local and deployed environments, verified email delivery. Also restores the Google button and its divider to the sign in and sign up pages, in the slot spec 0005 reserves, and runs the five authentication verify steps the local stack cannot: the breach refusal, the Google only account on `/account`, and the three rate limit steps. Remote migrations and deployment need your explicit approval in the plan.
+**Done when:** the deployed app signs users in with Google and with email, the Google button is back on the sign in and sign up pages and works, recovery and confirmation emails arrive at a real mailbox, and environment variables target the intended projects.
 - [ ] Design it (spec): `/architect deploy and provider setup`
 
 ## Deferred
 Out of scope for the current build pass, kept so the plan stays honest.
 - **Public profiles and social features**: ruled out of the MVP by `AGENTS.md`
 - **Error monitoring and product analytics**: not selected for this pass
+- **Account deletion**: from spec 0005. Undesigned, and it needs an elevated server side call that nothing else in the app uses, so it deserves its own decision before it is built
 
 ## Legend
 
