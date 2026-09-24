@@ -196,4 +196,8 @@ describe("formatAirDate · covers spec 0009 AC-10", () => {
     expect(formatAirDate("2013-02-30")).toBeNull();
     expect(formatAirDate("not a date")).toBeNull();
   });
+
+  it("keeps a year below 100 instead of reading it as 19xx", () => {
+    expect(formatAirDate("0099-01-01")).toBe("Jan 1, 99");
+  });
 });

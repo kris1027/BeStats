@@ -22,8 +22,8 @@ _Steps derived from spec 0009 acceptance criteria. `/check verify` runs these; `
 - [x] Open a movie page (for example `/movies/550`) → it looks exactly as before → AC-20
 
 ## Commands
-- [x] `curl -I /shows/abc`, `/shows/01396`, `/shows/1396.jpg`, `/shows/1396/season/01`, `/shows/1396/season/10000` → 404 → AC-13
-- [x] `curl -I /shows/1396/season/0` and `/shows/1396/season/9999` → not 404 from the proxy → AC-13
+- [x] With `BASE_URL=http://localhost:3000`, `curl -I "$BASE_URL/shows/abc"`, then the same for `/shows/01396`, `/shows/1396.jpg`, `/shows/1396/season/01`, `/shows/1396/season/10000`, one request each → 404 → AC-13
+- [x] `curl -I "$BASE_URL/shows/1396/season/0"` and `curl -I "$BASE_URL/shows/1396/season/9999"` → not 404 from the proxy → AC-13
 - [x] `pnpm build` → `/shows`, `/shows/[id]`, `/shows/[id]/season/[number]` all marked ◐ → AC-17
 - [x] `pnpm test` → request scope test covers `app/shows/`, `components/show/`, `components/catalog/`; layout purity passes → AC-18
 - [x] `pnpm tmdb:live` → the show read and the aggregate cast read still parse → AC-6, AC-8, AC-20

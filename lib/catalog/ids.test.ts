@@ -58,6 +58,7 @@ describe("parseSeasonNumber", () => {
     "10000",
     "abc",
     " 1",
+    "1\n",
     "١",
   ])("refuses %j", (segment) => {
     expect(parseSeasonNumber(segment)).toBeNull();

@@ -165,7 +165,9 @@ export function formatAirDate(date: string | null): string | null {
   const match = date === null ? null : TMDB_DATE.exec(date);
   if (!match) return null;
   const [, year, month, day] = match.map(Number);
-  const utc = new Date(Date.UTC(year, month - 1, day));
+  // `Date.UTC` reads years 0 to 99 as 1900 to 1999; `setUTCFullYear` does not.
+  const utc = new Date(0);
+  utc.setUTCFullYear(year, month - 1, day);
   // A value like 2013-02-30 rolls over; that is not the date TMDB wrote.
   if (utc.getUTCMonth() !== month - 1 || utc.getUTCDate() !== day) return null;
   return AIR_DATE_FORMAT.format(utc);
