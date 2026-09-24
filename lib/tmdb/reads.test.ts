@@ -7,6 +7,7 @@ import searchFixture from "./__fixtures__/search-movie.json";
 import season0Fixture from "./__fixtures__/season-1396-0.json";
 import season1Fixture from "./__fixtures__/season-1396-1.json";
 import tvFixture from "./__fixtures__/tv-1396.json";
+import aggregateFixture from "./__fixtures__/tv-1396-aggregate-credits.json";
 import { fetchMovieGenres } from "./genres";
 import { BACKDROP_SIZE, POSTER_SIZE, PROFILE_SIZE, STILL_SIZE } from "./images";
 import { fetchMovie } from "./movies";
@@ -15,7 +16,7 @@ import {
   fetchDiscoverTvShows,
   fetchSearchMovies,
 } from "./search";
-import { fetchSeason, fetchTvShow } from "./tv";
+import { fetchSeason, fetchShowCast, fetchTvShow } from "./tv";
 
 /**
  * Normalization against real TMDB payloads captured from the live API.
@@ -221,7 +222,173 @@ describe("fetchTvShow", () => {
     expect(
       show.seasons.find((season) => season.seasonNumber === 1)?.isSpecials,
     ).toBe(false);
-    expect(show.cast.length).toBeGreaterThan(0);
+  });
+
+  /** covers: spec 0009, AC-6, AC-20 */
+  it("appends translations, not credits, still in one request", async () => {
+    const fetchMock = installFetchMock([{ body: tvFixture }]);
+
+    const show = await fetchTvShow(1396);
+
+    expect(fetchMock.attempts).toBe(1);
+    expect(fetchMock.url().searchParams.get("append_to_response")).toBe(
+      "translations",
+    );
+    expect(show).not.toHaveProperty("cast");
+    expect(show.adult).toBe(false);
+    expect(show.tagline).toBe("Change the equation.");
+    expect(show.originalLanguage).toBe("en");
+    expect(show.lastAirYear).toBe(2013);
+    expect(show.overview).toMatch(/^Walter White/);
+    expect(show.overviewLanguage).toBe("en");
+  });
+
+  /** covers: spec 0009, AC-6 */
+  it("falls back to the original language overview, and says which", async () => {
+    installFetchMock([
+      {
+        body: {
+          ...tvFixture,
+          overview: "",
+          original_language: "es",
+        },
+      },
+    ]);
+
+    const show = await fetchTvShow(1396);
+
+    expect(show.overviewLanguage).toBe("es");
+    expect(show.overview).toMatch(/^Un profesor de química/);
+  });
+
+  /** covers: spec 0009, AC-5 */
+  it("leaves every missing show value missing", async () => {
+    installFetchMock([
+      {
+        body: {
+          ...tvFixture,
+          adult: undefined,
+          tagline: "",
+          overview: "",
+          last_air_date: null,
+          translations: { translations: [] },
+        },
+      },
+    ]);
+
+    const show = await fetchTvShow(1396);
+
+    expect(show.adult).toBe(false);
+    expect(show.tagline).toBeNull();
+    expect(show.overview).toBeNull();
+    expect(show.overviewLanguage).toBeNull();
+    expect(show.lastAirYear).toBeNull();
+  });
+});
+
+/** covers: spec 0009, AC-8 */
+describe("fetchShowCast", () => {
+  it("reads the aggregate credits and keeps the most episodes first, capped at 12", async () => {
+    const fetchMock = installFetchMock([{ body: aggregateFixture }]);
+
+    const cast = await fetchShowCast(1396);
+
+    expect(fetchMock.attempts).toBe(1);
+    expect(fetchMock.url().pathname).toBe("/3/tv/1396/aggregate_credits");
+    expect(cast).toHaveLength(12);
+    expect(cast[0]).toMatchObject({
+      personId: 17419,
+      name: "Bryan Cranston",
+      character: "Walter White",
+      creditId: "52542282760ee313280017f9",
+    });
+    expect(cast[0]?.profileUrl).toContain(`/t/p/${PROFILE_SIZE}/`);
+  });
+
+  it("sorts by total episodes, then TMDB's order, even when TMDB lists them out of order", async () => {
+    installFetchMock([
+      {
+        body: {
+          ...aggregateFixture,
+          cast: [...aggregateFixture.cast].reverse(),
+        },
+      },
+    ]);
+
+    const cast = await fetchShowCast(1396);
+
+    // Six people share 62 episodes; TMDB's order settles them.
+    expect(cast.slice(0, 7).map((member) => member.name)).toEqual([
+      "Bryan Cranston",
+      "Aaron Paul",
+      "Anna Gunn",
+      "RJ Mitte",
+      "Dean Norris",
+      "Betsy Brandt",
+      "Bob Odenkirk",
+    ]);
+    // Steven Michael Quezada (33) outranks Giancarlo Esposito (28) despite
+    // Esposito's lower order, because episode count comes first.
+    const names = cast.map((member) => member.name);
+    expect(names.indexOf("Steven Michael Quezada")).toBeLessThan(
+      names.indexOf("Giancarlo Esposito"),
+    );
+  });
+
+  it("picks the role with the most episodes, the first on a tie", async () => {
+    const tina = aggregateFixture.cast.find((p) => p.name === "Tina Parker");
+    installFetchMock([
+      {
+        body: {
+          cast: [
+            tina,
+            {
+              ...tina,
+              id: 1,
+              name: "Tied",
+              roles: [
+                { credit_id: "a", character: "First", episode_count: 2 },
+                { credit_id: "b", character: "Second", episode_count: 2 },
+              ],
+            },
+          ],
+        },
+      },
+    ]);
+
+    const cast = await fetchShowCast(1396);
+
+    expect(cast.find((m) => m.name === "Tina Parker")?.character).toBe(
+      "Francesca",
+    );
+    expect(cast.find((m) => m.name === "Tied")).toMatchObject({
+      character: "First",
+      creditId: "a",
+    });
+  });
+
+  it("drops a malformed person, or one with no role, and keeps the rest", async () => {
+    installFetchMock([
+      {
+        body: {
+          cast: [
+            { nonsense: true },
+            { ...aggregateFixture.cast[0], id: 2, roles: [] },
+            aggregateFixture.cast[1],
+          ],
+        },
+      },
+    ]);
+
+    const cast = await fetchShowCast(1396);
+
+    expect(cast.map((member) => member.name)).toEqual(["Aaron Paul"]);
+  });
+
+  it("returns an empty cast when TMDB lists nobody", async () => {
+    installFetchMock([{ body: { id: 1396, cast: [], crew: [] } }]);
+
+    expect(await fetchShowCast(1396)).toEqual([]);
   });
 });
 

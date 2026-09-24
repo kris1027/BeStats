@@ -90,16 +90,38 @@ export type SeasonSummary = {
   isSpecials: boolean;
 };
 
-export type TvShow = TvShowSummary & {
+/**
+ * One person in a show's series cast (spec 0009, AC-8). The same shape as a
+ * movie credit, so `CastRow` renders both; `creditId` and `character` come
+ * from the role the person played in the most episodes.
+ */
+export type ShowCastMember = CastMember;
+
+export type TvShow = Omit<TvShowSummary, "overview"> & {
+  /** As on `Movie`: a read by id does not exclude adult titles (spec 0009, AC-14). */
+  adult: boolean;
+  /** Resolved exactly like `Movie.overview` (spec 0009, AC-6). */
+  overview: string | null;
+  overviewLanguage: string | null;
+  originalLanguage: string;
+  tagline: string | null;
   backdropUrl: string | null;
   /** TMDB's own wording, for example `Ended`. Scope feature 16 interprets it. */
   status: string;
   inProduction: boolean;
   lastAirDate: string | null;
+  /**
+   * The year of `lastAirDate`, from the same `yearFromDate` as `firstAirYear`,
+   * so the air span never parses a TMDB date outside this module.
+   */
+  lastAirYear: number | null;
   numberOfSeasons: number;
   numberOfEpisodes: number;
   genres: Genre[];
-  cast: CastMember[];
+  /**
+   * No `cast`: the series cast is its own read, `getShowCast`, so the show
+   * read that progress and list screens reuse stays small (spec 0009, AC-20).
+   */
   seasons: SeasonSummary[];
 };
 

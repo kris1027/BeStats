@@ -47,6 +47,13 @@ export const TMDB_RETRY_DELAYS_MS = [250, 750] as const;
 export const TMDB_CONCURRENCY_LIMIT = 8;
 
 /**
+ * How many people a show's series cast keeps (spec 0009, AC-8). Applied in the
+ * module, not on the page, so a show with hundreds of credited people caches
+ * twelve. `CastRow`'s own `CAST_LIMIT` matches it.
+ */
+export const SHOW_CAST_LIMIT = 12;
+
+/**
  * The wording TMDB's terms require, quoted verbatim (spec 0002, AC-22). Where
  * it is displayed belongs to scope feature 18; this module only owns the text.
  */

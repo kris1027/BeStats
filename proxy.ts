@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
 import { isPrivatePath } from "@/lib/auth/private-paths";
-import { parseMovieId } from "@/lib/catalog/ids";
+import { parseSeasonNumber, parseTmdbId } from "@/lib/catalog/ids";
 import { getPublicEnv, publicEnvProblems } from "@/lib/env";
 import { sessionCookieOptions } from "@/lib/supabase/cookie-options";
 
@@ -33,12 +33,12 @@ const PATHNAME_HEADER = "x-pathname";
  * `middleware.ts` is deprecated.
  */
 export async function proxy(request: NextRequest) {
-  // A malformed movie id is a real 404, decided here because the movie page
-  // streams its shell first and by then the status is already 200 (spec 0006,
-  // AC-8). First, so it needs no auth configuration and makes no Supabase or
-  // TMDB call.
-  const malformedMovie = malformedMovieResponse(request);
-  if (malformedMovie) return malformedMovie;
+  // A malformed title id or season number is a real 404, decided here because
+  // the page streams its shell first and by then the status is already 200
+  // (spec 0006, AC-8; spec 0009, AC-13). First, so it needs no auth
+  // configuration and makes no Supabase or TMDB call.
+  const malformed = malformedCatalogResponse(request);
+  if (malformed) return malformed;
 
   // The catalog is public, so an install whose auth configuration is missing
   // or incomplete should still serve pages. Warn once instead of failing every
@@ -139,39 +139,64 @@ export async function proxy(request: NextRequest) {
   return response;
 }
 
-/** One segment under `/movies`; deeper paths already match no route. */
-const MOVIE_PATH = /^\/movies\/([^/]+)$/;
+/**
+ * The catalog routes whose segments the proxy checks, each with the parser
+ * its page uses, one per captured segment. Deeper or other paths already
+ * match no route, so they are not listed.
+ */
+const CATALOG_PATHS: {
+  pattern: RegExp;
+  parsers: ((segment: string) => number | null)[];
+}[] = [
+  { pattern: /^\/movies\/([^/]+)$/, parsers: [parseTmdbId] },
+  { pattern: /^\/shows\/([^/]+)$/, parsers: [parseTmdbId] },
+  {
+    pattern: /^\/shows\/([^/]+)\/season\/([^/]+)$/,
+    parsers: [parseTmdbId, parseSeasonNumber],
+  },
+];
 
 /**
  * A path that matches no route, so rendering it renders `app/not-found.tsx`.
  * Rewritten to rather than redirected to, so the address bar keeps the URL
  * the visitor asked for.
  */
-const NOT_FOUND_PATH = "/_movie-not-found";
+const NOT_FOUND_PATH = "/_catalog-not-found";
 
 /**
- * The 404 for `/movies/{segment}` when the segment is not a canonical movie
- * id, or null for every other request. Shares `parseMovieId` with the page, so
- * the proxy and the route cannot disagree about what a movie URL looks like.
+ * The 404 for a catalog URL with a segment that is not canonical, or null for
+ * every other request. Shares its parsers with the pages, so the proxy and
+ * the routes cannot disagree about what a movie, show or season URL looks
+ * like (spec 0006, AC-8; spec 0009, AC-13).
  *
  * The status is set explicitly rather than left to the rewrite, so the answer
  * is a 404 even if the rendered page would otherwise report 200.
  */
-function malformedMovieResponse(request: NextRequest): NextResponse | null {
-  const match = MOVIE_PATH.exec(request.nextUrl.pathname);
-  if (!match) return null;
+function malformedCatalogResponse(request: NextRequest): NextResponse | null {
+  const { pathname } = request.nextUrl;
+  for (const { pattern, parsers } of CATALOG_PATHS) {
+    const match = pattern.exec(pathname);
+    if (!match) continue;
 
-  let segment: string;
-  try {
-    segment = decodeURIComponent(match[1]);
-  } catch {
-    segment = match[1];
+    const valid = parsers.every(
+      (parse, index) => parse(decodeSegment(match[index + 1])) !== null,
+    );
+    if (valid) return null;
+
+    return NextResponse.rewrite(new URL(NOT_FOUND_PATH, request.url), {
+      status: 404,
+    });
   }
-  if (parseMovieId(segment) !== null) return null;
+  return null;
+}
 
-  return NextResponse.rewrite(new URL(NOT_FOUND_PATH, request.url), {
-    status: 404,
-  });
+/** A malformed escape is left as typed, which no parser accepts. */
+function decodeSegment(segment: string): string {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment;
+  }
 }
 
 /**
@@ -192,9 +217,10 @@ export const config = {
     /*
      * Every path except the ones Next.js serves as static assets, plus common
      * image files. Without this the proxy would run for every CSS, JS and image
-     * request too. `/movies/` is never an image, so `/movies/550.jpg` still
-     * reaches the malformed id rule and gets its 404 (spec 0006, AC-8).
+     * request too. `/movies/` and `/shows/` are never images, so
+     * `/movies/550.jpg` and `/shows/1396.jpg` still reach the malformed id
+     * rule and get their 404 (spec 0006, AC-8; spec 0009, AC-13).
      */
-    "/((?!_next/static|_next/image|favicon.ico|(?!movies/).*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|(?!movies/|shows/).*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)",
   ],
 };

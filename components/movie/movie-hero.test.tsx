@@ -75,7 +75,7 @@ describe("MovieHero", () => {
     const { container } = render(<MovieHero {...EMPTY} />);
 
     expect(
-      container.querySelector('[data-slot="movie-backdrop"]'),
+      container.querySelector('[data-slot="detail-backdrop"]'),
     ).not.toBeInTheDocument();
     expect(container.querySelectorAll("img")).toHaveLength(0);
     expect(

@@ -21,8 +21,8 @@ _The stack, tooling and product rules (ratings, progress, statuses, security) li
 | 6 | Authentication | Slice 1 | done |
 | 7 | Movie page | Slice 1 | done |
 | 8 | Movie tracking | Slice 1 | done |
-| 9 | Watchlist and movie history | Slice 1 | in-progress |
-| 10 | TV show page | Slice 2 | planned |
+| 9 | Watchlist and movie history | Slice 1 | done |
+| 10 | TV show page | Slice 2 | done |
 | 11 | Search and filters | Slice 3 | planned |
 | 12 | Episode and season tracking | Slice 4 | planned |
 | 13 | Calculated season and show ratings | Slice 5 | planned |
@@ -158,7 +158,7 @@ On the movie page, a signed in user can add to the watchlist, mark watched and r
 Code in `app/movies/actions.ts`, `lib/tracking/`, `components/tracking/`, `supabase/schemas/05-functions.sql`
 spec [0007](../specs/0007-movie-tracking/index.md)
 
-### 9. Watchlist and movie history · in-progress
+### 9. Watchlist and movie history · done
 Private view of the watchlist and watched movies, with empty and signed out states. TV entries join it in feature 14. This feature also inherits the mobile menu sheet from feature 6: `MobileMenuSheet` exists but is wired only into `/showcase`, and the sheet `mobile-menu-open.svg` draws holds the Watchlist, Upcoming and Watched links that arrive here, so the menu button and the sheet belong with them (spec [0005](../specs/0005-authentication/index.md), Consequences).
 **Done when:** a signed in user sees their own watchlist and watched movies with personal ratings labeled apart from TMDB ratings; a signed out visitor is sent to sign in; and, signed in at mobile width, the menu button opens a sheet holding those links plus the account block and Sign out, matching `mobile-menu-open.svg`.
 - [x] Design it (spec): `/architect watchlist and movie history`
@@ -175,10 +175,20 @@ spec [0008](../specs/0008-watchlist-and-movie-history/index.md)
 
 ## Slice 2: TV show page
 
-### 10. TV show page · needs a decision
-Public TV detail page with cast, seasons and episode lists (including season 0 specials), air dates and show status as reported by TMDB.
+### 10. TV show page · done
+Public TV detail page with cast, seasons and episode lists (including season 0 specials), air dates and show status as reported by TMDB. Also the `/shows` popular grid and one page per season (spec 0009).
 **Done when:** a visitor can open a show, browse seasons and episodes, and incomplete episode data or missing air dates display honestly.
-- [ ] Design it (spec): `/architect TV show page`
+- [x] Design it (spec): `/architect TV show page`
+- [x] Build it: `/develop TV show page`
+  - [x] The thin thread: `/shows` grid to a show page to a season page, verified in the running app and as prerendered shells in the build — AC-1, AC-17
+  - [x] The module strand: the new `TvShow` fields, the translations append, `getShowCast` from aggregate credits, and the show read moved to `hours` — AC-6, AC-8, AC-20
+  - [x] The show page thickened: `DetailHero`, air span and status, overview, season cards, the cast section, fallbacks and mobile — AC-3 to AC-8, AC-19
+  - [x] The season page thickened: header, episode rows, empty season, previous and next links, mobile — AC-9 to AC-12, AC-19
+  - [x] Not found, failure, metadata and pagination, then proof: `parseTmdbId`, the proxy patterns, soft 404s, retry panels, `/shows` pages, tests and checks — AC-2, AC-13 to AC-18
+- [x] Verify it: `/check verify TV show page`
+- [x] Test it: `/test TV show page`
+- [x] Document it: `/document TV show page`
+spec [0009](../specs/0009-tv-show-page/index.md) · code in [app/shows/](../../app/shows/), [components/show/](../../components/show/), [components/catalog/](../../components/catalog/), [lib/catalog/](../../lib/catalog/), [lib/format.ts](../../lib/format.ts), [lib/tmdb/](../../lib/tmdb/), [proxy.ts](../../proxy.ts)
 
 ## Slice 3: Search
 

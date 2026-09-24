@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { normalizeCast, resolveOverview } from "./normalize";
+import { SHOW_CAST_LIMIT } from "./constants";
+import {
+  normalizeCast,
+  normalizeSeasonDetail,
+  normalizeSeasonSummary,
+  normalizeShowCast,
+  resolveOverview,
+} from "./normalize";
 
 /**
  * covers: spec 0006, AC-4, AC-5
@@ -93,5 +100,121 @@ describe("normalizeCast", () => {
     ]);
 
     expect(new Set(cast.map((member) => member.creditId)).size).toBe(2);
+  });
+});
+
+/**
+ * covers: spec 0009, AC-8
+ *
+ * `reads.test.ts` proves the order and the role choice on the real Breaking
+ * Bad payload. These pin the edges a real payload rarely shows: missing
+ * counts, missing order, missing character and a huge cast.
+ */
+describe("normalizeShowCast", () => {
+  const person = (
+    id: number,
+    total: number | null,
+    order: number | null,
+    roles: {
+      credit_id: string;
+      character?: string | null;
+      episode_count?: number | null;
+    }[] = [
+      { credit_id: `c${id}`, character: `Role ${id}`, episode_count: total },
+    ],
+  ) => ({
+    id,
+    name: `Person ${id}`,
+    profile_path: null,
+    total_episode_count: total,
+    order,
+    roles,
+  });
+
+  it("returns an empty cast when TMDB sends none", () => {
+    expect(normalizeShowCast(null)).toEqual([]);
+    expect(normalizeShowCast(undefined)).toEqual([]);
+  });
+
+  it("sorts a person with no order after the ordered ones on the same count", () => {
+    const cast = normalizeShowCast([
+      person(1, 10, null),
+      person(2, 10, 5),
+      person(3, 10, 0),
+    ]);
+
+    expect(cast.map((member) => member.personId)).toEqual([3, 2, 1]);
+  });
+
+  it("treats a missing episode count as zero, never as the most", () => {
+    const cast = normalizeShowCast([person(1, null, 0), person(2, 1, 9)]);
+
+    expect(cast.map((member) => member.personId)).toEqual([2, 1]);
+  });
+
+  it("prefers a counted role over one with no count", () => {
+    const [member] = normalizeShowCast([
+      person(1, 5, 0, [
+        { credit_id: "none", character: "Cameo", episode_count: null },
+        { credit_id: "main", character: "Lead", episode_count: 5 },
+      ]),
+    ]);
+
+    expect(member).toMatchObject({ creditId: "main", character: "Lead" });
+  });
+
+  it("leaves a missing character empty rather than inventing one", () => {
+    const [member] = normalizeShowCast([
+      person(1, 3, 0, [{ credit_id: "x", character: null, episode_count: 3 }]),
+    ]);
+
+    expect(member?.character).toBe("");
+  });
+
+  it("keeps no private sort field in the result", () => {
+    const [member] = normalizeShowCast([person(1, 3, 0)]);
+
+    expect(member).not.toHaveProperty("totalEpisodes");
+  });
+
+  it(`cuts a long cast to ${SHOW_CAST_LIMIT}, keeping the most episodes`, () => {
+    const many = Array.from({ length: 40 }, (_, i) => person(i + 1, i, i));
+
+    const cast = normalizeShowCast(many);
+
+    expect(cast).toHaveLength(SHOW_CAST_LIMIT);
+    expect(cast[0]?.personId).toBe(40);
+    expect(cast.at(-1)?.personId).toBe(40 - SHOW_CAST_LIMIT + 1);
+  });
+});
+
+/**
+ * covers: spec 0009, AC-9
+ *
+ * TMDB sends `"name": ""` for some seasons; a blank name would leave the
+ * season heading, tab title and card link with no text.
+ */
+describe("season name fallback", () => {
+  const summary = { season_number: 2, air_date: null, poster_path: null };
+
+  it.each([
+    ["missing", undefined],
+    ["null", null],
+    ["empty", ""],
+    ["blank", "   "],
+  ])("falls back to Season N when the name is %s", (_label, name) => {
+    expect(normalizeSeasonSummary({ ...summary, name }).name).toBe("Season 2");
+    expect(
+      normalizeSeasonDetail(
+        { ...summary, name, overview: null, episodes: [] },
+        1396,
+      ).name,
+    ).toBe("Season 2");
+  });
+
+  it("keeps a real season name", () => {
+    expect(normalizeSeasonSummary({ ...summary, name: "Book One" }).name).toBe(
+      "Book One",
+    );
   });
 });

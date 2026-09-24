@@ -65,6 +65,43 @@ describe("the movie routes read no request scoped value directly (AC-13)", () =>
   });
 });
 
+/**
+ * covers: spec 0009, AC-17, AC-18
+ *
+ * The TV routes are public catalog pages with no tracking at all yet, so they
+ * and the pieces they render reach for no request API, no Supabase client and
+ * not even `components/tracking/`. Features 12 to 14 relax the last rule when
+ * they fill the reserved places.
+ */
+describe("the show routes read no request scoped value (spec 0009, AC-18)", () => {
+  const files = [
+    ...sourceFiles("app/shows"),
+    ...sourceFiles("components/show"),
+    ...sourceFiles("components/catalog"),
+  ];
+
+  it("finds the route files", () => {
+    expect(files).toContain("app/shows/page.tsx");
+    expect(files).toContain(join("app/shows/[id]/page.tsx"));
+    expect(files).toContain(join("app/shows/[id]/season/[number]/page.tsx"));
+  });
+
+  it.each(files)("%s reaches for none of them", (path) => {
+    const source = readFileSync(path, "utf8");
+    for (const api of [...FORBIDDEN, "@/components/tracking"]) {
+      expect(source, `${path} must not use ${api}`).not.toContain(api);
+    }
+  });
+
+  it.each([
+    "app/shows/page.tsx",
+    "app/shows/[id]/page.tsx",
+    "app/shows/[id]/season/[number]/page.tsx",
+  ])("%s does not opt out of the static shell (AC-17)", (path) => {
+    expect(readFileSync(path, "utf8")).not.toMatch(/instant\s*=\s*false/);
+  });
+});
+
 describe("private tracking state never enters a cache scope (spec 0007, AC-19; spec 0008, AC-17)", () => {
   const files = [
     ...sourceFiles("components/tracking"),

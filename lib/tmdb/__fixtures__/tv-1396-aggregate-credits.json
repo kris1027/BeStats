@@ -1,0 +1,358 @@
+{
+  "id": 1396,
+  "cast": [
+    {
+      "adult": false,
+      "gender": 2,
+      "id": 17419,
+      "known_for_department": "Acting",
+      "name": "Bryan Cranston",
+      "original_name": "Bryan Cranston",
+      "popularity": 6.9947,
+      "profile_path": "/7Jahy5LZX2Fo8fGJltMreAI49hC.jpg",
+      "total_episode_count": 62,
+      "roles": [
+        {
+          "credit_id": "52542282760ee313280017f9",
+          "character": "Walter White",
+          "episode_count": 62
+        }
+      ],
+      "order": 0
+    },
+    {
+      "adult": false,
+      "gender": 2,
+      "id": 84497,
+      "known_for_department": "Acting",
+      "name": "Aaron Paul",
+      "original_name": "Aaron Paul",
+      "popularity": 3.5982,
+      "profile_path": "/8Ac9uuoYwZoYVAIJfRLzzLsGGJn.jpg",
+      "total_episode_count": 62,
+      "roles": [
+        {
+          "credit_id": "52542282760ee31328001845",
+          "character": "Jesse Pinkman",
+          "episode_count": 62
+        }
+      ],
+      "order": 1
+    },
+    {
+      "adult": false,
+      "gender": 1,
+      "id": 134531,
+      "known_for_department": "Acting",
+      "name": "Anna Gunn",
+      "original_name": "Anna Gunn",
+      "popularity": 3.3034,
+      "profile_path": "/adppyeu1a4REN3khtgmXusrapFi.jpg",
+      "total_episode_count": 62,
+      "roles": [
+        {
+          "credit_id": "52542282760ee3132800181b",
+          "character": "Skyler White",
+          "episode_count": 62
+        }
+      ],
+      "order": 2
+    },
+    {
+      "adult": false,
+      "gender": 2,
+      "id": 209674,
+      "known_for_department": "Acting",
+      "name": "RJ Mitte",
+      "original_name": "RJ Mitte",
+      "popularity": 2.4502,
+      "profile_path": "/sNPA92ZrssYhlaB1UA2pWcLD9db.jpg",
+      "total_episode_count": 62,
+      "roles": [
+        {
+          "credit_id": "52542284760ee313280018a9",
+          "character": "Walter White Jr.",
+          "episode_count": 62
+        }
+      ],
+      "order": 3
+    },
+    {
+      "adult": false,
+      "gender": 2,
+      "id": 14329,
+      "known_for_department": "Acting",
+      "name": "Dean Norris",
+      "original_name": "Dean Norris",
+      "popularity": 3.8754,
+      "profile_path": "/mKRrEbsxAX3ro700HsViFArRM7l.jpg",
+      "total_episode_count": 62,
+      "roles": [
+        {
+          "credit_id": "52542283760ee3132800187b",
+          "character": "Hank Schrader",
+          "episode_count": 62
+        }
+      ],
+      "order": 4
+    },
+    {
+      "adult": false,
+      "gender": 1,
+      "id": 1217934,
+      "known_for_department": "Acting",
+      "name": "Betsy Brandt",
+      "original_name": "Betsy Brandt",
+      "popularity": 2.1568,
+      "profile_path": "/xAnuzyjdMbQq9L1c4JNwXL52Wm4.jpg",
+      "total_episode_count": 62,
+      "roles": [
+        {
+          "credit_id": "52542283760ee31328001891",
+          "character": "Marie Schrader",
+          "episode_count": 62
+        }
+      ],
+      "order": 5
+    },
+    {
+      "adult": false,
+      "gender": 2,
+      "id": 59410,
+      "known_for_department": "Acting",
+      "name": "Bob Odenkirk",
+      "original_name": "Bob Odenkirk",
+      "popularity": 4.7601,
+      "profile_path": "/rF0Lb6SBhGSTvjRffmlKRSeI3jE.jpg",
+      "total_episode_count": 43,
+      "roles": [
+        {
+          "credit_id": "5271b180760ee35afc09bb8d",
+          "character": "Saul Goodman",
+          "episode_count": 43
+        }
+      ],
+      "order": 7
+    },
+    {
+      "adult": false,
+      "gender": 2,
+      "id": 783,
+      "known_for_department": "Acting",
+      "name": "Jonathan Banks",
+      "original_name": "Jonathan Banks",
+      "popularity": 4.6699,
+      "profile_path": "/bswk26L13PvY4iMTwUTAsepXCLv.jpg",
+      "total_episode_count": 36,
+      "roles": [
+        {
+          "credit_id": "5271b1e6760ee35af60941ad",
+          "character": "Mike Ehrmantraut",
+          "episode_count": 36
+        }
+      ],
+      "order": 9
+    },
+    {
+      "adult": false,
+      "gender": 2,
+      "id": 61535,
+      "known_for_department": "Acting",
+      "name": "Steven Michael Quezada",
+      "original_name": "Steven Michael Quezada",
+      "popularity": 1.6644,
+      "profile_path": "/pVYrDkwI6GWvCNL2kJhpDJfBFyd.jpg",
+      "total_episode_count": 33,
+      "roles": [
+        {
+          "credit_id": "5271b489760ee35b3e0881a7",
+          "character": "Steven Gomez",
+          "episode_count": 33
+        }
+      ],
+      "order": 8
+    },
+    {
+      "adult": false,
+      "gender": 2,
+      "id": 4808,
+      "known_for_department": "Acting",
+      "name": "Giancarlo Esposito",
+      "original_name": "Giancarlo Esposito",
+      "popularity": 13.0115,
+      "profile_path": "/rcXnr82TwDzU4ZGdBeNXfG0ZQnZ.jpg",
+      "total_episode_count": 28,
+      "roles": [
+        {
+          "credit_id": "5271b1a7760ee35afc09c4e5",
+          "character": "Gustavo Fring",
+          "episode_count": 28
+        }
+      ],
+      "order": 6
+    },
+    {
+      "adult": false,
+      "gender": 2,
+      "id": 82945,
+      "known_for_department": "Acting",
+      "name": "Charles Baker",
+      "original_name": "Charles Baker",
+      "popularity": 1.887,
+      "profile_path": "/l2plWtvYRcLX4CXf8azXIyANq.jpg",
+      "total_episode_count": 15,
+      "roles": [
+        {
+          "credit_id": "52744007760ee356f6076365",
+          "character": "Skinny Pete",
+          "episode_count": 15
+        }
+      ],
+      "order": 656
+    },
+    {
+      "adult": false,
+      "gender": 2,
+      "id": 20379,
+      "known_for_department": "Acting",
+      "name": "Christopher Cousins",
+      "original_name": "Christopher Cousins",
+      "popularity": 2.6407,
+      "profile_path": "/9fmoeZLGbJfiYU6mIbrUkjF9wsR.jpg",
+      "total_episode_count": 13,
+      "roles": [
+        {
+          "credit_id": "527504f6760ee347c912980c",
+          "character": "Ted Beneke",
+          "episode_count": 13
+        }
+      ],
+      "order": 604
+    },
+    {
+      "adult": false,
+      "gender": 2,
+      "id": 191202,
+      "known_for_department": "Acting",
+      "name": "Matt Jones",
+      "original_name": "Matt Jones",
+      "popularity": 2.2233,
+      "profile_path": "/x13vFDaJHY1CxNvSPWujYe12bMc.jpg",
+      "total_episode_count": 12,
+      "roles": [
+        {
+          "credit_id": "52744535760ee3572209100e",
+          "character": "Badger",
+          "episode_count": 12
+        }
+      ],
+      "order": 658
+    },
+    {
+      "adult": false,
+      "gender": 2,
+      "id": 9291,
+      "known_for_department": "Acting",
+      "name": "Michael Shamus Wiles",
+      "original_name": "Michael Shamus Wiles",
+      "popularity": 1.1711,
+      "profile_path": "/qfCBvbCac2LO8ayIY2pre0eIMkv.jpg",
+      "total_episode_count": 11,
+      "roles": [
+        {
+          "credit_id": "5271b622760ee35b0709869c",
+          "character": "ASAC George Merkert",
+          "episode_count": 11
+        }
+      ],
+      "order": 606
+    },
+    {
+      "adult": false,
+      "gender": 2,
+      "id": 564348,
+      "known_for_department": "Acting",
+      "name": "Lavell Crawford",
+      "original_name": "Lavell Crawford",
+      "popularity": 1.7764,
+      "profile_path": "/mvDs3bWKicnC98nGJNqrm4NaALd.jpg",
+      "total_episode_count": 11,
+      "roles": [
+        {
+          "credit_id": "52763ec8760ee35a9a0f7511",
+          "character": "Huell",
+          "episode_count": 11
+        }
+      ],
+      "order": 637
+    },
+    {
+      "adult": false,
+      "gender": 2,
+      "id": 88124,
+      "known_for_department": "Acting",
+      "name": "Jesse Plemons",
+      "original_name": "Jesse Plemons",
+      "popularity": 5.6149,
+      "profile_path": "/og4I51GsuwohdPgoELOHVMMqMre.jpg",
+      "total_episode_count": 11,
+      "roles": [
+        {
+          "credit_id": "6524ae29447f9c010048439b",
+          "character": "Todd",
+          "episode_count": 11
+        }
+      ],
+      "order": 724
+    },
+    {
+      "adult": false,
+      "gender": 1,
+      "id": 147085,
+      "known_for_department": "Acting",
+      "name": "Tina Parker",
+      "original_name": "Tina Parker",
+      "popularity": 1.0812,
+      "profile_path": "/qa4BFhrCGQKwqdTgLJ8S2rr95hD.jpg",
+      "total_episode_count": 9,
+      "roles": [
+        {
+          "credit_id": "52768aeb760ee36d750c58ae",
+          "character": "Francesca (voice)",
+          "episode_count": 1
+        },
+        {
+          "credit_id": "52753cc8760ee3157002006b",
+          "character": "Francesca",
+          "episode_count": 8
+        }
+      ],
+      "order": 628
+    },
+    {
+      "adult": false,
+      "gender": 2,
+      "id": 582668,
+      "known_for_department": "Acting",
+      "name": "Jeremiah Bitsui",
+      "original_name": "Jeremiah Bitsui",
+      "popularity": 1.1913,
+      "profile_path": "/jB4u8jekprqQeB0xhdB4YSgO8FG.jpg",
+      "total_episode_count": 8,
+      "roles": [
+        {
+          "credit_id": "653051e71fb94f00ffda8bf3",
+          "character": "Gus' Messenger",
+          "episode_count": 1
+        },
+        {
+          "credit_id": "5275464a760ee33556010f2a",
+          "character": "Victor",
+          "episode_count": 7
+        }
+      ],
+      "order": 622
+    }
+  ],
+  "crew": []
+}

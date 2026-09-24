@@ -36,6 +36,7 @@ function PosterCard({
   href,
   badge,
   controls,
+  meta,
   priority = false,
   className,
 }: {
@@ -52,6 +53,12 @@ function PosterCard({
   badge?: React.ReactNode;
   /** Bottom row slot for the tracking controls features 8 and 12 add. */
   controls?: React.ReactNode;
+  /**
+   * A one line caption under the title, such as a season card's year and
+   * episode count (spec 0009, AC-7). Outside the link, so the link's name
+   * stays the title.
+   */
+  meta?: React.ReactNode;
   priority?: boolean;
   className?: string;
 }) {
@@ -146,6 +153,9 @@ function PosterCard({
           title
         )}
       </h3>
+      {meta ? (
+        <p className="-mt-1.5 truncate text-xs text-muted-foreground">{meta}</p>
+      ) : null}
     </article>
   );
 }

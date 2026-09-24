@@ -4,7 +4,7 @@ import { fetchMovieGenres } from "./genres";
 import { fetchMovie } from "./movies";
 import { fetchSearchMovies } from "./search";
 import { fetchShowEpisodes } from "./show-episodes";
-import { fetchSeason, fetchTvShow } from "./tv";
+import { fetchSeason, fetchShowCast, fetchTvShow } from "./tv";
 
 /**
  * LIVE CHECK. This file talks to the real TMDB API.
@@ -61,6 +61,15 @@ describe.skipIf(!hasToken)("TMDB live check (real network)", () => {
     expect(show.name).toBe("Breaking Bad");
     expect(show.status.length).toBeGreaterThan(0);
     expect(show.seasons.some((season) => season.isSpecials)).toBe(true);
+    expect(show.overviewLanguage).toBe("en");
+    expect(show.lastAirYear).toBe(2013);
+  });
+
+  it("reads a known show's series cast from aggregate credits", async () => {
+    const cast = await fetchShowCast(1396);
+    expect(cast.length).toBe(12);
+    expect(cast[0].name).toBe("Bryan Cranston");
+    expect(cast[0].character).toBe("Walter White");
   });
 
   it("reads a known season, including its specials", async () => {

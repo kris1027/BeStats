@@ -3,7 +3,11 @@ import Image from "next/image";
 
 import type { CastMember } from "@/lib/tmdb";
 
-/** How many billed cast members a movie page shows (spec 0006, AC-6). */
+/**
+ * How many billed cast members a movie page shows (spec 0006, AC-6). A show's
+ * cast arrives already cut to `SHOW_CAST_LIMIT` in the TMDB module, the same
+ * number, so this is a no op there; change the two together.
+ */
 const CAST_LIMIT = 12;
 
 /**
@@ -17,15 +21,19 @@ const CAST_LIMIT = 12;
  * leads nowhere useful is worse than none. The photo is decorative (`alt=""`)
  * because the name sits right under it.
  *
- * `cast` arrives already in TMDB billing order from the module.
+ * `cast` arrives already in order from the module: billing order for a movie,
+ * most episodes first for a show (spec 0009, AC-8).
  */
-function CastRow({ cast }: { cast: CastMember[] }) {
+function CastRow({
+  cast,
+  emptyMessage = "TMDB lists no cast for this movie.",
+}: {
+  cast: CastMember[];
+  /** What an empty cast says; the show page names a show (spec 0009, AC-8). */
+  emptyMessage?: string;
+}) {
   if (cast.length === 0) {
-    return (
-      <p className="text-[15px] text-muted-foreground">
-        TMDB lists no cast for this movie.
-      </p>
-    );
+    return <p className="text-[15px] text-muted-foreground">{emptyMessage}</p>;
   }
 
   return (

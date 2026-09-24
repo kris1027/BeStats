@@ -172,100 +172,79 @@
   "type": "Scripted",
   "vote_average": 8.952,
   "vote_count": 18665,
-  "credits": {
-    "cast": [
+  "translations": {
+    "translations": [
       {
-        "adult": false,
-        "gender": 2,
-        "id": 17419,
-        "known_for_department": "Acting",
-        "name": "Bryan Cranston",
-        "original_name": "Bryan Cranston",
-        "popularity": 7.045,
-        "profile_path": "/7Jahy5LZX2Fo8fGJltMreAI49hC.jpg",
-        "character": "Walter White",
-        "credit_id": "52542282760ee313280017f9",
-        "order": 0
+        "iso_3166_1": "US",
+        "iso_639_1": "en",
+        "name": "English",
+        "english_name": "English",
+        "data": {
+          "name": "",
+          "overview": "Walter White, a New Mexico chemistry teacher, is diagnosed with Stage III cancer and given a prognosis of only two years left to live. He becomes filled with a sense of fearlessness and an unrelenting desire to secure his family's financial future at any cost as he enters the dangerous world of drugs and crime.",
+          "homepage": "",
+          "tagline": "Change the equation."
+        }
       },
       {
-        "adult": false,
-        "gender": 2,
-        "id": 84497,
-        "known_for_department": "Acting",
-        "name": "Aaron Paul",
-        "original_name": "Aaron Paul",
-        "popularity": 3.871,
-        "profile_path": "/8Ac9uuoYwZoYVAIJfRLzzLsGGJn.jpg",
-        "character": "Jesse Pinkman",
-        "credit_id": "52542282760ee31328001845",
-        "order": 1
+        "iso_3166_1": "DE",
+        "iso_639_1": "de",
+        "name": "Deutsch",
+        "english_name": "German",
+        "data": {
+          "name": "",
+          "overview": "Ein krebskranker Chemielehrer tut sich mit einem ehemaligen Schüler zusammen, um die Zukunft seiner Familie durch die Herstellung und den Verkauf von Meth zu sichern.",
+          "homepage": "",
+          "tagline": ""
+        }
       },
       {
-        "adult": false,
-        "gender": 1,
-        "id": 134531,
-        "known_for_department": "Acting",
-        "name": "Anna Gunn",
-        "original_name": "Anna Gunn",
-        "popularity": 2.8719,
-        "profile_path": "/adppyeu1a4REN3khtgmXusrapFi.jpg",
-        "character": "Skyler White",
-        "credit_id": "52542282760ee3132800181b",
-        "order": 2
+        "iso_3166_1": "FR",
+        "iso_639_1": "fr",
+        "name": "Français",
+        "english_name": "French",
+        "data": {
+          "name": "",
+          "overview": "Un professeur de chimie atteint d'un cancer s'associe à un ancien élève pour fabriquer et vendre de la méthamphétamine afin d'assurer l'avenir financier de sa famille.",
+          "homepage": "",
+          "tagline": "Souviens-toi de mon nom."
+        }
       },
       {
-        "adult": false,
-        "gender": 2,
-        "id": 209674,
-        "known_for_department": "Acting",
-        "name": "RJ Mitte",
-        "original_name": "RJ Mitte",
-        "popularity": 2.4542,
-        "profile_path": "/sNPA92ZrssYhlaB1UA2pWcLD9db.jpg",
-        "character": "Walter White Jr.",
-        "credit_id": "52542284760ee313280018a9",
-        "order": 3
+        "iso_3166_1": "ES",
+        "iso_639_1": "es",
+        "name": "Español",
+        "english_name": "Spanish",
+        "data": {
+          "name": "",
+          "overview": "Un profesor de química con cáncer terminal se asocia con un exalumno suyo para fabricar y vender metanfetamina a fin de que su familia no pase apuros económicos.",
+          "homepage": "",
+          "tagline": "Recuerda mi nombre"
+        }
       },
       {
-        "adult": false,
-        "gender": 2,
-        "id": 14329,
-        "known_for_department": "Acting",
-        "name": "Dean Norris",
-        "original_name": "Dean Norris",
-        "popularity": 3.9606,
-        "profile_path": "/mKRrEbsxAX3ro700HsViFArRM7l.jpg",
-        "character": "Hank Schrader",
-        "credit_id": "52542283760ee3132800187b",
-        "order": 4
-      }
-    ],
-    "crew": [
-      {
-        "adult": false,
-        "gender": 2,
-        "id": 24951,
-        "known_for_department": "Production",
-        "name": "Peter Gould",
-        "original_name": "Peter Gould",
-        "popularity": 1.7073,
-        "profile_path": "/a2dJSpUiXQ2NAxqSzztr6WsnhOJ.jpg",
-        "credit_id": "67ac7225f85f19913a9b8a2d",
-        "department": "Production",
-        "job": "Co-Executive Producer"
+        "iso_3166_1": "CA",
+        "iso_639_1": "fr",
+        "name": "Français",
+        "english_name": "French",
+        "data": {
+          "name": "Breaking Bad : Le chimiste",
+          "overview": "En phase terminale d'un cancer, un professeur de chimie s'allie à un ancien élève pour assurer l'avenir de sa famille en fabriquant et en vendant de la méthamphétamine.",
+          "homepage": "",
+          "tagline": ""
+        }
       },
       {
-        "adult": false,
-        "gender": 2,
-        "id": 103009,
-        "known_for_department": "Writing",
-        "name": "Thomas Schnauz",
-        "original_name": "Thomas Schnauz",
-        "popularity": 1.2974,
-        "profile_path": "/uMz5wsgv6QQAgFI809SgCCbwYn9.jpg",
-        "credit_id": "67ac7024f71a3783e1bb4ea5",
-        "department": "Production",
-        "job": "Co-Executive Producer"
+        "iso_3166_1": "MX",
+        "iso_639_1": "es",
+        "name": "Español",
+        "english_name": "Spanish",
+        "data": {
+          "name": "",
+          "overview": "Un profesor de Química de secundaria con cáncer terminal se asocia a un exestudiante para asegurar el futuro de su familia al fabricar y vender metanfetamina.",
+          "homepage": "",
+          "tagline": "Vive libre o muere."
+        }
       }
     ]
   }

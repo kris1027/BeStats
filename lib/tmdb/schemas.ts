@@ -107,6 +107,9 @@ export const seasonSummarySchema = z.object({
 });
 
 export const tvShowSchema = tvSummarySchema.extend({
+  adult: z.boolean().nullish(),
+  original_language: z.string(),
+  tagline: nullableString,
   backdrop_path: nullableString,
   status: z.string().nullish(),
   in_production: z.boolean().nullish(),
@@ -114,8 +117,33 @@ export const tvShowSchema = tvSummarySchema.extend({
   number_of_seasons: nullableNumber,
   number_of_episodes: nullableNumber,
   genres: z.array(genreSchema).nullish(),
-  credits: creditsSchema,
+  translations: translationsSchema,
   seasons: z.array(seasonSummarySchema).nullish(),
+});
+
+/**
+ * One person in a show's aggregate credits, with every role they played.
+ * Parsed per item, like a movie credit, so one malformed person is dropped
+ * rather than failing the whole cast (spec 0009, AC-8).
+ */
+export const aggregateCastMemberSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  profile_path: nullableString,
+  total_episode_count: z.number().nullish(),
+  order: z.number().nullish(),
+  roles: z.array(
+    z.object({
+      credit_id: z.string(),
+      character: z.string().nullish(),
+      episode_count: z.number().nullish(),
+    }),
+  ),
+});
+
+/** `/tv/{id}/aggregate_credits`, its people left unparsed until one by one. */
+export const aggregateCreditsSchema = z.object({
+  cast: z.array(z.unknown()).nullish(),
 });
 
 /**
@@ -161,6 +189,7 @@ export function pagedSchema<T extends z.ZodTypeAny>(item: T) {
 export type RawMovie = z.infer<typeof movieSchema>;
 export type RawMovieSummary = z.infer<typeof movieSummarySchema>;
 export type RawTvShow = z.infer<typeof tvShowSchema>;
+export type RawAggregateCredits = z.infer<typeof aggregateCreditsSchema>;
 export type RawTvSummary = z.infer<typeof tvSummarySchema>;
 export type RawSeasonSummary = z.infer<typeof seasonSummarySchema>;
 export type RawSeasonDetail = z.infer<typeof seasonDetailSchema>;
