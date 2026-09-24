@@ -1,16 +1,27 @@
 import "server-only";
 import { tmdbRequest } from "./client";
-import { normalizeSeasonDetail, normalizeTvShow } from "./normalize";
-import { seasonDetailSchema, tvShowSchema } from "./schemas";
-import type { SeasonDetail, TvShow } from "./types";
+import {
+  normalizeSeasonDetail,
+  normalizeShowCast,
+  normalizeTvShow,
+} from "./normalize";
+import {
+  aggregateCreditsSchema,
+  seasonDetailSchema,
+  tvShowSchema,
+} from "./schemas";
+import type { SeasonDetail, ShowCastMember, TvShow } from "./types";
 import { assertId, assertSeasonNumber } from "./validation";
 
 /**
  * Reads one TV show, uncached.
  *
  * Nothing is appended for the seasons: TMDB's `/3/tv/{id}` already carries the
- * season summaries natively, so only `credits` costs anything extra and the
- * whole show is still one request (spec 0002, AC-6).
+ * season summaries natively. Only `translations` is appended, for the original
+ * language overview, so the show is still one request. The cast is not: it
+ * moved to `fetchShowCast`, because `getShowEpisodes` and the list screens
+ * reuse this read and should not download the credits (spec 0009, AC-20,
+ * amending spec 0002, AC-6).
  *
  * @param id TMDB show id.
  * @returns The normalized show, including its season summaries.
@@ -21,10 +32,29 @@ export async function fetchTvShow(id: number): Promise<TvShow> {
   assertId(id, endpoint);
   const raw = await tmdbRequest(
     endpoint,
-    { append_to_response: "credits" },
+    { append_to_response: "translations" },
     tvShowSchema,
   );
   return normalizeTvShow(raw);
+}
+
+/**
+ * Reads a show's series cast from its aggregate credits, uncached.
+ *
+ * Aggregate credits, not plain credits: plain credits list only the latest
+ * season's cast, so an ended show would lose everyone who left before its
+ * finale (spec 0009, AC-8). The payload can be over a megabyte for a long
+ * running show, which is why it is its own read with its own cache entry.
+ *
+ * @param id TMDB show id.
+ * @returns At most `SHOW_CAST_LIMIT` people, most episodes first.
+ * @throws {TmdbError} `not_found` when TMDB has no such show.
+ */
+export async function fetchShowCast(id: number): Promise<ShowCastMember[]> {
+  const endpoint = `/tv/${id}/aggregate_credits`;
+  assertId(id, endpoint);
+  const raw = await tmdbRequest(endpoint, {}, aggregateCreditsSchema);
+  return normalizeShowCast(raw.cast);
 }
 
 /**

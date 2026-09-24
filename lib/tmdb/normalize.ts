@@ -1,3 +1,4 @@
+import { SHOW_CAST_LIMIT } from "./constants";
 import {
   BACKDROP_SIZE,
   imageUrl,
@@ -6,6 +7,7 @@ import {
   STILL_SIZE,
 } from "./images";
 import {
+  aggregateCastMemberSchema,
   castMemberSchema,
   type RawEpisode,
   type RawMovie,
@@ -24,6 +26,7 @@ import type {
   MovieSummary,
   SeasonDetail,
   SeasonSummary,
+  ShowCastMember,
   TvShow,
   TvShowSummary,
 } from "./types";
@@ -192,20 +195,76 @@ export function normalizeSeasonSummary(raw: RawSeasonSummary): SeasonSummary {
 }
 
 export function normalizeTvShow(raw: RawTvShow): TvShow {
+  const lastAirDate = textOrNull(raw.last_air_date);
   return {
     ...normalizeTvSummary(raw),
+    ...resolveOverview(
+      raw.overview,
+      raw.original_language,
+      raw.translations?.translations,
+    ),
+    adult: raw.adult ?? false,
+    originalLanguage: raw.original_language,
+    tagline: textOrNull(raw.tagline),
     backdropUrl: imageUrl(raw.backdrop_path, BACKDROP_SIZE),
     // Reported verbatim. What `Ended` or `Canceled` means for automatic
     // completion belongs to scope feature 16, not to this module.
     status: raw.status ?? "",
     inProduction: raw.in_production ?? false,
-    lastAirDate: textOrNull(raw.last_air_date),
+    lastAirDate,
+    lastAirYear: yearFromDate(lastAirDate),
     numberOfSeasons: raw.number_of_seasons ?? 0,
     numberOfEpisodes: raw.number_of_episodes ?? 0,
     genres: normalizeGenres(raw.genres),
-    cast: normalizeCast(raw.credits?.cast),
     seasons: (raw.seasons ?? []).map(normalizeSeasonSummary),
   };
+}
+
+/**
+ * A show's series cast from TMDB's aggregate credits (spec 0009, AC-8).
+ *
+ * A person who played several roles is shown once, with the role they played
+ * in the most episodes (the first listed on a tie), because that is the part a
+ * viewer knows them for. People are sorted by total episode count, then by
+ * TMDB's own `order`: TMDB already returns them that way, but the explicit sort
+ * keeps the rule ours if TMDB ever changes its ordering. The result is cut to
+ * `SHOW_CAST_LIMIT` here rather than on the page, so the cached value stays
+ * small even when TMDB lists hundreds of people. A malformed person, or one
+ * with no role, is dropped, the same rule as a malformed movie credit.
+ */
+export function normalizeShowCast(
+  items: unknown[] | null | undefined,
+): ShowCastMember[] {
+  const people: (ShowCastMember & { totalEpisodes: number })[] = [];
+  for (const item of items ?? []) {
+    const parsed = aggregateCastMemberSchema.safeParse(item);
+    if (!parsed.success) continue;
+    const person = parsed.data;
+
+    let role = person.roles[0];
+    if (role === undefined) continue;
+    for (const candidate of person.roles) {
+      if ((candidate.episode_count ?? 0) > (role.episode_count ?? 0)) {
+        role = candidate;
+      }
+    }
+
+    people.push({
+      personId: person.id,
+      creditId: role.credit_id,
+      name: person.name,
+      character: role.character ?? "",
+      profileUrl: imageUrl(person.profile_path, PROFILE_SIZE),
+      // A missing order sorts last; the stable sort keeps TMDB's list order.
+      order: person.order ?? Number.MAX_SAFE_INTEGER,
+      totalEpisodes: person.total_episode_count ?? 0,
+    });
+  }
+
+  return people
+    .sort((a, b) => b.totalEpisodes - a.totalEpisodes || a.order - b.order)
+    .slice(0, SHOW_CAST_LIMIT)
+    .map(({ totalEpisodes: _, ...member }) => member);
 }
 
 /**

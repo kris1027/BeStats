@@ -17,7 +17,7 @@ import {
   fetchSearchTvShows,
 } from "./search";
 import { fetchShowEpisodes } from "./show-episodes";
-import { fetchSeason, fetchTvShow } from "./tv";
+import { fetchSeason, fetchShowCast, fetchTvShow } from "./tv";
 import type {
   BatchResult,
   DiscoverOptions,
@@ -27,6 +27,7 @@ import type {
   Paged,
   SearchOptions,
   SeasonDetail,
+  ShowCastMember,
   ShowEpisodes,
   TvShow,
   TvShowSummary,
@@ -46,7 +47,7 @@ import type {
  * **The explicit lifetime** (AC-4, AC-5). Every wrapper calls `cacheLife` in
  * its own scope, so no read falls back to the implicit `default` profile. The
  * profiles follow how fast each resource actually changes: `days` for detail,
- * `hours` for a season (the one read where a user is waiting on last night's
+ * `hours` for a show and a season (the one read where a user is waiting on last night's
  * episode, which is what satisfies the AGENTS.md section 12 rule against an
  * indefinitely cached catalog), `minutes` for query shaped reads with little
  * reuse, and `max` for genre lists that are effectively static.
@@ -95,11 +96,16 @@ export async function getMovie(id: number): Promise<Movie> {
   return unwrap(await getMovieCached(id));
 }
 
+/**
+ * `hours`, not `days`, so a new season or a changed status appears within
+ * hours (spec 0009, AC-20). The cast is not in this read, so the shorter
+ * lifetime costs one small request, not the credits.
+ */
 async function getTvShowCached(id: number): Promise<TmdbResult<TvShow>> {
   "use cache";
   try {
     const value = await fetchTvShow(id);
-    cacheLife("days");
+    cacheLife("hours");
     return { ok: true, value };
   } catch (error) {
     const failure = toFailure(error);
@@ -110,6 +116,26 @@ async function getTvShowCached(id: number): Promise<TmdbResult<TvShow>> {
 
 export async function getTvShow(id: number): Promise<TvShow> {
   return unwrap(await getTvShowCached(id));
+}
+
+/** A series cast changes rarely, so it keeps the detail profile (AC-20). */
+async function getShowCastCached(
+  id: number,
+): Promise<TmdbResult<ShowCastMember[]>> {
+  "use cache";
+  try {
+    const value = await fetchShowCast(id);
+    cacheLife("days");
+    return { ok: true, value };
+  } catch (error) {
+    const failure = toFailure(error);
+    cacheFailure(failure);
+    return { ok: false, failure };
+  }
+}
+
+export async function getShowCast(id: number): Promise<ShowCastMember[]> {
+  return unwrap(await getShowCastCached(id));
 }
 
 async function getSeasonCached(
