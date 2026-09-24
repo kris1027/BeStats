@@ -9,7 +9,7 @@ import { MovieOverview } from "@/components/movie/movie-overview";
 import { RetryLink } from "@/components/retry-link";
 import { StatePanel } from "@/components/state-panel";
 import { MovieTrackingSlot } from "@/components/tracking/movie-tracking-slot";
-import { parseMovieId } from "@/lib/catalog/ids";
+import { parseTmdbId } from "@/lib/catalog/ids";
 import { truncateAtWord } from "@/lib/format";
 
 import { loadMovie } from "./load-movie";
@@ -29,7 +29,7 @@ const DESCRIPTION_LIMIT = 160;
 export async function generateMetadata({
   params,
 }: PageProps<"/movies/[id]">): Promise<Metadata> {
-  const id = parseMovieId((await params).id);
+  const id = parseTmdbId((await params).id);
   if (id === null)
     return { title: "Movie not found", robots: { index: false } };
 
@@ -77,7 +77,7 @@ async function MovieDetail({
 }) {
   // `proxy.ts` already answered a malformed id with a real 404; this is the
   // same rule again for any request that did not pass through it.
-  const id = parseMovieId((await params).id);
+  const id = parseTmdbId((await params).id);
   if (id === null) notFound();
 
   const result = await loadMovie(id);

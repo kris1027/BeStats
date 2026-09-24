@@ -83,3 +83,90 @@ export function formatPersonalScore(value: number | null): string {
   if (value === null) return "Not rated";
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
+
+/**
+ * The years a show aired, for the show hero (spec 0009, AC-4).
+ *
+ * Derived from TMDB's own facts without a clock, so the text never depends on
+ * when or where the page renders. `Ended` and `Canceled` close the span;
+ * anything else with a last air year has something aired and is still open
+ * (`–present`); with no last air year nothing has aired and only the first
+ * year shows. The statuses are compared exactly, TMDB's wording verbatim.
+ *
+ * @returns The span, or null when TMDB has no first air year.
+ */
+export function formatAirSpan({
+  firstAirYear,
+  lastAirYear,
+  status,
+}: {
+  firstAirYear: number | null;
+  lastAirYear: number | null;
+  status: string;
+}): string | null {
+  if (firstAirYear === null) return null;
+  if (lastAirYear === null) return String(firstAirYear);
+  if (status === "Ended" || status === "Canceled") {
+    return lastAirYear === firstAirYear
+      ? String(firstAirYear)
+      : `${firstAirYear}–${lastAirYear}`;
+  }
+  return `${firstAirYear}–present`;
+}
+
+/**
+ * A season's episode count as a card and the season header state it
+ * (spec 0009, AC-7). Zero is said in words, because TMDB listing no episodes
+ * yet is not the same as a season of none.
+ */
+export function formatEpisodeCount(count: number): string {
+  if (count === 0) return "No episodes listed yet";
+  return `${count} ${count === 1 ? "episode" : "episodes"}`;
+}
+
+/**
+ * A season's year and episode count, as a season card and the season header
+ * show them (spec 0009, AC-7, AC-9). The year is the leading four characters
+ * of TMDB's date, never a `Date` parse, for the reason `yearFromDate` gives in
+ * the TMDB module; a season with no date leaves the year out.
+ *
+ * @returns The parts to join with the meta line's ` · ` separator.
+ */
+export function seasonMetaParts(
+  airDate: string | null,
+  episodeCount: number,
+): string[] {
+  const year = airDate && /^\d{4}/.test(airDate) ? airDate.slice(0, 4) : null;
+  return [year, formatEpisodeCount(episodeCount)].filter(
+    (part): part is string => part !== null,
+  );
+}
+
+const TMDB_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+const AIR_DATE_FORMAT = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+/**
+ * A TMDB air date as `Mar 3, 2013` (spec 0009, AC-10).
+ *
+ * TMDB gives a calendar date with no time or zone. It is read and formatted in
+ * UTC, so the day printed is the day TMDB wrote whatever timezone the server
+ * runs in; a local parse would print the day before west of UTC. Nothing is
+ * compared with today: whether it has aired belongs to features 12 and 14.
+ *
+ * @returns The formatted date, or null for a missing or malformed value.
+ */
+export function formatAirDate(date: string | null): string | null {
+  const match = date === null ? null : TMDB_DATE.exec(date);
+  if (!match) return null;
+  const [, year, month, day] = match.map(Number);
+  const utc = new Date(Date.UTC(year, month - 1, day));
+  // A value like 2013-02-30 rolls over; that is not the date TMDB wrote.
+  if (utc.getUTCMonth() !== month - 1 || utc.getUTCDate() !== day) return null;
+  return AIR_DATE_FORMAT.format(utc);
+}

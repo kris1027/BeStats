@@ -94,13 +94,13 @@ describe("the proxy with incomplete auth configuration", () => {
 });
 
 /**
- * covers: spec 0006, AC-8
+ * covers: spec 0006, AC-8; spec 0009, AC-13
  *
- * Run for real: a malformed movie id must be a 404 decided here, before any
+ * Run for real: a malformed movie id, show id or season number must be a 404 decided here, before any
  * Supabase or TMDB call and whether or not auth is configured, because the
  * movie page streams its shell first and cannot change the status afterwards.
  */
-describe("the proxy's movie id rule", () => {
+describe("the proxy's catalog id rule", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.restoreAllMocks();
@@ -131,12 +131,24 @@ describe("the proxy's movie id rule", () => {
     "/movies/-2",
     "/movies/2147483648",
     "/movies/550.jpg",
+    // spec 0009, AC-13
+    "/shows/abc",
+    "/shows/0",
+    "/shows/01396",
+    "/shows/1396.jpg",
+    "/shows/abc/season/1",
+    "/shows/1396/season/01",
+    "/shows/1396/season/00",
+    "/shows/1396/season/-1",
+    "/shows/1396/season/1.0",
+    "/shows/1396/season/10000",
+    "/shows/1396/season/x",
   ])("answers %s with a 404 rewrite", async (path) => {
     const response = await run(path);
 
     expect(response.status).toBe(404);
     expect(response.headers.get("x-middleware-rewrite")).toContain(
-      "/_movie-not-found",
+      "/_catalog-not-found",
     );
   });
 
@@ -149,6 +161,27 @@ describe("the proxy's movie id rule", () => {
     },
   );
 
+  it.each([
+    "/shows/%2B1396",
+    "/shows/%E0%A4%A",
+    "/shows/1396/season/%2B1",
+    "/shows/1396/season/%E0%A4%A",
+  ])(
+    "decodes the show path %s before judging it, and answers 404",
+    async (path) => {
+      const response = await run(path);
+
+      expect(response.status).toBe(404);
+    },
+  );
+
+  it("lets a percent encoded canonical show and season through", async () => {
+    const response = await run("/shows/%31%33%39%36/season/%32");
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-middleware-rewrite")).toBeNull();
+  });
+
   it("lets a percent encoded canonical id through", async () => {
     const response = await run("/movies/%35%35%30");
 
@@ -156,25 +189,33 @@ describe("the proxy's movie id rule", () => {
     expect(response.headers.get("x-middleware-rewrite")).toBeNull();
   });
 
-  it.each(["/movies/550", "/movies", "/movies/550/extra", "/shows/abc"])(
-    "lets %s through untouched",
-    async (path) => {
-      const response = await run(path);
+  it.each([
+    "/movies/550",
+    "/movies",
+    "/movies/550/extra",
+    "/shows",
+    "/shows/1396",
+    "/shows/1396/season/0",
+    "/shows/1396/season/2",
+    "/shows/1396/season/9999",
+    "/shows/1396/season",
+    "/shows/1396/season/2/extra",
+  ])("lets %s through untouched", async (path) => {
+    const response = await run(path);
 
-      expect(response.status).toBe(200);
-      expect(response.headers.get("x-middleware-rewrite")).toBeNull();
-    },
-  );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-middleware-rewrite")).toBeNull();
+  });
 
   it("decides before the auth configuration check", () => {
-    expect(PROXY.indexOf("malformedMovieResponse(request)")).toBeLessThan(
+    expect(PROXY.indexOf("malformedCatalogResponse(request)")).toBeLessThan(
       PROXY.indexOf("publicEnvProblems()"),
     );
   });
 });
 
 /**
- * covers: spec 0006, AC-8
+ * covers: spec 0006, AC-8; spec 0009, AC-13
  *
  * The matcher decides whether the proxy runs at all, so a movie path that
  * looks like an image file must still reach the malformed id rule, while real
@@ -185,12 +226,15 @@ describe("the proxy matcher", () => {
     return unstable_doesMiddlewareMatch({ config, url });
   }
 
-  it.each(["/movies/550.jpg", "/movies/550.png", "/movies/x.svg"])(
-    "runs for %s so it can answer 404",
-    (url) => {
-      expect(matches(url)).toBe(true);
-    },
-  );
+  it.each([
+    "/movies/550.jpg",
+    "/movies/550.png",
+    "/movies/x.svg",
+    "/shows/1396.jpg",
+    "/shows/1396/season/1.png",
+  ])("runs for %s so it can answer 404", (url) => {
+    expect(matches(url)).toBe(true);
+  });
 
   it.each([
     "/_next/static/chunks/app.js",

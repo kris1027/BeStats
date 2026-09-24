@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  formatAirDate,
+  formatAirSpan,
+  formatEpisodeCount,
   formatPersonalScore,
   formatRuntime,
   formatVoteCount,
   languageName,
+  seasonMetaParts,
   truncateAtWord,
 } from "./format";
 
@@ -111,5 +115,85 @@ describe("formatPersonalScore · covers spec 0007 AC-10", () => {
     // 7.96 is an average, not an integer score, so it keeps the decimal that
     // tells the two apart.
     expect(formatPersonalScore(7.96)).toBe("8.0");
+  });
+});
+
+describe("formatAirSpan · covers spec 0009 AC-4", () => {
+  const span = (
+    firstAirYear: number | null,
+    lastAirYear: number | null,
+    status: string,
+  ) => formatAirSpan({ firstAirYear, lastAirYear, status });
+
+  it("closes the span for an ended or canceled show", () => {
+    expect(span(2008, 2013, "Ended")).toBe("2008–2013");
+    expect(span(2019, 2020, "Canceled")).toBe("2019–2020");
+  });
+
+  it("shows one year when it ended the year it began", () => {
+    expect(span(2016, 2016, "Ended")).toBe("2016");
+  });
+
+  it("stays open while something has aired and it has not ended", () => {
+    expect(span(2011, 2024, "Returning Series")).toBe("2011–present");
+    expect(span(2011, 2024, "")).toBe("2011–present");
+  });
+
+  it("shows only the first year when nothing has aired", () => {
+    expect(span(2027, null, "Planned")).toBe("2027");
+    expect(span(2027, null, "Ended")).toBe("2027");
+  });
+
+  it("is absent with no first air year", () => {
+    expect(span(null, 2013, "Ended")).toBeNull();
+  });
+
+  it("compares the status exactly", () => {
+    expect(span(2008, 2013, "ended")).toBe("2008–present");
+  });
+});
+
+describe("formatEpisodeCount · covers spec 0009 AC-7", () => {
+  it("counts in words", () => {
+    expect(formatEpisodeCount(0)).toBe("No episodes listed yet");
+    expect(formatEpisodeCount(1)).toBe("1 episode");
+    expect(formatEpisodeCount(13)).toBe("13 episodes");
+  });
+});
+
+describe("seasonMetaParts · covers spec 0009 AC-7", () => {
+  it("joins the year and the count, leaving a missing year out", () => {
+    expect(seasonMetaParts("2009-03-08", 13)).toEqual(["2009", "13 episodes"]);
+    expect(seasonMetaParts(null, 0)).toEqual(["No episodes listed yet"]);
+  });
+
+  it("leaves out a year it cannot read rather than guessing one", () => {
+    expect(seasonMetaParts("", 1)).toEqual(["1 episode"]);
+    expect(seasonMetaParts("soon", 2)).toEqual(["2 episodes"]);
+  });
+});
+
+describe("formatAirDate · covers spec 0009 AC-10", () => {
+  it("formats TMDB's calendar date in en-US", () => {
+    expect(formatAirDate("2013-03-03")).toBe("Mar 3, 2013");
+    expect(formatAirDate("2008-01-20")).toBe("Jan 20, 2008");
+  });
+
+  it("never shifts the day with the server's timezone", () => {
+    const original = process.env.TZ;
+    process.env.TZ = "America/Los_Angeles";
+    try {
+      expect(formatAirDate("2013-01-01")).toBe("Jan 1, 2013");
+    } finally {
+      process.env.TZ = original;
+    }
+  });
+
+  it("is null for a missing or malformed date", () => {
+    expect(formatAirDate(null)).toBeNull();
+    expect(formatAirDate("")).toBeNull();
+    expect(formatAirDate("2013")).toBeNull();
+    expect(formatAirDate("2013-02-30")).toBeNull();
+    expect(formatAirDate("not a date")).toBeNull();
   });
 });
