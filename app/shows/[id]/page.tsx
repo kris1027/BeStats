@@ -13,7 +13,12 @@ import { StatePanel } from "@/components/state-panel";
 import { parseTmdbId } from "@/lib/catalog/ids";
 import { orderSeasons } from "@/lib/catalog/seasons";
 import { formatAirSpan, truncateAtWord } from "@/lib/format";
-import { getShowCast, TmdbError } from "@/lib/tmdb";
+import {
+  getShowCast,
+  isTmdbNotFound,
+  TmdbError,
+  type TmdbErrorKind,
+} from "@/lib/tmdb";
 
 import { loadShow } from "./load-show";
 
@@ -145,19 +150,39 @@ async function ShowDetail({
 const SECTION_HEADING =
   "text-xl leading-tight font-bold text-foreground md:text-2xl";
 
+const NO_CAST_MESSAGE = "TMDB lists no cast for this show.";
+
+/** Failures a retry can fix; the rest are cached as settled answers. */
+const TRANSIENT_KINDS: ReadonlySet<TmdbErrorKind> = new Set([
+  "timeout",
+  "rate_limited",
+  "upstream",
+]);
+
 /**
  * The series cast, streamed on its own so a slow or failed aggregate credits
  * read never holds back or takes down the rest of the page (spec 0009, AC-8).
- * A failure shows the error panel in this section only.
+ * Only a transient failure offers Retry: a missing or unreadable credits
+ * response is cached for minutes, so retrying it would just repeat the failure.
  */
 async function ShowCast({ id }: { id: number }) {
   try {
     const cast = await getShowCast(id);
-    return (
-      <CastRow cast={cast} emptyMessage="TMDB lists no cast for this show." />
-    );
+    return <CastRow cast={cast} emptyMessage={NO_CAST_MESSAGE} />;
   } catch (error) {
     if (!(error instanceof TmdbError)) throw error;
+    if (isTmdbNotFound(error)) {
+      return <CastRow cast={[]} emptyMessage={NO_CAST_MESSAGE} />;
+    }
+    if (!TRANSIENT_KINDS.has(error.kind)) {
+      return (
+        <StatePanel
+          variant="empty"
+          title="Cast unavailable"
+          description="TMDB's cast listing for this show couldn't be read."
+        />
+      );
+    }
     return (
       <StatePanel
         variant="error"

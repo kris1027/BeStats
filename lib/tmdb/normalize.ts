@@ -186,7 +186,7 @@ export function normalizeTvSummary(raw: RawTvSummary): TvShowSummary {
 export function normalizeSeasonSummary(raw: RawSeasonSummary): SeasonSummary {
   return {
     seasonNumber: raw.season_number,
-    name: raw.name ?? `Season ${raw.season_number}`,
+    name: textOrNull(raw.name) ?? `Season ${raw.season_number}`,
     episodeCount: raw.episode_count ?? 0,
     airDate: textOrNull(raw.air_date),
     posterUrl: imageUrl(raw.poster_path, POSTER_SIZE),
@@ -294,7 +294,7 @@ export function normalizeSeasonDetail(
 ): SeasonDetail {
   return {
     seasonNumber: raw.season_number,
-    name: raw.name ?? `Season ${raw.season_number}`,
+    name: textOrNull(raw.name) ?? `Season ${raw.season_number}`,
     overview: textOrNull(raw.overview),
     airDate: textOrNull(raw.air_date),
     posterUrl: imageUrl(raw.poster_path, POSTER_SIZE),

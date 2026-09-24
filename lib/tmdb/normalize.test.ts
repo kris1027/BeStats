@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import { SHOW_CAST_LIMIT } from "./constants";
-import { normalizeCast, normalizeShowCast, resolveOverview } from "./normalize";
+import {
+  normalizeCast,
+  normalizeSeasonDetail,
+  normalizeSeasonSummary,
+  normalizeShowCast,
+  resolveOverview,
+} from "./normalize";
 
 /**
  * covers: spec 0006, AC-4, AC-5
@@ -179,5 +185,36 @@ describe("normalizeShowCast", () => {
     expect(cast).toHaveLength(SHOW_CAST_LIMIT);
     expect(cast[0]?.personId).toBe(40);
     expect(cast.at(-1)?.personId).toBe(40 - SHOW_CAST_LIMIT + 1);
+  });
+});
+
+/**
+ * covers: spec 0009, AC-9
+ *
+ * TMDB sends `"name": ""` for some seasons; a blank name would leave the
+ * season heading, tab title and card link with no text.
+ */
+describe("season name fallback", () => {
+  const summary = { season_number: 2, air_date: null, poster_path: null };
+
+  it.each([
+    ["missing", undefined],
+    ["null", null],
+    ["empty", ""],
+    ["blank", "   "],
+  ])("falls back to Season N when the name is %s", (_label, name) => {
+    expect(normalizeSeasonSummary({ ...summary, name }).name).toBe("Season 2");
+    expect(
+      normalizeSeasonDetail(
+        { ...summary, name, overview: null, episodes: [] },
+        1396,
+      ).name,
+    ).toBe("Season 2");
+  });
+
+  it("keeps a real season name", () => {
+    expect(normalizeSeasonSummary({ ...summary, name: "Book One" }).name).toBe(
+      "Book One",
+    );
   });
 });
