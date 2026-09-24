@@ -1,7 +1,7 @@
 # 0008. Watchlist and movie history pages
 
 **Date**: 2026-09-23
-**Status**: In Progress
+**Status**: Accepted
 
 Scope feature: [9. Watchlist and movie history](../../scope/scope.md) · Beta tier
 
