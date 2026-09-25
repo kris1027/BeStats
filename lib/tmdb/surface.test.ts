@@ -4,7 +4,7 @@ import movieFixture from "./__fixtures__/movie-550.json";
 import { TMDB_ATTRIBUTION } from "./constants";
 import { getTmdbToken, resetTmdbTokenCache } from "./env";
 import { isTmdbNotFound, TmdbError } from "./errors";
-import { imageUrl } from "./images";
+import { imageUrl, resizeImageUrl } from "./images";
 import { fetchMovie } from "./movies";
 import { fetchSearchMovies } from "./search";
 
@@ -17,6 +17,36 @@ import { fetchSearchMovies } from "./search";
 afterEach(() => {
   restoreFetchMock();
   vi.restoreAllMocks();
+});
+
+describe("resizeImageUrl (spec 0010)", () => {
+  it("swaps the width of a URL imageUrl built", () => {
+    expect(
+      resizeImageUrl("https://image.tmdb.org/t/p/w500/abc.jpg", "w92"),
+    ).toBe("https://image.tmdb.org/t/p/w92/abc.jpg");
+  });
+
+  it("swaps only the width, keeping a deeper path intact", () => {
+    expect(
+      resizeImageUrl("https://image.tmdb.org/t/p/original/a/b.png", "w185"),
+    ).toBe("https://image.tmdb.org/t/p/w185/a/b.png");
+  });
+
+  it("returns a TMDB URL with no width segment unchanged, not guessed at", () => {
+    expect(resizeImageUrl("https://image.tmdb.org/t/p/abc.jpg", "w92")).toBe(
+      "https://image.tmdb.org/t/p/abc.jpg",
+    );
+  });
+
+  it("keeps a missing image missing", () => {
+    expect(resizeImageUrl(null, "w92")).toBeNull();
+  });
+
+  it("returns a URL from anywhere else unchanged", () => {
+    expect(resizeImageUrl("https://example.com/w500/abc.jpg", "w92")).toBe(
+      "https://example.com/w500/abc.jpg",
+    );
+  });
 });
 
 describe("imageUrl", () => {

@@ -54,6 +54,7 @@ export const movieSummarySchema = z.object({
   overview: nullableString,
   vote_average: nullableNumber,
   vote_count: nullableNumber,
+  genre_ids: z.array(z.number()).nullish(),
 });
 
 /**
@@ -96,6 +97,7 @@ export const tvSummarySchema = z.object({
   overview: nullableString,
   vote_average: nullableNumber,
   vote_count: nullableNumber,
+  genre_ids: z.array(z.number()).nullish(),
 });
 
 export const seasonSummarySchema = z.object({

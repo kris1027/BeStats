@@ -1,8 +1,14 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { tmdbRequest } from "./client";
 import { fetchMovieGenres } from "./genres";
 import { fetchMovie } from "./movies";
-import { fetchSearchMovies } from "./search";
+import { movieSummarySchema, pagedSchema } from "./schemas";
+import {
+  fetchDiscoverMovies,
+  fetchSearchMovies,
+  fetchSearchTvShows,
+} from "./search";
 import { fetchShowEpisodes } from "./show-episodes";
 import { fetchSeason, fetchShowCast, fetchTvShow } from "./tv";
 
@@ -97,6 +103,38 @@ describe.skipIf(!hasToken)("TMDB live check (real network)", () => {
 
     const genres = await fetchMovieGenres();
     expect(genres.length).toBeGreaterThan(0);
+  });
+
+  // Spec 0010 filters a search locally because `/search/movie` ignores
+  // `with_genres`. If TMDB ever starts honouring it, this fails, so the local
+  // scan can be revisited rather than silently doubling up (AC-23).
+  it("ignores with_genres on /search/movie", async () => {
+    const schema = pagedSchema(movieSummarySchema);
+    const plain = await tmdbRequest(
+      "/search/movie",
+      { query: "dune", include_adult: false },
+      schema,
+    );
+    // 10402 is Music, which no Dune film carries.
+    const withGenre = await tmdbRequest(
+      "/search/movie",
+      { query: "dune", include_adult: false, with_genres: "10402" },
+      schema,
+    );
+    expect(withGenre.total_results).toBe(plain.total_results);
+    expect(withGenre.results.map((movie) => movie.id)).toEqual(
+      plain.results.map((movie) => movie.id),
+    );
+  });
+
+  // The count caps `formatResultCount` words as `10,000+` and `20,000+`
+  // (spec 0010, AC-3), observed on 2026-09-24.
+  it("still caps search totals at 10,000 and discover totals at 20,001", async () => {
+    const search = await fetchSearchTvShows("the");
+    expect(search.totalResults).toBe(10_000);
+
+    const discover = await fetchDiscoverMovies();
+    expect(discover.totalResults).toBe(20_001);
   });
 });
 

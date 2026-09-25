@@ -33,6 +33,7 @@ function movie(id: number): Movie {
     tagline: null,
     runtimeMinutes: null,
     genres: [],
+    genreIds: [],
     cast: [],
   };
 }
@@ -51,6 +52,7 @@ function show(id: number, seasonNumbers: number[]): TvShow {
     tagline: null,
     tmdbRating: null,
     tmdbVoteCount: 0,
+    genreIds: [],
     backdropUrl: null,
     status: "Ended",
     inProduction: false,
@@ -137,6 +139,7 @@ describe("fetchMoviesByIds", () => {
     // The summary shape only: detail fields do not leak through a list read.
     expect(Object.keys(result.found[0]).sort()).toEqual(
       [
+        "genreIds",
         "id",
         "overview",
         "posterUrl",
