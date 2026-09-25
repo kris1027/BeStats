@@ -1,4 +1,4 @@
-import type { MovieTrackingError } from "./types";
+import type { EpisodeTrackingError, MovieTrackingError } from "./types";
 
 /**
  * Every toast a tracking control can show, written once (spec 0007, toast
@@ -47,3 +47,31 @@ export const SIGN_IN_ACTION_LABEL = "Sign in";
 
 /** The line that replaces the controls when the tracking read fails (AC-17). */
 export const TRACKING_READ_FAILED = "Couldn't load your tracking.";
+
+/**
+ * The episode and season controls' failure copy (spec 0011, AC-7, AC-14): the
+ * movie copy, with the two lines that name what could not be tracked, and a
+ * refused Undo that points back at the page the person is already on.
+ */
+export const EPISODE_TRACKING_MESSAGES: Record<EpisodeTrackingError, string> = {
+  ...TRACKING_MESSAGES,
+  not_found: "This episode isn't available to track.",
+  not_aired: "This episode hasn't aired yet.",
+  undo_expired: "Couldn't undo. Change the episodes again on this page.",
+};
+
+/** An episode count in the season toasts: "1 episode", "4 episodes". */
+function episodes(n: number): string {
+  return `${n} ${n === 1 ? "episode" : "episodes"}`;
+}
+
+/**
+ * The toasts a season write confirms itself with (spec 0011, AC-10, AC-11).
+ * Unlike a single pill, one click here can change dozens of rows, so it says
+ * how many and carries the Undo.
+ */
+export const SEASON_MESSAGES = {
+  marked: (n: number) => `Marked ${episodes(n)} watched`,
+  nothingToMark: "Every aired episode is already watched",
+  unmarked: (n: number) => `Unmarked ${episodes(n)}`,
+} as const;

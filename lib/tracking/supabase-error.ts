@@ -15,6 +15,10 @@ import type { MovieTrackingError } from "./types";
  * row matches, so a refused Undo reaches the user as `undo_expired` rather than
  * a silent success (spec 0008, AC-6, AC-7).
  *
+ * `22023` (`invalid_parameter_value`) is what the season functions raise for an
+ * empty, oversized or mismatched episode list (spec 0011, AC-15). The action
+ * checks the same bounds first, so reaching it means a bug or a tampered call.
+ *
  * `PGRST301` and `PGRST303` are an expired or invalid JWT: the session lapsed
  * between the claims check and the write, so the person is asked to sign in
  * again (AC-12). `42501` is a missing grant or a policy refusal, which a
@@ -30,6 +34,8 @@ export function classifyTrackingError(error: { code?: string | null }): {
   switch (error.code) {
     case "P0002":
       return { error: "undo_expired", outcome: "undo_expired" };
+    case "22023":
+      return { error: "invalid_input", outcome: "invalid_input" };
     case "PGRST301":
     case "PGRST303":
       return { error: "session_expired", outcome: "session_expired" };
