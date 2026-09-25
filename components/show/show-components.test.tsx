@@ -1,5 +1,11 @@
 import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// The row's tracking slot reads the session; these tests render the list
+// without `tracking`, so it never mounts, but its import must still load.
+vi.mock("@/components/tracking/episode-tracking-slot", () => ({
+  EpisodeTrackingSlot: () => null,
+}));
 
 import { DetailHero } from "@/components/catalog/detail-hero";
 import { EpisodeList } from "@/components/show/episode-list";

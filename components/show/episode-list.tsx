@@ -1,4 +1,7 @@
+import { Suspense } from "react";
+
 import { EpisodeRow } from "@/components/show/episode-row";
+import { EpisodeTrackingSlot } from "@/components/tracking/episode-tracking-slot";
 import type { Episode } from "@/lib/tmdb";
 
 /**
@@ -13,13 +16,20 @@ const EAGER_STILLS = 2;
  * Every episode of one season, in episode number order, with no pagination
  * (spec 0009, AC-10). The input is copied before sorting because it is a
  * cached value.
+ *
+ * With `tracking`, each row gets its own tracking slot inside its own
+ * Suspense boundary with a `null` fallback, so a visitor sees nothing and the
+ * route keeps its prerendered shell (spec 0011, AC-4, AC-20). Every slot gets
+ * the same season wide `idsKey`, so the whole list costs one read (AC-18).
  */
 function EpisodeList({
   seasonName,
   episodes,
+  tracking,
 }: {
   seasonName: string;
   episodes: Episode[];
+  tracking?: { showId: number; idsKey: string };
 }) {
   const ordered = [...episodes].sort(
     (a, b) => a.episodeNumber - b.episodeNumber,
@@ -32,7 +42,21 @@ function EpisodeList({
     >
       {ordered.map((episode, index) => (
         <li key={episode.id}>
-          <EpisodeRow episode={episode} eager={index < EAGER_STILLS} />
+          <EpisodeRow
+            episode={episode}
+            eager={index < EAGER_STILLS}
+            tracking={
+              tracking ? (
+                <Suspense fallback={null}>
+                  <EpisodeTrackingSlot
+                    showId={tracking.showId}
+                    idsKey={tracking.idsKey}
+                    episode={episode}
+                  />
+                </Suspense>
+              ) : undefined
+            }
+          />
         </li>
       ))}
     </ol>
