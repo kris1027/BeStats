@@ -8,6 +8,7 @@ import {
   formatRuntime,
   formatVoteCount,
   languageName,
+  parseTmdbDate,
   seasonMetaParts,
   truncateAtWord,
 } from "./format";
@@ -199,5 +200,35 @@ describe("formatAirDate · covers spec 0009 AC-10", () => {
 
   it("keeps a year below 100 instead of reading it as 19xx", () => {
     expect(formatAirDate("0099-01-01")).toBe("Jan 1, 99");
+  });
+});
+
+describe("parseTmdbDate · covers spec 0011 AC-3", () => {
+  it("is UTC midnight of the day TMDB wrote", () => {
+    expect(parseTmdbDate("2013-03-03")?.toISOString()).toBe(
+      "2013-03-03T00:00:00.000Z",
+    );
+  });
+
+  it("accepts a real leap day and refuses a false one", () => {
+    expect(parseTmdbDate("2024-02-29")?.toISOString()).toBe(
+      "2024-02-29T00:00:00.000Z",
+    );
+    expect(parseTmdbDate("2023-02-29")).toBeNull();
+  });
+
+  it.each([
+    null,
+    "",
+    "2013-13-01",
+    "2013-02-30",
+    "2013-02-03T00:00:00Z",
+    "13-02-03",
+  ])("is null for %j", (value) => {
+    expect(parseTmdbDate(value)).toBeNull();
+  });
+
+  it("keeps a year below 100 instead of reading it as 19xx", () => {
+    expect(parseTmdbDate("0099-01-01")?.getUTCFullYear()).toBe(99);
   });
 });

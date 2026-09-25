@@ -23,8 +23,8 @@ _The stack, tooling and product rules (ratings, progress, statuses, security) li
 | 8 | Movie tracking | Slice 1 | done |
 | 9 | Watchlist and movie history | Slice 1 | done |
 | 10 | TV show page | Slice 2 | done |
-| 11 | Search and filters | Slice 3 | in-progress |
-| 12 | Episode and season tracking | Slice 4 | planned |
+| 11 | Search and filters | Slice 3 | done |
+| 12 | Episode and season tracking | Slice 4 | done |
 | 13 | Calculated season and show ratings | Slice 5 | planned |
 | 14 | TV status and progress | Slice 6 | planned |
 | 15 | Up Next | Slice 7 | planned |
@@ -192,7 +192,7 @@ spec [0009](../specs/0009-tv-show-page/index.md) · code in [app/shows/](../../a
 
 ## Slice 3: Search
 
-### 11. Search and filters · in-progress
+### 11. Search and filters · done
 Results page for movies or TV with a title query, genre, year and minimum TMDB rating filters, shareable URL parameters and pagination. Search and discovery endpoints differ, so the approach must be verified against TMDB.
 **Done when:** every displayed result meets the selected filters, counts are never falsely unfiltered totals, filters survive opening a title and returning, and failures offer a retry.
 - [x] Design it (spec): `/architect search and filters`
@@ -208,10 +208,21 @@ spec [0010](../specs/0010-search-and-filters/index.md) · code in [app/search/](
 
 ## Slice 4: Episode tracking
 
-### 12. Episode and season tracking · needs a decision · GA
+### 12. Episode and season tracking · done · GA
 Mark episodes watched and rate them from 1 to 10; mark a season watched, which covers only aired episodes and never overwrites ratings.
 **Done when:** marking a season watched is idempotent, skips future and unknown date episodes, keeps existing ratings, and specials can be tracked and rated.
-- [ ] Design it (spec): `/architect episode and season tracking`
+- [x] Design it (spec): `/architect episode and season tracking`
+- [x] Build it: `/develop episode and season tracking`
+  - [x] The thin thread: the UTC air status rule, `mark_episode_watched`, the season read, `setEpisodeWatched`, the season store and the watched pill on each row, verified with two browsers — AC-1, AC-3 to AC-5, AC-7, AC-14, AC-15, AC-19 to AC-22, AC-24
+  - [x] The rating strand: `rate_episode`, `setEpisodeRating`, the score pill and picker, and the episode intent mirror — AC-1, AC-6, AC-13, AC-16
+  - [x] The upcoming strand: the "Upcoming" label and removals only controls for future rows that already have state — AC-2, AC-3
+  - [x] The season strand: the three season functions, `setSeasonWatched` and `undoSeasonWatched`, the header button, count and Undo toasts, rows and count moving together — AC-8 to AC-13, AC-16, AC-19
+  - [x] Failure, edge states and proof: read failure, the one read check, orphaned rows, Specials, 375px and keyboard, tests, checks and `verify.md` — AC-12, AC-17, AC-18, AC-23, AC-25
+- [ ] Verify it: `/check verify episode and season tracking`
+- [x] Test it: `/test episode and season tracking`
+- [x] Review it (fresh model): `/check review episode and season tracking`
+- [x] Document it: `/document episode and season tracking`
+spec [0011](../specs/0011-episode-and-season-tracking/index.md) · code in [components/tracking/](../../components/tracking/), [app/shows/actions.ts](../../app/shows/actions.ts), [lib/tv/](../../lib/tv/)
 
 ## Slice 5: Calculated ratings
 

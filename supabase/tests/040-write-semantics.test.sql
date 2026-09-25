@@ -40,7 +40,9 @@ select is(
 );
 
 -- AC-6, the season shape: one array upsert, repeated. This is how marking a
--- whole season watched behaves, and it must stay idempotent.
+-- whole season watched behaves, and it must stay idempotent. The count names
+-- the three episodes written here, not the whole season, so rows a manual check
+-- in the running app left on the local stack cannot change the result.
 insert into public.user_episode_state
   (user_id, episode_id, show_id, season_number, episode_number, watched_at)
 values
@@ -51,8 +53,8 @@ on conflict (user_id, episode_id) do update set watched_at = excluded.watched_at
 
 select is(
   (select count(*) from public.user_episode_state
-   where user_id = '11111111-1111-1111-1111-111111111111' and show_id = 1396
-     and season_number = 1),
+   where user_id = '11111111-1111-1111-1111-111111111111'
+     and episode_id in (62085, 62086, 62087)),
   3::bigint,
   'marking a season watched twice still leaves one row per episode'
 );

@@ -35,8 +35,8 @@ function EpisodeRow({
   /** Loads the still eagerly, for the first rows (`EAGER_STILLS`). */
   eager?: boolean;
   /**
-   * Where feature 12's watched toggle and episode rating land. Left undefined
-   * here, so it renders nothing (AC-18).
+   * The episode's tracking slot (spec 0011), inside its own Suspense
+   * boundary. Undefined renders nothing.
    */
   tracking?: React.ReactNode;
 }) {

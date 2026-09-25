@@ -8,10 +8,13 @@ import { SeasonHeader } from "@/components/show/season-header";
 import { SeasonNav } from "@/components/show/season-nav";
 import { SeasonSkeleton } from "@/components/show/season-skeleton";
 import { StatePanel } from "@/components/state-panel";
+import { SeasonTrackingSlot } from "@/components/tracking/season-tracking-slot";
+import { SeasonTrackingStore } from "@/components/tracking/season-tracking-store";
 import { ButtonLink } from "@/components/ui/button";
 import { parseSeasonNumber, parseTmdbId } from "@/lib/catalog/ids";
 import { adjacentSeasons, orderSeasons } from "@/lib/catalog/seasons";
 import { truncateAtWord } from "@/lib/format";
+import { episodeIdsKey } from "@/lib/tracking/episode-state";
 
 import { loadSeason } from "./load-season";
 
@@ -70,8 +73,9 @@ export async function generateMetadata({
  *
  * A static shell like the show page (AC-17): only the Suspense boundary and
  * its skeleton; the season streams inside. Nothing here reads a session
- * (AC-18). The header and each episode row keep an empty tracking slot for
- * features 12 and 13.
+ * (AC-18): the tracking places in the header and each row read it inside
+ * their own Suspense boundaries, all sharing one read (spec 0011, AC-18,
+ * AC-20).
  */
 export default function SeasonPage({
   params,
@@ -131,35 +135,64 @@ async function SeasonDetail({ params }: { params: SeasonParams }) {
     orderSeasons(show.seasons),
     seasonNumber,
   );
+  // One key for the whole season, built once, so the header and every row
+  // share one tracking read (spec 0011, AC-18).
+  const idsKey = episodeIdsKey(season.episodes.map((episode) => episode.id));
+  const episodes = season.episodes.map(({ id, episodeNumber, airDate }) => ({
+    id,
+    episodeNumber,
+    airDate,
+  }));
 
   return (
-    <article className="flex flex-col gap-8 md:gap-10">
-      <SeasonHeader
-        showId={id}
-        showName={show.name}
-        seasonName={season.name}
-        posterUrl={season.posterUrl ?? show.posterUrl}
-        airDate={season.airDate}
-        episodeCount={season.episodes.length}
-        overview={season.overview}
-      />
-
-      {season.episodes.length === 0 ? (
-        <StatePanel
-          variant="empty"
-          title="No episodes yet"
-          description="TMDB lists no episodes for this season yet."
-          action={
-            <ButtonLink size="touch" href={`/shows/${id}`}>
-              Back to the show
-            </ButtonLink>
+    <SeasonTrackingStore
+      showId={id}
+      seasonNumber={seasonNumber}
+      returnPath={`/shows/${id}/season/${seasonNumber}`}
+    >
+      <article className="flex flex-col gap-8 md:gap-10">
+        <SeasonHeader
+          showId={id}
+          showName={show.name}
+          seasonName={season.name}
+          posterUrl={season.posterUrl ?? show.posterUrl}
+          airDate={season.airDate}
+          episodeCount={season.episodes.length}
+          overview={season.overview}
+          tracking={
+            <Suspense fallback={null}>
+              <SeasonTrackingSlot
+                showId={id}
+                seasonNumber={seasonNumber}
+                seasonName={season.name}
+                idsKey={idsKey}
+                episodes={episodes}
+              />
+            </Suspense>
           }
         />
-      ) : (
-        <EpisodeList seasonName={season.name} episodes={season.episodes} />
-      )}
 
-      <SeasonNav showId={id} previous={previous} next={next} />
-    </article>
+        {season.episodes.length === 0 ? (
+          <StatePanel
+            variant="empty"
+            title="No episodes yet"
+            description="TMDB lists no episodes for this season yet."
+            action={
+              <ButtonLink size="touch" href={`/shows/${id}`}>
+                Back to the show
+              </ButtonLink>
+            }
+          />
+        ) : (
+          <EpisodeList
+            seasonName={season.name}
+            episodes={season.episodes}
+            tracking={{ showId: id, idsKey }}
+          />
+        )}
+
+        <SeasonNav showId={id} previous={previous} next={next} />
+      </article>
+    </SeasonTrackingStore>
   );
 }

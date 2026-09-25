@@ -34,8 +34,9 @@ function SeasonHeader({
   episodeCount: number;
   overview: string | null;
   /**
-   * Where feature 12's mark season watched and feature 13's season rating
-   * land. Left undefined here, so it renders nothing (AC-18).
+   * The season's tracking slot, inside its own Suspense boundary: the mark
+   * season button and count (spec 0011), later feature 13's season rating.
+   * Undefined renders nothing.
    */
   tracking?: React.ReactNode;
 }) {

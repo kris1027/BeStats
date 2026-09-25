@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "cn";
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
@@ -29,19 +29,28 @@ const STEPS: Record<string, number> = {
  * @param onClear Called when Clear rating is pressed.
  * @param initialFocusRef Receives the choice that holds the tab stop, so the
  * popover can move focus straight to it on open.
+ * @param unavailableNote When set, a score cannot be picked right now: the ten
+ * choices stay focusable (so the keyboard rules still hold) but are
+ * `aria-disabled` and do nothing, under this note. Clear rating still works,
+ * which is how a future dated episode's old score can be removed (spec 0011,
+ * AC-2).
  */
 function ScorePicker({
   rating,
   onPick,
   onClear,
   initialFocusRef,
+  unavailableNote,
 }: {
   rating: number | null;
   onPick: (score: number) => void;
   onClear: () => void;
   initialFocusRef: React.RefObject<HTMLButtonElement | null>;
+  unavailableNote?: string;
 }) {
+  const unavailable = unavailableNote !== undefined;
   const [focused, setFocused] = useState(rating ?? 1);
+  const noteId = useId();
   const choices = useRef<(HTMLButtonElement | null)[]>([]);
 
   function onKeyDown(event: React.KeyboardEvent, score: number) {
@@ -59,9 +68,15 @@ function ScorePicker({
 
   return (
     <div className="flex flex-col gap-3">
+      {unavailable ? (
+        <p id={noteId} className="text-sm text-text-secondary">
+          {unavailableNote}
+        </p>
+      ) : null}
       <div
         role="radiogroup"
         aria-label="Your score"
+        aria-describedby={unavailable ? noteId : undefined}
         className="grid grid-cols-5 gap-2"
       >
         {SCORES.map((score) => {
@@ -77,12 +92,18 @@ function ScorePicker({
               type="button"
               role="radio"
               aria-checked={checked}
+              aria-disabled={unavailable || undefined}
               tabIndex={score === focused ? 0 : -1}
               onKeyDown={(event) => onKeyDown(event, score)}
               onFocus={() => setFocused(score)}
-              onClick={() => onPick(score)}
+              onClick={() => {
+                if (!unavailable) onPick(score);
+              }}
               className={cn(
-                "glass flex size-11 cursor-pointer items-center justify-center rounded-full text-sm font-bold transition-[filter] hover:brightness-125",
+                "glass flex size-11 items-center justify-center rounded-full text-sm font-bold",
+                unavailable
+                  ? "cursor-not-allowed opacity-50"
+                  : "cursor-pointer transition-[filter] hover:brightness-125",
                 checked
                   ? "glass-rim-score glass-plate-score text-score-personal"
                   : "glass-rim glass-plate text-foreground",

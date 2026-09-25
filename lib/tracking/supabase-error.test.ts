@@ -26,6 +26,13 @@ describe("classifyTrackingError", () => {
     });
   });
 
+  it("reports a season function's list guard (22023) as invalid_input (spec 0011, AC-15)", () => {
+    expect(classifyTrackingError({ code: "22023" })).toEqual({
+      error: "invalid_input",
+      outcome: "invalid_input",
+    });
+  });
+
   it("shows a policy refusal as a failed save but logs it as forbidden", () => {
     expect(classifyTrackingError({ code: "42501" })).toEqual({
       error: "write_failed",

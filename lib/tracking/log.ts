@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { MovieTrackingError } from "./types";
+import type { EpisodeTrackingError } from "./types";
 
 /**
  * The only way a tracking path writes to the log (spec 0007, AC-21).
@@ -18,6 +18,11 @@ export const TRACKING_EVENT = {
   listRead: "movie_tracking.list_read",
   restoreWatchlist: "movie_tracking.restore_watchlist",
   restoreWatched: "movie_tracking.restore_watched",
+  episodeWatched: "episode_tracking.watched",
+  episodeRate: "episode_tracking.rate",
+  episodeRead: "episode_tracking.read",
+  seasonWatched: "season_tracking.watched",
+  seasonUndo: "season_tracking.undo",
 } as const;
 
 export type TrackingEvent =
@@ -29,7 +34,7 @@ export type TrackingEvent =
  * both reach the client as `write_failed` but stay apart here, so a broken
  * grant is not mistaken for a flaky network.
  */
-export type TrackingOutcome = MovieTrackingError | "forbidden" | "db_error";
+export type TrackingOutcome = EpisodeTrackingError | "forbidden" | "db_error";
 
 /**
  * Records one failed or refused tracking attempt. Successful writes are not

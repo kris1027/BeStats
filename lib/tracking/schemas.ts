@@ -47,3 +47,71 @@ export const restoreWatchedInputSchema = z.object({
   movieId: movieIdSchema,
   watchedAt: z.iso.datetime({ offset: true }),
 });
+
+/** A TMDB show or episode id: the same bounds as a movie id. */
+export const tmdbIdSchema = movieIdSchema;
+
+/** A season number as Postgres's `smallint` holds it; 0 is Specials. */
+export const seasonNumberSchema = z.number().int().min(0).max(32767);
+
+/**
+ * A list of episode ids for a season write. The bound matches the guard in
+ * the season functions (spec 0011, AC-15), so an oversized list fails here
+ * before costing a request.
+ */
+export const episodeIdListSchema = z.array(tmdbIdSchema).min(1).max(1000);
+
+export const episodeWatchedInputSchema = z.object({
+  showId: tmdbIdSchema,
+  seasonNumber: seasonNumberSchema,
+  episodeId: tmdbIdSchema,
+  watched: z.boolean(),
+});
+
+export const episodeRatingInputSchema = z.object({
+  showId: tmdbIdSchema,
+  seasonNumber: seasonNumberSchema,
+  episodeId: tmdbIdSchema,
+  rating: ratingSchema.nullable(),
+});
+
+/**
+ * Marking a season takes its episodes from TMDB, so only unmarking needs the
+ * ids the page rendered (spec 0011, API surface).
+ */
+export const seasonWatchedInputSchema = z.discriminatedUnion("watched", [
+  z.object({
+    showId: tmdbIdSchema,
+    seasonNumber: seasonNumberSchema,
+    watched: z.literal(true),
+  }),
+  z.object({
+    showId: tmdbIdSchema,
+    seasonNumber: seasonNumberSchema,
+    watched: z.literal(false),
+    episodeIds: episodeIdListSchema,
+  }),
+]);
+
+/**
+ * A date to put back. As on the watched page, a full ISO timestamp with an
+ * offset, and never in the future; `restore_episodes_watched` applies the same
+ * bound again (spec 0011, AC-11, AC-15).
+ */
+const restoreEntrySchema = z.object({
+  episodeId: tmdbIdSchema,
+  watchedAt: z.iso
+    .datetime({ offset: true })
+    .refine((value) => Date.parse(value) <= Date.now()),
+});
+
+export const seasonUndoInputSchema = z.object({
+  showId: tmdbIdSchema,
+  undo: z.discriminatedUnion("kind", [
+    z.object({ kind: z.literal("unmark"), episodeIds: episodeIdListSchema }),
+    z.object({
+      kind: z.literal("restore"),
+      entries: z.array(restoreEntrySchema).min(1).max(1000),
+    }),
+  ]),
+});

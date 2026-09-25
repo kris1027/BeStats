@@ -66,19 +66,22 @@ describe("the movie routes read no request scoped value directly (AC-13)", () =>
 });
 
 /**
- * covers: spec 0009, AC-17, AC-18
+ * covers: spec 0009, AC-17, AC-18, as amended by spec 0011, AC-20
  *
- * The TV routes are public catalog pages with no tracking at all yet, so they
- * and the pieces they render reach for no request API, no Supabase client and
- * not even `components/tracking/`. Features 12 to 14 relax the last rule when
- * they fill the reserved places.
+ * The TV routes are public catalog pages. Spec 0011 put the episode and
+ * season tracking reads in `components/tracking/`, inside their own Suspense
+ * boundaries, so the routes and `components/show` may import from there, but
+ * still reach for no request API, Supabase client or session read directly.
+ * `app/shows/actions.ts` is exempt, like `app/movies/actions.ts`.
  */
-describe("the show routes read no request scoped value (spec 0009, AC-18)", () => {
+const SHOW_ACTIONS = "app/shows/actions.ts";
+
+describe("the show routes read no request scoped value (spec 0009, AC-18; spec 0011, AC-20)", () => {
   const files = [
     ...sourceFiles("app/shows"),
     ...sourceFiles("components/show"),
     ...sourceFiles("components/catalog"),
-  ];
+  ].filter((path) => path !== SHOW_ACTIONS);
 
   it("finds the route files", () => {
     expect(files).toContain("app/shows/page.tsx");
@@ -88,7 +91,7 @@ describe("the show routes read no request scoped value (spec 0009, AC-18)", () =
 
   it.each(files)("%s reaches for none of them", (path) => {
     const source = readFileSync(path, "utf8");
-    for (const api of [...FORBIDDEN, "@/components/tracking"]) {
+    for (const api of FORBIDDEN) {
       expect(source, `${path} must not use ${api}`).not.toContain(api);
     }
   });
@@ -99,6 +102,15 @@ describe("the show routes read no request scoped value (spec 0009, AC-18)", () =
     "app/shows/[id]/season/[number]/page.tsx",
   ])("%s does not opt out of the static shell (AC-17)", (path) => {
     expect(readFileSync(path, "utf8")).not.toMatch(/instant\s*=\s*false/);
+  });
+
+  it("keeps each season tracking read behind its own Suspense boundary (spec 0011, AC-20)", () => {
+    expect(
+      readFileSync("app/shows/[id]/season/[number]/page.tsx", "utf8"),
+    ).toMatch(/<Suspense fallback=\{null\}>\s*<SeasonTrackingSlot/);
+    expect(readFileSync("components/show/episode-list.tsx", "utf8")).toMatch(
+      /<Suspense fallback=\{null\}>\s*<EpisodeTrackingSlot/,
+    );
   });
 });
 
@@ -151,7 +163,7 @@ describe("search reads no request scoped value (spec 0010, AC-22)", () => {
   });
 });
 
-describe("private tracking state never enters a cache scope (spec 0007, AC-19; spec 0008, AC-17)", () => {
+describe("private tracking state never enters a cache scope (spec 0007, AC-19; spec 0008, AC-17; spec 0011, AC-20)", () => {
   const files = [
     ...sourceFiles("components/tracking"),
     ...sourceFiles("lib/tracking"),
@@ -159,6 +171,7 @@ describe("private tracking state never enters a cache scope (spec 0007, AC-19; s
     ...sourceFiles("app/watched"),
     ...sourceFiles("components/library"),
     ACTIONS,
+    SHOW_ACTIONS,
   ];
 
   it("finds the tracking files", () => {
