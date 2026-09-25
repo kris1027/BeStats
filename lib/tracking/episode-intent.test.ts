@@ -89,6 +89,7 @@ describe("applyEpisodeIntent", () => {
   it("never changes its input", () => {
     const before = structuredClone(states);
     applyEpisodeIntent(states, { kind: "season_mark", episodeIds: [1, 2] });
+    applyEpisodeIntent(states, { kind: "season_unmark", episodeIds: [1, 2] });
     expect(states).toEqual(before);
   });
 });

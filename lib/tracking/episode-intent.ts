@@ -47,21 +47,23 @@ export function applyEpisodeIntent(
           ? { ...state, rating: null }
           : { watched: true, rating: intent.value },
       );
-    case "season_mark":
-      return intent.episodeIds.reduce(
-        (next, id) =>
-          withState(next, id, (state) => ({ ...state, watched: true })),
-        states,
-      );
-    case "season_unmark":
-      return intent.episodeIds.reduce(
-        (next, id) =>
-          // Removals never create a row, so an id with no state stays absent.
-          id in next
-            ? withState(next, id, (state) => ({ ...state, watched: false }))
-            : next,
-        states,
-      );
+    case "season_mark": {
+      // One copy per intent, not per id: a season can hold hundreds of ids and
+      // every row replays the pending intents on each render.
+      const next: Record<number, EpisodeTrackingState> = { ...states };
+      for (const id of intent.episodeIds) {
+        next[id] = { ...(next[id] ?? EMPTY_EPISODE_TRACKING), watched: true };
+      }
+      return next;
+    }
+    case "season_unmark": {
+      const next: Record<number, EpisodeTrackingState> = { ...states };
+      for (const id of intent.episodeIds) {
+        // Removals never create a row, so an id with no state stays absent.
+        if (id in next) next[id] = { ...next[id], watched: false };
+      }
+      return next;
+    }
   }
 }
 

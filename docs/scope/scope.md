@@ -218,7 +218,7 @@ Mark episodes watched and rate them from 1 to 10; mark a season watched, which c
   - [x] The upcoming strand: the "Upcoming" label and removals only controls for future rows that already have state — AC-2, AC-3
   - [x] The season strand: the three season functions, `setSeasonWatched` and `undoSeasonWatched`, the header button, count and Undo toasts, rows and count moving together — AC-8 to AC-13, AC-16, AC-19
   - [x] Failure, edge states and proof: read failure, the one read check, orphaned rows, Specials, 375px and keyboard, tests, checks and `verify.md` — AC-12, AC-17, AC-18, AC-23, AC-25
-- [x] Verify it: `/check verify episode and season tracking`
+- [ ] Verify it: `/check verify episode and season tracking`
 - [x] Test it: `/test episode and season tracking`
 - [x] Review it (fresh model): `/check review episode and season tracking`
 - [x] Document it: `/document episode and season tracking`
