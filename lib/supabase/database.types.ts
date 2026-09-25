@@ -113,6 +113,31 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      mark_episode_watched: {
+        Args: {
+          p_episode_id: number
+          p_episode_number: number
+          p_season_number: number
+          p_show_id: number
+        }
+        Returns: {
+          created_at: string
+          episode_id: number
+          episode_number: number
+          rating: number | null
+          season_number: number
+          show_id: number
+          updated_at: string
+          user_id: string
+          watched_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "user_episode_state"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       mark_movie_watched: {
         Args: { p_movie_id: number }
         Returns: {
@@ -128,6 +153,41 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "user_movie_state"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      mark_season_watched: {
+        Args: {
+          p_episode_ids: number[]
+          p_episode_numbers: number[]
+          p_season_number: number
+          p_show_id: number
+        }
+        Returns: number[]
+      }
+      rate_episode: {
+        Args: {
+          p_episode_id: number
+          p_episode_number: number
+          p_rating: number
+          p_season_number: number
+          p_show_id: number
+        }
+        Returns: {
+          created_at: string
+          episode_id: number
+          episode_number: number
+          rating: number | null
+          season_number: number
+          show_id: number
+          updated_at: string
+          user_id: string
+          watched_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "user_episode_state"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -151,6 +211,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      restore_episodes_watched: {
+        Args: { p_entries: Json; p_show_id: number }
+        Returns: number
+      }
       restore_movie_watched: {
         Args: { p_movie_id: number; p_watched_at: string }
         Returns: undefined
@@ -158,6 +222,13 @@ export type Database = {
       restore_movie_watchlist: {
         Args: { p_movie_id: number }
         Returns: undefined
+      }
+      unmark_episodes_watched: {
+        Args: { p_episode_ids: number[]; p_show_id: number }
+        Returns: {
+          episode_id: number
+          watched_at: string
+        }[]
       }
     }
     Enums: {
