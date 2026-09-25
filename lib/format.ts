@@ -162,6 +162,19 @@ const AIR_DATE_FORMAT = new Intl.DateTimeFormat("en-US", {
  * @returns The formatted date, or null for a missing or malformed value.
  */
 export function formatAirDate(date: string | null): string | null {
+  const utc = parseTmdbDate(date);
+  return utc === null ? null : AIR_DATE_FORMAT.format(utc);
+}
+
+/**
+ * A TMDB calendar date as a UTC midnight `Date`, or null when it is missing,
+ * not `YYYY-MM-DD`, or not a real day.
+ *
+ * The one strict parse behind every air date, so the date a row prints and
+ * the date `lib/tv/air-status.ts` compares can never disagree (spec 0011,
+ * AC-3).
+ */
+export function parseTmdbDate(date: string | null): Date | null {
   const match = date === null ? null : TMDB_DATE.exec(date);
   if (!match) return null;
   const [, year, month, day] = match.map(Number);
@@ -170,5 +183,5 @@ export function formatAirDate(date: string | null): string | null {
   utc.setUTCFullYear(year, month - 1, day);
   // A value like 2013-02-30 rolls over; that is not the date TMDB wrote.
   if (utc.getUTCMonth() !== month - 1 || utc.getUTCDate() !== day) return null;
-  return AIR_DATE_FORMAT.format(utc);
+  return utc;
 }
