@@ -3,8 +3,12 @@ import { describe, expect, it, vi } from "vitest";
 
 import { Navbar } from "@/components/layout/navbar";
 
+const pathname = vi.hoisted(() => ({ current: "/shows" }));
+
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/shows",
+  usePathname: () => pathname.current,
+  useRouter: () => ({ push: vi.fn() }),
+  useSearchParams: () => new URLSearchParams("type=movie"),
 }));
 
 /**
@@ -99,17 +103,50 @@ describe("Navbar", () => {
     }
   });
 
-  it("leaves out the search field rather than faking one", () => {
+  // covers: spec 0010, AC-1, AC-6. The desktop field and the mobile icon are
+  // both in the document; CSS hides one at each width.
+  it("searches the catalog the page is on", () => {
+    pathname.current = "/movies/550";
+    const { unmount } = render(
+      <Navbar
+        mobileAccountSlot={<ACCOUNT_SLOT />}
+        desktopAccountSlot={<ACCOUNT_SLOT />}
+      />,
+    );
+    expect(screen.getByRole("combobox")).toHaveAttribute(
+      "placeholder",
+      "Search movies",
+    );
+    expect(screen.getByRole("button", { name: "Search" })).toBeInTheDocument();
+    unmount();
+
+    pathname.current = "/watchlist";
     render(
       <Navbar
         mobileAccountSlot={<ACCOUNT_SLOT />}
         desktopAccountSlot={<ACCOUNT_SLOT />}
       />,
     );
+    expect(screen.getByRole("combobox")).toHaveAttribute(
+      "placeholder",
+      "Search shows",
+    );
+    pathname.current = "/shows";
+  });
 
-    // Feature 11 owns search; a dead search box would be a false affordance.
-    expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
-    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+  it("takes the type from the type parameter on /search", () => {
+    pathname.current = "/search";
+    render(
+      <Navbar
+        mobileAccountSlot={<ACCOUNT_SLOT />}
+        desktopAccountSlot={<ACCOUNT_SLOT />}
+      />,
+    );
+    expect(screen.getByRole("combobox")).toHaveAttribute(
+      "placeholder",
+      "Search movies",
+    );
+    pathname.current = "/shows";
   });
 
   it("sticks to the top and blurs what scrolls underneath it", () => {

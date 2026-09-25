@@ -6,6 +6,10 @@ import {
   MediaTypeTabs,
   MediaTypeTabsView,
 } from "@/components/layout/media-type-tabs";
+import {
+  NavbarSearch,
+  NavbarSearchFallback,
+} from "@/components/search/navbar-search";
 
 /**
  * The sticky top navigation, in its signed out form (spec 0004, AC-13).
@@ -20,8 +24,11 @@ import {
  * underneath (AC-16). `scroll-padding-top` on the root layout keeps an
  * anchored heading from landing behind it.
  *
- * The search field the references draw is deliberately absent: it belongs to
- * feature 11 and a non working search box would be a false affordance.
+ * The search sits between the tabs and the account controls on desktop, and
+ * as a round icon beside the account control on mobile (spec 0010, AC-1,
+ * AC-6). Each reads the pathname, so each has its own Suspense boundary whose
+ * fallback is the same control at the same size, for the same reason as the
+ * tabs.
  *
  * The account controls are passed in rather than rendered here (spec 0005,
  * AC-14). They are the only part of the shell that reads the session, so each
@@ -53,7 +60,12 @@ function Navbar({
             BeStats
           </Link>
 
-          <div className="md:hidden">{mobileAccountSlot}</div>
+          <div className="flex items-center gap-2 md:hidden">
+            <Suspense fallback={<NavbarSearchFallback layout="mobile" />}>
+              <NavbarSearch layout="mobile" />
+            </Suspense>
+            {mobileAccountSlot}
+          </div>
         </div>
 
         {/*
@@ -72,6 +84,12 @@ function Navbar({
         >
           <MediaTypeTabs className="self-center md:self-auto" />
         </Suspense>
+
+        <div className="hidden md:block">
+          <Suspense fallback={<NavbarSearchFallback layout="desktop" />}>
+            <NavbarSearch layout="desktop" />
+          </Suspense>
+        </div>
 
         <div className="hidden md:flex md:flex-1 md:justify-end">
           {desktopAccountSlot}

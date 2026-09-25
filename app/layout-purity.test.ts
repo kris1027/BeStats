@@ -30,6 +30,12 @@ const LAYOUT_TREE = [
   // Rendered inside the account slot rather than the layout, but it sits in
   // the shell on every page, so it is held to the same rule (spec 0008).
   "components/layout/library-nav.tsx",
+  // The navbar search (spec 0010, AC-1, AC-6, AC-22).
+  "components/search/navbar-search.tsx",
+  "components/search/quick-search.tsx",
+  "components/search/quick-search-row.tsx",
+  "components/search/use-quick-search.ts",
+  "components/search/mobile-search-overlay.tsx",
 ];
 
 /**
