@@ -43,6 +43,12 @@ export type MovieSummary = {
   /** TMDB's community rating. Never the signed in user's personal rating. */
   tmdbRating: number | null;
   tmdbVoteCount: number;
+  /**
+   * TMDB's `genre_ids`, which a list result carries instead of `genres`.
+   * Search checks them itself, because `/search` ignores genre filters
+   * (spec 0010, AC-13). Missing means `[]`, never a guess.
+   */
+  genreIds: number[];
 };
 
 export type Movie = Omit<MovieSummary, "overview"> & {
@@ -78,6 +84,8 @@ export type TvShowSummary = {
   overview: string | null;
   tmdbRating: number | null;
   tmdbVoteCount: number;
+  /** As on `MovieSummary`. */
+  genreIds: number[];
 };
 
 export type SeasonSummary = {
@@ -178,9 +186,15 @@ export type BatchResult<T> = {
 
 /** Filters TMDB's discover endpoints accept. Search endpoints accept none. */
 export type DiscoverOptions = {
+  /** Every one of these genres, not any of them (spec 0010, AC-10). */
   genreIds?: number[];
   year?: number;
   minRating?: number;
+  /**
+   * Sent as `vote_count.gte`. Search sets it with a minimum rating so a title
+   * rated 9 by three people does not top the list (spec 0010, AC-12).
+   */
+  minVoteCount?: number;
   page?: number;
 };
 

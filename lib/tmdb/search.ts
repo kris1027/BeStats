@@ -29,7 +29,11 @@ import { assertPage, assertQuery } from "./validation";
 const pagedMovieSchema = pagedSchema(movieSummarySchema);
 const pagedTvSchema = pagedSchema(tvSummarySchema);
 
-/** TMDB's `with_genres` takes a comma separated list, meaning "any of these". */
+/**
+ * TMDB's `with_genres` reads a comma as AND and a pipe as OR, so the comma
+ * list sent here means a title must have every one of these genres
+ * (spec 0010, AC-10, AC-23).
+ */
 function genreParam(genreIds: number[] | undefined): string | undefined {
   return genreIds && genreIds.length > 0 ? genreIds.join(",") : undefined;
 }
@@ -95,6 +99,7 @@ export async function fetchDiscoverMovies(
       with_genres: genreParam(options.genreIds),
       primary_release_year: options.year,
       "vote_average.gte": options.minRating,
+      "vote_count.gte": options.minVoteCount,
     },
     pagedMovieSchema,
   );
@@ -121,6 +126,7 @@ export async function fetchDiscoverTvShows(
       // /discover/tv reference during this build.
       first_air_date_year: options.year,
       "vote_average.gte": options.minRating,
+      "vote_count.gte": options.minVoteCount,
     },
     pagedTvSchema,
   );

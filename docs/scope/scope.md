@@ -23,7 +23,7 @@ _The stack, tooling and product rules (ratings, progress, statuses, security) li
 | 8 | Movie tracking | Slice 1 | done |
 | 9 | Watchlist and movie history | Slice 1 | done |
 | 10 | TV show page | Slice 2 | done |
-| 11 | Search and filters | Slice 3 | planned |
+| 11 | Search and filters | Slice 3 | in-progress |
 | 12 | Episode and season tracking | Slice 4 | planned |
 | 13 | Calculated season and show ratings | Slice 5 | planned |
 | 14 | TV status and progress | Slice 6 | planned |
@@ -192,10 +192,19 @@ spec [0009](../specs/0009-tv-show-page/index.md) · code in [app/shows/](../../a
 
 ## Slice 3: Search
 
-### 11. Search and filters · needs a decision
+### 11. Search and filters · in-progress
 Results page for movies or TV with a title query, genre, year and minimum TMDB rating filters, shareable URL parameters and pagination. Search and discovery endpoints differ, so the approach must be verified against TMDB.
 **Done when:** every displayed result meets the selected filters, counts are never falsely unfiltered totals, filters survive opening a title and returning, and failures offer a retry.
-- [ ] Design it (spec): `/architect search and filters`
+- [x] Design it (spec): `/architect search and filters`
+- [x] Build it: `/develop search and filters`
+  - [x] The thin thread: summary `genreIds`, the pure `lib/search/` helpers, `GET /api/search` with the proxy exclusion, a bare navbar field and plain search on `/search` — AC-1, AC-7, AC-10, AC-12, AC-18, AC-20, AC-23
+  - [x] Quick search to the design: rows, counts, states, keyboard combobox, and the mobile overlay — AC-1 to AC-6
+  - [x] The results page: filter bar as a GET form, type switch, browse and discover modes, keyed skeletons — AC-8, AC-9, AC-11, AC-12, AC-21, AC-24
+  - [x] Filtered search: the page scan, partial count, `More results` cursor, cards with the movie bookmark, invalid and failure states — AC-13 to AC-16, AC-18, AC-19
+  - [x] Proof: metadata and `noindex`, purity and request scope tests, prerendered build, Back navigation, 375px and keyboard passes — AC-6, AC-17, AC-21, AC-22
+- [x] Verify it: `/check verify search and filters`
+- [x] Test it: `/test search and filters`
+spec [0010](../specs/0010-search-and-filters/index.md) · code in [app/search/](../../app/search/), [app/api/search/](../../app/api/search/), [components/search/](../../components/search/), [lib/search/](../../lib/search/), [lib/tmdb/](../../lib/tmdb/), [proxy.ts](../../proxy.ts)
 
 ## Slice 4: Episode tracking
 
@@ -258,6 +267,7 @@ Out of scope for the current build pass, kept so the plan stays honest.
 - **Public profiles and social features**: ruled out of the MVP by `AGENTS.md`
 - **Error monitoring and product analytics**: not selected for this pass
 - **Account deletion**: from spec 0005. Undesigned, and it needs an elevated server side call that nothing else in the app uses, so it deserves its own decision before it is built
+- **Rate limit on `/api/search`**: from spec 0010. The public quick search endpoint is guarded only by validation and CDN caching; add a per IP limit before public launch (feature 20)
 
 ## Legend
 

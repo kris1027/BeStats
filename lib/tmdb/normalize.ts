@@ -117,6 +117,7 @@ export function normalizeMovieSummary(raw: RawMovieSummary): MovieSummary {
     overview: textOrNull(raw.overview),
     tmdbRating: ratingOrNull(raw.vote_average),
     tmdbVoteCount: raw.vote_count ?? 0,
+    genreIds: raw.genre_ids ?? [],
   };
 }
 
@@ -164,6 +165,9 @@ export function normalizeMovie(raw: RawMovie): Movie {
     tagline: textOrNull(raw.tagline),
     runtimeMinutes: runtimeOrNull(raw.runtime),
     genres: normalizeGenres(raw.genres),
+    // A detail payload has `genres` and no `genre_ids`, so the ids come from
+    // the list the page shows rather than staying empty.
+    genreIds: normalizeGenres(raw.genres).map((genre) => genre.id),
     cast: normalizeCast(raw.credits?.cast),
   };
 }
@@ -179,6 +183,7 @@ export function normalizeTvSummary(raw: RawTvSummary): TvShowSummary {
     overview: textOrNull(raw.overview),
     tmdbRating: ratingOrNull(raw.vote_average),
     tmdbVoteCount: raw.vote_count ?? 0,
+    genreIds: raw.genre_ids ?? [],
   };
 }
 
@@ -216,6 +221,7 @@ export function normalizeTvShow(raw: RawTvShow): TvShow {
     numberOfSeasons: raw.number_of_seasons ?? 0,
     numberOfEpisodes: raw.number_of_episodes ?? 0,
     genres: normalizeGenres(raw.genres),
+    genreIds: normalizeGenres(raw.genres).map((genre) => genre.id),
     seasons: (raw.seasons ?? []).map(normalizeSeasonSummary),
   };
 }

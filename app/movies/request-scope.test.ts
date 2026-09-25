@@ -102,6 +102,55 @@ describe("the show routes read no request scoped value (spec 0009, AC-18)", () =
   });
 });
 
+/**
+ * covers: spec 0010, AC-20, AC-22
+ *
+ * Search is public. The page, the Route Handler and every search piece reach
+ * for no request API and no Supabase client, and declare no cache scope of
+ * their own; the only session read is each movie card's bookmark, inside its
+ * own Suspense boundary, exactly as on `/movies`.
+ */
+describe("search reads no request scoped value (spec 0010, AC-22)", () => {
+  const files = [
+    ...sourceFiles("app/search"),
+    ...sourceFiles("app/api/search"),
+    ...sourceFiles("components/search"),
+    ...sourceFiles("lib/search"),
+  ];
+
+  it("finds the search files", () => {
+    expect(files).toContain(join("app/search/page.tsx"));
+    expect(files).toContain(join("app/api/search/route.ts"));
+    expect(files).toContain(join("components/search/search-results.tsx"));
+    expect(files).toContain(join("lib/search/scan.ts"));
+  });
+
+  it.each(files)("%s reaches for none of them", (path) => {
+    const source = readFileSync(path, "utf8");
+    for (const api of FORBIDDEN) {
+      expect(source, `${path} must not use ${api}`).not.toContain(api);
+    }
+    expect(source).not.toMatch(/["']use cache/);
+  });
+
+  it("does not opt the page out of the static shell (AC-21)", () => {
+    expect(readFileSync("app/search/page.tsx", "utf8")).not.toMatch(
+      /instant\s*=\s*false/,
+    );
+  });
+
+  it("keeps the movie bookmark behind its own Suspense boundary (AC-16)", () => {
+    expect(
+      readFileSync("components/search/search-results.tsx", "utf8"),
+    ).toMatch(/<Suspense fallback=\{null\}>\s*<CardBookmark/);
+  });
+
+  it("reads nothing from the request but its query in the Route Handler (AC-20)", () => {
+    const source = readFileSync("app/api/search/route.ts", "utf8");
+    expect(source).not.toMatch(/request\.(cookies|headers)/);
+  });
+});
+
 describe("private tracking state never enters a cache scope (spec 0007, AC-19; spec 0008, AC-17)", () => {
   const files = [
     ...sourceFiles("components/tracking"),

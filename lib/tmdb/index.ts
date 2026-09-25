@@ -17,7 +17,7 @@ import "server-only";
 
 export { TMDB_ATTRIBUTION } from "./constants";
 export { isTmdbNotFound, TmdbError, type TmdbErrorKind } from "./errors";
-export { imageUrl, type TmdbImageSize } from "./images";
+export { imageUrl, resizeImageUrl, type TmdbImageSize } from "./images";
 export {
   discoverMovies,
   discoverTvShows,

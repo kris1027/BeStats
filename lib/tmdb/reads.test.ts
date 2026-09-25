@@ -15,6 +15,7 @@ import {
   fetchDiscoverMovies,
   fetchDiscoverTvShows,
   fetchSearchMovies,
+  fetchSearchTvShows,
 } from "./search";
 import { fetchSeason, fetchShowCast, fetchTvShow } from "./tv";
 
@@ -525,6 +526,71 @@ describe("search and discover", () => {
     expect(fetchMock.url().pathname).toBe("/3/discover/tv");
     expect(params.get("first_air_date_year")).toBe("2008");
     expect(params.has("primary_release_year")).toBe(false);
+  });
+});
+
+describe("genre ids and the vote floor (spec 0010, AC-23)", () => {
+  it("normalizes a search result's genre_ids to genreIds", async () => {
+    installFetchMock([{ body: searchFixture }]);
+
+    const page = await fetchSearchMovies("fight club");
+
+    expect(page.results[0]?.genreIds).toEqual(
+      searchFixture.results[0].genre_ids,
+    );
+  });
+
+  it("reads missing genre_ids as an empty list, never a guess", async () => {
+    installFetchMock([
+      {
+        body: {
+          page: 1,
+          results: [
+            { id: 1, name: "No genres", genre_ids: null },
+            { id: 2, name: "Absent" },
+          ],
+          total_pages: 1,
+          total_results: 2,
+        },
+      },
+    ]);
+
+    const page = await fetchSearchTvShows("genres");
+
+    expect(page.results.map((show) => show.genreIds)).toEqual([[], []]);
+  });
+
+  it("takes a detail read's genre ids from its genres list", async () => {
+    installFetchMock([{ body: movieFixture }]);
+
+    const movie = await fetchMovie(550);
+
+    expect(movie.genreIds).toEqual(
+      movieFixture.genres.map((genre) => genre.id),
+    );
+  });
+
+  it("sends several genres as a comma list, which TMDB reads as all of them", async () => {
+    const fetchMock = installFetchMock([
+      { body: { page: 1, results: [], total_pages: 0, total_results: 0 } },
+    ]);
+
+    await fetchDiscoverTvShows({ genreIds: [18, 35] });
+
+    expect(fetchMock.url().searchParams.get("with_genres")).toBe("18,35");
+  });
+
+  it("sends minVoteCount as vote_count.gte, and nothing when it is unset", async () => {
+    const fetchMock = installFetchMock([
+      { body: { page: 1, results: [], total_pages: 0, total_results: 0 } },
+      { body: { page: 1, results: [], total_pages: 0, total_results: 0 } },
+    ]);
+
+    await fetchDiscoverMovies({ minRating: 7, minVoteCount: 100 });
+    expect(fetchMock.url().searchParams.get("vote_count.gte")).toBe("100");
+
+    await fetchDiscoverMovies({});
+    expect(fetchMock.url(1).searchParams.has("vote_count.gte")).toBe(false);
   });
 });
 

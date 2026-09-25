@@ -51,3 +51,28 @@ export function imageUrl(
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   return `${TMDB_IMAGE_BASE}/${size}${normalizedPath}`;
 }
+
+/**
+ * The same TMDB image at another width, or null when there is no image.
+ *
+ * A normalized summary carries only the absolute URL at `POSTER_SIZE`, and
+ * quick search draws its posters a few dozen pixels wide, so it asks for the
+ * smallest width instead of fetching five `w500` posters per keystroke
+ * (spec 0010, value sourcing). A URL this module did not build is returned
+ * unchanged rather than guessed at.
+ *
+ * @param url An absolute URL from `imageUrl`, or null.
+ * @param size The width to swap in.
+ */
+export function resizeImageUrl(
+  url: string | null,
+  size: TmdbImageSize,
+): string | null {
+  if (!url) return null;
+  const prefix = `${TMDB_IMAGE_BASE}/`;
+  if (!url.startsWith(prefix)) return url;
+  const rest = url.slice(prefix.length);
+  const slash = rest.indexOf("/");
+  if (slash === -1) return url;
+  return `${prefix}${size}${rest.slice(slash)}`;
+}
