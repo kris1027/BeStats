@@ -220,7 +220,11 @@ export const config = {
      * request too. `/movies/` and `/shows/` are never images, so
      * `/movies/550.jpg` and `/shows/1396.jpg` still reach the malformed id
      * rule and get their 404 (spec 0006, AC-8; spec 0009, AC-13).
+     *
+     * `api/` is skipped too. No Route Handler there needs a session, and a
+     * refresh could attach `Set-Cookie` to a response a CDN must be free to
+     * cache, such as `/api/search` (spec 0010, AC-20).
      */
-    "/((?!_next/static|_next/image|favicon.ico|(?!movies/|shows/).*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)",
+    "/((?!api/|_next/static|_next/image|favicon.ico|(?!movies/|shows/).*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)",
   ],
 };

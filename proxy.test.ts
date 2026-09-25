@@ -245,4 +245,17 @@ describe("the proxy matcher", () => {
   ])("skips the static file %s", (url) => {
     expect(matches(url)).toBe(false);
   });
+
+  // covers: spec 0010, AC-20. A session refresh on a Route Handler could add
+  // Set-Cookie to a response the CDN is meant to share.
+  it.each(["/api/search", "/api/search?type=tv&q=dune"])(
+    "skips the Route Handler %s",
+    (url) => {
+      expect(matches(url)).toBe(false);
+    },
+  );
+
+  it.each(["/search", "/search?q=api/"])("still runs for %s", (url) => {
+    expect(matches(url)).toBe(true);
+  });
 });
