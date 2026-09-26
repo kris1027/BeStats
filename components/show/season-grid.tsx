@@ -1,5 +1,8 @@
+import { Suspense } from "react";
+
 import { PosterCard } from "@/components/poster-card";
 import { PosterGrid } from "@/components/poster-grid";
+import { SeasonRatingBadgeSlot } from "@/components/tracking/season-rating-badge-slot";
 import { seasonMetaParts } from "@/lib/format";
 import type { SeasonSummary } from "@/lib/tmdb";
 
@@ -11,6 +14,10 @@ import type { SeasonSummary } from "@/lib/tmdb";
  * because hiding it would make the show look shorter than TMDB says it is.
  * A season with no poster of its own borrows the show's, which is TMDB's own
  * artwork for the same title, and only then falls back to the tile.
+ *
+ * Each card's badge is the signed in user's calculated season rating
+ * (spec 0012, AC-8), streamed in its own boundary with no fallback so the
+ * grid itself stays part of the public page.
  */
 function SeasonGrid({
   showId,
@@ -39,6 +46,14 @@ function SeasonGrid({
             title={season.name}
             posterUrl={season.posterUrl ?? showPosterUrl}
             href={`/shows/${showId}/season/${season.seasonNumber}`}
+            badge={
+              <Suspense fallback={null}>
+                <SeasonRatingBadgeSlot
+                  showId={showId}
+                  seasonNumber={season.seasonNumber}
+                />
+              </Suspense>
+            }
             meta={seasonMetaParts(season.airDate, season.episodeCount).join(
               " · ",
             )}

@@ -10,6 +10,7 @@ import { SeasonGrid } from "@/components/show/season-grid";
 import { ShowDetailSkeleton } from "@/components/show/show-detail-skeleton";
 import { ShowMeta } from "@/components/show/show-meta";
 import { StatePanel } from "@/components/state-panel";
+import { ShowRatingSlot } from "@/components/tracking/show-rating-slot";
 import { parseTmdbId } from "@/lib/catalog/ids";
 import { orderSeasons } from "@/lib/catalog/seasons";
 import { formatAirSpan, truncateAtWord } from "@/lib/format";
@@ -59,8 +60,10 @@ export async function generateMetadata({
  * skeleton, so navigation commits instantly and `pnpm build` prerenders it
  * without calling TMDB (AC-17). Everything that needs the id streams inside.
  *
- * Nothing here reads a cookie, a header or a session (AC-18). The hero's
- * tracking slot is left empty until feature 14 adds the status control.
+ * Nothing here reads a cookie, a header or a session (AC-18). The signed in
+ * user's calculated ratings (spec 0012) stream from `components/tracking/`
+ * beside the Seasons heading and on each season card. The hero's tracking
+ * slot is left empty until feature 14 adds the status control.
  */
 export default function ShowPage({ params }: PageProps<"/shows/[id]">) {
   return (
@@ -124,9 +127,14 @@ async function ShowDetail({
         aria-labelledby="seasons-heading"
         className="flex flex-col gap-4"
       >
-        <h2 id="seasons-heading" className={SECTION_HEADING}>
-          Seasons
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <h2 id="seasons-heading" className={SECTION_HEADING}>
+            Seasons
+          </h2>
+          <Suspense fallback={null}>
+            <ShowRatingSlot showId={id} />
+          </Suspense>
+        </div>
         <SeasonGrid
           showId={id}
           showName={show.name}

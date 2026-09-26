@@ -1,7 +1,7 @@
 import { StarIcon } from "lucide-react";
 
 import { GlassPill } from "@/components/glass-pill";
-import { formatPersonalScore } from "@/lib/format";
+import { formatCalculatedRating, formatPersonalScore } from "@/lib/format";
 
 /**
  * Community and personal ratings must never be confused for one another
@@ -62,4 +62,38 @@ function PersonalScoreBadge({ value }: { value: number | null }) {
   );
 }
 
-export { PersonalScoreBadge, TmdbRatingBadge };
+/**
+ * A calculated season or show rating, in the same cyan as the user's own
+ * score because it is still theirs, but always to one decimal (`AGENTS.md`
+ * section 9, spec 0012).
+ * A separate component from `PersonalScoreBadge` so an average and an
+ * explicit score can never share a formatter by accident.
+ *
+ * `label` is a screen reader prefix for places with no visible label, the
+ * season cards. The header and heading omit it: their visible "Your season
+ * rating" already names the value, and a hidden copy would be read twice.
+ */
+function CalculatedRatingBadge({
+  value,
+  label,
+}: {
+  value: number | null;
+  label?: string;
+}) {
+  return (
+    <GlassPill
+      tone="score"
+      icon={
+        <StarIcon
+          className="fill-score-personal text-score-personal"
+          aria-hidden="true"
+        />
+      }
+    >
+      {label ? <span className="sr-only">{label} </span> : null}
+      {formatCalculatedRating(value)}
+    </GlassPill>
+  );
+}
+
+export { CalculatedRatingBadge, PersonalScoreBadge, TmdbRatingBadge };

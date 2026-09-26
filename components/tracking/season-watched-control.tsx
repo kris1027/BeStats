@@ -17,6 +17,7 @@ import {
   seasonWatchSummary,
 } from "@/lib/tv/season-watch";
 
+import { SeasonRating } from "./season-rating";
 import { useEpisodeStates, useSeasonTracking } from "./season-tracking-store";
 import { WatchedIcon } from "./tracking-icons";
 
@@ -40,6 +41,10 @@ const PILL = "h-11 px-4 md:h-9 md:px-3.5";
  *
  * A season write confirms itself with a toast, because one click can change
  * dozens of rows; the toast carries the Undo.
+ *
+ * The calculated season rating (spec 0012) sits in the same row, in both
+ * states: a season with nothing aired can still hold ratings for undated
+ * episodes marked one at a time.
  */
 function SeasonWatchedControl({
   seasonName,
@@ -132,7 +137,10 @@ function SeasonWatchedControl({
 
   if (summary.state === "none_aired") {
     return (
-      <div data-slot="season-tracking" className="flex flex-wrap gap-3 pt-1">
+      <div
+        data-slot="season-tracking"
+        className="flex flex-wrap items-center gap-3 pt-1"
+      >
         <button
           type="button"
           aria-label={`${name}: nothing aired yet`}
@@ -146,6 +154,7 @@ function SeasonWatchedControl({
           <WatchedIcon filled={false} />
           <span aria-hidden="true">Nothing aired yet</span>
         </button>
+        <SeasonRating episodes={episodes} states={shown} />
       </div>
     );
   }
@@ -175,6 +184,7 @@ function SeasonWatchedControl({
       <p className="text-sm text-text-secondary">
         {summary.watchedAired} of {summary.aired} watched
       </p>
+      <SeasonRating episodes={episodes} states={shown} />
     </div>
   );
 }

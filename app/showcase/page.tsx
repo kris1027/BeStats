@@ -8,6 +8,7 @@ import { MobileMenuSheet } from "@/components/layout/mobile-menu-sheet";
 import { PosterCard } from "@/components/poster-card";
 import { PosterGrid } from "@/components/poster-grid";
 import {
+  CalculatedRatingBadge,
   PersonalScoreBadge,
   TmdbRatingBadge,
 } from "@/components/rating-badges";
@@ -182,6 +183,8 @@ export default function ShowcasePage() {
           <TmdbRatingBadge value={null} />
           <PersonalScoreBadge value={9} />
           <PersonalScoreBadge value={null} />
+          <CalculatedRatingBadge value={7} label="Your season rating" />
+          <CalculatedRatingBadge value={22 / 3} label="Your show rating" />
           <GlassPill icon={<TvIcon aria-hidden="true" />}>S1E1</GlassPill>
           <GlassPill icon={<PlannedIcon />}>Planned</GlassPill>
           <GlassPill icon={<PlanIcon />}>Plan</GlassPill>

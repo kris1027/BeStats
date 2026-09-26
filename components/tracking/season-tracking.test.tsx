@@ -6,7 +6,7 @@ import type { EpisodeStates } from "@/lib/tracking/episode-intent";
 
 /**
  * covers: spec 0011, AC-1, AC-2, AC-4, AC-8, AC-10, AC-11, AC-13, AC-14,
- * AC-16, AC-17, AC-18
+ * AC-16, AC-17, AC-18; spec 0012, AC-5, AC-6
  *
  * The Server Actions, the router, Sonner and the tracking read are the
  * boundaries. Each action is a deferred promise the test settles by hand, so
@@ -63,7 +63,11 @@ const EPISODES = [
 
 /** The header and the two aired rows, in one store, as the page wires them. */
 function renderSeason(states: EpisodeStates = {}) {
-  return render(
+  return render(seasonTree(states));
+}
+
+function seasonTree(states: EpisodeStates) {
+  return (
     <SeasonTrackingStore
       showId={1396}
       seasonNumber={1}
@@ -85,7 +89,7 @@ function renderSeason(states: EpisodeStates = {}) {
           airDate="Sep 1, 2026"
         />
       ))}
-    </SeasonTrackingStore>,
+    </SeasonTrackingStore>
   );
 }
 
@@ -183,6 +187,143 @@ describe("the episode controls", () => {
     await userEvent.click(await screen.findByRole("radio", { name: "7" }));
     expect(row(1)).toHaveAttribute("aria-pressed", "true");
     expect(action).toHaveBeenCalledWith("rating", 1396, 1, 1, 7);
+  });
+});
+
+describe("the season rating (spec 0012, AC-5, AC-6)", () => {
+  const rating = () =>
+    screen.getByText("Your season rating").closest("p") as HTMLElement;
+
+  it("is the mean of the rated listed episodes, to one decimal", () => {
+    renderSeason({
+      1: { watched: true, rating: 8 },
+      2: { watched: false, rating: 7 },
+      // Not listed on this page: an id TMDB no longer lists stays out.
+      99: { watched: true, rating: 1 },
+    });
+    expect(rating()).toHaveTextContent(
+      "Your season rating7.5from 2 rated episodes",
+    );
+  });
+
+  it("uses the singular for one rated episode", () => {
+    renderSeason({ 1: { watched: false, rating: 6 } });
+    expect(rating()).toHaveTextContent("6.0from 1 rated episode");
+    expect(rating()).not.toHaveTextContent("episodes");
+  });
+
+  it("reads Not rated with no basis when nothing is rated, never zero", () => {
+    renderSeason({ 1: { watched: true, rating: null } });
+    expect(rating()).toHaveTextContent("Your season ratingNot rated");
+    expect(rating()).not.toHaveTextContent(/from|0\.0/);
+  });
+
+  it("moves with a picked score at once and rolls back when it fails", async () => {
+    renderSeason({ 1: { watched: true, rating: 8 } });
+    await userEvent.click(
+      screen.getByRole("button", { name: "Your score for Pilot 2: Not rated" }),
+    );
+    await userEvent.click(await screen.findByRole("radio", { name: "5" }));
+    expect(rating()).toHaveTextContent("6.5from 2 rated episodes");
+    await settle(0, { ok: false, error: "write_failed" });
+    expect(rating()).toHaveTextContent("8.0from 1 rated episode");
+  });
+
+  it("holds the new value until the refreshed states confirm it", async () => {
+    const { rerender } = renderSeason({ 1: { watched: true, rating: 8 } });
+    await userEvent.click(
+      screen.getByRole("button", { name: "Your score for Pilot 2: Not rated" }),
+    );
+    await userEvent.click(await screen.findByRole("radio", { name: "10" }));
+    // `refresh()` delivers the confirmed rows as props, then the write settles.
+    rerender(
+      seasonTree({
+        1: { watched: true, rating: 8 },
+        2: { watched: true, rating: 10 },
+      }),
+    );
+    expect(rating()).toHaveTextContent("9.0from 2 rated episodes");
+    await settle(0, { ok: true });
+    expect(rating()).toHaveTextContent("9.0from 2 rated episodes");
+  });
+
+  it("drops a cleared score from the average at once (AC-4)", async () => {
+    renderSeason({
+      1: { watched: true, rating: 8 },
+      2: { watched: true, rating: 5 },
+    });
+    expect(rating()).toHaveTextContent("6.5from 2 rated episodes");
+    await userEvent.click(
+      screen.getByRole("button", { name: "Your score for Pilot 2: 5" }),
+    );
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Clear rating" }),
+    );
+    expect(rating()).toHaveTextContent("8.0from 1 rated episode");
+  });
+
+  it("returns to Not rated when the only score is cleared", async () => {
+    renderSeason({ 1: { watched: true, rating: 8 } });
+    await userEvent.click(
+      screen.getByRole("button", { name: "Your score for Pilot 1: 8" }),
+    );
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Clear rating" }),
+    );
+    expect(rating()).toHaveTextContent(/^Your season ratingNot rated$/);
+  });
+
+  it("keeps an unmarked episode's score in the average (AC-4)", async () => {
+    renderSeason({
+      1: { watched: true, rating: 8 },
+      2: { watched: true, rating: 6 },
+    });
+    await userEvent.click(row(1));
+    expect(row(1)).toHaveAttribute("aria-pressed", "false");
+    expect(rating()).toHaveTextContent("7.0from 2 rated episodes");
+  });
+
+  it("counts a future dated episode's stored score (AC-4)", () => {
+    // Episode 3 airs after TODAY; its old rating still counts.
+    renderSeason({
+      1: { watched: true, rating: 8 },
+      3: { watched: false, rating: 4 },
+    });
+    expect(rating()).toHaveTextContent("6.0from 2 rated episodes");
+  });
+
+  it("adds no tab stop and no control (AC-16)", () => {
+    renderSeason({ 1: { watched: true, rating: 8 } });
+    const line = rating();
+    expect(within(line).queryAllByRole("button")).toHaveLength(0);
+    expect(within(line).queryAllByRole("link")).toHaveLength(0);
+    expect(line.querySelectorAll("[tabindex]")).toHaveLength(0);
+  });
+
+  it("names the value once, with no hidden duplicate label", () => {
+    renderSeason({ 1: { watched: true, rating: 8 } });
+    expect(screen.getAllByText(/Your season rating/)).toHaveLength(1);
+  });
+
+  it("does not move when an episode or the season is marked", async () => {
+    renderSeason({ 1: { watched: false, rating: 9 } });
+    await userEvent.click(seasonButton());
+    expect(rating()).toHaveTextContent("9.0from 1 rated episode");
+  });
+
+  it("shows beside Nothing aired yet, for ratings on undated episodes", () => {
+    render(
+      <SeasonTrackingStore showId={1} seasonNumber={0} returnPath="/x">
+        <SeasonWatchedControl
+          seasonName="Specials"
+          episodes={[{ id: 7, episodeNumber: 1, airDate: null }]}
+          states={{ 7: { watched: true, rating: 10 } }}
+          today={TODAY}
+        />
+      </SeasonTrackingStore>,
+    );
+    expect(screen.getByText("Nothing aired yet")).toBeInTheDocument();
+    expect(rating()).toHaveTextContent("10.0from 1 rated episode");
   });
 });
 

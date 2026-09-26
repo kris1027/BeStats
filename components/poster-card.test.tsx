@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { PosterCard } from "@/components/poster-card";
 import {
+  CalculatedRatingBadge,
   PersonalScoreBadge,
   TmdbRatingBadge,
 } from "@/components/rating-badges";
@@ -96,5 +97,42 @@ describe("rating badges", () => {
   it("shows a calculated TMDB rating to one decimal place", () => {
     render(<TmdbRatingBadge value={7} />);
     expect(screen.getByText("7.0")).toBeVisible();
+  });
+});
+
+describe("CalculatedRatingBadge · covers spec 0012 AC-3, AC-8, AC-15", () => {
+  it("always shows one decimal, unlike an explicit score", () => {
+    render(<CalculatedRatingBadge value={8} />);
+    expect(screen.getByText("8.0")).toBeVisible();
+  });
+
+  it("rounds an unrounded mean for display only", () => {
+    render(<CalculatedRatingBadge value={22 / 3} />);
+    expect(screen.getByText("7.3")).toBeVisible();
+  });
+
+  it("says Not rated rather than zero", () => {
+    render(<CalculatedRatingBadge value={null} />);
+    expect(screen.getByText("Not rated")).toBeVisible();
+    expect(screen.queryByText("0.0")).not.toBeInTheDocument();
+  });
+
+  it("wears the cyan personal rim, never the TMDB look", () => {
+    const { container } = render(<CalculatedRatingBadge value={7.5} />);
+    const pill = container.querySelector('[data-slot="glass-pill"]');
+    expect(pill).toHaveClass("glass-rim-score");
+    expect(pill).not.toHaveTextContent("TMDB");
+  });
+
+  it("adds a screen reader label only when one is given", () => {
+    const { container, rerender } = render(
+      <CalculatedRatingBadge value={7.5} label="Your season rating" />,
+    );
+    expect(screen.getByText("Your season rating")).toHaveClass("sr-only");
+    expect(container).toHaveTextContent("Your season rating 7.5");
+
+    rerender(<CalculatedRatingBadge value={7.5} />);
+    expect(container.querySelector(".sr-only")).toBeNull();
+    expect(container).toHaveTextContent(/^7\.5$/);
   });
 });

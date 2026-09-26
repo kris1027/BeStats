@@ -1,10 +1,20 @@
 import { render, screen, within } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 // The row's tracking slot reads the session; these tests render the list
 // without `tracking`, so it never mounts, but its import must still load.
 vi.mock("@/components/tracking/episode-tracking-slot", () => ({
   EpisodeTrackingSlot: () => null,
+}));
+// Each season card's badge reads the session too; a visitor sees nothing.
+// One test hands it a stand in badge to check where it lands (spec 0012).
+const seasonBadge = vi.hoisted(() =>
+  vi.fn((_props: { showId: number; seasonNumber: number }): ReactNode => null),
+);
+vi.mock("@/components/tracking/season-rating-badge-slot", () => ({
+  SeasonRatingBadgeSlot: (props: { showId: number; seasonNumber: number }) =>
+    seasonBadge(props),
 }));
 
 import { DetailHero } from "@/components/catalog/detail-hero";
@@ -26,7 +36,7 @@ import type { Episode, SeasonSummary } from "@/lib/tmdb";
 const POSTER = "https://image.tmdb.org/t/p/w500/poster.jpg";
 
 describe("the show hero", () => {
-  function renderHero(meta: React.ReactNode) {
+  function renderHero(meta: ReactNode) {
     return render(
       <DetailHero
         title="Breaking Bad"
@@ -112,6 +122,34 @@ describe("SeasonGrid", () => {
       "/shows/1396/season/0",
     );
     expect(cards[1]).toHaveTextContent("1 episode");
+  });
+
+  it("gives each card its own season's rating badge and keeps the link name (spec 0012, AC-8)", () => {
+    seasonBadge.mockImplementation(({ seasonNumber }) =>
+      seasonNumber === 1 ? (
+        <span>
+          <span className="sr-only">Your season rating </span>8.3
+        </span>
+      ) : null,
+    );
+    render(
+      <SeasonGrid
+        showId={1396}
+        showName="Breaking Bad"
+        showPosterUrl={null}
+        seasons={[season({}), season({ seasonNumber: 2, name: "Season 2" })]}
+      />,
+    );
+
+    expect(seasonBadge).toHaveBeenCalledWith({ showId: 1396, seasonNumber: 1 });
+    expect(seasonBadge).toHaveBeenCalledWith({ showId: 1396, seasonNumber: 2 });
+    const cards = screen.getAllByRole("listitem");
+    expect(cards[0]).toHaveTextContent("Your season rating 8.3");
+    expect(cards[1]).not.toHaveTextContent("Your season rating");
+    expect(
+      within(cards[0]).getByRole("link", { name: "Season 1" }),
+    ).toBeInTheDocument();
+    seasonBadge.mockImplementation(() => null);
   });
 
   it("borrows the show poster, then falls back to the tile", () => {
