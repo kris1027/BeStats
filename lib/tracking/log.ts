@@ -23,6 +23,7 @@ export const TRACKING_EVENT = {
   episodeRead: "episode_tracking.read",
   seasonWatched: "season_tracking.watched",
   seasonUndo: "season_tracking.undo",
+  showRatingRead: "show_tracking.rating_read",
 } as const;
 
 export type TrackingEvent =

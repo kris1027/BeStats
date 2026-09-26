@@ -85,6 +85,23 @@ export function formatPersonalScore(value: number | null): string {
 }
 
 /**
+ * A calculated season or show rating as every surface shows it: always one
+ * decimal (`7.0`, not `7`), or "Not rated" (`AGENTS.md` section 9, spec 0012
+ * AC-3). An explicit score keeps `formatPersonalScore`, because padding a
+ * user's own `8` would imply a precision they did not give.
+ *
+ * Rounds half up. The tiny tolerance restores ties that binary floating point
+ * lands just below, so an exact average of `8.05` reads `8.1` as a person
+ * working it out by hand expects, not `8.0`.
+ *
+ * @param value The unrounded mean, or null when nothing is rated.
+ */
+export function formatCalculatedRating(value: number | null): string {
+  if (value === null) return "Not rated";
+  return (Math.round(value * 10 + 1e-9) / 10).toFixed(1);
+}
+
+/**
  * The years a show aired, for the show hero (spec 0009, AC-4).
  *
  * Derived from TMDB's own facts without a clock, so the text never depends on

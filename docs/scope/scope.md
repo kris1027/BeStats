@@ -25,7 +25,7 @@ _The stack, tooling and product rules (ratings, progress, statuses, security) li
 | 10 | TV show page | Slice 2 | done |
 | 11 | Search and filters | Slice 3 | done |
 | 12 | Episode and season tracking | Slice 4 | done |
-| 13 | Calculated season and show ratings | Slice 5 | planned |
+| 13 | Calculated season and show ratings | Slice 5 | in-progress |
 | 14 | TV status and progress | Slice 6 | planned |
 | 15 | Up Next | Slice 7 | planned |
 | 16 | Automatic completion | Slice 7 | planned |
@@ -226,10 +226,20 @@ spec [0011](../specs/0011-episode-and-season-tracking/index.md) · code in [comp
 
 ## Slice 5: Calculated ratings
 
-### 13. Calculated season and show ratings · GA
+### 13. Calculated season and show ratings · in-progress · GA
 Domain functions for season rating (mean of rated episodes) and show rating (equal weight mean of rated regular seasons), shown as personal ratings to one decimal, or Not rated.
 **Done when:** unrated episodes and seasons are excluded, season 0 is excluded, unequal season lengths do not change season weight, and no ratings shows Not rated, never zero.
-- [ ] Build it: `/develop calculated season and show ratings`
+- [x] Design it (spec): `/architect calculated season and show ratings`
+- [x] Build it: `/develop calculated season and show ratings`
+  - [x] The thin thread: `lib/tv/ratings.ts`, `formatCalculatedRating`, `CalculatedRatingBadge` and the season header rating from confirmed state — AC-1 to AC-5, AC-14, AC-15, AC-17
+  - [x] The optimistic strand: the season rating moving and rolling back with the score pill — AC-6
+  - [x] The show strand: `getShowEpisodeRatings`, the show rating in the Seasons heading row, its Not rated, Specials note and retry states — AC-7, AC-9 to AC-13
+  - [x] The card strand and proof: season card badges from the shared read, 375px, two browsers, the read count, checks and `verify.md` — AC-8 to AC-10, AC-13, AC-16, AC-17
+- [x] Verify it: `/check verify calculated season and show ratings`
+- [x] Test it: `/test calculated season and show ratings`
+- [x] Review it (fresh model): `/check review calculated season and show ratings`
+- [x] Document it: `/document calculated season and show ratings`
+spec [0012](../specs/0012-calculated-season-show-ratings/index.md) · code in [lib/tv/](../../lib/tv/), [lib/tracking/](../../lib/tracking/), [components/tracking/](../../components/tracking/), [components/show/](../../components/show/)
 
 ## Slice 6: TV status and progress
 
