@@ -8,9 +8,9 @@ TMDB supplies catalog metadata. Supabase stores accounts and private user data. 
 
 ## Development status
 
-**In development — not a finished product.** The foundations (scaffold, checks, database schema and ownership policies, server-only TMDB integration, design system), email/password authentication, the public movie catalog and movie pages are implemented. Movie tracking (watchlist, watched, personal rating) is being built. TV, search, and Up Next are still planned.
+**In development — not a finished product.** The foundations, email/password authentication, public movie and TV pages, search and filters, private movie watchlist and history, movie tracking, and episode and season tracking are implemented. Calculated season and show ratings are in progress. TV status and progress, Up Next, automatic completion, Google sign-in and provider setup, and launch verification are still planned.
 
-The project follows a thin end-to-end approach: finish the core movie loop before expanding into TV progress, search, and Up Next. See the [scope and roadmap](docs/scope/scope.md) for the feature breakdown and [specifications](docs/specs/) for decisions already made.
+The project follows a thin end-to-end approach. The core movie loop now extends into TV pages, search, and episode tracking; TV progress and Up Next are the next slices. See the [scope and roadmap](docs/scope/scope.md) for the feature breakdown and [specifications](docs/specs/) for decisions already made.
 
 ## Local setup
 
