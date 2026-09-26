@@ -73,6 +73,14 @@ export default function ShowPage({ params }: PageProps<"/shows/[id]">) {
   );
 }
 
+/**
+ * The show body, everything that needs the id and the TMDB response.
+ *
+ * The show rating sits in its own Suspense boundary with no fallback, so the
+ * one read that touches the session (spec 0012) never holds back the public
+ * catalog content around it, and a signed out visitor sees nothing in its
+ * place rather than a placeholder for a value they cannot have.
+ */
 async function ShowDetail({
   params,
 }: {
