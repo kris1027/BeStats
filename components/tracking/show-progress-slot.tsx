@@ -37,10 +37,14 @@ async function ShowProgressSlot({ showId }: { showId: number }) {
     return null;
   }
   const retry = `/shows/${showId}`;
-  if (watched.kind === "failed") return <Unavailable retryHref={retry} />;
+  // A failed status read cannot tell whether the show is tracked, so it gets
+  // the same Try again as a failed watched read rather than no line at all.
+  if (watched.kind === "failed" || status.kind === "failed") {
+    return <Unavailable retryHref={retry} />;
+  }
 
   const watchedIds = watched.state.get(showId) ?? new Set<number>();
-  const hasRow = status.kind === "ok" && status.state !== null;
+  const hasRow = status.state !== null;
   // Nothing tracked and nothing watched: no line, and no TMDB read for it.
   if (!hasRow && watchedIds.size === 0) return null;
 

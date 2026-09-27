@@ -55,6 +55,16 @@ begin
     raise exception 'status_changed' using errcode = 'BS409';
   end if;
 
+  -- Choosing the status the row already holds writes nothing, so a status
+  -- the system set never silently becomes the user's (AC-2). No previous
+  -- values are reported, so there is no Undo for it.
+  if v_prior.status = p_status then
+    return query select
+      v_prior.status, v_prior.status_source, v_prior.listed_at,
+      null::public.tv_status, null::public.status_source, null::timestamptz;
+    return;
+  end if;
+
   if v_prior.user_id is null then
     -- A concurrent first write wins; this one reports the change.
     insert into public.user_show_state as s (user_id, show_id, status, status_source)

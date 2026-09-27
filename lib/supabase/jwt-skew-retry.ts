@@ -5,6 +5,13 @@
 export const JWT_ISSUED_AT_FUTURE = "PGRST303";
 
 /**
+ * `PGRST303` covers every JWT claims failure, an expired token included, so
+ * the message is what singles out the clock skew. Retrying an expired token
+ * would only delay the 401 the caller has to act on.
+ */
+const ISSUED_AT_FUTURE_MESSAGE = /issued at future/i;
+
+/**
  * How long to wait before each retry. PostgREST reads its clock from a cache
  * that can lag Supabase Auth by about a second and applies no leeway to `iat`,
  * so the waits add up to a little more than that.
@@ -21,7 +28,9 @@ export const JWT_SKEW_RETRY_DELAYS_MS = [500, 1000] as const;
  * "Status unavailable" pill, a missing rating) although nothing was wrong
  * (supabase/supabase#49655, #50651). The rejection happens before the request
  * reaches the database, so sending a write again cannot apply it twice. Any
- * other response, including every other 401, is returned untouched.
+ * other response, including every other 401, is returned untouched. A
+ * `Request` input is cloned for each attempt, so its body is still there to
+ * send again.
  *
  * @param baseFetch The fetch to wrap, `globalThis.fetch` in the app.
  * @param wait How to wait between attempts; tests pass a fake.
@@ -33,11 +42,13 @@ export function withJwtSkewRetry(
     new Promise((resolve) => setTimeout(resolve, ms)),
 ): typeof fetch {
   return async (input, init) => {
-    let response = await baseFetch(input, init);
+    const attempt = () =>
+      baseFetch(input instanceof Request ? input.clone() : input, init);
+    let response = await attempt();
     for (const delay of JWT_SKEW_RETRY_DELAYS_MS) {
       if (!(await isIssuedAtFuture(response))) return response;
       await wait(delay);
-      response = await baseFetch(input, init);
+      response = await attempt();
     }
     return response;
   };
@@ -51,7 +62,10 @@ async function isIssuedAtFuture(response: Response): Promise<boolean> {
       typeof body === "object" &&
       body !== null &&
       "code" in body &&
-      body.code === JWT_ISSUED_AT_FUTURE
+      body.code === JWT_ISSUED_AT_FUTURE &&
+      "message" in body &&
+      typeof body.message === "string" &&
+      ISSUED_AT_FUTURE_MESSAGE.test(body.message)
     );
   } catch {
     return false;

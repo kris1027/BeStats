@@ -34,6 +34,10 @@ const COPY = {
       title: "Your watchlist is empty",
       description: "Plan a movie or a show to see it here.",
     },
+    browse: [
+      { label: "Browse movies", href: "/movies" },
+      { label: "Browse shows", href: "/shows" },
+    ],
     failed: "Couldn't load your watchlist",
   },
   watched: {
@@ -42,6 +46,7 @@ const COPY = {
       title: "Nothing watched yet",
       description: "Movies you mark watched show up here.",
     },
+    browse: [{ label: "Browse movies", href: "/movies" }],
     failed: "Couldn't load your watched movies",
   },
 } as const;
@@ -104,9 +109,13 @@ async function LibrarySection({
           title={COPY[list].empty.title}
           description={COPY[list].empty.description}
           action={
-            <ButtonLink size="touch" href="/movies">
-              Browse movies
-            </ButtonLink>
+            <div className="flex flex-wrap justify-center gap-2">
+              {COPY[list].browse.map(({ label, href }) => (
+                <ButtonLink key={href} size="touch" href={href}>
+                  {label}
+                </ButtonLink>
+              ))}
+            </div>
           }
         />
       </div>

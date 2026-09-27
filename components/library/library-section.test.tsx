@@ -197,6 +197,15 @@ describe("empty lists (AC-10)", () => {
       expect(getLibraryTitles).not.toHaveBeenCalled();
     },
   );
+
+  it("offers Browse shows only on the watchlist, which can hold shows", async () => {
+    getWatchlistPage.mockResolvedValue({ kind: "ok", rows: [], total: 0 });
+    await renderSection("watchlist");
+    expect(screen.getByRole("link", { name: "Browse shows" })).toHaveAttribute(
+      "href",
+      "/shows",
+    );
+  });
 });
 
 describe("failures never look like an empty list (AC-11)", () => {

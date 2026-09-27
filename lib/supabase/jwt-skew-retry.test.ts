@@ -80,6 +80,37 @@ describe("withJwtSkewRetry", () => {
     expect(base).toHaveBeenCalledTimes(1);
   });
 
+  it("does not retry a PGRST303 for any other claim, such as an expired token", async () => {
+    const expired = Response.json(
+      { code: "PGRST303", message: "JWT expired" },
+      { status: 401 },
+    );
+    const base = fetchReturning(expired);
+
+    const response = await withJwtSkewRetry(base, noWait)("http://x/rest");
+
+    expect((await response.json()).message).toBe("JWT expired");
+    expect(base).toHaveBeenCalledTimes(1);
+  });
+
+  it("sends a Request input's body again on the retry", async () => {
+    const bodies: string[] = [];
+    const responses = [issuedAtFuture(), ok()];
+    const base = vi.fn<typeof fetch>(async (input) => {
+      bodies.push(await (input as Request).text());
+      return responses.shift() as Response;
+    });
+    const request = new Request("http://x/rest", {
+      method: "POST",
+      body: '{"p_show_id":1396}',
+    });
+
+    const response = await withJwtSkewRetry(base, noWait)(request);
+
+    expect(response.status).toBe(200);
+    expect(bodies).toEqual(['{"p_show_id":1396}', '{"p_show_id":1396}']);
+  });
+
   it("does not retry a 401 whose body is not JSON", async () => {
     const base = fetchReturning(new Response("Unauthorized", { status: 401 }));
 
