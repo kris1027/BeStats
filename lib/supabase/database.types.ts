@@ -217,7 +217,10 @@ export type Database = {
         }
       }
       remove_show_status: {
-        Args: { p_show_id: number }
+        Args: {
+          p_expected: Database["public"]["Enums"]["tv_status"]
+          p_show_id: number
+        }
         Returns: {
           listed_at: string
           removed_at: string
@@ -265,6 +268,7 @@ export type Database = {
       }
       set_show_status: {
         Args: {
+          p_expected: Database["public"]["Enums"]["tv_status"]
           p_show_id: number
           p_status: Database["public"]["Enums"]["tv_status"]
         }

@@ -122,14 +122,19 @@ export const seasonUndoInputSchema = z.object({
 export const tvStatusSchema = z.enum(TV_STATUSES);
 
 /**
- * A status write (spec 0013, AC-21): the show and the status to set, or null
- * to remove it. The source is never an input: a choice made by hand is always
- * `user`, fixed inside `set_show_status`.
+ * A status write (spec 0013, AC-21): the show, the status to set or null to
+ * remove it, and the status the caller last saw (null for none), which the
+ * database compares before writing. The source is never an input: a choice
+ * made by hand is always `user`, fixed inside `set_show_status`. A removal
+ * must name the status it removes.
  */
-export const showStatusInputSchema = z.object({
-  showId: tmdbIdSchema,
-  status: tvStatusSchema.nullable(),
-});
+export const showStatusInputSchema = z
+  .object({
+    showId: tmdbIdSchema,
+    status: tvStatusSchema.nullable(),
+    expected: tvStatusSchema.nullable(),
+  })
+  .refine((input) => input.status !== null || input.expected !== null);
 
 /** A time the client carries back for an Undo: full ISO, never in the future. */
 const pastInstantSchema = z.iso

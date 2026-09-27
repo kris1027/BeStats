@@ -10,6 +10,7 @@ import {
   logTrackingEvent,
   TRACKING_EVENT,
   type TrackingEvent,
+  type TrackingOutcome,
 } from "@/lib/tracking/log";
 import {
   episodeRatingInputSchema,
@@ -23,8 +24,10 @@ import { classifyTrackingError } from "@/lib/tracking/supabase-error";
 import type {
   EpisodeTrackingError,
   EpisodeTrackingResult,
+  MovieTrackingError,
   SeasonUndo,
   SeasonWatchedResult,
+  ShowStatusError,
   ShowStatusResult,
   ShowStatusUndo,
   TvStatus,
@@ -53,15 +56,18 @@ import { loadSeason } from "./[id]/season/[number]/load-season";
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
-/** What one write's body settles on. */
-type Step<T> =
+/**
+ * What one write's body settles on. `E` is the refusals the body can return
+ * itself: the episode classes, or the status ones for a status write.
+ */
+type Step<T, E extends TrackingOutcome = EpisodeTrackingError> =
   | { kind: "done"; value: T }
-  | { kind: "refused"; error: EpisodeTrackingError }
+  | { kind: "refused"; error: E }
   | { kind: "db_error"; error: { code?: string | null } };
 
-type Outcome<T> =
+type Outcome<T, E extends TrackingOutcome = EpisodeTrackingError> =
   | { ok: true; value: T }
-  | { ok: false; error: EpisodeTrackingError };
+  | { ok: false; error: E | MovieTrackingError };
 
 /**
  * The shared shape of every episode action after its input is parsed: the
@@ -71,10 +77,13 @@ type Outcome<T> =
  * @param body The TMDB check and the Supabase call, given the request client
  * and the verified user id.
  */
-async function runEpisodeWrite<T>(
+async function runEpisodeWrite<
+  T,
+  E extends TrackingOutcome = EpisodeTrackingError,
+>(
   event: TrackingEvent,
-  body: (supabase: SupabaseClient, userId: string) => Promise<Step<T>>,
-): Promise<Outcome<T>> {
+  body: (supabase: SupabaseClient, userId: string) => Promise<Step<T, E>>,
+): Promise<Outcome<T, E>> {
   let value: T;
   try {
     const user = await getOptionalUser();
@@ -106,8 +115,11 @@ async function runEpisodeWrite<T>(
   return { ok: true, value };
 }
 
-/** A PostgREST response reduced to a `Step`. */
-function settled<T>(error: { code?: string | null } | null, value: T): Step<T> {
+/** A PostgREST response reduced to a `Step`; it never refuses on its own. */
+function settled<T>(
+  error: { code?: string | null } | null,
+  value: T,
+): Step<T, never> {
   return error ? { kind: "db_error", error } : { kind: "done", value };
 }
 
@@ -420,32 +432,56 @@ export async function undoSeasonWatched(
   );
 }
 
+/** A status write's body: its own refusals are status classes. */
+type StatusStep = Step<ShowStatusUndo | null, ShowStatusError>;
+
 /**
- * A status result, from the shared episode write shape. `not_aired` belongs
- * to episodes and cannot come from a status write; it is folded into an
- * ordinary failed save rather than widening the status error type.
+ * `BS409` is what `set_show_status` and `remove_show_status` raise when the
+ * row no longer holds the status the caller saw, so a stale card never
+ * overwrites or deletes a newer status. It is read here rather than in
+ * `classifyTrackingError`, since only these two raise it.
+ */
+function settledStatus(
+  error: { code?: string | null } | null,
+  value: ShowStatusUndo | null,
+): StatusStep {
+  if (error?.code === "BS409") {
+    return { kind: "refused", error: "status_changed" };
+  }
+  return settled(error, value);
+}
+
+/**
+ * A status result, from the shared episode write shape.
+ *
+ * `status_changed` refreshes the page as a success does: nothing was written,
+ * and the card or pill should now show the status that is really stored.
  */
 function asShowStatusResult(
-  outcome: Outcome<ShowStatusUndo | null>,
+  outcome: Outcome<ShowStatusUndo | null, ShowStatusError>,
 ): ShowStatusResult {
   if (outcome.ok) return { ok: true, undo: outcome.value };
-  return {
-    ok: false,
-    error: outcome.error === "not_aired" ? "write_failed" : outcome.error,
-  };
+  if (outcome.error === "status_changed") refresh();
+  return { ok: false, error: outcome.error };
 }
 
 /**
  * Sets a show's status by hand, or removes it with `null` (spec 0013, AC-2,
  * AC-4, AC-16, AC-18).
  *
+ * `expected` is the status the caller last saw, or null for no row. The
+ * database writes only while the row still holds it, and otherwise refuses
+ * with `status_changed`, so a card rendered before a change made elsewhere
+ * can never delete or overwrite the newer status.
+ *
  * Setting goes through `set_show_status`, which always writes
- * `status_source = 'user'`; the source is never an input. Like every creating
- * write it first confirms the show with TMDB (an unknown or adult show is
- * `not_found`, an outage `tmdb_unavailable`), so no row is ever stored for a
- * show the app cannot render. Removing goes through `remove_show_status` and
- * skips TMDB, so it works during an outage and for a show TMDB later drops.
- * Neither touches an episode row (AC-3).
+ * `status_source = 'user'`; the source is never an input. Only a write that
+ * creates the row (`expected` null) first confirms the show with TMDB (an
+ * unknown or adult show is `not_found`, an outage `tmdb_unavailable`), so no
+ * row is ever stored for a show the app cannot render. With `expected` set,
+ * the function only updates an existing row, so it skips TMDB: Stop watching
+ * works during an outage and for a show TMDB later drops, as removing through
+ * `remove_show_status` does. Neither touches an episode row (AC-3).
  *
  * The result carries the Undo: the values the database reported replacing,
  * and what the row must still hold for the Undo to apply. It is null when
@@ -454,20 +490,27 @@ function asShowStatusResult(
 export async function setShowStatus(
   showId: number,
   status: TvStatus | null,
+  expected: TvStatus | null,
 ): Promise<ShowStatusResult> {
   const event = TRACKING_EVENT.showStatus;
-  const input = parse(showStatusInputSchema, { showId, status }, event);
+  const input = parse(
+    showStatusInputSchema,
+    { showId, status, expected },
+    event,
+  );
   if (!input) return { ok: false, error: "invalid_input" };
 
   const target = input.status;
   if (target === null) {
     return asShowStatusResult(
-      await runEpisodeWrite<ShowStatusUndo | null>(event, async (supabase) => {
+      await runEpisodeWrite(event, async (supabase): Promise<StatusStep> => {
         const { data, error } = await supabase.rpc("remove_show_status", {
           p_show_id: input.showId,
+          // Non null: the schema refuses a removal that names no status.
+          p_expected: input.expected as TvStatus,
         });
         const removed = data?.[0];
-        return settled(
+        return settledStatus(
           error,
           removed
             ? {
@@ -484,25 +527,29 @@ export async function setShowStatus(
   }
 
   return asShowStatusResult(
-    await runEpisodeWrite<ShowStatusUndo | null>(event, async (supabase) => {
-      const show = await loadShow(input.showId);
-      if (show.kind !== "found") {
-        return {
-          kind: "refused",
-          error: show.kind === "failed" ? "tmdb_unavailable" : "not_found",
-        };
+    await runEpisodeWrite(event, async (supabase): Promise<StatusStep> => {
+      if (input.expected === null) {
+        const show = await loadShow(input.showId);
+        if (show.kind !== "found") {
+          return {
+            kind: "refused",
+            error: show.kind === "failed" ? "tmdb_unavailable" : "not_found",
+          };
+        }
       }
 
       const { data, error } = await supabase.rpc("set_show_status", {
         p_show_id: input.showId,
         p_status: target,
+        // Sent as null for "no row": the argument has no default, on purpose.
+        p_expected: input.expected as TvStatus,
       });
       // The generated types call the previous columns non null; they are
       // null when there was no row, so each is read defensively.
       const row = data?.[0];
       const previousStatus = row?.previous_status ?? null;
       const previousSource = row?.previous_source ?? null;
-      return settled(
+      return settledStatus(
         error,
         previousStatus !== null && previousSource !== null
           ? {
@@ -538,7 +585,7 @@ export async function restoreShowStatus(
 
   const request = input.undo;
   return asShowStatusResult(
-    await runEpisodeWrite<ShowStatusUndo | null>(event, async (supabase) => {
+    await runEpisodeWrite(event, async (supabase): Promise<StatusStep> => {
       const { error } = await supabase.rpc("restore_show_status", {
         p_show_id: input.showId,
         p_status: request.status,

@@ -268,9 +268,37 @@ describe("showStatusInputSchema (spec 0013, AC-21)", () => {
       null,
     ]) {
       expect(
-        showStatusInputSchema.safeParse({ showId: 1, status }).success,
+        showStatusInputSchema.safeParse({
+          showId: 1,
+          status,
+          expected: "watching",
+        }).success,
       ).toBe(true);
     }
+  });
+
+  it("accepts null as the expected status of a first write, but not of a removal", () => {
+    expect(
+      showStatusInputSchema.safeParse({
+        showId: 1,
+        status: "watching",
+        expected: null,
+      }).success,
+    ).toBe(true);
+    expect(
+      showStatusInputSchema.safeParse({
+        showId: 1,
+        status: null,
+        expected: null,
+      }).success,
+    ).toBe(false);
+  });
+
+  it("refuses a missing expected status rather than reading it as no row", () => {
+    expect(
+      showStatusInputSchema.safeParse({ showId: 1, status: "watching" })
+        .success,
+    ).toBe(false);
   });
 
   it("refuses a missing status rather than reading it as a removal", () => {
@@ -283,10 +311,15 @@ describe("showStatusInputSchema (spec 0013, AC-21)", () => {
     const parsed = showStatusInputSchema.parse({
       showId: 1396,
       status: "watching",
+      expected: null,
       userId: "user-b",
       source: "system",
     });
-    expect(parsed).toEqual({ showId: 1396, status: "watching" });
+    expect(parsed).toEqual({
+      showId: 1396,
+      status: "watching",
+      expected: null,
+    });
   });
 });
 

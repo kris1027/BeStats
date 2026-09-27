@@ -480,12 +480,22 @@ grant execute on function public.restore_episodes_watched(integer, jsonb) to aut
 -- and `user_id` always `auth.uid()`. None touches `user_episode_state`
 -- (AC-3). `supabase/tests/090-show-status-functions.test.sql` pins them.
 
--- Sets one status by hand (AC-2). Returns the row as written plus what it was
--- before (all null when there was no row), which the client keeps as the
--- Undo of Stop watching (AC-16). `listed_at` is the trigger's.
+-- Sets one status by hand (AC-2), but only over the status the caller last
+-- saw: `p_expected` is that status, or null for "no row". A card rendered
+-- before a status changed elsewhere (another tab, an episode that started the
+-- show) would otherwise overwrite the newer status; a mismatch raises
+-- `BS409`, which reaches the user as `status_changed`, and writes nothing.
+--
+-- With `p_expected` set the row must already exist, and this only updates it,
+-- so the Server Action skips the TMDB check there: a show TMDB has since
+-- dropped can still be moved off the watchlist. Only `p_expected` null
+-- inserts. Returns the row as written plus what it was before (all null when
+-- there was no row), which the client keeps as the Undo of Stop watching
+-- (AC-16). `listed_at` is the trigger's.
 create or replace function public.set_show_status(
   p_show_id integer,
-  p_status public.tv_status
+  p_status public.tv_status,
+  p_expected public.tv_status
 )
 returns table (
   status public.tv_status,
@@ -505,19 +515,34 @@ declare
   v_prior public.user_show_state;
   v_row public.user_show_state;
 begin
-  -- Locks the row, when there is one, so the previous values reported are
-  -- the ones this write replaced.
+  -- Locks the row, when there is one, so the status compared and the
+  -- previous values reported are the ones this write replaced.
   select * into v_prior
   from public.user_show_state as s
   where s.user_id = auth.uid() and s.show_id = p_show_id
   for update;
 
-  insert into public.user_show_state as s (user_id, show_id, status, status_source)
-  values (auth.uid(), p_show_id, p_status, 'user')
-  on conflict (user_id, show_id) do update
-    set status = excluded.status,
+  if v_prior.status is distinct from p_expected then
+    raise exception 'status_changed' using errcode = 'BS409';
+  end if;
+
+  if v_prior.user_id is null then
+    -- A concurrent first write wins; this one reports the change.
+    insert into public.user_show_state as s (user_id, show_id, status, status_source)
+    values (auth.uid(), p_show_id, p_status, 'user')
+    on conflict (user_id, show_id) do nothing
+    returning s.* into v_row;
+  else
+    update public.user_show_state as s
+    set status = p_status,
         status_source = 'user'
-  returning s.* into v_row;
+    where s.user_id = auth.uid() and s.show_id = p_show_id
+    returning s.* into v_row;
+  end if;
+
+  if v_row.user_id is null then
+    raise exception 'status_changed' using errcode = 'BS409';
+  end if;
 
   return query select
     v_row.status, v_row.status_source, v_row.listed_at,
@@ -526,23 +551,50 @@ end;
 $$;
 
 -- Removes a show's status (AC-4, AC-16): the row goes, the episode rows stay.
--- Returns what was deleted and when, which is the Undo; zero rows when there
--- was nothing to remove.
-create or replace function public.remove_show_status(p_show_id integer)
+-- Only the status the caller saw is removed: a row that now holds another one
+-- raises `BS409` and stays, as in `set_show_status`. Returns what was deleted
+-- and when, which is the Undo; zero rows when there was nothing to remove.
+create or replace function public.remove_show_status(
+  p_show_id integer,
+  p_expected public.tv_status
+)
 returns table (
   status public.tv_status,
   status_source public.status_source,
   listed_at timestamptz,
   removed_at timestamptz
 )
-language sql
+language plpgsql
 volatile
 security invoker
 set search_path = ''
 as $$
+#variable_conflict use_column
+declare
+  v_row public.user_show_state;
+begin
+  if p_expected is null then
+    raise exception 'expected status required' using errcode = '22023';
+  end if;
+
   delete from public.user_show_state as s
-  where s.user_id = auth.uid() and s.show_id = p_show_id
-  returning s.status, s.status_source, s.listed_at, now();
+  where s.user_id = auth.uid()
+    and s.show_id = p_show_id
+    and s.status = p_expected
+  returning s.* into v_row;
+
+  if v_row.user_id is null then
+    if exists (
+      select 1 from public.user_show_state as s
+      where s.user_id = auth.uid() and s.show_id = p_show_id
+    ) then
+      raise exception 'status_changed' using errcode = 'BS409';
+    end if;
+    return;
+  end if;
+
+  return query select v_row.status, v_row.status_source, v_row.listed_at, now();
+end;
 $$;
 
 -- The Undo of a removal or of Stop watching (AC-19). It puts back the
@@ -617,9 +669,9 @@ begin
 end;
 $$;
 
-revoke all on function public.set_show_status(integer, public.tv_status) from public, anon, authenticated;
-revoke all on function public.remove_show_status(integer) from public, anon, authenticated;
+revoke all on function public.set_show_status(integer, public.tv_status, public.tv_status) from public, anon, authenticated;
+revoke all on function public.remove_show_status(integer, public.tv_status) from public, anon, authenticated;
 revoke all on function public.restore_show_status(integer, public.tv_status, public.status_source, public.tv_status, timestamptz, timestamptz) from public, anon, authenticated;
-grant execute on function public.set_show_status(integer, public.tv_status) to authenticated;
-grant execute on function public.remove_show_status(integer) to authenticated;
+grant execute on function public.set_show_status(integer, public.tv_status, public.tv_status) to authenticated;
+grant execute on function public.remove_show_status(integer, public.tv_status) to authenticated;
 grant execute on function public.restore_show_status(integer, public.tv_status, public.status_source, public.tv_status, timestamptz, timestamptz) to authenticated;

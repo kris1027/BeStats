@@ -108,7 +108,7 @@ describe("ShowStatusControl", () => {
     await screen.findByRole("menu");
     await user.click(screen.getByRole("menuitemradio", { name: "Dropped" }));
 
-    expect(action).toHaveBeenCalledWith("set", 1396, "dropped");
+    expect(action).toHaveBeenCalledWith("set", 1396, "dropped", "watching");
     await waitFor(() =>
       expect(pill()).toHaveAccessibleName("Dropped, status for Breaking Bad"),
     );
@@ -139,7 +139,7 @@ describe("ShowStatusControl", () => {
       await screen.findByRole("menuitem", { name: "Remove status" }),
     );
 
-    expect(action).toHaveBeenCalledWith("set", 1396, null);
+    expect(action).toHaveBeenCalledWith("set", 1396, null, "on_hold");
     await waitFor(() =>
       expect(pill()).toHaveAccessibleName(
         "Add to my shows, status for Breaking Bad",

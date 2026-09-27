@@ -107,7 +107,9 @@ function lastUndo(): () => void {
 }
 
 afterEach(() => {
-  pending.length = 0;
+  // Settled rather than dropped: React entangles async transitions, so one
+  // left pending would keep a later test's optimistic removal from reverting.
+  for (const resolve of pending.splice(0)) resolve({ ok: true, undo: null });
   vi.clearAllMocks();
 });
 
@@ -375,6 +377,46 @@ describe("a title TMDB no longer has (AC-11)", () => {
     expect(toast).toHaveBeenLastCalledWith(
       "This show moved to On Hold",
       expect.anything(),
+    );
+  });
+});
+
+describe("a show whose status changed elsewhere (spec 0013 review fix)", () => {
+  it("names the status the card showed, so the database can refuse a stale click", async () => {
+    const user = userEvent.setup();
+    render(
+      grid("watchlist", [
+        item(1, { kind: "tv", status: "want_to_watch", title: "Planned" }),
+        item(2, { kind: "tv", status: "watching", title: "Started" }),
+      ]),
+    );
+    const [planned, stop] = screen.getAllByRole("button");
+    await user.click(planned);
+    await settleNext({ ok: true, undo: null });
+    await user.click(stop);
+    await settleNext({ ok: true, undo: null });
+    expect(setShowStatus.mock.calls).toEqual([
+      [1, null, "want_to_watch"],
+      [2, "on_hold", "watching"],
+    ]);
+  });
+
+  it("brings the card back with a toast, and offers no Undo, when the write is refused", async () => {
+    const user = userEvent.setup();
+    render(
+      grid("watchlist", [
+        item(1, { kind: "tv", status: "want_to_watch", title: "Planned" }),
+      ]),
+    );
+    await user.click(screen.getByRole("button"));
+    await settleNext({ ok: false, error: "status_changed" });
+
+    await waitFor(() =>
+      expect(screen.getByRole("link", { name: "Planned" })).toBeInTheDocument(),
+    );
+    expect(toast).toHaveBeenLastCalledWith(
+      "This show's status changed elsewhere. Showing the current one.",
+      expect.objectContaining({ action: undefined }),
     );
   });
 });

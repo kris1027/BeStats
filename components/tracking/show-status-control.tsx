@@ -77,19 +77,24 @@ function ShowStatusControl({
 
   function choose(status: TvStatus) {
     if (shown?.status === status) return;
+    const expected = shown?.status ?? null;
     startTransition(async () => {
       setShown({ status, source: "user" });
       const result = await settleStatusCall(() =>
-        setShowStatus(showId, status),
+        setShowStatus(showId, status, expected),
       );
       if (!result.ok) fail(result.error);
     });
   }
 
   function remove() {
+    if (shown === null) return;
+    const expected = shown.status;
     startTransition(async () => {
       setShown(null);
-      const result = await settleStatusCall(() => setShowStatus(showId, null));
+      const result = await settleStatusCall(() =>
+        setShowStatus(showId, null, expected),
+      );
       if (!result.ok) return fail(result.error);
       if (result.undo === null) return;
 

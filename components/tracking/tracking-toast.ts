@@ -11,6 +11,7 @@ import {
 import type {
   EpisodeTrackingError,
   MovieTrackingError,
+  ShowStatusError,
 } from "@/lib/tracking/types";
 
 /** Which control failed, so each keeps one toast of its own. */
@@ -27,7 +28,9 @@ export type TrackingControl = "watchlist" | "watched" | "rating";
  * @param call The Server Action call.
  * @returns The error class, or null when the write landed.
  */
-export async function settleTrackingCall<E extends EpisodeTrackingError>(
+export async function settleTrackingCall<
+  E extends EpisodeTrackingError | ShowStatusError,
+>(
   call: () => Promise<{ ok: true } | { ok: false; error: E }>,
 ): Promise<E | "write_failed" | null> {
   try {
@@ -124,7 +127,7 @@ export async function settleStatusCall<R extends { ok: boolean }>(
  * @param options.navigate The router push, for the Sign in action.
  */
 export function showStatusError(
-  error: MovieTrackingError,
+  error: ShowStatusError,
   {
     id,
     returnPath,
@@ -140,7 +143,7 @@ export function showStatusError(
 
 /** The Sign in action a session expired toast carries, and no other. */
 function signInAction(
-  error: EpisodeTrackingError,
+  error: EpisodeTrackingError | ShowStatusError,
   returnPath: string,
   navigate: (href: string) => void,
 ) {

@@ -1,6 +1,7 @@
 import type {
   EpisodeTrackingError,
   MovieTrackingError,
+  ShowStatusError,
   TvStatus,
 } from "./types";
 
@@ -108,10 +109,12 @@ export const SHOW_STATUS_MESSAGES = {
 } as const;
 
 /** The show status failure copy: the movie copy, naming a show. */
-export const SHOW_TRACKING_MESSAGES: Record<MovieTrackingError, string> = {
+export const SHOW_TRACKING_MESSAGES: Record<ShowStatusError, string> = {
   ...TRACKING_MESSAGES,
   not_found: "This show isn't available to track.",
   undo_expired: SHOW_STATUS_MESSAGES.undoExpired,
+  status_changed:
+    "This show's status changed elsewhere. Showing the current one.",
 };
 
 /**

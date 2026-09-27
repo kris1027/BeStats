@@ -16,8 +16,11 @@ import { settleStatusCall, showStatusError } from "./tracking-toast";
  * Plan sets Want to Watch; Planned removes the status. It sits above the
  * card's link overlay, so a click never opens the show. The same optimistic
  * and rollback rules as every tracking control apply: the icon flips at once
- * and returns to the server's state if the write fails. The accessible name
- * says what the click will do, since the two states act differently.
+ * and returns to the server's state if the write fails. Each write names the
+ * status this icon stood for, so a card rendered before the status changed
+ * elsewhere refreshes instead of replacing or deleting the newer one. The
+ * accessible name says what the click will do, since the two states act
+ * differently.
  */
 function ShowCardBookmarkButton({
   showId,
@@ -38,7 +41,11 @@ function ShowCardBookmarkButton({
     startTransition(async () => {
       setOptimistic(value);
       const result = await settleStatusCall(() =>
-        setShowStatus(showId, value ? "want_to_watch" : null),
+        setShowStatus(
+          showId,
+          value ? "want_to_watch" : null,
+          value ? null : "want_to_watch",
+        ),
       );
       if (!result.ok) {
         showStatusError(result.error, {

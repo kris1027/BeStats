@@ -552,7 +552,7 @@ describe("setShowStatus (spec 0013)", () => {
       ],
       error: null,
     };
-    expect(await setShowStatus(SHOW, "watching")).toEqual({
+    expect(await setShowStatus(SHOW, "watching", null)).toEqual({
       ok: true,
       undo: null,
     });
@@ -560,7 +560,10 @@ describe("setShowStatus (spec 0013)", () => {
     expect(writes()).toEqual([
       {
         method: "rpc",
-        args: ["set_show_status", { p_show_id: SHOW, p_status: "watching" }],
+        args: [
+          "set_show_status",
+          { p_show_id: SHOW, p_status: "watching", p_expected: null },
+        ],
       },
     ]);
     expect(refresh).toHaveBeenCalledOnce();
@@ -580,7 +583,7 @@ describe("setShowStatus (spec 0013)", () => {
       ],
       error: null,
     };
-    expect(await setShowStatus(SHOW, "on_hold")).toEqual({
+    expect(await setShowStatus(SHOW, "on_hold", "watching")).toEqual({
       ok: true,
       undo: {
         expected: "on_hold",
@@ -592,19 +595,56 @@ describe("setShowStatus (spec 0013)", () => {
     });
   });
 
-  it("refuses a show TMDB does not have, writing nothing", async () => {
+  it("refuses a first status for a show TMDB does not have, writing nothing", async () => {
     loadShow.mockResolvedValue({ kind: "not_found" });
-    expect(await setShowStatus(SHOW, "watching")).toEqual({
+    expect(await setShowStatus(SHOW, "watching", null)).toEqual({
       ok: false,
       error: "not_found",
     });
     loadShow.mockResolvedValue({ kind: "failed" });
-    expect(await setShowStatus(SHOW, "watching")).toEqual({
+    expect(await setShowStatus(SHOW, "watching", null)).toEqual({
       ok: false,
       error: "tmdb_unavailable",
     });
     expect(writes()).toEqual([]);
   });
+
+  it.each(["not_found", "failed"])(
+    "changes an existing row without TMDB, even when TMDB answers %s (AC-17)",
+    async (kind) => {
+      loadShow.mockResolvedValue({ kind });
+      result = { data: [], error: null };
+      expect(await setShowStatus(SHOW, "on_hold", "watching")).toEqual({
+        ok: true,
+        undo: null,
+      });
+      expect(loadShow).not.toHaveBeenCalled();
+      expect(writes()).toEqual([
+        {
+          method: "rpc",
+          args: [
+            "set_show_status",
+            { p_show_id: SHOW, p_status: "on_hold", p_expected: "watching" },
+          ],
+        },
+      ]);
+    },
+  );
+
+  it.each([
+    ["watching", "want_to_watch"],
+    [null, "want_to_watch"],
+  ] as const)(
+    "reports a status changed elsewhere as status_changed and refreshes (%s over %s)",
+    async (status, expected) => {
+      result = { data: null, error: { code: "BS409" } };
+      expect(await setShowStatus(SHOW, status, expected)).toEqual({
+        ok: false,
+        error: "status_changed",
+      });
+      expect(refresh).toHaveBeenCalledOnce();
+    },
+  );
 
   it("removes through remove_show_status without TMDB, returning the removal's Undo (AC-4)", async () => {
     result = {
@@ -618,7 +658,7 @@ describe("setShowStatus (spec 0013)", () => {
       ],
       error: null,
     };
-    expect(await setShowStatus(SHOW, null)).toEqual({
+    expect(await setShowStatus(SHOW, null, "want_to_watch")).toEqual({
       ok: true,
       undo: {
         expected: null,
@@ -630,23 +670,41 @@ describe("setShowStatus (spec 0013)", () => {
     });
     expect(loadShow).not.toHaveBeenCalled();
     expect(writes()).toEqual([
-      { method: "rpc", args: ["remove_show_status", { p_show_id: SHOW }] },
+      {
+        method: "rpc",
+        args: [
+          "remove_show_status",
+          { p_show_id: SHOW, p_expected: "want_to_watch" },
+        ],
+      },
     ]);
   });
 
   it("offers no Undo when there was nothing to remove", async () => {
     result = { data: [], error: null };
-    expect(await setShowStatus(SHOW, null)).toEqual({ ok: true, undo: null });
+    expect(await setShowStatus(SHOW, null, "watching")).toEqual({
+      ok: true,
+      undo: null,
+    });
   });
 
   it.each([
     [0, "watching"],
     [SHOW, "binging"],
     [1.5, null],
+    // A removal must name the status it removes.
+    [SHOW, null, null],
+    [SHOW, "watching", "binging"],
   ])(
     "refuses %s / %s as invalid input before any read (AC-21)",
-    async (id, status) => {
-      expect(await setShowStatus(id, status as "watching")).toEqual({
+    async (id, status, expected = "watching") => {
+      expect(
+        await setShowStatus(
+          id,
+          status as "watching",
+          expected as "watching" | null,
+        ),
+      ).toEqual({
         ok: false,
         error: "invalid_input",
       });
@@ -657,7 +715,7 @@ describe("setShowStatus (spec 0013)", () => {
 
   it("answers an expired session with session_expired (AC-21)", async () => {
     getOptionalUser.mockResolvedValue(null);
-    expect(await setShowStatus(SHOW, "dropped")).toEqual({
+    expect(await setShowStatus(SHOW, "dropped", "watching")).toEqual({
       ok: false,
       error: "session_expired",
     });
@@ -666,7 +724,7 @@ describe("setShowStatus (spec 0013)", () => {
 
   it("reports a failed write as write_failed with no refresh, so the pill rolls back (AC-2)", async () => {
     result = { data: null, error: { code: "XX000" } };
-    expect(await setShowStatus(SHOW, "on_hold")).toEqual({
+    expect(await setShowStatus(SHOW, "on_hold", "watching")).toEqual({
       ok: false,
       error: "write_failed",
     });
@@ -675,8 +733,8 @@ describe("setShowStatus (spec 0013)", () => {
 
   it("never sends a user id; the owner comes from the session in SQL (AC-20, AC-21)", async () => {
     result = { data: [], error: null };
-    await setShowStatus(SHOW, "watching");
-    await setShowStatus(SHOW, null);
+    await setShowStatus(SHOW, "watching", null);
+    await setShowStatus(SHOW, null, "watching");
     for (const call of writes()) {
       expect(JSON.stringify(call.args)).not.toMatch(/user/);
     }

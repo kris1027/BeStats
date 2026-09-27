@@ -80,7 +80,7 @@ select is(
 );
 
 -- Starting a planned show keeps its place (AC-14).
-select public.set_show_status(970001, 'watching');
+select public.set_show_status(970001, 'watching', 'want_to_watch');
 select is(
   (select listed_at from public.user_watchlist_entries where kind = 'tv' and tmdb_id = 970001),
   '2024-02-01T00:00:00Z'::timestamptz,

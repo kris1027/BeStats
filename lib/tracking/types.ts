@@ -132,6 +132,14 @@ export type ShowStatusUndo = {
 };
 
 /**
+ * A status write's failure: the movie classes, plus `status_changed` when the
+ * row no longer holds the status the caller last saw (another tab, or an
+ * episode that started the show). Nothing is written then, and the page
+ * refreshes to the current status rather than overwriting it.
+ */
+export type ShowStatusError = MovieTrackingError | "status_changed";
+
+/**
  * What `setShowStatus` returns. `undo` is null when there was nothing to take
  * back: a first status on an untracked show, or removing a status that was
  * already gone. Like the movie results, no state comes back: the controls
@@ -139,4 +147,4 @@ export type ShowStatusUndo = {
  */
 export type ShowStatusResult =
   | { ok: true; undo: ShowStatusUndo | null }
-  | { ok: false; error: MovieTrackingError };
+  | { ok: false; error: ShowStatusError };

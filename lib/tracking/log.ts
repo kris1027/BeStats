@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { EpisodeTrackingError } from "./types";
+import type { EpisodeTrackingError, ShowStatusError } from "./types";
 
 /**
  * The only way a tracking path writes to the log (spec 0007, AC-21).
@@ -39,7 +39,11 @@ export type TrackingEvent =
  * both reach the client as `write_failed` but stay apart here, so a broken
  * grant is not mistaken for a flaky network.
  */
-export type TrackingOutcome = EpisodeTrackingError | "forbidden" | "db_error";
+export type TrackingOutcome =
+  | EpisodeTrackingError
+  | ShowStatusError
+  | "forbidden"
+  | "db_error";
 
 /**
  * Records one failed or refused tracking attempt. Successful writes are not

@@ -30,7 +30,7 @@ import {
   UNDO_ACTION_LABEL,
   UNDO_EXPIRED_MESSAGES,
 } from "@/lib/tracking/messages";
-import type { MovieTrackingError, ShowStatusUndo } from "@/lib/tracking/types";
+import type { ShowStatusError, ShowStatusUndo } from "@/lib/tracking/types";
 
 import { LibraryCard } from "./library-card";
 import {
@@ -136,7 +136,7 @@ function LibraryGrid({
     focusable?.focus();
   }
 
-  function onError(error: MovieTrackingError, item: LibraryItem) {
+  function onError(error: ShowStatusError, item: LibraryItem) {
     if (item.kind === "tv") {
       showStatusError(error, {
         id: toastId(list, item),
@@ -145,6 +145,8 @@ function LibraryGrid({
       });
       return;
     }
+    // Only a status write can report a status changed elsewhere.
+    if (error === "status_changed") return;
     showTrackingError(error, {
       movieId: item.tmdbId,
       control: list,
@@ -201,18 +203,21 @@ function LibraryGrid({
   /**
    * The write a card's button makes, and the toast that confirms it. A movie
    * uses the spec 0007 actions and needs no payload for its Undo; a show's
-   * Undo is what `setShowStatus` reported replacing.
+   * Undo is what `setShowStatus` reported replacing. A show's write names the
+   * status the card showed, so a card rendered before the status changed
+   * elsewhere comes back with `status_changed` instead of deleting or
+   * overwriting the newer status.
    */
   async function removeWrite(
     item: LibraryItem,
   ): Promise<
     | { ok: true; message: string; showUndo: ShowStatusUndo | null }
-    | { ok: false; error: MovieTrackingError }
+    | { ok: false; error: ShowStatusError }
   > {
     if (item.kind === "tv") {
       const stopping = item.status === "watching";
       const result = await settleStatusCall(() =>
-        setShowStatus(item.tmdbId, stopping ? "on_hold" : null),
+        setShowStatus(item.tmdbId, stopping ? "on_hold" : null, item.status),
       );
       if (!result.ok) return result;
       // A missing title's fallback opens one sentence and sits mid sentence
