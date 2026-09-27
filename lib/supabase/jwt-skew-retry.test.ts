@@ -111,6 +111,24 @@ describe("withJwtSkewRetry", () => {
     expect(bodies).toEqual(['{"p_show_id":1396}', '{"p_show_id":1396}']);
   });
 
+  it("sends a stream in init.body again on the retry", async () => {
+    const bodies: string[] = [];
+    const responses = [issuedAtFuture(), ok()];
+    const base = vi.fn<typeof fetch>(async (_input, init) => {
+      bodies.push(await new Response(init?.body).text());
+      return responses.shift() as Response;
+    });
+    const body = new Response('{"p_show_id":1396}').body;
+
+    const response = await withJwtSkewRetry(base, noWait)("http://x/rest", {
+      method: "POST",
+      body,
+    });
+
+    expect(response.status).toBe(200);
+    expect(bodies).toEqual(['{"p_show_id":1396}', '{"p_show_id":1396}']);
+  });
+
   it("does not retry a 401 whose body is not JSON", async () => {
     const base = fetchReturning(new Response("Unauthorized", { status: 401 }));
 

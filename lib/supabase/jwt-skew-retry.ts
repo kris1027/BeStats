@@ -28,9 +28,12 @@ export const JWT_SKEW_RETRY_DELAYS_MS = [500, 1000] as const;
  * "Status unavailable" pill, a missing rating) although nothing was wrong
  * (supabase/supabase#49655, #50651). The rejection happens before the request
  * reaches the database, so sending a write again cannot apply it twice. Any
- * other response, including every other 401, is returned untouched. A
- * `Request` input is cloned for each attempt, so its body is still there to
- * send again.
+ * other response, including every other 401, is returned untouched.
+ *
+ * Every attempt must be able to send the body again. A `Request` input is
+ * cloned per attempt, and a stream in `init.body` is read into a buffer once,
+ * up front. `init` is otherwise passed on as given, rather than folded into a
+ * `Request`, which would drop the `next` options Next.js reads from it.
  *
  * @param baseFetch The fetch to wrap, `globalThis.fetch` in the app.
  * @param wait How to wait between attempts; tests pass a fake.
@@ -41,7 +44,14 @@ export function withJwtSkewRetry(
   wait: (ms: number) => Promise<void> = (ms) =>
     new Promise((resolve) => setTimeout(resolve, ms)),
 ): typeof fetch {
-  return async (input, init) => {
+  return async (input, originalInit) => {
+    const init =
+      originalInit?.body instanceof ReadableStream
+        ? {
+            ...originalInit,
+            body: await new Response(originalInit.body).arrayBuffer(),
+          }
+        : originalInit;
     const attempt = () =>
       baseFetch(input instanceof Request ? input.clone() : input, init);
     let response = await attempt();
