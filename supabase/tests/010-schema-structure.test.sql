@@ -66,8 +66,8 @@ select is(
     where not t.tgisinternal
       and c.relname in ('user_movie_state', 'user_show_state', 'user_episode_state')
   ),
-  5::bigint,
-  'five triggers exist: three for updated_at, one for status_changed_at and one for watchlisted_at'
+  6::bigint,
+  'six triggers exist: three for updated_at, one each for status_changed_at, watchlisted_at and listed_at'
 );
 
 -- Owner deletion cascades, which is what AC-11 asserts behaviourally.

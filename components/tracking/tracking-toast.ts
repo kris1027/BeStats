@@ -4,12 +4,14 @@ import { toast } from "sonner";
 
 import {
   EPISODE_TRACKING_MESSAGES,
+  SHOW_TRACKING_MESSAGES,
   SIGN_IN_ACTION_LABEL,
   TRACKING_MESSAGES,
 } from "@/lib/tracking/messages";
 import type {
   EpisodeTrackingError,
   MovieTrackingError,
+  ShowStatusError,
 } from "@/lib/tracking/types";
 
 /** Which control failed, so each keeps one toast of its own. */
@@ -26,7 +28,9 @@ export type TrackingControl = "watchlist" | "watched" | "rating";
  * @param call The Server Action call.
  * @returns The error class, or null when the write landed.
  */
-export async function settleTrackingCall<E extends EpisodeTrackingError>(
+export async function settleTrackingCall<
+  E extends EpisodeTrackingError | ShowStatusError,
+>(
   call: () => Promise<{ ok: true } | { ok: false; error: E }>,
 ): Promise<E | "write_failed" | null> {
   try {
@@ -95,9 +99,51 @@ export function showEpisodeTrackingError(
   });
 }
 
+/**
+ * Runs a status action and keeps its whole result, which carries the Undo
+ * (spec 0013). A rejected call settles as `write_failed`, as
+ * `settleTrackingCall` does, so the control rolls back with a toast.
+ *
+ * @param call The Server Action call.
+ */
+export async function settleStatusCall<R extends { ok: boolean }>(
+  call: () => Promise<R>,
+): Promise<R | { ok: false; error: "write_failed" }> {
+  try {
+    return await call();
+  } catch {
+    return { ok: false, error: "write_failed" };
+  }
+}
+
+/**
+ * Shows the toast for a failed show status write (spec 0013, AC-2, AC-21).
+ * The caller names the toast id, one per show and surface, so repeated
+ * failures replace each other and an Undo's outcome rewrites its own toast.
+ *
+ * @param error The error class the action returned.
+ * @param options.id The toast id.
+ * @param options.returnPath The page to come back to after signing in.
+ * @param options.navigate The router push, for the Sign in action.
+ */
+export function showStatusError(
+  error: ShowStatusError,
+  {
+    id,
+    returnPath,
+    navigate,
+  }: { id: string; returnPath: string; navigate: (href: string) => void },
+): void {
+  toast(SHOW_TRACKING_MESSAGES[error], {
+    id,
+    description: undefined,
+    action: signInAction(error, returnPath, navigate),
+  });
+}
+
 /** The Sign in action a session expired toast carries, and no other. */
 function signInAction(
-  error: EpisodeTrackingError,
+  error: EpisodeTrackingError | ShowStatusError,
   returnPath: string,
   navigate: (href: string) => void,
 ) {

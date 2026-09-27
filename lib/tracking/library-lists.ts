@@ -1,19 +1,28 @@
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
-import { getMovieSummaries, type MovieSummary, TmdbError } from "@/lib/tmdb";
+import {
+  getMovieSummaries,
+  getTvShowsByIds,
+  type MovieSummary,
+  TmdbError,
+  type TvShowSummary,
+} from "@/lib/tmdb";
 
 import { logTrackingEvent, TRACKING_EVENT } from "./log";
+import type { TvStatus } from "./types";
 
 /**
- * The paged reads behind `/watchlist` and `/watched` (spec 0008, API surface).
+ * The paged reads behind `/watchlist` and `/watched` (spec 0008, API surface;
+ * spec 0013 for the merged watchlist).
  *
- * Postgres decides which movies are on a page and in what order; TMDB only
+ * Postgres decides which titles are on a page and in what order; TMDB only
  * supplies their titles afterwards, 20 at most. Neither read may ever run
  * inside `use cache`: the rows belong to one person (`AGENTS.md` section 11,
  * AC-17). Each filters on `user_id` explicitly as well as through row level
- * security, the spec 0007 pattern, and orders with `movie_id` as the tiebreak
- * so two rows stamped in the same instant never swap places between pages.
+ * security, the spec 0007 pattern, and orders with the TMDB id as the final
+ * tiebreak so two rows stamped in the same instant never swap places between
+ * pages.
  */
 
 /** Cards per page on both list pages. */
@@ -32,7 +41,15 @@ export type LibraryPage<Row> =
   | { kind: "ok"; rows: Row[]; total: number }
   | { kind: "failed" };
 
-export type WatchlistRow = { movieId: number };
+/**
+ * One watchlist entry: a planned movie, or a show that is Want to Watch or
+ * Watching (spec 0013, AC-13). `status` is the show's, and null for a movie.
+ */
+export type WatchlistRow = {
+  kind: "movie" | "tv";
+  tmdbId: number;
+  status: TvStatus | null;
+};
 
 export type WatchedRow = {
   movieId: number;
@@ -58,7 +75,15 @@ function pageRange(page: number): [number, number] {
 }
 
 /**
- * One page of the user's watchlist, newest plan first (AC-1).
+ * One page of the user's watchlist: planned movies and Want to Watch or
+ * Watching shows in one order, newest first (spec 0008, AC-1; spec 0013,
+ * AC-13).
+ *
+ * Read from the `user_watchlist_entries` view, which runs with the reader's
+ * rights, so both tables' row level security applies. One ordered query with
+ * an exact count, so the page and the total are always the truthful merged
+ * ones: `listed_at` descending, then `kind` (movies before shows on a tie),
+ * then the TMDB id.
  *
  * @param userId The verified session's user, never a client value.
  * @param page A page already parsed by `parsePageParam`.
@@ -70,29 +95,33 @@ export async function getWatchlistPage(
   try {
     const supabase = await createClient();
     const { data, error, count } = await supabase
-      .from("user_movie_state")
-      .select("movie_id", { count: "exact" })
+      .from("user_watchlist_entries")
+      .select("kind, tmdb_id, status", { count: "exact" })
       .eq("user_id", userId)
-      .eq("in_watchlist", true)
-      .order("watchlisted_at", { ascending: false })
-      .order("movie_id", { ascending: true })
+      .order("listed_at", { ascending: false })
+      .order("kind", { ascending: true })
+      .order("tmdb_id", { ascending: true })
       .range(...pageRange(page));
 
     if (error?.code === RANGE_NOT_SATISFIABLE) {
       return pastTheEnd(
         await supabase
-          .from("user_movie_state")
-          .select("movie_id", { count: "exact", head: true })
-          .eq("user_id", userId)
-          .eq("in_watchlist", true),
+          .from("user_watchlist_entries")
+          .select("tmdb_id", { count: "exact", head: true })
+          .eq("user_id", userId),
       );
     }
     if (error || count === null) return failed();
-    return {
-      kind: "ok",
-      rows: data.map((row) => ({ movieId: row.movie_id })),
-      total: count,
-    };
+
+    const rows: WatchlistRow[] = [];
+    for (const row of data) {
+      // A view's columns are all nullable to the type generator; the view
+      // itself never yields a null id or an unknown kind.
+      if (row.tmdb_id === null) continue;
+      if (row.kind !== "movie" && row.kind !== "tv") continue;
+      rows.push({ kind: row.kind, tmdbId: row.tmdb_id, status: row.status });
+    }
+    return { kind: "ok", rows, total: count };
   } catch {
     // A network failure inside supabase-js. The error is dropped on purpose,
     // as in the actions: its message can carry request details (AC-19).
@@ -149,31 +178,45 @@ export async function getWatchedPage(
   }
 }
 
-/** A page's titles, keyed by movie id, or a systemic TMDB failure. */
+/** A page's titles, keyed by TMDB id per kind, or a systemic TMDB failure. */
 export type LibraryTitles =
-  | { kind: "ok"; titles: Map<number, MovieSummary> }
+  | {
+      kind: "ok";
+      movies: Map<number, MovieSummary>;
+      shows: Map<number, TvShowSummary>;
+    }
   | { kind: "failed" };
 
 /**
  * The TMDB titles for one page of rows, through the cached per title reads
- * (spec 0008, AC-11).
+ * (spec 0008, AC-11; spec 0013, AC-17).
  *
- * A movie TMDB no longer has is simply absent from the map, so the page shows
+ * A title TMDB no longer has is simply absent from its map, so the page shows
  * its "No longer on TMDB" card. A systemic failure (a rejected token, an
  * exhausted rate limit) is `failed` rather than a short map, because a short
- * map would render every movie as missing and invite the user to remove rows
+ * map would render every title as missing and invite the user to remove rows
  * that are fine (`AGENTS.md` section 12).
  *
- * @param ids The page's movie ids, at most `LIBRARY_PAGE_SIZE`.
+ * @param movieIds The page's movie ids.
+ * @param showIds The page's show ids. Together at most `LIBRARY_PAGE_SIZE`.
  */
 export async function getLibraryTitles(
-  ids: readonly number[],
+  movieIds: readonly number[],
+  showIds: readonly number[] = [],
 ): Promise<LibraryTitles> {
   try {
-    const { found } = await getMovieSummaries(ids);
+    const [movies, shows] = await Promise.all([
+      movieIds.length > 0
+        ? getMovieSummaries(movieIds)
+        : { found: [], missingIds: [] },
+      showIds.length > 0
+        ? getTvShowsByIds(showIds)
+        : { found: [], missingIds: [] },
+    ]);
     return {
       kind: "ok",
-      titles: new Map(found.map((movie) => [movie.id, movie])),
+      movies: new Map(movies.found.map((movie) => [movie.id, movie])),
+      shows: new Map(shows.found.map((show) => [show.id, show])),
     };
   } catch (error) {
     if (!(error instanceof TmdbError)) throw error;

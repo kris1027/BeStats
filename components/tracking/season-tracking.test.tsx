@@ -70,6 +70,7 @@ function seasonTree(states: EpisodeStates) {
   return (
     <SeasonTrackingStore
       showId={1396}
+      showName="Breaking Bad"
       seasonNumber={1}
       returnPath="/shows/1396/season/1"
     >
@@ -313,7 +314,12 @@ describe("the season rating (spec 0012, AC-5, AC-6)", () => {
 
   it("shows beside Nothing aired yet, for ratings on undated episodes", () => {
     render(
-      <SeasonTrackingStore showId={1} seasonNumber={0} returnPath="/x">
+      <SeasonTrackingStore
+        showId={1}
+        showName="Show"
+        seasonNumber={0}
+        returnPath="/x"
+      >
         <SeasonWatchedControl
           seasonName="Specials"
           episodes={[{ id: 7, episodeNumber: 1, airDate: null }]}
@@ -330,7 +336,12 @@ describe("the season rating (spec 0012, AC-5, AC-6)", () => {
 describe("the removals only controls for a future row with state (AC-2)", () => {
   function renderUpcoming(state: { watched: boolean; rating: number | null }) {
     return render(
-      <SeasonTrackingStore showId={1} seasonNumber={1} returnPath="/x">
+      <SeasonTrackingStore
+        showId={1}
+        showName="Show"
+        seasonNumber={1}
+        returnPath="/x"
+      >
         <EpisodeTrackingControls
           episodeId={3}
           label="Finale"
@@ -392,7 +403,12 @@ describe("the season button (AC-8 to AC-11)", () => {
 
   it("reads Nothing aired yet, focusable but inert, with no count", async () => {
     render(
-      <SeasonTrackingStore showId={1} seasonNumber={2} returnPath="/x">
+      <SeasonTrackingStore
+        showId={1}
+        showName="Show"
+        seasonNumber={2}
+        returnPath="/x"
+      >
         <SeasonWatchedControl
           seasonName="Season 2"
           episodes={[EPISODES[2]]}
@@ -501,7 +517,12 @@ describe("the server slots (AC-4, AC-17, AC-18)", () => {
 
   function inStore(node: React.ReactNode) {
     return render(
-      <SeasonTrackingStore showId={1396} seasonNumber={1} returnPath="/x">
+      <SeasonTrackingStore
+        showId={1396}
+        showName="Breaking Bad"
+        seasonNumber={1}
+        returnPath="/x"
+      >
         {node}
       </SeasonTrackingStore>,
     );

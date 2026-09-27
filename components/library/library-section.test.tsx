@@ -4,7 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { LibraryItem } from "./types";
 
 /**
- * covers: spec 0008, AC-1 to AC-3, AC-9 to AC-11, AC-13
+ * covers: spec 0008, AC-1 to AC-3, AC-9 to AC-11, AC-13; spec 0013, AC-13,
+ * AC-15, AC-17
  *
  * `LibrarySection` is an async Server Component, so each test awaits it and
  * renders what it returns. The session, the two Postgres reads and the TMDB
@@ -23,10 +24,12 @@ vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/tmdb", () => ({
   getMovieSummaries: vi.fn(),
+  getTvShowsByIds: vi.fn(),
+  getShowEpisodes: vi.fn(),
   TmdbError: class extends Error {},
 }));
-vi.mock("@/lib/tracking/movie-lists", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/lib/tracking/movie-lists")>()),
+vi.mock("@/lib/tracking/library-lists", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/tracking/library-lists")>()),
   getWatchlistPage: (...args: unknown[]) => getWatchlistPage(...args),
   getWatchedPage: (...args: unknown[]) => getWatchedPage(...args),
   getLibraryTitles: (...args: unknown[]) => getLibraryTitles(...args),
@@ -50,10 +53,18 @@ vi.mock("./library-grid", () => ({
     label: string;
     page: number;
     returnPath: string;
+    nextEpisodes: Record<string, unknown>;
   }) => (
-    <ul aria-label={props.label} data-return-path={props.returnPath}>
+    <ul
+      aria-label={props.label}
+      data-return-path={props.returnPath}
+      data-next-episodes={Object.keys(props.nextEpisodes).join(",")}
+    >
       {props.items.map((item) => (
-        <li key={item.movieId} data-testid={`item-${item.movieId}`}>
+        <li
+          key={`${item.kind}-${item.tmdbId}`}
+          data-testid={`item-${item.kind}-${item.tmdbId}`}
+        >
           {JSON.stringify(item)}
         </li>
       ))}
@@ -74,9 +85,19 @@ async function renderSection(
   );
 }
 
-/** The item the grid stub received for one movie. */
-function received(movieId: number): LibraryItem {
-  return JSON.parse(screen.getByTestId(`item-${movieId}`).textContent ?? "");
+/** The item the grid stub received for one card. */
+function received(id: number, kind: "movie" | "tv" = "movie"): LibraryItem {
+  return JSON.parse(screen.getByTestId(`item-${kind}-${id}`).textContent ?? "");
+}
+
+/** A watchlist row for a planned movie. */
+function planned(id: number) {
+  return { kind: "movie", tmdbId: id, status: null };
+}
+
+/** The titles read with only these movies found. */
+function movieTitles(entries: [number, ReturnType<typeof summary>][] = []) {
+  return { kind: "ok", movies: new Map(entries), shows: new Map() };
 }
 
 function summary(id: number, title: string) {
@@ -90,7 +111,7 @@ function summary(id: number, title: string) {
 
 beforeEach(() => {
   requireUser.mockResolvedValue({ id: "user-a", email: "a@example.test" });
-  getLibraryTitles.mockResolvedValue({ kind: "ok", titles: new Map() });
+  getLibraryTitles.mockResolvedValue(movieTitles());
 });
 
 afterEach(() => {
@@ -156,7 +177,11 @@ describe("the page parameter (AC-9)", () => {
 
 describe("empty lists (AC-10)", () => {
   it.each([
-    ["watchlist", "Your watchlist is empty", "Plan a movie to see it here."],
+    [
+      "watchlist",
+      "Your watchlist is empty",
+      "Plan a movie or a show to see it here.",
+    ],
     ["watched", "Nothing watched yet", "Movies you mark watched show up here."],
   ] as const)(
     "the %s page shows its empty panel with Browse movies",
@@ -172,6 +197,15 @@ describe("empty lists (AC-10)", () => {
       expect(getLibraryTitles).not.toHaveBeenCalled();
     },
   );
+
+  it("offers Browse shows only on the watchlist, which can hold shows", async () => {
+    getWatchlistPage.mockResolvedValue({ kind: "ok", rows: [], total: 0 });
+    await renderSection("watchlist");
+    expect(screen.getByRole("link", { name: "Browse shows" })).toHaveAttribute(
+      "href",
+      "/shows",
+    );
+  });
 });
 
 describe("failures never look like an empty list (AC-11)", () => {
@@ -197,7 +231,7 @@ describe("failures never look like an empty list (AC-11)", () => {
   it("a systemic TMDB failure shows 'Couldn't reach TMDB', not the grid", async () => {
     getWatchlistPage.mockResolvedValue({
       kind: "ok",
-      rows: [{ movieId: 550 }],
+      rows: [planned(550)],
       total: 1,
     });
     getLibraryTitles.mockResolvedValue({ kind: "failed" });
@@ -209,22 +243,23 @@ describe("failures never look like an empty list (AC-11)", () => {
       "href",
       "/watchlist",
     );
-    expect(screen.queryByTestId("item-550")).toBeNull();
+    expect(screen.queryByTestId("item-movie-550")).toBeNull();
   });
 
   it("keeps a card for a movie TMDB no longer has, with no title", async () => {
     getWatchlistPage.mockResolvedValue({
       kind: "ok",
-      rows: [{ movieId: 550 }, { movieId: 2147480000 }],
+      rows: [planned(550), planned(2147480000)],
       total: 2,
     });
-    getLibraryTitles.mockResolvedValue({
-      kind: "ok",
-      titles: new Map([[550, summary(550, "Fight Club")]]),
-    });
+    getLibraryTitles.mockResolvedValue(
+      movieTitles([[550, summary(550, "Fight Club")]]),
+    );
     await renderSection("watchlist");
     expect(received(2147480000)).toEqual({
-      movieId: 2147480000,
+      kind: "movie",
+      tmdbId: 2147480000,
+      status: null,
       title: null,
       posterUrl: null,
       tmdbRating: null,
@@ -238,26 +273,25 @@ describe("a page of cards (AC-1, AC-2, AC-9, AC-13)", () => {
   it("joins each watchlist row with its TMDB title, in the Postgres order", async () => {
     getWatchlistPage.mockResolvedValue({
       kind: "ok",
-      rows: [{ movieId: 603 }, { movieId: 550 }],
+      rows: [planned(603), planned(550)],
       total: 2,
     });
-    getLibraryTitles.mockResolvedValue({
-      kind: "ok",
-      titles: new Map([
+    getLibraryTitles.mockResolvedValue(
+      movieTitles([
         [550, summary(550, "Fight Club")],
         [603, summary(603, "The Matrix")],
       ]),
-    });
+    );
     await renderSection("watchlist");
 
-    expect(getLibraryTitles).toHaveBeenCalledWith([603, 550]);
+    expect(getLibraryTitles).toHaveBeenCalledWith([603, 550], []);
     const grid = screen.getByRole("list", { name: "Your watchlist, page 1" });
     expect(grid).toHaveAttribute("data-return-path", "/watchlist");
     expect(
       within(grid)
         .getAllByRole("listitem")
         .map((item) => item.dataset.testid),
-    ).toEqual(["item-603", "item-550"]);
+    ).toEqual(["item-movie-603", "item-movie-550"]);
     expect(received(603)).toMatchObject({
       title: "The Matrix",
       posterUrl: "https://image.tmdb.org/t/p/w342/603.jpg",
@@ -287,7 +321,7 @@ describe("a page of cards (AC-1, AC-2, AC-9, AC-13)", () => {
   it("shows no pagination when the list fits on one page", async () => {
     getWatchlistPage.mockResolvedValue({
       kind: "ok",
-      rows: [{ movieId: 550 }],
+      rows: [planned(550)],
       total: 20,
     });
     await renderSection("watchlist");
@@ -297,7 +331,7 @@ describe("a page of cards (AC-1, AC-2, AC-9, AC-13)", () => {
   it("pages a longer list, with page 1 as the bare path", async () => {
     getWatchlistPage.mockResolvedValue({
       kind: "ok",
-      rows: [{ movieId: 550 }],
+      rows: [planned(550)],
       total: 41,
     });
     await renderSection("watchlist", { page: "2" });
@@ -313,14 +347,16 @@ describe("a page of cards (AC-1, AC-2, AC-9, AC-13)", () => {
   });
 
   it.each([
-    ["watchlist", ["TMDB rating", "Planned"]],
+    ["watchlist", ["TMDB rating", "Planned", "Stop watching", "Next episode"]],
     ["watched", ["Your score"]],
   ] as const)("the %s legend lists %j", async (list, labels) => {
     const read = list === "watchlist" ? getWatchlistPage : getWatchedPage;
     read.mockResolvedValue({
       kind: "ok",
       rows: [
-        { movieId: 550, watchedAt: "2026-09-23T12:00:00+00:00", rating: 7 },
+        list === "watchlist"
+          ? planned(550)
+          : { movieId: 550, watchedAt: "2026-09-23T12:00:00+00:00", rating: 7 },
       ],
       total: 1,
     });
@@ -331,6 +367,79 @@ describe("a page of cards (AC-1, AC-2, AC-9, AC-13)", () => {
         .getAllByRole("listitem")
         .map((item) => item.textContent),
     ).toEqual(labels);
+  });
+});
+
+describe("shows on the watchlist (spec 0013, AC-13, AC-15, AC-17)", () => {
+  it("merges shows and movies in the Postgres order, each joined with its own titles", async () => {
+    getWatchlistPage.mockResolvedValue({
+      kind: "ok",
+      rows: [
+        planned(550),
+        { kind: "tv", tmdbId: 550, status: "watching" },
+        { kind: "tv", tmdbId: 1399, status: "want_to_watch" },
+      ],
+      total: 3,
+    });
+    getLibraryTitles.mockResolvedValue({
+      kind: "ok",
+      movies: new Map([[550, summary(550, "Fight Club")]]),
+      shows: new Map([
+        [
+          550,
+          {
+            id: 550,
+            name: "A Show",
+            posterUrl: null,
+            tmdbRating: 7.1,
+          },
+        ],
+      ]),
+    });
+    await renderSection("watchlist");
+
+    expect(getLibraryTitles).toHaveBeenCalledWith([550], [550, 1399]);
+    expect(
+      screen.getAllByRole("listitem").map((item) => item.dataset.testid),
+    ).toContain("item-tv-550");
+    expect(received(550, "tv")).toMatchObject({
+      kind: "tv",
+      status: "watching",
+      title: "A Show",
+      tmdbRating: 7.1,
+    });
+    expect(received(550)).toMatchObject({ title: "Fight Club" });
+    // A show TMDB no longer has keeps its card and its status, with no title.
+    expect(received(1399, "tv")).toMatchObject({
+      status: "want_to_watch",
+      title: null,
+    });
+  });
+
+  it("streams a Next episode pill for each show card TMDB still has, and none for movies", async () => {
+    getWatchlistPage.mockResolvedValue({
+      kind: "ok",
+      rows: [
+        planned(603),
+        { kind: "tv", tmdbId: 1396, status: "watching" },
+        { kind: "tv", tmdbId: 1399, status: "want_to_watch" },
+      ],
+      total: 3,
+    });
+    getLibraryTitles.mockResolvedValue({
+      kind: "ok",
+      movies: new Map([[603, summary(603, "The Matrix")]]),
+      shows: new Map([
+        [
+          1396,
+          { id: 1396, name: "Breaking Bad", posterUrl: null, tmdbRating: 8.9 },
+        ],
+      ]),
+    });
+    await renderSection("watchlist");
+    expect(
+      screen.getByRole("list", { name: "Your watchlist, page 1" }),
+    ).toHaveAttribute("data-next-episodes", "tv-1396");
   });
 });
 

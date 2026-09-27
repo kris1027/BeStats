@@ -1,4 +1,9 @@
-import type { EpisodeTrackingError, MovieTrackingError } from "./types";
+import type {
+  EpisodeTrackingError,
+  MovieTrackingError,
+  ShowStatusError,
+  TvStatus,
+} from "./types";
 
 /**
  * Every toast a tracking control can show, written once (spec 0007, toast
@@ -74,4 +79,61 @@ export const SEASON_MESSAGES = {
   marked: (n: number) => `Marked ${episodes(n)} watched`,
   nothingToMark: "Every aired episode is already watched",
   unmarked: (n: number) => `Unmarked ${episodes(n)}`,
+} as const;
+
+/** The status names every TV surface shows (spec 0013, AC-1). */
+export const TV_STATUS_LABELS: Record<TvStatus, string> = {
+  want_to_watch: "Want to Watch",
+  watching: "Watching",
+  on_hold: "On Hold",
+  dropped: "Dropped",
+  completed: "Completed",
+};
+
+/**
+ * The show status control's copy and toasts (spec 0013, AC-1, AC-4, AC-5,
+ * AC-8, AC-16). A status change shows itself on the pill; only a removal or
+ * a Stop watching, whose card or label is gone, confirms with a toast, and
+ * that toast carries the Undo. The automatic move to Watching is announced
+ * because the person never chose it.
+ */
+export const SHOW_STATUS_MESSAGES = {
+  untracked: "Add to my shows",
+  unavailable: "Status unavailable",
+  remove: "Remove status",
+  menuLabel: "Show status",
+  removed: (show: string) => `Removed ${show} from your shows`,
+  stopped: (show: string) => `${show} moved to On Hold`,
+  started: (show: string) => `${show} moved to Watching`,
+  undoExpired: "Couldn't undo. Change the status from the show page.",
+} as const;
+
+/** The show status failure copy: the movie copy, naming a show. */
+export const SHOW_TRACKING_MESSAGES: Record<ShowStatusError, string> = {
+  ...TRACKING_MESSAGES,
+  not_found: "This show isn't available to track.",
+  undo_expired: SHOW_STATUS_MESSAGES.undoExpired,
+  status_changed:
+    "This show's status changed elsewhere. Showing the current one.",
+};
+
+/**
+ * The progress line under the show hero's status pill (spec 0013, AC-10,
+ * AC-11). Counts only aired regular episodes, so it never says "0%" for a
+ * show with nothing aired, and never shows a number from a partial read.
+ */
+export const SHOW_PROGRESS_MESSAGES = {
+  counted: (watched: number, total: number) =>
+    `${watched} of ${total} ${total === 1 ? "episode" : "episodes"} watched`,
+  noneAired: "No episodes have aired yet",
+  unavailable: "Progress unavailable right now",
+  barLabel: "Aired episodes watched",
+} as const;
+
+/** The Next episode pill on a watchlist TV card (spec 0013, AC-15). */
+export const NEXT_EPISODE_MESSAGES = {
+  upToDate: "Up to date",
+  pill: (season: number, episode: number) => `S${season}E${episode}`,
+  accessible: (season: number, episode: number) =>
+    `Next episode, season ${season} episode ${episode}`,
 } as const;

@@ -1,7 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { startTransition, useEffect, useOptimistic, useRef } from "react";
+import {
+  type ReactNode,
+  startTransition,
+  useEffect,
+  useOptimistic,
+  useRef,
+} from "react";
 import { toast } from "sonner";
 
 import {
@@ -10,24 +16,28 @@ import {
   setMovieWatched,
   setMovieWatchlist,
 } from "@/app/movies/actions";
+import { restoreShowStatus, setShowStatus } from "@/app/shows/actions";
 import { PosterGrid } from "@/components/poster-grid";
 import {
+  settleStatusCall,
   settleTrackingCall,
+  showStatusError,
   showTrackingError,
 } from "@/components/tracking/tracking-toast";
 import {
   LIBRARY_MESSAGES,
+  SHOW_STATUS_MESSAGES,
   UNDO_ACTION_LABEL,
   UNDO_EXPIRED_MESSAGES,
 } from "@/lib/tracking/messages";
-import type { MovieTrackingError } from "@/lib/tracking/types";
+import type { ShowStatusError, ShowStatusUndo } from "@/lib/tracking/types";
 
 import { LibraryCard } from "./library-card";
 import {
   cancelLibraryHeadingFocus,
   focusLibraryHeading,
 } from "./library-heading";
-import type { LibraryItem, LibraryList } from "./types";
+import { type LibraryItem, type LibraryList, libraryItemKey } from "./types";
 
 /**
  * Cards whose posters load eagerly: one full row at the widest grid, as on
@@ -53,9 +63,16 @@ const UNDO_TOAST_MS = 10_000;
  * Undo is not optimistic: the restored card needs the server's order, and
  * `refresh()` brings it back in its old place.
  *
+ * A show card on the watchlist (spec 0013, AC-16) removes itself the same
+ * way, through the show status action: the Planned bookmark removes the
+ * status, Stop watching sets On Hold. Its toast names the show and its Undo
+ * puts back the status, source and place the action reported.
+ *
  * @param page The page number. Emptying a page past page 1 redirects, which
  * remounts the page, so the heading has to take the focus again (AC-9).
  * @param returnPath The page, for the session expired toast's Sign in action.
+ * @param nextEpisodes Each show card's streamed Next episode pill, keyed by
+ * `libraryItemKey`, rendered on the server in its own Suspense boundary.
  */
 function LibraryGrid({
   list,
@@ -63,17 +80,19 @@ function LibraryGrid({
   label,
   page,
   returnPath,
+  nextEpisodes = {},
 }: {
   list: LibraryList;
   items: LibraryItem[];
   label: string;
   page: number;
   returnPath: string;
+  nextEpisodes?: Record<string, ReactNode>;
 }) {
   const router = useRouter();
   const gridRef = useRef<HTMLUListElement>(null);
-  const [visible, hide] = useOptimistic(items, (state, movieId: number) =>
-    state.filter((item) => item.movieId !== movieId),
+  const [visible, hide] = useOptimistic(items, (state, key: string) =>
+    state.filter((item) => libraryItemKey(item) !== key),
   );
 
   /**
@@ -82,14 +101,14 @@ function LibraryGrid({
    * did not redirect (later pages moved up), so the new heading must not
    * take the focus on some later visit.
    */
-  const headingFocusFor = useRef<number | null>(null);
+  const headingFocusFor = useRef<string | null>(null);
   useEffect(() => {
-    const movieId = headingFocusFor.current;
-    if (movieId === null || items.some((item) => item.movieId === movieId)) {
+    const key = headingFocusFor.current;
+    if (key === null || items.some((item) => libraryItemKey(item) === key)) {
       return;
     }
     headingFocusFor.current = null;
-    cancelLibraryHeadingFocus(movieId);
+    cancelLibraryHeadingFocus(key);
   }, [items]);
 
   /**
@@ -97,19 +116,19 @@ function LibraryGrid({
    * link, else the previous card's, else the heading. A card with no title
    * link (a missing title) takes the focus on its remove button (AC-16).
    */
-  function moveFocusFrom(movieId: number) {
-    const index = visible.findIndex((item) => item.movieId === movieId);
+  function moveFocusFrom(key: string) {
+    const index = visible.findIndex((item) => libraryItemKey(item) === key);
     const target = visible[index + 1] ?? visible[index - 1];
 
     if (!target) {
-      const remountFor = page > 1 ? movieId : null;
+      const remountFor = page > 1 ? key : null;
       headingFocusFor.current = remountFor;
       focusLibraryHeading({ remountFor });
       return;
     }
 
     const card = gridRef.current?.querySelector(
-      `[data-movie-id="${target.movieId}"]`,
+      `[data-item-key="${libraryItemKey(target)}"]`,
     );
     const focusable =
       card?.querySelector<HTMLElement>("h3 a") ??
@@ -117,9 +136,19 @@ function LibraryGrid({
     focusable?.focus();
   }
 
-  function onError(error: MovieTrackingError, movieId: number) {
+  function onError(error: ShowStatusError, item: LibraryItem) {
+    if (item.kind === "tv") {
+      showStatusError(error, {
+        id: toastId(list, item),
+        returnPath,
+        navigate: router.push,
+      });
+      return;
+    }
+    // Only a status write can report a status changed elsewhere.
+    if (error === "status_changed") return;
     showTrackingError(error, {
-      movieId,
+      movieId: item.tmdbId,
       control: list,
       returnPath,
       navigate: router.push,
@@ -134,85 +163,150 @@ function LibraryGrid({
    * Undo off it while the restore runs (no second restore), and the outcome
    * then closes it or rewrites it in place.
    */
-  function undo(event: { preventDefault: () => void }, item: LibraryItem) {
+  function undo(
+    event: { preventDefault: () => void },
+    item: LibraryItem,
+    message: string,
+    showUndo: ShowStatusUndo | null,
+  ) {
     event.preventDefault();
     const id = toastId(list, item);
-    toast(LIBRARY_MESSAGES[list].removed, { id, action: undefined });
+    toast(message, { id, action: undefined });
 
     startTransition(async () => {
-      const error = await settleTrackingCall(() =>
-        list === "watchlist"
-          ? restoreMovieWatchlist(item.movieId)
-          : restoreMovieWatched(item.movieId, item.watchedAt ?? ""),
-      );
+      const error = await settleTrackingCall(async () => {
+        if (item.kind === "tv") {
+          // Only reached with an Undo: the toast offered none without one.
+          if (showUndo === null) return { ok: true as const };
+          return restoreShowStatus(item.tmdbId, showUndo);
+        }
+        return list === "watchlist"
+          ? restoreMovieWatchlist(item.tmdbId)
+          : restoreMovieWatched(item.tmdbId, item.watchedAt ?? "");
+      });
       if (error === "undo_expired") {
         // Sonner merges an update into the toast with the same id, so the
         // removal's score line survives unless cleared explicitly.
-        toast(UNDO_EXPIRED_MESSAGES[list], {
-          id,
-          description: undefined,
-          action: undefined,
-        });
+        toast(
+          item.kind === "tv"
+            ? SHOW_STATUS_MESSAGES.undoExpired
+            : UNDO_EXPIRED_MESSAGES[list],
+          { id, description: undefined, action: undefined },
+        );
         return;
       }
       toast.dismiss(id);
-      if (error) onError(error, item.movieId);
+      if (error) onError(error, item);
     });
   }
 
+  /**
+   * The write a card's button makes, and the toast that confirms it. A movie
+   * uses the spec 0007 actions and needs no payload for its Undo; a show's
+   * Undo is what `setShowStatus` reported replacing. A show's write names the
+   * status the card showed, so a card rendered before the status changed
+   * elsewhere comes back with `status_changed` instead of deleting or
+   * overwriting the newer status.
+   */
+  async function removeWrite(
+    item: LibraryItem,
+  ): Promise<
+    | { ok: true; message: string; showUndo: ShowStatusUndo | null }
+    | { ok: false; error: ShowStatusError }
+  > {
+    if (item.kind === "tv") {
+      const stopping = item.status === "watching";
+      const result = await settleStatusCall(() =>
+        setShowStatus(item.tmdbId, stopping ? "on_hold" : null, item.status),
+      );
+      if (!result.ok) return result;
+      // A missing title's fallback opens one sentence and sits mid sentence
+      // in the other, so each message gets the casing its position needs.
+      return {
+        ok: true,
+        message: stopping
+          ? SHOW_STATUS_MESSAGES.stopped(item.title ?? "This show")
+          : SHOW_STATUS_MESSAGES.removed(item.title ?? "this show"),
+        showUndo: result.undo,
+      };
+    }
+    const error = await settleTrackingCall(() =>
+      list === "watchlist"
+        ? setMovieWatchlist(item.tmdbId, false)
+        : setMovieWatched(item.tmdbId, false),
+    );
+    if (error) return { ok: false, error };
+    return {
+      ok: true,
+      message: LIBRARY_MESSAGES[list].removed,
+      showUndo: null,
+    };
+  }
+
   function remove(item: LibraryItem) {
-    moveFocusFrom(item.movieId);
+    const key = libraryItemKey(item);
+    moveFocusFrom(key);
 
     startTransition(async () => {
-      hide(item.movieId);
-      const error = await settleTrackingCall(() =>
-        list === "watchlist"
-          ? setMovieWatchlist(item.movieId, false)
-          : setMovieWatched(item.movieId, false),
-      );
-      if (error) {
-        if (headingFocusFor.current === item.movieId) {
+      hide(key);
+      const result = await removeWrite(item);
+      if (!result.ok) {
+        if (headingFocusFor.current === key) {
           headingFocusFor.current = null;
         }
-        cancelLibraryHeadingFocus(item.movieId);
-        onError(error, item.movieId);
+        cancelLibraryHeadingFocus(key);
+        onError(result.error, item);
         return;
       }
 
-      toast(LIBRARY_MESSAGES[list].removed, {
+      // A show whose row was already gone has nothing to put back.
+      const canUndo = item.kind === "movie" || result.showUndo !== null;
+      toast(result.message, {
         id: toastId(list, item),
         description:
           list === "watched" && item.rating !== null
             ? LIBRARY_MESSAGES.watched.scoreKept
             : undefined,
         duration: UNDO_TOAST_MS,
-        action: {
-          label: UNDO_ACTION_LABEL,
-          onClick: (event) => undo(event, item),
-        },
+        action: canUndo
+          ? {
+              label: UNDO_ACTION_LABEL,
+              onClick: (event) =>
+                undo(event, item, result.message, result.showUndo),
+            }
+          : undefined,
       });
     });
   }
 
   return (
     <PosterGrid ref={gridRef} aria-label={label}>
-      {visible.map((item, index) => (
-        <li key={item.movieId} data-movie-id={item.movieId}>
-          <LibraryCard
-            list={list}
-            item={item}
-            onRemove={() => remove(item)}
-            priority={index < EAGER_POSTERS}
-          />
-        </li>
-      ))}
+      {visible.map((item, index) => {
+        const key = libraryItemKey(item);
+        return (
+          <li key={key} data-item-key={key}>
+            <LibraryCard
+              list={list}
+              item={item}
+              nextEpisode={nextEpisodes[key]}
+              onRemove={() => remove(item)}
+              priority={index < EAGER_POSTERS}
+            />
+          </li>
+        );
+      })}
     </PosterGrid>
   );
 }
 
-/** One toast per list and movie: its removal, then its Undo's outcome. */
+/**
+ * One toast per list and card: its removal, then its Undo's outcome. A movie
+ * keeps the spec 0008 id; a show's carries its kind, since the ids can meet.
+ */
 function toastId(list: LibraryList, item: LibraryItem): string {
-  return `library-${list}-${item.movieId}`;
+  return item.kind === "tv"
+    ? `library-${list}-tv-${item.tmdbId}`
+    : `library-${list}-${item.tmdbId}`;
 }
 
 export { LibraryGrid };

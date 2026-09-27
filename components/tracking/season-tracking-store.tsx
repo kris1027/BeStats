@@ -7,18 +7,25 @@ import {
   useContext,
   useOptimistic,
 } from "react";
+import { toast } from "sonner";
 
 import {
   applyEpisodeIntents,
   type EpisodeIntent,
   type EpisodeStates,
 } from "@/lib/tracking/episode-intent";
+import { SHOW_STATUS_MESSAGES } from "@/lib/tracking/messages";
 import type { EpisodeTrackingError } from "@/lib/tracking/types";
 
 import { showEpisodeTrackingError } from "./tracking-toast";
 
-/** Any action result: a success with whatever it carries, or a refusal. */
-type ActionResult = { ok: true } | { ok: false; error: EpisodeTrackingError };
+/**
+ * Any action result: a success with whatever it carries, or a refusal. Every
+ * success says whether it moved the show to Watching (spec 0013, AC-8).
+ */
+type ActionResult =
+  | { ok: true; showStarted: boolean }
+  | { ok: false; error: EpisodeTrackingError };
 
 /** What a rejected call (offline, a server error, a deploy) settles as. */
 type WriteFailed = { ok: false; error: "write_failed" };
@@ -58,14 +65,22 @@ const Context = createContext<SeasonTrackingContext | null>(null);
  *
  * Calls queue in the Next.js action queue rather than being dropped, and each
  * carries a target value, so rapid clicks settle on the last one (AC-16).
+ *
+ * It is also the one place that announces the automatic move to Watching
+ * (spec 0013, AC-8): whichever control's write started the show, the store
+ * shows "{show} moved to Watching" once, under one id, so it never stacks.
+ *
+ * @param showName The show's TMDB name, which the season header renders.
  */
 function SeasonTrackingStore({
   showId,
+  showName,
   seasonNumber,
   returnPath,
   children,
 }: {
   showId: number;
+  showName: string;
   seasonNumber: number;
   returnPath: string;
   children: React.ReactNode;
@@ -88,6 +103,11 @@ function SeasonTrackingStore({
           (settled): typeof settled | WriteFailed => settled,
           (): WriteFailed => ({ ok: false, error: "write_failed" }),
         );
+        if (result.ok && result.showStarted) {
+          toast(SHOW_STATUS_MESSAGES.started(showName), {
+            id: `show-started-${showId}`,
+          });
+        }
         onSettled(result);
       });
     },

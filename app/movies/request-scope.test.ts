@@ -181,7 +181,7 @@ describe("private tracking state never enters a cache scope (spec 0007, AC-19; s
     );
     expect(files).toContain(join("app/watchlist/page.tsx"));
     expect(files).toContain(join("app/watched/page.tsx"));
-    expect(files).toContain(join("lib/tracking/movie-lists.ts"));
+    expect(files).toContain(join("lib/tracking/library-lists.ts"));
     expect(files).toContain(join("components/library/library-section.tsx"));
   });
 
@@ -204,5 +204,30 @@ describe("private tracking state never enters a cache scope (spec 0007, AC-19; s
     expect(readFileSync("app/movies/page.tsx", "utf8")).toMatch(
       /<Suspense fallback=\{null\}>\s*<CardBookmark/,
     );
+  });
+
+  it("keeps the show status, progress and TV bookmarks each behind their own boundary (spec 0013, AC-11, AC-18, AC-22)", () => {
+    const show = readFileSync("app/shows/[id]/page.tsx", "utf8");
+    expect(show).toMatch(/<Suspense fallback=\{null\}>\s*<ShowStatusSlot/);
+    expect(show).toMatch(/<Suspense fallback=\{null\}>\s*<ShowProgressSlot/);
+    expect(readFileSync("app/shows/page.tsx", "utf8")).toMatch(
+      /<Suspense fallback=\{null\}>\s*<ShowCardBookmark/,
+    );
+    expect(
+      readFileSync("components/search/search-results.tsx", "utf8"),
+    ).toMatch(/<Suspense fallback=\{null\}>\s*<ShowCardBookmark/);
+    expect(
+      readFileSync("components/library/library-section.tsx", "utf8"),
+    ).toMatch(/<Suspense fallback=\{null\}>\s*<NextEpisodePill/);
+  });
+
+  it("gives no show route an instant = false opt out (spec 0013, AC-22)", () => {
+    for (const path of [
+      "app/shows/page.tsx",
+      "app/shows/[id]/page.tsx",
+      "app/search/page.tsx",
+    ]) {
+      expect(readFileSync(path, "utf8")).not.toMatch(/instant\s*=\s*false/);
+    }
   });
 });

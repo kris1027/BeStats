@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
- * covers: spec 0011, AC-5 to AC-11, AC-14, AC-15, AC-19, AC-21, AC-22, AC-24
+ * covers: spec 0011, AC-5 to AC-11, AC-14, AC-15, AC-19, AC-21, AC-22, AC-24;
+ * spec 0013, AC-2, AC-4, AC-8, AC-16, AC-19, AC-21
  *
  * The session, TMDB and the database are the boundaries, so those are the
  * three things replaced. The fake Supabase client records every call, so each
@@ -13,6 +14,9 @@ vi.mock("@/lib/auth/user", () => ({ getOptionalUser }));
 
 const loadSeason = vi.fn();
 vi.mock("./[id]/season/[number]/load-season", () => ({ loadSeason }));
+
+const loadShow = vi.fn();
+vi.mock("./[id]/load-show", () => ({ loadShow }));
 
 const refresh = vi.fn();
 vi.mock("next/cache", () => ({ refresh }));
@@ -42,9 +46,11 @@ const createClient = vi.fn(async () => ({
 vi.mock("@/lib/supabase/server", () => ({ createClient }));
 
 const {
+  restoreShowStatus,
   setEpisodeRating,
   setEpisodeWatched,
   setSeasonWatched,
+  setShowStatus,
   undoSeasonWatched,
 } = await import("./actions");
 
@@ -76,6 +82,7 @@ beforeEach(() => {
     show: { id: SHOW },
     season: SEASON,
   });
+  loadShow.mockResolvedValue({ kind: "found", show: { id: SHOW } });
   result = { data: null, error: null };
   calls.length = 0;
   warn = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -91,6 +98,7 @@ describe("setEpisodeWatched", () => {
   it("marks through mark_episode_watched with TMDB's numbers (AC-5, AC-7)", async () => {
     expect(await setEpisodeWatched(SHOW, 1, 62086, true)).toEqual({
       ok: true,
+      showStarted: false,
     });
     expect(loadSeason).toHaveBeenCalledWith(SHOW, 1);
     expect(writes()).toEqual([
@@ -113,6 +121,7 @@ describe("setEpisodeWatched", () => {
   it("allows an episode with no air date (AC-3)", async () => {
     expect(await setEpisodeWatched(SHOW, 1, 62088, true)).toEqual({
       ok: true,
+      showStarted: false,
     });
   });
 
@@ -153,6 +162,7 @@ describe("setEpisodeWatched", () => {
     loadSeason.mockResolvedValue({ kind: "failed" });
     expect(await setEpisodeWatched(SHOW, 1, 62087, false)).toEqual({
       ok: true,
+      showStarted: false,
     });
     expect(loadSeason).not.toHaveBeenCalled();
     expect(writes()).toEqual([
@@ -168,7 +178,10 @@ describe("setEpisodeWatched", () => {
 
 describe("setEpisodeRating", () => {
   it("rates through rate_episode (AC-6)", async () => {
-    expect(await setEpisodeRating(SHOW, 1, 62085, 8)).toEqual({ ok: true });
+    expect(await setEpisodeRating(SHOW, 1, 62085, 8)).toEqual({
+      ok: true,
+      showStarted: false,
+    });
     expect(writes()).toEqual([
       {
         method: "rpc",
@@ -195,7 +208,10 @@ describe("setEpisodeRating", () => {
   });
 
   it("clears by nulling only rating, skipping TMDB, even for an upcoming episode (AC-2, AC-6)", async () => {
-    expect(await setEpisodeRating(SHOW, 1, 62087, null)).toEqual({ ok: true });
+    expect(await setEpisodeRating(SHOW, 1, 62087, null)).toEqual({
+      ok: true,
+      showStarted: false,
+    });
     expect(loadSeason).not.toHaveBeenCalled();
     expect(writes()).toEqual([
       { method: "from", args: ["user_episode_state"] },
@@ -295,10 +311,14 @@ describe("the session (AC-14, AC-19)", () => {
 
 describe("setSeasonWatched", () => {
   it("marks only the aired episodes TMDB lists, and offers their Undo (AC-9, AC-10)", async () => {
-    result = { data: [62086], error: null };
+    result = {
+      data: [{ marked_ids: [62086], show_started: false }],
+      error: null,
+    };
     expect(await setSeasonWatched(SHOW, 1, true)).toEqual({
       ok: true,
       undo: { kind: "unmark", episodeIds: [62086] },
+      showStarted: false,
     });
     expect(writes()).toEqual([
       {
@@ -318,10 +338,11 @@ describe("setSeasonWatched", () => {
   });
 
   it("offers no Undo when nothing was newly marked (AC-10)", async () => {
-    result = { data: [], error: null };
+    result = { data: [{ marked_ids: [], show_started: false }], error: null };
     expect(await setSeasonWatched(SHOW, 1, true)).toEqual({
       ok: true,
       undo: null,
+      showStarted: false,
     });
   });
 
@@ -334,6 +355,7 @@ describe("setSeasonWatched", () => {
     expect(await setSeasonWatched(SHOW, 1, true)).toEqual({
       ok: true,
       undo: null,
+      showStarted: false,
     });
     expect(writes()).toEqual([]);
   });
@@ -360,6 +382,7 @@ describe("setSeasonWatched", () => {
         kind: "restore",
         entries: [{ episodeId: 62087, watchedAt: "2026-09-20T10:00:00+00:00" }],
       },
+      showStarted: false,
     });
     expect(loadSeason).not.toHaveBeenCalled();
     expect(writes()).toEqual([
@@ -386,7 +409,7 @@ describe("undoSeasonWatched", () => {
   it("takes back a mark through unmark_episodes_watched (AC-10)", async () => {
     expect(
       await undoSeasonWatched(SHOW, { kind: "unmark", episodeIds: [62086] }),
-    ).toEqual({ ok: true });
+    ).toEqual({ ok: true, showStarted: false });
     expect(writes()).toEqual([
       {
         method: "rpc",
@@ -405,7 +428,7 @@ describe("undoSeasonWatched", () => {
         kind: "restore",
         entries: [{ episodeId: 62087, watchedAt: "2026-09-20T10:00:00+00:00" }],
       }),
-    ).toEqual({ ok: true });
+    ).toEqual({ ok: true, showStarted: false });
     expect(writes()).toEqual([
       {
         method: "rpc",
@@ -475,7 +498,7 @@ describe("failures and logs (AC-13, AC-22, AC-24)", () => {
     expect(warn).not.toHaveBeenCalled();
   });
 
-  it("never names user_show_state on any path (AC-24)", async () => {
+  it("never names user_show_state on any path; the start is in SQL (AC-24, spec 0013 AC-6)", async () => {
     result = { data: [], error: null };
     await setEpisodeWatched(SHOW, 1, 62085, true);
     await setEpisodeWatched(SHOW, 1, 62085, false);
@@ -485,5 +508,312 @@ describe("failures and logs (AC-13, AC-22, AC-24)", () => {
     await setSeasonWatched(SHOW, 1, false, [62085]);
     await undoSeasonWatched(SHOW, { kind: "unmark", episodeIds: [62085] });
     expect(JSON.stringify(calls)).not.toContain("user_show_state");
+  });
+});
+
+describe("showStarted (spec 0013, AC-8)", () => {
+  it("reports the automatic start the episode function returned", async () => {
+    result = { data: [{ show_started: true }], error: null };
+    expect(await setEpisodeWatched(SHOW, 1, 62085, true)).toEqual({
+      ok: true,
+      showStarted: true,
+    });
+    expect(await setEpisodeRating(SHOW, 1, 62085, 7)).toEqual({
+      ok: true,
+      showStarted: true,
+    });
+  });
+
+  it("reports it from a season mark beside the Undo", async () => {
+    result = {
+      data: [{ marked_ids: [62085], show_started: true }],
+      error: null,
+    };
+    expect(await setSeasonWatched(SHOW, 1, true)).toEqual({
+      ok: true,
+      undo: { kind: "unmark", episodeIds: [62085] },
+      showStarted: true,
+    });
+  });
+});
+
+describe("setShowStatus (spec 0013)", () => {
+  it("sets a status through set_show_status after confirming the show, never sending a source (AC-2)", async () => {
+    result = {
+      data: [
+        {
+          status: "watching",
+          status_source: "user",
+          listed_at: "2026-09-25T10:00:00+00:00",
+          previous_status: null,
+          previous_source: null,
+          previous_listed_at: null,
+        },
+      ],
+      error: null,
+    };
+    expect(await setShowStatus(SHOW, "watching", null)).toEqual({
+      ok: true,
+      undo: null,
+    });
+    expect(loadShow).toHaveBeenCalledWith(SHOW);
+    expect(writes()).toEqual([
+      {
+        method: "rpc",
+        args: [
+          "set_show_status",
+          { p_show_id: SHOW, p_status: "watching", p_expected: null },
+        ],
+      },
+    ]);
+    expect(refresh).toHaveBeenCalledOnce();
+  });
+
+  it("returns the replaced values as the Undo of Stop watching (AC-16)", async () => {
+    result = {
+      data: [
+        {
+          status: "on_hold",
+          status_source: "user",
+          listed_at: "2026-09-01T10:00:00+00:00",
+          previous_status: "watching",
+          previous_source: "system",
+          previous_listed_at: "2026-09-01T10:00:00+00:00",
+        },
+      ],
+      error: null,
+    };
+    expect(await setShowStatus(SHOW, "on_hold", "watching")).toEqual({
+      ok: true,
+      undo: {
+        expected: "on_hold",
+        status: "watching",
+        source: "system",
+        listedAt: "2026-09-01T10:00:00+00:00",
+        removedAt: null,
+      },
+    });
+  });
+
+  it("refuses a first status for a show TMDB does not have, writing nothing", async () => {
+    loadShow.mockResolvedValue({ kind: "not_found" });
+    expect(await setShowStatus(SHOW, "watching", null)).toEqual({
+      ok: false,
+      error: "not_found",
+    });
+    loadShow.mockResolvedValue({ kind: "failed" });
+    expect(await setShowStatus(SHOW, "watching", null)).toEqual({
+      ok: false,
+      error: "tmdb_unavailable",
+    });
+    expect(writes()).toEqual([]);
+  });
+
+  it.each(["not_found", "failed"])(
+    "changes an existing row without TMDB, even when TMDB answers %s (AC-17)",
+    async (kind) => {
+      loadShow.mockResolvedValue({ kind });
+      result = { data: [], error: null };
+      expect(await setShowStatus(SHOW, "on_hold", "watching")).toEqual({
+        ok: true,
+        undo: null,
+      });
+      expect(loadShow).not.toHaveBeenCalled();
+      expect(writes()).toEqual([
+        {
+          method: "rpc",
+          args: [
+            "set_show_status",
+            { p_show_id: SHOW, p_status: "on_hold", p_expected: "watching" },
+          ],
+        },
+      ]);
+    },
+  );
+
+  it.each([
+    ["watching", "want_to_watch"],
+    [null, "want_to_watch"],
+  ] as const)(
+    "reports a status changed elsewhere as status_changed and refreshes (%s over %s)",
+    async (status, expected) => {
+      result = { data: null, error: { code: "BS409" } };
+      expect(await setShowStatus(SHOW, status, expected)).toEqual({
+        ok: false,
+        error: "status_changed",
+      });
+      expect(refresh).toHaveBeenCalledOnce();
+    },
+  );
+
+  it("removes through remove_show_status without TMDB, returning the removal's Undo (AC-4)", async () => {
+    result = {
+      data: [
+        {
+          status: "want_to_watch",
+          status_source: "user",
+          listed_at: "2026-09-01T10:00:00+00:00",
+          removed_at: "2026-09-25T23:30:00+00:00",
+        },
+      ],
+      error: null,
+    };
+    expect(await setShowStatus(SHOW, null, "want_to_watch")).toEqual({
+      ok: true,
+      undo: {
+        expected: null,
+        status: "want_to_watch",
+        source: "user",
+        listedAt: "2026-09-01T10:00:00+00:00",
+        removedAt: "2026-09-25T23:30:00+00:00",
+      },
+    });
+    expect(loadShow).not.toHaveBeenCalled();
+    expect(writes()).toEqual([
+      {
+        method: "rpc",
+        args: [
+          "remove_show_status",
+          { p_show_id: SHOW, p_expected: "want_to_watch" },
+        ],
+      },
+    ]);
+  });
+
+  it("offers no Undo when there was nothing to remove", async () => {
+    result = { data: [], error: null };
+    expect(await setShowStatus(SHOW, null, "watching")).toEqual({
+      ok: true,
+      undo: null,
+    });
+  });
+
+  it.each([
+    [0, "watching"],
+    [SHOW, "binging"],
+    [1.5, null],
+    // A removal must name the status it removes.
+    [SHOW, null, null],
+    [SHOW, "watching", "binging"],
+  ])(
+    "refuses %s / %s as invalid input before any read (AC-21)",
+    async (id, status, expected = "watching") => {
+      expect(
+        await setShowStatus(
+          id,
+          status as "watching",
+          expected as "watching" | null,
+        ),
+      ).toEqual({
+        ok: false,
+        error: "invalid_input",
+      });
+      expect(getOptionalUser).not.toHaveBeenCalled();
+      expect(writes()).toEqual([]);
+    },
+  );
+
+  it("answers an expired session with session_expired (AC-21)", async () => {
+    getOptionalUser.mockResolvedValue(null);
+    expect(await setShowStatus(SHOW, "dropped", "watching")).toEqual({
+      ok: false,
+      error: "session_expired",
+    });
+    expect(writes()).toEqual([]);
+  });
+
+  it("reports a failed write as write_failed with no refresh, so the pill rolls back (AC-2)", async () => {
+    result = { data: null, error: { code: "XX000" } };
+    expect(await setShowStatus(SHOW, "on_hold", "watching")).toEqual({
+      ok: false,
+      error: "write_failed",
+    });
+    expect(refresh).not.toHaveBeenCalled();
+  });
+
+  it("never sends a user id; the owner comes from the session in SQL (AC-20, AC-21)", async () => {
+    result = { data: [], error: null };
+    await setShowStatus(SHOW, "watching", null);
+    await setShowStatus(SHOW, null, "watching");
+    for (const call of writes()) {
+      expect(JSON.stringify(call.args)).not.toMatch(/user/);
+    }
+  });
+});
+
+describe("restoreShowStatus (spec 0013, AC-19, AC-21)", () => {
+  const removal = {
+    expected: null,
+    status: "watching" as const,
+    source: "system" as const,
+    listedAt: "2026-09-01T10:00:00+00:00",
+    removedAt: "2026-09-25T23:29:00+00:00",
+  };
+
+  it("sends a removal's Undo, leaving out the expected status", async () => {
+    expect(await restoreShowStatus(SHOW, removal)).toEqual({
+      ok: true,
+      undo: null,
+    });
+    expect(writes()).toEqual([
+      {
+        method: "rpc",
+        args: [
+          "restore_show_status",
+          {
+            p_show_id: SHOW,
+            p_status: "watching",
+            p_source: "system",
+            p_listed_at: "2026-09-01T10:00:00+00:00",
+            p_removed_at: "2026-09-25T23:29:00+00:00",
+          },
+        ],
+      },
+    ]);
+  });
+
+  it("sends a Stop watching Undo with the expected status and no removal time", async () => {
+    await restoreShowStatus(SHOW, {
+      ...removal,
+      expected: "on_hold",
+      removedAt: null,
+    });
+    expect(writes()[0].args[1]).toEqual({
+      p_show_id: SHOW,
+      p_status: "watching",
+      p_source: "system",
+      p_expected: "on_hold",
+      p_listed_at: "2026-09-01T10:00:00+00:00",
+    });
+  });
+
+  it("reports a refused Undo as undo_expired", async () => {
+    result = { data: null, error: { code: "P0002" } };
+    expect(await restoreShowStatus(SHOW, removal)).toEqual({
+      ok: false,
+      error: "undo_expired",
+    });
+  });
+
+  it.each([
+    ["a removal with no removal time", { ...removal, removedAt: null }],
+    ["a time in the future", { ...removal, listedAt: "2026-09-27T00:00:00Z" }],
+    ["a time with no offset", { ...removal, removedAt: "2026-09-25T23:29:00" }],
+    ["an unknown source", { ...removal, source: "robot" }],
+  ])("refuses %s as invalid input", async (_name, undo) => {
+    expect(
+      await restoreShowStatus(SHOW, undo as unknown as typeof removal),
+    ).toEqual({ ok: false, error: "invalid_input" });
+    expect(writes()).toEqual([]);
+  });
+
+  it("answers an expired session with session_expired, writing nothing (AC-21)", async () => {
+    getOptionalUser.mockResolvedValue(null);
+    expect(await restoreShowStatus(SHOW, removal)).toEqual({
+      ok: false,
+      error: "session_expired",
+    });
+    expect(writes()).toEqual([]);
+    expect(refresh).not.toHaveBeenCalled();
   });
 });

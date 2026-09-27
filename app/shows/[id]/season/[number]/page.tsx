@@ -147,6 +147,7 @@ async function SeasonDetail({ params }: { params: SeasonParams }) {
   return (
     <SeasonTrackingStore
       showId={id}
+      showName={show.name}
       seasonNumber={seasonNumber}
       returnPath={`/shows/${id}/season/${seasonNumber}`}
     >
