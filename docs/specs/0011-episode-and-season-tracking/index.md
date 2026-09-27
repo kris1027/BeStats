@@ -43,7 +43,7 @@ This decides how a signed in user marks TV episodes watched, rates them from 1 t
 - **AC-21**: After a successful write, the action calls `refresh()` from `next/cache`. Marking a season, moving to the next season and pressing Back shows the marked state.
 - **AC-22**: Failed actions log one line with an event and an outcome class only (for example `episode_tracking.rate refused session_expired`). No user id, email, show id, episode id, count or rating appears in any log line. Successful writes are not logged.
 - **AC-23**: At 375px the row pills and the header button with its count wrap with no horizontal page scroll, every control meets the 44px target, the picker's two rows of five fit on screen, and every control shows the visible focus ring when reached by keyboard.
-- **AC-24**: No action or function in this feature creates, changes or deletes a `user_show_state` row. Tests assert the table is untouched after every write path.
+- **AC-24**: No action or function in this feature creates, changes or deletes a `user_show_state` row. Tests assert the table is untouched after every write path. _Amended by spec [0013](../0013-tv-status-and-progress/index.md), AC-6: the episode functions now start a show through `start_watching_show`, and nothing else in them touches `user_show_state`._
 - **AC-25**: Episode rows whose episode id TMDB no longer lists for the season are kept, never deleted, and never shown or counted on the page.
 
 ## Decision

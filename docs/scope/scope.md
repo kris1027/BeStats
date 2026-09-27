@@ -26,7 +26,7 @@ _The stack, tooling and product rules (ratings, progress, statuses, security) li
 | 11 | Search and filters | Slice 3 | done |
 | 12 | Episode and season tracking | Slice 4 | done |
 | 13 | Calculated season and show ratings | Slice 5 | in-progress |
-| 14 | TV status and progress | Slice 6 | planned |
+| 14 | TV status and progress | Slice 6 | in-progress |
 | 15 | Up Next | Slice 7 | planned |
 | 16 | Automatic completion | Slice 7 | planned |
 | 17 | SEO metadata and sitemap | Slice 8 | planned |
@@ -243,10 +243,21 @@ spec [0012](../specs/0012-calculated-season-show-ratings/index.md) · code in [l
 
 ## Slice 6: TV status and progress
 
-### 14. TV status and progress · needs a decision · GA
+### 14. TV status and progress · in-progress · GA
 Five statuses with manual choices kept apart from automatic ones, overall progress from aired regular episodes, and TV entries joining the private watchlist.
 **Done when:** status changes preserve episode history and ratings; progress excludes specials and unaired episodes; a zero eligible total shows an empty state; the chosen air date boundary is documented.
-- [ ] Design it (spec): `/architect TV status and progress`
+- [x] Design it (spec): `/architect TV status and progress`
+- [x] Build it: `/develop TV status and progress`
+  - [x] The thin thread: `listed_at`, the set, remove and restore status functions, `setShowStatus` and `restoreShowStatus`, and the hero status pill with its menu, Undo, visitor and read failure states, verified with two browsers — AC-1 to AC-5, AC-19 to AC-21
+  - [x] The automatic strand: `start_watching_show`, the three episode functions returning `show_started`, and the "moved to Watching" toast — AC-6 to AC-8
+  - [x] The progress strand: `lib/tv/progress.ts`, `getWatchedEpisodeIds` and the hero progress line with its counted, none aired and unavailable states — AC-9 to AC-12
+  - [x] The watchlist and grid strands: the `user_watchlist_entries` view, TV cards with the streamed Next episode pill, Planned and Stop watching with Undo, the legend, and the TV bookmark on `/shows` and `/search` — AC-13 to AC-18
+  - [x] Proof: 375px and keyboard passes, request scope tests, the view's query plan, checks and `verify.md` — AC-12, AC-20, AC-22
+- [x] Verify it: `/check verify TV status and progress`
+- [x] Test it: `/test TV status and progress`
+- [x] Review it (fresh model): `/check review TV status and progress`
+- [x] Document it: `/document TV status and progress`
+spec [0013](../specs/0013-tv-status-and-progress/index.md) · code in [lib/tracking/show-state.ts](../../lib/tracking/show-state.ts), [lib/tv/progress.ts](../../lib/tv/progress.ts), [components/tracking/](../../components/tracking/), [components/library/](../../components/library/), [app/shows/actions.ts](../../app/shows/actions.ts), `supabase/migrations/20260926*`
 
 ## Slice 7: Up Next and completion
 
@@ -288,6 +299,7 @@ Out of scope for the current build pass, kept so the plan stays honest.
 - **Public profiles and social features**: ruled out of the MVP by `AGENTS.md`
 - **Error monitoring and product analytics**: not selected for this pass
 - **Account deletion**: from spec 0005. Undesigned, and it needs an elevated server side call that nothing else in the app uses, so it deserves its own decision before it is built
+- **TV history on `/watched`**: from spec 0013. The watched page stays movies only; it has no artboard for shows and no scope row yet
 - **Rate limit on `/api/search`**: from spec 0010. The public quick search endpoint is guarded only by validation and CDN caching; add a per IP limit before public launch (feature 20)
 
 ## Legend
