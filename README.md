@@ -12,6 +12,27 @@ TMDB supplies catalog metadata. Supabase stores accounts and private user data. 
 
 The project follows a thin end-to-end approach. The core movie loop now extends into TV pages, search, and episode tracking; TV progress and Up Next are the next slices. See the [scope and roadmap](docs/scope/scope.md) for the feature breakdown and [specifications](docs/specs/) for decisions already made.
 
+## Screenshots
+
+Captured from the running app with live TMDB content. These public views are shown signed out; catalog titles and ratings change over time.
+
+**Desktop catalog** — browse popular shows and their TMDB community ratings.
+
+![BeStats desktop show catalog with poster cards and TMDB ratings](docs/screenshots/catalog-desktop.png)
+
+**Show details** — title information, an overview, and season navigation.
+
+![Reacher detail page showing its overview, TMDB rating, and seasons](docs/screenshots/title-detail-desktop.png)
+
+<details>
+<summary>Mobile catalog</summary>
+
+The catalog adapts to a two-column layout with compact navigation.
+
+<img src="docs/screenshots/catalog-mobile.png" alt="BeStats mobile show catalog with compact navigation and two columns of posters" width="302">
+
+</details>
+
 ## Local setup
 
 Use Node.js 22, matching CI, and the pnpm version pinned in the `packageManager` field of [package.json](package.json). A running Docker-compatible container runtime is needed for local Supabase and database tests.
