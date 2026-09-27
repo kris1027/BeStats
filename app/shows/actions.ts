@@ -14,8 +14,10 @@ import {
 import {
   episodeRatingInputSchema,
   episodeWatchedInputSchema,
+  restoreShowStatusInputSchema,
   seasonUndoInputSchema,
   seasonWatchedInputSchema,
+  showStatusInputSchema,
 } from "@/lib/tracking/schemas";
 import { classifyTrackingError } from "@/lib/tracking/supabase-error";
 import type {
@@ -23,15 +25,19 @@ import type {
   EpisodeTrackingResult,
   SeasonUndo,
   SeasonWatchedResult,
+  ShowStatusResult,
+  ShowStatusUndo,
+  TvStatus,
 } from "@/lib/tracking/types";
 import { airStatus, todayUtc } from "@/lib/tv/air-status";
 import { airedEpisodesForMarking } from "@/lib/tv/season-watch";
 
+import { loadShow } from "./[id]/load-show";
 import { loadSeason } from "./[id]/season/[number]/load-season";
 
 /**
  * The episode and season tracking mutations, as Server Actions (spec 0011,
- * API surface).
+ * API surface), and the TV status writes (spec 0013, API surface).
  *
  * The same order as `app/movies/actions.ts`: Zod parse, then the verified
  * session, then (for a write that can create a row) the TMDB season read and
@@ -167,9 +173,23 @@ function parse<T>(
   return null;
 }
 
-/** Drops an `Outcome`'s value for the actions that return none. */
-function withoutValue(outcome: Outcome<unknown>): EpisodeTrackingResult {
-  return outcome.ok ? { ok: true } : outcome;
+/**
+ * An episode write's result: whether it moved the show to Watching on its
+ * own (spec 0013, AC-8). Removals and Undo never do.
+ */
+function withShowStarted(outcome: Outcome<boolean>): EpisodeTrackingResult {
+  return outcome.ok ? { ok: true, showStarted: outcome.value } : outcome;
+}
+
+/**
+ * The `show_started` column the three episode functions return beside their
+ * own result (spec 0013, AC-8). A missing row reads as false: only a `true`
+ * the database reported may raise the toast.
+ */
+function showStartedFrom(
+  data: readonly { show_started: boolean | null }[] | null,
+): boolean {
+  return data?.[0]?.show_started === true;
 }
 
 /**
@@ -195,7 +215,7 @@ export async function setEpisodeWatched(
   if (!input) return { ok: false, error: "invalid_input" };
 
   if (input.watched) {
-    return withoutValue(
+    return withShowStarted(
       await runEpisodeWrite(event, async (supabase) => {
         const episode = await confirmEpisode(
           input.showId,
@@ -203,25 +223,25 @@ export async function setEpisodeWatched(
           input.episodeId,
         );
         if (episode.kind === "refused") return episode;
-        const { error } = await supabase.rpc("mark_episode_watched", {
+        const { data, error } = await supabase.rpc("mark_episode_watched", {
           p_show_id: input.showId,
           p_season_number: episode.seasonNumber,
           p_episode_number: episode.episodeNumber,
           p_episode_id: input.episodeId,
         });
-        return settled(error, null);
+        return settled(error, showStartedFrom(data));
       }),
     );
   }
 
-  return withoutValue(
+  return withShowStarted(
     await runEpisodeWrite(event, async (supabase, userId) => {
       const { error } = await supabase
         .from("user_episode_state")
         .update({ watched_at: null })
         .eq("user_id", userId)
         .eq("episode_id", input.episodeId);
-      return settled(error, null);
+      return settled(error, false);
     }),
   );
 }
@@ -249,7 +269,7 @@ export async function setEpisodeRating(
 
   const score = input.rating;
   if (score !== null) {
-    return withoutValue(
+    return withShowStarted(
       await runEpisodeWrite(event, async (supabase) => {
         const episode = await confirmEpisode(
           input.showId,
@@ -257,26 +277,26 @@ export async function setEpisodeRating(
           input.episodeId,
         );
         if (episode.kind === "refused") return episode;
-        const { error } = await supabase.rpc("rate_episode", {
+        const { data, error } = await supabase.rpc("rate_episode", {
           p_show_id: input.showId,
           p_season_number: episode.seasonNumber,
           p_episode_number: episode.episodeNumber,
           p_episode_id: input.episodeId,
           p_rating: score,
         });
-        return settled(error, null);
+        return settled(error, showStartedFrom(data));
       }),
     );
   }
 
-  return withoutValue(
+  return withShowStarted(
     await runEpisodeWrite(event, async (supabase, userId) => {
       const { error } = await supabase
         .from("user_episode_state")
         .update({ rating: null })
         .eq("user_id", userId)
         .eq("episode_id", input.episodeId);
-      return settled(error, null);
+      return settled(error, false);
     }),
   );
 }
@@ -309,8 +329,9 @@ export async function setSeasonWatched(
   );
   if (!input) return { ok: false, error: "invalid_input" };
 
+  type SeasonWrite = { undo: SeasonUndo | null; showStarted: boolean };
   const outcome = input.watched
-    ? await runEpisodeWrite<SeasonUndo | null>(event, async (supabase) => {
+    ? await runEpisodeWrite<SeasonWrite>(event, async (supabase) => {
         const confirmed = await confirmSeason(input.showId, input.seasonNumber);
         if (confirmed.kind === "refused") return confirmed;
 
@@ -318,7 +339,9 @@ export async function setSeasonWatched(
           confirmed.season.episodes,
           todayUtc(new Date()),
         );
-        if (aired.ids.length === 0) return { kind: "done", value: null };
+        if (aired.ids.length === 0) {
+          return { kind: "done", value: { undo: null, showStarted: false } };
+        }
 
         const { data, error } = await supabase.rpc("mark_season_watched", {
           p_show_id: input.showId,
@@ -326,33 +349,36 @@ export async function setSeasonWatched(
           p_episode_ids: aired.ids,
           p_episode_numbers: aired.numbers,
         });
-        return settled(
-          error,
-          data && data.length > 0
-            ? { kind: "unmark" as const, episodeIds: data }
-            : null,
-        );
+        const marked = data?.[0]?.marked_ids ?? [];
+        return settled(error, {
+          undo:
+            marked.length > 0
+              ? { kind: "unmark" as const, episodeIds: marked }
+              : null,
+          showStarted: showStartedFrom(data),
+        });
       })
-    : await runEpisodeWrite<SeasonUndo | null>(event, async (supabase) => {
+    : await runEpisodeWrite<SeasonWrite>(event, async (supabase) => {
         const { data, error } = await supabase.rpc("unmark_episodes_watched", {
           p_show_id: input.showId,
           p_episode_ids: input.episodeIds,
         });
-        return settled(
-          error,
-          data && data.length > 0
-            ? {
-                kind: "restore" as const,
-                entries: data.map((row) => ({
-                  episodeId: row.episode_id,
-                  watchedAt: row.watched_at,
-                })),
-              }
-            : null,
-        );
+        return settled(error, {
+          undo:
+            data && data.length > 0
+              ? {
+                  kind: "restore" as const,
+                  entries: data.map((row) => ({
+                    episodeId: row.episode_id,
+                    watchedAt: row.watched_at,
+                  })),
+                }
+              : null,
+          showStarted: false,
+        });
       });
 
-  return outcome.ok ? { ok: true, undo: outcome.value } : outcome;
+  return outcome.ok ? { ok: true, ...outcome.value } : outcome;
 }
 
 /**
@@ -373,14 +399,14 @@ export async function undoSeasonWatched(
   if (!input) return { ok: false, error: "invalid_input" };
 
   const request = input.undo;
-  return withoutValue(
+  return withShowStarted(
     await runEpisodeWrite(event, async (supabase) => {
       if (request.kind === "unmark") {
         const { error } = await supabase.rpc("unmark_episodes_watched", {
           p_show_id: input.showId,
           p_episode_ids: request.episodeIds,
         });
-        return settled(error, null);
+        return settled(error, false);
       }
       const { error } = await supabase.rpc("restore_episodes_watched", {
         p_show_id: input.showId,
@@ -388,6 +414,139 @@ export async function undoSeasonWatched(
           episode_id: entry.episodeId,
           watched_at: entry.watchedAt,
         })),
+      });
+      return settled(error, false);
+    }),
+  );
+}
+
+/**
+ * A status result, from the shared episode write shape. `not_aired` belongs
+ * to episodes and cannot come from a status write; it is folded into an
+ * ordinary failed save rather than widening the status error type.
+ */
+function asShowStatusResult(
+  outcome: Outcome<ShowStatusUndo | null>,
+): ShowStatusResult {
+  if (outcome.ok) return { ok: true, undo: outcome.value };
+  return {
+    ok: false,
+    error: outcome.error === "not_aired" ? "write_failed" : outcome.error,
+  };
+}
+
+/**
+ * Sets a show's status by hand, or removes it with `null` (spec 0013, AC-2,
+ * AC-4, AC-16, AC-18).
+ *
+ * Setting goes through `set_show_status`, which always writes
+ * `status_source = 'user'`; the source is never an input. Like every creating
+ * write it first confirms the show with TMDB (an unknown or adult show is
+ * `not_found`, an outage `tmdb_unavailable`), so no row is ever stored for a
+ * show the app cannot render. Removing goes through `remove_show_status` and
+ * skips TMDB, so it works during an outage and for a show TMDB later drops.
+ * Neither touches an episode row (AC-3).
+ *
+ * The result carries the Undo: the values the database reported replacing,
+ * and what the row must still hold for the Undo to apply. It is null when
+ * there was nothing to put back.
+ */
+export async function setShowStatus(
+  showId: number,
+  status: TvStatus | null,
+): Promise<ShowStatusResult> {
+  const event = TRACKING_EVENT.showStatus;
+  const input = parse(showStatusInputSchema, { showId, status }, event);
+  if (!input) return { ok: false, error: "invalid_input" };
+
+  const target = input.status;
+  if (target === null) {
+    return asShowStatusResult(
+      await runEpisodeWrite<ShowStatusUndo | null>(event, async (supabase) => {
+        const { data, error } = await supabase.rpc("remove_show_status", {
+          p_show_id: input.showId,
+        });
+        const removed = data?.[0];
+        return settled(
+          error,
+          removed
+            ? {
+                expected: null,
+                status: removed.status,
+                source: removed.status_source,
+                listedAt: removed.listed_at ?? null,
+                removedAt: removed.removed_at,
+              }
+            : null,
+        );
+      }),
+    );
+  }
+
+  return asShowStatusResult(
+    await runEpisodeWrite<ShowStatusUndo | null>(event, async (supabase) => {
+      const show = await loadShow(input.showId);
+      if (show.kind !== "found") {
+        return {
+          kind: "refused",
+          error: show.kind === "failed" ? "tmdb_unavailable" : "not_found",
+        };
+      }
+
+      const { data, error } = await supabase.rpc("set_show_status", {
+        p_show_id: input.showId,
+        p_status: target,
+      });
+      // The generated types call the previous columns non null; they are
+      // null when there was no row, so each is read defensively.
+      const row = data?.[0];
+      const previousStatus = row?.previous_status ?? null;
+      const previousSource = row?.previous_source ?? null;
+      return settled(
+        error,
+        previousStatus !== null && previousSource !== null
+          ? {
+              expected: target,
+              status: previousStatus,
+              source: previousSource,
+              listedAt: row?.previous_listed_at ?? null,
+              removedAt: null,
+            }
+          : null,
+      );
+    }),
+  );
+}
+
+/**
+ * The Undo on a status toast: a removal, or Stop watching on the watchlist
+ * (spec 0013, AC-4, AC-16, AC-19).
+ *
+ * The payload is what `setShowStatus` returned. `restore_show_status` applies
+ * it only while the row is still what the undone action left, within 10
+ * minutes, and never with a time in the future; anything else comes back as
+ * `undo_expired`. A removal's Undo recreates the row, but only with values
+ * the database itself reported a moment ago, so it needs no TMDB check.
+ */
+export async function restoreShowStatus(
+  showId: number,
+  undo: ShowStatusUndo,
+): Promise<ShowStatusResult> {
+  const event = TRACKING_EVENT.restoreShowStatus;
+  const input = parse(restoreShowStatusInputSchema, { showId, undo }, event);
+  if (!input) return { ok: false, error: "invalid_input" };
+
+  const request = input.undo;
+  return asShowStatusResult(
+    await runEpisodeWrite<ShowStatusUndo | null>(event, async (supabase) => {
+      const { error } = await supabase.rpc("restore_show_status", {
+        p_show_id: input.showId,
+        p_status: request.status,
+        p_source: request.source,
+        // Left out rather than sent as null: the three carry null defaults.
+        ...(request.expected !== null && { p_expected: request.expected }),
+        ...(request.listedAt !== null && { p_listed_at: request.listedAt }),
+        ...(request.removedAt !== null && { p_removed_at: request.removedAt }),
       });
       return settled(error, null);
     }),

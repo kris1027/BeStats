@@ -74,9 +74,13 @@ export const EMPTY_EPISODE_TRACKING: EpisodeTrackingState = {
  */
 export type EpisodeTrackingError = MovieTrackingError | "not_aired";
 
-/** What the single episode actions and the season Undo return. */
+/**
+ * What the single episode actions and the season Undo return. `showStarted`
+ * is true only when this write moved the show to Watching on its own (spec
+ * 0013, AC-8), which the season page confirms with a toast.
+ */
 export type EpisodeTrackingResult =
-  | { ok: true }
+  | { ok: true; showStarted: boolean }
   | { ok: false; error: EpisodeTrackingError };
 
 /**
@@ -90,5 +94,49 @@ export type SeasonUndo =
 
 /** `undo` is null when the write changed nothing. */
 export type SeasonWatchedResult =
-  | { ok: true; undo: SeasonUndo | null }
+  | { ok: true; undo: SeasonUndo | null; showStarted: boolean }
   | { ok: false; error: EpisodeTrackingError };
+
+/**
+ * The five TV statuses, in the order every menu lists them (spec 0013, AC-1).
+ * The values are the `tv_status` enum's, so they cross to Postgres unchanged.
+ */
+export const TV_STATUSES = [
+  "want_to_watch",
+  "watching",
+  "on_hold",
+  "dropped",
+  "completed",
+] as const;
+
+export type TvStatus = (typeof TV_STATUSES)[number];
+
+/** Who set a status: the person, or the automatic move to Watching. */
+export type StatusSource = "user" | "system";
+
+/** One show's stored status. No row is `null`, never a sixth status. */
+export type ShowStatusState = { status: TvStatus; source: StatusSource };
+
+/**
+ * How to take back a status write (spec 0013, AC-4, AC-16, AC-19): the values
+ * the database reported replacing, and what the row must still hold for the
+ * Undo to apply. `expected` is null after a removal (the row must be absent,
+ * and `removedAt` bounds the window) and `on_hold` after Stop watching.
+ */
+export type ShowStatusUndo = {
+  expected: TvStatus | null;
+  status: TvStatus;
+  source: StatusSource;
+  listedAt: string | null;
+  removedAt: string | null;
+};
+
+/**
+ * What `setShowStatus` returns. `undo` is null when there was nothing to take
+ * back: a first status on an untracked show, or removing a status that was
+ * already gone. Like the movie results, no state comes back: the controls
+ * converge on the server prop `refresh()` delivers.
+ */
+export type ShowStatusResult =
+  | { ok: true; undo: ShowStatusUndo | null }
+  | { ok: false; error: MovieTrackingError };

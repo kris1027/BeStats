@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { TV_STATUSES } from "./types";
+
 /**
  * The input rules every movie tracking action applies before any Supabase or
  * TMDB call (spec 0007, AC-13).
@@ -115,3 +117,42 @@ export const seasonUndoInputSchema = z.object({
     }),
   ]),
 });
+
+/** One of the five statuses, exactly as `tv_status` spells them. */
+export const tvStatusSchema = z.enum(TV_STATUSES);
+
+/**
+ * A status write (spec 0013, AC-21): the show and the status to set, or null
+ * to remove it. The source is never an input: a choice made by hand is always
+ * `user`, fixed inside `set_show_status`.
+ */
+export const showStatusInputSchema = z.object({
+  showId: tmdbIdSchema,
+  status: tvStatusSchema.nullable(),
+});
+
+/** A time the client carries back for an Undo: full ISO, never in the future. */
+const pastInstantSchema = z.iso
+  .datetime({ offset: true })
+  .refine((value) => Date.parse(value) <= Date.now());
+
+/**
+ * The Undo of a status removal or of Stop watching (spec 0013, AC-19, AC-21):
+ * the values `set_show_status` or `remove_show_status` reported. A removal's
+ * Undo must carry the time of the removal, which bounds the window;
+ * `restore_show_status` applies every bound again.
+ */
+export const restoreShowStatusInputSchema = z
+  .object({
+    showId: tmdbIdSchema,
+    undo: z.object({
+      expected: tvStatusSchema.nullable(),
+      status: tvStatusSchema,
+      source: z.enum(["user", "system"]),
+      listedAt: pastInstantSchema.nullable(),
+      removedAt: pastInstantSchema.nullable(),
+    }),
+  })
+  .refine(
+    (input) => input.undo.expected !== null || input.undo.removedAt !== null,
+  );

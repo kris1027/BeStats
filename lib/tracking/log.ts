@@ -24,6 +24,10 @@ export const TRACKING_EVENT = {
   seasonWatched: "season_tracking.watched",
   seasonUndo: "season_tracking.undo",
   showRatingRead: "show_tracking.rating_read",
+  showStatus: "show_tracking.status",
+  restoreShowStatus: "show_tracking.restore_status",
+  showStatusRead: "show_tracking.status_read",
+  watchedEpisodesRead: "show_tracking.watched_read",
 } as const;
 
 export type TrackingEvent =
