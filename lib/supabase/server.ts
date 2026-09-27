@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { getPublicEnv } from "@/lib/env";
 import { sessionCookieOptions } from "@/lib/supabase/cookie-options";
 import type { Database } from "@/lib/supabase/database.types";
+import { withJwtSkewRetry } from "@/lib/supabase/jwt-skew-retry";
 
 /**
  * Supabase client for Server Components, Server Actions and Route Handlers.
@@ -23,6 +24,10 @@ import type { Database } from "@/lib/supabase/database.types";
  *
  * Its cookies are `HttpOnly` through `sessionCookieOptions()`, the same
  * definition the proxy uses (spec 0005, AC-25).
+ *
+ * Its fetch retries PostgREST's "JWT issued at future" rejection, which a
+ * freshly signed in or refreshed session otherwise hits on its first render
+ * (`withJwtSkewRetry`).
  */
 export async function createClient() {
   // `cookies()` comes first so a prerender postpones here, before the env is
@@ -36,6 +41,7 @@ export async function createClient() {
     env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     {
       cookieOptions: sessionCookieOptions(),
+      global: { fetch: withJwtSkewRetry(fetch) },
       cookies: {
         getAll() {
           return cookieStore.getAll();
