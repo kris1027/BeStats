@@ -15,7 +15,7 @@
 -- replica`, as `070-movie-restore-functions.test.sql` does.
 
 begin;
-select plan(54);
+select plan(55);
 
 -- Shape (AC-19)
 
@@ -76,7 +76,8 @@ values
   ('11111111-1111-1111-1111-111111111111', 930120, 900301, 2, 20, null, null, now() - interval '11 minutes');
 set local session_replication_role = origin;
 
--- A snapshot of user_show_state, to prove no path touches it (AC-24).
+-- A snapshot of user_show_state, to prove no path touches it beyond the one
+-- automatic start spec 0013 allows (AC-24, amended by spec 0013 AC-6).
 create temporary table show_state_before on commit drop as
   select * from public.user_show_state;
 grant select on show_state_before to authenticated;
@@ -197,11 +198,11 @@ insert into public.user_episode_state (user_id, episode_id, show_id, season_numb
 values ('11111111-1111-1111-1111-111111111111', 930103, 900301, 1, 3, 4);
 
 select is(
-  public.mark_season_watched(
+  (select marked_ids from public.mark_season_watched(
     900301, 1::smallint,
     array[930101, 930102, 930103, 930104, 930104],
     array[1, 2, 3, 4, 4]::smallint[]
-  ),
+  )),
   array[930103, 930104],
   'mark season returns only the newly marked ids, once each, despite a duplicated id'
 );
@@ -225,9 +226,9 @@ select is(
   'a duplicated id creates one row'
 );
 select is(
-  public.mark_season_watched(
+  (select marked_ids from public.mark_season_watched(
     900301, 1::smallint, array[930101, 930102, 930103, 930104], array[1, 2, 3, 4]::smallint[]
-  ),
+  )),
   '{}'::integer[],
   'running mark season again changes nothing and reports nothing'
 );
@@ -393,11 +394,20 @@ select is(
   'user A''s calls landed on user A''s own row'
 );
 
--- AC-24: no path touched user_show_state.
+-- AC-24, as spec 0013 AC-6 amends it: the only change to user_show_state is
+-- the automatic start of show 900301 for user A. Every other row is exactly
+-- as it was. `100-automatic-watching.test.sql` covers the rule itself.
 select set_eq(
-  $$ select * from public.user_show_state $$,
+  $$ select * from public.user_show_state
+     where not (user_id = '11111111-1111-1111-1111-111111111111' and show_id = 900301) $$,
   $$ select * from show_state_before $$,
-  'user_show_state is unchanged after every write path'
+  'user_show_state is otherwise unchanged after every write path'
+);
+select is(
+  (select status::text || '/' || status_source::text from public.user_show_state
+   where user_id = '11111111-1111-1111-1111-111111111111' and show_id = 900301),
+  'watching/system',
+  'the first regular episode watched started the show, and nothing else did'
 );
 
 -- anon cannot call any of them.

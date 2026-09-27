@@ -11,7 +11,7 @@ begin;
 select plan(26);
 
 -- User A and user B come from supabase/seed.sql.
--- A owns: movie 603 and 27205, show 1396 and 1399, episodes 62085 to 62119.
+-- A owns: movie 603 and 27205, show 1396 and 1399, episodes 62085 to 62087 and 62131.
 -- B owns: movie 603, show 1396, episode 63056.
 
 set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';

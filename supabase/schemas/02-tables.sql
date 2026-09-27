@@ -60,11 +60,27 @@ create table public.user_show_state (
   -- "The `status_source` default is insert only".
   status_source public.status_source not null default 'user',
   status_changed_at timestamptz not null default now(),
+  -- When the show last joined the watchlist, by entering Want to Watch or
+  -- Watching from anywhere else; the watchlist page's order (spec 0013,
+  -- AC-14). Owned by `user_show_state_set_listed_at` in `03-triggers.sql`, so
+  -- no client can choose it. Moving between those two keeps it, so starting a
+  -- planned show does not move its card; leaving them keeps it too, so Undo
+  -- of Stop watching puts the card back in its old place.
+  listed_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint user_show_state_pkey primary key (user_id, show_id),
-  constraint user_show_state_show_id_check check (show_id > 0)
+  constraint user_show_state_show_id_check check (show_id > 0),
+  -- A show on the watchlist always has a time to sort by.
+  constraint user_show_state_listed_at_check
+    check (status not in ('want_to_watch', 'watching') or listed_at is not null)
 );
+
+-- The show half of the watchlist page (spec 0013, AC-13): only the rows the
+-- page can show, ending in `show_id`, the tiebreak, as the movie index does.
+create index user_show_state_watchlist_idx
+  on public.user_show_state (user_id, listed_at desc, show_id)
+  where status in ('want_to_watch', 'watching');
 
 -- One row per person per TMDB episode. Deliberately not tied to
 -- `user_show_state` by a foreign key: AGENTS.md section 7 requires episode

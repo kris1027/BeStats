@@ -81,6 +81,7 @@ export type Database = {
       user_show_state: {
         Row: {
           created_at: string
+          listed_at: string | null
           show_id: number
           status: Database["public"]["Enums"]["tv_status"]
           status_changed_at: string
@@ -90,6 +91,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          listed_at?: string | null
           show_id: number
           status: Database["public"]["Enums"]["tv_status"]
           status_changed_at?: string
@@ -99,6 +101,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          listed_at?: string | null
           show_id?: number
           status?: Database["public"]["Enums"]["tv_status"]
           status_changed_at?: string
@@ -110,7 +113,16 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      user_watchlist_entries: {
+        Row: {
+          kind: string | null
+          listed_at: string | null
+          status: Database["public"]["Enums"]["tv_status"] | null
+          tmdb_id: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       mark_episode_watched: {
@@ -124,19 +136,14 @@ export type Database = {
           created_at: string
           episode_id: number
           episode_number: number
-          rating: number | null
+          rating: number
           season_number: number
           show_id: number
+          show_started: boolean
           updated_at: string
           user_id: string
-          watched_at: string | null
-        }
-        SetofOptions: {
-          from: "*"
-          to: "user_episode_state"
-          isOneToOne: true
-          isSetofReturn: false
-        }
+          watched_at: string
+        }[]
       }
       mark_movie_watched: {
         Args: { p_movie_id: number }
@@ -164,7 +171,10 @@ export type Database = {
           p_season_number: number
           p_show_id: number
         }
-        Returns: number[]
+        Returns: {
+          marked_ids: number[]
+          show_started: boolean
+        }[]
       }
       rate_episode: {
         Args: {
@@ -178,19 +188,14 @@ export type Database = {
           created_at: string
           episode_id: number
           episode_number: number
-          rating: number | null
+          rating: number
           season_number: number
           show_id: number
+          show_started: boolean
           updated_at: string
           user_id: string
-          watched_at: string | null
-        }
-        SetofOptions: {
-          from: "*"
-          to: "user_episode_state"
-          isOneToOne: true
-          isSetofReturn: false
-        }
+          watched_at: string
+        }[]
       }
       rate_movie: {
         Args: { p_movie_id: number; p_rating: number }
@@ -211,6 +216,15 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      remove_show_status: {
+        Args: { p_show_id: number }
+        Returns: {
+          listed_at: string
+          removed_at: string
+          status: Database["public"]["Enums"]["tv_status"]
+          status_source: Database["public"]["Enums"]["status_source"]
+        }[]
+      }
       restore_episodes_watched: {
         Args: { p_entries: Json; p_show_id: number }
         Returns: number
@@ -222,6 +236,50 @@ export type Database = {
       restore_movie_watchlist: {
         Args: { p_movie_id: number }
         Returns: undefined
+      }
+      restore_show_status: {
+        Args: {
+          p_expected?: Database["public"]["Enums"]["tv_status"]
+          p_listed_at?: string
+          p_removed_at?: string
+          p_show_id: number
+          p_source: Database["public"]["Enums"]["status_source"]
+          p_status: Database["public"]["Enums"]["tv_status"]
+        }
+        Returns: {
+          created_at: string
+          listed_at: string | null
+          show_id: number
+          status: Database["public"]["Enums"]["tv_status"]
+          status_changed_at: string
+          status_source: Database["public"]["Enums"]["status_source"]
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "user_show_state"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      set_show_status: {
+        Args: {
+          p_show_id: number
+          p_status: Database["public"]["Enums"]["tv_status"]
+        }
+        Returns: {
+          listed_at: string
+          previous_listed_at: string
+          previous_source: Database["public"]["Enums"]["status_source"]
+          previous_status: Database["public"]["Enums"]["tv_status"]
+          status: Database["public"]["Enums"]["tv_status"]
+          status_source: Database["public"]["Enums"]["status_source"]
+        }[]
+      }
+      start_watching_show: {
+        Args: { p_should_start: boolean; p_show_id: number }
+        Returns: boolean
       }
       unmark_episodes_watched: {
         Args: { p_episode_ids: number[]; p_show_id: number }
