@@ -6,36 +6,37 @@ import { type ReactNode, useEffect } from "react";
 const LIBRARY_HEADING_ID = "library-heading";
 
 /**
- * The movie whose removal looked like it emptied a page past page 1. The
+ * The card whose removal looked like it emptied a page past page 1. The
  * server answers that refresh with a redirect to another page, and the page
  * segment is keyed by its search params, so the whole page remounts and the
  * heading that held the focus is replaced. The new heading reads this on
  * mount and takes the focus back. Module state, because nothing else survives
  * the remount.
  *
- * It is keyed by movie, because only the removal that set it knows whether
- * the redirect happened: when it did not, the grid is still mounted and
- * cancels it, so a later, unrelated visit never has its focus taken.
+ * It is keyed by card (`libraryItemKey`, since a movie and a show can share
+ * a TMDB id), because only the removal that set it knows whether the redirect
+ * happened: when it did not, the grid is still mounted and cancels it, so a
+ * later, unrelated visit never has its focus taken.
  */
-let focusAfterRemountFor: number | null = null;
+let focusAfterRemountFor: string | null = null;
 
 /**
  * Moves focus to the list page's heading (spec 0008, AC-16). `remountFor` is
- * the removed movie when the heading may be about to be replaced, so its
+ * the removed card when the heading may be about to be replaced, so its
  * replacement takes the focus too.
  */
-function focusLibraryHeading({ remountFor }: { remountFor: number | null }) {
+function focusLibraryHeading({ remountFor }: { remountFor: string | null }) {
   focusAfterRemountFor = remountFor;
   document.getElementById(LIBRARY_HEADING_ID)?.focus();
 }
 
 /**
- * The removal of `movieId` settled without a remount: it failed and the card
- * stays, or the refreshed page still had movies from later pages. Leaves
+ * The removal of the card `key` settled without a remount: it failed and the
+ * card stays, or the refreshed page still had titles from later pages. Leaves
  * another removal's pending focus alone.
  */
-function cancelLibraryHeadingFocus(movieId: number) {
-  if (focusAfterRemountFor === movieId) focusAfterRemountFor = null;
+function cancelLibraryHeadingFocus(key: string) {
+  if (focusAfterRemountFor === key) focusAfterRemountFor = null;
 }
 
 /**

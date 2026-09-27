@@ -8,6 +8,7 @@ import { RetryLink } from "@/components/retry-link";
 import { PosterCardSkeleton, Skeleton } from "@/components/skeleton";
 import { StatePanel } from "@/components/state-panel";
 import { CardBookmark } from "@/components/tracking/card-bookmark";
+import { ShowCardBookmark } from "@/components/tracking/show-card-bookmark";
 import { ButtonLink } from "@/components/ui/button";
 import { lastReachablePage } from "@/lib/catalog/pages";
 import { formatRange, mediaNoun } from "@/lib/search/count";
@@ -53,7 +54,8 @@ const EAGER_POSTERS = 6;
  *
  * Every TMDB failure lands here, inside the keyed Suspense boundary, so the
  * heading and the filter bar above stay usable (AC-19). No session is read,
- * except by each movie card's bookmark in its own boundary (AC-16, AC-22).
+ * except by each card's bookmark in its own boundary (AC-16, AC-22; spec
+ * 0013, AC-18).
  */
 async function SearchResults({ raw }: { raw: RawParams }) {
   const type = parseSearchType(raw.type);
@@ -188,9 +190,9 @@ async function FilteredResults({ params }: { params: SearchParams }) {
 }
 
 /**
- * The poster grid, the same cards as the landings (AC-16). Movie cards carry
- * the bookmark exactly as `/movies` does, returning to this search's canonical
- * URL; TV cards carry nothing until feature 14.
+ * The poster grid, the same cards as the landings (AC-16). Every card carries
+ * the bookmark its landing does, movie or TV (spec 0013, AC-18), returning to
+ * this search's canonical URL.
  */
 function ResultGrid({
   params,
@@ -200,7 +202,8 @@ function ResultGrid({
   results: SearchResult[];
 }) {
   const returnPath = searchHref(params);
-  const gridMovieIds = results.map((result) => result.id);
+  // One type per results page, so these are the grid's movie or show ids.
+  const gridIds = results.map((result) => result.id);
 
   return (
     <PosterGrid aria-label="Search results">
@@ -218,11 +221,20 @@ function ResultGrid({
                   <CardBookmark
                     movieId={result.id}
                     title={result.title}
-                    gridMovieIds={gridMovieIds}
+                    gridMovieIds={gridIds}
                     returnPath={returnPath}
                   />
                 </Suspense>
-              ) : undefined
+              ) : (
+                <Suspense fallback={null}>
+                  <ShowCardBookmark
+                    showId={result.id}
+                    name={result.title}
+                    gridShowIds={gridIds}
+                    returnPath={returnPath}
+                  />
+                </Suspense>
+              )
             }
             priority={index < EAGER_POSTERS}
           />

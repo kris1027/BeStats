@@ -10,7 +10,9 @@ import { SeasonGrid } from "@/components/show/season-grid";
 import { ShowDetailSkeleton } from "@/components/show/show-detail-skeleton";
 import { ShowMeta } from "@/components/show/show-meta";
 import { StatePanel } from "@/components/state-panel";
+import { ShowProgressSlot } from "@/components/tracking/show-progress-slot";
 import { ShowRatingSlot } from "@/components/tracking/show-rating-slot";
+import { ShowStatusSlot } from "@/components/tracking/show-status-slot";
 import { parseTmdbId } from "@/lib/catalog/ids";
 import { orderSeasons } from "@/lib/catalog/seasons";
 import { formatAirSpan, truncateAtWord } from "@/lib/format";
@@ -62,8 +64,8 @@ export async function generateMetadata({
  *
  * Nothing here reads a cookie, a header or a session (AC-18). The signed in
  * user's calculated ratings (spec 0012) stream from `components/tracking/`
- * beside the Seasons heading and on each season card. The hero's tracking
- * slot is left empty until feature 14 adds the status control.
+ * beside the Seasons heading and on each season card, and the hero's status
+ * pill and progress line (spec 0013) stream into its tracking place.
  */
 export default function ShowPage({ params }: PageProps<"/shows/[id]">) {
   return (
@@ -116,6 +118,19 @@ async function ShowDetail({
         }
         tmdbRating={show.tmdbRating}
         tmdbVoteCount={show.tmdbVoteCount}
+        tracking={
+          // Two boundaries, not one: the pill never waits on the progress
+          // line's TMDB read (spec 0013, AC-11). A fragment, so a visitor's
+          // empty slots add no gap to the hero (AC-5).
+          <>
+            <Suspense fallback={null}>
+              <ShowStatusSlot showId={id} showName={show.name} />
+            </Suspense>
+            <Suspense fallback={null}>
+              <ShowProgressSlot showId={id} />
+            </Suspense>
+          </>
+        }
       />
 
       <section

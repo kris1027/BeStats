@@ -1,6 +1,10 @@
 import { StarIcon } from "lucide-react";
 
-import { PlannedIcon } from "@/components/tracking/tracking-icons";
+import {
+  NextEpisodeIcon,
+  PlannedIcon,
+  StopWatchingIcon,
+} from "@/components/tracking/tracking-icons";
 
 /**
  * The key under a list page's grid, per `badge-legend` in
@@ -9,8 +13,8 @@ import { PlannedIcon } from "@/components/tracking/tracking-icons";
  *
  * The marks reuse the badges' own icons and meaning colours, so the key can
  * never drift from what the cards show. Only the badges a page can actually
- * show are listed: the artboard's Stop watching and Next episode belong to TV
- * entries, which arrive with feature 14.
+ * show are listed, in the artboard's order: the watchlist adds Stop watching
+ * and Next episode for its show cards (spec 0013, AC-17).
  */
 const ENTRIES = {
   watchlist: [
@@ -24,6 +28,8 @@ const ENTRIES = {
       ),
     },
     { label: "Planned", icon: <PlannedIcon className="size-4" /> },
+    { label: "Stop watching", icon: <StopWatchingIcon className="size-4" /> },
+    { label: "Next episode", icon: <NextEpisodeIcon className="size-4" /> },
   ],
   watched: [
     {

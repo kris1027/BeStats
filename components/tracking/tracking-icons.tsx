@@ -89,4 +89,109 @@ function WatchedIcon({ filled, className }: IconProps & { filled: boolean }) {
   );
 }
 
-export { PlanIcon, PlannedIcon, WatchedIcon };
+/**
+ * Stop watching: a square inside a circle, from `stop` in the watchlist
+ * artboards and the legend (spec 0013, AC-16). The show status pill reuses it
+ * for On Hold, the status it sets.
+ */
+function StopWatchingIcon({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="-12 -12 24 24"
+      fill="none"
+      aria-hidden="true"
+      className={cn("size-3.5", className)}
+    >
+      <circle r="10" className="stroke-foreground" strokeWidth="1.8" />
+      <rect
+        x="-3"
+        y="-3"
+        width="6"
+        height="6"
+        rx=".7"
+        className="stroke-foreground"
+        strokeWidth="1.8"
+      />
+    </svg>
+  );
+}
+
+/**
+ * Next episode: the television from `tv` in the watchlist artboards, in the
+ * artboard's grey (spec 0013, AC-15). The status pill uses it for Watching.
+ */
+function NextEpisodeIcon({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="-11 -12 22 22"
+      fill="none"
+      aria-hidden="true"
+      className={cn("size-3.5", className)}
+    >
+      <g
+        className="stroke-muted-foreground"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      >
+        <rect x="-9" y="-6" width="18" height="14" rx="2" />
+        <path d="m-4-11 4 5 4-5" />
+      </g>
+    </svg>
+  );
+}
+
+/**
+ * Dropped: a circle crossed by a slash. No reference draws it, so it follows
+ * the Stop watching circle's weight and uses none of the meaning colours.
+ */
+function DroppedIcon({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="-12 -12 24 24"
+      fill="none"
+      aria-hidden="true"
+      className={cn("size-3.5", className)}
+    >
+      <circle r="10" className="stroke-foreground" strokeWidth="1.8" />
+      <path
+        d="M-7 7 7-7"
+        className="stroke-foreground"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+/**
+ * Completed: a check. No reference draws it; like Dropped it keeps the
+ * neutral colour, so it is never mistaken for Planned green.
+ */
+function CompletedIcon({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="-12 -12 24 24"
+      fill="none"
+      aria-hidden="true"
+      className={cn("size-3.5", className)}
+    >
+      <path
+        d="m-8 0 5 5L8-6"
+        className="stroke-foreground"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export {
+  CompletedIcon,
+  DroppedIcon,
+  NextEpisodeIcon,
+  PlanIcon,
+  PlannedIcon,
+  StopWatchingIcon,
+  WatchedIcon,
+};

@@ -1,10 +1,12 @@
 import { redirect } from "next/navigation";
+import { type ReactNode, Suspense } from "react";
 
 import { PaginationLinks } from "@/components/pagination-links";
 import { PosterGrid } from "@/components/poster-grid";
 import { RetryLink } from "@/components/retry-link";
 import { PosterCardSkeleton } from "@/components/skeleton";
 import { StatePanel } from "@/components/state-panel";
+import { NextEpisodePill } from "@/components/tracking/next-episode-pill";
 import { ButtonLink } from "@/components/ui/button";
 import { requireUser } from "@/lib/auth/user";
 import { parsePageParam } from "@/lib/catalog/pages";
@@ -16,11 +18,13 @@ import {
   type LibraryPage,
   libraryLastPage,
   type WatchedRow,
-} from "@/lib/tracking/movie-lists";
+  type WatchlistRow,
+} from "@/lib/tracking/library-lists";
+import { showIdsKey } from "@/lib/tracking/show-state";
 
 import { BadgeLegend } from "./badge-legend";
 import { LibraryGrid } from "./library-grid";
-import type { LibraryItem, LibraryList } from "./types";
+import { type LibraryItem, type LibraryList, libraryItemKey } from "./types";
 
 /** Every piece of copy that differs between the two pages. */
 const COPY = {
@@ -28,7 +32,7 @@ const COPY = {
     grid: "Your watchlist",
     empty: {
       title: "Your watchlist is empty",
-      description: "Plan a movie to see it here.",
+      description: "Plan a movie or a show to see it here.",
     },
     failed: "Couldn't load your watchlist",
   },
@@ -75,10 +79,10 @@ async function LibrarySection({
   const page = parsePageParam((await searchParams).page);
   if (page === null) return <NoSuchPage list={list} />;
 
-  const result: LibraryPage<Partial<WatchedRow> & { movieId: number }> =
+  const result: LibraryPage<LibraryRow> =
     list === "watchlist"
-      ? await getWatchlistPage(user.id, page)
-      : await getWatchedPage(user.id, page);
+      ? toLibraryRows(await getWatchlistPage(user.id, page))
+      : toLibraryRows(await getWatchedPage(user.id, page));
   if (result.kind === "failed") {
     return (
       <LoadFailed
@@ -109,7 +113,13 @@ async function LibrarySection({
     );
   }
 
-  const titles = await getLibraryTitles(result.rows.map((row) => row.movieId));
+  const movieIds = result.rows
+    .filter((row) => row.kind === "movie")
+    .map((row) => row.tmdbId);
+  const showIds = result.rows
+    .filter((row) => row.kind === "tv")
+    .map((row) => row.tmdbId);
+  const titles = await getLibraryTitles(movieIds, showIds);
   if (titles.kind === "failed") {
     return (
       <LoadFailed
@@ -121,16 +131,34 @@ async function LibrarySection({
   }
 
   const items: LibraryItem[] = result.rows.map((row) => {
-    const movie = titles.titles.get(row.movieId);
+    const found =
+      row.kind === "tv"
+        ? titleOf(titles.shows.get(row.tmdbId))
+        : titleOf(titles.movies.get(row.tmdbId));
     return {
-      movieId: row.movieId,
-      title: movie?.title ?? null,
-      posterUrl: movie?.posterUrl ?? null,
-      tmdbRating: movie?.tmdbRating ?? null,
-      rating: row.rating ?? null,
-      watchedAt: row.watchedAt ?? null,
+      kind: row.kind,
+      tmdbId: row.tmdbId,
+      status: row.status,
+      title: found?.title ?? null,
+      posterUrl: found?.posterUrl ?? null,
+      tmdbRating: found?.tmdbRating ?? null,
+      rating: row.rating,
+      watchedAt: row.watchedAt,
     };
   });
+
+  // Each show card's Next episode pill streams on its own (spec 0013,
+  // AC-15). One key for the page, so every pill shares one watched ids read.
+  const watchedIdsKey = showIdsKey(showIds);
+  const nextEpisodes: Record<string, ReactNode> = {};
+  for (const item of items) {
+    if (item.kind !== "tv" || item.title === null) continue;
+    nextEpisodes[libraryItemKey(item)] = (
+      <Suspense fallback={null}>
+        <NextEpisodePill showId={item.tmdbId} watchedIdsKey={watchedIdsKey} />
+      </Suspense>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-10">
@@ -140,6 +168,7 @@ async function LibrarySection({
         label={`${COPY[list].grid}, page ${page}`}
         page={page}
         returnPath={pageHref(list, page)}
+        nextEpisodes={nextEpisodes}
       />
 
       {lastPage > 1 ? (
@@ -155,6 +184,49 @@ async function LibrarySection({
   );
 }
 
+/** One row of either list, in the shape the page joins with TMDB. */
+type LibraryRow = WatchlistRow & {
+  rating: number | null;
+  watchedAt: string | null;
+};
+
+/** Both list reads, reduced to one row shape. The watched page is movies only. */
+function toLibraryRows(
+  page: LibraryPage<WatchlistRow> | LibraryPage<WatchedRow>,
+): LibraryPage<LibraryRow> {
+  if (page.kind === "failed") return page;
+  return {
+    kind: "ok",
+    total: page.total,
+    rows: page.rows.map((row) =>
+      "movieId" in row
+        ? {
+            kind: "movie",
+            tmdbId: row.movieId,
+            status: null,
+            rating: row.rating,
+            watchedAt: row.watchedAt,
+          }
+        : { ...row, rating: null, watchedAt: null },
+    ),
+  };
+}
+
+/** The fields a card shows, from a movie or a show summary. */
+function titleOf(
+  summary:
+    | { title: string; posterUrl: string | null; tmdbRating: number | null }
+    | { name: string; posterUrl: string | null; tmdbRating: number | null }
+    | undefined,
+) {
+  if (!summary) return null;
+  return {
+    title: "title" in summary ? summary.title : summary.name,
+    posterUrl: summary.posterUrl,
+    tmdbRating: summary.tmdbRating,
+  };
+}
+
 /** Shown for a malformed page number, before any read (AC-9). */
 function NoSuchPage({ list }: { list: LibraryList }) {
   return (
@@ -162,7 +234,7 @@ function NoSuchPage({ list }: { list: LibraryList }) {
       <StatePanel
         variant="empty"
         title="That page doesn't exist"
-        description="There are no movies at this page number."
+        description="There are no titles at this page number."
         action={
           <ButtonLink size="touch" href={pageHref(list, 1)}>
             Back to page 1

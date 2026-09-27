@@ -32,6 +32,12 @@ vi.mock("@/app/movies/actions", () => ({
   restoreMovieWatchlist: (...args: unknown[]) => restoreMovieWatchlist(...args),
   restoreMovieWatched: (...args: unknown[]) => restoreMovieWatched(...args),
 }));
+const setShowStatus = deferred();
+const restoreShowStatus = deferred();
+vi.mock("@/app/shows/actions", () => ({
+  setShowStatus: (...args: unknown[]) => setShowStatus(...args),
+  restoreShowStatus: (...args: unknown[]) => restoreShowStatus(...args),
+}));
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 const toast = vi.fn();
@@ -47,7 +53,9 @@ const { LibraryHeading } = await import("./library-heading");
 
 function item(movieId: number, overrides: Partial<LibraryItem> = {}) {
   return {
-    movieId,
+    kind: "movie",
+    tmdbId: movieId,
+    status: null,
     title: `Movie ${movieId}`,
     posterUrl: null,
     tmdbRating: 7.5,
@@ -343,6 +351,31 @@ describe("a title TMDB no longer has (AC-11)", () => {
         name: "Remove missing title from Watchlist",
       }),
     ).toBeInTheDocument();
+  });
+
+  it("names a missing show in lower case mid sentence and capitalised at the start (spec 0013, AC-16)", async () => {
+    const user = userEvent.setup();
+    render(
+      grid("watchlist", [
+        item(1, { kind: "tv", status: "want_to_watch", title: null }),
+        item(2, { kind: "tv", status: "watching", title: null }),
+      ]),
+    );
+
+    const [planned, stop] = screen.getAllByRole("button");
+    await user.click(planned);
+    await settleNext({ ok: true, undo: null });
+    expect(toast).toHaveBeenLastCalledWith(
+      "Removed this show from your shows",
+      expect.anything(),
+    );
+
+    await user.click(stop);
+    await settleNext({ ok: true, undo: null });
+    expect(toast).toHaveBeenLastCalledWith(
+      "This show moved to On Hold",
+      expect.anything(),
+    );
   });
 });
 

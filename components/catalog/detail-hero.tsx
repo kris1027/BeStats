@@ -22,8 +22,8 @@ type DetailHeroProps = {
   tmdbVoteCount: number;
   /**
    * The tracking row, rendered under the rating block. The movie page passes
-   * a Suspense wrapped `MovieTrackingSlot` (spec 0007); the show page leaves
-   * it empty until feature 14 adds the status control (spec 0009, AC-18).
+   * a Suspense wrapped `MovieTrackingSlot` (spec 0007); the show page passes
+   * its status pill and progress line, each in its own boundary (spec 0013).
    * This component reads no session itself, so it stays a plain catalog piece.
    */
   tracking?: React.ReactNode;

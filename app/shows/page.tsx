@@ -8,6 +8,7 @@ import { TmdbRatingBadge } from "@/components/rating-badges";
 import { RetryLink } from "@/components/retry-link";
 import { PosterCardSkeleton } from "@/components/skeleton";
 import { StatePanel } from "@/components/state-panel";
+import { ShowCardBookmark } from "@/components/tracking/show-card-bookmark";
 import { ButtonLink } from "@/components/ui/button";
 import { lastReachablePage, parsePageParam } from "@/lib/catalog/pages";
 import { discoverTvShows, TmdbError } from "@/lib/tmdb";
@@ -36,9 +37,9 @@ function pageHref(page: number): string {
  *
  * The heading is static and prerendered; the grid needs the `page` search
  * parameter, so it streams inside the Suspense boundary behind a grid of
- * skeleton cards at the same footprint (AC-17). No session is read here and no
- * card has a tracking control: the TV bookmark arrives with feature 14
- * (AC-18).
+ * skeleton cards at the same footprint (AC-17). No session is read here: each
+ * card's TV bookmark (spec 0013, AC-18) reads it in its own Suspense boundary,
+ * all sharing one read, so the grid never waits on it.
  */
 export default function ShowsPage({ searchParams }: PageProps<"/shows">) {
   return (
@@ -87,6 +88,8 @@ async function PopularShows({
   const lastPage = lastReachablePage(result.totalPages);
   if (page > lastPage) return <NoSuchPage />;
 
+  const gridShowIds = result.results.map((show) => show.id);
+
   return (
     <div className="flex flex-col gap-10">
       <PosterGrid aria-label={`Popular shows, page ${page}`}>
@@ -97,6 +100,16 @@ async function PopularShows({
               posterUrl={show.posterUrl}
               href={`/shows/${show.id}`}
               badge={<TmdbRatingBadge value={show.tmdbRating} />}
+              controls={
+                <Suspense fallback={null}>
+                  <ShowCardBookmark
+                    showId={show.id}
+                    name={show.name}
+                    gridShowIds={gridShowIds}
+                    returnPath={pageHref(page)}
+                  />
+                </Suspense>
+              }
               priority={index < EAGER_POSTERS}
             />
           </li>
