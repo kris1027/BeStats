@@ -18,6 +18,7 @@ export const TRACKING_EVENT = {
   listRead: "movie_tracking.list_read",
   restoreWatchlist: "movie_tracking.restore_watchlist",
   restoreWatched: "movie_tracking.restore_watched",
+  comingSoonRead: "movie_tracking.coming_soon_read",
   episodeWatched: "episode_tracking.watched",
   episodeRate: "episode_tracking.rate",
   episodeRead: "episode_tracking.read",
@@ -28,6 +29,7 @@ export const TRACKING_EVENT = {
   restoreShowStatus: "show_tracking.restore_status",
   showStatusRead: "show_tracking.status_read",
   watchedEpisodesRead: "show_tracking.watched_read",
+  upNextRead: "show_tracking.up_next_read",
 } as const;
 
 export type TrackingEvent =

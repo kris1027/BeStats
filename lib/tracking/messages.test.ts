@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  COMING_SOON_MESSAGES,
   EPISODE_TRACKING_MESSAGES,
   NEXT_EPISODE_MESSAGES,
   SEASON_MESSAGES,
@@ -9,6 +10,8 @@ import {
   SHOW_TRACKING_MESSAGES,
   TRACKING_MESSAGES,
   TV_STATUS_LABELS,
+  UP_NEXT_MESSAGES,
+  UPCOMING_EMPTY_MESSAGES,
 } from "./messages";
 import { TV_STATUSES } from "./types";
 
@@ -136,5 +139,64 @@ describe("NEXT_EPISODE_MESSAGES (spec 0013, AC-15)", () => {
       "Next episode, season 2 episode 10",
     );
     expect(NEXT_EPISODE_MESSAGES.upToDate).toBe("Up to date");
+  });
+});
+
+describe("UP_NEXT_MESSAGES (spec 0014, AC-5, AC-7 to AC-9, AC-13)", () => {
+  it("uses the AGENTS.md section 9 caught up wording", () => {
+    expect(UP_NEXT_MESSAGES.caughtUp).toBe("You're up to date");
+  });
+
+  it("puts the short date on the pill and the full date in the spoken text (AC-5)", () => {
+    expect(UP_NEXT_MESSAGES.datedPill(2, 3, "Oct 2")).toBe("S2E3 · Oct 2");
+    expect(UP_NEXT_MESSAGES.nextAirs(2, 3, "Oct 2, 2026")).toBe(
+      "Next episode, season 2 episode 3, airs Oct 2, 2026",
+    );
+    expect(UP_NEXT_MESSAGES.firstAirs(1, 1, "Jan 21, 2027")).toBe(
+      "Season 1 episode 1 airs Jan 21, 2027",
+    );
+  });
+
+  it("names the show and episode on the button and both toasts (AC-8, AC-9)", () => {
+    expect(UP_NEXT_MESSAGES.markLabel("Breaking Bad", 1, 2)).toBe(
+      "Mark Breaking Bad season 1 episode 2 watched",
+    );
+    expect(UP_NEXT_MESSAGES.marked("Breaking Bad", 1, 2)).toBe(
+      "Marked Breaking Bad S1E2 watched",
+    );
+    expect(UP_NEXT_MESSAGES.alreadyWatched("Breaking Bad", 1, 2)).toBe(
+      "Breaking Bad S1E2 was already watched",
+    );
+  });
+
+  it("keeps the unavailable and empty copy (AC-7, AC-13)", () => {
+    expect(UP_NEXT_MESSAGES.unavailable).toBe("Next episode unavailable");
+    expect(UP_NEXT_MESSAGES.empty).toBe(
+      "Start watching a show and its next episode shows up here.",
+    );
+  });
+});
+
+describe("COMING_SOON_MESSAGES (spec 0014, AC-11 to AC-13)", () => {
+  it("spells out the release date and the bookmark action (AC-12)", () => {
+    expect(COMING_SOON_MESSAGES.releases("Oct 21, 2026")).toBe(
+      "Releases Oct 21, 2026",
+    );
+    expect(COMING_SOON_MESSAGES.remove("Dune")).toBe(
+      "Remove Dune from watchlist",
+    );
+  });
+
+  it("says how many plans were checked past the ceiling (AC-11)", () => {
+    expect(COMING_SOON_MESSAGES.checkedLimit(200)).toBe(
+      "Checked your 200 most recently planned movies",
+    );
+  });
+
+  it("keeps the empty copy, and one panel title when both are empty (AC-13)", () => {
+    expect(COMING_SOON_MESSAGES.empty).toBe(
+      "No planned movies are waiting for release.",
+    );
+    expect(UPCOMING_EMPTY_MESSAGES.title).toBe("Nothing upcoming yet");
   });
 });

@@ -137,3 +137,49 @@ export const NEXT_EPISODE_MESSAGES = {
   accessible: (season: number, episode: number) =>
     `Next episode, season ${season} episode ${episode}`,
 } as const;
+
+/**
+ * The Up Next section of `/upcoming` (spec 0014, AC-5, AC-7 to AC-9, AC-13,
+ * AC-14). The caught up caption is the `AGENTS.md` section 9 wording.
+ */
+export const UP_NEXT_MESSAGES = {
+  heading: "Up Next",
+  gridLabel: "Shows you're watching",
+  caughtUp: "You're up to date",
+  datedPill: (season: number, episode: number, date: string) =>
+    `S${season}E${episode} · ${date}`,
+  nextAirs: (season: number, episode: number, fullDate: string) =>
+    `Next episode, season ${season} episode ${episode}, airs ${fullDate}`,
+  firstAirs: (season: number, episode: number, fullDate: string) =>
+    `Season ${season} episode ${episode} airs ${fullDate}`,
+  unavailable: "Next episode unavailable",
+  markLabel: (show: string, season: number, episode: number) =>
+    `Mark ${show} season ${season} episode ${episode} watched`,
+  marked: (show: string, season: number, episode: number) =>
+    `Marked ${show} S${season}E${episode} watched`,
+  alreadyWatched: (show: string, season: number, episode: number) =>
+    `${show} S${season}E${episode} was already watched`,
+  empty: "Start watching a show and its next episode shows up here.",
+  browse: "Browse shows",
+  failed: "Couldn't load your shows. Try again in a moment.",
+} as const;
+
+/** The Coming soon section of `/upcoming` (spec 0014, AC-11 to AC-14). */
+export const COMING_SOON_MESSAGES = {
+  heading: "Coming soon",
+  gridLabel: "Planned movies coming soon",
+  releases: (fullDate: string) => `Releases ${fullDate}`,
+  remove: (title: string) => `Remove ${title} from watchlist`,
+  checkedLimit: (limit: number) =>
+    `Checked your ${limit} most recently planned movies`,
+  empty: "No planned movies are waiting for release.",
+  browse: "Browse movies",
+  failed: "Couldn't load your planned movies. Try again in a moment.",
+} as const;
+
+/** The one panel when both sections are empty (spec 0014, AC-13). */
+export const UPCOMING_EMPTY_MESSAGES = {
+  title: "Nothing upcoming yet",
+  description:
+    "Shows you're watching and planned movies that aren't out yet show up here.",
+} as const;

@@ -99,6 +99,7 @@ describe("setEpisodeWatched", () => {
     expect(await setEpisodeWatched(SHOW, 1, 62086, true)).toEqual({
       ok: true,
       showStarted: false,
+      newlyMarked: false,
     });
     expect(loadSeason).toHaveBeenCalledWith(SHOW, 1);
     expect(writes()).toEqual([
@@ -122,6 +123,7 @@ describe("setEpisodeWatched", () => {
     expect(await setEpisodeWatched(SHOW, 1, 62088, true)).toEqual({
       ok: true,
       showStarted: false,
+      newlyMarked: false,
     });
   });
 
@@ -163,6 +165,7 @@ describe("setEpisodeWatched", () => {
     expect(await setEpisodeWatched(SHOW, 1, 62087, false)).toEqual({
       ok: true,
       showStarted: false,
+      newlyMarked: false,
     });
     expect(loadSeason).not.toHaveBeenCalled();
     expect(writes()).toEqual([
@@ -511,12 +514,67 @@ describe("failures and logs (AC-13, AC-22, AC-24)", () => {
   });
 });
 
+describe("newlyMarked (spec 0014, AC-9)", () => {
+  it("reports the mark this call set", async () => {
+    result = {
+      data: [{ show_started: false, newly_marked: true }],
+      error: null,
+    };
+    expect(await setEpisodeWatched(SHOW, 1, 62085, true)).toEqual({
+      ok: true,
+      showStarted: false,
+      newlyMarked: true,
+    });
+  });
+
+  it("is false when another call had already marked it", async () => {
+    result = {
+      data: [{ show_started: false, newly_marked: false }],
+      error: null,
+    };
+    expect(await setEpisodeWatched(SHOW, 1, 62085, true)).toEqual({
+      ok: true,
+      showStarted: false,
+      newlyMarked: false,
+    });
+  });
+
+  it("offers no Undo when the function returned no row", async () => {
+    result = { data: [], error: null };
+    expect(await setEpisodeWatched(SHOW, 1, 62085, true)).toEqual({
+      ok: true,
+      showStarted: false,
+      newlyMarked: false,
+    });
+  });
+
+  it("carries no newlyMarked on a failed write", async () => {
+    result = {
+      data: null,
+      error: { code: "PGRST301", message: "jwt expired" },
+    };
+    const outcome = await setEpisodeWatched(SHOW, 1, 62085, true);
+    expect(outcome.ok).toBe(false);
+    expect(outcome).not.toHaveProperty("newlyMarked");
+  });
+
+  it("is false when unmarking, whatever the database returned", async () => {
+    result = { data: [{ newly_marked: true }], error: null };
+    expect(await setEpisodeWatched(SHOW, 1, 62085, false)).toEqual({
+      ok: true,
+      showStarted: false,
+      newlyMarked: false,
+    });
+  });
+});
+
 describe("showStarted (spec 0013, AC-8)", () => {
   it("reports the automatic start the episode function returned", async () => {
     result = { data: [{ show_started: true }], error: null };
     expect(await setEpisodeWatched(SHOW, 1, 62085, true)).toEqual({
       ok: true,
       showStarted: true,
+      newlyMarked: false,
     });
     expect(await setEpisodeRating(SHOW, 1, 62085, 7)).toEqual({
       ok: true,

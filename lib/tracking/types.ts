@@ -84,6 +84,15 @@ export type EpisodeTrackingResult =
   | { ok: false; error: EpisodeTrackingError };
 
 /**
+ * What `setEpisodeWatched` returns (spec 0014, AC-9): the shared success
+ * shape plus `newlyMarked`, true only when this call set the mark, so Up Next
+ * offers Undo only for a mark it made. Always false when unmarking.
+ */
+export type MarkEpisodeWatchedResult =
+  | { ok: true; showStarted: boolean; newlyMarked: boolean }
+  | { ok: false; error: EpisodeTrackingError };
+
+/**
  * How to take back a season write (spec 0011, AC-10, AC-11). Marking reports
  * the ids it newly marked, so Undo clears exactly those; unmarking reports the
  * dates it cleared, so Undo can put each one back.

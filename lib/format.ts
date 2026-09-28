@@ -183,6 +183,33 @@ export function formatAirDate(date: string | null): string | null {
   return utc === null ? null : AIR_DATE_FORMAT.format(utc);
 }
 
+const SHORT_DATE_FORMAT = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  timeZone: "UTC",
+});
+
+/**
+ * A TMDB date as the Upcoming artboard prints it on a pill: `Dec 25` inside
+ * today's UTC year, `Feb 3, 2027` outside it (spec 0014, AC-5). The year is
+ * compared as TMDB writes it, against the same UTC day `airStatus` uses, so a
+ * pill and the rule that chose its episode never disagree about the year.
+ *
+ * @param date TMDB's date, unchanged.
+ * @param today `requestTodayUtc()`, read once per request.
+ * @returns The formatted date, or null for a missing or malformed value.
+ */
+export function formatShortDate(
+  date: string | null,
+  today: string,
+): string | null {
+  const utc = parseTmdbDate(date);
+  if (utc === null) return null;
+  return date?.slice(0, 4) === today.slice(0, 4)
+    ? SHORT_DATE_FORMAT.format(utc)
+    : AIR_DATE_FORMAT.format(utc);
+}
+
 /**
  * A TMDB calendar date as a UTC midnight `Date`, or null when it is missing,
  * not `YYYY-MM-DD`, or not a real day.
