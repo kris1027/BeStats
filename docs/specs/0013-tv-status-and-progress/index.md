@@ -1,7 +1,7 @@
 # 0013. TV status and progress: one status per show, progress from aired episodes, shows on the watchlist
 
 **Date**: 2026-09-26
-**Status**: In Progress
+**Status**: Accepted
 
 Scope feature: [14. TV status and progress](../../scope/scope.md) · GA tier
 

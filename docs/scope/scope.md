@@ -25,9 +25,9 @@ _The stack, tooling and product rules (ratings, progress, statuses, security) li
 | 10 | TV show page | Slice 2 | done |
 | 11 | Search and filters | Slice 3 | done |
 | 12 | Episode and season tracking | Slice 4 | done |
-| 13 | Calculated season and show ratings | Slice 5 | in-progress |
-| 14 | TV status and progress | Slice 6 | in-progress |
-| 15 | Up Next | Slice 7 | planned |
+| 13 | Calculated season and show ratings | Slice 5 | done |
+| 14 | TV status and progress | Slice 6 | done |
+| 15 | Up Next | Slice 7 | done |
 | 16 | Automatic completion | Slice 7 | planned |
 | 17 | SEO metadata and sitemap | Slice 8 | planned |
 | 18 | Legal pages and TMDB attribution | Slice 8 | planned |
@@ -226,7 +226,7 @@ spec [0011](../specs/0011-episode-and-season-tracking/index.md) · code in [comp
 
 ## Slice 5: Calculated ratings
 
-### 13. Calculated season and show ratings · in-progress · GA
+### 13. Calculated season and show ratings · done · GA
 Domain functions for season rating (mean of rated episodes) and show rating (equal weight mean of rated regular seasons), shown as personal ratings to one decimal, or Not rated.
 **Done when:** unrated episodes and seasons are excluded, season 0 is excluded, unequal season lengths do not change season weight, and no ratings shows Not rated, never zero.
 - [x] Design it (spec): `/architect calculated season and show ratings`
@@ -243,7 +243,7 @@ spec [0012](../specs/0012-calculated-season-show-ratings/index.md) · code in [l
 
 ## Slice 6: TV status and progress
 
-### 14. TV status and progress · in-progress · GA
+### 14. TV status and progress · done · GA
 Five statuses with manual choices kept apart from automatic ones, overall progress from aired regular episodes, and TV entries joining the private watchlist.
 **Done when:** status changes preserve episode history and ratings; progress excludes specials and unaired episodes; a zero eligible total shows an empty state; the chosen air date boundary is documented.
 - [x] Design it (spec): `/architect TV status and progress`
@@ -261,10 +261,19 @@ spec [0013](../specs/0013-tv-status-and-progress/index.md) · code in [lib/track
 
 ## Slice 7: Up Next and completion
 
-### 15. Up Next · needs a decision
-Private view showing the first unwatched aired regular episode for each Watching show, or "You're up to date."
+### 15. Up Next · done
+The private `/upcoming` page (the navbar's Upcoming link): an Up Next section showing the first unwatched aired regular episode for each Watching show, or "You're up to date", with Mark watched on each card; and a Coming soon section of planned movies not released yet, as the Upcoming artboard draws.
 **Done when:** it picks the correct episode in season and episode order, ongoing shows caught up show "You're up to date", and On Hold and Dropped shows are excluded.
-- [ ] Design it (spec): `/architect Up Next`
+- [x] Design it (spec): `/architect Up Next`
+- [x] Build it: `/develop Up Next`
+  - [x] The thin thread: the `user_up_next_shows` view, `lib/tv/up-next.ts`, `/upcoming` with the Up Next section and the Upcoming nav link — AC-1 to AC-4, AC-15
+  - [x] The pill strand: every pill state, the caught up caption, the unavailable slot with Retry — AC-5 to AC-7
+  - [x] The mark strand: `newly_marked`, Mark watched with pending, refresh, focus and Undo — AC-8 to AC-10
+  - [x] The movie and states strands: Coming soon with its 200 ceiling and Planned bookmark, empty and failure states — AC-11 to AC-14
+  - [x] Proof: 375px and keyboard passes, query plan and cold load timings, checks and `verify.md` — AC-15, AC-16
+- [x] Verify it: `/check verify Up Next`
+- [x] Test it: `/test Up Next`
+spec [0014](../specs/0014-up-next/index.md) · code in [app/upcoming/](../../app/upcoming/), [components/upcoming/](../../components/upcoming/), [lib/tracking/up-next.ts](../../lib/tracking/up-next.ts), [lib/tv/up-next.ts](../../lib/tv/up-next.ts), `supabase/migrations/20260928*`
 
 ### 16. Automatic completion · needs a decision · GA
 Move a show to Completed only when TMDB says ended or canceled and every aired regular episode is watched, using complete metadata only, and reversible when the condition changes.
