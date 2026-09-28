@@ -141,6 +141,34 @@ function NextEpisodeIcon({ className }: IconProps) {
 }
 
 /**
+ * Release date: the calendar from `calendar` in the Upcoming artboards, in the
+ * same grey as the Next episode television (spec 0014, AC-5, AC-12).
+ */
+function CalendarIcon({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="-11 -12 22 23"
+      fill="none"
+      aria-hidden="true"
+      className={cn("size-3.5", className)}
+    >
+      <g
+        className="stroke-muted-foreground"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      >
+        <rect x="-9" y="-8" width="18" height="18" rx="2" />
+        <path d="M-9-2H9M-4-11V-5M4-11V-5" />
+        <path
+          d="M-4 2h.1M1 2h.1M5 2h.1M-4 6h.1M1 6h.1M5 6h.1"
+          strokeWidth="2.5"
+        />
+      </g>
+    </svg>
+  );
+}
+
+/**
  * Dropped: a circle crossed by a slash. No reference draws it, so it follows
  * the Stop watching circle's weight and uses none of the meaning colours.
  */
@@ -187,6 +215,7 @@ function CompletedIcon({ className }: IconProps) {
 }
 
 export {
+  CalendarIcon,
   CompletedIcon,
   DroppedIcon,
   NextEpisodeIcon,

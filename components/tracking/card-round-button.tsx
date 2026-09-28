@@ -14,16 +14,20 @@ import type * as React from "react";
  *
  * @param label The accessible name. The icon inside is decorative.
  * @param pressed For a toggle, its state; leave it out for a plain action.
+ * @param disabled While the action it started runs (spec 0014, AC-8): the
+ * button refuses a second tap and reports itself busy.
  */
 function CardRoundButton({
   label,
   pressed,
+  disabled,
   onClick,
   className,
   children,
 }: {
   label: string;
   pressed?: boolean;
+  disabled?: boolean;
   onClick: () => void;
   className?: string;
   children: React.ReactNode;
@@ -33,9 +37,11 @@ function CardRoundButton({
       type="button"
       aria-label={label}
       aria-pressed={pressed}
+      aria-busy={disabled || undefined}
+      disabled={disabled}
       onClick={onClick}
       className={cn(
-        "flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full md:size-9",
+        "flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full disabled:cursor-default disabled:opacity-60 md:size-9",
         className,
       )}
     >

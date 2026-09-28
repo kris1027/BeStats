@@ -34,6 +34,7 @@ function PosterCard({
   title,
   posterUrl,
   href,
+  linkId,
   badge,
   controls,
   meta,
@@ -49,6 +50,11 @@ function PosterCard({
    * and the card has no link at all.
    */
   href?: string;
+  /**
+   * The title link's id, for a page that must return focus to this card
+   * after it moves (spec 0014, AC-16).
+   */
+  linkId?: string;
   /** Top right slot, typically a `TmdbRatingBadge`. */
   badge?: React.ReactNode;
   /** Bottom row slot for the tracking controls features 8 and 12 add. */
@@ -139,7 +145,7 @@ function PosterCard({
 
       <h3 className="text-sm leading-snug text-foreground">
         {href ? (
-          <Link href={href} className="rounded-sm hover:underline">
+          <Link href={href} id={linkId} className="rounded-sm hover:underline">
             {/*
              * The link covers the poster as well as the caption, so the whole
              * card is clickable while the accessible name stays the title and
