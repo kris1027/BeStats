@@ -159,6 +159,7 @@ export const UP_NEXT_MESSAGES = {
     `Marked ${show} S${season}E${episode} watched`,
   alreadyWatched: (show: string, season: number, episode: number) =>
     `${show} S${season}E${episode} was already watched`,
+  undoChanged: "Couldn't undo. This episode changed in another tab.",
   empty: "Start watching a show and its next episode shows up here.",
   browse: "Browse shows",
   failed: "Couldn't load your shows. Try again in a moment.",

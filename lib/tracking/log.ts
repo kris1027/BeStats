@@ -20,6 +20,7 @@ export const TRACKING_EVENT = {
   restoreWatched: "movie_tracking.restore_watched",
   comingSoonRead: "movie_tracking.coming_soon_read",
   episodeWatched: "episode_tracking.watched",
+  episodeUndoMark: "episode_tracking.undo_mark",
   episodeRate: "episode_tracking.rate",
   episodeRead: "episode_tracking.read",
   seasonWatched: "season_tracking.watched",

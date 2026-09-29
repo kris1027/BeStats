@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { startTransition, useEffect, useRef, useTransition } from "react";
 import { toast } from "sonner";
 
-import { setEpisodeWatched } from "@/app/shows/actions";
+import { setEpisodeWatched, undoEpisodeMark } from "@/app/shows/actions";
 import { CardRoundButton } from "@/components/tracking/card-round-button";
 import { WatchedIcon } from "@/components/tracking/tracking-icons";
 import {
@@ -40,9 +40,11 @@ function focusCard(showId: number) {
  * the button stays disabled with `aria-busy` until that has rendered. Nothing
  * is optimistic: a failure leaves the card exactly as it was, with a toast.
  *
- * Undo is offered only when `newlyMarked` says this tap set the mark, so it
- * can never clear a mark another tab made. It clears the watched mark alone;
- * a rating stays, and the show's status never changes.
+ * Undo is offered only when `newlyMarked` says this tap set the mark, and it
+ * hands back that mark's `markedAt`, so `undoEpisodeMark` clears it only while
+ * it is still the stored one: a mark another tab made in the meantime is
+ * refused as `undo_expired`, with its own toast and a refresh. It clears the
+ * watched mark alone; a rating stays, and the show's status never changes.
  *
  * Focus follows the card wherever it moves: to its title link once the
  * refresh has rendered, and after an Undo only when the focus was on the
@@ -102,7 +104,11 @@ function MarkNextWatchedButton({
    * takes Undo off it while the unmark runs, so a quick failure is not lost
    * in the toast's exit animation and Undo cannot run twice.
    */
-  function undo(event: { preventDefault: () => void }, message: string) {
+  function undo(
+    event: { preventDefault: () => void },
+    message: string,
+    markedAt: string,
+  ) {
     event.preventDefault();
     const fromToast =
       document.activeElement?.closest("[data-sonner-toast]") != null;
@@ -110,8 +116,15 @@ function MarkNextWatchedButton({
 
     startTransition(async () => {
       const result = await settleStatusCall(() =>
-        setEpisodeWatched(showId, seasonNumber, episodeId, false),
+        undoEpisodeMark(showId, episodeId, markedAt),
       );
+      if (!result.ok && result.error === "undo_expired") {
+        // Nothing was written, so the action did not refresh; the card
+        // should now show the mark the other tab left.
+        toast(UP_NEXT_MESSAGES.undoChanged, { id: toastId, action: undefined });
+        router.refresh();
+        return;
+      }
       toast.dismiss(toastId);
       if (!result.ok) {
         onError(result.error);
@@ -132,7 +145,8 @@ function MarkNextWatchedButton({
       }
 
       focusCardAfterRefresh = showId;
-      if (!result.newlyMarked) {
+      const { markedAt } = result;
+      if (!result.newlyMarked || markedAt === null) {
         toast(
           UP_NEXT_MESSAGES.alreadyWatched(
             showName,
@@ -154,7 +168,7 @@ function MarkNextWatchedButton({
         duration: UNDO_TOAST_MS,
         action: {
           label: UNDO_ACTION_LABEL,
-          onClick: (event) => undo(event, message),
+          onClick: (event) => undo(event, message, markedAt),
         },
       });
     });

@@ -87,9 +87,18 @@ export type EpisodeTrackingResult =
  * What `setEpisodeWatched` returns (spec 0014, AC-9): the shared success
  * shape plus `newlyMarked`, true only when this call set the mark, so Up Next
  * offers Undo only for a mark it made. Always false when unmarking.
+ *
+ * `markedAt` is the `watched_at` that mark stored, as PostgREST returned it,
+ * and null whenever `newlyMarked` is false. Undo hands it back to
+ * `undoEpisodeMark`, so it clears that mark and never a newer one.
  */
 export type MarkEpisodeWatchedResult =
-  | { ok: true; showStarted: boolean; newlyMarked: boolean }
+  | {
+      ok: true;
+      showStarted: boolean;
+      newlyMarked: boolean;
+      markedAt: string | null;
+    }
   | { ok: false; error: EpisodeTrackingError };
 
 /**

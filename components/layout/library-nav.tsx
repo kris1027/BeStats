@@ -4,6 +4,8 @@ import { cn } from "cn";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { UPCOMING_PATH } from "@/components/upcoming/ids";
+
 /**
  * The signed in library links: `library-navigation` in
  * `design/desktop-navbar-signed-in.svg` and the links in
@@ -22,7 +24,7 @@ import { usePathname } from "next/navigation";
  */
 const LINKS = [
   { href: "/watchlist", label: "Watchlist" },
-  { href: "/upcoming", label: "Upcoming" },
+  { href: UPCOMING_PATH, label: "Upcoming" },
   { href: "/watched", label: "Watched" },
 ] as const;
 

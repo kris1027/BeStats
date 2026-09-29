@@ -13,7 +13,7 @@ Act on the code review of `feat/up-next` (spec 0014) before it merges: stop the 
 ## Decisions
 
 1. **Up Next streams first.** `UpcomingSections` starts both reads, awaits only Up Next, and hands the running Coming soon promise to a Suspense boundary inside the Coming soon section (heading renders at once, grid skeleton as fallback). Only when Up Next is empty does it await Coming soon up front, because the both empty panel (AC-13) needs both results. Failures stay independent (AC-14).
-2. **Nothing aired caption.** A `not_aired` show with no dated upcoming episode gets the caption "No episodes aired yet" under its name, still no pill (`AGENTS.md` section 9, "a sensible empty state").
+2. **Nothing aired caption.** A `not_aired` show with no dated upcoming episode gets the caption "No episodes have aired yet" under its name, still no pill (`AGENTS.md` section 9, "a sensible empty state").
 3. **One `/upcoming` constant.** `UPCOMING_PATH` moves to `components/upcoming/ids.ts`; the four local copies go.
 4. **Toast id.** `MarkNextWatchedButton` builds its toast id with `upNextCardLinkId`.
 5. **Spec text.** AC-5 gains the caption line, AC-14 describes the streamed Coming soon read, AC-16 says `PosterCard` gains only the `linkId` prop.
@@ -29,7 +29,7 @@ No change to reads, writes or caching. Every read stays behind `requireUser()` a
 - With Watching shows, Up Next cards render without waiting for the Coming soon movie batch.
 - With no Watching shows and no upcoming planned movies, the single "Nothing upcoming yet" panel still shows.
 - A failed Coming soon read shows its section error while Up Next renders, and vice versa.
-- A Watching show with no aired and no dated episode shows "No episodes aired yet".
+- A Watching show with no aired and no dated episode shows "No episodes have aired yet".
 
 ## Checks
 
@@ -39,4 +39,4 @@ No change to reads, writes or caching. Every read stays behind `requireUser()` a
 
 1. `pnpm dev:docker`, sign in as a user with Watching shows and planned movies, open `/upcoming`: Up Next cards appear while the Coming soon grid still shows its skeleton on a cold load.
 2. Sign in as a user with nothing tracked: the "Nothing upcoming yet" panel shows, not two empty sections.
-3. Track a show that has not aired (Watching): its card reads "No episodes aired yet".
+3. Track a show that has not aired (Watching): its card reads "No episodes have aired yet".
