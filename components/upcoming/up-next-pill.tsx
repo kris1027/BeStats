@@ -9,16 +9,15 @@ import { getShowEpisodes, TmdbError } from "@/lib/tmdb";
 import { requestTodayUtc } from "@/lib/tracking/episode-state";
 import {
   NEXT_EPISODE_MESSAGES,
+  SHOW_PROGRESS_MESSAGES,
   UP_NEXT_MESSAGES,
 } from "@/lib/tracking/messages";
 import { getWatchedEpisodeIds } from "@/lib/tracking/show-state";
 import { type UpNextState, upNextState } from "@/lib/tv/up-next";
 
 import { DatedPill } from "./dated-pill";
+import { UPCOMING_PATH } from "./ids";
 import { MarkNextWatchedButton } from "./mark-next-watched-button";
-
-/** The page Retry reloads. */
-const UPCOMING_PATH = "/upcoming";
 
 /** A card's state, or `unavailable` when it may not show any number. */
 type UpNextCardState = UpNextState | { kind: "unavailable" };
@@ -167,9 +166,12 @@ async function UpNextControls({
 }
 
 /**
- * "You're up to date" under a caught up show's name, always visible
- * (`AGENTS.md` section 9; spec 0014, AC-5). Decided by the same cached read
- * as the pill, so the two can never disagree.
+ * The secondary line under the show name (spec 0014, AC-5). "You're up to
+ * date" for a caught up show (the `AGENTS.md` section 9 wording, always
+ * visible). A show with nothing aired and no dated episode has no pill, so
+ * it says so here, in the show page's progress wording, rather than leaving
+ * a bare poster (`AGENTS.md` section 9, a sensible empty state). Decided by
+ * the same cached read as the pill, so the two can never disagree.
  */
 async function UpNextCaption({
   showId,
@@ -179,12 +181,14 @@ async function UpNextCaption({
   watchedIdsKey: string;
 }) {
   const state = await getUpNextCardState(showId, watchedIdsKey);
-  if (state.kind !== "caught_up") return null;
-  return (
-    <span className="text-sm text-text-secondary">
-      {UP_NEXT_MESSAGES.caughtUp}
-    </span>
-  );
+  const caption =
+    state.kind === "caught_up"
+      ? UP_NEXT_MESSAGES.caughtUp
+      : state.kind === "not_aired" && state.upcoming === null
+        ? SHOW_PROGRESS_MESSAGES.noneAired
+        : null;
+  if (caption === null) return null;
+  return <span className="text-sm text-text-secondary">{caption}</span>;
 }
 
 /** The pill's stand in while a card's episodes load (AC-6). */

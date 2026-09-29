@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { type ReactNode, Suspense } from "react";
 
 import { PosterGrid } from "@/components/poster-grid";
 import { RetryLink } from "@/components/retry-link";
@@ -26,11 +26,8 @@ import {
 
 import type { ComingSoonItem } from "./coming-soon-card";
 import { ComingSoonGrid } from "./coming-soon-grid";
-import { COMING_SOON_HEADING_ID } from "./ids";
+import { COMING_SOON_HEADING_ID, UPCOMING_PATH } from "./ids";
 import { UpNextCard, type UpNextItem } from "./up-next-card";
-
-/** The page every Retry reloads: a full load, never the router cache. */
-const UPCOMING_PATH = "/upcoming";
 
 /** Posters that load eagerly: one full row at the widest grid. */
 const EAGER_POSTERS = 6;
@@ -49,47 +46,61 @@ type ComingSoonSection =
  * it reads the session and the user's rows.
  *
  * `requireUser()` first, outside any `try`, so a request that got past the
- * proxy still reads nothing (AC-1). Then both sections' reads at once; each
- * fails on its own, so a failed movie batch never hides Up Next, and the one
- * "Nothing upcoming yet" panel appears only when both reads succeeded, both
- * came back empty, and no planned movie went unchecked (AC-13, AC-14).
+ * proxy still reads nothing (AC-1). Then both sections' reads start at once,
+ * but only Up Next is awaited: the Coming soon read (up to 200 movie
+ * summaries, the slow part of a cold load) streams in its own boundary, so
+ * it never holds back the Up Next cards. Only an empty Up Next waits for it,
+ * because the one "Nothing upcoming yet" panel appears only when both reads
+ * succeeded, both came back empty, and no planned movie went unchecked
+ * (AC-13). Each read fails on its own (AC-14).
  */
 async function UpcomingSections() {
   await requireUser();
   const today = requestTodayUtc();
 
-  const [upNext, comingSoon] = await Promise.all([
-    loadUpNext(),
-    loadComingSoon(today),
-  ]);
+  const comingSoon = loadComingSoon(today);
+  // Handled by whichever branch awaits it; this only stops a rejection from
+  // being reported as unhandled when the Up Next read throws first.
+  comingSoon.catch(() => {});
+  const upNext = await loadUpNext();
 
-  if (
-    showsNothingUpcomingPanel(
-      upNext.kind === "ok" ? upNext.items.length : null,
-      comingSoon.kind === "ok"
-        ? { count: comingSoon.items.length, total: comingSoon.total }
-        : null,
-    )
-  ) {
-    return (
-      <div className="py-12">
-        <StatePanel
-          variant="empty"
-          title={UPCOMING_EMPTY_MESSAGES.title}
-          description={UPCOMING_EMPTY_MESSAGES.description}
-          action={
-            <div className="flex flex-wrap justify-center gap-2">
-              <ButtonLink size="touch" href="/shows">
-                {UP_NEXT_MESSAGES.browse}
-              </ButtonLink>
-              <ButtonLink size="touch" href="/movies">
-                {COMING_SOON_MESSAGES.browse}
-              </ButtonLink>
-            </div>
-          }
-        />
-      </div>
-    );
+  let comingSoonBody: ReactNode = (
+    <Suspense fallback={<SectionGridSkeleton />}>
+      <StreamedComingSoon section={comingSoon} />
+    </Suspense>
+  );
+
+  if (upNext.kind === "ok" && upNext.items.length === 0) {
+    const settled = await comingSoon;
+    if (
+      showsNothingUpcomingPanel(
+        0,
+        settled.kind === "ok"
+          ? { count: settled.items.length, total: settled.total }
+          : null,
+      )
+    ) {
+      return (
+        <div className="py-12">
+          <StatePanel
+            variant="empty"
+            title={UPCOMING_EMPTY_MESSAGES.title}
+            description={UPCOMING_EMPTY_MESSAGES.description}
+            action={
+              <div className="flex flex-wrap justify-center gap-2">
+                <ButtonLink size="touch" href="/shows">
+                  {UP_NEXT_MESSAGES.browse}
+                </ButtonLink>
+                <ButtonLink size="touch" href="/movies">
+                  {COMING_SOON_MESSAGES.browse}
+                </ButtonLink>
+              </div>
+            }
+          />
+        </div>
+      );
+    }
+    comingSoonBody = <ComingSoonBody section={settled} />;
   }
 
   return (
@@ -106,7 +117,7 @@ async function UpcomingSections() {
         heading={COMING_SOON_MESSAGES.heading}
         focusable
       >
-        <ComingSoonBody section={comingSoon} />
+        {comingSoonBody}
       </Section>
     </>
   );
@@ -212,6 +223,15 @@ function UpNextBody({ section }: { section: UpNextSection }) {
   );
 }
 
+/** The Coming soon read already running, awaited inside its own boundary. */
+async function StreamedComingSoon({
+  section,
+}: {
+  section: Promise<ComingSoonSection>;
+}) {
+  return <ComingSoonBody section={await section} />;
+}
+
 function ComingSoonBody({ section }: { section: ComingSoonSection }) {
   if (section.kind === "failed") {
     return <SectionFailed message={COMING_SOON_MESSAGES.failed} />;
@@ -313,17 +333,24 @@ function UpcomingSkeleton() {
       {[0, 1].map((section) => (
         <div key={section} className="flex flex-col gap-5">
           <Skeleton shape="line" className="h-7 w-40" />
-          <PosterGrid>
-            {Array.from({ length: EAGER_POSTERS }, (_, index) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders with no identity.
-              <li key={index}>
-                <PosterCardSkeleton />
-              </li>
-            ))}
-          </PosterGrid>
+          <SectionGridSkeleton />
         </div>
       ))}
     </div>
+  );
+}
+
+/** One row of poster placeholders, under a heading already on screen. */
+function SectionGridSkeleton() {
+  return (
+    <PosterGrid aria-hidden="true">
+      {Array.from({ length: EAGER_POSTERS }, (_, index) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders with no identity.
+        <li key={index}>
+          <PosterCardSkeleton />
+        </li>
+      ))}
+    </PosterGrid>
   );
 }
 

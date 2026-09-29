@@ -19,16 +19,13 @@ import {
 import type { MovieTrackingError } from "@/lib/tracking/types";
 
 import { ComingSoonCard, type ComingSoonItem } from "./coming-soon-card";
-import { COMING_SOON_HEADING_ID } from "./ids";
+import { COMING_SOON_HEADING_ID, UPCOMING_PATH } from "./ids";
 
 /** One full row at the widest grid loads eagerly, as on the list pages. */
 const EAGER_POSTERS = 6;
 
 /** Long enough for a keyboard user to reach Undo, as on the list pages. */
 const UNDO_TOAST_MS = 10_000;
-
-/** The page the session expired toast's Sign in action returns to. */
-const RETURN_PATH = "/upcoming";
 
 /**
  * The Coming soon grid and what its Planned bookmark does (spec 0014, AC-12),
@@ -65,7 +62,7 @@ function ComingSoonGrid({ items }: { items: ComingSoonItem[] }) {
     showTrackingError(error, {
       movieId,
       control: "watchlist",
-      returnPath: RETURN_PATH,
+      returnPath: UPCOMING_PATH,
       navigate: router.push,
     });
   }

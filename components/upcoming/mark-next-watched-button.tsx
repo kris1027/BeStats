@@ -13,10 +13,7 @@ import {
 } from "@/components/tracking/tracking-toast";
 import { UNDO_ACTION_LABEL, UP_NEXT_MESSAGES } from "@/lib/tracking/messages";
 
-import { upNextCardLinkId } from "./ids";
-
-/** The page the session expired toast's Sign in action returns to. */
-const RETURN_PATH = "/upcoming";
+import { UPCOMING_PATH, upNextCardLinkId } from "./ids";
 
 /** Long enough for a keyboard user to reach Undo, as on the list pages. */
 const UNDO_TOAST_MS = 10_000;
@@ -66,7 +63,7 @@ function MarkNextWatchedButton({
 }) {
   const router = useRouter();
   const [pending, startMark] = useTransition();
-  const toastId = `up-next-${showId}`;
+  const toastId = upNextCardLinkId(showId);
 
   // The refresh rendered this card again with a new episode (after a mark,
   // or after an Undo that brought it back), so the focus comes to its link.
@@ -95,7 +92,7 @@ function MarkNextWatchedButton({
   function onError(error: Parameters<typeof showEpisodeTrackingError>[0]) {
     showEpisodeTrackingError(error, {
       id: toastId,
-      returnPath: RETURN_PATH,
+      returnPath: UPCOMING_PATH,
       navigate: router.push,
     });
   }
