@@ -1,7 +1,7 @@
 # 0012. Calculated season and show ratings: pure averages over your episode scores
 
 **Date**: 2026-09-25
-**Status**: In Progress
+**Status**: Accepted
 
 Scope feature: [13. Calculated season and show ratings](../../scope/scope.md) · GA tier
 

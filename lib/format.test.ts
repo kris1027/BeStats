@@ -6,6 +6,7 @@ import {
   formatEpisodeCount,
   formatPersonalScore,
   formatRuntime,
+  formatShortDate,
   formatVoteCount,
   languageName,
   parseTmdbDate,
@@ -200,6 +201,35 @@ describe("formatAirDate · covers spec 0009 AC-10", () => {
 
   it("keeps a year below 100 instead of reading it as 19xx", () => {
     expect(formatAirDate("0099-01-01")).toBe("Jan 1, 99");
+  });
+});
+
+describe("formatShortDate · covers spec 0014 AC-5", () => {
+  const today = "2026-09-28";
+
+  it("leaves the year out inside today's UTC year", () => {
+    expect(formatShortDate("2026-12-25", today)).toBe("Dec 25");
+    expect(formatShortDate("2026-01-01", today)).toBe("Jan 1");
+  });
+
+  it("prints the year outside it, either side", () => {
+    expect(formatShortDate("2027-02-03", today)).toBe("Feb 3, 2027");
+    expect(formatShortDate("2025-12-31", today)).toBe("Dec 31, 2025");
+  });
+
+  it("prints the day TMDB wrote whatever the server's zone", () => {
+    expect(formatShortDate("2026-10-01", today)).toBe("Oct 1");
+  });
+
+  it("prints the year across the new year boundary", () => {
+    expect(formatShortDate("2027-01-01", "2026-12-31")).toBe("Jan 1, 2027");
+    expect(formatShortDate("2026-12-31", "2026-12-31")).toBe("Dec 31");
+  });
+
+  it("is null for a missing or malformed date", () => {
+    expect(formatShortDate(null, today)).toBeNull();
+    expect(formatShortDate("2026-02-30", today)).toBeNull();
+    expect(formatShortDate("2026", today)).toBeNull();
   });
 });
 

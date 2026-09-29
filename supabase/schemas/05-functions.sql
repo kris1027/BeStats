@@ -206,6 +206,10 @@ grant execute on function public.start_watching_show(integer, boolean) to authen
 -- It never touches `rating`. `prior` reads the row as it was before the
 -- upsert (every part of one statement sees the same snapshot), which is how
 -- `show_started` knows whether this call is the one that watched it.
+-- `newly_marked` (spec 0014, AC-9) is whether this transaction set the mark:
+-- `now()` is the transaction's start, and `coalesce` keeps an earlier
+-- writer's time. It does not read `prior`, whose snapshot two racing tabs
+-- could both take before either commits; the upserted row is what won.
 create or replace function public.mark_episode_watched(
   p_show_id integer,
   p_season_number smallint,
@@ -222,7 +226,8 @@ returns table (
   rating smallint,
   created_at timestamptz,
   updated_at timestamptz,
-  show_started boolean
+  show_started boolean,
+  newly_marked boolean
 )
 language sql
 volatile
@@ -250,7 +255,8 @@ as $$
       p_show_id,
       p_season_number >= 1
         and not exists (select 1 from prior where prior.watched_at is not null)
-    )
+    ),
+    u.watched_at = now()
   from upserted as u;
 $$;
 

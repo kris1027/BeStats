@@ -70,6 +70,17 @@ export const episodeWatchedInputSchema = z.object({
   watched: z.boolean(),
 });
 
+/**
+ * Undo on an Up Next card carries the `watched_at` its mark stored, a full
+ * ISO timestamp with an offset as PostgREST returned it (spec 0014, AC-9).
+ * It only narrows the update, so a forged value can match nothing.
+ */
+export const episodeMarkUndoInputSchema = z.object({
+  showId: tmdbIdSchema,
+  episodeId: tmdbIdSchema,
+  markedAt: z.iso.datetime({ offset: true }),
+});
+
 export const episodeRatingInputSchema = z.object({
   showId: tmdbIdSchema,
   seasonNumber: seasonNumberSchema,

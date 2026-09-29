@@ -26,7 +26,7 @@ let result: { data: unknown; error: unknown } = { data: null, error: null };
 
 function builder() {
   const chain: Record<string, unknown> = {};
-  for (const method of ["from", "update", "eq", "rpc"]) {
+  for (const method of ["from", "update", "eq", "rpc", "select"]) {
     chain[method] = (...args: unknown[]) => {
       calls.push({ method, args });
       return chain;
@@ -51,6 +51,7 @@ const {
   setEpisodeWatched,
   setSeasonWatched,
   setShowStatus,
+  undoEpisodeMark,
   undoSeasonWatched,
 } = await import("./actions");
 
@@ -99,6 +100,8 @@ describe("setEpisodeWatched", () => {
     expect(await setEpisodeWatched(SHOW, 1, 62086, true)).toEqual({
       ok: true,
       showStarted: false,
+      newlyMarked: false,
+      markedAt: null,
     });
     expect(loadSeason).toHaveBeenCalledWith(SHOW, 1);
     expect(writes()).toEqual([
@@ -122,6 +125,8 @@ describe("setEpisodeWatched", () => {
     expect(await setEpisodeWatched(SHOW, 1, 62088, true)).toEqual({
       ok: true,
       showStarted: false,
+      newlyMarked: false,
+      markedAt: null,
     });
   });
 
@@ -163,6 +168,8 @@ describe("setEpisodeWatched", () => {
     expect(await setEpisodeWatched(SHOW, 1, 62087, false)).toEqual({
       ok: true,
       showStarted: false,
+      newlyMarked: false,
+      markedAt: null,
     });
     expect(loadSeason).not.toHaveBeenCalled();
     expect(writes()).toEqual([
@@ -511,12 +518,132 @@ describe("failures and logs (AC-13, AC-22, AC-24)", () => {
   });
 });
 
+describe("newlyMarked (spec 0014, AC-9)", () => {
+  it("reports the mark this call set", async () => {
+    result = {
+      data: [
+        {
+          show_started: false,
+          newly_marked: true,
+          watched_at: "2026-09-25T23:30:00.123456+00:00",
+        },
+      ],
+      error: null,
+    };
+    expect(await setEpisodeWatched(SHOW, 1, 62085, true)).toEqual({
+      ok: true,
+      showStarted: false,
+      newlyMarked: true,
+      markedAt: "2026-09-25T23:30:00.123456+00:00",
+    });
+  });
+
+  it("is false when another call had already marked it", async () => {
+    result = {
+      data: [{ show_started: false, newly_marked: false }],
+      error: null,
+    };
+    expect(await setEpisodeWatched(SHOW, 1, 62085, true)).toEqual({
+      ok: true,
+      showStarted: false,
+      newlyMarked: false,
+      markedAt: null,
+    });
+  });
+
+  it("offers no Undo when the function returned no row", async () => {
+    result = { data: [], error: null };
+    expect(await setEpisodeWatched(SHOW, 1, 62085, true)).toEqual({
+      ok: true,
+      showStarted: false,
+      newlyMarked: false,
+      markedAt: null,
+    });
+  });
+
+  it("carries no newlyMarked on a failed write", async () => {
+    result = {
+      data: null,
+      error: { code: "PGRST301", message: "jwt expired" },
+    };
+    const outcome = await setEpisodeWatched(SHOW, 1, 62085, true);
+    expect(outcome.ok).toBe(false);
+    expect(outcome).not.toHaveProperty("newlyMarked");
+  });
+
+  it("is false when unmarking, whatever the database returned", async () => {
+    result = { data: [{ newly_marked: true }], error: null };
+    expect(await setEpisodeWatched(SHOW, 1, 62085, false)).toEqual({
+      ok: true,
+      showStarted: false,
+      newlyMarked: false,
+      markedAt: null,
+    });
+  });
+});
+
+describe("undoEpisodeMark (spec 0014, AC-9)", () => {
+  const MARKED_AT = "2026-09-25T23:30:00.123456+00:00";
+
+  it("clears only the mark it was given, and refreshes", async () => {
+    result = { data: [{ episode_id: 62085 }], error: null };
+    expect(await undoEpisodeMark(SHOW, 62085, MARKED_AT)).toEqual({
+      ok: true,
+      showStarted: false,
+    });
+    expect(writes()).toEqual([
+      { method: "from", args: ["user_episode_state"] },
+      { method: "update", args: [{ watched_at: null }] },
+      { method: "select", args: ["episode_id"] },
+    ]);
+    expect(eqs().map((call) => call.args)).toEqual([
+      ["user_id", USER.id],
+      ["show_id", SHOW],
+      ["episode_id", 62085],
+      ["watched_at", MARKED_AT],
+    ]);
+    expect(loadSeason).not.toHaveBeenCalled();
+    expect(refresh).toHaveBeenCalledOnce();
+  });
+
+  it("refuses as undo_expired when the mark changed elsewhere", async () => {
+    result = { data: [], error: null };
+    expect(await undoEpisodeMark(SHOW, 62085, MARKED_AT)).toEqual({
+      ok: false,
+      error: "undo_expired",
+    });
+    expect(refresh).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledWith(
+      "episode_tracking.undo_mark refused undo_expired",
+    );
+  });
+
+  it("refuses a markedAt that is not a full ISO timestamp", async () => {
+    expect(await undoEpisodeMark(SHOW, 62085, "2026-09-25")).toEqual({
+      ok: false,
+      error: "invalid_input",
+    });
+    expect(calls).toEqual([]);
+  });
+
+  it("writes nothing without a session", async () => {
+    getOptionalUser.mockResolvedValue(null);
+    expect(await undoEpisodeMark(SHOW, 62085, MARKED_AT)).toEqual({
+      ok: false,
+      error: "session_expired",
+    });
+    expect(calls).toEqual([]);
+  });
+});
+
 describe("showStarted (spec 0013, AC-8)", () => {
   it("reports the automatic start the episode function returned", async () => {
     result = { data: [{ show_started: true }], error: null };
     expect(await setEpisodeWatched(SHOW, 1, 62085, true)).toEqual({
       ok: true,
       showStarted: true,
+      newlyMarked: false,
+      markedAt: null,
     });
     expect(await setEpisodeRating(SHOW, 1, 62085, 7)).toEqual({
       ok: true,

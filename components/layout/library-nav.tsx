@@ -4,6 +4,8 @@ import { cn } from "cn";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { UPCOMING_PATH } from "@/components/upcoming/ids";
+
 /**
  * The signed in library links: `library-navigation` in
  * `design/desktop-navbar-signed-in.svg` and the links in
@@ -15,13 +17,14 @@ import { usePathname } from "next/navigation";
  * inside `AccountSlot`, which is already request scoped behind its own
  * Suspense boundary, so it costs no route its static shell.
  *
- * Upcoming, which both artboards draw, arrives with feature 15.
+ * Upcoming sits between the two, as both artboards draw it (spec 0014, AC-1).
  *
  * @param variant `bar` is the glass pill in the desktop navbar; `sheet` is the
  * stacked list inside the mobile menu, with 44px rows for touch.
  */
 const LINKS = [
   { href: "/watchlist", label: "Watchlist" },
+  { href: UPCOMING_PATH, label: "Upcoming" },
   { href: "/watched", label: "Watched" },
 ] as const;
 

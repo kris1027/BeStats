@@ -39,7 +39,8 @@ All values live in `app/globals.css`, split across four blocks: `@theme inline` 
 - `components/layout/` holds the app shell pieces. The navbar ships only its signed out form; the signed in variant arrives with feature 6 and must not be built by reading a client supplied identity.
 - Everything else at the top level is a content piece: `glass-pill`, `rating-badges`, `poster-card`, `poster-grid`, `state-panel`, `skeleton`, `pagination-links`, `retry-link`.
 - `components/movie/` holds the movie page pieces (`MovieHero`, `MovieOverview`, `CastRow`, `MovieDetailSkeleton`), all Server Components. Feature 10 should reuse their structure for TV rather than design a second page (spec 0006).
-- Six badges in the reference legend (Planned, Plan, Stop watching, Watch again, Next episode, Release date) are specified but unbuilt. They belong to features 8, 12, 14 and 15, and each must reuse `GlassPill` rather than re-derive it.
+- `components/upcoming/` holds the private `/upcoming` page pieces (spec 0014). Its two client components, `coming-soon-grid.tsx` and `mark-next-watched-button.tsx`, sit outside the shell, so the shell's client boundary list above is unchanged. `ids.ts` is the one home of the page path and the focus ids the server cards and those client controls share; import from it instead of restating `"/upcoming"`.
+- The six badges in the reference legend (Planned, Plan, Stop watching, Watch again, Next episode, Release date) are built by features 8, 12, 14 and 15. A new badge must reuse `GlassPill` rather than re-derive it.
 
 ## Checking your work
 

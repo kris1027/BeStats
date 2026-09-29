@@ -13,6 +13,7 @@ import {
   type TrackingOutcome,
 } from "@/lib/tracking/log";
 import {
+  episodeMarkUndoInputSchema,
   episodeRatingInputSchema,
   episodeWatchedInputSchema,
   restoreShowStatusInputSchema,
@@ -24,6 +25,7 @@ import { classifyTrackingError } from "@/lib/tracking/supabase-error";
 import type {
   EpisodeTrackingError,
   EpisodeTrackingResult,
+  MarkEpisodeWatchedResult,
   MovieTrackingError,
   SeasonUndo,
   SeasonWatchedResult,
@@ -208,16 +210,18 @@ function showStartedFrom(
  * Marks one episode watched, or clears the mark.
  *
  * Marking goes through `mark_episode_watched`, which keeps the first watched
- * date on a repeat (AC-5). Unmarking is an update only: it never creates a
- * row, skips TMDB so it works during an outage and for an episode TMDB later
- * dropped, and leaves the rating alone (AC-5, AC-7).
+ * date on a repeat (AC-5) and reports `newly_marked`, true only for the call
+ * that set the mark (spec 0014, AC-9), so Up Next never offers an Undo that
+ * would clear a mark made elsewhere. Unmarking is an update only: it never
+ * creates a row, skips TMDB so it works during an outage and for an episode
+ * TMDB later dropped, and leaves the rating alone (AC-5, AC-7).
  */
 export async function setEpisodeWatched(
   showId: number,
   seasonNumber: number,
   episodeId: number,
   watched: boolean,
-): Promise<EpisodeTrackingResult> {
+): Promise<MarkEpisodeWatchedResult> {
   const event = TRACKING_EVENT.episodeWatched;
   const input = parse(
     episodeWatchedInputSchema,
@@ -226,9 +230,8 @@ export async function setEpisodeWatched(
   );
   if (!input) return { ok: false, error: "invalid_input" };
 
-  if (input.watched) {
-    return withShowStarted(
-      await runEpisodeWrite(event, async (supabase) => {
+  const outcome = input.watched
+    ? await runEpisodeWrite(event, async (supabase) => {
         const episode = await confirmEpisode(
           input.showId,
           input.seasonNumber,
@@ -241,18 +244,69 @@ export async function setEpisodeWatched(
           p_episode_number: episode.episodeNumber,
           p_episode_id: input.episodeId,
         });
-        return settled(error, showStartedFrom(data));
-      }),
-    );
-  }
+        // As with `show_started`, only a `true` the database reported
+        // counts: a missing row offers no Undo.
+        const row = data?.[0];
+        const newlyMarked = row?.newly_marked === true;
+        return settled(error, {
+          showStarted: showStartedFrom(data),
+          newlyMarked,
+          markedAt: newlyMarked ? (row?.watched_at ?? null) : null,
+        });
+      })
+    : await runEpisodeWrite(event, async (supabase, userId) => {
+        const { error } = await supabase
+          .from("user_episode_state")
+          .update({ watched_at: null })
+          .eq("user_id", userId)
+          .eq("episode_id", input.episodeId);
+        return settled(error, {
+          showStarted: false,
+          newlyMarked: false,
+          markedAt: null,
+        });
+      });
+
+  return outcome.ok ? { ok: true, ...outcome.value } : outcome;
+}
+
+/**
+ * Undo for a mark made on an Up Next card (spec 0014, AC-9): clears the
+ * watched mark only while it is still the one that tap stored.
+ *
+ * `newly_marked` decides whether Undo is offered; this is what keeps it
+ * honest afterwards. The update matches `watched_at = markedAt` as well as
+ * the owner and the episode, so if another tab unmarked and marked the
+ * episode again, nothing matches and the Undo is refused as `undo_expired`
+ * rather than clearing the newer mark (spec 0014, key invariants). Like every
+ * removal it skips TMDB, and it never touches the rating or the status.
+ */
+export async function undoEpisodeMark(
+  showId: number,
+  episodeId: number,
+  markedAt: string,
+): Promise<EpisodeTrackingResult> {
+  const event = TRACKING_EVENT.episodeUndoMark;
+  const input = parse(
+    episodeMarkUndoInputSchema,
+    { showId, episodeId, markedAt },
+    event,
+  );
+  if (!input) return { ok: false, error: "invalid_input" };
 
   return withShowStarted(
     await runEpisodeWrite(event, async (supabase, userId) => {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("user_episode_state")
         .update({ watched_at: null })
         .eq("user_id", userId)
-        .eq("episode_id", input.episodeId);
+        .eq("show_id", input.showId)
+        .eq("episode_id", input.episodeId)
+        .eq("watched_at", input.markedAt)
+        .select("episode_id");
+      if (!error && data.length === 0) {
+        return { kind: "refused", error: "undo_expired" };
+      }
       return settled(error, false);
     }),
   );

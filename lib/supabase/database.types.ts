@@ -113,6 +113,14 @@ export type Database = {
       }
     }
     Views: {
+      user_up_next_shows: {
+        Row: {
+          last_activity_at: string | null
+          show_id: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
       user_watchlist_entries: {
         Row: {
           kind: string | null
@@ -136,6 +144,7 @@ export type Database = {
           created_at: string
           episode_id: number
           episode_number: number
+          newly_marked: boolean
           rating: number
           season_number: number
           show_id: number

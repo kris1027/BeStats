@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 /**
- * covers: spec 0008, AC-14, AC-15
+ * covers: spec 0008, AC-14, AC-15; spec 0014, AC-1
  *
  * The lit link comes from the pathname, so the pathname is what the test sets.
  */
@@ -12,22 +12,22 @@ vi.mock("next/navigation", () => ({ usePathname: () => pathname }));
 const { LibraryNav } = await import("./library-nav");
 
 describe("LibraryNav", () => {
-  it("links Watchlist and Watched, with no Upcoming until feature 15", () => {
+  it("links Watchlist, Upcoming and Watched, in that order (spec 0014, AC-1)", () => {
     render(<LibraryNav variant="bar" />);
     const nav = screen.getByRole("navigation", { name: "Library" });
     expect(nav).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Watchlist" })).toHaveAttribute(
-      "href",
-      "/watchlist",
-    );
-    expect(screen.getByRole("link", { name: "Watched" })).toHaveAttribute(
-      "href",
-      "/watched",
-    );
-    expect(screen.queryByRole("link", { name: "Upcoming" })).toBeNull();
+    expect(
+      screen
+        .getAllByRole("link")
+        .map((link) => [link.textContent, link.getAttribute("href")]),
+    ).toEqual([
+      ["Watchlist", "/watchlist"],
+      ["Upcoming", "/upcoming"],
+      ["Watched", "/watched"],
+    ]);
   });
 
-  it.each(["/watchlist", "/watched"])(
+  it.each(["/watchlist", "/upcoming", "/watched"])(
     "lights only the link for %s as a selected pill with aria-current",
     (current) => {
       pathname = current;

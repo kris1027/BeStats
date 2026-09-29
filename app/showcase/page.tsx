@@ -15,6 +15,7 @@ import {
 import { PosterCardSkeleton, Skeleton } from "@/components/skeleton";
 import { StatePanel } from "@/components/state-panel";
 import {
+  NextEpisodeIcon,
   PlanIcon,
   PlannedIcon,
   WatchedIcon,
@@ -31,6 +32,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { DatedPill } from "@/components/upcoming/dated-pill";
+
+import { CardRoundButtonDemo } from "./card-round-button-demo";
 
 export const metadata: Metadata = {
   title: "Design system",
@@ -195,13 +199,26 @@ export default function ShowcasePage() {
           <GlassPill icon={<CircleStopIcon aria-hidden="true" />}>
             Stop watching
           </GlassPill>
+          <GlassPill icon={<NextEpisodeIcon />}>S2E4</GlassPill>
+          <GlassPill icon={<NextEpisodeIcon />}>Up to date</GlassPill>
+          <DatedPill
+            slot="showcase-dated-pill"
+            label="Releases December 25, 2026"
+            text="Dec 25"
+          />
+          <DatedPill
+            slot="showcase-dated-pill"
+            label="Releases February 3, 2027"
+            text="Feb 3, 2027"
+          />
         </div>
         <p className="max-w-[65ch] text-sm text-muted-foreground">
           A TMDB badge with no value renders nothing; a personal score with no
           value renders &ldquo;Not rated&rdquo;. Plan, Planned and the watched
           marks are the movie tracking marks from spec 0007, drawn from the
-          legend&rsquo;s own paths. The remaining legend badges ship with the
-          features that own their behaviour.
+          legend&rsquo;s own paths. Next episode and Release date are the Up
+          Next and Coming soon pills from spec 0014; below <code>sm</code> a
+          release date that carries its year drops the calendar glyph.
         </p>
       </Section>
 
@@ -218,6 +235,7 @@ export default function ShowcasePage() {
           <Button size="sm" disabled>
             Disabled
           </Button>
+          <CardRoundButtonDemo />
           <ButtonLink href="/shows" size="sm">
             Button link
           </ButtonLink>
