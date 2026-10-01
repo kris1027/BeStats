@@ -267,12 +267,10 @@ describe("a check that cannot decide (AC-6, AC-12)", () => {
   it("never writes on an incomplete read, in either direction", async () => {
     getShowEpisodes.mockResolvedValue(episodesRead({ complete: false }));
     await applyAutoCompletion(SHOW, visit, {
-      status: "completed",
-      source: "system",
+      row: { status: "completed", source: "system" },
     });
     await applyAutoCompletion(SHOW, visit, {
-      status: "watching",
-      source: "system",
+      row: { status: "watching", source: "system" },
     });
     expect(rpc).not.toHaveBeenCalled();
   });
@@ -281,8 +279,7 @@ describe("a check that cannot decide (AC-6, AC-12)", () => {
 describe("applyAutoCompletion on a visit (AC-10, AC-14)", () => {
   it("uses the row the page read, with no select and no status gate", async () => {
     await applyAutoCompletion(SHOW, visit, {
-      status: "watching",
-      source: "system",
+      row: { status: "watching", source: "system" },
     });
     expect(calls.filter((call) => call.method === "from")).toEqual([]);
     expect(getTvShow).not.toHaveBeenCalled();
@@ -293,8 +290,7 @@ describe("applyAutoCompletion on a visit (AC-10, AC-14)", () => {
     getWatchedEpisodeIds.mockResolvedValue(watched([1]));
     expect(
       await applyAutoCompletion(SHOW, visit, {
-        status: "completed",
-        source: "system",
+        row: { status: "completed", source: "system" },
       }),
     ).toEqual({ changed: "reopened" });
     expect(rpcCalls()).toEqual([
@@ -310,7 +306,7 @@ describe("applyAutoCompletion on a visit (AC-10, AC-14)", () => {
     { status: "completed", source: "user" },
     { status: "on_hold", source: "system" },
   ] as const)("never reads TMDB for %j", async (row) => {
-    await applyAutoCompletion(SHOW, visit, row);
+    await applyAutoCompletion(SHOW, visit, { row });
     expect(getShowEpisodes).not.toHaveBeenCalled();
     expect(rpc).not.toHaveBeenCalled();
   });
@@ -512,7 +508,9 @@ describe("applyAutoCompletion, the edges of applying a verdict", () => {
   it("reports nothing changed when the database found the row already reopened (AC-16)", async () => {
     getWatchedEpisodeIds.mockResolvedValue(watched([1]));
     rpcResponse = { data: false, error: null };
-    expect(await applyAutoCompletion(SHOW, visit, completedSystem)).toEqual({
+    expect(
+      await applyAutoCompletion(SHOW, visit, { row: completedSystem }),
+    ).toEqual({
       changed: null,
     });
     expect(warn).not.toHaveBeenCalled();
@@ -521,7 +519,9 @@ describe("applyAutoCompletion, the edges of applying a verdict", () => {
   it("logs a refused reopen once and changes nothing (AC-12)", async () => {
     getWatchedEpisodeIds.mockResolvedValue(watched([1]));
     rpcResponse = { data: null, error: { code: "42501" } };
-    expect(await applyAutoCompletion(SHOW, visit, completedSystem)).toEqual({
+    expect(
+      await applyAutoCompletion(SHOW, visit, { row: completedSystem }),
+    ).toEqual({
       changed: null,
     });
     expect(warn).toHaveBeenCalledOnce();
@@ -532,19 +532,19 @@ describe("applyAutoCompletion, the edges of applying a verdict", () => {
 
   it("uses watched ids the caller already read instead of reading them again", async () => {
     expect(
-      await applyAutoCompletion(
-        SHOW,
-        visit,
-        { status: "watching", source: "system" },
-        new Set([1, 2]),
-      ),
+      await applyAutoCompletion(SHOW, visit, {
+        row: { status: "watching", source: "system" },
+        watchedIds: new Set([1, 2]),
+      }),
     ).toEqual({ changed: "completed" });
     expect(getWatchedEpisodeIds).not.toHaveBeenCalled();
   });
 
   it("reads a show with no watched rows as nothing watched", async () => {
     getWatchedEpisodeIds.mockResolvedValue({ kind: "ok", state: new Map() });
-    expect(await applyAutoCompletion(SHOW, visit, completedSystem)).toEqual({
+    expect(
+      await applyAutoCompletion(SHOW, visit, { row: completedSystem }),
+    ).toEqual({
       changed: "reopened",
     });
   });

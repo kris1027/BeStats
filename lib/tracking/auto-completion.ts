@@ -57,18 +57,18 @@ type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
  *
  * @param showId The show, already validated by the caller.
  * @param trigger What ran the check.
- * @param knownRow The row as the caller already read it this request (a
- * visit), so it is not selected again. A write always selects it fresh, after
- * its own write, because that write may have just started the show.
- * @param knownWatchedIds This show's watched episode ids, when the caller
- * read them for many shows at once (`/upcoming`, one batched read for the
- * page). Otherwise they are read here, after the write.
+ * @param known What the caller already read this request, so it is not read
+ * again. `known.row` is the row as a visit read it; a present `null` means
+ * "no row", distinct from leaving it out. A write leaves it out and the row is
+ * selected fresh, after its own write, because that write may have just
+ * started the show. `known.watchedIds` is this show's watched episode ids,
+ * when the caller read them for many shows at once (`/upcoming`, one batched
+ * read for the page). Otherwise they are read here, after the write.
  */
 export async function applyAutoCompletion(
   showId: number,
   trigger: CompletionTrigger,
-  knownRow?: CompletionRow,
-  knownWatchedIds?: ReadonlySet<number>,
+  known: { row?: CompletionRow; watchedIds?: ReadonlySet<number> } = {},
 ): Promise<{ changed: AutoCompletionChange }> {
   const user = await requireUser();
 
@@ -76,8 +76,8 @@ export async function applyAutoCompletion(
     const supabase = await createClient();
 
     let row: CompletionRow;
-    if (knownRow !== undefined) {
-      row = knownRow;
+    if (known.row !== undefined) {
+      row = known.row;
     } else {
       const selected = await selectRow(supabase, user.id, showId);
       if (selected.kind === "failed") return failed("db_error");
@@ -95,7 +95,7 @@ export async function applyAutoCompletion(
 
     const [episodes, watchedIds] = await Promise.all([
       readEpisodes(showId),
-      knownWatchedIds ?? readWatchedIds(showId),
+      known.watchedIds ?? readWatchedIds(showId),
     ]);
     if (episodes.kind === "failed") return failed(episodes.outcome);
     if (!episodes.read.complete) return failed("incomplete");
@@ -276,7 +276,7 @@ export const getReconciledShowStatus = cache(
     const { changed } = await applyAutoCompletion(
       showId,
       { kind: "visit" },
-      read.state,
+      { row: read.state },
     );
     if (changed === "completed") {
       return { kind: "ok", state: { status: "completed", source: "system" } };
@@ -325,8 +325,10 @@ export const reconcileUpNextShows = cache(async (): Promise<void> => {
       await applyAutoCompletion(
         show.showId,
         { kind: "visit" },
-        row,
-        watchedByShow.get(show.showId) ?? new Set<number>(),
+        {
+          row,
+          watchedIds: watchedByShow.get(show.showId) ?? new Set<number>(),
+        },
       );
     }
   }
