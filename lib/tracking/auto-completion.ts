@@ -40,7 +40,7 @@ import type { ShowStatusState, TrackingRead, TvStatus } from "./types";
  */
 
 /** What the check changed, if anything. */
-export type AutoCompletionChange = "completed" | "reopened" | null;
+type AutoCompletionChange = "completed" | "reopened" | null;
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -220,7 +220,7 @@ function failed(outcome: TrackingOutcome): { changed: null } {
 const VISIT_CHECK_CONCURRENCY = 8;
 
 /** A row the visit check may move: set by the system, Watching or Completed. */
-export type SystemShow = { showId: number; status: TvStatus };
+type SystemShow = { showId: number; status: TvStatus };
 
 /**
  * The signed in user's shows whose status the system set and a visit may
@@ -322,14 +322,12 @@ export const reconcileUpNextShows = cache(async (): Promise<void> => {
   async function worker(): Promise<void> {
     for (let show = queue.shift(); show; show = queue.shift()) {
       const row = { status: show.status, source: "system" as const };
-      await Promise.allSettled([
-        applyAutoCompletion(
-          show.showId,
-          { kind: "visit" },
-          row,
-          watchedByShow.get(show.showId) ?? new Set<number>(),
-        ),
-      ]);
+      await applyAutoCompletion(
+        show.showId,
+        { kind: "visit" },
+        row,
+        watchedByShow.get(show.showId) ?? new Set<number>(),
+      );
     }
   }
   await Promise.all(
