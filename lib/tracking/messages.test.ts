@@ -200,3 +200,32 @@ describe("COMING_SOON_MESSAGES (spec 0014, AC-11 to AC-13)", () => {
     expect(UPCOMING_EMPTY_MESSAGES.title).toBe("Nothing upcoming yet");
   });
 });
+
+/**
+ * covers: spec 0015, AC-5
+ *
+ * The automatic completion toasts, pinned word for word: Up Next and the
+ * season mark fold it into their own toast, a single tick says it alone.
+ */
+describe("automatic completion copy (spec 0015, AC-5)", () => {
+  it("joins the Up Next mark and the move", () => {
+    expect(UP_NEXT_MESSAGES.markedCompleted("Dark", 3, 8)).toBe(
+      "Marked Dark S3E8 watched · Moved to Completed",
+    );
+  });
+
+  it("joins the season mark and the move, with the show's name", () => {
+    expect(SEASON_MESSAGES.markedCompleted(1, "Dark")).toBe(
+      "Marked 1 episode watched · Dark moved to Completed",
+    );
+    expect(SEASON_MESSAGES.markedCompleted(8, "Dark")).toBe(
+      "Marked 8 episodes watched · Dark moved to Completed",
+    );
+  });
+
+  it("says the move alone after a single tick or rating", () => {
+    expect(SHOW_STATUS_MESSAGES.completed("Dark")).toBe(
+      "Dark moved to Completed",
+    );
+  });
+});

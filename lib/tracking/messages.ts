@@ -77,6 +77,9 @@ function episodes(n: number): string {
  */
 export const SEASON_MESSAGES = {
   marked: (n: number) => `Marked ${episodes(n)} watched`,
+  /** The mark also completed the show (spec 0015, AC-5). */
+  markedCompleted: (n: number, show: string) =>
+    `Marked ${episodes(n)} watched · ${show} moved to Completed`,
   nothingToMark: "Every aired episode is already watched",
   unmarked: (n: number) => `Unmarked ${episodes(n)}`,
 } as const;
@@ -94,8 +97,9 @@ export const TV_STATUS_LABELS: Record<TvStatus, string> = {
  * The show status control's copy and toasts (spec 0013, AC-1, AC-4, AC-5,
  * AC-8, AC-16). A status change shows itself on the pill; only a removal or
  * a Stop watching, whose card or label is gone, confirms with a toast, and
- * that toast carries the Undo. The automatic move to Watching is announced
- * because the person never chose it.
+ * that toast carries the Undo. The automatic moves to Watching and to
+ * Completed (spec 0015, AC-5) are announced because the person never chose
+ * them.
  */
 export const SHOW_STATUS_MESSAGES = {
   untracked: "Add to my shows",
@@ -105,6 +109,8 @@ export const SHOW_STATUS_MESSAGES = {
   removed: (show: string) => `Removed ${show} from your shows`,
   stopped: (show: string) => `${show} moved to On Hold`,
   started: (show: string) => `${show} moved to Watching`,
+  /** An episode write completed the show (spec 0015, AC-5). */
+  completed: (show: string) => `${show} moved to Completed`,
   undoExpired: "Couldn't undo. Change the status from the show page.",
 } as const;
 
@@ -157,6 +163,9 @@ export const UP_NEXT_MESSAGES = {
     `Mark ${show} season ${season} episode ${episode} watched`,
   marked: (show: string, season: number, episode: number) =>
     `Marked ${show} S${season}E${episode} watched`,
+  /** The mark also completed the show (spec 0015, AC-5). */
+  markedCompleted: (show: string, season: number, episode: number) =>
+    `Marked ${show} S${season}E${episode} watched · Moved to Completed`,
   alreadyWatched: (show: string, season: number, episode: number) =>
     `${show} S${season}E${episode} was already watched`,
   undoChanged: "Couldn't undo. This episode changed in another tab.",

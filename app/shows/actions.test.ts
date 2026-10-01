@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
  * covers: spec 0011, AC-5 to AC-11, AC-14, AC-15, AC-19, AC-21, AC-22, AC-24;
- * spec 0013, AC-2, AC-4, AC-8, AC-16, AC-19, AC-21
+ * spec 0013, AC-2, AC-4, AC-8, AC-16, AC-19, AC-21; spec 0015, AC-4, AC-6
  *
  * The session, TMDB and the database are the boundaries, so those are the
  * three things replaced. The fake Supabase client records every call, so each
@@ -20,6 +20,11 @@ vi.mock("./[id]/load-show", () => ({ loadShow }));
 
 const refresh = vi.fn();
 vi.mock("next/cache", () => ({ refresh }));
+
+// The completion check is its own module with its own tests; here it is the
+// boundary, so each test sees exactly which trigger an action sent it.
+const applyAutoCompletion = vi.fn();
+vi.mock("@/lib/tracking/auto-completion", () => ({ applyAutoCompletion }));
 
 const calls: { method: string; args: unknown[] }[] = [];
 let result: { data: unknown; error: unknown } = { data: null, error: null };
@@ -84,6 +89,7 @@ beforeEach(() => {
     season: SEASON,
   });
   loadShow.mockResolvedValue({ kind: "found", show: { id: SHOW } });
+  applyAutoCompletion.mockResolvedValue({ changed: null });
   result = { data: null, error: null };
   calls.length = 0;
   warn = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -100,6 +106,7 @@ describe("setEpisodeWatched", () => {
     expect(await setEpisodeWatched(SHOW, 1, 62086, true)).toEqual({
       ok: true,
       showStarted: false,
+      showCompleted: false,
       newlyMarked: false,
       markedAt: null,
     });
@@ -125,6 +132,7 @@ describe("setEpisodeWatched", () => {
     expect(await setEpisodeWatched(SHOW, 1, 62088, true)).toEqual({
       ok: true,
       showStarted: false,
+      showCompleted: false,
       newlyMarked: false,
       markedAt: null,
     });
@@ -168,6 +176,7 @@ describe("setEpisodeWatched", () => {
     expect(await setEpisodeWatched(SHOW, 1, 62087, false)).toEqual({
       ok: true,
       showStarted: false,
+      showCompleted: false,
       newlyMarked: false,
       markedAt: null,
     });
@@ -188,6 +197,7 @@ describe("setEpisodeRating", () => {
     expect(await setEpisodeRating(SHOW, 1, 62085, 8)).toEqual({
       ok: true,
       showStarted: false,
+      showCompleted: false,
     });
     expect(writes()).toEqual([
       {
@@ -218,6 +228,7 @@ describe("setEpisodeRating", () => {
     expect(await setEpisodeRating(SHOW, 1, 62087, null)).toEqual({
       ok: true,
       showStarted: false,
+      showCompleted: false,
     });
     expect(loadSeason).not.toHaveBeenCalled();
     expect(writes()).toEqual([
@@ -326,6 +337,7 @@ describe("setSeasonWatched", () => {
       ok: true,
       undo: { kind: "unmark", episodeIds: [62086] },
       showStarted: false,
+      showCompleted: false,
     });
     expect(writes()).toEqual([
       {
@@ -350,6 +362,7 @@ describe("setSeasonWatched", () => {
       ok: true,
       undo: null,
       showStarted: false,
+      showCompleted: false,
     });
   });
 
@@ -363,6 +376,7 @@ describe("setSeasonWatched", () => {
       ok: true,
       undo: null,
       showStarted: false,
+      showCompleted: false,
     });
     expect(writes()).toEqual([]);
   });
@@ -390,6 +404,7 @@ describe("setSeasonWatched", () => {
         entries: [{ episodeId: 62087, watchedAt: "2026-09-20T10:00:00+00:00" }],
       },
       showStarted: false,
+      showCompleted: false,
     });
     expect(loadSeason).not.toHaveBeenCalled();
     expect(writes()).toEqual([
@@ -416,7 +431,7 @@ describe("undoSeasonWatched", () => {
   it("takes back a mark through unmark_episodes_watched (AC-10)", async () => {
     expect(
       await undoSeasonWatched(SHOW, { kind: "unmark", episodeIds: [62086] }),
-    ).toEqual({ ok: true, showStarted: false });
+    ).toEqual({ ok: true, showStarted: false, showCompleted: false });
     expect(writes()).toEqual([
       {
         method: "rpc",
@@ -435,7 +450,7 @@ describe("undoSeasonWatched", () => {
         kind: "restore",
         entries: [{ episodeId: 62087, watchedAt: "2026-09-20T10:00:00+00:00" }],
       }),
-    ).toEqual({ ok: true, showStarted: false });
+    ).toEqual({ ok: true, showStarted: false, showCompleted: false });
     expect(writes()).toEqual([
       {
         method: "rpc",
@@ -533,6 +548,7 @@ describe("newlyMarked (spec 0014, AC-9)", () => {
     expect(await setEpisodeWatched(SHOW, 1, 62085, true)).toEqual({
       ok: true,
       showStarted: false,
+      showCompleted: false,
       newlyMarked: true,
       markedAt: "2026-09-25T23:30:00.123456+00:00",
     });
@@ -546,6 +562,7 @@ describe("newlyMarked (spec 0014, AC-9)", () => {
     expect(await setEpisodeWatched(SHOW, 1, 62085, true)).toEqual({
       ok: true,
       showStarted: false,
+      showCompleted: false,
       newlyMarked: false,
       markedAt: null,
     });
@@ -556,6 +573,7 @@ describe("newlyMarked (spec 0014, AC-9)", () => {
     expect(await setEpisodeWatched(SHOW, 1, 62085, true)).toEqual({
       ok: true,
       showStarted: false,
+      showCompleted: false,
       newlyMarked: false,
       markedAt: null,
     });
@@ -576,6 +594,7 @@ describe("newlyMarked (spec 0014, AC-9)", () => {
     expect(await setEpisodeWatched(SHOW, 1, 62085, false)).toEqual({
       ok: true,
       showStarted: false,
+      showCompleted: false,
       newlyMarked: false,
       markedAt: null,
     });
@@ -590,6 +609,7 @@ describe("undoEpisodeMark (spec 0014, AC-9)", () => {
     expect(await undoEpisodeMark(SHOW, 62085, MARKED_AT)).toEqual({
       ok: true,
       showStarted: false,
+      showCompleted: false,
     });
     expect(writes()).toEqual([
       { method: "from", args: ["user_episode_state"] },
@@ -642,12 +662,14 @@ describe("showStarted (spec 0013, AC-8)", () => {
     expect(await setEpisodeWatched(SHOW, 1, 62085, true)).toEqual({
       ok: true,
       showStarted: true,
+      showCompleted: false,
       newlyMarked: false,
       markedAt: null,
     });
     expect(await setEpisodeRating(SHOW, 1, 62085, 7)).toEqual({
       ok: true,
       showStarted: true,
+      showCompleted: false,
     });
   });
 
@@ -660,7 +682,148 @@ describe("showStarted (spec 0013, AC-8)", () => {
       ok: true,
       undo: { kind: "unmark", episodeIds: [62085] },
       showStarted: true,
+      showCompleted: false,
     });
+  });
+});
+
+describe("the completion check after a write (spec 0015, AC-4, AC-6)", () => {
+  const write = (newlyWatchedRegular: boolean) => [
+    SHOW,
+    { kind: "write", newlyWatchedRegular },
+  ];
+
+  it("runs after a mark, with newlyWatchedRegular from newly_marked", async () => {
+    result = { data: [{ newly_marked: true, watched_at: "t" }], error: null };
+    await setEpisodeWatched(SHOW, 1, 62085, true);
+    result = { data: [{ newly_marked: false }], error: null };
+    await setEpisodeWatched(SHOW, 1, 62085, true);
+    expect(applyAutoCompletion.mock.calls).toEqual([write(true), write(false)]);
+  });
+
+  it("never counts a special as a new regular watch", async () => {
+    loadSeason.mockResolvedValue({
+      kind: "found",
+      show: { id: SHOW },
+      season: { ...SEASON, seasonNumber: 0 },
+    });
+    result = { data: [{ newly_marked: true, watched_at: "t" }], error: null };
+    await setEpisodeWatched(SHOW, 0, 62085, true);
+    result = { data: [{ newly_marked: true }], error: null };
+    await setEpisodeRating(SHOW, 0, 62085, 8);
+    result = { data: [{ marked_ids: [62085] }], error: null };
+    await setSeasonWatched(SHOW, 0, true);
+    expect(applyAutoCompletion.mock.calls).toEqual([
+      write(false),
+      write(false),
+      write(false),
+    ]);
+  });
+
+  it("runs after a rating, with newly_marked from rate_episode", async () => {
+    result = { data: [{ newly_marked: true }], error: null };
+    await setEpisodeRating(SHOW, 1, 62085, 9);
+    expect(applyAutoCompletion.mock.calls).toEqual([write(true)]);
+  });
+
+  it("runs after a season mark, new when it marked any episode", async () => {
+    result = { data: [{ marked_ids: [62085] }], error: null };
+    await setSeasonWatched(SHOW, 1, true);
+    result = { data: [{ marked_ids: [] }], error: null };
+    await setSeasonWatched(SHOW, 1, true);
+    expect(applyAutoCompletion.mock.calls).toEqual([write(true), write(false)]);
+  });
+
+  it("runs after a season Undo that restores dates, never as a new watch", async () => {
+    await undoSeasonWatched(SHOW, {
+      kind: "restore",
+      entries: [{ episodeId: 62085, watchedAt: "2026-09-25T10:00:00.000Z" }],
+    });
+    expect(applyAutoCompletion.mock.calls).toEqual([write(false)]);
+  });
+
+  it("never runs after an unmark, a rating clear, or an Undo that unmarks", async () => {
+    await setEpisodeWatched(SHOW, 1, 62085, false);
+    await setEpisodeRating(SHOW, 1, 62085, null);
+    await setSeasonWatched(SHOW, 1, false, [62085]);
+    await undoSeasonWatched(SHOW, { kind: "unmark", episodeIds: [62085] });
+    result = { data: [{ episode_id: 62085 }], error: null };
+    await undoEpisodeMark(SHOW, 62085, "2026-09-25T10:00:00.000Z");
+    expect(applyAutoCompletion).not.toHaveBeenCalled();
+  });
+
+  it("never runs when the write itself failed", async () => {
+    result = { data: null, error: { code: "XX000" } };
+    await setEpisodeWatched(SHOW, 1, 62085, true);
+    await setEpisodeRating(SHOW, 1, 62085, 9);
+    await setSeasonWatched(SHOW, 1, true);
+    expect(applyAutoCompletion).not.toHaveBeenCalled();
+  });
+
+  it("reports showCompleted, and refreshes after the check", async () => {
+    let refreshedBeforeCheck = false;
+    applyAutoCompletion.mockImplementation(async () => {
+      refreshedBeforeCheck ||= refresh.mock.calls.length > 0;
+      return { changed: "completed" };
+    });
+    result = {
+      data: [{ newly_marked: true, watched_at: "t", show_started: true }],
+      error: null,
+    };
+    expect(await setEpisodeWatched(SHOW, 1, 62085, true)).toEqual({
+      ok: true,
+      showStarted: true,
+      showCompleted: true,
+      newlyMarked: true,
+      markedAt: "t",
+    });
+    expect(refreshedBeforeCheck).toBe(false);
+    result = { data: [{ marked_ids: [62085] }], error: null };
+    expect(await setSeasonWatched(SHOW, 1, true)).toMatchObject({
+      ok: true,
+      showCompleted: true,
+    });
+    expect(refresh).toHaveBeenCalledTimes(2);
+  });
+
+  it("reports showCompleted when a season Undo that restores dates completes the show", async () => {
+    applyAutoCompletion.mockResolvedValue({ changed: "completed" });
+    expect(
+      await undoSeasonWatched(SHOW, {
+        kind: "restore",
+        entries: [{ episodeId: 62085, watchedAt: "2026-09-25T10:00:00.000Z" }],
+      }),
+    ).toEqual({ ok: true, showStarted: false, showCompleted: true });
+  });
+
+  it("never runs when a season Undo that restores dates failed", async () => {
+    result = { data: null, error: { code: "XX000" } };
+    const outcome = await undoSeasonWatched(SHOW, {
+      kind: "restore",
+      entries: [{ episodeId: 62085, watchedAt: "2026-09-25T10:00:00.000Z" }],
+    });
+    expect(outcome.ok).toBe(false);
+    expect(applyAutoCompletion).not.toHaveBeenCalled();
+  });
+
+  it("never reports a reopen as a completion", async () => {
+    applyAutoCompletion.mockResolvedValue({ changed: "reopened" });
+    result = { data: [{ newly_marked: true }], error: null };
+    expect(await setEpisodeRating(SHOW, 1, 62085, 9)).toMatchObject({
+      ok: true,
+      showCompleted: false,
+    });
+  });
+
+  it("keeps the write's success when the check could not decide (AC-6)", async () => {
+    applyAutoCompletion.mockResolvedValue({ changed: null });
+    result = { data: [{ newly_marked: true }], error: null };
+    expect(await setEpisodeRating(SHOW, 1, 62085, 9)).toEqual({
+      ok: true,
+      showStarted: false,
+      showCompleted: false,
+    });
+    expect(refresh).toHaveBeenCalledOnce();
   });
 });
 

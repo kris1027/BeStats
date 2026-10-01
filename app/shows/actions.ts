@@ -6,6 +6,7 @@ import type { z } from "zod";
 import { getOptionalUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
 import type { SeasonDetail } from "@/lib/tmdb";
+import { applyAutoCompletion } from "@/lib/tracking/auto-completion";
 import {
   logTrackingEvent,
   TRACKING_EVENT,
@@ -30,6 +31,7 @@ import type {
   SeasonUndo,
   SeasonWatchedResult,
   ShowStatusError,
+  ShowStatusFlags,
   ShowStatusResult,
   ShowStatusUndo,
   TvStatus,
@@ -54,6 +56,11 @@ import { loadSeason } from "./[id]/season/[number]/load-season";
  * rolls back with a toast rather than an error boundary (AC-13). `user_id` is
  * always the session's, and the season and episode numbers stored on a new row
  * are always TMDB's, never the client's (AC-7, AC-19).
+ *
+ * Every write that can watch an episode then runs the automatic completion
+ * check before `refresh()` (spec 0015, AC-4), so the page that comes back
+ * already shows the new status. The check never turns a successful write into
+ * an error: it can only add `showCompleted: true` (AC-6).
  */
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
@@ -189,10 +196,38 @@ function parse<T>(
 
 /**
  * An episode write's result: whether it moved the show to Watching on its
- * own (spec 0013, AC-8). Removals and Undo never do.
+ * own (spec 0013, AC-8), and whether the check after it moved the show to
+ * Completed (spec 0015, AC-4).
  */
-function withShowStarted(outcome: Outcome<boolean>): EpisodeTrackingResult {
-  return outcome.ok ? { ok: true, showStarted: outcome.value } : outcome;
+function withShowFlags(
+  outcome: Outcome<ShowStatusFlags>,
+): EpisodeTrackingResult {
+  return outcome.ok ? { ok: true, ...outcome.value } : outcome;
+}
+
+/** A write that changed no status: every removal, and a failed write. */
+const NO_STATUS_CHANGE: ShowStatusFlags = {
+  showStarted: false,
+  showCompleted: false,
+};
+
+/**
+ * Runs the automatic completion check after a successful episode write
+ * (spec 0015, AC-4) and reports whether it completed the show.
+ *
+ * @param newlyWatchedRegular Whether the write moved a regular (season 1 or
+ * later) episode from unwatched to watched, which alone lets a Watching you
+ * chose yourself complete. Always false for an Undo and for a special.
+ */
+async function completedAfterWrite(
+  showId: number,
+  newlyWatchedRegular: boolean,
+): Promise<boolean> {
+  const { changed } = await applyAutoCompletion(showId, {
+    kind: "write",
+    newlyWatchedRegular,
+  });
+  return changed === "completed";
 }
 
 /**
@@ -244,12 +279,17 @@ export async function setEpisodeWatched(
           p_episode_number: episode.episodeNumber,
           p_episode_id: input.episodeId,
         });
+        if (error) return { kind: "db_error", error };
         // As with `show_started`, only a `true` the database reported
         // counts: a missing row offers no Undo.
         const row = data?.[0];
         const newlyMarked = row?.newly_marked === true;
-        return settled(error, {
+        return settled(null, {
           showStarted: showStartedFrom(data),
+          showCompleted: await completedAfterWrite(
+            input.showId,
+            newlyMarked && episode.seasonNumber >= 1,
+          ),
           newlyMarked,
           markedAt: newlyMarked ? (row?.watched_at ?? null) : null,
         });
@@ -261,7 +301,7 @@ export async function setEpisodeWatched(
           .eq("user_id", userId)
           .eq("episode_id", input.episodeId);
         return settled(error, {
-          showStarted: false,
+          ...NO_STATUS_CHANGE,
           newlyMarked: false,
           markedAt: null,
         });
@@ -294,7 +334,7 @@ export async function undoEpisodeMark(
   );
   if (!input) return { ok: false, error: "invalid_input" };
 
-  return withShowStarted(
+  return withShowFlags(
     await runEpisodeWrite(event, async (supabase, userId) => {
       const { data, error } = await supabase
         .from("user_episode_state")
@@ -307,7 +347,7 @@ export async function undoEpisodeMark(
       if (!error && data.length === 0) {
         return { kind: "refused", error: "undo_expired" };
       }
-      return settled(error, false);
+      return settled(error, NO_STATUS_CHANGE);
     }),
   );
 }
@@ -335,7 +375,7 @@ export async function setEpisodeRating(
 
   const score = input.rating;
   if (score !== null) {
-    return withShowStarted(
+    return withShowFlags(
       await runEpisodeWrite(event, async (supabase) => {
         const episode = await confirmEpisode(
           input.showId,
@@ -350,19 +390,26 @@ export async function setEpisodeRating(
           p_episode_id: input.episodeId,
           p_rating: score,
         });
-        return settled(error, showStartedFrom(data));
+        if (error) return { kind: "db_error", error };
+        return settled(null, {
+          showStarted: showStartedFrom(data),
+          showCompleted: await completedAfterWrite(
+            input.showId,
+            data?.[0]?.newly_marked === true && episode.seasonNumber >= 1,
+          ),
+        });
       }),
     );
   }
 
-  return withShowStarted(
+  return withShowFlags(
     await runEpisodeWrite(event, async (supabase, userId) => {
       const { error } = await supabase
         .from("user_episode_state")
         .update({ rating: null })
         .eq("user_id", userId)
         .eq("episode_id", input.episodeId);
-      return settled(error, false);
+      return settled(error, NO_STATUS_CHANGE);
     }),
   );
 }
@@ -395,7 +442,7 @@ export async function setSeasonWatched(
   );
   if (!input) return { ok: false, error: "invalid_input" };
 
-  type SeasonWrite = { undo: SeasonUndo | null; showStarted: boolean };
+  type SeasonWrite = { undo: SeasonUndo | null } & ShowStatusFlags;
   const outcome = input.watched
     ? await runEpisodeWrite<SeasonWrite>(event, async (supabase) => {
         const confirmed = await confirmSeason(input.showId, input.seasonNumber);
@@ -406,7 +453,7 @@ export async function setSeasonWatched(
           todayUtc(new Date()),
         );
         if (aired.ids.length === 0) {
-          return { kind: "done", value: { undo: null, showStarted: false } };
+          return { kind: "done", value: { undo: null, ...NO_STATUS_CHANGE } };
         }
 
         const { data, error } = await supabase.rpc("mark_season_watched", {
@@ -415,13 +462,18 @@ export async function setSeasonWatched(
           p_episode_ids: aired.ids,
           p_episode_numbers: aired.numbers,
         });
+        if (error) return { kind: "db_error", error };
         const marked = data?.[0]?.marked_ids ?? [];
-        return settled(error, {
+        return settled(null, {
           undo:
             marked.length > 0
               ? { kind: "unmark" as const, episodeIds: marked }
               : null,
           showStarted: showStartedFrom(data),
+          showCompleted: await completedAfterWrite(
+            input.showId,
+            marked.length > 0 && confirmed.season.seasonNumber >= 1,
+          ),
         });
       })
     : await runEpisodeWrite<SeasonWrite>(event, async (supabase) => {
@@ -440,7 +492,7 @@ export async function setSeasonWatched(
                   })),
                 }
               : null,
-          showStarted: false,
+          ...NO_STATUS_CHANGE,
         });
       });
 
@@ -465,14 +517,14 @@ export async function undoSeasonWatched(
   if (!input) return { ok: false, error: "invalid_input" };
 
   const request = input.undo;
-  return withShowStarted(
+  return withShowFlags(
     await runEpisodeWrite(event, async (supabase) => {
       if (request.kind === "unmark") {
         const { error } = await supabase.rpc("unmark_episodes_watched", {
           p_show_id: input.showId,
           p_episode_ids: request.episodeIds,
         });
-        return settled(error, false);
+        return settled(error, NO_STATUS_CHANGE);
       }
       const { error } = await supabase.rpc("restore_episodes_watched", {
         p_show_id: input.showId,
@@ -481,7 +533,13 @@ export async function undoSeasonWatched(
           watched_at: entry.watchedAt,
         })),
       });
-      return settled(error, false);
+      if (error) return { kind: "db_error", error };
+      // Putting back dates an unmark cleared is not a new watch, so only a
+      // row the system set can complete here (spec 0015, AC-4).
+      return settled(null, {
+        showStarted: false,
+        showCompleted: await completedAfterWrite(input.showId, false),
+      });
     }),
   );
 }

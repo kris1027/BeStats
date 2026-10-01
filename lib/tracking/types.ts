@@ -75,12 +75,19 @@ export const EMPTY_EPISODE_TRACKING: EpisodeTrackingState = {
 export type EpisodeTrackingError = MovieTrackingError | "not_aired";
 
 /**
- * What the single episode actions and the season Undo return. `showStarted`
- * is true only when this write moved the show to Watching on its own (spec
- * 0013, AC-8), which the season page confirms with a toast.
+ * What an episode write did to the show's status on its own. `showStarted`
+ * is true only when the write moved the show to Watching (spec 0013, AC-8);
+ * `showCompleted` only when the check after it moved the show to Completed
+ * (spec 0015, AC-4, AC-5). Both can be true; the toast then names Completed.
+ */
+export type ShowStatusFlags = { showStarted: boolean; showCompleted: boolean };
+
+/**
+ * What the single episode actions and the season Undo return, with the
+ * status flags the season page and Up Next confirm with a toast.
  */
 export type EpisodeTrackingResult =
-  | { ok: true; showStarted: boolean }
+  | ({ ok: true } & ShowStatusFlags)
   | { ok: false; error: EpisodeTrackingError };
 
 /**
@@ -93,12 +100,11 @@ export type EpisodeTrackingResult =
  * `undoEpisodeMark`, so it clears that mark and never a newer one.
  */
 export type MarkEpisodeWatchedResult =
-  | {
+  | ({
       ok: true;
-      showStarted: boolean;
       newlyMarked: boolean;
       markedAt: string | null;
-    }
+    } & ShowStatusFlags)
   | { ok: false; error: EpisodeTrackingError };
 
 /**
@@ -112,7 +118,7 @@ export type SeasonUndo =
 
 /** `undo` is null when the write changed nothing. */
 export type SeasonWatchedResult =
-  | { ok: true; undo: SeasonUndo | null; showStarted: boolean }
+  | ({ ok: true; undo: SeasonUndo | null } & ShowStatusFlags)
   | { ok: false; error: EpisodeTrackingError };
 
 /**
