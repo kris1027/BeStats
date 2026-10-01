@@ -133,6 +133,14 @@ export type Database = {
       }
     }
     Functions: {
+      complete_show_automatically: {
+        Args: {
+          p_allow_user_source: boolean
+          p_episode_ids: number[]
+          p_show_id: number
+        }
+        Returns: boolean
+      }
       mark_episode_watched: {
         Args: {
           p_episode_id: number
@@ -197,6 +205,7 @@ export type Database = {
           created_at: string
           episode_id: number
           episode_number: number
+          newly_marked: boolean
           rating: number
           season_number: number
           show_id: number
@@ -236,6 +245,10 @@ export type Database = {
           status: Database["public"]["Enums"]["tv_status"]
           status_source: Database["public"]["Enums"]["status_source"]
         }[]
+      }
+      reopen_show_automatically: {
+        Args: { p_episode_ids?: number[]; p_show_id: number }
+        Returns: boolean
       }
       restore_episodes_watched: {
         Args: { p_entries: Json; p_show_id: number }

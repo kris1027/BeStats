@@ -137,3 +137,58 @@ create trigger user_episode_state_set_updated_at
 create trigger user_show_state_set_status_changed_at
   before update on public.user_show_state
   for each row execute function public.set_status_changed_at();
+
+-- Reopens an automatic completion when a regular episode stops being watched
+-- (spec 0015, AC-8): moves the writer's show from Completed with source
+-- `system` to Watching with source `system`, in the same transaction as the
+-- unmark. It covers every way a watched mark can go (a single untick, an
+-- Undo, a season unmark, a direct API update or delete), because it lives on
+-- the table rather than in each path.
+--
+-- It never touches a Completed the user chose, any other status, or anything
+-- for a special (the `when` clauses on the two triggers keep season 0 out).
+-- Security invoker: it runs as whoever made the episode write, so the forced
+-- row level security of `user_show_state` applies and a user can only ever
+-- reopen their own show. It writes only when the episode row is the
+-- session's own: an account deletion cascades from `auth.users` as
+-- `supabase_auth_admin`, with no session and no UPDATE on `user_show_state`,
+-- and the trigger runs as that role, so it must return before it writes
+-- (AC-9). A write with no session leaves the show to the next visit's check
+-- (AC-10). Otherwise it catches nothing: a real failure fails the unmark. A season unmark of
+-- many episodes reopens the show on its first row; the rest match nothing.
+create or replace function public.reopen_completed_show()
+returns trigger
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+begin
+  if auth.uid() is distinct from old.user_id then
+    return null;
+  end if;
+
+  update public.user_show_state as s
+  set status = 'watching',
+      status_source = 'system'
+  where s.user_id = old.user_id
+    and s.show_id = old.show_id
+    and s.status = 'completed'
+    and s.status_source = 'system';
+  return null;
+end;
+$$;
+
+-- Spec 0015 AC-8: an unwatched or deleted regular episode reopens an
+-- automatic completion. A rating cleared alone (`watched_at` unchanged) fires
+-- neither, and neither fires for a special.
+create trigger user_episode_state_reopen_on_unwatch
+  after update of watched_at on public.user_episode_state
+  for each row
+  when (old.watched_at is not null and new.watched_at is null and old.season_number >= 1)
+  execute function public.reopen_completed_show();
+
+create trigger user_episode_state_reopen_on_delete
+  after delete on public.user_episode_state
+  for each row
+  when (old.watched_at is not null and old.season_number >= 1)
+  execute function public.reopen_completed_show();

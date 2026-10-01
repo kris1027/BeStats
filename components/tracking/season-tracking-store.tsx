@@ -15,16 +15,20 @@ import {
   type EpisodeStates,
 } from "@/lib/tracking/episode-intent";
 import { SHOW_STATUS_MESSAGES } from "@/lib/tracking/messages";
-import type { EpisodeTrackingError } from "@/lib/tracking/types";
+import type {
+  EpisodeTrackingError,
+  ShowStatusFlags,
+} from "@/lib/tracking/types";
 
 import { showEpisodeTrackingError } from "./tracking-toast";
 
 /**
  * Any action result: a success with whatever it carries, or a refusal. Every
- * success says whether it moved the show to Watching (spec 0013, AC-8).
+ * success says whether it moved the show to Watching (spec 0013, AC-8) or to
+ * Completed (spec 0015, AC-4).
  */
 type ActionResult =
-  | { ok: true; showStarted: boolean }
+  | ({ ok: true } & ShowStatusFlags)
   | { ok: false; error: EpisodeTrackingError };
 
 /** What a rejected call (offline, a server error, a deploy) settles as. */
@@ -32,6 +36,8 @@ type WriteFailed = { ok: false; error: "write_failed" };
 
 type SeasonTrackingContext = {
   showId: number;
+  /** The show's TMDB name, for toasts that name it. */
+  showName: string;
   seasonNumber: number;
   /** Where the session expired toast's Sign in action comes back to. */
   returnPath: string;
@@ -42,11 +48,15 @@ type SeasonTrackingContext = {
    * last exactly as long as the call's transition, so a success gives way to
    * the rows `refresh()` delivers and a failure to the unchanged ones, which
    * is the rollback (AC-13). A rejected call settles as `write_failed`.
+   *
+   * `announcesCompletion` is for a control whose own toast already names the
+   * move to Completed (Mark season watched), so the store stays quiet.
    */
   run: <R extends ActionResult>(
     intents: readonly EpisodeIntent[],
     call: () => Promise<R>,
     onSettled: (result: R | WriteFailed) => void,
+    options?: { announcesCompletion?: boolean },
   ) => void;
   /** Shows a failure toast under the given id. */
   fail: (error: EpisodeTrackingError, toastId: string) => void;
@@ -66,9 +76,12 @@ const Context = createContext<SeasonTrackingContext | null>(null);
  * Calls queue in the Next.js action queue rather than being dropped, and each
  * carries a target value, so rapid clicks settle on the last one (AC-16).
  *
- * It is also the one place that announces the automatic move to Watching
- * (spec 0013, AC-8): whichever control's write started the show, the store
- * shows "{show} moved to Watching" once, under one id, so it never stacks.
+ * It is also the one place that announces the automatic moves (spec 0013,
+ * AC-8; spec 0015, AC-5): whichever control's write started or completed the
+ * show, the store shows "{show} moved to Watching" or "{show} moved to
+ * Completed" once, under one id, so it never stacks. Completed wins when one
+ * write did both, and it carries no Undo: unticking the episode is the way
+ * back, and the database reopens the show (spec 0015, AC-8).
  *
  * @param showName The show's TMDB name, which the season header renders.
  */
@@ -91,23 +104,38 @@ function SeasonTrackingStore({
     readonly EpisodeIntent[]
   >([], (list, added) => [...list, ...added]);
 
+  function announceStatusMove(
+    flags: ShowStatusFlags,
+    options: { announcesCompletion?: boolean } | undefined,
+  ) {
+    const id = `show-auto-status-${showId}`;
+    if (flags.showCompleted) {
+      if (options?.announcesCompletion) return;
+      toast(SHOW_STATUS_MESSAGES.completed(showName), {
+        id,
+        action: undefined,
+      });
+      return;
+    }
+    if (flags.showStarted) {
+      toast(SHOW_STATUS_MESSAGES.started(showName), { id });
+    }
+  }
+
   const value: SeasonTrackingContext = {
     showId,
+    showName,
     seasonNumber,
     returnPath,
     pending,
-    run(intents, call, onSettled) {
+    run(intents, call, onSettled, options) {
       startTransition(async () => {
         addPending(intents);
         const result = await call().then(
           (settled): typeof settled | WriteFailed => settled,
           (): WriteFailed => ({ ok: false, error: "write_failed" }),
         );
-        if (result.ok && result.showStarted) {
-          toast(SHOW_STATUS_MESSAGES.started(showName), {
-            id: `show-started-${showId}`,
-          });
-        }
+        if (result.ok) announceStatusMove(result, options);
         onSettled(result);
       });
     },

@@ -2,8 +2,8 @@ import { cn } from "cn";
 
 import { glassPillClassName } from "@/components/glass-pill";
 import { RetryLink } from "@/components/retry-link";
+import { getReconciledShowStatus } from "@/lib/tracking/auto-completion";
 import { SHOW_STATUS_MESSAGES } from "@/lib/tracking/messages";
-import { getShowStatus } from "@/lib/tracking/show-state";
 
 import { ShowStatusControl } from "./show-status-control";
 
@@ -15,7 +15,9 @@ import { ShowStatusControl } from "./show-status-control";
  * The failure never falls back to "Add to my shows": a click on that could
  * overwrite a status the page simply failed to read. It reads the session,
  * so the page renders it inside its own Suspense boundary with a `null`
- * fallback, and it does not wait on the progress read below it (AC-11).
+ * fallback, and it does not wait on the progress read below it (AC-11),
+ * except for a row the system set: then the automatic completion check runs
+ * first and the pill shows its result (spec 0015, AC-10, narrowing AC-11).
  *
  * @param showId The show, already confirmed by `loadShow`.
  * @param showName The TMDB name, for accessible names and toasts.
@@ -27,7 +29,7 @@ async function ShowStatusSlot({
   showId: number;
   showName: string;
 }) {
-  const result = await getShowStatus(showId);
+  const result = await getReconciledShowStatus(showId);
   const returnPath = `/shows/${showId}`;
 
   if (result.kind === "signed_out") return null;

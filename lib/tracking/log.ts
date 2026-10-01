@@ -31,6 +31,7 @@ export const TRACKING_EVENT = {
   showStatusRead: "show_tracking.status_read",
   watchedEpisodesRead: "show_tracking.watched_read",
   upNextRead: "show_tracking.up_next_read",
+  autoComplete: "show_tracking.auto_complete",
 } as const;
 
 export type TrackingEvent =
@@ -40,13 +41,16 @@ export type TrackingEvent =
  * The classified reason. `forbidden` is a `42501` (a missing grant or a policy
  * refusal, which means a bug) and `db_error` is anything else from Postgres;
  * both reach the client as `write_failed` but stay apart here, so a broken
- * grant is not mistaken for a flaky network.
+ * grant is not mistaken for a flaky network. `incomplete` is an automatic
+ * completion check whose TMDB episode read had a failed season, so it could
+ * not decide (spec 0015, AC-6, AC-12).
  */
 export type TrackingOutcome =
   | EpisodeTrackingError
   | ShowStatusError
   | "forbidden"
-  | "db_error";
+  | "db_error"
+  | "incomplete";
 
 /**
  * Records one failed or refused tracking attempt. Successful writes are not

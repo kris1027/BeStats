@@ -296,6 +296,7 @@ Tracer Bullet: prove the whole pipe works with one thin real thread, then thicke
 - `pnpm-workspace.yaml` exists only to pin `allowBuilds`. This is a single package repo, not a monorepo.
 - `cacheComponents: true` is on in `next.config.ts`. Every route must be prerenderable or opt out with `export const instant = false`, and every cached read calls `cacheLife` inside its own `use cache` scope. A rejection thrown inside a cached scope loses its class and its fields, so return a plain result and rebuild the error outside the scope.
 - The TMDB token is server only. Only `lib/tmdb/env.ts` may read `TMDB_READ_ACCESS_TOKEN`, and `security-boundary.test.ts` fails if any other file names it or gives it a `NEXT_PUBLIC_` prefix, the same rule the Supabase service role key carries.
+- Two server renders write: `/shows/{id}` and `/upcoming` run the automatic completion check of spec 0015 (`lib/tracking/auto-completion.ts`) before they read the status, and only on rows whose `status_source` is `system`. No other page writes on load; keep it that way unless a spec says otherwise.
 - TMDB images render through `next/image`; `image.tmdb.org` is the one allowed remote pattern.
 
 ## Code conventions

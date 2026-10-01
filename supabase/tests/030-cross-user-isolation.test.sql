@@ -8,7 +8,7 @@
 -- `set local` confines both to this transaction, which is rolled back.
 
 begin;
-select plan(26);
+select plan(28);
 
 -- User A and user B come from supabase/seed.sql.
 -- A owns: movie 603 and 27205, show 1396 and 1399, episodes 62085 to 62087 and 62131.
@@ -120,6 +120,20 @@ delete from public.user_episode_state
   where user_id = '22222222-2222-2222-2222-222222222222';
 delete from public.user_movie_state
   where user_id = '22222222-2222-2222-2222-222222222222';
+
+-- Spec 0015 AC-17: the automatic completion functions act on the caller's
+-- own row only. B's 1396 is an automatic Completed; A's 1396 is Watching, so
+-- a reopen that leaked across users would have something to change.
+select is(
+  public.reopen_show_automatically(1396),
+  false,
+  'user A cannot reopen user B''s automatic Completed (checked below)'
+);
+select is(
+  public.complete_show_automatically(1399, array[63056], true),
+  false,
+  'user A cannot complete a show with user B''s watched episode ids'
+);
 
 -- Back to the privileged role to confirm user B's rows are all still there.
 reset role;

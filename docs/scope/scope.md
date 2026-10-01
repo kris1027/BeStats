@@ -28,7 +28,7 @@ _The stack, tooling and product rules (ratings, progress, statuses, security) li
 | 13 | Calculated season and show ratings | Slice 5 | done |
 | 14 | TV status and progress | Slice 6 | done |
 | 15 | Up Next | Slice 7 | done |
-| 16 | Automatic completion | Slice 7 | planned |
+| 16 | Automatic completion | Slice 7 | done |
 | 17 | SEO metadata and sitemap | Slice 8 | planned |
 | 18 | Legal pages and TMDB attribution | Slice 8 | planned |
 | 19 | Security and acceptance verification | Slice 8 | planned |
@@ -275,10 +275,21 @@ The private `/upcoming` page (the navbar's Upcoming link): an Up Next section sh
 - [x] Test it: `/test Up Next`
 spec [0014](../specs/0014-up-next/index.md) · code in [app/upcoming/](../../app/upcoming/), [components/upcoming/](../../components/upcoming/), [lib/tracking/up-next.ts](../../lib/tracking/up-next.ts), [lib/tv/up-next.ts](../../lib/tv/up-next.ts), `supabase/migrations/20260928*`
 
-### 16. Automatic completion · needs a decision · GA
+### 16. Automatic completion · done · GA
 Move a show to Completed only when TMDB says ended or canceled and every aired regular episode is watched, using complete metadata only, and reversible when the condition changes.
 **Done when:** a partial fetch never completes a show, manual On Hold, Dropped and chosen statuses are never overwritten, and auto completion reverts when new episodes appear.
-- [ ] Design it (spec): `/architect automatic completion`
+- [x] Design it (spec): `/architect automatic completion`
+- [x] Build it: `/develop automatic completion`
+  - [x] The thin thread: `showStatus` on `ShowEpisodes`, `completionVerdict`, `complete_show_automatically` and `rate_episode` migration, the gated write check in `setEpisodeWatched`, the Up Next toast — AC-1 to AC-5, AC-15, AC-16
+  - [x] The write strand: rating, season mark and season Undo checks, toasts, logging, Up Next focus move — AC-4 to AC-7
+  - [x] The reopen strand: the `reopen_completed_show` triggers and their pgTAP — AC-8, AC-9, AC-15
+  - [x] The visit and pin strands: show page and `/upcoming` checks, `set_show_status` pin, status matrix and cross user tests — AC-10 to AC-14, AC-16, AC-17, AC-19
+  - [x] Proof: 375px and keyboard, two browser step, checks, `/upcoming` timings, `verify.md` — AC-16, AC-18
+- [x] Verify it: `/check verify automatic completion`
+- [x] Test it: `/test automatic completion`
+- [x] Review it (fresh model): `/check review automatic completion`
+- [x] Document it: `/document automatic completion`
+spec [0015](../specs/0015-automatic-completion/index.md) · code in [lib/tv/auto-completion.ts](../../lib/tv/auto-completion.ts), [lib/tracking/auto-completion.ts](../../lib/tracking/auto-completion.ts), [app/shows/actions.ts](../../app/shows/actions.ts), [components/upcoming/](../../components/upcoming/), `supabase/migrations/20260930*`
 
 ## Slice 8: Launch readiness
 

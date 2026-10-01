@@ -1,12 +1,9 @@
 import { RetryLink } from "@/components/retry-link";
 import { getShowEpisodes, type ShowEpisodes, TmdbError } from "@/lib/tmdb";
+import { getReconciledShowStatus } from "@/lib/tracking/auto-completion";
 import { requestTodayUtc } from "@/lib/tracking/episode-state";
 import { SHOW_PROGRESS_MESSAGES } from "@/lib/tracking/messages";
-import {
-  getShowStatus,
-  getWatchedEpisodeIds,
-  showIdsKey,
-} from "@/lib/tracking/show-state";
+import { getWatchedEpisodeIds, showIdsKey } from "@/lib/tracking/show-state";
 import { type ShowProgress, showProgress } from "@/lib/tv/progress";
 
 /**
@@ -22,7 +19,9 @@ import { type ShowProgress, showProgress } from "@/lib/tv/progress";
  * section 9).
  *
  * The TMDB episode list comes from its public `hours` cache; the watched ids
- * and today are read per request, outside any cache (AC-12). The page renders
+ * and today are read per request, outside any cache (AC-12). The status is
+ * the one after the automatic completion check (spec 0015, AC-10), shared
+ * with the pill through React `cache()`. The page renders
  * this in its own Suspense boundary with a `null` fallback, so nothing
  * shifts while it loads and the status pill never waits for it.
  *
@@ -30,7 +29,7 @@ import { type ShowProgress, showProgress } from "@/lib/tv/progress";
  */
 async function ShowProgressSlot({ showId }: { showId: number }) {
   const [status, watched] = await Promise.all([
-    getShowStatus(showId),
+    getReconciledShowStatus(showId),
     getWatchedEpisodeIds(showIdsKey([showId])),
   ]);
   if (status.kind === "signed_out" || watched.kind === "signed_out") {

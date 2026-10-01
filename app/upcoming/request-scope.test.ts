@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 /**
- * covers: spec 0014, AC-2, AC-6, AC-15
+ * covers: spec 0014, AC-2, AC-6, AC-15; spec 0015, AC-11
  *
  * `/upcoming` is private, so unlike the catalog routes it does read the
  * session. What must never happen is a user specific value reaching a shared
@@ -27,6 +27,8 @@ describe("/upcoming keeps private values out of shared caches (AC-15)", () => {
     ...sourceFiles("components/upcoming"),
     "lib/tracking/up-next.ts",
     "lib/tv/up-next.ts",
+    "lib/tracking/auto-completion.ts",
+    "lib/tv/auto-completion.ts",
   ];
 
   it("finds the page and its pieces", () => {
@@ -73,5 +75,20 @@ describe("/upcoming keeps private values out of shared caches (AC-15)", () => {
     ).toMatch(
       /async function UpcomingSections\(\) \{\s*await requireUser\(\);/,
     );
+  });
+
+  it("runs the automatic completion check before the one Up Next read (spec 0015, AC-11)", () => {
+    const source = readFileSync(
+      "components/upcoming/upcoming-sections.tsx",
+      "utf8",
+    );
+    expect(source).toMatch(
+      /async function loadUpNext\(\)[^{]*\{(?:(?!await)[\s\S])*await reconcileUpNextShows\(\);\s*const shows = await getUpNextShows\(\);/,
+    );
+    expect(source.match(/getUpNextShows\(/g)).toHaveLength(1);
+    const readers = files.filter((path) =>
+      /user_up_next_shows/.test(readFileSync(path, "utf8")),
+    );
+    expect(readers).toEqual(["lib/tracking/up-next.ts"]);
   });
 });

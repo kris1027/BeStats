@@ -48,6 +48,7 @@ export type {
   SeasonSummary,
   ShowCastMember,
   ShowEpisodes,
+  TmdbShowStatus,
   TvShow,
   TvShowSummary,
 } from "./types";

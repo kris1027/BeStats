@@ -507,6 +507,70 @@ describe("the season button (AC-8 to AC-11)", () => {
   });
 });
 
+/** covers: spec 0015, AC-5 */
+describe("the automatic moves (spec 0013, AC-8; spec 0015, AC-5)", () => {
+  const flags = (showStarted: boolean, showCompleted: boolean) => ({
+    ok: true,
+    showStarted,
+    showCompleted,
+  });
+
+  it("names Completed alone after a single tick, with no Undo", async () => {
+    renderSeason();
+    await userEvent.click(row(1));
+    await settle(0, { ...flags(false, true), newlyMarked: true });
+    expect(toast).toHaveBeenCalledOnce();
+    expect(toast).toHaveBeenCalledWith("Breaking Bad moved to Completed", {
+      id: "show-auto-status-1396",
+      action: undefined,
+    });
+  });
+
+  it("shows only Completed when one write both started and completed", async () => {
+    renderSeason();
+    await userEvent.click(row(1));
+    await settle(0, flags(true, true));
+    expect(toast.mock.calls.map(([message]) => message)).toEqual([
+      "Breaking Bad moved to Completed",
+    ]);
+  });
+
+  it("still names Watching for a write that only started the show", async () => {
+    renderSeason();
+    await userEvent.click(row(1));
+    await settle(0, flags(true, false));
+    expect(toast.mock.calls.map(([message]) => message)).toEqual([
+      "Breaking Bad moved to Watching",
+    ]);
+  });
+
+  it("folds Completed into the season toast, keeping its Undo", async () => {
+    renderSeason({ 1: { watched: true, rating: 9 } });
+    await userEvent.click(seasonButton());
+    await settle(0, {
+      ...flags(true, true),
+      undo: { kind: "unmark", episodeIds: [2] },
+    });
+    expect(toast).toHaveBeenCalledOnce();
+    const [message, options] = toast.mock.calls[0];
+    expect(message).toBe(
+      "Marked 1 episode watched · Breaking Bad moved to Completed",
+    );
+    expect(options.action.label).toBe("Undo");
+  });
+
+  it("names Completed when a season mark marked nothing new but completed", async () => {
+    // Another tab watched the season first, so this mark finds nothing new.
+    renderSeason();
+    await userEvent.click(seasonButton());
+    expect(action).toHaveBeenCalledWith("season", 1396, 1, true);
+    await settle(0, { ...flags(false, true), undo: null });
+    expect(toast.mock.calls.map(([message]) => message)).toEqual([
+      "Breaking Bad moved to Completed",
+    ]);
+  });
+});
+
 describe("the server slots (AC-4, AC-17, AC-18)", () => {
   const episode = {
     id: 3,
