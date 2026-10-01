@@ -7,6 +7,7 @@ import {
   completionVerdict,
   isFinishedShowStatus,
   MAX_COMPLETION_EPISODE_IDS,
+  mayChange,
 } from "./auto-completion";
 
 /**
@@ -344,5 +345,78 @@ describe("completionVerdict, the id limit boundary (AC-3)", () => {
     expect(verdict.kind === "complete" && verdict.episodeIds).toHaveLength(
       MAX_COMPLETION_EPISODE_IDS,
     );
+  });
+});
+
+describe("mayChange, the row and trigger gate (AC-2, AC-14)", () => {
+  const onVisit: CompletionTrigger = { kind: "visit" };
+  const finishing: CompletionTrigger = {
+    kind: "write",
+    newlyWatchedRegular: true,
+  };
+  const notFinishing: CompletionTrigger = {
+    kind: "write",
+    newlyWatchedRegular: false,
+  };
+
+  it.each<[string, CompletionRow, CompletionTrigger, boolean]>([
+    ["no row", null, onVisit, false],
+    [
+      "system Watching, visit",
+      { status: "watching", source: "system" },
+      onVisit,
+      true,
+    ],
+    [
+      "system Watching, any write",
+      { status: "watching", source: "system" },
+      notFinishing,
+      true,
+    ],
+    [
+      "user Watching, visit",
+      { status: "watching", source: "user" },
+      onVisit,
+      false,
+    ],
+    [
+      "user Watching, other write",
+      { status: "watching", source: "user" },
+      notFinishing,
+      false,
+    ],
+    [
+      "user Watching, finishing write",
+      { status: "watching", source: "user" },
+      finishing,
+      true,
+    ],
+    [
+      "system Completed, visit",
+      { status: "completed", source: "system" },
+      onVisit,
+      true,
+    ],
+    [
+      "system Completed, write",
+      { status: "completed", source: "system" },
+      finishing,
+      false,
+    ],
+    [
+      "user Completed, visit",
+      { status: "completed", source: "user" },
+      onVisit,
+      false,
+    ],
+    [
+      "On Hold, finishing write",
+      { status: "on_hold", source: "user" },
+      finishing,
+      false,
+    ],
+    ["Dropped, visit", { status: "dropped", source: "system" }, onVisit, false],
+  ])("%s", (_name, row, trigger, expected) => {
+    expect(mayChange(row, trigger)).toBe(expected);
   });
 });

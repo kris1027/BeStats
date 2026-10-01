@@ -67,6 +67,35 @@ export type CompletionVerdict =
 const NONE: CompletionVerdict = { kind: "none" };
 
 /**
+ * Whether this row may move at all for this trigger, before any TMDB read
+ * (spec 0015, AC-2, AC-14): a Watching row the system set, a Watching row you
+ * chose only through your own finishing write, and a Completed row the system
+ * set only on a visit. Shared by `completionVerdict` and the server callers
+ * so the gate lives in one place, and a row it rules out costs no TMDB read
+ * (`AGENTS.md` section 9: manual choices survive refreshes).
+ *
+ * @param row The stored status and source, or null when there is no row.
+ * @param trigger What ran the check.
+ */
+export function mayChange(
+  row: CompletionRow,
+  trigger: CompletionTrigger,
+): boolean {
+  if (row === null) return false;
+  if (row.status === "watching") {
+    return (
+      row.source === "system" ||
+      (trigger.kind === "write" && trigger.newlyWatchedRegular)
+    );
+  }
+  return (
+    row.status === "completed" &&
+    row.source === "system" &&
+    trigger.kind === "visit"
+  );
+}
+
+/**
  * The automatic completion rule, the one place it exists (spec 0015, AC-1,
  * AC-2, the `completionVerdict` table).
  *
@@ -74,9 +103,11 @@ const NONE: CompletionVerdict = { kind: "none" };
  * `Ended` or `Canceled`, and progress is `counted` with nothing left: a
  * `none_aired` show is never finished. An incomplete or failed read answers
  * `none` in both directions, so a partial fetch neither completes nor reopens
- * (`AGENTS.md` section 9). Only rows the system set move on a visit; a
- * Watching you chose completes only through your own finishing write, and a
- * reopen after an unmark is the database trigger's job, not a write's.
+ * (`AGENTS.md` section 9). Which rows may move for which trigger is
+ * `mayChange`, this rule's own gate: only rows the system set move on a
+ * visit; a Watching you chose completes only through your own finishing
+ * write, and a reopen after an unmark is the database trigger's job, not a
+ * write's.
  *
  * @param read The TMDB episode read, or null when it failed.
  * @param row The stored status and source.
@@ -92,6 +123,7 @@ export function completionVerdict(
   today: string,
 ): CompletionVerdict {
   if (row === null || read === null || !read.complete) return NONE;
+  if (!mayChange(row, trigger)) return NONE;
 
   const progress = showProgress(read.episodes, watchedIds, today);
   const finished =
@@ -100,10 +132,7 @@ export function completionVerdict(
     progress.next === null;
 
   if (row.status === "watching") {
-    const mayComplete =
-      row.source === "system" ||
-      (trigger.kind === "write" && trigger.newlyWatchedRegular);
-    if (!mayComplete || !finished) return NONE;
+    if (!finished) return NONE;
 
     const episodeIds = [
       ...new Set(eligibleEpisodes(read.episodes, today).map((e) => e.id)),
@@ -112,12 +141,7 @@ export function completionVerdict(
     return { kind: "complete", episodeIds };
   }
 
-  if (
-    row.status === "completed" &&
-    row.source === "system" &&
-    trigger.kind === "visit" &&
-    !finished
-  ) {
+  if (row.status === "completed" && !finished) {
     return { kind: "reopen" };
   }
 

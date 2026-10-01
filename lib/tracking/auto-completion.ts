@@ -16,6 +16,7 @@ import {
   type CompletionTrigger,
   completionVerdict,
   isFinishedShowStatus,
+  mayChange,
 } from "@/lib/tv/auto-completion";
 
 import { requestTodayUtc } from "./episode-state";
@@ -135,25 +136,6 @@ export async function applyAutoCompletion(
     // its message can carry request details (spec 0007, AC-21).
     return failed("db_error");
   }
-}
-
-/**
- * Whether any verdict but `none` is possible for this row and trigger, so a
- * row the rule can never move costs no TMDB read at all.
- */
-function mayChange(row: CompletionRow, trigger: CompletionTrigger): boolean {
-  if (row === null) return false;
-  if (row.status === "watching") {
-    return (
-      row.source === "system" ||
-      (trigger.kind === "write" && trigger.newlyWatchedRegular)
-    );
-  }
-  return (
-    row.status === "completed" &&
-    row.source === "system" &&
-    trigger.kind === "visit"
-  );
 }
 
 async function selectRow(
@@ -288,13 +270,7 @@ export const getReconciledShowStatus = cache(
     const read = await getShowStatus(showId);
     if (read.kind !== "ok" || read.state === null) return read;
 
-    const { status, source } = read.state;
-    if (
-      source !== "system" ||
-      (status !== "watching" && status !== "completed")
-    ) {
-      return read;
-    }
+    if (!mayChange(read.state, { kind: "visit" })) return read;
 
     const { changed } = await applyAutoCompletion(
       showId,
