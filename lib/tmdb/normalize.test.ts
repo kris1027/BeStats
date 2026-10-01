@@ -7,7 +7,25 @@ import {
   normalizeSeasonSummary,
   normalizeShowCast,
   resolveOverview,
+  showStatusOf,
 } from "./normalize";
+
+/** covers: spec 0015, AC-1 (an unknown status never reads as finished) */
+describe("showStatusOf", () => {
+  it.each(["Returning Series", "Ended", "Canceled", "Pilot"])(
+    "keeps the documented %j",
+    (status) => {
+      expect(showStatusOf(status)).toBe(status);
+    },
+  );
+
+  it.each([null, undefined, "", "ended", "Cancelled", "toString"])(
+    "maps %j to the empty status",
+    (status) => {
+      expect(showStatusOf(status)).toBe("");
+    },
+  );
+});
 
 /**
  * covers: spec 0006, AC-4, AC-5

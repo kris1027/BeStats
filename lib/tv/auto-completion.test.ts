@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import type { TmdbShowStatus } from "@/lib/tmdb/types";
+
 import {
   type CompletionRead,
   type CompletionRow,
@@ -29,7 +31,9 @@ const episodes = [
 const allWatched = new Set([101, 102, 201]);
 const oneLeft = new Set([101, 102]);
 
-function read(overrides: Partial<NonNullable<CompletionRead>> = {}) {
+function read(
+  overrides: Partial<NonNullable<CompletionRead>> = {},
+): NonNullable<CompletionRead> {
   return { episodes, complete: true, showStatus: "Ended", ...overrides };
 }
 
@@ -54,18 +58,18 @@ const otherWrite: CompletionTrigger = {
 const complete = { kind: "complete", episodeIds: [101, 102, 201] };
 
 describe("isFinishedShowStatus (AC-1)", () => {
-  it.each(["Ended", "Canceled"])("%s is finished", (status) => {
+  it.each<TmdbShowStatus>(["Ended", "Canceled"])("%s is finished", (status) => {
     expect(isFinishedShowStatus(status)).toBe(true);
   });
 
-  it.each([
+  // A variant spelling such as `ended` never reaches here: the normalizer
+  // maps it to "" (`showStatusOf` in lib/tmdb/normalize.ts).
+  it.each<TmdbShowStatus>([
     "Returning Series",
     "In Production",
     "Planned",
     "Pilot",
     "",
-    "ended",
-    "Cancelled",
   ])("%j is ongoing", (status) => {
     expect(isFinishedShowStatus(status)).toBe(false);
   });

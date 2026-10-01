@@ -7,6 +7,23 @@
  * throughout, never zero, an empty string or placeholder text (AC-13).
  */
 
+/**
+ * A show's status in TMDB's documented wording, or `""` when TMDB sends none
+ * or a value outside this list. A closed union so automatic completion
+ * (spec 0015) compares against known words a typo cannot slip past, and the
+ * normalizer maps anything new to `""`, which reads as ongoing: an unknown
+ * status must never complete a show (`AGENTS.md` section 9). No page displays
+ * this text, so narrowing an unknown value hides nothing.
+ */
+export type TmdbShowStatus =
+  | "Returning Series"
+  | "Planned"
+  | "In Production"
+  | "Ended"
+  | "Canceled"
+  | "Pilot"
+  | "";
+
 export type Genre = {
   id: number;
   name: string;
@@ -115,7 +132,7 @@ export type TvShow = Omit<TvShowSummary, "overview"> & {
   tagline: string | null;
   backdropUrl: string | null;
   /** TMDB's own wording, for example `Ended`. Scope feature 16 interprets it. */
-  status: string;
+  status: TmdbShowStatus;
   inProduction: boolean;
   lastAirDate: string | null;
   /**
@@ -182,7 +199,7 @@ export type ShowEpisodes = {
    * seasons, so the status and the episodes always come from one snapshot
    * (spec 0015, AC-1).
    */
-  showStatus: string;
+  showStatus: TmdbShowStatus;
 };
 
 /** The return of the batch helpers: what was found, and what TMDB has lost. */

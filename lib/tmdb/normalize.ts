@@ -27,6 +27,7 @@ import type {
   SeasonDetail,
   SeasonSummary,
   ShowCastMember,
+  TmdbShowStatus,
   TvShow,
   TvShowSummary,
 } from "./types";
@@ -199,6 +200,30 @@ export function normalizeSeasonSummary(raw: RawSeasonSummary): SeasonSummary {
   };
 }
 
+/**
+ * Every documented status, keyed so the compiler flags a word added to
+ * `TmdbShowStatus` but missing here.
+ */
+const KNOWN_SHOW_STATUSES: Record<Exclude<TmdbShowStatus, "">, true> = {
+  "Returning Series": true,
+  Planned: true,
+  "In Production": true,
+  Ended: true,
+  Canceled: true,
+  Pilot: true,
+};
+
+/**
+ * TMDB's status narrowed to `TmdbShowStatus`. A missing or undocumented value
+ * becomes `""`, which automatic completion reads as ongoing, so a new upstream
+ * word can never complete a show (`AGENTS.md` section 9).
+ */
+export function showStatusOf(raw: string | null | undefined): TmdbShowStatus {
+  return raw != null && Object.hasOwn(KNOWN_SHOW_STATUSES, raw)
+    ? (raw as TmdbShowStatus)
+    : "";
+}
+
 export function normalizeTvShow(raw: RawTvShow): TvShow {
   const lastAirDate = textOrNull(raw.last_air_date);
   return {
@@ -212,9 +237,9 @@ export function normalizeTvShow(raw: RawTvShow): TvShow {
     originalLanguage: raw.original_language,
     tagline: textOrNull(raw.tagline),
     backdropUrl: imageUrl(raw.backdrop_path, BACKDROP_SIZE),
-    // Reported verbatim. What `Ended` or `Canceled` means for automatic
-    // completion belongs to scope feature 16, not to this module.
-    status: raw.status ?? "",
+    // Narrowed, not interpreted. What `Ended` or `Canceled` means for
+    // automatic completion belongs to scope feature 16, not to this module.
+    status: showStatusOf(raw.status),
     inProduction: raw.in_production ?? false,
     lastAirDate,
     lastAirYear: yearFromDate(lastAirDate),

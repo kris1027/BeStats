@@ -10,6 +10,7 @@ import {
   isTmdbNotFound,
   type ShowEpisodes,
   TmdbError,
+  type TmdbShowStatus,
 } from "@/lib/tmdb";
 import {
   type CompletionRow,
@@ -169,7 +170,7 @@ type TmdbFailure = { kind: "failed"; outcome: TrackingOutcome };
 
 async function readShowStatus(
   showId: number,
-): Promise<{ kind: "ok"; status: string } | TmdbFailure> {
+): Promise<{ kind: "ok"; status: TmdbShowStatus } | TmdbFailure> {
   try {
     return { kind: "ok", status: (await getTvShow(showId)).status };
   } catch (error) {

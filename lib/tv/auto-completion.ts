@@ -1,3 +1,4 @@
+import type { TmdbShowStatus } from "@/lib/tmdb/types";
 import type { ShowStatusState } from "@/lib/tracking/types";
 
 import {
@@ -17,10 +18,8 @@ export const MAX_COMPLETION_EPISODE_IDS = 20_000;
  * The two TMDB show statuses that mean no new episode is coming (spec 0015,
  * AC-1). Everything else, the empty string included, is ongoing.
  */
-const FINISHED_SHOW_STATUSES: ReadonlySet<string> = new Set([
-  "Ended",
-  "Canceled",
-]);
+const FINISHED_SHOW_STATUSES: ReadonlySet<TmdbShowStatus> =
+  new Set<TmdbShowStatus>(["Ended", "Canceled"]);
 
 /**
  * Whether TMDB says the show has ended or been canceled (spec 0015, AC-1).
@@ -30,19 +29,21 @@ const FINISHED_SHOW_STATUSES: ReadonlySet<string> = new Set([
  *
  * @param status `TvShow.status` or `ShowEpisodes.showStatus`.
  */
-export function isFinishedShowStatus(status: string): boolean {
+export function isFinishedShowStatus(status: TmdbShowStatus): boolean {
   return FINISHED_SHOW_STATUSES.has(status);
 }
 
 /**
  * The parts of a `getShowEpisodes` read the rule needs, or `null` when the
  * read failed (a `TmdbError`, or a show TMDB no longer has). Structural, so
- * this module stays pure and free of the TMDB module.
+ * this module stays pure and free of the TMDB module at runtime: the only
+ * import from it is the type-only `TmdbShowStatus`, erased at compile time,
+ * from `types.ts`, which carries no `server-only` guard.
  */
 export type CompletionRead = {
   episodes: readonly ProgressEpisode[];
   complete: boolean;
-  showStatus: string;
+  showStatus: TmdbShowStatus;
 } | null;
 
 /** The stored row: status and source, or `null` when there is no row. */
