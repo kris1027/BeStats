@@ -1,4 +1,4 @@
-import type { StatusSource, TvStatus } from "@/lib/tracking/types";
+import type { ShowStatusState } from "@/lib/tracking/types";
 
 import {
   eligibleEpisodes,
@@ -46,7 +46,7 @@ export type CompletionRead = {
 } | null;
 
 /** The stored row: status and source, or `null` when there is no row. */
-export type CompletionRow = { status: TvStatus; source: StatusSource } | null;
+export type CompletionRow = ShowStatusState | null;
 
 /**
  * What ran the check (spec 0015, AC-2). `write` is a Server Action right
