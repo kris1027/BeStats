@@ -60,17 +60,7 @@ export function showProgress(
   watchedEpisodeIds: ReadonlySet<number>,
   today: string,
 ): ShowProgress {
-  const eligible = episodes
-    .filter(
-      (episode) =>
-        episode.seasonNumber >= 1 &&
-        airStatus(episode.airDate, today) === "aired",
-    )
-    .sort(
-      (a, b) =>
-        a.seasonNumber - b.seasonNumber || a.episodeNumber - b.episodeNumber,
-    );
-
+  const eligible = eligibleEpisodes(episodes, today);
   if (eligible.length === 0) return { kind: "none_aired" };
 
   // One entry per id, so an id TMDB listed twice counts once on both sides.
@@ -94,4 +84,29 @@ export function showProgress(
   }
 
   return { kind: "counted", watched, total, next };
+}
+
+/**
+ * The episodes progress counts: regular season (1 or later) and `aired` by
+ * the spec 0011 UTC date rule, in season then episode order. Exported so
+ * automatic completion (spec 0015, AC-1) sends the database exactly the ids
+ * this rule counted, never a second copy of it.
+ *
+ * @param episodes The show's episodes, in any order.
+ * @param today `requestTodayUtc()`.
+ */
+export function eligibleEpisodes<T extends ProgressEpisode>(
+  episodes: readonly T[],
+  today: string,
+): T[] {
+  return episodes
+    .filter(
+      (episode) =>
+        episode.seasonNumber >= 1 &&
+        airStatus(episode.airDate, today) === "aired",
+    )
+    .sort(
+      (a, b) =>
+        a.seasonNumber - b.seasonNumber || a.episodeNumber - b.episodeNumber,
+    );
 }
