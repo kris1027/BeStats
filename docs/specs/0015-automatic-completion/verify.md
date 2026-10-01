@@ -10,6 +10,8 @@ Setup you may want first: `pnpm exec supabase db reset`, then `pnpm dev:docker`,
 - [x] Untick the special of a show you completed (any show with a season 0), or clear a rating alone → the status stays `completed|system` → AC-8, AC-9
 - [x] Untick episode 5, open `/upcoming` with a second Watching show listed after it, click Mark watched on Chernobyl → toast "Marked Chernobyl S1E5 watched · Moved to Completed" with Undo, the card leaves, focus lands on the next card's title link → AC-5, AC-7
 - [x] Repeat with Chernobyl as the last card (focus goes to the previous card) and as the only card (focus goes to the "Up Next" heading) → AC-7
+- [ ] With Chernobyl the only card and Coming soon empty, Mark watched → the page swaps to its empty panel and focus lands on that panel's heading (`UPCOMING_EMPTY_HEADING_ID`) → AC-7
+- [ ] Mark season watched on a season another tab already marked, the show `Ended` and otherwise caught up → toast "Chernobyl moved to Completed" with no Undo, not the nothing-to-mark message → AC-5
 - [x] Focus the toast's Undo with the keyboard and press Enter → Chernobyl comes back first in Up Next and its title link has the focus → AC-7, AC-8
 - [x] `Q "update user_episode_state set watched_at = now() where show_id = 87108"` with the row `watching|system`, then open `/shows/87108` → the pill reads Completed and the line "5 of 5 episodes watched" → AC-10
 - [x] Simulate a new episode: `set session_replication_role = replica; update user_episode_state set watched_at = null where show_id = 87108 and episode_number = 5;` (triggers off, so only the visit can notice), then open `/upcoming` → Chernobyl is listed first with S1E5, and the row reads `watching|system` → AC-11
@@ -55,9 +57,10 @@ The 20 seeded Completed rows had no watched episodes, so each first system load 
 - AC-2 … unit tests, blocked season step
 - AC-3 … pgTAP 130
 - AC-4 … season mark and single tick steps, `app/shows/actions.test.ts`
-- AC-5 … toast steps, messages and component tests
+- AC-5 … toast steps, messages and component tests, including `season-tracking.test.tsx` "names Completed when a season mark marked nothing new but completed"
 - AC-6 … blocked season step, `lib/tracking/auto-completion.test.ts`
-- AC-7 … Up Next focus steps, `mark-next-watched-button.test.tsx`
+- AC-7 … Up Next focus steps, `mark-next-watched-button.test.tsx` (including "falls back to the empty page's heading when the page empties"); the focus surviving Sonner's restore (`releaseToastFocus`) is the keyboard Undo step
+- Lock order (added during the build) … pgTAP 130 "complete_show_automatically locks …" and "unmark_episodes_watched locks episode rows in episode_id order"
 - AC-8 … untick steps, pgTAP 130
 - AC-9 … pgTAP 130 (rating clear, 40 episode unmark, user delete in both orders)
 - AC-10 … show page visit step
