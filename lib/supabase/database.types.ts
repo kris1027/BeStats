@@ -247,7 +247,7 @@ export type Database = {
         }[]
       }
       reopen_show_automatically: {
-        Args: { p_show_id: number }
+        Args: { p_episode_ids?: number[]; p_show_id: number }
         Returns: boolean
       }
       restore_episodes_watched: {

@@ -59,10 +59,14 @@ export type CompletionTrigger =
   | { kind: "write"; newlyWatchedRegular: boolean }
   | { kind: "visit" };
 
-/** What to do with the row. `episodeIds` goes to `complete_show_automatically`. */
+/**
+ * What to do with the row. `episodeIds` goes to `complete_show_automatically`
+ * or `reopen_show_automatically`. A reopen's `null` means the reason does not
+ * depend on watched state, so the database reopens without checking.
+ */
 export type CompletionVerdict =
   | { kind: "complete"; episodeIds: number[] }
-  | { kind: "reopen" }
+  | { kind: "reopen"; episodeIds: number[] | null }
   | { kind: "none" };
 
 const NONE: CompletionVerdict = { kind: "none" };
@@ -143,7 +147,21 @@ export function completionVerdict(
   }
 
   if (row.status === "completed" && !finished) {
-    return { kind: "reopen" };
+    // While TMDB still says finished, the only reason to reopen is an
+    // unwatched episode, and that comes from a watched-ids read that may
+    // predate another tab's finale mark: the ids go to the database, which
+    // reopens only if one of them is still unwatched (spec 0015, AC-16).
+    // No longer finished, or no aired regular episode at all, does not
+    // depend on watched state, so `null` reopens without the check.
+    if (!isFinishedShowStatus(read.showStatus)) {
+      return { kind: "reopen", episodeIds: null };
+    }
+    const episodeIds = [
+      ...new Set(eligibleEpisodes(read.episodes, today).map((e) => e.id)),
+    ];
+    if (episodeIds.length === 0) return { kind: "reopen", episodeIds: null };
+    if (episodeIds.length > MAX_COMPLETION_EPISODE_IDS) return NONE;
+    return { kind: "reopen", episodeIds };
   }
 
   return NONE;

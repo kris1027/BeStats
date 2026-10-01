@@ -114,8 +114,13 @@ export async function applyAutoCompletion(
     );
 
     if (verdict.kind === "reopen") {
+      // A null list is sent by leaving the argument out: the function's
+      // default is null, which reopens without the watched check.
       const { data, error } = await supabase.rpc("reopen_show_automatically", {
         p_show_id: showId,
+        ...(verdict.episodeIds === null
+          ? {}
+          : { p_episode_ids: verdict.episodeIds }),
       });
       if (error) return failed(classifyTrackingError(error).outcome);
       return { changed: data === true ? "reopened" : null };

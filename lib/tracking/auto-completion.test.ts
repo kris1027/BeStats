@@ -316,8 +316,24 @@ describe("applyAutoCompletion on a visit (AC-10, AC-14)", () => {
     expect(rpcCalls()).toEqual([
       {
         method: "rpc",
-        args: ["reopen_show_automatically", { p_show_id: SHOW }],
+        args: [
+          "reopen_show_automatically",
+          { p_show_id: SHOW, p_episode_ids: [1, 2] },
+        ],
       },
+    ]);
+  });
+
+  it("leaves the ids out when TMDB no longer says finished, so it reopens unchecked", async () => {
+    getShowEpisodes.mockResolvedValue(
+      episodesRead({ showStatus: "Returning Series" }),
+    );
+    getWatchedEpisodeIds.mockResolvedValue(watched([1, 2]));
+    await applyAutoCompletion(SHOW, visit, {
+      row: { status: "completed", source: "system" },
+    });
+    expect(rpcCalls().map((call) => call.args)).toEqual([
+      ["reopen_show_automatically", { p_show_id: SHOW }],
     ]);
   });
 
@@ -443,7 +459,7 @@ describe("getSystemShows and reconcileUpNextShows (AC-11, AC-12)", () => {
         "complete_show_automatically",
         { p_show_id: 1, p_episode_ids: [1, 2], p_allow_user_source: false },
       ],
-      ["reopen_show_automatically", { p_show_id: 3 }],
+      ["reopen_show_automatically", { p_show_id: 3, p_episode_ids: [1, 2] }],
     ]);
     expect(warn).toHaveBeenCalledWith(
       "show_tracking.auto_complete refused tmdb_unavailable",
@@ -587,7 +603,7 @@ describe("reconcileUpNextShows, the quiet paths (AC-11)", () => {
     getWatchedEpisodeIds.mockResolvedValue({ kind: "ok", state: new Map() });
     await reconcileUpNextShows();
     expect(rpcCalls().map((call) => call.args)).toEqual([
-      ["reopen_show_automatically", { p_show_id: 4 }],
+      ["reopen_show_automatically", { p_show_id: 4, p_episode_ids: [1, 2] }],
     ]);
   });
 });

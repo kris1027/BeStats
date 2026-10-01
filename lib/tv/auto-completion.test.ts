@@ -134,7 +134,7 @@ describe("completionVerdict, completed and system (AC-2)", () => {
   it("reopens on a visit once an episode is unwatched", () => {
     expect(
       completionVerdict(read(), completedSystem, visit, oneLeft, today),
-    ).toEqual({ kind: "reopen" });
+    ).toEqual({ kind: "reopen", episodeIds: [101, 102, 201] });
   });
 
   it("reopens on a visit once a new regular episode has aired", () => {
@@ -146,7 +146,7 @@ describe("completionVerdict, completed and system (AC-2)", () => {
     });
     expect(
       completionVerdict(withNew, completedSystem, visit, allWatched, today),
-    ).toEqual({ kind: "reopen" });
+    ).toEqual({ kind: "reopen", episodeIds: [101, 102, 201, 202] });
   });
 
   it("reopens on a visit when TMDB no longer says Ended", () => {
@@ -158,7 +158,40 @@ describe("completionVerdict, completed and system (AC-2)", () => {
         allWatched,
         today,
       ),
-    ).toEqual({ kind: "reopen" });
+    ).toEqual({ kind: "reopen", episodeIds: null });
+  });
+
+  it("sends each aired regular id once for the database to confirm (AC-16)", () => {
+    const mixed = read({
+      showStatus: "Canceled",
+      episodes: [
+        ...episodes,
+        { id: 101, seasonNumber: 1, episodeNumber: 1, airDate: "2026-01-01" },
+        { id: 1, seasonNumber: 0, episodeNumber: 1, airDate: "2026-01-01" },
+        { id: 301, seasonNumber: 3, episodeNumber: 1, airDate: "2027-01-01" },
+        { id: 302, seasonNumber: 3, episodeNumber: 2, airDate: null },
+      ],
+    });
+    expect(
+      completionVerdict(mixed, completedSystem, visit, oneLeft, today),
+    ).toEqual({ kind: "reopen", episodeIds: [101, 102, 201] });
+  });
+
+  it("does not reopen a finished show past the id cap", () => {
+    const huge = read({
+      episodes: Array.from(
+        { length: MAX_COMPLETION_EPISODE_IDS + 1 },
+        (_, i) => ({
+          id: i + 1,
+          seasonNumber: 1,
+          episodeNumber: i + 1,
+          airDate: "2026-01-01",
+        }),
+      ),
+    });
+    expect(
+      completionVerdict(huge, completedSystem, visit, new Set(), today),
+    ).toEqual({ kind: "none" });
   });
 
   it("stays put on a visit while still finished and watched", () => {
@@ -250,7 +283,7 @@ describe("completionVerdict, what counts (AC-1)", () => {
         new Set(),
         today,
       ),
-    ).toEqual({ kind: "reopen" });
+    ).toEqual({ kind: "reopen", episodeIds: null });
   });
 
   it("ignores specials and upcoming or undated episodes, watched or not", () => {
