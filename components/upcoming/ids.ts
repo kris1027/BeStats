@@ -1,8 +1,7 @@
 /**
  * The ids `/upcoming` moves the focus to (spec 0014, AC-12, AC-16; spec 0015,
- * AC-7), and the
- * page's own path. Plain values in a plain module, so the server cards and
- * the client controls share them.
+ * AC-7), and the page's own path. Plain values in a plain module, so the
+ * server cards and the client controls share them.
  */
 
 /** The page every Retry reloads and every Sign in toast returns to. */
