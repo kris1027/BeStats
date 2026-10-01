@@ -187,6 +187,8 @@ describe("fetchShowEpisodes", () => {
     expect(readSeasons.sort()).toEqual([1, 2, 3]);
     expect(result.complete).toBe(true);
     expect(result.failedSeasonNumbers).toEqual([]);
+    // From the same show read as the season list (spec 0015, AC-1).
+    expect(result.showStatus).toBe("Ended");
     expect(
       result.episodes.map((e) => `${e.seasonNumber}x${e.episodeNumber}`),
     ).toEqual(["1x1", "1x2", "2x1", "2x2", "3x1", "3x2"]);

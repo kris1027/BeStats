@@ -81,5 +81,6 @@ export async function fetchShowEpisodes(
     episodes,
     complete: failedSeasonNumbers.length === 0,
     failedSeasonNumbers,
+    showStatus: show.status,
   };
 }

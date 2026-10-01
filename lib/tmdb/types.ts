@@ -176,6 +176,13 @@ export type ShowEpisodes = {
    */
   complete: boolean;
   failedSeasonNumbers: number[];
+  /**
+   * TMDB's `status` for the show (`Ended`, `Canceled`, `Returning Series`,
+   * ...), `""` when missing. Copied from the same show read that listed the
+   * seasons, so the status and the episodes always come from one snapshot
+   * (spec 0015, AC-1).
+   */
+  showStatus: string;
 };
 
 /** The return of the batch helpers: what was found, and what TMDB has lost. */
