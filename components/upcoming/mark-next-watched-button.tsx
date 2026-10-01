@@ -18,6 +18,7 @@ import {
 } from "@/lib/tracking/messages";
 
 import {
+  UP_NEXT_CARD_LINK_SELECTOR,
   UP_NEXT_HEADING_ID,
   UPCOMING_EMPTY_HEADING_ID,
   UPCOMING_PATH,
@@ -82,7 +83,9 @@ function focusTargetIfCardLeaves(showId: number): string {
     item?.nextElementSibling,
     item?.previousElementSibling,
   ]) {
-    const link = neighbour?.querySelector<HTMLElement>('a[id^="up-next-"]');
+    const link = neighbour?.querySelector<HTMLElement>(
+      UP_NEXT_CARD_LINK_SELECTOR,
+    );
     if (link?.id) return link.id;
   }
   return UP_NEXT_HEADING_ID;

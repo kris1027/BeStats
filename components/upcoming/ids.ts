@@ -8,10 +8,19 @@
 /** The page every Retry reloads and every Sign in toast returns to. */
 export const UPCOMING_PATH = "/upcoming";
 
+const UP_NEXT_CARD_LINK_PREFIX = "up-next-";
+
 /** The title link of one Up Next card. */
 export function upNextCardLinkId(showId: number): string {
-  return `up-next-${showId}`;
+  return `${UP_NEXT_CARD_LINK_PREFIX}${showId}`;
 }
+
+/**
+ * Finds any card's title link from the shared prefix, so the selector cannot
+ * drift from `upNextCardLinkId`; the `a` qualifier keeps `UP_NEXT_HEADING_ID`
+ * out of it.
+ */
+export const UP_NEXT_CARD_LINK_SELECTOR = `a[id^="${UP_NEXT_CARD_LINK_PREFIX}"]`;
 
 /**
  * The Up Next heading, which takes the focus when a mark completes the only
