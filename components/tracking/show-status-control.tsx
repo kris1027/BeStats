@@ -45,8 +45,10 @@ const UNDO_TOAST_MS = 10_000;
  * The pill names the current status, or "Add to my shows" when there is no
  * row. The menu lists the five statuses as one radio group with the current
  * one checked, then, only when a row exists, "Remove status". Choosing the
- * status the show already has sends nothing: a status the system set would
- * otherwise silently become the user's (AC-2).
+ * status the show already has sends nothing when the user set it; when the
+ * system set it, it is written again as the user's, with no toast, so an
+ * automatic check never moves it afterwards (spec 0015, AC-19, replacing the
+ * last sentence of spec 0013 AC-2).
  *
  * The label is optimistic, as the movie pills are: it changes at once and
  * lasts while the action runs, then gives way to the prop `refresh()`
@@ -76,7 +78,10 @@ function ShowStatusControl({
   }
 
   function choose(status: TvStatus) {
-    if (shown?.status === status) return;
+    // The current item sends nothing, unless the system set it: then it
+    // pins the status as the user's, so no automatic check moves it again
+    // (spec 0015, AC-19). The label and checked item stay the same.
+    if (shown?.status === status && shown.source === "user") return;
     const expected = shown?.status ?? null;
     startTransition(async () => {
       setShown({ status, source: "user" });

@@ -21,6 +21,8 @@ type StatePanelProps = {
   title: string;
   description: string;
   className?: string;
+  /** Makes the heading a focus target, for a panel that replaces a list. */
+  headingId?: string;
 } & (
   | { variant: "empty"; action?: React.ReactNode }
   | { variant: "error" | "signed-out"; action: React.ReactNode }
@@ -38,6 +40,7 @@ function StatePanel({
   description,
   action,
   className,
+  headingId,
 }: StatePanelProps) {
   if (variant !== "empty" && !action) {
     throw new Error(
@@ -67,7 +70,11 @@ function StatePanel({
       </span>
 
       <div className="flex flex-col gap-2">
-        <h2 className="text-lg leading-tight font-semibold text-foreground">
+        <h2
+          id={headingId}
+          tabIndex={headingId ? -1 : undefined}
+          className="text-lg leading-tight font-semibold text-foreground"
+        >
           {title}
         </h2>
         <p className="text-[15px] leading-relaxed text-muted-foreground">

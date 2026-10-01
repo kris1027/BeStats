@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ShowStatusState } from "@/lib/tracking/types";
 
 /**
- * covers: spec 0013, AC-1, AC-2, AC-4, AC-21
+ * covers: spec 0013, AC-1, AC-2, AC-4, AC-21; spec 0015, AC-19
  *
  * The Server Actions, the router and Sonner are the boundaries. Each action is
  * a deferred promise the test settles by hand, so the optimistic label can be
@@ -121,14 +121,38 @@ describe("ShowStatusControl", () => {
     );
   });
 
-  it("sends nothing when the current status is chosen again, so a system status stays the system's (AC-2)", async () => {
+  it("sends nothing when the current status the user chose is chosen again", async () => {
     const user = userEvent.setup();
-    renderControl({ status: "watching", source: "system" });
+    renderControl({ status: "watching", source: "user" });
     await user.click(pill());
     await user.click(
       await screen.findByRole("menuitemradio", { name: "Watching" }),
     );
     expect(action).not.toHaveBeenCalled();
+  });
+
+  it("pins a status the system set when it is chosen again, quietly (spec 0015, AC-19)", async () => {
+    const user = userEvent.setup();
+    renderControl({ status: "completed", source: "system" });
+    await user.click(pill());
+    await user.click(
+      await screen.findByRole("menuitemradio", { name: "Completed" }),
+    );
+    expect(action).toHaveBeenCalledWith("set", 1396, "completed", "completed");
+    expect(pill()).toHaveAccessibleName("Completed, status for Breaking Bad");
+
+    await settle({
+      ok: true,
+      undo: {
+        expected: "completed",
+        status: "completed",
+        source: "system",
+        listedAt: null,
+        removedAt: null,
+      },
+    });
+    expect(pill()).toHaveAccessibleName("Completed, status for Breaking Bad");
+    expect(toast).not.toHaveBeenCalled();
   });
 
   it("removes the status and offers Undo with the reported values (AC-4)", async () => {

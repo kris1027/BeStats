@@ -8,6 +8,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { requireUser } from "@/lib/auth/user";
 import { formatAirDate, formatShortDate } from "@/lib/format";
 import { getMovieSummaries, getTvShowsByIds, TmdbError } from "@/lib/tmdb";
+import { reconcileUpNextShows } from "@/lib/tracking/auto-completion";
 import { requestTodayUtc } from "@/lib/tracking/episode-state";
 import { logTrackingEvent, TRACKING_EVENT } from "@/lib/tracking/log";
 import {
@@ -26,13 +27,16 @@ import {
 
 import type { ComingSoonItem } from "./coming-soon-card";
 import { ComingSoonGrid } from "./coming-soon-grid";
-import { COMING_SOON_HEADING_ID, UPCOMING_PATH } from "./ids";
+import {
+  COMING_SOON_HEADING_ID,
+  UP_NEXT_HEADING_ID,
+  UPCOMING_EMPTY_HEADING_ID,
+  UPCOMING_PATH,
+} from "./ids";
 import { UpNextCard, type UpNextItem } from "./up-next-card";
 
 /** Posters that load eagerly: one full row at the widest grid. */
 const EAGER_POSTERS = 6;
-
-const UP_NEXT_HEADING_ID = "up-next-heading";
 
 type UpNextSection = { kind: "ok"; items: UpNextItem[] } | { kind: "failed" };
 
@@ -84,6 +88,7 @@ async function UpcomingSections() {
         <div className="py-12">
           <StatePanel
             variant="empty"
+            headingId={UPCOMING_EMPTY_HEADING_ID}
             title={UPCOMING_EMPTY_MESSAGES.title}
             description={UPCOMING_EMPTY_MESSAGES.description}
             action={
@@ -105,17 +110,12 @@ async function UpcomingSections() {
 
   return (
     <>
-      <Section
-        id={UP_NEXT_HEADING_ID}
-        heading={UP_NEXT_MESSAGES.heading}
-        focusable={false}
-      >
+      <Section id={UP_NEXT_HEADING_ID} heading={UP_NEXT_MESSAGES.heading}>
         <UpNextBody section={upNext} />
       </Section>
       <Section
         id={COMING_SOON_HEADING_ID}
         heading={COMING_SOON_MESSAGES.heading}
-        focusable
       >
         {comingSoonBody}
       </Section>
@@ -124,12 +124,17 @@ async function UpcomingSections() {
 }
 
 /**
- * The Watching shows, in the view's order, with their TMDB names (AC-3).
+ * The Watching shows, in the view's order, with their TMDB names (AC-3),
+ * after the automatic completion check has run (spec 0015, AC-11).
  * A show TMDB no longer has stays as a missing title card (AC-7); a
  * systemic TMDB failure fails the section rather than showing every show as
  * missing (`AGENTS.md` section 12).
  */
 async function loadUpNext(): Promise<UpNextSection> {
+  // The automatic completion check first, so the list below already holds
+  // its result (spec 0015, AC-11). Coming soon started before this and never
+  // waits for it.
+  await reconcileUpNextShows();
   const shows = await getUpNextShows();
   if (shows.kind !== "ok") return { kind: "failed" };
   if (shows.state.length === 0) return { kind: "ok", items: [] };
@@ -268,26 +273,25 @@ function ComingSoonBody({ section }: { section: ComingSoonSection }) {
 }
 
 /**
- * One section: an h2 in the page heading's style, a step smaller. The Coming
- * soon heading can take the focus, because removing its last card moves the
- * focus there (AC-12).
+ * One section: an h2 in the page heading's style, a step smaller. Both
+ * headings can take the focus: removing the last Coming soon card moves it
+ * there (AC-12), and so does a mark that completes the last Up Next show
+ * (spec 0015, AC-7).
  */
 function Section({
   id,
   heading,
-  focusable,
   children,
 }: {
   id: string;
   heading: string;
-  focusable: boolean;
   children: ReactNode;
 }) {
   return (
     <section aria-labelledby={id} className="flex flex-col gap-5">
       <h2
         id={id}
-        tabIndex={focusable ? -1 : undefined}
+        tabIndex={-1}
         className="text-2xl leading-tight font-bold tracking-[-0.02em] text-foreground"
       >
         {heading}
