@@ -149,10 +149,12 @@ create trigger user_show_state_set_status_changed_at
 -- for a special (the `when` clauses on the two triggers keep season 0 out).
 -- Security invoker: it runs as whoever made the episode write, so the forced
 -- row level security of `user_show_state` applies and a user can only ever
--- reopen their own show. It reads `old.user_id` and `old.show_id`, never
--- `auth.uid()`, so a cascade from `auth.users` (run as the table owner, with
--- no session) matches no row or harmlessly updates one about to go. It
--- catches nothing: a real failure fails the unmark (AC-9). A season unmark of
+-- reopen their own show. It writes only when the episode row is the
+-- session's own: an account deletion cascades from `auth.users` as
+-- `supabase_auth_admin`, with no session and no UPDATE on `user_show_state`,
+-- and the trigger runs as that role, so it must return before it writes
+-- (AC-9). A write with no session leaves the show to the next visit's check
+-- (AC-10). Otherwise it catches nothing: a real failure fails the unmark. A season unmark of
 -- many episodes reopens the show on its first row; the rest match nothing.
 create or replace function public.reopen_completed_show()
 returns trigger
@@ -161,6 +163,10 @@ security invoker
 set search_path = ''
 as $$
 begin
+  if auth.uid() is distinct from old.user_id then
+    return null;
+  end if;
+
   update public.user_show_state as s
   set status = 'watching',
       status_source = 'system'

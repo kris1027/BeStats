@@ -17,7 +17,7 @@
 -- pinned in the past.
 
 begin;
-select plan(59);
+select plan(64);
 
 -- Shape (AC-17)
 
@@ -494,18 +494,134 @@ select throws_ok(
 );
 reset role;
 
--- Deleting a user (AC-9): whichever table the cascade reaches first, and the
--- real `auth.users` cascade.
-select lives_ok(
-  $$ delete from public.user_episode_state where show_id = 990051;
-     delete from public.user_show_state where show_id = 990051 $$,
-  'episode rows first, then the show row: no error'
+-- Deleting a user (AC-9). GoTrue deletes from `auth.users` as
+-- `supabase_auth_admin`, with no session. The ON DELETE CASCADE actions run as
+-- the child table's owner, but the reopen trigger they set off is queued and
+-- fires afterwards as the role that issued the delete, so its update needs
+-- that role's rights. `supabase test db` connects as `postgres`, which cannot
+-- `set role supabase_auth_admin`, so a stand-in role with exactly
+-- `supabase_auth_admin`'s rights on the tracking tables deletes from two
+-- stand-in parents whose cascade actions reach the two tables in each order.
+-- Everything here is rolled back with the file.
+select set_config('request.jwt.claims', '', true);
+do $$
+declare
+  t text;
+  p text;
+begin
+  execute format(
+    'create role bestats_test_auth_admin nologin %s',
+    case when (select rolbypassrls from pg_roles where rolname = 'supabase_auth_admin')
+      then 'bypassrls' else 'nobypassrls' end
+  );
+  if has_schema_privilege('supabase_auth_admin', 'public', 'usage') then
+    grant usage on schema public to bestats_test_auth_admin;
+  end if;
+  -- The reopen trigger calls `auth.uid()`, which the real role can (it owns
+  -- `auth`). `postgres` cannot grant on `auth`, but it can grant `anon`,
+  -- which may call `auth.uid()` and holds no right on the tracking tables;
+  -- the assertion below checks the effective rights still match.
+  grant anon to bestats_test_auth_admin;
+  foreach t in array array['public.user_show_state', 'public.user_episode_state'] loop
+    foreach p in array array['select', 'insert', 'update', 'delete'] loop
+      if has_table_privilege('supabase_auth_admin', t, p) then
+        execute format('grant %s on %s to bestats_test_auth_admin', p, t);
+      end if;
+    end loop;
+  end loop;
+end
+$$;
+grant bestats_test_auth_admin to current_user;
+
+create table public.bestats_test_episodes_first (
+  user_id uuid not null,
+  show_id integer not null,
+  primary key (user_id, show_id)
+);
+alter table public.user_episode_state
+  add constraint bestats_test_episodes_first_episode_fk foreign key (user_id, show_id)
+  references public.bestats_test_episodes_first on delete cascade not valid;
+alter table public.user_show_state
+  add constraint bestats_test_episodes_first_show_fk foreign key (user_id, show_id)
+  references public.bestats_test_episodes_first on delete cascade not valid;
+create table public.bestats_test_show_first (
+  user_id uuid not null,
+  show_id integer not null,
+  primary key (user_id, show_id)
+);
+alter table public.user_show_state
+  add constraint bestats_test_show_first_show_fk foreign key (user_id, show_id)
+  references public.bestats_test_show_first on delete cascade not valid;
+alter table public.user_episode_state
+  add constraint bestats_test_show_first_episode_fk foreign key (user_id, show_id)
+  references public.bestats_test_show_first on delete cascade not valid;
+grant select, delete on public.bestats_test_episodes_first, public.bestats_test_show_first
+  to bestats_test_auth_admin;
+insert into public.bestats_test_episodes_first values ('22222222-2222-2222-2222-222222222222', 990051);
+insert into public.bestats_test_show_first values ('22222222-2222-2222-2222-222222222222', 990052);
+
+select ok(
+  (select r.rolbypassrls = a.rolbypassrls and not r.rolsuper
+   from pg_roles r, pg_roles a
+   where r.rolname = 'bestats_test_auth_admin' and a.rolname = 'supabase_auth_admin')
+  and (select bool_and(
+         has_table_privilege('bestats_test_auth_admin', t, p)
+           = has_table_privilege('supabase_auth_admin', t, p))
+       from unnest(array['public.user_show_state', 'public.user_episode_state']) as t,
+            unnest(array['select', 'insert', 'update', 'delete']) as p)
+  and has_function_privilege('bestats_test_auth_admin', 'auth.uid()', 'execute')
+    = has_function_privilege('supabase_auth_admin', 'auth.uid()', 'execute'),
+  'the stand-in deleter has exactly supabase_auth_admin''s rights on the tracking tables'
+);
+-- Cascade actions fire in trigger name order, which follows creation order.
+select is(
+  (select array_agg(c.conrelid::regclass::text order by t.tgname)
+   from pg_trigger t join pg_constraint c on c.oid = t.tgconstraint
+   where t.tgrelid = 'public.bestats_test_episodes_first'::regclass
+     and t.tgfoid = 'pg_catalog."RI_FKey_cascade_del"'::regproc),
+  array['user_episode_state', 'user_show_state'],
+  'the first stand-in cascade reaches the episode rows first'
+);
+select is(
+  (select array_agg(c.conrelid::regclass::text order by t.tgname)
+   from pg_trigger t join pg_constraint c on c.oid = t.tgconstraint
+   where t.tgrelid = 'public.bestats_test_show_first'::regclass
+     and t.tgfoid = 'pg_catalog."RI_FKey_cascade_del"'::regproc),
+  array['user_show_state', 'user_episode_state'],
+  'the second stand-in cascade reaches the show row first'
+);
+-- Both cascades delete a watched regular episode of an automatic Completed,
+-- so the reopen trigger's `when` clause matches and it really fires.
+select is(
+  (select string_agg(s.status::text || '/' || s.status_source::text || '/'
+     || e.season_number || '/' || (e.watched_at is not null), ',' order by s.show_id)
+   from public.user_show_state s
+   join public.user_episode_state e on e.user_id = s.user_id and e.show_id = s.show_id
+   where s.user_id = '22222222-2222-2222-2222-222222222222' and s.show_id in (990051, 990052)),
+  'completed/system/1/true,completed/system/1/true',
+  'both cascades start from an automatic Completed with a watched regular episode'
 );
 select lives_ok(
-  $$ delete from public.user_show_state where show_id = 990052;
-     delete from public.user_episode_state where show_id = 990052 $$,
-  'the show row first, then episode rows: no error'
+  $$ set local role bestats_test_auth_admin;
+     delete from public.bestats_test_episodes_first;
+     reset role $$,
+  'a cascade reaching episode rows first, as the auth admin: no error'
 );
+select lives_ok(
+  $$ set local role bestats_test_auth_admin;
+     delete from public.bestats_test_show_first;
+     reset role $$,
+  'a cascade reaching the show row first, as the auth admin: no error'
+);
+select is(
+  (select count(*)::int from public.user_show_state
+   where user_id = '22222222-2222-2222-2222-222222222222' and show_id in (990051, 990052))
+  + (select count(*)::int from public.user_episode_state
+     where user_id = '22222222-2222-2222-2222-222222222222' and show_id in (990051, 990052)),
+  0,
+  'and both cascades remove every row they reach'
+);
+-- The real cascade, as the test runner (it cannot become supabase_auth_admin).
 select lives_ok(
   $$ delete from auth.users where id = '22222222-2222-2222-2222-222222222222' $$,
   'deleting user B, with an automatic Completed, cascades cleanly'
