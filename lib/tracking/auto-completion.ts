@@ -2,7 +2,7 @@ import "server-only";
 
 import { cache } from "react";
 
-import { requireUser } from "@/lib/auth/user";
+import { getOptionalUser, requireUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
 import {
   getShowEpisodes,
@@ -70,9 +70,13 @@ export async function applyAutoCompletion(
   trigger: CompletionTrigger,
   known: { row?: CompletionRow; watchedIds?: ReadonlySet<number> } = {},
 ): Promise<{ changed: AutoCompletionChange }> {
-  const user = await requireUser();
-
   try {
+    // Not `requireUser`: its redirect throws, and this function never throws.
+    // Inside the `try`, since building the client can throw too. The id still
+    // comes from the verified session (`AGENTS.md` section 5).
+    const user = await getOptionalUser();
+    if (!user) return failed("session_expired");
+
     const supabase = await createClient();
 
     let row: CompletionRow;

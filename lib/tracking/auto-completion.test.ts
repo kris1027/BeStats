@@ -46,7 +46,13 @@ const createClient = vi.fn(async () => ({
 vi.mock("@/lib/supabase/server", () => ({ createClient }));
 
 const requireUser = vi.fn(async () => ({ id: "user-a", email: "a@example" }));
-vi.mock("@/lib/auth/user", () => ({ requireUser }));
+const getOptionalUser = vi.fn(
+  async (): Promise<{ id: string; email: string } | null> => ({
+    id: "user-a",
+    email: "a@example",
+  }),
+);
+vi.mock("@/lib/auth/user", () => ({ requireUser, getOptionalUser }));
 
 class TmdbError extends Error {
   constructor(readonly kind: string) {
@@ -122,6 +128,20 @@ beforeEach(() => {
 afterEach(() => {
   vi.clearAllMocks();
   warn.mockRestore();
+});
+
+describe("applyAutoCompletion without a session", () => {
+  it("returns unchanged without throwing or calling the RPC", async () => {
+    getOptionalUser.mockResolvedValueOnce(null);
+    await expect(applyAutoCompletion(SHOW, write)).resolves.toEqual({
+      changed: null,
+    });
+    expect(createClient).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledWith(
+      "show_tracking.auto_complete refused session_expired",
+    );
+  });
 });
 
 describe("applyAutoCompletion after a write (AC-4)", () => {
