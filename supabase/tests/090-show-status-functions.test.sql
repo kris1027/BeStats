@@ -12,7 +12,7 @@
 -- triggers, as `070-movie-restore-functions.test.sql` does.
 
 begin;
-select plan(55);
+select plan(56);
 
 -- Shape (AC-20)
 
@@ -166,14 +166,22 @@ select is(
   'every status chosen by hand is written with status_source user'
 );
 
--- Choosing the status the row already holds writes nothing (AC-2).
+-- Choosing the status the row already holds (spec 0015, AC-19, which
+-- replaces the last sentence of AC-2): a system source becomes the user's,
+-- reporting what it replaced; a user source writes nothing and reports none.
 update public.user_show_state set status_source = 'system'
 where user_id = '11111111-1111-1111-1111-111111111111' and show_id = 910003;
 select results_eq(
+  $$ select status::text, status_source::text, previous_status::text, previous_source::text
+     from public.set_show_status(910003, 'dropped', 'dropped') $$,
+  $$ values ('dropped', 'user', 'dropped', 'system') $$,
+  'the same status pins a system source as the user''s and reports it'
+);
+select results_eq(
   $$ select status::text, status_source::text, previous_status::text
      from public.set_show_status(910003, 'dropped', 'dropped') $$,
-  $$ values ('dropped', 'system', null::text) $$,
-  'the same status keeps a system source and reports no previous value'
+  $$ values ('dropped', 'user', null::text) $$,
+  'the same status with a user source writes nothing and reports no previous value'
 );
 
 -- Any status from any status (AC-3).

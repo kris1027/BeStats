@@ -15,7 +15,7 @@
 -- replica`, as `070-movie-restore-functions.test.sql` does.
 
 begin;
-select plan(55);
+select plan(57);
 
 -- Shape (AC-19)
 
@@ -162,6 +162,25 @@ select ok(
    from public.user_episode_state
    where user_id = '11111111-1111-1111-1111-111111111111' and episode_id = 930101),
   'rating an unwatched episode with a row marks it watched again'
+);
+
+-- Spec 0015 AC-4: `newly_marked` says whether this rating was also the
+-- watch. 930108 has no row at first; its watched date is then moved into the
+-- past, since inside this one transaction `now()` never moves.
+select is(
+  (select newly_marked
+   from public.rate_episode(900301, 1::smallint, 8::smallint, 930108, 7::smallint)),
+  true,
+  'rating an untracked episode reports newly_marked'
+);
+update public.user_episode_state
+set watched_at = '2020-01-01T00:00:00Z'
+where user_id = '11111111-1111-1111-1111-111111111111' and episode_id = 930108;
+select is(
+  (select newly_marked
+   from public.rate_episode(900301, 1::smallint, 8::smallint, 930108, 9::smallint)),
+  false,
+  'rating a watched episode does not report newly_marked'
 );
 
 select throws_ok(
