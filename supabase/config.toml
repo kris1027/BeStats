@@ -143,8 +143,10 @@ max_catalogs = 2
 # [storage.analytics.buckets.my-warehouse]
 
 # Store vector embeddings in S3 for large and durable datasets
+# Off (spec 0018 AC-7): BeStats stores no embeddings, and the hosted Free plan
+# refuses vector buckets with a 402, which would fail every `config push`.
 [storage.vector]
-enabled = true
+enabled = false
 max_buckets = 10
 max_indexes = 5
 
