@@ -32,7 +32,7 @@ _The stack, tooling and product rules (ratings, progress, statuses, security) li
 | 17 | SEO metadata and sitemap | Slice 8 | done |
 | 18 | Legal pages and TMDB attribution | Slice 8 | done |
 | 19 | Security and acceptance verification | Slice 8 | done |
-| 20 | Deploy and provider setup | Slice 8 | planned |
+| 20 | Deploy and provider setup | Slice 8 | in-progress |
 
 ## Foundations
 
@@ -329,10 +329,20 @@ Run the full `AGENTS.md` section 13 checklist with two test users, including dir
 - [x] Verify it: `/check verify security and acceptance verification`
 - [x] Test it: `/test security and acceptance verification`
 
-### 20. Deploy and provider setup · needs a decision · GA
-Vercel deployment, Supabase Cloud project, Google OAuth and auth redirects for local and deployed environments, verified email delivery. Also restores the Google button and its divider to the sign in and sign up pages, in the slot spec 0005 reserves, and runs the five authentication verify steps the local stack cannot: the breach refusal, the Google only account on `/account`, and the three rate limit steps. Remote migrations and deployment need your explicit approval in the plan.
-**Done when:** the deployed app signs users in with Google and with email, the Google button is back on the sign in and sign up pages and works, recovery and confirmation emails arrive at a real mailbox, and environment variables target the intended projects.
-- [ ] Design it (spec): `/architect deploy and provider setup`
+### 20. Deploy and provider setup · in-progress · GA
+Vercel deployment on the free `vercel.app` address, the existing Supabase Free project configured from the repo (`db push` and `config push` through a runbook), branch protection, and the hosted security checks spec 0005 left here. Production sends no email: sign up needs no confirmation, recovery shows a contact notice, and Google sign in stays absent (both deferred together). Remote migrations and deployment need your explicit approval in the plan.
+**Done when:** the deployed app signs users up and in with email and password against the cloud project with every migration applied, hosted auth settings match `supabase/config.toml`, environment variables target the intended projects, and no screen promises an email production can't send.
+spec [0018](../specs/0018-deploy-and-provider-setup/index.md)
+- [x] Design it (spec): `/architect deploy and provider setup`
+- [ ] Build it: `/develop deploy and provider setup`
+  - [ ] Thin thread to production: Vercel project, branch protection, EU region and JWT key checks, `db push` and `config push`, a real signed in write (AC-1 to AC-9)
+  - [ ] The no email strand and previews: the flag, sign up without confirmation, recovery notice, server side refusals, preview notices (AC-10 to AC-15, AC-21)
+  - [ ] Legal, SEO and runbook: region in the privacy policy, `docs/deploy.md`, sitemap checks and Search Console (AC-22 to AC-24)
+  - [ ] Hosted security proof: cookies, token lifetime, isolation, bundle secrets, `/api/search` firewall rule, then the rate limit finding (AC-5, AC-16 to AC-20)
+- [ ] Verify it: `/check verify deploy and provider setup`
+- [ ] Test it: `/test deploy and provider setup`
+- [ ] Review it (fresh model): `/check review deploy and provider setup`
+- [ ] Document it: `/document deploy and provider setup`
 
 ## Deferred
 Out of scope for the current build pass, kept so the plan stays honest.
@@ -341,7 +351,8 @@ Out of scope for the current build pass, kept so the plan stays honest.
 - **Self serve account deletion and data export** (from spec 0017): GDPR requests are handled by email for now; a `/account` flow needs the Supabase admin API or a security definer function
 - **Account deletion**: from spec 0005. Undesigned, and it needs an elevated server side call that nothing else in the app uses, so it deserves its own decision before it is built
 - **TV history on `/watched`**: from spec 0013. The watched page stays movies only; it has no artboard for shows and no scope row yet
-- **Rate limit on `/api/search`**: from spec 0010. The public quick search endpoint is guarded only by validation and CDN caching; add a per IP limit before public launch (feature 20)
+- **Rate limit on `/api/search`**: from spec 0010. Now planned as a Vercel Firewall rule in feature 20 (spec 0018 AC-20); returns here only if the Hobby plan does not offer one
+- **Email delivery and Google sign in** (from spec 0018): an SMTP provider (your own domain, or Gmail SMTP), `enable_confirmations = true` and `NEXT_PUBLIC_AUTH_EMAIL_DELIVERY=on`, password recovery back, a browser pass of spec 0005's email steps, the Google button restored, a pre account takeover guard for accounts created while confirmation was off, `secure_password_change = true`, Google and the email provider added to `PROCESSORS`, and leaked password protection if you move to Pro
 
 ## Legend
 
