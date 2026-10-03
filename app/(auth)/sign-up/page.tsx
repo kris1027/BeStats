@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 
 import { AuthCrossLink } from "@/components/auth/auth-cross-link";
 import { AuthPanel } from "@/components/auth/auth-panel";
+import { LEGAL_LINK_CLASS } from "@/components/legal/legal-document";
 import { Skeleton } from "@/components/skeleton";
 import { isSafeNextPath } from "@/lib/auth/next-path";
 import { SignUpForm } from "./sign-up-form";
@@ -21,6 +23,11 @@ export const metadata: Metadata = {
  *
  * The Google button the sign in artboard draws is absent here too. Feature 20
  * restores it to both pages in the slot this leaves above the fields.
+ *
+ * The terms line sits outside the form's boundary, so it is in the static
+ * shell and does not shift when the form streams in, and below the whole form
+ * area, so it covers the Google button too. It is a notice, not a checkbox:
+ * nothing is stored and the sign up action is unchanged (spec 0017, AC-14).
  */
 export default function SignUpPage({ searchParams }: PageProps<"/sign-up">) {
   return (
@@ -39,6 +46,17 @@ export default function SignUpPage({ searchParams }: PageProps<"/sign-up">) {
       <Suspense fallback={<FormSkeleton />}>
         <SignUpFormSlot searchParams={searchParams} />
       </Suspense>
+      <p className="text-xs text-muted-foreground">
+        By creating an account, you agree to the{" "}
+        <Link href="/terms" className={LEGAL_LINK_CLASS}>
+          Terms of Service
+        </Link>{" "}
+        and acknowledge the{" "}
+        <Link href="/privacy" className={LEGAL_LINK_CLASS}>
+          Privacy Policy
+        </Link>
+        .
+      </p>
     </AuthPanel>
   );
 }
