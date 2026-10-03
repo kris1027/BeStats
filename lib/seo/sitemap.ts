@@ -4,8 +4,9 @@ import type { MetadataRoute } from "next";
 export const DISCOVER_PAGES_PER_TYPE = 10;
 
 /**
- * The sitemap entries, in the order spec 0016, AC-6 fixes: the two landings,
- * then every movie, then every show, each in page order then result order.
+ * The sitemap entries, in the order spec 0016, AC-6 fixes, amended by spec
+ * 0017, AC-13: the two landings, the two legal pages, then every movie, then
+ * every show, each in page order then result order.
  *
  * Ids are deduplicated within each media type, first occurrence winning,
  * because popularity can shift a title across a page boundary between two
@@ -26,6 +27,8 @@ export function sitemapEntries(
   return [
     `${origin}/movies`,
     `${origin}/shows`,
+    `${origin}/privacy`,
+    `${origin}/terms`,
     ...uniqueIds(moviePages).map((id) => `${origin}/movies/${id}`),
     ...uniqueIds(showPages).map((id) => `${origin}/shows/${id}`),
   ].map((url) => ({ url }));

@@ -299,6 +299,7 @@ Tracer Bullet: prove the whole pipe works with one thin real thread, then thicke
 - The TMDB token is server only. Only `lib/tmdb/env.ts` may read `TMDB_READ_ACCESS_TOKEN`, and `security-boundary.test.ts` fails if any other file names it or gives it a `NEXT_PUBLIC_` prefix, the same rule the Supabase service role key carries.
 - Two server renders write: `/shows/{id}` and `/upcoming` run the automatic completion check of spec 0015 (`lib/tracking/auto-completion.ts`) before they read the status, and only on rows whose `status_source` is `system`. No other page writes on load; keep it that way unless a spec says otherwise.
 - TMDB images render through `next/image`; `image.tmdb.org` is the one allowed remote pattern.
+- Legal facts (operator, contact email, processors, `LEGAL_LAST_UPDATED`) live only in `lib/legal/operator.ts`, and TMDB's notice only in `TMDB_ATTRIBUTION`; `lib/legal/boundary.test.ts` fails if either is pasted elsewhere. `/privacy` and `/terms` describe only what the code does, so a change that adds a processor, email provider or analytics updates `PROCESSORS`, the policy text and `LEGAL_LAST_UPDATED` in the same PR (spec 0017). `public/tmdb-logo.svg` is TMDB's official file, hash checked; never edit it.
 
 ## Code conventions
 

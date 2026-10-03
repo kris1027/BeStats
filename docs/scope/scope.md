@@ -30,7 +30,7 @@ _The stack, tooling and product rules (ratings, progress, statuses, security) li
 | 15 | Up Next | Slice 7 | done |
 | 16 | Automatic completion | Slice 7 | done |
 | 17 | SEO metadata and sitemap | Slice 8 | done |
-| 18 | Legal pages and TMDB attribution | Slice 8 | planned |
+| 18 | Legal pages and TMDB attribution | Slice 8 | done |
 | 19 | Security and acceptance verification | Slice 8 | planned |
 | 20 | Deploy and provider setup | Slice 8 | planned |
 
@@ -308,10 +308,20 @@ Titles, descriptions, social cards and a sitemap for the public catalog pages.
 - [x] Review it (fresh model): `/check review SEO metadata and sitemap`
 spec [0016](../specs/0016-seo-metadata-and-sitemap/index.md) · code in `lib/seo/`, `app/robots.ts`, `app/sitemap.ts`, `app/opengraph-image.tsx`, the public page `generateMetadata` functions
 
-### 18. Legal pages and TMDB attribution · needs a decision
+### 18. Legal pages and TMDB attribution · done
 Privacy policy, terms, and the TMDB attribution and branding required by its current terms.
 **Done when:** attribution meets TMDB's current requirements and privacy and terms pages are linked from the site footer and sign up.
-- [ ] Design it (spec): `/architect legal pages and TMDB attribution`
+- [x] Design it (spec): `/architect legal pages and TMDB attribution`
+- [x] Build it: `/develop legal pages and TMDB attribution`
+  - [x] The thin thread: `lib/legal/operator.ts`, a minimal `/privacy`, `SiteFooter` in the root layout and the purity test — AC-1, AC-4, AC-6, AC-10
+  - [x] Attribution done right: the new `TMDB_ATTRIBUTION`, the unmodified TMDB logo in `public/` and its hash test — AC-2, AC-3
+  - [x] The full Privacy Policy and Terms of Service from the facts tables — AC-7 to AC-11
+  - [x] Metadata, sitemap entries, proxy cases and the sign up line — AC-6, AC-12 to AC-14
+  - [x] Footer layout at both widths and the proof: checks and browser pass — AC-5, AC-15
+- [x] Verify it: `/check verify legal pages and TMDB attribution`
+- [x] Test it: `/test legal pages and TMDB attribution`
+- [x] Review it (fresh model): `/check review legal pages and TMDB attribution`
+spec [0017](../specs/0017-legal-pages-tmdb-attribution/index.md) · code in `components/layout/site-footer.tsx`, `components/legal/`, `lib/legal/`, `app/privacy/`, `app/terms/`, `public/tmdb-logo.svg`
 
 ### 19. Security and acceptance verification · GA
 Run the full `AGENTS.md` section 13 checklist with two test users, including direct data requests, shared cache checks and secrets absent from bundles.
@@ -328,6 +338,7 @@ Vercel deployment, Supabase Cloud project, Google OAuth and auth redirects for l
 Out of scope for the current build pass, kept so the plan stays honest.
 - **Public profiles and social features**: ruled out of the MVP by `AGENTS.md`
 - **Error monitoring and product analytics**: not selected for this pass
+- **Self serve account deletion and data export** (from spec 0017): GDPR requests are handled by email for now; a `/account` flow needs the Supabase admin API or a security definer function
 - **Account deletion**: from spec 0005. Undesigned, and it needs an elevated server side call that nothing else in the app uses, so it deserves its own decision before it is built
 - **TV history on `/watched`**: from spec 0013. The watched page stays movies only; it has no artboard for shows and no scope row yet
 - **Rate limit on `/api/search`**: from spec 0010. The public quick search endpoint is guarded only by validation and CDN caching; add a per IP limit before public launch (feature 20)

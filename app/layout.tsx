@@ -4,6 +4,7 @@ import { Suspense } from "react";
 
 import { AccountSlot } from "@/components/layout/account-slot";
 import { Navbar } from "@/components/layout/navbar";
+import { SiteFooter } from "@/components/layout/site-footer";
 import { Skeleton } from "@/components/skeleton";
 import { Toaster } from "@/components/ui/sonner";
 import { SITE_NAME, shareMetadata } from "@/lib/seo/metadata";
@@ -49,7 +50,8 @@ export const metadata: Metadata = {
 };
 
 /**
- * The application shell: the sticky navbar above a single main region.
+ * The application shell: the sticky navbar, a single main region, and the
+ * footer.
  *
  * The scroll padding is what keeps an anchored heading from landing underneath
  * the sticky navbar, which is the half of AC-13 that is easy to miss because it
@@ -67,6 +69,10 @@ export const metadata: Metadata = {
  * shell are the media type tabs and the menu sheet, neither of which reads a
  * server dynamic API, so routes still prerender under `cacheComponents`
  * (spec 0004, AC-18).
+ *
+ * `SiteFooter` carries TMDB's attribution and the legal links on every route
+ * (spec 0017, AC-1). It reads no request state, so it stays in the static
+ * shell, and `<main>` keeps `flex-1` so a short page pushes it to the bottom.
  *
  * `Toaster` is the Sonner region the tracking controls report failed saves
  * through (spec 0007). It is a client boundary that reads no request state, so
@@ -110,6 +116,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <main className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col px-4 py-8 md:py-12">
           {children}
         </main>
+        <SiteFooter />
         <Toaster />
       </body>
     </html>

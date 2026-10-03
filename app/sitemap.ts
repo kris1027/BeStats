@@ -6,9 +6,9 @@ import { DISCOVER_PAGES_PER_TYPE, sitemapEntries } from "@/lib/seo/sitemap";
 import { discoverMovies, discoverTvShows, TmdbError } from "@/lib/tmdb";
 
 /**
- * `/sitemap.xml` (spec 0016, AC-6 to AC-9): the two landings plus the 200 most
- * popular movies and 200 most popular shows, all pages a signed out visitor
- * can open from a landing.
+ * `/sitemap.xml` (spec 0016, AC-6 to AC-9): the two landings, the two legal
+ * pages (spec 0017, AC-13), then the 200 most popular movies and 200 most
+ * popular shows, all pages a signed out visitor can open from a landing.
  *
  * A deployment that is not indexable answers an empty `urlset` and asks TMDB
  * nothing. Prerendered, so the build decides which branch it is, and it reads

@@ -54,8 +54,10 @@ export const TMDB_CONCURRENCY_LIMIT = 8;
 export const SHOW_CAST_LIMIT = 12;
 
 /**
- * The wording TMDB's terms require, quoted verbatim (spec 0002, AC-22). Where
- * it is displayed belongs to scope feature 18; this module only owns the text.
+ * The notice TMDB's API Terms of Use require, quoted verbatim from section 3
+ * as updated 20 October 2023 (spec 0017, AC-3). The site footer renders it on
+ * every route; this module only owns the text, so it exists as a literal
+ * nowhere else.
  */
 export const TMDB_ATTRIBUTION =
-  "This product uses the TMDB API but is not endorsed or certified by TMDB.";
+  "This website uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.";

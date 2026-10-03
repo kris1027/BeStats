@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TmdbError } from "@/lib/tmdb/errors";
 
 /**
- * covers: spec 0016, AC-6, AC-7, AC-8, AC-9
+ * covers: spec 0016, AC-6, AC-7, AC-8, AC-9; spec 0017, AC-13
  *
  * The sitemap is the one SEO surface that reads TMDB, so its order, dedupe,
  * independent failure and lifetime choice are pinned against mocked discover
@@ -67,20 +67,22 @@ afterEach(() => {
 });
 
 describe("the sitemap on an indexable deployment", () => {
-  it("lists the landings, then movies, then shows, in page order (AC-6)", async () => {
+  it("lists the landings, the legal pages, then movies, then shows, in page order (AC-6; spec 0017, AC-13)", async () => {
     happyReads();
 
     const listed = urls(await sitemap());
 
-    expect(listed.slice(0, 4)).toEqual([
+    expect(listed.slice(0, 6)).toEqual([
       `${ORIGIN}/movies`,
       `${ORIGIN}/shows`,
+      `${ORIGIN}/privacy`,
+      `${ORIGIN}/terms`,
       `${ORIGIN}/movies/101`,
       `${ORIGIN}/movies/102`,
     ]);
-    expect(listed).toHaveLength(2 + 20 + 20);
-    expect(listed[21]).toBe(`${ORIGIN}/movies/1002`);
-    expect(listed[22]).toBe(`${ORIGIN}/shows/5101`);
+    expect(listed).toHaveLength(4 + 20 + 20);
+    expect(listed[23]).toBe(`${ORIGIN}/movies/1002`);
+    expect(listed[24]).toBe(`${ORIGIN}/shows/5101`);
     expect(listed.at(-1)).toBe(`${ORIGIN}/shows/6002`);
   });
 
@@ -116,6 +118,8 @@ describe("the sitemap on an indexable deployment", () => {
     expect(urls(await sitemap())).toEqual([
       `${ORIGIN}/movies`,
       `${ORIGIN}/shows`,
+      `${ORIGIN}/privacy`,
+      `${ORIGIN}/terms`,
       `${ORIGIN}/movies/1`,
       `${ORIGIN}/movies/2`,
       `${ORIGIN}/movies/3`,
@@ -158,14 +162,14 @@ describe("the sitemap on an indexable deployment", () => {
 
     const listed = urls(await sitemap());
 
-    expect(listed).toHaveLength(2 + 18 + 18);
+    expect(listed).toHaveLength(4 + 18 + 18);
     expect(listed).not.toContain(`${ORIGIN}/movies/201`);
     expect(listed).not.toContain(`${ORIGIN}/shows/6001`);
     expect(listed).toContain(`${ORIGIN}/movies/301`);
     expect(cacheLife.mock.calls).toEqual([["minutes"]]);
   });
 
-  it("still lists the landings when every read fails (AC-8)", async () => {
+  it("still lists the landings and legal pages when every read fails (AC-8)", async () => {
     discoverMovies.mockRejectedValue(
       new TmdbError("rate_limited", "/discover", "failed"),
     );
@@ -176,6 +180,8 @@ describe("the sitemap on an indexable deployment", () => {
     expect(urls(await sitemap())).toEqual([
       `${ORIGIN}/movies`,
       `${ORIGIN}/shows`,
+      `${ORIGIN}/privacy`,
+      `${ORIGIN}/terms`,
     ]);
     expect(cacheLife.mock.calls).toEqual([["minutes"]]);
   });
