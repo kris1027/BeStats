@@ -31,7 +31,7 @@ _The stack, tooling and product rules (ratings, progress, statuses, security) li
 | 16 | Automatic completion | Slice 7 | done |
 | 17 | SEO metadata and sitemap | Slice 8 | done |
 | 18 | Legal pages and TMDB attribution | Slice 8 | done |
-| 19 | Security and acceptance verification | Slice 8 | planned |
+| 19 | Security and acceptance verification | Slice 8 | done |
 | 20 | Deploy and provider setup | Slice 8 | planned |
 
 ## Foundations
@@ -323,11 +323,11 @@ Privacy policy, terms, and the TMDB attribution and branding required by its cur
 - [x] Review it (fresh model): `/check review legal pages and TMDB attribution`
 spec [0017](../specs/0017-legal-pages-tmdb-attribution/index.md) · code in `components/layout/site-footer.tsx`, `components/legal/`, `lib/legal/`, `app/privacy/`, `app/terms/`, `public/tmdb-logo.svg`
 
-### 19. Security and acceptance verification · GA
+### 19. Security and acceptance verification · done
 Run the full `AGENTS.md` section 13 checklist with two test users, including direct data requests, shared cache checks and secrets absent from bundles.
 **Done when:** all 15 acceptance items are verified or reported blocked with the reason, and no cross user read or write succeeds.
-- [ ] Verify it: `/check verify security and acceptance verification`
-- [ ] Test it: `/test security and acceptance verification`
+- [x] Verify it: `/check verify security and acceptance verification`
+- [x] Test it: `/test security and acceptance verification`
 
 ### 20. Deploy and provider setup · needs a decision · GA
 Vercel deployment, Supabase Cloud project, Google OAuth and auth redirects for local and deployed environments, verified email delivery. Also restores the Google button and its divider to the sign in and sign up pages, in the slot spec 0005 reserves, and runs the five authentication verify steps the local stack cannot: the breach refusal, the Google only account on `/account`, and the three rate limit steps. Remote migrations and deployment need your explicit approval in the plan.
