@@ -28,21 +28,25 @@ const LINK_ERROR = AUTH_MESSAGES[AUTH_OUTCOME.invalidLink];
  */
 describe("SignInForm's first render", () => {
   it("shows the reset confirmation as a polite status, not an alert (AC-8)", () => {
-    render(<SignInForm initialNotice={RESET_NOTICE} />);
+    render(<SignInForm emailDelivery="on" initialNotice={RESET_NOTICE} />);
 
     expect(screen.getByRole("status")).toHaveTextContent(RESET_NOTICE);
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
   it("shows a callback error as an alert (AC-21)", () => {
-    render(<SignInForm initialError={LINK_ERROR} />);
+    render(<SignInForm emailDelivery="on" initialError={LINK_ERROR} />);
 
     expect(screen.getByRole("alert")).toHaveTextContent(LINK_ERROR);
   });
 
   it("lets the error win when both arrive, because it is the one to act on", () => {
     render(
-      <SignInForm initialError={LINK_ERROR} initialNotice={RESET_NOTICE} />,
+      <SignInForm
+        emailDelivery="on"
+        initialError={LINK_ERROR}
+        initialNotice={RESET_NOTICE}
+      />,
     );
 
     expect(screen.getByRole("alert")).toHaveTextContent(LINK_ERROR);
@@ -50,7 +54,7 @@ describe("SignInForm's first render", () => {
   });
 
   it("shows no message band when there is nothing to say", () => {
-    render(<SignInForm />);
+    render(<SignInForm emailDelivery="on" />);
 
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
@@ -58,7 +62,7 @@ describe("SignInForm's first render", () => {
 
   it("does not offer the resend link for a notice", () => {
     // The resend link belongs only to the unconfirmed address outcome (AC-6).
-    render(<SignInForm initialNotice={RESET_NOTICE} />);
+    render(<SignInForm emailDelivery="on" initialNotice={RESET_NOTICE} />);
 
     expect(
       screen.queryByRole("link", { name: /confirmation link/i }),
@@ -66,7 +70,7 @@ describe("SignInForm's first render", () => {
   });
 
   it("keeps the fields labelled and usable under a notice", () => {
-    render(<SignInForm initialNotice={RESET_NOTICE} />);
+    render(<SignInForm emailDelivery="on" initialNotice={RESET_NOTICE} />);
 
     expect(screen.getByLabelText("Email")).toBeEnabled();
     expect(screen.getByLabelText("Password")).toBeEnabled();
@@ -90,7 +94,7 @@ describe("SignInForm's resend link for an unconfirmed address", () => {
       values: { email: "someone+tag@example.com" },
     });
 
-    render(<SignInForm next="/account?tab=a" />);
+    render(<SignInForm emailDelivery="on" next="/account?tab=a" />);
     const form = screen
       .getByRole("button", { name: "Sign in" })
       .closest("form");
@@ -105,5 +109,44 @@ describe("SignInForm's resend link for an unconfirmed address", () => {
     expect(href.pathname).toBe("/check-email");
     expect(href.searchParams.get("email")).toBe("someone+tag@example.com");
     expect(href.searchParams.get("next")).toBe("/account?tab=a");
+  });
+});
+
+/** covers: spec 0018, AC-13 */
+describe("SignInForm's recovery link", () => {
+  it("offers Forgot password? while email delivery is on", () => {
+    render(<SignInForm emailDelivery="on" />);
+    expect(
+      screen.getByRole("link", { name: "Forgot password?" }),
+    ).toHaveAttribute("href", "/forgot-password");
+  });
+
+  it("leaves it out while email delivery is off", () => {
+    render(<SignInForm emailDelivery="off" />);
+    expect(
+      screen.queryByRole("link", { name: "Forgot password?" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("offers no resend link for an account that cannot sign in yet", async () => {
+    vi.mocked(signInAction).mockResolvedValue({
+      status: "error",
+      message: AUTH_MESSAGES[AUTH_OUTCOME.accountNotReady],
+      outcome: AUTH_OUTCOME.accountNotReady,
+    });
+
+    render(<SignInForm emailDelivery="off" />);
+    const form = screen
+      .getByRole("button", { name: "Sign in" })
+      .closest("form");
+    if (!form) throw new Error("the sign in button is outside a form");
+    fireEvent.submit(form);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "This account can't sign in yet.",
+    );
+    expect(
+      screen.queryByRole("link", { name: /confirmation link/i }),
+    ).not.toBeInTheDocument();
   });
 });

@@ -335,7 +335,7 @@ Vercel deployment on the free `vercel.app` address, the existing Supabase Free p
 spec [0018](../specs/0018-deploy-and-provider-setup/index.md)
 - [x] Design it (spec): `/architect deploy and provider setup`
 - [ ] Build it: `/develop deploy and provider setup`
-  - [ ] Thin thread to production: Vercel project, branch protection, EU region and JWT key checks, `db push` and `config push`, a real signed in write (AC-1 to AC-9)
+  - [x] Thin thread to production: Vercel project, branch protection, EU region and JWT key checks, `db push` and `config push`, a real signed in write (AC-1 to AC-9)
   - [ ] The no email strand and previews: the flag, sign up without confirmation, recovery notice, server side refusals, preview notices (AC-10 to AC-15, AC-21)
   - [ ] Legal, SEO and runbook: region in the privacy policy, `docs/deploy.md`, sitemap checks and Search Console (AC-22 to AC-24)
   - [ ] Hosted security proof: cookies, token lifetime, isolation, bundle secrets, `/api/search` firewall rule, then the rate limit finding (AC-5, AC-16 to AC-20)

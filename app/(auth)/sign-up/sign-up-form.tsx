@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import {
   AuthFeedback,
@@ -20,8 +21,9 @@ import { signUpAction } from "../actions";
  * you learn by failing is a rule the form kept to itself.
  *
  * There is no "already have an account?" hint on the email field and no check
- * as you type. Either would turn this form into the membership lookup AC-2
- * exists to prevent.
+ * as you type. With email delivery off, a submitted taken address is reported
+ * with a link back to sign in (spec 0018, AC-12); with it on, the action masks
+ * that case as AC-2 asks.
  */
 function SignUpForm({ next }: { next?: string }) {
   const [state, formAction] = useActionState<AuthActionState, FormData>(
@@ -34,6 +36,15 @@ function SignUpForm({ next }: { next?: string }) {
       {next ? <input type="hidden" name="next" value={next} /> : null}
 
       <AuthFeedback state={state} />
+
+      {state.link ? (
+        <Link
+          href={state.link.href}
+          className="-mt-2 self-start rounded-sm text-sm font-semibold text-text-link hover:text-foreground hover:underline"
+        >
+          {state.link.label}
+        </Link>
+      ) : null}
 
       <AuthField
         label="Email"

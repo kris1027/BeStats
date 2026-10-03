@@ -12,6 +12,7 @@ import {
   type SignInNotice,
 } from "@/lib/auth/messages";
 import { isSafeNextPath } from "@/lib/auth/next-path";
+import { getAuthEmailDelivery } from "@/lib/env";
 import { SignInForm } from "./sign-in-form";
 
 export const metadata: Metadata = {
@@ -68,6 +69,9 @@ export default function SignInPage({ searchParams }: PageProps<"/sign-in">) {
  * completed password reset says so here (AC-8). The lookup checks own keys
  * only: `in` also finds `toString` and `constructor`, which would put an empty
  * message band on the page.
+ *
+ * The email flag is read here, inside the boundary, rather than in the shell,
+ * so the route keeps its prerendered shell (spec 0018, AC-13).
  */
 async function SignInFormSlot({
   searchParams,
@@ -94,6 +98,7 @@ async function SignInFormSlot({
       next={isSafeNextPath(next) ? next : undefined}
       initialError={initialError}
       initialNotice={initialNotice}
+      emailDelivery={getAuthEmailDelivery()}
     />
   );
 }

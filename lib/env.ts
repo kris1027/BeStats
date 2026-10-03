@@ -121,3 +121,34 @@ function describeProblems(error: z.ZodError): string {
     .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
     .join("; ");
 }
+
+/** Whether this deployment can deliver auth emails. */
+export type AuthEmailDelivery = "on" | "off";
+
+/**
+ * Reads `NEXT_PUBLIC_AUTH_EMAIL_DELIVERY`, the switch for every surface that
+ * sends or promises an auth email (spec 0018, AC-10).
+ *
+ * Production sends no email yet, so `off` is the default: unset or empty means
+ * `off`, and only a deliberate `on` brings back confirmation, resend and
+ * password recovery. Separate from `getPublicEnv()` on purpose, because a
+ * preview deployment has no Supabase variables at all and still renders the
+ * sign in pages and runs `next.config.ts`, which both read this.
+ *
+ * Read as a literal `process.env` access, so Next.js inlines it at build time.
+ * A change therefore needs a redeploy, not just an environment edit.
+ *
+ * @returns `on` or `off`.
+ * @throws If the variable holds anything else. The message names the variable
+ * and never its value.
+ */
+export function getAuthEmailDelivery(): AuthEmailDelivery {
+  const value = process.env.NEXT_PUBLIC_AUTH_EMAIL_DELIVERY;
+
+  if (value === undefined || value === "" || value === "off") return "off";
+  if (value === "on") return "on";
+
+  throw new Error(
+    "Invalid public environment configuration. NEXT_PUBLIC_AUTH_EMAIL_DELIVERY must be on or off.",
+  );
+}

@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { getPublicEnv, publicEnvProblems } from "@/lib/env";
+import {
+  getAuthEmailDelivery,
+  getPublicEnv,
+  publicEnvProblems,
+} from "@/lib/env";
 
 /**
  * covers: spec 0005, public catalog without auth configuration
@@ -55,5 +59,38 @@ describe("publicEnvProblems", () => {
   it("never includes a value in the message, so it is safe to log", () => {
     stubEnv({ ...COMPLETE, NEXT_PUBLIC_SUPABASE_URL: "not-a-url-secret" });
     expect(publicEnvProblems()).not.toContain("not-a-url-secret");
+  });
+});
+
+/**
+ * covers: spec 0018, AC-10
+ *
+ * Every surface that sends or promises an auth email reads this one switch.
+ * Production has no email yet, so anything short of a deliberate `on` must
+ * read as `off`, and a typo must fail loudly rather than pick a side.
+ */
+describe("getAuthEmailDelivery", () => {
+  it("reads unset as off", () => {
+    vi.stubEnv("NEXT_PUBLIC_AUTH_EMAIL_DELIVERY", undefined);
+    expect(getAuthEmailDelivery()).toBe("off");
+  });
+
+  it("reads empty as off", () => {
+    vi.stubEnv("NEXT_PUBLIC_AUTH_EMAIL_DELIVERY", "");
+    expect(getAuthEmailDelivery()).toBe("off");
+  });
+
+  it.each(["on", "off"] as const)("returns %s as given", (value) => {
+    vi.stubEnv("NEXT_PUBLIC_AUTH_EMAIL_DELIVERY", value);
+    expect(getAuthEmailDelivery()).toBe(value);
+  });
+
+  it("throws on anything else, naming the variable and never the value", () => {
+    vi.stubEnv("NEXT_PUBLIC_AUTH_EMAIL_DELIVERY", "yes-please");
+
+    expect(() => getAuthEmailDelivery()).toThrow(
+      "NEXT_PUBLIC_AUTH_EMAIL_DELIVERY",
+    );
+    expect(() => getAuthEmailDelivery()).not.toThrow("yes-please");
   });
 });
