@@ -5,6 +5,12 @@ import type * as React from "react";
 import { GlassPill } from "@/components/glass-pill";
 import { LibraryNav } from "@/components/layout/library-nav";
 import { MobileMenuSheet } from "@/components/layout/mobile-menu-sheet";
+import {
+  ContactEmail,
+  ExternalLink,
+  LegalList,
+  LegalSection,
+} from "@/components/legal/legal-document";
 import { PosterCard } from "@/components/poster-card";
 import { PosterGrid } from "@/components/poster-grid";
 import {
@@ -369,6 +375,27 @@ export default function ShowcasePage() {
             ring is gone.
           </CardDescription>
         </Card>
+      </Section>
+
+      <Section
+        title="Legal text and the footer"
+        note="The pieces /privacy and /terms are built from (spec 0017). There is no typography plugin, so lists and links are styled by hand. The site footer itself renders below every page, including this one: flat, no glass, links at the 44px and 36px touch heights."
+      >
+        <div className="max-w-[72ch]">
+          <LegalSection title="Sample section">
+            <p>
+              Body text in the secondary token, with an{" "}
+              <ExternalLink href="https://www.themoviedb.org">
+                external link
+              </ExternalLink>{" "}
+              and the contact address, <ContactEmail />.
+            </p>
+            <LegalList>
+              <li>A list item in body text.</li>
+              <li>A second item, to show the gap.</li>
+            </LegalList>
+          </LegalSection>
+        </div>
       </Section>
     </div>
   );
