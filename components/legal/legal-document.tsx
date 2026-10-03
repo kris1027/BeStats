@@ -58,7 +58,11 @@ export function sectionId(title: string): string {
     .replace(/^-|-$/g, "");
 }
 
-/** One numbered part of a legal page: an `h2` with its own anchor. */
+/**
+ * Every part of a legal page goes through here so its `h2` carries the
+ * `sectionId` anchor: links such as `/privacy#cookies` stay stable when the
+ * text changes, and tests find each required section by id (spec 0017).
+ */
 export function LegalSection({
   title,
   children,
@@ -95,7 +99,12 @@ export function LegalList({ children }: { children: React.ReactNode }) {
 export const LEGAL_LINK_CLASS =
   "rounded-sm text-text-link underline underline-offset-4 hover:text-foreground";
 
-/** A link off BeStats (TMDB, UODO, a processor), opened in a new tab. */
+/**
+ * A link off BeStats (TMDB, UODO, a processor). It opens a new tab so a reader
+ * checking a source doesn't lose their place in the policy, and
+ * `noopener noreferrer` keeps the other site from scripting this tab or
+ * learning which page sent the visit.
+ */
 export function ExternalLink({
   href,
   children,

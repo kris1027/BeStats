@@ -30,10 +30,11 @@ export function SiteFooter() {
             className="inline-flex min-h-11 w-fit items-center rounded-sm md:min-h-9"
           >
             {/*
-             * The official file, byte for byte (`public/tmdb-logo.test.ts`).
+             * The official file, byte for byte (`./tmdb-logo.test.ts`).
              * `unoptimized` because the image optimizer refuses SVG without
-             * `dangerouslyAllowSVG`. The size attributes are the file's own
-             * viewBox; CSS sets only the height, smaller than the 20px BeStats
+             * `dangerouslyAllowSVG`. The size attributes are the file's
+             * viewBox (273.42 × 35.52) rounded, since next/image takes whole
+             * pixels; CSS sets only the height, smaller than the 20px BeStats
              * wordmark, as TMDB's terms ask.
              */}
             <Image

@@ -94,8 +94,7 @@ export default function TermsPage() {
         </p>
         <p>{TMDB_ATTRIBUTION}</p>
         <p>
-          TMDB community ratings belong to TMDB. Your own ratings are yours, and
-          BeStats always shows the two apart.
+          TMDB community ratings belong to TMDB. Your own ratings are yours.
         </p>
       </LegalSection>
 
