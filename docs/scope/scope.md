@@ -29,7 +29,7 @@ _The stack, tooling and product rules (ratings, progress, statuses, security) li
 | 14 | TV status and progress | Slice 6 | done |
 | 15 | Up Next | Slice 7 | done |
 | 16 | Automatic completion | Slice 7 | done |
-| 17 | SEO metadata and sitemap | Slice 8 | planned |
+| 17 | SEO metadata and sitemap | Slice 8 | done |
 | 18 | Legal pages and TMDB attribution | Slice 8 | planned |
 | 19 | Security and acceptance verification | Slice 8 | planned |
 | 20 | Deploy and provider setup | Slice 8 | planned |
@@ -293,10 +293,20 @@ spec [0015](../specs/0015-automatic-completion/index.md) · code in [lib/tv/auto
 
 ## Slice 8: Launch readiness
 
-### 17. SEO metadata and sitemap
+### 17. SEO metadata and sitemap · done
 Titles, descriptions, social cards and a sitemap for the public catalog pages.
 **Done when:** public movie, TV and search pages carry accurate metadata and a sitemap lists reachable public pages; private pages are not indexed.
-- [ ] Design it (spec): `/architect SEO metadata and sitemap`
+- [x] Design it (spec): `/architect SEO metadata and sitemap`
+- [x] Build it: `/develop SEO metadata and sitemap`
+  - [x] The crawler pipe: `lib/seo/site.ts`, `robots.txt`, a landings only sitemap, the proxy matcher exclusion — AC-1, AC-2, AC-4, AC-5, AC-9, AC-25
+  - [x] Shared metadata and the site card: `catalogMetadata()`, `metadataBase`, root defaults, `app/opengraph-image.tsx` — AC-3, AC-10, AC-11, AC-19, AC-20
+  - [x] Title pages: movie, show and season canonicals, share images, failed branch `noindex`, Movie and TVSeries JSON-LD — AC-12 to AC-16, AC-21 to AC-23
+  - [x] Popular titles sitemap, landings and search: 20 discover reads with independent failure, per page canonicals, descriptions — AC-6 to AC-8, AC-17, AC-18
+  - [x] Proof: tests, build route table, heads checked signed out and signed in and with no site URL — AC-24, AC-25
+- [x] Verify it: `/check verify SEO metadata and sitemap`
+- [x] Test it: `/test SEO metadata and sitemap`
+- [x] Review it (fresh model): `/check review SEO metadata and sitemap`
+spec [0016](../specs/0016-seo-metadata-and-sitemap/index.md) · code in `lib/seo/`, `app/robots.ts`, `app/sitemap.ts`, `app/opengraph-image.tsx`, the public page `generateMetadata` functions
 
 ### 18. Legal pages and TMDB attribution · needs a decision
 Privacy policy, terms, and the TMDB attribution and branding required by its current terms.

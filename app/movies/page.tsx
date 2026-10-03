@@ -11,11 +11,8 @@ import { StatePanel } from "@/components/state-panel";
 import { CardBookmark } from "@/components/tracking/card-bookmark";
 import { ButtonLink } from "@/components/ui/button";
 import { lastReachablePage, parsePageParam } from "@/lib/catalog/pages";
+import { landingPageMetadata } from "@/lib/landing-metadata";
 import { discoverMovies, TmdbError } from "@/lib/tmdb";
-
-export const metadata: Metadata = {
-  title: "Movies",
-};
 
 /** TMDB's discover page size, which the skeleton mirrors. */
 const PAGE_SIZE = 20;
@@ -29,6 +26,29 @@ const EAGER_POSTERS = 6;
 /** One URL per page: page 1 is the bare path. */
 function pageHref(page: number): string {
   return page === 1 ? "/movies" : `/movies?page=${page}`;
+}
+
+/** Every page of the landing shares one description (spec 0016, AC-17). */
+const DESCRIPTION =
+  "Browse popular movies on BeStats. See the cast, ratings and details, and keep track of what you watch.";
+
+/**
+ * The landing's metadata (spec 0016, AC-17). Page N declares its own
+ * canonical through `pageHref`, the same address the pagination links use. A
+ * page that shows no results is `noindex`. `landingPageMetadata` decides it
+ * from the same cached `discoverMovies` call the body makes, so metadata costs no
+ * extra TMDB request.
+ */
+export async function generateMetadata({
+  searchParams,
+}: PageProps<"/movies">): Promise<Metadata> {
+  return landingPageMetadata({
+    pageParam: (await searchParams).page,
+    discover: discoverMovies,
+    title: "Movies",
+    description: DESCRIPTION,
+    pageHref,
+  });
 }
 
 /**

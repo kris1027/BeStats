@@ -6,6 +6,8 @@ import { AccountSlot } from "@/components/layout/account-slot";
 import { Navbar } from "@/components/layout/navbar";
 import { Skeleton } from "@/components/skeleton";
 import { Toaster } from "@/components/ui/sonner";
+import { SITE_NAME, shareMetadata } from "@/lib/seo/metadata";
+import { siteUrl } from "@/lib/seo/site";
 import "./globals.css";
 
 /**
@@ -23,13 +25,27 @@ const inter = Inter({
   display: "swap",
 });
 
+const origin = siteUrl();
+
+/**
+ * The defaults every page starts from (spec 0016, AC-3, AC-20).
+ *
+ * `metadataBase` is set only when the site URL is valid, so a missing value
+ * never fails the build. The default `openGraph` and `twitter` are what the
+ * private and auth pages share as, since they set none of their own; every
+ * public catalog page sets its own through `catalogMetadata()`, because the
+ * merge is shallow and nested fields are replaced, not combined. Without
+ * their own title and description, Next fills both cards from the page's.
+ */
 export const metadata: Metadata = {
+  metadataBase: origin === null ? undefined : new URL(origin),
   title: {
-    default: "BeStats",
-    template: "%s · BeStats",
+    default: SITE_NAME,
+    template: `%s · ${SITE_NAME}`,
   },
   description:
     "Track the movies and TV shows you watch. Discover titles, keep a watchlist, and rate every episode.",
+  ...shareMetadata({}),
 };
 
 /**

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
+import { JsonLd } from "@/components/catalog/json-ld";
 import { CastRow } from "@/components/movie/cast-row";
 import { MovieDetailSkeleton } from "@/components/movie/movie-detail-skeleton";
 import { MovieHero } from "@/components/movie/movie-hero";
@@ -11,6 +12,8 @@ import { StatePanel } from "@/components/state-panel";
 import { MovieTrackingSlot } from "@/components/tracking/movie-tracking-slot";
 import { parseTmdbId } from "@/lib/catalog/ids";
 import { truncateAtWord } from "@/lib/format";
+import { movieJsonLd } from "@/lib/seo/json-ld";
+import { catalogMetadata } from "@/lib/seo/metadata";
 
 import { loadMovie } from "./load-movie";
 
@@ -19,12 +22,14 @@ const DESCRIPTION_LIMIT = 160;
 
 /**
  * The tab title and description, from the same `loadMovie` the body uses
- * (spec 0006, AC-12).
+ * (spec 0006, AC-12), plus the canonical and share card of spec 0016, AC-12.
  *
  * The not found branch also sets `noindex` itself rather than relying only on
  * the tag Next injects for `notFound()`, because the status is already 200 by
  * the time the body decides (a soft 404, AC-9) and the tag is what keeps the
- * page out of search results.
+ * page out of search results. The failed branch is `noindex` too, so a TMDB
+ * outage never gets a retry panel indexed (spec 0016, AC-15). The canonical
+ * is built from the id alone, so a query string never reaches it (AC-16).
  */
 export async function generateMetadata({
   params,
@@ -37,16 +42,21 @@ export async function generateMetadata({
   if (result.kind === "not_found") {
     return { title: "Movie not found", robots: { index: false } };
   }
-  if (result.kind === "failed") return { title: "Movie" };
+  if (result.kind === "failed") {
+    return { title: "Movie", robots: { index: false } };
+  }
 
-  const { title, releaseYear, overview } = result.movie;
-  return {
+  const { title, releaseYear, overview, backdropUrl, posterUrl } = result.movie;
+  return catalogMetadata({
     title: releaseYear === null ? title : `${title} (${releaseYear})`,
     description:
       overview === null
         ? undefined
         : truncateAtWord(overview, DESCRIPTION_LIMIT),
-  };
+    path: `/movies/${id}`,
+    image: backdropUrl ?? posterUrl,
+    ogType: "video.movie",
+  });
 }
 
 /**
@@ -100,6 +110,7 @@ async function MovieDetail({
 
   return (
     <article className="flex flex-col gap-10 md:gap-14">
+      <JsonLd data={movieJsonLd(movie)} />
       <MovieHero
         title={movie.title}
         tagline={movie.tagline}

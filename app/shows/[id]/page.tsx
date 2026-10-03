@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { DetailHero } from "@/components/catalog/detail-hero";
 import { CastRowSkeleton } from "@/components/catalog/detail-skeletons";
+import { JsonLd } from "@/components/catalog/json-ld";
 import { CastRow } from "@/components/movie/cast-row";
 import { MovieOverview } from "@/components/movie/movie-overview";
 import { RetryLink } from "@/components/retry-link";
@@ -16,6 +17,8 @@ import { ShowStatusSlot } from "@/components/tracking/show-status-slot";
 import { parseTmdbId } from "@/lib/catalog/ids";
 import { orderSeasons } from "@/lib/catalog/seasons";
 import { formatAirSpan, truncateAtWord } from "@/lib/format";
+import { showJsonLd } from "@/lib/seo/json-ld";
+import { catalogMetadata } from "@/lib/seo/metadata";
 import {
   getShowCast,
   isTmdbNotFound,
@@ -30,8 +33,11 @@ const DESCRIPTION_LIMIT = 160;
 
 /**
  * The tab title and description, from the same `loadShow` the body uses
- * (spec 0009, AC-16). The not found branch sets `noindex` itself, because the
- * status is already 200 by the time the body decides (a soft 404, AC-14).
+ * (spec 0009, AC-16), plus the canonical and share card of spec 0016, AC-13.
+ * The not found branch sets `noindex` itself, because the status is already
+ * 200 by the time the body decides (a soft 404, AC-14), and so does the failed
+ * branch, so a TMDB outage never gets a retry panel indexed (spec 0016,
+ * AC-15).
  */
 export async function generateMetadata({
   params,
@@ -43,16 +49,21 @@ export async function generateMetadata({
   if (result.kind === "not_found") {
     return { title: "Show not found", robots: { index: false } };
   }
-  if (result.kind === "failed") return { title: "Show" };
+  if (result.kind === "failed") {
+    return { title: "Show", robots: { index: false } };
+  }
 
-  const { name, firstAirYear, overview } = result.show;
-  return {
+  const { name, firstAirYear, overview, backdropUrl, posterUrl } = result.show;
+  return catalogMetadata({
     title: firstAirYear === null ? name : `${name} (${firstAirYear})`,
     description:
       overview === null
         ? undefined
         : truncateAtWord(overview, DESCRIPTION_LIMIT),
-  };
+    path: `/shows/${id}`,
+    image: backdropUrl ?? posterUrl,
+    ogType: "video.tv_show",
+  });
 }
 
 /**
@@ -104,6 +115,7 @@ async function ShowDetail({
 
   return (
     <article className="flex flex-col gap-10 md:gap-14">
+      <JsonLd data={showJsonLd(show)} />
       <DetailHero
         title={show.name}
         tagline={show.tagline}

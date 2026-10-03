@@ -255,7 +255,23 @@ describe("the proxy matcher", () => {
     },
   );
 
-  it.each(["/search", "/search?q=api/"])("still runs for %s", (url) => {
+  // covers: spec 0016, AC-25. The metadata routes are prerendered and shared,
+  // so a refresh must never attach Set-Cookie to one.
+  it.each([
+    "/robots.txt",
+    "/sitemap.xml",
+    "/opengraph-image",
+    "/opengraph-image?1a2b3c",
+  ])("skips the metadata route %s", (url) => {
+    expect(matches(url)).toBe(false);
+  });
+
+  it.each([
+    "/search",
+    "/search?q=api/",
+    "/movies/robots.txt",
+    "/robots.txt.bak",
+  ])("still runs for %s", (url) => {
     expect(matches(url)).toBe(true);
   });
 });

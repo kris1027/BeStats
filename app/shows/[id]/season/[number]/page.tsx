@@ -14,6 +14,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { parseSeasonNumber, parseTmdbId } from "@/lib/catalog/ids";
 import { adjacentSeasons, orderSeasons } from "@/lib/catalog/seasons";
 import { truncateAtWord } from "@/lib/format";
+import { catalogMetadata } from "@/lib/seo/metadata";
 import { episodeIdsKey } from "@/lib/tracking/episode-state";
 
 import { loadSeason } from "./load-season";
@@ -35,8 +36,11 @@ async function parseParams(
 
 /**
  * The tab title and description, from the same `loadSeason` the body uses
- * (spec 0009, AC-16). Both not found branches set `noindex` themselves: the
- * status is already 200 when the body decides (AC-14).
+ * (spec 0009, AC-16), plus the canonical and share card of spec 0016, AC-14.
+ * Both not found branches set `noindex` themselves: the status is already 200
+ * when the body decides (AC-14). The failed branch does too, so a TMDB outage
+ * never gets a retry panel indexed (spec 0016, AC-15). Season pages carry no
+ * JSON-LD (spec 0016, AC-22).
  */
 export async function generateMetadata({
   params,
@@ -53,16 +57,19 @@ export async function generateMetadata({
     case "season_not_found":
       return { title: "Season not found", robots: { index: false } };
     case "failed":
-      return { title: "Season" };
+      return { title: "Season", robots: { index: false } };
     case "found": {
       const { season, show } = result;
-      return {
+      return catalogMetadata({
         title: `${season.name} · ${show.name}`,
         description:
           season.overview === null
             ? undefined
             : truncateAtWord(season.overview, DESCRIPTION_LIMIT),
-      };
+        path: `/shows/${parsed.id}/season/${parsed.seasonNumber}`,
+        image: season.posterUrl ?? show.backdropUrl ?? show.posterUrl,
+        ogType: "website",
+      });
     }
   }
 }
