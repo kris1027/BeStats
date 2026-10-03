@@ -224,7 +224,11 @@ export const config = {
      * `api/` is skipped too. No Route Handler there needs a session, and a
      * refresh could attach `Set-Cookie` to a response a CDN must be free to
      * cache, such as `/api/search` (spec 0010, AC-20).
+     *
+     * `robots.txt`, `sitemap.xml` and `opengraph-image` are skipped for the
+     * same reason: each is prerendered and shared by every visitor, so no
+     * refresh may ever attach a cookie to one (spec 0016, AC-25).
      */
-    "/((?!api/|_next/static|_next/image|favicon.ico|(?!movies/|shows/).*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)",
+    "/((?!api/|robots\\.txt$|sitemap\\.xml$|opengraph-image|_next/static|_next/image|favicon.ico|(?!movies/|shows/).*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)",
   ],
 };
