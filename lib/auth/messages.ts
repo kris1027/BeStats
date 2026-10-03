@@ -1,3 +1,5 @@
+import { CONTACT_EMAIL } from "@/lib/legal/operator";
+
 /**
  * Every message an auth surface can show, written once (spec 0005, AC-2, AC-5,
  * AC-7).
@@ -32,9 +34,32 @@ export const AUTH_OUTCOME = {
   wrongCurrentPassword: "wrong_current_password",
   /** Supabase, or the network to it, failed in a way we cannot classify. */
   unexpected: "unexpected",
+  /**
+   * Sign up met an address that already has an account, while email delivery
+   * is off (spec 0018, AC-12). Only reachable with the flag off; with it on,
+   * that case lands on `/check-email` like a new address does.
+   */
+  alreadyRegistered: "already_registered",
+  /**
+   * Sign up returned neither a session nor an error while email delivery is
+   * off: the hosted project still asks for confirmation (spec 0018, AC-11).
+   */
+  signUpUnavailable: "sign_up_unavailable",
+  /** An unconfirmed address signed in while no confirmation email can be sent. */
+  accountNotReady: "account_not_ready",
+  /** A resend or recovery email was asked for while none can be sent. */
+  emailUnavailable: "email_unavailable",
 } as const;
 
 export type AuthOutcome = (typeof AUTH_OUTCOME)[keyof typeof AUTH_OUTCOME];
+
+/**
+ * What every recovery surface says while production sends no email (spec
+ * 0018, AC-13): `/forgot-password`, `/reset-password`, and the resend and
+ * reset actions when posted to directly. Honest about the gap and names the
+ * one way to get help, instead of a form that pretends to send something.
+ */
+export const RECOVERY_UNAVAILABLE_MESSAGE = `Password recovery by email isn't available yet. If you can't sign in, write to ${CONTACT_EMAIL} from the address on your account and we'll help.`;
 
 /**
  * The copy shown for each outcome.
@@ -63,6 +88,12 @@ export const AUTH_MESSAGES: Record<AuthOutcome, string> = {
   [AUTH_OUTCOME.wrongCurrentPassword]: "Your current password is not correct.",
   [AUTH_OUTCOME.unexpected]:
     "Something went wrong on our side. Please try again.",
+  [AUTH_OUTCOME.alreadyRegistered]:
+    "An account with this email already exists.",
+  [AUTH_OUTCOME.signUpUnavailable]:
+    "Sign up is unavailable right now. Please try again later.",
+  [AUTH_OUTCOME.accountNotReady]: `This account can't sign in yet. Write to ${CONTACT_EMAIL} for help.`,
+  [AUTH_OUTCOME.emailUnavailable]: RECOVERY_UNAVAILABLE_MESSAGE,
 };
 
 /**

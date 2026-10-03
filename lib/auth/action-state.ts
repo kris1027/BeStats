@@ -34,6 +34,13 @@ export type AuthActionState = {
    * email is ever carried; a password must never travel back to the page.
    */
   values?: { email?: string };
+  /**
+   * A next step the action points to, rendered by the form under its message.
+   * Today only sign up's "already exists" refusal carries one, the way back to
+   * sign in with the same `next` (spec 0018, AC-12). The action builds the
+   * href from a validated path, never from raw input.
+   */
+  link?: { href: string; label: string };
 };
 
 /** The state a form starts in, before anything has been submitted. */

@@ -9,6 +9,7 @@ import {
 import { AuthField } from "@/components/auth/auth-field";
 import { type AuthActionState, IDLE_STATE } from "@/lib/auth/action-state";
 import { AUTH_OUTCOME } from "@/lib/auth/messages";
+import type { AuthEmailDelivery } from "@/lib/env";
 import { signInAction } from "../actions";
 
 /**
@@ -32,10 +33,17 @@ function SignInForm({
   next,
   initialError,
   initialNotice,
+  emailDelivery,
 }: {
   next?: string;
   initialError?: string;
   initialNotice?: string;
+  /**
+   * Whether this deployment can send a recovery email. With it off the
+   * `Forgot password?` link would lead to a notice, not a form, so it is left
+   * out (spec 0018, AC-13).
+   */
+  emailDelivery: AuthEmailDelivery;
 }) {
   const [state, formAction] = useActionState<AuthActionState, FormData>(
     signInAction,
@@ -68,12 +76,14 @@ function SignInForm({
           error={state.fieldErrors?.password}
         />
 
-        <Link
-          href="/forgot-password"
-          className="self-end rounded-sm text-sm text-text-link hover:text-foreground hover:underline"
-        >
-          Forgot password?
-        </Link>
+        {emailDelivery === "on" ? (
+          <Link
+            href="/forgot-password"
+            className="self-end rounded-sm text-sm text-text-link hover:text-foreground hover:underline"
+          >
+            Forgot password?
+          </Link>
+        ) : null}
       </div>
 
       {/*

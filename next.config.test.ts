@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import nextConfig from "./next.config";
 
@@ -15,12 +15,29 @@ import nextConfig from "./next.config";
  * Cache Components flag, both of which the rest of the suite quietly assumes.
  */
 describe("next.config", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it("sends / to /shows", async () => {
+    vi.stubEnv("NEXT_PUBLIC_AUTH_EMAIL_DELIVERY", "on");
     const redirects = await nextConfig.redirects?.();
 
     expect(redirects).toEqual([
       expect.objectContaining({ source: "/", destination: "/shows" }),
     ]);
+  });
+
+  /** covers: spec 0018, AC-13 */
+  it("sends /check-email to /sign-in, temporarily, only while email is off", async () => {
+    vi.stubEnv("NEXT_PUBLIC_AUTH_EMAIL_DELIVERY", "off");
+    const redirects = await nextConfig.redirects?.();
+
+    expect(redirects).toContainEqual({
+      source: "/check-email",
+      destination: "/sign-in",
+      permanent: false,
+    });
   });
 
   it("makes that redirect temporary, so no browser caches it forever", async () => {

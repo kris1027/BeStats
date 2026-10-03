@@ -26,7 +26,7 @@ import {
   signUpSchema,
 } from "@/lib/auth/schemas";
 import { classifyAuthError } from "@/lib/auth/supabase-error";
-import { getPublicEnv } from "@/lib/env";
+import { getAuthEmailDelivery, getPublicEnv } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -83,12 +83,14 @@ async function padTo(startedAt: number, floorMs: number): Promise<void> {
 }
 
 /**
- * Creates an unconfirmed account and sends a confirmation link (AC-1, AC-2).
+ * Creates an account, then signs in or asks for confirmation (spec 0005 AC-1,
+ * AC-2; spec 0018 AC-11, AC-12).
  *
- * Succeeds and fails into the same place. A new address and an address that
- * already has a confirmed account both land on `/check-email`, because the only
- * way not to reveal which one happened is to behave identically. Supabase
- * signals the second case with an empty `identities` array and sends no mail.
+ * Which of the two happens comes from what Supabase returned, never from the
+ * email flag alone: a session means the project confirms automatically, so the
+ * person is signed in and sent on. The flag only decides how the cases with no
+ * session are reported, so a flag and a hosted config that disagree can never
+ * fake a success.
  */
 export async function signUpAction(
   _previous: AuthActionState,
@@ -109,23 +111,25 @@ export async function signUpAction(
 
   const { email, password, next } = parsed.data;
   const nextPath = safeNextPath(next);
+  const emailDelivery = getAuthEmailDelivery();
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { emailRedirectTo: callbackUrl({ next: nextPath }) },
+    // Only an email carries this link, and with delivery off none is sent.
+    options:
+      emailDelivery === "on"
+        ? { emailRedirectTo: callbackUrl({ next: nextPath }) }
+        : undefined,
   });
 
-  // Two ways Supabase reports an address that already has an account, and both
-  // must end up somewhere indistinguishable from a new address (AC-2).
+  // Two ways Supabase reports an address that already has an account.
   //
   // `user_already_exists` is what the installed version actually returns: a
   // plain 422. The empty `identities` array below is the obfuscated form older
   // and differently configured versions send instead. Both are handled, because
-  // which one arrives is a property of the Auth server, not of this code, and
-  // treating either as an ordinary error would print "already registered" on
-  // the page and hand out a membership oracle.
+  // which one arrives is a property of the Auth server, not of this code.
   const addressAlreadyRegistered =
     error?.code === "user_already_exists" ||
     (!error && data.user?.identities?.length === 0);
@@ -136,9 +140,44 @@ export async function signUpAction(
     return keepEmail(failure(outcome, passwordFieldFor(outcome)), formData);
   }
 
+  if (emailDelivery === "off") {
+    // With no email to send, masking a taken address would leave its owner
+    // waiting for a message that never comes. Spec 0018 accepts the
+    // membership signal this gives in exchange (Consequences).
+    if (addressAlreadyRegistered) {
+      logAuthEvent(
+        AUTH_EVENT.signUp,
+        "refused",
+        AUTH_OUTCOME.alreadyRegistered,
+      );
+      return keepEmail(
+        {
+          ...failure(AUTH_OUTCOME.alreadyRegistered),
+          link: {
+            href: `/sign-in?next=${encodeURIComponent(nextPath)}`,
+            label: "Sign in instead",
+          },
+        },
+        formData,
+      );
+    }
+
+    // Confirmation still on in the cloud while this deployment says no email
+    // goes out: routing to `/check-email` would promise a message nobody
+    // sends, so refuse plainly and leave the mismatch in the log.
+    if (!data.session) {
+      logAuthEvent(AUTH_EVENT.signUp, "error", AUTH_OUTCOME.signUpUnavailable);
+      return keepEmail(failure(AUTH_OUTCOME.signUpUnavailable), formData);
+    }
+
+    redirect(nextPath);
+  }
+
   // Both branches, never one. See SIGN_UP_PAD_MS: padding only the refusal
   // makes the refusal the slow one and leaks the answer just as loudly.
   await padTo(startedAt, SIGN_UP_PAD_MS);
+
+  if (data.session) redirect(nextPath);
 
   redirect(
     `/check-email?email=${encodeURIComponent(email)}&next=${encodeURIComponent(nextPath)}`,
@@ -155,6 +194,17 @@ export async function resendConfirmationAction(
   _previous: AuthActionState,
   formData: FormData,
 ): Promise<AuthActionState> {
+  // Refused before anything else, so a direct post can never reach Supabase's
+  // email API while production sends no email (spec 0018, AC-13).
+  if (getAuthEmailDelivery() === "off") {
+    logAuthEvent(
+      AUTH_EVENT.resendConfirmation,
+      "refused",
+      AUTH_OUTCOME.emailUnavailable,
+    );
+    return keepEmail(failure(AUTH_OUTCOME.emailUnavailable), formData);
+  }
+
   const parsed = emailOnlySchema.safeParse({ email: formData.get("email") });
 
   if (!parsed.success) {
@@ -215,7 +265,15 @@ export async function signInAction(
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    const outcome = classifyAuthError(error);
+    const classified = classifyAuthError(error);
+    // With no email to send, "check your inbox" would be untrue, so an
+    // unconfirmed account (one created while confirmation was on) is told to
+    // write in instead, with no resend offer (spec 0018, AC-13).
+    const outcome =
+      classified === AUTH_OUTCOME.emailNotConfirmed &&
+      getAuthEmailDelivery() === "off"
+        ? AUTH_OUTCOME.accountNotReady
+        : classified;
     logAuthEvent(AUTH_EVENT.signIn, "refused", outcome);
     // The unconfirmed case is the one exception to the neutral rule, and it is
     // safe: reaching it required the correct password, so the person asking
@@ -258,6 +316,16 @@ export async function requestPasswordResetAction(
   _previous: AuthActionState,
   formData: FormData,
 ): Promise<AuthActionState> {
+  // Same refusal as the resend action, for the same reason (spec 0018, AC-13).
+  if (getAuthEmailDelivery() === "off") {
+    logAuthEvent(
+      AUTH_EVENT.requestPasswordReset,
+      "refused",
+      AUTH_OUTCOME.emailUnavailable,
+    );
+    return keepEmail(failure(AUTH_OUTCOME.emailUnavailable), formData);
+  }
+
   const parsed = emailOnlySchema.safeParse({ email: formData.get("email") });
 
   if (!parsed.success) {
