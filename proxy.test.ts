@@ -6,6 +6,24 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { config } from "./proxy";
 
 /**
+ * The session the mocked Supabase client reports. Only the legal page cases
+ * below reach `createServerClient`; every other run returns before it, on the
+ * malformed id rule or the missing configuration check.
+ */
+const session = vi.hoisted(() => ({ signedIn: false }));
+
+vi.mock("@supabase/ssr", () => ({
+  createServerClient: () => ({
+    auth: {
+      getClaims: async () =>
+        session.signedIn
+          ? { data: { claims: { sub: "user-1" } }, error: null }
+          : { data: null, error: new Error("no session") },
+    },
+  }),
+}));
+
+/**
  * covers: spec 0005, AC-10, AC-17
  *
  * The proxy guard must redirect a navigation and must not touch a Server
@@ -273,5 +291,55 @@ describe("the proxy matcher", () => {
     "/robots.txt.bak",
   ])("still runs for %s", (url) => {
     expect(matches(url)).toBe(true);
+  });
+});
+
+/**
+ * covers: spec 0017, AC-6
+ *
+ * The legal pages are public: the guard must neither send a signed out
+ * visitor to sign in nor treat a signed in one differently, and the id rule
+ * must not 404 them. Run for real against a mocked session.
+ */
+describe("the proxy and the legal pages", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+    session.signedIn = false;
+  });
+
+  it.each([
+    ["/privacy", false],
+    ["/privacy", true],
+    ["/terms", false],
+    ["/terms", true],
+  ])("serves %s (signed in: %s) without a redirect", async (path, signedIn) => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "http://127.0.0.1:54321");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test");
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "http://localhost:3000");
+    session.signedIn = signedIn;
+
+    const { proxy } = await import("./proxy");
+    const response = await proxy(new NextRequest(`http://localhost${path}`));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("location")).toBeNull();
+  });
+
+  it("would redirect a private path in the same setup, so the guard ran", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "http://127.0.0.1:54321");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test");
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "http://localhost:3000");
+
+    const { proxy } = await import("./proxy");
+    const response = await proxy(new NextRequest("http://localhost/watchlist"));
+
+    expect(response.status).toBe(307);
+  });
+
+  it("keeps both out of the private path registry", async () => {
+    const { isPrivatePath } = await import("@/lib/auth/private-paths");
+    expect(isPrivatePath("/privacy")).toBe(false);
+    expect(isPrivatePath("/terms")).toBe(false);
   });
 });
