@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { cacheLife } from "next/cache";
 
 import { isIndexableDeployment, siteUrl } from "@/lib/seo/site";
-import { SITEMAP_PAGES, sitemapEntries } from "@/lib/seo/sitemap";
+import { DISCOVER_PAGES_PER_TYPE, sitemapEntries } from "@/lib/seo/sitemap";
 import { discoverMovies, discoverTvShows, TmdbError } from "@/lib/tmdb";
 
 /**
@@ -11,7 +11,9 @@ import { discoverMovies, discoverTvShows, TmdbError } from "@/lib/tmdb";
  * can open from a landing.
  *
  * A deployment that is not indexable answers an empty `urlset` and asks TMDB
- * nothing. Prerendered, so the build decides which branch it is.
+ * nothing. Prerendered, so the build decides which branch it is, and it reads
+ * no request state, so nothing user specific can reach it (`lib/seo/AGENTS.md`,
+ * the prerendered routes and request state rules).
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const origin = siteUrl();
@@ -29,7 +31,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
  * The 20 reads settle independently: a `TmdbError` drops only its own page,
  * so a TMDB hiccup shrinks the list instead of failing the file. Any other
  * rejection is a bug and is rethrown. A complete list lives for days; a
- * partial one for minutes, so the full list returns soon after TMDB recovers.
+ * partial one for minutes, so the full list returns soon after TMDB recovers
+ * (`lib/seo/AGENTS.md`, the sitemap cache rule).
  * Only plain id arrays leave this scope (`AGENTS.md`, the cached scope rule).
  */
 async function popularTitleIds(): Promise<{
@@ -37,7 +40,10 @@ async function popularTitleIds(): Promise<{
   showPages: number[][];
 }> {
   "use cache";
-  const pages = Array.from({ length: SITEMAP_PAGES }, (_, index) => index + 1);
+  const pages = Array.from(
+    { length: DISCOVER_PAGES_PER_TYPE },
+    (_, index) => index + 1,
+  );
   const settled = await Promise.allSettled([
     ...pages.map((page) => discoverMovies({ page })),
     ...pages.map((page) => discoverTvShows({ page })),
@@ -63,7 +69,7 @@ async function popularTitleIds(): Promise<{
   }
 
   return {
-    moviePages: idPages.slice(0, SITEMAP_PAGES),
-    showPages: idPages.slice(SITEMAP_PAGES),
+    moviePages: idPages.slice(0, DISCOVER_PAGES_PER_TYPE),
+    showPages: idPages.slice(DISCOVER_PAGES_PER_TYPE),
   };
 }
