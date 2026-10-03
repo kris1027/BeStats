@@ -30,7 +30,7 @@ _The stack, tooling and product rules (ratings, progress, statuses, security) li
 | 15 | Up Next | Slice 7 | done |
 | 16 | Automatic completion | Slice 7 | done |
 | 17 | SEO metadata and sitemap | Slice 8 | done |
-| 18 | Legal pages and TMDB attribution | Slice 8 | planned |
+| 18 | Legal pages and TMDB attribution | Slice 8 | in-progress |
 | 19 | Security and acceptance verification | Slice 8 | planned |
 | 20 | Deploy and provider setup | Slice 8 | planned |
 
@@ -308,10 +308,22 @@ Titles, descriptions, social cards and a sitemap for the public catalog pages.
 - [x] Review it (fresh model): `/check review SEO metadata and sitemap`
 spec [0016](../specs/0016-seo-metadata-and-sitemap/index.md) · code in `lib/seo/`, `app/robots.ts`, `app/sitemap.ts`, `app/opengraph-image.tsx`, the public page `generateMetadata` functions
 
-### 18. Legal pages and TMDB attribution · needs a decision
+### 18. Legal pages and TMDB attribution · in-progress
 Privacy policy, terms, and the TMDB attribution and branding required by its current terms.
 **Done when:** attribution meets TMDB's current requirements and privacy and terms pages are linked from the site footer and sign up.
-- [ ] Design it (spec): `/architect legal pages and TMDB attribution`
+- [x] Design it (spec): `/architect legal pages and TMDB attribution`
+- [ ] Build it: `/develop legal pages and TMDB attribution`
+  - [ ] Gate (human): read TMDB's live terms into the rationale, add `public/tmdb-logo.svg`, supply the operator's legal name — AC-1, AC-3, AC-8
+  - [ ] Footer and pages shell: `lib/legal/`, `LegalPage`, stub `/privacy` and `/terms`, `SiteFooter` mounted in the root layout — AC-5, AC-7, AC-19, AC-20, AC-22
+  - [ ] TMDB notice and logo in the footer with drift and file tests — AC-2, AC-3, AC-4, AC-21
+  - [ ] The privacy policy and the terms, written against the inventory — AC-6, AC-9 to AC-17
+  - [ ] Sign up line and sitemap entries — AC-18, AC-23
+  - [ ] Proof: checks, build route table, footer walk at 320px, 390px and desktop — AC-4, AC-6, AC-19, AC-20, AC-22
+- [ ] Verify it: `/check verify legal pages and TMDB attribution`
+- [ ] Test it: `/test legal pages and TMDB attribution`
+- [ ] Review it (fresh model): `/check review legal pages and TMDB attribution`
+- [ ] Follow-up: self-serve account deletion and data export, so the policy's erasure right does not rest on email (needs its own spec)
+spec [0017](../specs/0017-legal-pages-and-tmdb-attribution/index.md) · code in `components/layout/site-footer.tsx`, `components/legal/`, `lib/legal/`, `app/privacy/`, `app/terms/`
 
 ### 19. Security and acceptance verification · GA
 Run the full `AGENTS.md` section 13 checklist with two test users, including direct data requests, shared cache checks and secrets absent from bundles.
