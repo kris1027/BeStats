@@ -1,7 +1,7 @@
 import type { TmdbShowStatus } from "@/lib/tmdb/types";
 import { isFinishedShowStatus } from "@/lib/tv/auto-completion";
 
-import { siteUrl } from "./site";
+import { absoluteUrl } from "./site";
 
 /** Cast members a movie's JSON-LD lists (spec 0016, AC-21). */
 const ACTOR_LIMIT = 10;
@@ -55,7 +55,7 @@ export function movieJsonLd(movie: MovieJsonLdInput): JsonLd {
     "@context": "https://schema.org",
     "@type": "Movie",
     name: movie.title,
-    url: canonical(`/movies/${movie.id}`),
+    url: absoluteUrl(`/movies/${movie.id}`),
     image: movie.posterUrl,
     datePublished: movie.releaseDate,
     description: movie.overview,
@@ -76,7 +76,7 @@ export function showJsonLd(show: ShowJsonLdInput): JsonLd {
     "@context": "https://schema.org",
     "@type": "TVSeries",
     name: show.name,
-    url: canonical(`/shows/${show.id}`),
+    url: absoluteUrl(`/shows/${show.id}`),
     image: show.posterUrl,
     startDate: show.firstAirDate,
     endDate: isFinishedShowStatus(show.status) ? show.lastAirDate : null,
@@ -101,11 +101,6 @@ export function jsonLdScript(data: JsonLd): string {
     .replace(/</g, "\\u003c")
     .replace(/\u2028/g, "\\u2028")
     .replace(/\u2029/g, "\\u2029");
-}
-
-function canonical(path: string): string | null {
-  const origin = siteUrl();
-  return origin === null ? null : `${origin}${path}`;
 }
 
 /** Drops null, empty string, zero and empty array values. */

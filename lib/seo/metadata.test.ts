@@ -116,7 +116,11 @@ describe("landingMetadata (AC-17)", () => {
   it("declares the page's own canonical with the site card", () => {
     vi.stubEnv("NEXT_PUBLIC_SITE_URL", ORIGIN);
 
-    const metadata = landingMetadata("Movies", "Browse", "/movies?page=3");
+    const metadata = landingMetadata({
+      title: "Movies",
+      description: "Browse",
+      path: "/movies?page=3",
+    });
 
     expect(metadata.alternates).toEqual({
       canonical: `${ORIGIN}/movies?page=3`,
@@ -128,7 +132,13 @@ describe("landingMetadata (AC-17)", () => {
   it("is noindex with no canonical when the page shows no results", () => {
     vi.stubEnv("NEXT_PUBLIC_SITE_URL", ORIGIN);
 
-    expect(landingMetadata("Movies", "Browse", null)).toEqual({
+    expect(
+      landingMetadata({
+        title: "Movies",
+        description: "Browse",
+        path: null,
+      }),
+    ).toEqual({
       title: "Movies",
       description: "Browse",
       robots: { index: false },

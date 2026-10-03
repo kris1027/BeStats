@@ -11,7 +11,7 @@ import { StatePanel } from "@/components/state-panel";
 import { CardBookmark } from "@/components/tracking/card-bookmark";
 import { ButtonLink } from "@/components/ui/button";
 import { lastReachablePage, parsePageParam } from "@/lib/catalog/pages";
-import { landingMetadata } from "@/lib/seo/metadata";
+import { landingPageMetadata } from "@/lib/landing-metadata";
 import { discoverMovies, TmdbError } from "@/lib/tmdb";
 
 /** TMDB's discover page size, which the skeleton mirrors. */
@@ -35,27 +35,20 @@ const DESCRIPTION =
 /**
  * The landing's metadata (spec 0016, AC-17). Page N declares its own
  * canonical through `pageHref`, the same address the pagination links use. A
- * page that shows no results is `noindex`: decided from the same cached
- * `discoverMovies` call the body makes, so metadata costs no extra TMDB request.
+ * page that shows no results is `noindex`. `landingPageMetadata` decides it
+ * from the same cached `discoverMovies` call the body makes, so metadata costs no
+ * extra TMDB request.
  */
 export async function generateMetadata({
   searchParams,
 }: PageProps<"/movies">): Promise<Metadata> {
-  const page = parsePageParam((await searchParams).page);
-  if (page === null) return landingMetadata("Movies", DESCRIPTION, null);
-
-  try {
-    const { totalPages } = await discoverMovies({ page });
-    const exists = page <= lastReachablePage(totalPages);
-    return landingMetadata(
-      "Movies",
-      DESCRIPTION,
-      exists ? pageHref(page) : null,
-    );
-  } catch (error) {
-    if (!(error instanceof TmdbError)) throw error;
-    return landingMetadata("Movies", DESCRIPTION, null);
-  }
+  return landingPageMetadata({
+    pageParam: (await searchParams).page,
+    discover: discoverMovies,
+    title: "Movies",
+    description: DESCRIPTION,
+    pageHref,
+  });
 }
 
 /**

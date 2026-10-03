@@ -11,7 +11,7 @@ import {
   SearchResultsSkeleton,
 } from "@/components/search/search-results";
 import { MAX_QUERY_LENGTH } from "@/lib/search/constants";
-import { siteCardUrl } from "@/lib/seo/metadata";
+import { shareMetadata } from "@/lib/seo/metadata";
 
 /** The search page's description, the same for every query (spec 0016, AC-18). */
 const DESCRIPTION =
@@ -20,10 +20,11 @@ const DESCRIPTION =
 /**
  * `“dune” · Search` with a query, `Search` without, through the root layout's
  * template, and never indexed: a results page per query would be endless thin
- * content (spec 0010, AC-22). No canonical, for the same reason; it shares as
- * the site card, set explicitly because the metadata merge is shallow
- * (spec 0016, AC-11, AC-18). The share title is plain `Search`, so a shared
- * link never carries the query into a preview.
+ * content (spec 0010, AC-22). No canonical, for the same reason, so
+ * `shareMetadata()` gets no `url`; it shares as the site card, set explicitly
+ * because the metadata merge is shallow (spec 0016, AC-11, AC-18). The share
+ * title is plain `Search`, so a shared link never carries the query into a
+ * preview.
  */
 export async function generateMetadata({
   searchParams,
@@ -31,26 +32,11 @@ export async function generateMetadata({
   const { q } = await searchParams;
   const query = typeof q === "string" ? q.trim() : "";
   const valid = query !== "" && query.length <= MAX_QUERY_LENGTH;
-  const siteCard = siteCardUrl();
-  const images = siteCard === null ? undefined : [siteCard];
   return {
     title: valid ? `“${query}” · Search` : "Search",
     description: DESCRIPTION,
     robots: { index: false, follow: true },
-    openGraph: {
-      title: "Search",
-      description: DESCRIPTION,
-      siteName: "BeStats",
-      locale: "en_US",
-      type: "website",
-      images,
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: "Search",
-      description: DESCRIPTION,
-      images,
-    },
+    ...shareMetadata({ title: "Search", description: DESCRIPTION }),
   };
 }
 
