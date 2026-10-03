@@ -143,8 +143,10 @@ max_catalogs = 2
 # [storage.analytics.buckets.my-warehouse]
 
 # Store vector embeddings in S3 for large and durable datasets
+# Off (spec 0018 AC-7): BeStats stores no embeddings, and the hosted Free plan
+# refuses vector buckets with a 402, which would fail every `config push`.
 [storage.vector]
-enabled = true
+enabled = false
 max_buckets = 10
 max_indexes = 5
 
@@ -201,8 +203,9 @@ password_requirements = ""
 # config.toml key: it is a dashboard setting on the hosted project, under
 # Authentication > Providers > Email, and is not available on the local CLI
 # stack at all. So AC-9's breach branch cannot be exercised locally. The code
-# still classifies and reports the outcome; turning the setting on belongs to
-# feature 20 with the rest of the cloud project setup.
+# still classifies and reports the outcome. On the hosted project the setting
+# needs the Pro plan, and BeStats runs on Free (spec 0018), so it stays off
+# there too until a plan change.
 
 # Configure passkey sign-ins.
 # [auth.passkey]
@@ -252,9 +255,11 @@ enable_signup = true
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
 # If enabled, users need to confirm their email address before signing in.
-# Spec 0005 AC-1 and AC-6: sign up must create no session, and an unconfirmed
-# address must be refused at sign in. Both depend on this being true.
-enable_confirmations = true
+# Off, locally and in production (spec 0018 AC-8): production sends no email
+# yet, so sign up signs you in straight away. Spec 0005's confirmation flow
+# (AC-1, AC-6) is dormant until email delivery returns, when this goes back to
+# true together with NEXT_PUBLIC_AUTH_EMAIL_DELIVERY=on and an SMTP provider.
+enable_confirmations = false
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
 secure_password_change = false
 # Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
@@ -445,3 +450,15 @@ enabled = true
 # formatted with uppercase keywords, indent 2, max width 180, trailing commas,
 # and column/key alignment. Set to "null" to emit raw, unformatted SQL.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":180,\"commaStyle\":\"trailing\"}"
+
+# The hosted production project (spec 0018 AC-8). `supabase config push` merges
+# this block over the settings above when the linked project's ref matches, so
+# the two origin dependent values are the only differences from the local
+# stack. Never set them in the dashboard: the next push overwrites them. See
+# docs/deploy.md for the push routine.
+[remotes.production]
+project_id = "kyatxtclyikcmkebjxan"
+
+[remotes.production.auth]
+site_url = "https://bestats-sable.vercel.app"
+additional_redirect_urls = ["https://bestats-sable.vercel.app/auth/callback", "https://bestats-sable.vercel.app/**"]
