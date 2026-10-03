@@ -27,6 +27,8 @@ const LAYOUT_TREE = [
   "components/layout/navbar.tsx",
   "components/layout/media-type-tabs.tsx",
   "components/layout/mobile-menu-sheet.tsx",
+  // TMDB's attribution and the legal links, on every route (spec 0017, AC-1).
+  "components/layout/site-footer.tsx",
   // Rendered inside the account slot rather than the layout, but it sits in
   // the shell on every page, so it is held to the same rule (spec 0008).
   "components/layout/library-nav.tsx",
