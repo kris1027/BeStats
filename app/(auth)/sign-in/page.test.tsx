@@ -1,13 +1,15 @@
 import { render, screen } from "@testing-library/react";
 import type * as React from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   AUTH_MESSAGES,
   AUTH_OUTCOME,
+  AUTH_UNCONFIGURED_MESSAGE,
   SIGN_IN_NOTICE,
   SIGN_IN_NOTICES,
 } from "@/lib/auth/messages";
+import { stubPublicEnv } from "@/lib/env.test-helpers";
 import SignInPage from "./page";
 
 vi.mock("../actions", () => ({
@@ -43,6 +45,9 @@ async function renderSlot(params: Record<string, string>) {
  * string itself.
  */
 describe("the sign in page's query string", () => {
+  beforeEach(() => stubPublicEnv());
+  afterEach(() => vi.unstubAllEnvs());
+
   it("shows the reset confirmation for the notice the reset action sends (AC-8)", async () => {
     await renderSlot({ notice: SIGN_IN_NOTICE.passwordReset });
 
@@ -80,5 +85,49 @@ describe("the sign in page's query string", () => {
 
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+});
+
+/**
+ * covers: spec 0018, AC-21
+ *
+ * A Vercel preview carries no Supabase variables, so a form there could only
+ * fail on submit. The page says sign in isn't available instead.
+ */
+describe("the sign in page without auth configuration", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it.each([
+    ["nothing configured", {}],
+    [
+      "the Supabase keys but no site URL",
+      {
+        NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321",
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_test",
+      },
+    ],
+  ])("shows the notice instead of the form with %s", async (_, env) => {
+    stubPublicEnv(env);
+
+    await renderSlot({ next: "/watchlist" });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      AUTH_UNCONFIGURED_MESSAGE,
+    );
+    expect(screen.queryByLabelText(/password/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("shows the form once auth is configured", async () => {
+    stubPublicEnv();
+
+    await renderSlot({});
+
+    expect(
+      screen.queryByText(AUTH_UNCONFIGURED_MESSAGE),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /sign in/i }),
+    ).toBeInTheDocument();
   });
 });

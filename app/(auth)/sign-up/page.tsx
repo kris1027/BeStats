@@ -4,9 +4,11 @@ import { Suspense } from "react";
 
 import { AuthCrossLink } from "@/components/auth/auth-cross-link";
 import { AuthPanel } from "@/components/auth/auth-panel";
+import { AuthUnavailableNotice } from "@/components/auth/auth-unavailable-notice";
 import { LEGAL_LINK_CLASS } from "@/components/legal/legal-document";
 import { Skeleton } from "@/components/skeleton";
 import { isSafeNextPath } from "@/lib/auth/next-path";
+import { publicEnvProblems } from "@/lib/env";
 import { SignUpForm } from "./sign-up-form";
 
 export const metadata: Metadata = {
@@ -61,13 +63,18 @@ export default function SignUpPage({ searchParams }: PageProps<"/sign-up">) {
   );
 }
 
-/** Validates `next` before it reaches the hidden field; checked again server side. */
+/**
+ * Validates `next` before it reaches the hidden field; checked again server
+ * side. With no Supabase configuration on this deployment (a Vercel preview),
+ * shows the notice instead of the form, as `/sign-in` does (spec 0018, AC-21).
+ */
 async function SignUpFormSlot({
   searchParams,
 }: {
   searchParams: PageProps<"/sign-up">["searchParams"];
 }) {
   const params = await searchParams;
+  if (publicEnvProblems()) return <AuthUnavailableNotice />;
   const next = typeof params.next === "string" ? params.next : undefined;
 
   return <SignUpForm next={isSafeNextPath(next) ? next : undefined} />;

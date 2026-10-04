@@ -336,7 +336,8 @@ spec [0018](../specs/0018-deploy-and-provider-setup/index.md)
 - [x] Design it (spec): `/architect deploy and provider setup`
 - [ ] Build it: `/develop deploy and provider setup`
   - [x] Thin thread to production: Vercel project, branch protection, EU region and JWT key checks, `db push` and `config push`, a real signed in write (AC-1 to AC-9)
-  - [ ] The no email strand and previews: the flag, sign up without confirmation, recovery notice, server side refusals, preview notices (AC-10 to AC-15, AC-21)
+  - [x] The no email strand: the flag, sign up without confirmation, recovery notice, server side refusals (AC-10 to AC-15)
+  - [ ] Previews: the unavailable notice on `/sign-in` and `/sign-up`, the proxy fallback, Preview variables and a bypass token check (AC-6, AC-21)
   - [ ] Legal, SEO and runbook: region in the privacy policy, `docs/deploy.md`, sitemap checks and Search Console (AC-22 to AC-24)
   - [ ] Hosted security proof: cookies, token lifetime, isolation, bundle secrets, `/api/search` firewall rule, then the rate limit finding (AC-5, AC-16 to AC-20)
 - [ ] Verify it: `/check verify deploy and provider setup`
@@ -352,6 +353,7 @@ Out of scope for the current build pass, kept so the plan stays honest.
 - **Account deletion**: from spec 0005. Undesigned, and it needs an elevated server side call that nothing else in the app uses, so it deserves its own decision before it is built
 - **TV history on `/watched`**: from spec 0013. The watched page stays movies only; it has no artboard for shows and no scope row yet
 - **Rate limit on `/api/search`**: from spec 0010. Now planned as a Vercel Firewall rule in feature 20 (spec 0018 AC-20); returns here only if the Hobby plan does not offer one
+- **A paid Supabase plan** (from spec 0018): the Free project pauses after about a week idle and has no automatic backups; revisit if that bites, or before inviting more than a handful of users
 - **Email delivery and Google sign in** (from spec 0018): an SMTP provider (your own domain, or Gmail SMTP), `enable_confirmations = true` and `NEXT_PUBLIC_AUTH_EMAIL_DELIVERY=on`, password recovery back, a browser pass of spec 0005's email steps, the Google button restored, a pre account takeover guard for accounts created while confirmation was off, `secure_password_change = true`, Google and the email provider added to `PROCESSORS`, and leaked password protection if you move to Pro
 
 ## Legend

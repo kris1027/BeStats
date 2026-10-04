@@ -1,8 +1,10 @@
 import { render, screen } from "@testing-library/react";
 import type * as React from "react";
 import { Suspense } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { AUTH_UNCONFIGURED_MESSAGE } from "@/lib/auth/messages";
+import { stubNoPublicEnv, stubPublicEnv } from "@/lib/env.test-helpers";
 import SignUpPage from "./page";
 
 vi.mock("../actions", () => ({
@@ -70,5 +72,52 @@ describe("the sign up terms line", () => {
   it("asks for no checkbox", () => {
     const { container } = render(termsLine());
     expect(container.querySelector("input")).toBeNull();
+  });
+});
+
+/**
+ * Renders the form slot the way the page's Suspense boundary would, awaiting
+ * the async Server Component as a function (see the sign in page test).
+ */
+async function renderSlot() {
+  const boundary = panelChildren().find((child) => child?.type === Suspense);
+  if (!boundary) throw new Error("the sign up panel has no form boundary");
+  const slot = boundary.props.children as Element;
+  const resolve = slot.type as (props: unknown) => Promise<React.ReactElement>;
+
+  render(await resolve(slot.props));
+}
+
+/**
+ * covers: spec 0018, AC-21
+ *
+ * A Vercel preview carries no Supabase variables, so the page shows a notice
+ * instead of a form that could only fail on submit.
+ */
+describe("the sign up page without auth configuration", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("shows the notice instead of the form", async () => {
+    stubNoPublicEnv();
+
+    await renderSlot();
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      AUTH_UNCONFIGURED_MESSAGE,
+    );
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("shows the form once auth is configured", async () => {
+    stubPublicEnv();
+
+    await renderSlot();
+
+    expect(
+      screen.queryByText(AUTH_UNCONFIGURED_MESSAGE),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Create account" }),
+    ).toBeInTheDocument();
   });
 });

@@ -3,6 +3,7 @@ import { Suspense } from "react";
 
 import { AuthCrossLink } from "@/components/auth/auth-cross-link";
 import { AuthPanel } from "@/components/auth/auth-panel";
+import { AuthUnavailableNotice } from "@/components/auth/auth-unavailable-notice";
 import { Skeleton } from "@/components/skeleton";
 import {
   AUTH_MESSAGES,
@@ -12,7 +13,7 @@ import {
   type SignInNotice,
 } from "@/lib/auth/messages";
 import { isSafeNextPath } from "@/lib/auth/next-path";
-import { getAuthEmailDelivery } from "@/lib/env";
+import { getAuthEmailDelivery, publicEnvProblems } from "@/lib/env";
 import { SignInForm } from "./sign-in-form";
 
 export const metadata: Metadata = {
@@ -72,6 +73,11 @@ export default function SignInPage({ searchParams }: PageProps<"/sign-in">) {
  *
  * The email flag is read here, inside the boundary, rather than in the shell,
  * so the route keeps its prerendered shell (spec 0018, AC-13).
+ *
+ * A deployment with no Supabase configuration, such as a Vercel preview, gets
+ * a notice instead of a form that could only fail on submit (spec 0018,
+ * AC-21). The check is read after `searchParams`, inside the boundary, for the
+ * same reason as the flag.
  */
 async function SignInFormSlot({
   searchParams,
@@ -79,6 +85,7 @@ async function SignInFormSlot({
   searchParams: PageProps<"/sign-in">["searchParams"];
 }) {
   const params = await searchParams;
+  if (publicEnvProblems()) return <AuthUnavailableNotice />;
 
   const next = typeof params.next === "string" ? params.next : undefined;
   const errorCode = typeof params.error === "string" ? params.error : undefined;

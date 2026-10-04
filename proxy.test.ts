@@ -3,6 +3,7 @@ import { unstable_doesMiddlewareMatch } from "next/experimental/testing/server";
 import { NextRequest } from "next/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { stubNoPublicEnv, stubPublicEnv } from "@/lib/env.test-helpers";
 import { config } from "./proxy";
 
 /**
@@ -93,14 +94,7 @@ describe("the proxy with incomplete auth configuration", () => {
       },
     ],
   ])("still serves the public catalog with %s", async (_, env) => {
-    const values: Record<string, string> = env;
-    for (const name of [
-      "NEXT_PUBLIC_SUPABASE_URL",
-      "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
-      "NEXT_PUBLIC_SITE_URL",
-    ]) {
-      vi.stubEnv(name, values[name]);
-    }
+    stubPublicEnv(env);
     vi.spyOn(console, "warn").mockImplementation(() => {});
 
     const { proxy } = await import("./proxy");
@@ -109,7 +103,47 @@ describe("the proxy with incomplete auth configuration", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("location")).toBeNull();
   });
+
+  /**
+   * covers: spec 0018, AC-21
+   *
+   * A Vercel preview has no Supabase variables, so nobody can be signed in
+   * there. A private page would otherwise throw from `getPublicEnv`.
+   */
+  it("sends a private navigation to sign in without calling Supabase", async () => {
+    stubNoAuth();
+    const ssr = await import("@supabase/ssr");
+    const create = vi.spyOn(ssr, "createServerClient");
+
+    const { proxy } = await import("./proxy");
+    const response = await proxy(
+      new NextRequest("http://localhost/watchlist?type=tv"),
+    );
+
+    expect(response.status).toBe(307);
+    const location = new URL(response.headers.get("location") ?? "");
+    expect(location.pathname).toBe("/sign-in");
+    expect(location.searchParams.get("next")).toBe("/watchlist?type=tv");
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it("never redirects a Server Action POST to a private path", async () => {
+    stubNoAuth();
+
+    const { proxy } = await import("./proxy");
+    const response = await proxy(
+      new NextRequest("http://localhost/watchlist", { method: "POST" }),
+    );
+
+    expect(response.headers.get("location")).toBeNull();
+  });
 });
+
+/** No auth configuration at all, the shape of a Vercel preview. */
+function stubNoAuth() {
+  stubNoPublicEnv();
+  vi.spyOn(console, "warn").mockImplementation(() => {});
+}
 
 /**
  * covers: spec 0006, AC-8; spec 0009, AC-13
@@ -125,13 +159,7 @@ describe("the proxy's catalog id rule", () => {
   });
 
   async function run(path: string) {
-    for (const name of [
-      "NEXT_PUBLIC_SUPABASE_URL",
-      "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
-      "NEXT_PUBLIC_SITE_URL",
-    ]) {
-      vi.stubEnv(name, undefined);
-    }
+    stubNoPublicEnv();
     vi.spyOn(console, "warn").mockImplementation(() => {});
     const fetchSpy = vi.spyOn(globalThis, "fetch");
 
@@ -314,9 +342,7 @@ describe("the proxy and the legal pages", () => {
     ["/terms", false],
     ["/terms", true],
   ])("serves %s (signed in: %s) without a redirect", async (path, signedIn) => {
-    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "http://127.0.0.1:54321");
-    vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test");
-    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "http://localhost:3000");
+    stubPublicEnv();
     session.signedIn = signedIn;
 
     const { proxy } = await import("./proxy");
@@ -327,9 +353,7 @@ describe("the proxy and the legal pages", () => {
   });
 
   it("would redirect a private path in the same setup, so the guard ran", async () => {
-    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "http://127.0.0.1:54321");
-    vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test");
-    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "http://localhost:3000");
+    stubPublicEnv();
 
     const { proxy } = await import("./proxy");
     const response = await proxy(new NextRequest("http://localhost/watchlist"));
