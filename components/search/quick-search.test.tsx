@@ -149,6 +149,44 @@ describe("QuickSearch", () => {
     expect(fetchMock.mock.calls.at(-1)?.[1]?.cache).toBe("no-store");
   });
 
+  /**
+   * covers: spec 0018, AC-20
+   *
+   * The Vercel Firewall answers a limited `/api/search` itself, with a `429`
+   * whose body is not this app's JSON. That must land in the same error state,
+   * not a parse failure that leaves the panel spinning.
+   */
+  it("shows the error state for the firewall's 429, whose body is not JSON", async () => {
+    const user = userEvent.setup();
+    script = async () =>
+      new Response("Too Many Requests", {
+        status: 429,
+        headers: { "content-type": "text/plain" },
+      });
+    render(<QuickSearch type="movie" />);
+
+    await user.type(screen.getByRole("combobox"), "dune");
+
+    expect(await screen.findByText("Couldn't reach TMDB")).toBeInTheDocument();
+    expect(screen.queryAllByRole("option")).toHaveLength(0);
+    expect(
+      screen.getByRole("button", { name: "Try again" }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows results again on Try again once the limit has passed (AC-20)", async () => {
+    const user = userEvent.setup();
+    script = async () => new Response("", { status: 429 });
+    render(<QuickSearch type="movie" />);
+    await user.type(screen.getByRole("combobox"), "dune");
+    await screen.findByText("Couldn't reach TMDB");
+
+    script = async () => json(body(95, ["dune again"]));
+    await user.click(screen.getByRole("button", { name: "Try again" }));
+
+    expect(await screen.findByText("dune again")).toBeInTheDocument();
+  });
+
   it("opens the active row on Enter", async () => {
     const user = userEvent.setup();
     render(<QuickSearch type="tv" />);
