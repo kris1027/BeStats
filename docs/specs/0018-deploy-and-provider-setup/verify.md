@@ -1,5 +1,5 @@
 # Verify: deploy and provider setup · spec 0018 · updated 2026-10-04
-_Steps derived from spec 0018 acceptance criteria. `/check verify` runs these; `/test` locks the durable ones. This file covers build steps 3 (previews) and 4 (legal, SEO and runbook) so far; add later steps as they land._
+_Steps derived from spec 0018 acceptance criteria. `/check verify` runs these; `/test` locks the durable ones. This file covers build steps 3 (previews), 4 (legal, SEO and runbook) and 5 (hosted security proof)._
 
 ## UI / manual
 - [ ] Open a preview URL in a browser where you are signed out of Vercel → Vercel's login wall, not BeStats → AC-21
@@ -29,11 +29,43 @@ _Steps derived from spec 0018 acceptance criteria. `/check verify` runs these; `
 - [ ] Open `docs/deploy.md` → it covers linking at CLI `2.117.0` with the region and JWT key checks, `db push` before merge, `config push` with the diff review and the AC-8 path, Vercel variables per environment with the redeploy note, branch protection and the firewall settings, the AC-18 finding, restoring a paused project, rollback, `pnpm tmdb:live` and the sitemap check, the legal read through, and manual password help → AC-24
 - [ ] `pnpm exec supabase config diff` → only the three differences `docs/deploy.md` section 3 accepts (Twilio enabled, two pooler sizes) → AC-7, AC-24
 
+## Step 5: hosted security proof
+_Needs two throwaway production accounts. Sign them up through `POST <supabase url>/auth/v1/signup` with the publishable key, get tokens from `auth/v1/token?grant_type=password`, and delete them at the end (last step)._
+- [ ] Decode one access token → header `alg` is `ES256` and its `kid` is served at `<supabase url>/auth/v1/.well-known/jwks.json` → AC-9
+- [ ] Same token → `exp - iat` is `600` → AC-17
+- [ ] `pnpm exec supabase db query --linked "select relname, relrowsecurity from pg_class c join pg_namespace n on n.oid = c.relnamespace where nspname = 'public' and relkind in ('r','p')"` → `user_episode_state`, `user_movie_state`, `user_show_state`, all `true` → AC-5
+- [ ] Each user inserts one row in each table with their own token → `201` three times each → AC-5
+- [ ] With A's token, `GET /rest/v1/<table>?select=*` on all three tables plus `user_watchlist_entries` and `user_up_next_shows` → only A's rows; adding `&user_id=eq.<B>` → `[]` → AC-5
+- [ ] With A's token, `PATCH` and `DELETE` on `?user_id=eq.<B>` (with `Prefer: return=representation`) → `200` and `[]` on every table → AC-5
+- [ ] With A's token, insert a row with `user_id` = B, upsert over B's row, and `PATCH` A's own row to `user_id` = B → each `403` with code `42501` → AC-5
+- [ ] With B's token, read B's rows → unchanged (rating 8, status `watching`, episode rating 9) → AC-5
+- [ ] Without a user token, `GET` any of the five → `401` → AC-5
+- [ ] In a browser with cookies cleared, sign in on production → the only `sb-` cookie has `HttpOnly` and `Secure`; `document.cookie` is empty → AC-16
+- [ ] Signed in, load `/watchlist`, `/account`, `/upcoming` and every script they reference → no `eyJ...` token, no `sb_secret_`, no `service_role`, no `TMDB_READ_ACCESS_TOKEN`, no `refresh_token` in the HTML; same for the public pages → AC-19
+- [ ] On `/account`, change the password with a seven character new one → "at least 8 characters"; with a wrong current one → "Your current password is not correct."; with the right one → "Your password has been changed.", and the password grant then accepts only the new password → AC-14
+- [ ] `vercel firewall overview` → one active custom rule → AC-20
+- [ ] Send 70 quick requests to `/api/search?type=movie&q=dune<n>` → 60 `200`, then `429` with `x-vercel-mitigated: deny`; `/shows` still `200` → AC-20
+- [ ] While limited, type in the navbar search → "Couldn't reach TMDB" with Try again; a minute later, typing a title → results → AC-20
+- [ ] Send wrong passwords straight to `auth/v1/token` until `429`, then sign in through the production app at once → the app sign in succeeds while your address is still `429` (Supabase does not count the visitor's address) → AC-18
+- [ ] From several browsers, send about 150 wrong sign ins through the app in 20 seconds → some show `You have reached the limit for now. Please wait a little and try again.`; wrong current passwords on `/account` during the burst show the same copy → AC-18
+- [ ] Read `docs/deploy.md` section 6 and the comment beside `sign_in_sign_ups` in `supabase/config.toml` → both record the shared Vercel address finding → AC-18, AC-24
+- [ ] Delete the two accounts (`delete from auth.users where id in (...)` on the linked project, or the dashboard) → their rows in all three tables count `0` afterwards → AC-5
+
 ## Acceptance-criteria coverage
 - AC-6 (Preview half) · covered by `vercel env ls preview`
 - AC-21 · covered by every UI step above plus the protection, robots, redirect, allow list and unit test commands
 - Value sourcing, "whether auth is configured on this deployment" from `publicEnvProblems()` · covered by the preview notice step against the production form step (vary the config, see both outcomes)
 - AC-22 · covered by the robots, canonical, sitemap and Search Console steps
 - AC-23 · covered by the two `/privacy` steps, the unit tests and the region mutation check
-- AC-24 · covered by the `docs/deploy.md` read through; AC-18's finding and the firewall rule stay open until build step 5
+- AC-24 · covered by the `docs/deploy.md` read through, including the firewall settings (section 5) and the AC-18 finding (section 6)
 - Value sourcing, "privacy policy, the Supabase region" from `supabase projects list` → `SUPABASE_REGION` · covered by comparing `pnpm exec supabase projects list` (`eu-central-1`) with the rendered `/privacy` text
+- AC-5 · covered by the RLS listing, the own rows, cross user read, update, delete, forged insert, upsert, reassign and anon steps, and the cascade count after deletion
+- AC-9, AC-17 · covered by the token decode and the JWKS step
+- AC-14 · covered by the `/account` password change steps
+- AC-16 · covered by the cookie step
+- AC-18 · covered by the direct versus app sign in step, the parallel burst with `/account`, and the recorded finding
+- AC-19 · covered by the signed in and public bundle scans
+- AC-20 · covered by the firewall overview, the burst, and the quick search error state
+- Value sourcing, "AC-18 finding, which IP Supabase counts" · covered by exhausting the visitor's own address and signing in through the app (vary the source address, see which bucket blocks)
+- Value sourcing, "AC-5, AC-17 checks, access tokens" from the password grant · covered by the token steps
+- Value sourcing, "Vercel Firewall rule" settings · covered by the overview and the 60 then `429` burst

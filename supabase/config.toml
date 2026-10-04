@@ -236,6 +236,12 @@ token_refresh = 150
 # Spec 0005 AC-18. This is also the bucket `changePasswordAction` draws on when
 # it re-checks the current password, which is deliberate: it limits guessing at
 # the current password too.
+# Spec 0018 AC-18, measured on production on 2026-10-04: Supabase counts the
+# address of Vercel's function, not the visitor's. Sign ins leave from a small
+# pool of Vercel addresses, each with its own bucket, so this limit is shared
+# by every visitor: a burst of wrong passwords from one person makes some sign
+# ins fail with the rate limited copy for everyone, for up to five minutes.
+# Accepted for now; see docs/deploy.md section 6.
 sign_in_sign_ups = 30
 # Number of OTP / Magic link verifications that can be made in a 5 minute interval per IP address.
 token_verifications = 30

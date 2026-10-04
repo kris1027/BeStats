@@ -90,13 +90,35 @@ Checked on 2026-10-04: the variables match this table, and a preview of `feat/de
 - Key: IP address
 - Action: respond `429`
 
-Status: not set up yet. It is part of build step 5. If the Hobby plan offers no rate limit rule, record that here and the per IP limit returns to the scope's Deferred list.
+The rule is named `Rate limit api search`. The Hobby plan offers it. You can recreate it from the CLI (it stages a draft, then `publish` makes it live):
+
+```sh
+vercel firewall rules add "Rate limit api search" \
+  --condition '{"type":"path","op":"eq","value":"/api/search"}' \
+  --action rate_limit --rate-limit-algo fixed_window --rate-limit-keys ip \
+  --rate-limit-requests 60 --rate-limit-window 60 --rate-limit-action rate_limit --yes
+vercel firewall publish --yes
+```
+
+Check it with `vercel firewall overview` (one active custom rule).
+
+Checked on 2026-10-04: a burst of 70 requests from one address got 60 answers of `200`, then `429` (`x-vercel-mitigated: deny`), while `/shows` kept answering `200`. With the limit reached, the navbar quick search showed its "Couldn't reach TMDB" error with Try again. A normal typing session sends one request per pause (the field debounces), so it stays far below the limit.
 
 ## 6. Which IP address Supabase counts (AC-18)
 
 Sign ins run in a Server Action on Vercel, so Supabase may count the visitor's address or Vercel's outbound address against `sign_in_sign_ups` (30 per five minutes). If it counts Vercel's, the limit is shared by everyone, and one person sending thirty wrong passwords locks every visitor out for five minutes.
 
-Finding: not established yet. Build step 5 checks it last, from two different networks, because exhausting the bucket also blocks your own sign ins. Record the result here and beside `[auth.rate_limit]` in `supabase/config.toml`.
+**Finding (2026-10-04): Supabase counts Vercel's addresses, not the visitor's.** How it was measured, from one network:
+
+1. Wrong passwords sent straight to `auth/v1/token` from your own address until Supabase answered `429` (after about 30).
+2. With that address still blocked (`429` right before and right after), a correct sign in through the production app succeeded in under a second. So the app's sign in is not counted against the visitor's address.
+3. Six browsers then sent 150 wrong sign ins through the app in about 20 seconds: about 100 got "Those details did not match", about 50 got `You have reached the limit for now. Please wait a little and try again.` Run alongside a burst, wrong current passwords on `/account` got the same rate limited copy, so they draw on the same buckets.
+4. A minute later, correct sign ins worked again.
+
+The mix in step 3 means Vercel sends these calls from a small pool of addresses, each with its own bucket of 30 per five minutes. What that means for you:
+- The limit is shared by every visitor. One person sending wrong passwords quickly makes some sign ins, sign ups and password changes fail with the rate limited copy for everyone, for up to five minutes. Accepted for now (spec 0018, Consequences).
+- One person gets a few buckets rather than one, so the brute force protection is a few times looser than "30 per five minutes".
+- If it bites, the follow up is a second Vercel Firewall rule on sign in and sign up posts per IP (spec 0018, Follow-up). The same note sits beside `[auth.rate_limit]` in `supabase/config.toml`.
 
 ## 7. Restoring a paused project (remote)
 
