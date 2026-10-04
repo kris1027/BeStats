@@ -340,8 +340,8 @@ spec [0018](../specs/0018-deploy-and-provider-setup/index.md) · code in [docs/d
   - [x] Previews: the unavailable notice on `/sign-in` and `/sign-up`, the proxy fallback, Preview variables and a bypass token check (AC-6, AC-21)
   - [x] Legal, SEO and runbook: region in the privacy policy, `docs/deploy.md`, sitemap checks and Search Console (AC-22 to AC-24)
   - [x] Hosted security proof: cookies, token lifetime, isolation, bundle secrets, `/api/search` firewall rule, then the rate limit finding (AC-5, AC-16 to AC-20)
-- [ ] Verify it: `/check verify deploy and provider setup`
-- [ ] Test it: `/test deploy and provider setup`
+- [x] Verify it: `/check verify deploy and provider setup`
+- [x] Test it: `/test deploy and provider setup`
 - [ ] Review it (fresh model): `/check review deploy and provider setup`
 - [ ] Document it: `/document deploy and provider setup`
 
