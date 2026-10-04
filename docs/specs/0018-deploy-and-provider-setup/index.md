@@ -1,7 +1,7 @@
 # 0018. Deploy and provider setup: Vercel and the existing Supabase Free project, email and password without confirmation, email delivery and Google deferred
 
 **Date**: 2026-10-03
-**Status**: In Progress
+**Status**: Accepted
 
 Scope feature: [20. Deploy and provider setup](../../scope/scope.md) · GA tier
 

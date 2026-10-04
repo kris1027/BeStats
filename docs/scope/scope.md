@@ -32,7 +32,7 @@ _The stack, tooling and product rules (ratings, progress, statuses, security) li
 | 17 | SEO metadata and sitemap | Slice 8 | done |
 | 18 | Legal pages and TMDB attribution | Slice 8 | done |
 | 19 | Security and acceptance verification | Slice 8 | done |
-| 20 | Deploy and provider setup | Slice 8 | in-progress |
+| 20 | Deploy and provider setup | Slice 8 | done |
 
 ## Foundations
 
@@ -329,7 +329,7 @@ Run the full `AGENTS.md` section 13 checklist with two test users, including dir
 - [x] Verify it: `/check verify security and acceptance verification`
 - [x] Test it: `/test security and acceptance verification`
 
-### 20. Deploy and provider setup · in-progress · GA
+### 20. Deploy and provider setup · done · GA
 Vercel deployment on the free `vercel.app` address, the existing Supabase Free project configured from the repo (`db push` and `config push` through a runbook), branch protection, and the hosted security checks spec 0005 left here. Production sends no email: sign up needs no confirmation, recovery shows a contact notice, and Google sign in stays absent (both deferred together). Remote migrations and deployment need your explicit approval in the plan.
 **Done when:** the deployed app signs users up and in with email and password against the cloud project with every migration applied, hosted auth settings match `supabase/config.toml`, environment variables target the intended projects, and no screen promises an email production can't send.
 spec [0018](../specs/0018-deploy-and-provider-setup/index.md) · code in [docs/deploy.md](../deploy.md), [vercel.json](../../vercel.json), [supabase/config.toml](../../supabase/config.toml), [lib/env.ts](../../lib/env.ts), [app/(auth)/](../../app/(auth)/)
@@ -342,8 +342,8 @@ spec [0018](../specs/0018-deploy-and-provider-setup/index.md) · code in [docs/d
   - [x] Hosted security proof: cookies, token lifetime, isolation, bundle secrets, `/api/search` firewall rule, then the rate limit finding (AC-5, AC-16 to AC-20)
 - [x] Verify it: `/check verify deploy and provider setup`
 - [x] Test it: `/test deploy and provider setup`
-- [ ] Review it (fresh model): `/check review deploy and provider setup`
-- [ ] Document it: `/document deploy and provider setup`
+- [x] Review it (fresh model): `/check review deploy and provider setup`
+- [x] Document it: `/document deploy and provider setup`
 
 ## Deferred
 Out of scope for the current build pass, kept so the plan stays honest.
