@@ -27,7 +27,7 @@ _Steps derived from spec 0018 acceptance criteria. `/check verify` runs these; `
 - [ ] `pnpm vitest run lib/legal app/privacy` → all pass, including the EU region test and the no account email test → AC-23
 - [ ] Temporarily set `SUPABASE_REGION.code` to `us-east-1` and run `pnpm vitest run lib/legal/operator.test.ts` → the region test fails; revert → AC-23
 - [ ] Open `docs/deploy.md` → it covers linking at CLI `2.117.0` with the region and JWT key checks, `db push` before merge, `config push` with the diff review and the AC-8 path, Vercel variables per environment with the redeploy note, branch protection and the firewall settings, the AC-18 finding, restoring a paused project, rollback, `pnpm tmdb:live` and the sitemap check, the legal read through, and manual password help → AC-24
-- [ ] `docs/deploy.md` section 3 records the diff of a `config push` you ran yourself (not the placeholder paragraph) → AC-7, AC-24
+- [ ] `pnpm exec supabase config diff` → only the three differences `docs/deploy.md` section 3 accepts (Twilio enabled, two pooler sizes) → AC-7, AC-24
 
 ## Acceptance-criteria coverage
 - AC-6 (Preview half) · covered by `vercel env ls preview`

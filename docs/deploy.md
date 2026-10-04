@@ -49,11 +49,13 @@ Auth settings reach the cloud only through `pnpm exec supabase config push`. Nev
 
 **What the hosted project carries** (checked on 2026-10-04 through the public `auth/v1/settings` endpoint where it exposes them): sign up enabled, confirmation off (`mailer_autoconfirm: true`), only the email provider enabled. From `config.toml`: `minimum_password_length = 8`, `jwt_expiry = 600`, `sign_in_sign_ups = 30`, `secure_password_change = false`, and the production `site_url` and redirect list above. Google and every other external provider stay disabled.
 
-**Accepted differences.** The first push ran on 2026-10-04 from an agent shell, which applied it without stopping at the prompt, so its diff was never read or recorded here. Two settings are known to need the plan's cooperation:
-- `[storage.vector] enabled = false`, because the Free plan refuses vector buckets with a 402.
-- `email_sent` in `[auth.rate_limit]` needs custom SMTP, which production doesn't have. Expect the hosted value to differ.
+**Accepted differences.** The first push ran on 2026-10-04 from an agent shell, which applied it without stopping at the prompt, so its diff was never read. You ran the push again yourself later that day, and it wrote nothing: API, database and storage settings were up to date, and auth had only the difference below. `pnpm exec supabase config diff` (read only, safe to run any time) lists the same three differences. All three are accepted:
+- `auth.sms.twilio.enabled`: `false` here, `true` on the hosted project. The CLI can switch SMS providers but can't turn the active one off. Harmless, because phone sign up is off (`[auth.sms] enable_signup = false`) and the hosted settings list email as the only enabled provider.
+- `db.pooler.default_pool_size` (`20` here, `15` hosted) and `db.pooler.max_client_conn` (`100` here, `200` hosted). The Management API has no field for these, so the hosted values are the Free plan's own. BeStats never connects through the pooler (it uses the Data API), so they don't matter.
 
-Recommended next: run step 3 yourself once, read the diff, and replace this paragraph with what it shows (ideally "no differences", or the exact fields that differ and why you accepted them).
+The CLI also skips some declared properties without comparing them, such as `auth.rate_limit.email_sent` (needs custom SMTP), the `[storage.vector]` and `[storage.analytics]` limits, and the Apple and Twilio credentials. `config diff` names them under "not part of the current comparison". `[storage.vector] enabled = false` stays because the Free plan refuses vector buckets with a 402, which would fail every push.
+
+If a later push shows anything beyond these, cancel and investigate.
 
 **Not available on Free.** Leaked password protection (the breach check of spec 0005 AC-9) needs the Pro plan, so it stays off.
 
