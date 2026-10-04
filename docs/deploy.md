@@ -106,18 +106,22 @@ Checked on 2026-10-04: a burst of 70 requests from one address got 60 answers of
 
 ## 6. Which IP address Supabase counts (AC-18)
 
-Sign ins run in a Server Action on Vercel, so Supabase may count the visitor's address or Vercel's outbound address against `sign_in_sign_ups` (30 per five minutes). If it counts Vercel's, the limit is shared by everyone, and one person sending thirty wrong passwords locks every visitor out for five minutes.
+Sign ins run in a Server Action on Vercel, so Supabase may count the visitor's address or Vercel's outbound address. If it counts Vercel's, the limit is shared by everyone, and one person sending wrong passwords quickly makes sign in fail for every visitor.
+
+**Which knob limits a password sign in.** Not `sign_in_sign_ups`. A password sign in is `POST auth/v1/token?grant_type=password`, and Supabase Auth limits every `/token` grant (password and session refresh alike) with the limiter built from `token_refresh` (150 per five minutes in `config.toml`). `sign_in_sign_ups` limits sign ups, password recovery, OTP and `PUT /user`. Source: `supabase/auth`, `internal/api/token.go` (`limiter := a.limiterOpts.Token`) and `internal/api/apilimiter/apilimiter.go`; the CLI maps `token_refresh` to `GOTRUE_RATE_LIMIT_TOKEN_REFRESH` and `sign_in_sign_ups` to `GOTRUE_RATE_LIMIT_OTP`.
+
+**It is a token bucket, not a five minute block** (`tollbooth.NewLimiter(rate/(60*5)).SetBurst(30)`). Each address starts with 30 tries and gets one back every 300/150 = 2 seconds. So a `429` turns back into `400` within seconds, and a drained bucket refills fully in about a minute. Session refreshes made by the proxy on Vercel draw on the same buckets as sign ins.
 
 **Finding (2026-10-04): Supabase counts Vercel's addresses, not the visitor's.** How it was measured, from one network:
 
-1. Wrong passwords sent straight to `auth/v1/token` from your own address until Supabase answered `429` (after about 30).
-2. With that address still blocked (`429` right before and right after), a correct sign in through the production app succeeded in under a second. So the app's sign in is not counted against the visitor's address.
+1. Wrong passwords sent straight to `auth/v1/token` from your own address until Supabase answered `429` (after 30 to 36 on a fresh bucket, fewer on a bucket not yet refilled, since one try comes back every 2 seconds).
+2. Right after that `429`, a correct sign in through the production app succeeded in under a second. This step alone proves nothing: a try can refill between the two requests, and a second run saw `400` again moments later. Step 3 is the evidence.
 3. Six browsers then sent 150 wrong sign ins through the app in about 20 seconds: about 100 got "Those details did not match", about 50 got `You have reached the limit for now. Please wait a little and try again.` Run alongside a burst, wrong current passwords on `/account` got the same rate limited copy, so they draw on the same buckets.
 4. A minute later, correct sign ins worked again.
 
-The mix in step 3 means Vercel sends these calls from a small pool of addresses, each with its own bucket of 30 per five minutes. What that means for you:
-- The limit is shared by every visitor. One person sending wrong passwords quickly makes some sign ins, sign ups and password changes fail with the rate limited copy for everyone, for up to five minutes. Accepted for now (spec 0018, Consequences).
-- One person gets a few buckets rather than one, so the brute force protection is a few times looser than "30 per five minutes".
+The mix in step 3 is the proof. All 150 came from one network, so one bucket keyed on the visitor's address would have let through about 40 (30 plus ten refills in 20 seconds), not about 100. Vercel sends these calls from a small pool of addresses, each with its own bucket. What that means for you:
+- The limit is shared by every visitor. One person sending wrong passwords quickly makes some sign ins, current password checks and session refreshes fail for everyone (sign ups use the separate `sign_in_sign_ups` bucket), for as long as they keep sending (each bucket lets one try through every 2 seconds). Accepted for now (spec 0018, Consequences).
+- One person gets a few buckets rather than one, so the brute force protection is a few times looser than one bucket: each bucket alone already allows a steady 150 tries per five minutes.
 - If it bites, the follow up is a second Vercel Firewall rule on sign in and sign up posts per IP (spec 0018, Follow-up). The same note sits beside `[auth.rate_limit]` in `supabase/config.toml`.
 
 ## 7. Restoring a paused project (remote)

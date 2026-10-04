@@ -218,12 +218,13 @@ password_requirements = ""
 # rp_origins = ["http://127.0.0.1:3000"]
 
 [auth.rate_limit]
-# Spec 0005 AC-18 names two numbers: thirty sign in attempts and two emails.
-# Both are set below. Note what the knobs actually measure, which is not what
-# AC-18 says: `email_sent` is per hour and needs SMTP configured, and
-# `sign_in_sign_ups` is per five minutes per IP address, not per hour per
-# address. Supabase exposes no per-address sign in limit, so AC-18's wording
-# needs correcting rather than the configuration.
+# Spec 0005 AC-18 and spec 0018 AC-18. Three knobs matter here, all per IP
+# address (Supabase exposes no per-address limit):
+# - `token_refresh` limits password sign ins (every /token grant), as a token
+#   bucket: burst 30, one try back every 2 seconds.
+# - `sign_in_sign_ups` limits sign ups, recovery, OTP and PUT /user, not
+#   password sign ins.
+# - `email_sent` is per hour and only applies once SMTP is configured.
 # Number of emails that can be sent per hour. Requires auth.email.smtp to be enabled.
 email_sent = 2
 # Number of SMS messages that can be sent per hour. Requires auth.sms to be enabled.
@@ -231,17 +232,21 @@ sms_sent = 30
 # Number of anonymous sign-ins that can be made per hour per IP address. Requires enable_anonymous_sign_ins = true.
 anonymous_users = 30
 # Number of sessions that can be refreshed in a 5 minute interval per IP address.
+# Despite the name, this is the bucket password sign ins use (and so the
+# current password check in `changePasswordAction`): Supabase Auth's /token
+# endpoint applies it to the password grant too. Spec 0018 AC-18, measured on
+# production on 2026-10-04: Supabase counts the address of Vercel's function,
+# not the visitor's. Sign ins leave from a small pool of Vercel addresses, each
+# with its own token bucket (burst 30, one try back every 2 seconds), so the
+# limit is shared by every visitor: a burst of wrong passwords from one person
+# makes some sign ins fail with the rate limited copy for everyone while it
+# lasts. Accepted for now; see docs/deploy.md section 6.
 token_refresh = 150
 # Number of sign up and sign-in requests that can be made in a 5 minute interval per IP address (excludes anonymous users).
-# Spec 0005 AC-18. This is also the bucket `changePasswordAction` draws on when
-# it re-checks the current password, which is deliberate: it limits guessing at
-# the current password too.
-# Spec 0018 AC-18, measured on production on 2026-10-04: Supabase counts the
-# address of Vercel's function, not the visitor's. Sign ins leave from a small
-# pool of Vercel addresses, each with its own bucket, so this limit is shared
-# by every visitor: a burst of wrong passwords from one person makes some sign
-# ins fail with the rate limited copy for everyone, for up to five minutes.
-# Accepted for now; see docs/deploy.md section 6.
+# Spec 0005 AC-18.
+# Password sign ins are NOT limited here: Supabase Auth limits every /token
+# grant, password included, with `token_refresh` above. This knob covers sign
+# ups, recovery, OTP and PUT /user. See docs/deploy.md section 6.
 sign_in_sign_ups = 30
 # Number of OTP / Magic link verifications that can be made in a 5 minute interval per IP address.
 token_verifications = 30
