@@ -16,6 +16,7 @@ import {
   OPERATOR_NAME,
   PROCESSORS,
   RIGHTS_RESPONSE,
+  SUPABASE_REGION,
   SUPERVISORY_AUTHORITY,
 } from "@/lib/legal/operator";
 import { catalogMetadata } from "@/lib/seo/metadata";
@@ -84,10 +85,6 @@ export default function PrivacyPage() {
             6(1)(b)).
           </li>
           <li>
-            To send the emails your account needs, such as address confirmation
-            and password recovery, on the same basis.
-          </li>
-          <li>
             To keep the service secure and stop abuse, for example through rate
             limits and logs. The legal basis is our legitimate interest in a
             safe service (GDPR Art. 6(1)(f)).
@@ -134,9 +131,14 @@ export default function PrivacyPage() {
 
       <LegalSection title="Transfers outside the EEA">
         <p>
-          Supabase and Vercel are based in the United States. Where your data
-          leaves the European Economic Area, it is protected by the safeguards
-          those providers offer, such as the EU Standard Contractual Clauses.
+          Your data is stored and processed in the EU: the database in{" "}
+          {SUPABASE_REGION.name}, and the app&rsquo;s server functions in the
+          matching Vercel region.
+        </p>
+        <p>
+          Supabase and Vercel are United States companies. Where their staff
+          access your data for support and operations, that access is covered by
+          the EU Standard Contractual Clauses.
         </p>
       </LegalSection>
 

@@ -11,6 +11,7 @@ import {
   OPERATOR_NAME,
   PROCESSORS,
   RIGHTS_RESPONSE,
+  SUPABASE_REGION,
   SUPERVISORY_AUTHORITY,
 } from "@/lib/legal/operator";
 import PrivacyPage, { metadata } from "./page";
@@ -110,6 +111,22 @@ describe("/privacy", () => {
     }
     expect(container.textContent).not.toMatch(
       /delete (my|your) account button|download my data/i,
+    );
+  });
+
+  it("places the data in the EU region the constant names (spec 0018, AC-23)", () => {
+    const { container } = render(<PrivacyPage />);
+    const text = container.textContent ?? "";
+
+    expect(text).toContain(`the database in ${SUPABASE_REGION.name}`);
+    expect(text).toContain("EU Standard Contractual Clauses");
+  });
+
+  it("promises no account email production can't send (spec 0018, AC-23)", () => {
+    const { container } = render(<PrivacyPage />);
+
+    expect(container.textContent).not.toMatch(
+      /address confirmation|password recovery|send the emails/i,
     );
   });
 
