@@ -282,6 +282,61 @@ describe("the email actions with email delivery off", () => {
   });
 });
 
+/**
+ * covers: spec 0018, AC-18 (runtime half)
+ *
+ * In production the `token_refresh` bucket limits every password sign in and
+ * may be shared by every visitor, so a drained bucket must read as "wait",
+ * never as wrong details that would send someone to reset a good password.
+ */
+describe("signInAction once the sign in bucket is drained", () => {
+  beforeEach(() => {
+    vi.stubEnv("NEXT_PUBLIC_AUTH_EMAIL_DELIVERY", "off");
+    auth.signInWithPassword.mockResolvedValue({
+      data: { user: null, session: null },
+      error: new AuthApiError(
+        "Request rate limit reached",
+        429,
+        "over_request_rate_limit",
+      ),
+    });
+  });
+
+  it("shows the rate limited copy", async () => {
+    const state = await signInAction(
+      IDLE_STATE,
+      form({ email: ADDRESS, password: PASSWORD }),
+    );
+
+    expect(state.outcome).toBe(AUTH_OUTCOME.rateLimited);
+    expect(state.message).toBe(
+      "You have reached the limit for now. Please wait a little and try again.",
+    );
+  });
+
+  it("does not claim the details were wrong", async () => {
+    const state = await signInAction(
+      IDLE_STATE,
+      form({ email: ADDRESS, password: PASSWORD }),
+    );
+
+    expect(state.message).not.toBe(
+      AUTH_MESSAGES[AUTH_OUTCOME.invalidCredentials],
+    );
+  });
+
+  it("keeps the typed address and logs the outcome without it", async () => {
+    const state = await signInAction(
+      IDLE_STATE,
+      form({ email: ADDRESS, password: PASSWORD }),
+    );
+
+    expect(state.values?.email).toBe(ADDRESS);
+    expect(JSON.stringify(warn.mock.calls)).not.toContain(ADDRESS);
+    expect(JSON.stringify(warn.mock.calls)).not.toContain(PASSWORD);
+  });
+});
+
 /** covers: spec 0005, AC-6, AC-7 (the `on` path is unchanged) */
 describe("the email actions with email delivery on", () => {
   beforeEach(() => {
