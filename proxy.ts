@@ -56,6 +56,14 @@ export async function proxy(request: NextRequest) {
         `[proxy] Authentication is not configured, so sessions are not being refreshed. ${envProblems}. Copy .env.example to .env.local to enable it.`,
       );
     }
+
+    // Nobody can be signed in here, so a private page could only throw from
+    // `getPublicEnv` inside `requireUser()`. Send the visitor to `/sign-in`,
+    // which says sign in isn't available, with no Supabase call (spec 0018,
+    // AC-21). The same GET only rule as the guard below.
+    if (request.method === "GET" && isPrivatePath(request.nextUrl.pathname)) {
+      return signInRedirect(request);
+    }
     return NextResponse.next({ request: withPathname(request) });
   }
 
@@ -104,7 +112,7 @@ export async function proxy(request: NextRequest) {
   const { data, error } = await supabase.auth.getClaims();
   const signedIn = !error && typeof data?.claims?.sub === "string";
 
-  const { pathname, search } = request.nextUrl;
+  const { pathname } = request.nextUrl;
 
   // Only a navigation is redirected, never a Server Action.
   //
@@ -121,15 +129,10 @@ export async function proxy(request: NextRequest) {
   const isNavigation = request.method === "GET";
 
   if (isNavigation && !signedIn && isPrivatePath(pathname)) {
-    const signIn = new URL("/sign-in", request.url);
-    // The query string travels too, so a link into a filtered private list
-    // survives the detour through sign in.
-    signIn.searchParams.set("next", `${pathname}${search}`);
-
     // Built from `response` rather than a fresh redirect, so any refreshed
     // cookie set above is still written. Dropping it here would sign out a
     // visitor whose token had just been renewed.
-    const redirect = NextResponse.redirect(signIn);
+    const redirect = signInRedirect(request);
     for (const cookie of response.cookies.getAll()) {
       redirect.cookies.set(cookie);
     }
@@ -137,6 +140,18 @@ export async function proxy(request: NextRequest) {
   }
 
   return response;
+}
+
+/**
+ * The redirect to `/sign-in` for a signed out visit to a private path. The
+ * query string travels in `next` too, so a link into a filtered private list
+ * survives the detour through sign in.
+ */
+function signInRedirect(request: NextRequest): NextResponse {
+  const { pathname, search } = request.nextUrl;
+  const signIn = new URL("/sign-in", request.url);
+  signIn.searchParams.set("next", `${pathname}${search}`);
+  return NextResponse.redirect(signIn);
 }
 
 /**

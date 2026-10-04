@@ -1,8 +1,9 @@
 import { render, screen } from "@testing-library/react";
 import type * as React from "react";
 import { Suspense } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { AUTH_UNCONFIGURED_MESSAGE } from "@/lib/auth/messages";
 import SignUpPage from "./page";
 
 vi.mock("../actions", () => ({
@@ -70,5 +71,60 @@ describe("the sign up terms line", () => {
   it("asks for no checkbox", () => {
     const { container } = render(termsLine());
     expect(container.querySelector("input")).toBeNull();
+  });
+});
+
+/**
+ * Renders the form slot the way the page's Suspense boundary would, awaiting
+ * the async Server Component as a function (see the sign in page test).
+ */
+async function renderSlot() {
+  const boundary = panelChildren().find((child) => child?.type === Suspense);
+  if (!boundary) throw new Error("the sign up panel has no form boundary");
+  const slot = boundary.props.children as Element;
+  const resolve = slot.type as (props: unknown) => Promise<React.ReactElement>;
+
+  render(await resolve(slot.props));
+}
+
+/**
+ * covers: spec 0018, AC-21
+ *
+ * A Vercel preview carries no Supabase variables, so the page shows a notice
+ * instead of a form that could only fail on submit.
+ */
+describe("the sign up page without auth configuration", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("shows the notice instead of the form", async () => {
+    for (const name of [
+      "NEXT_PUBLIC_SUPABASE_URL",
+      "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+      "NEXT_PUBLIC_SITE_URL",
+    ]) {
+      vi.stubEnv(name, undefined);
+    }
+
+    await renderSlot();
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      AUTH_UNCONFIGURED_MESSAGE,
+    );
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("shows the form once auth is configured", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "http://127.0.0.1:54321");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test");
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "http://localhost:3000");
+
+    await renderSlot();
+
+    expect(
+      screen.queryByText(AUTH_UNCONFIGURED_MESSAGE),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Create account" }),
+    ).toBeInTheDocument();
   });
 });

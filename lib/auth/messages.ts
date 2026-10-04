@@ -54,6 +54,14 @@ export const AUTH_OUTCOME = {
 export type AuthOutcome = (typeof AUTH_OUTCOME)[keyof typeof AUTH_OUTCOME];
 
 /**
+ * What `/sign-in` and `/sign-up` show instead of a form on a deployment with
+ * no Supabase configuration, such as a Vercel preview (spec 0018, AC-21). A
+ * form there could only fail on submit, so the page says so up front.
+ */
+export const AUTH_UNCONFIGURED_MESSAGE =
+  "Sign in isn't available on this deployment.";
+
+/**
  * What every recovery surface says while production sends no email (spec
  * 0018, AC-13): `/forgot-password`, `/reset-password`, and the resend and
  * reset actions when posted to directly. Honest about the gap and names the

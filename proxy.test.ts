@@ -109,7 +109,53 @@ describe("the proxy with incomplete auth configuration", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("location")).toBeNull();
   });
+
+  /**
+   * covers: spec 0018, AC-21
+   *
+   * A Vercel preview has no Supabase variables, so nobody can be signed in
+   * there. A private page would otherwise throw from `getPublicEnv`.
+   */
+  it("sends a private navigation to sign in without calling Supabase", async () => {
+    stubNoAuth();
+    const ssr = await import("@supabase/ssr");
+    const create = vi.spyOn(ssr, "createServerClient");
+
+    const { proxy } = await import("./proxy");
+    const response = await proxy(
+      new NextRequest("http://localhost/watchlist?type=tv"),
+    );
+
+    expect(response.status).toBe(307);
+    const location = new URL(response.headers.get("location") ?? "");
+    expect(location.pathname).toBe("/sign-in");
+    expect(location.searchParams.get("next")).toBe("/watchlist?type=tv");
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it("never redirects a Server Action POST to a private path", async () => {
+    stubNoAuth();
+
+    const { proxy } = await import("./proxy");
+    const response = await proxy(
+      new NextRequest("http://localhost/watchlist", { method: "POST" }),
+    );
+
+    expect(response.headers.get("location")).toBeNull();
+  });
 });
+
+/** No auth configuration at all, the shape of a Vercel preview. */
+function stubNoAuth() {
+  for (const name of [
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+    "NEXT_PUBLIC_SITE_URL",
+  ]) {
+    vi.stubEnv(name, undefined);
+  }
+  vi.spyOn(console, "warn").mockImplementation(() => {});
+}
 
 /**
  * covers: spec 0006, AC-8; spec 0009, AC-13
