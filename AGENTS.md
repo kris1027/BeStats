@@ -300,6 +300,8 @@ Tracer Bullet: prove the whole pipe works with one thin real thread, then thicke
 - Two server renders write: `/shows/{id}` and `/upcoming` run the automatic completion check of spec 0015 (`lib/tracking/auto-completion.ts`) before they read the status, and only on rows whose `status_source` is `system`. No other page writes on load; keep it that way unless a spec says otherwise.
 - TMDB images render through `next/image`; `image.tmdb.org` is the one allowed remote pattern.
 - Legal facts (operator, contact email, processors, `LEGAL_LAST_UPDATED`) live only in `lib/legal/operator.ts`, and TMDB's notice only in `TMDB_ATTRIBUTION`; `lib/legal/boundary.test.ts` fails if either is pasted elsewhere. `/privacy` and `/terms` describe only what the code does, so a change that adds a processor, email provider or analytics updates `PROCESSORS`, the policy text and `LEGAL_LAST_UPDATED` in the same PR (spec 0017). `public/tmdb-logo.svg` is TMDB's official file, hash checked; never edit it.
+- Production runs from [docs/deploy.md](docs/deploy.md), the runbook of spec 0018: push a migration with `supabase db push` before merging the PR that adds it, and auth settings reach the cloud only through `supabase config push` (never the dashboard). Run both pushes yourself; from an agent shell the CLI applies them without stopping at the prompt. `vercel.json` pins functions to `fra1`, next to the Supabase region `eu-central-1`. The `/api/search` rate limit is a Vercel Firewall rule, recorded only in `docs/deploy.md`.
+- `NEXT_PUBLIC_AUTH_EMAIL_DELIVERY` (`on` or `off`, unset meaning `off`) is read only through `getAuthEmailDelivery()` in `lib/env.ts`, separate from `getPublicEnv()` so previews with no Supabase variables still build. Production is `off`: no auth email is sent or promised. Being a `NEXT_PUBLIC_` value, a change takes a redeploy.
 
 ## Code conventions
 
@@ -313,3 +315,4 @@ Tracer Bullet: prove the whole pipe works with one thin real thread, then thicke
 - [components/AGENTS.md](components/AGENTS.md): the UI foundation, the plate rule, the token and glass utility vocabulary, and the server by default policy for the shell
 - [lib/auth/AGENTS.md](lib/auth/AGENTS.md): the session boundary (`requireUser`, `getOptionalUser`), the private path registry, and the rules every auth form and Server Action follows
 - [lib/seo/AGENTS.md](lib/seo/AGENTS.md): canonicals, share cards, JSON-LD, robots and the sitemap, the deployment gate, and why no SEO surface reads request state
+- [docs/deploy.md](docs/deploy.md): the production runbook (linking, `db push`, `config push` and its accepted differences, Vercel variables, the firewall rule, the rate limit finding, rollback, manual password help)
