@@ -60,7 +60,9 @@ export async function proxy(request: NextRequest) {
     // Nobody can be signed in here, so a private page could only throw from
     // `getPublicEnv` inside `requireUser()`. Send the visitor to `/sign-in`,
     // which says sign in isn't available, with no Supabase call (spec 0018,
-    // AC-21). The same GET only rule as the guard below.
+    // AC-21). Falling back instead of failing is the `publicEnvProblems()`
+    // rule in `AGENTS.md` "Commands and repo facts". The same GET only rule as
+    // the guard below.
     if (request.method === "GET" && isPrivatePath(request.nextUrl.pathname)) {
       return signInRedirect(request);
     }
@@ -146,6 +148,10 @@ export async function proxy(request: NextRequest) {
  * The redirect to `/sign-in` for a signed out visit to a private path. The
  * query string travels in `next` too, so a link into a filtered private list
  * survives the detour through sign in.
+ *
+ * A convenience, not the security boundary (`AGENTS.md` section 11, and the
+ * proxy redirect rule in `lib/auth/AGENTS.md`): `requireUser()` and RLS still
+ * refuse a request that slips past it.
  */
 function signInRedirect(request: NextRequest): NextResponse {
   const { pathname, search } = request.nextUrl;

@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AUTH_UNCONFIGURED_MESSAGE } from "@/lib/auth/messages";
+import { stubNoPublicEnv, stubPublicEnv } from "@/lib/env.test-helpers";
 import SignUpPage from "./page";
 
 vi.mock("../actions", () => ({
@@ -97,13 +98,7 @@ describe("the sign up page without auth configuration", () => {
   afterEach(() => vi.unstubAllEnvs());
 
   it("shows the notice instead of the form", async () => {
-    for (const name of [
-      "NEXT_PUBLIC_SUPABASE_URL",
-      "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
-      "NEXT_PUBLIC_SITE_URL",
-    ]) {
-      vi.stubEnv(name, undefined);
-    }
+    stubNoPublicEnv();
 
     await renderSlot();
 
@@ -114,9 +109,7 @@ describe("the sign up page without auth configuration", () => {
   });
 
   it("shows the form once auth is configured", async () => {
-    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "http://127.0.0.1:54321");
-    vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test");
-    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "http://localhost:3000");
+    stubPublicEnv();
 
     await renderSlot();
 

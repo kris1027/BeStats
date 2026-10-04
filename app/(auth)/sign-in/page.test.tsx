@@ -9,6 +9,7 @@ import {
   SIGN_IN_NOTICE,
   SIGN_IN_NOTICES,
 } from "@/lib/auth/messages";
+import { stubPublicEnv } from "@/lib/env.test-helpers";
 import SignInPage from "./page";
 
 vi.mock("../actions", () => ({
@@ -16,13 +17,6 @@ vi.mock("../actions", () => ({
 }));
 
 type Element = React.ReactElement<Record<string, unknown>>;
-
-/** A complete auth configuration, so the slot renders the form. */
-function stubConfiguredAuth() {
-  vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "http://127.0.0.1:54321");
-  vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test");
-  vi.stubEnv("NEXT_PUBLIC_SITE_URL", "http://localhost:3000");
-}
 
 /**
  * Renders the form the way the page's streamed slot would. jsdom's client
@@ -51,7 +45,7 @@ async function renderSlot(params: Record<string, string>) {
  * string itself.
  */
 describe("the sign in page's query string", () => {
-  beforeEach(stubConfiguredAuth);
+  beforeEach(() => stubPublicEnv());
   afterEach(() => vi.unstubAllEnvs());
 
   it("shows the reset confirmation for the notice the reset action sends (AC-8)", async () => {
@@ -113,14 +107,7 @@ describe("the sign in page without auth configuration", () => {
       },
     ],
   ])("shows the notice instead of the form with %s", async (_, env) => {
-    const values: Record<string, string> = env;
-    for (const name of [
-      "NEXT_PUBLIC_SUPABASE_URL",
-      "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
-      "NEXT_PUBLIC_SITE_URL",
-    ]) {
-      vi.stubEnv(name, values[name]);
-    }
+    stubPublicEnv(env);
 
     await renderSlot({ next: "/watchlist" });
 
@@ -132,7 +119,7 @@ describe("the sign in page without auth configuration", () => {
   });
 
   it("shows the form once auth is configured", async () => {
-    stubConfiguredAuth();
+    stubPublicEnv();
 
     await renderSlot({});
 
