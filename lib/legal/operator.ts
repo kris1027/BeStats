@@ -35,7 +35,19 @@ export const MINIMUM_AGE = 16;
  * whenever the text changes materially. Pages format it in UTC and never read
  * the clock (spec 0017, AC-7).
  */
-export const LEGAL_LAST_UPDATED = "2026-10-03";
+export const LEGAL_LAST_UPDATED = "2026-10-04";
+
+/**
+ * Where the production Supabase project stores your data, read from
+ * `supabase projects list` (spec 0018, AC-23). A region can't change after a
+ * project is created, so this moves only with a new project, and the EU test
+ * beside it fails if that project ever leaves the EU. The app's functions sit
+ * in the matching Vercel region, pinned in `vercel.json`.
+ */
+export const SUPABASE_REGION = {
+  code: "eu-central-1",
+  name: "Frankfurt, Germany",
+} as const;
 
 /** Days within which an account deletion request is completed. */
 export const DELETION_DAYS = 30;
@@ -50,14 +62,14 @@ export const COMPLAINT_RESPONSE_DAYS = 14;
 export type Processor = { name: string; purpose: string; url: string };
 
 /**
- * Only the processors live today. Google joins when feature 20 restores Google
- * sign in, and an email provider joins when one is chosen, each in its own PR.
+ * Only the processors live today. Production sends no email (spec 0018), so
+ * neither Google nor an email provider is listed; both join with the deferred
+ * email delivery and Google sign in work, in the PR that turns them on.
  */
 export const PROCESSORS: readonly Processor[] = [
   {
     name: "Supabase",
-    purpose:
-      "Stores your account and tracking data, handles sign in, and sends account emails such as confirmation and password recovery.",
+    purpose: "Stores your account and tracking data and handles sign in.",
     url: "https://supabase.com",
   },
   {

@@ -10,6 +10,7 @@ import {
   OPERATOR_NAME,
   PROCESSORS,
   RIGHTS_RESPONSE,
+  SUPABASE_REGION,
   SUPERVISORY_AUTHORITY,
 } from "./operator";
 
@@ -54,5 +55,19 @@ describe("the operator facts", () => {
       expect(processor.url).toMatch(/^https:\/\//);
     }
     expect(SUPERVISORY_AUTHORITY.url).toMatch(/^https:\/\//);
+  });
+});
+
+/**
+ * covers: spec 0018, AC-23
+ *
+ * The privacy policy promises EU storage. A project moved to a region outside
+ * the EU would make that sentence false, so the constant has to say EU before
+ * the page can render it.
+ */
+describe("the Supabase region", () => {
+  it("is an EU region with a place name", () => {
+    expect(SUPABASE_REGION.code).toMatch(/^eu-/);
+    expect(SUPABASE_REGION.name.trim()).not.toBe("");
   });
 });
