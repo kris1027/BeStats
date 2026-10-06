@@ -2,13 +2,13 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { sectionId } from "@/components/legal/legal-document";
+import { expectOperatorLinks } from "@/components/legal/test-helpers";
 import {
   CONTACT_EMAIL,
   DELETION_DAYS,
   LEGAL_LAST_UPDATED,
   MINIMUM_AGE,
   OPERATOR_COUNTRY,
-  OPERATOR_GITHUB_URL,
   OPERATOR_HANDLE,
   PROCESSORS,
   RIGHTS_RESPONSE,
@@ -83,13 +83,7 @@ describe("/privacy", () => {
     expect(
       container.querySelector(`a[href="mailto:${CONTACT_EMAIL}"]`),
     ).not.toBeNull();
-    const operatorLinks = container.querySelectorAll(
-      `a[href="${OPERATOR_GITHUB_URL}"]`,
-    );
-    expect(operatorLinks.length).toBeGreaterThan(0);
-    for (const link of operatorLinks) {
-      expect(link).toHaveTextContent(OPERATOR_HANDLE);
-    }
+    expectOperatorLinks(container);
   });
 
   it("opens external links in a new tab, safely (AC-7)", () => {

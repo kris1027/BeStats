@@ -129,8 +129,11 @@ export function ExternalLink({
 }
 
 /**
- * The operator's handle, always linked to their GitHub profile, which carries
- * the full name (spec 0017, AC-10).
+ * The operator's handle, always linked to their GitHub profile. The pages name
+ * the operator by handle rather than legal name, and the profile carries the
+ * full name, so the data controller stays identifiable (plan
+ * `prompts/navbar-footer-slim-and-drop-design-refs.md`, decisions 7 and 9).
+ * Both values come from `lib/legal/operator.ts` (spec 0017, AC-10).
  */
 export function OperatorLink() {
   return (
