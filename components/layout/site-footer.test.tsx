@@ -69,6 +69,27 @@ describe("SiteFooter", () => {
     expect(container.querySelector('a[href^="mailto:"]')).toBeNull();
   });
 
+  it("gives the small print credit a 44px tap area without a taller line (AC-5)", () => {
+    render(<SiteFooter />);
+    const credit = screen.getByRole("link", { name: OPERATOR_HANDLE });
+
+    // 12px into the column's gap-3, the 16px line, 16px into the footer's
+    // py-4: 44px on mobile, drawn by the pseudo element, not the line box.
+    expect(credit).toHaveClass(
+      "relative",
+      "inline-block",
+      "after:absolute",
+      "after:-top-3",
+      "after:-bottom-4",
+      "after:-inset-x-2",
+    );
+    expect(credit.closest("p")).toHaveClass("text-xs");
+    expect(credit.closest("p")?.parentElement).toHaveClass("gap-3");
+    expect(credit).not.toHaveClass("min-h-11");
+    // The shared footer link look, the same classes as the legal links.
+    expect(credit).toHaveClass("text-text-link", "hover:underline");
+  });
+
   it("sits on flat black, with no glass, blur or border (AC-5)", () => {
     const { container } = render(<SiteFooter />);
     expect(container.innerHTML).not.toMatch(/glass|backdrop-blur/);
