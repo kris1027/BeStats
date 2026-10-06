@@ -5,10 +5,10 @@
 /*
  * One palette, no light theme, no `.dark` variant (spec 0004, AC-1).
  *
- * Every screen is drawn on pure black, so a
- * light palette here would be a half maintained theme nothing renders. Deleting
- * it makes the absence honest: adding light later is a restructure, which is the
- * tradeoff spec 0004 accepted.
+ * Every screen is drawn on pure black, so a light palette here would be a
+ * half maintained theme nothing renders. Deleting it makes the absence honest:
+ * adding light later is a restructure, which is the tradeoff spec 0004
+ * accepted.
  */
 
 @theme inline {
@@ -108,8 +108,8 @@
   --accent-foreground: #f6f7f8;
   /*
    * The original designs drew no error state, so this is the one shadcn
-   * token with no product value. It carries no product meaning and is not one of the three
-   * colours above.
+   * token with no product value. It carries no product meaning and is not one
+   * of the three colours above.
    *
    * The first pick, `#F87171`, measured 3.90:1 against the brightest point of
    * the glass gradient over the control plate, which fails AA for body text.
@@ -134,12 +134,12 @@
 /*
  * The glass system (spec 0004, AC-3).
  *
- * Three gradients and one shadow, defined once. The rim is the hard part: every
- * reference draws it as an SVG stroke with a gradient on a rounded shape, and
- * the obvious CSS translation (`border-image`) ignores `border-radius`, so it
- * would square off every pill. The technique that works is a two layer
- * background over a transparent border: fill and plate clipped to `padding-box`,
- * rim gradient clipped to `border-box`.
+ * Three gradients and one shadow, defined once. The rim is the hard part: the
+ * original designs drew it as an SVG stroke with a gradient on a rounded
+ * shape, and the obvious CSS translation (`border-image`) ignores
+ * `border-radius`, so it would square off every pill. The technique that works
+ * is a two layer background over a transparent border: fill and plate clipped
+ * to `padding-box`, rim gradient clipped to `border-box`.
  *
  * `glass` and `glass-selected` own that stack; `glass-rim` and the plate
  * utilities feed it through custom properties, which resolve on the element

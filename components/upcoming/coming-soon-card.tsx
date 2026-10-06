@@ -23,10 +23,10 @@ export type ComingSoonItem = {
 };
 
 /**
- * One card in the Coming soon section (spec 0014, AC-12): the poster, the calendar pill bottom left, the
- * filled green Planned bookmark bottom right, the title underneath, and no
- * rating badge. The bookmark only reports the tap: `ComingSoonGrid` owns the
- * removal, its focus and its toast.
+ * One card in the Coming soon section (spec 0014, AC-12): the poster, the
+ * calendar pill bottom left, the filled green Planned bookmark bottom right,
+ * the title underneath, and no rating badge. The bookmark only reports the
+ * tap: `ComingSoonGrid` owns the removal, its focus and its toast.
  */
 function ComingSoonCard({
   item,

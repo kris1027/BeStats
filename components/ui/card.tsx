@@ -5,7 +5,7 @@ import type * as React from "react";
  * A glass card on the control plate at `--radius` (spec 0004, AC-4).
  *
  * The stock shadcn card shipped `ring-1 ring-foreground/10` as its edge, which
- * is a flat hairline, not the gradient rim every reference draws. It also
+ * is a flat hairline, not the gradient rim the glass system calls for. It also
  * hardcoded `rounded-xl` in six places, which would ignore the radius token.
  * Both are replaced here by the glass utilities, so a radius change is one
  * edit in `globals.css`.
