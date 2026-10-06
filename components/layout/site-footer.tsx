@@ -2,26 +2,27 @@ import Image from "next/image";
 import Link from "next/link";
 import type * as React from "react";
 
-import { OPERATOR_NAME } from "@/lib/legal/operator";
+import { OPERATOR_GITHUB_URL, OPERATOR_HANDLE } from "@/lib/legal/operator";
 import { TMDB_ATTRIBUTION } from "@/lib/tmdb";
 
 /**
  * The quiet footer under every route: TMDB's logo and the notice its API terms
- * require, then the two legal pages and the operator line (spec 0017, AC-1 to
- * AC-5).
+ * require, then the two legal pages and the credit line (spec 0017, AC-1 to
+ * AC-5). The credit names the operator by handle, linked to their GitHub
+ * profile, the same way the legal pages do.
  *
  * A Server Component that reads no cookie, header or session, so it sits in
  * every route's prerendered shell (`app/layout-purity.test.ts` holds it to
  * that). It carries no email address on purpose: the contact address lives
  * only on `/privacy` and `/terms`, off the pages scrapers crawl most.
  *
- * Flat, with no glass or blur, because it sits on the plain black page rather
- * than over artwork (`components/AGENTS.md`, backdrop blur).
+ * Flat, with no glass, blur or border, because it sits on the plain black
+ * page rather than over artwork (`components/AGENTS.md`, backdrop blur).
  */
 export function SiteFooter() {
   return (
-    <footer className="w-full border-t border-border">
-      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-4 px-4 py-6 md:flex-row md:items-center md:justify-between md:gap-6">
+    <footer className="w-full">
+      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-3 px-4 py-4 md:flex-row md:items-center md:justify-between md:gap-6">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-4">
           <a
             href="https://www.themoviedb.org"
@@ -57,7 +58,15 @@ export function SiteFooter() {
             <FooterLink href="/terms">Terms of Service</FooterLink>
           </nav>
           <p className="text-xs text-muted-foreground">
-            © BeStats · {OPERATOR_NAME}
+            © BeStats · Crafted with love by{" "}
+            <a
+              href={OPERATOR_GITHUB_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-sm text-text-link underline-offset-4 hover:text-foreground hover:underline"
+            >
+              {OPERATOR_HANDLE}
+            </a>
           </p>
         </div>
       </div>

@@ -1,6 +1,11 @@
 import type * as React from "react";
 
-import { CONTACT_EMAIL, LEGAL_LAST_UPDATED } from "@/lib/legal/operator";
+import {
+  CONTACT_EMAIL,
+  LEGAL_LAST_UPDATED,
+  OPERATOR_GITHUB_URL,
+  OPERATOR_HANDLE,
+} from "@/lib/legal/operator";
 
 /**
  * `3 October 2026`, from the fixed constant and never the clock, parsed and
@@ -121,6 +126,16 @@ export function ExternalLink({
     >
       {children}
     </a>
+  );
+}
+
+/**
+ * The operator's handle, always linked to their GitHub profile, which carries
+ * the full name (spec 0017, AC-10).
+ */
+export function OperatorLink() {
+  return (
+    <ExternalLink href={OPERATOR_GITHUB_URL}>{OPERATOR_HANDLE}</ExternalLink>
   );
 }
 

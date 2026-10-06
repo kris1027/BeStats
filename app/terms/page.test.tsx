@@ -9,7 +9,8 @@ import {
   LEGAL_LAST_UPDATED,
   MINIMUM_AGE,
   OPERATOR_COUNTRY,
-  OPERATOR_NAME,
+  OPERATOR_GITHUB_URL,
+  OPERATOR_HANDLE,
 } from "@/lib/legal/operator";
 import { TMDB_ATTRIBUTION } from "@/lib/tmdb/constants";
 
@@ -79,7 +80,7 @@ describe("/terms", () => {
     const text = container.textContent ?? "";
 
     for (const fact of [
-      OPERATOR_NAME,
+      OPERATOR_HANDLE,
       OPERATOR_COUNTRY,
       CONTACT_EMAIL,
       `at least ${MINIMUM_AGE}`,
@@ -91,6 +92,13 @@ describe("/terms", () => {
     expect(
       container.querySelector(`a[href="mailto:${CONTACT_EMAIL}"]`),
     ).not.toBeNull();
+    const operatorLinks = container.querySelectorAll(
+      `a[href="${OPERATOR_GITHUB_URL}"]`,
+    );
+    expect(operatorLinks.length).toBeGreaterThan(0);
+    for (const link of operatorLinks) {
+      expect(link).toHaveTextContent(OPERATOR_HANDLE);
+    }
   });
 
   it("builds its metadata through catalogMetadata (AC-12)", () => {

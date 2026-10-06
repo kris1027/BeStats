@@ -11,8 +11,15 @@
  * `PROCESSORS`, the policy text and `LEGAL_LAST_UPDATED` in the same PR.
  */
 
-/** The person who runs BeStats and is its data controller. */
-export const OPERATOR_NAME = "Krzysztof Obarzanek";
+/**
+ * The person who runs BeStats and is its data controller, named by handle.
+ * The pages always link it to `OPERATOR_GITHUB_URL`, the public profile that
+ * carries the full name, so the handle is never shown on its own.
+ */
+export const OPERATOR_HANDLE = "kris1027";
+
+/** The operator's GitHub profile, where every mention of the handle links. */
+export const OPERATOR_GITHUB_URL = "https://github.com/kris1027";
 
 /** Where rights requests, deletion requests and complaints go. */
 export const CONTACT_EMAIL = "kris1027.dev@gmail.com";
@@ -35,7 +42,7 @@ export const MINIMUM_AGE = 16;
  * whenever the text changes materially. Pages format it in UTC and never read
  * the clock (spec 0017, AC-7).
  */
-export const LEGAL_LAST_UPDATED = "2026-10-04";
+export const LEGAL_LAST_UPDATED = "2026-10-06";
 
 /**
  * Where the production Supabase project stores your data, read from

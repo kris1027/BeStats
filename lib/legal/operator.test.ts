@@ -7,7 +7,8 @@ import {
   LEGAL_LAST_UPDATED,
   MINIMUM_AGE,
   OPERATOR_COUNTRY,
-  OPERATOR_NAME,
+  OPERATOR_GITHUB_URL,
+  OPERATOR_HANDLE,
   PROCESSORS,
   RIGHTS_RESPONSE,
   SUPABASE_REGION,
@@ -24,7 +25,7 @@ import {
 describe("the operator facts", () => {
   it("are all present", () => {
     for (const value of [
-      OPERATOR_NAME,
+      OPERATOR_HANDLE,
       OPERATOR_COUNTRY,
       RIGHTS_RESPONSE,
       SUPERVISORY_AUTHORITY.name,
@@ -55,6 +56,10 @@ describe("the operator facts", () => {
       expect(processor.url).toMatch(/^https:\/\//);
     }
     expect(SUPERVISORY_AUTHORITY.url).toMatch(/^https:\/\//);
+  });
+
+  it("link the operator handle to its own GitHub profile", () => {
+    expect(OPERATOR_GITHUB_URL).toBe(`https://github.com/${OPERATOR_HANDLE}`);
   });
 });
 

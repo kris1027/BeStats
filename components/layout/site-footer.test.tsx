@@ -1,7 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { OPERATOR_NAME } from "@/lib/legal/operator";
+import { OPERATOR_GITHUB_URL, OPERATOR_HANDLE } from "@/lib/legal/operator";
 import { TMDB_ATTRIBUTION } from "@/lib/tmdb/constants";
 
 // The real entry point pulls `server-only` and the cached reads into jsdom.
@@ -54,19 +54,24 @@ describe("SiteFooter", () => {
     }
   });
 
-  it("names the operator with no year and no email (AC-4)", () => {
+  it("credits the operator's handle with no year and no email (AC-4)", () => {
     const { container } = render(<SiteFooter />);
 
-    expect(
-      screen.getByText(`© BeStats · ${OPERATOR_NAME}`),
-    ).toBeInTheDocument();
+    expect(container.textContent).toContain(
+      `© BeStats · Crafted with love by ${OPERATOR_HANDLE}`,
+    );
+    const credit = screen.getByRole("link", { name: OPERATOR_HANDLE });
+    expect(credit).toHaveAttribute("href", OPERATOR_GITHUB_URL);
+    expect(credit).toHaveAttribute("target", "_blank");
+    expect(credit).toHaveAttribute("rel", "noopener noreferrer");
     expect(container.textContent).not.toMatch(/\b(19|20)\d{2}\b/);
     expect(container.textContent).not.toContain("@");
     expect(container.querySelector('a[href^="mailto:"]')).toBeNull();
   });
 
-  it("sits on flat black, with no glass or blur (AC-5)", () => {
+  it("sits on flat black, with no glass, blur or border (AC-5)", () => {
     const { container } = render(<SiteFooter />);
     expect(container.innerHTML).not.toMatch(/glass|backdrop-blur/);
+    expect(screen.getByRole("contentinfo")).not.toHaveClass("border-t");
   });
 });
