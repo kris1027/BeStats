@@ -19,7 +19,9 @@ import { UPCOMING_PATH } from "@/components/upcoming/ids";
  * Upcoming sits between the two (spec 0014, AC-1).
  *
  * @param variant `bar` is the glass pill in the desktop navbar, 40px tall like
- * every navbar control; `sheet` is the stacked list inside the mobile menu,
+ * every navbar control, with `hit-area-tab` widening each link to a 44px tap
+ * target like the media tabs (the 4px pill gap keeps neighbours from
+ * overlapping); `sheet` is the stacked list inside the mobile menu,
  * with 44px rows for touch.
  */
 const LINKS = [
@@ -51,7 +53,9 @@ function LibraryNav({ variant }: { variant: "bar" | "sheet" }) {
             aria-current={selected ? "page" : undefined}
             className={cn(
               "flex items-center rounded-full font-bold transition-[filter,color]",
-              variant === "bar" ? "h-7 px-4 text-sm" : "h-11 px-4 text-base",
+              variant === "bar"
+                ? "hit-area-tab h-7 px-4 text-sm"
+                : "h-11 px-4 text-base",
               selected
                 ? "glass-selected glass-rim text-foreground"
                 : "text-text-link hover:text-foreground",

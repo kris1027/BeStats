@@ -53,6 +53,19 @@ describe("LibraryNav", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("gives the bar links the hidden tab tap area, and the sheet rows none", () => {
+    pathname = "/movies";
+    const { unmount } = render(<LibraryNav variant="bar" />);
+    for (const link of screen.getAllByRole("link")) {
+      expect(link).toHaveClass("hit-area-tab", "h-7");
+    }
+    unmount();
+    render(<LibraryNav variant="sheet" />);
+    for (const link of screen.getAllByRole("link")) {
+      expect(link).not.toHaveClass("hit-area-tab");
+    }
+  });
+
   it("gives the sheet rows a 44px touch target", () => {
     pathname = "/movies";
     render(<LibraryNav variant="sheet" />);
