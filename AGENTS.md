@@ -110,7 +110,7 @@ Supabase Auth may use its supported browser client with a public key. TMDB crede
 - TMDB API for movie, TV, cast, season, and episode metadata.
 - Vercel for the Next.js deployment.
 - Supabase Cloud for the database and authentication.
-- Biome for linting and formatting. It replaces ESLint (installed today) in scope feature 2; until then `pnpm lint` still runs ESLint. Do not add Prettier.
+- Biome for linting and formatting: `pnpm lint` runs `biome check` and `pnpm lint:ci` runs `biome ci`. It replaced ESLint in scope feature 2, and ESLint is no longer installed. Do not add ESLint or Prettier.
 - pnpm as the package manager.
 
 This section is the only place the stack is defined. Installed versions live in `package.json`; check it instead of trusting a list here. Choose compatible supported package versions at implementation time and commit the lockfile.
