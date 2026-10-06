@@ -7,7 +7,9 @@ A movie and TV tracking web app powered by TMDB. Anyone can browse and search th
 
 _These are recommendations to keep your build orderly, not requirements. Skip anything that does not fit: if you already know how to build a feature, use `/develop` and skip `/architect`. You decide when a feature is `done`._
 
-_The stack, tooling and product rules (ratings, progress, statuses, security) live only in `AGENTS.md`; this file does not repeat them. Specs below only record the decisions `AGENTS.md` leaves open. Every UI feature follows the artboards in `design/`._
+_The stack, tooling and product rules (ratings, progress, statuses, security) live only in `AGENTS.md`; this file does not repeat them. Specs below only record the decisions `AGENTS.md` leaves open. The UI reference is the shipped interface plus `/showcase`._
+
+_2026-10-06: the `design/` artboards were removed. The UI built from them carries their decisions forward; a screen with no precedent is described and approved in its plan. Same day: the navbar became transparent with 40px controls, the footer lost its border, and the operator is named by handle (`kris1027`, linked to GitHub) instead of a legal name._
 
 ## At a glance
 
@@ -86,7 +88,7 @@ Code in `lib/tmdb/`, `next.config.ts`, `vitest.live.mts`, `security-boundary.tes
 spec [0002](../specs/0002-tmdb-integration-module/index.md)
 
 ### 5. Design system and UI foundation · done
-Base components adapted from the reference designs, plus loading, empty, error and missing image patterns. The sixteen references now exist in `design/`.
+Base components adapted from the reference designs, plus loading, empty, error and missing image patterns. The sixteen references lived in `design/` until it was removed on 2026-10-06.
 **Done when:** base components match `design/`, work by keyboard with visible focus, and cover the shared loading, empty and error states on desktop and mobile.
 - [x] Design it (spec): `/architect design system and UI foundation`
 - [x] Build it: `/develop design system and UI foundation`
