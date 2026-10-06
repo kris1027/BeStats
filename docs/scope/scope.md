@@ -89,7 +89,7 @@ spec [0002](../specs/0002-tmdb-integration-module/index.md)
 
 ### 5. Design system and UI foundation · done
 Base components adapted from the reference designs, plus loading, empty, error and missing image patterns. The sixteen references lived in `design/` until it was removed on 2026-10-06.
-**Done when:** base components match `design/`, work by keyboard with visible focus, and cover the shared loading, empty and error states on desktop and mobile.
+**Done when:** base components matched those references (their decisions now live in the shipped UI and `/showcase`), work by keyboard with visible focus, and cover the shared loading, empty and error states on desktop and mobile.
 - [x] Design it (spec): `/architect design system and UI foundation`
 - [x] Build it: `/develop design system and UI foundation`
   - [x] Theme foundation: one black palette, Inter, the shadcn remap, product tokens, glass utilities with the rounded rim technique, focus ring — AC-1 to AC-4, AC-6
@@ -162,8 +162,8 @@ Code in `app/movies/actions.ts`, `lib/tracking/`, `components/tracking/`, `supab
 spec [0007](../specs/0007-movie-tracking/index.md)
 
 ### 9. Watchlist and movie history · done
-Private view of the watchlist and watched movies, with empty and signed out states. TV entries join it in feature 14. This feature also inherits the mobile menu sheet from feature 6: `MobileMenuSheet` exists but is wired only into `/showcase`, and the sheet `mobile-menu-open.svg` draws holds the Watchlist, Upcoming and Watched links that arrive here, so the menu button and the sheet belong with them (spec [0005](../specs/0005-authentication/index.md), Consequences).
-**Done when:** a signed in user sees their own watchlist and watched movies with personal ratings labeled apart from TMDB ratings; a signed out visitor is sent to sign in; and, signed in at mobile width, the menu button opens a sheet holding those links plus the account block and Sign out, matching `mobile-menu-open.svg`.
+Private view of the watchlist and watched movies, with empty and signed out states. TV entries join it in feature 14. This feature also inherits the mobile menu sheet from feature 6: `MobileMenuSheet` exists but is wired only into `/showcase`, and the menu sheet holds the Watchlist, Upcoming and Watched links that arrive here, so the menu button and the sheet belong with them (spec [0005](../specs/0005-authentication/index.md), Consequences).
+**Done when:** a signed in user sees their own watchlist and watched movies with personal ratings labeled apart from TMDB ratings; a signed out visitor is sent to sign in; and, signed in at mobile width, the menu button opens a sheet holding those links plus the account block and Sign out.
 - [x] Design it (spec): `/architect watchlist and movie history`
 - [x] Build it: `/develop watchlist and movie history`
   - [x] The thin thread: the `watchlisted_at` column, trigger, backfill and indexes with pgTAP, and a read only `/watchlist` page with the desktop link, verified with two users — AC-1, AC-3, AC-4, AC-8, AC-12, AC-14, AC-17
@@ -265,7 +265,7 @@ spec [0013](../specs/0013-tv-status-and-progress/index.md) · code in [lib/track
 ## Slice 7: Up Next and completion
 
 ### 15. Up Next · done
-The private `/upcoming` page (the navbar's Upcoming link): an Up Next section showing the first unwatched aired regular episode for each Watching show, or "You're up to date", with Mark watched on each card; and a Coming soon section of planned movies not released yet, as the Upcoming artboard draws.
+The private `/upcoming` page (the navbar's Upcoming link): an Up Next section showing the first unwatched aired regular episode for each Watching show, or "You're up to date", with Mark watched on each card; and a Coming soon section of planned movies not released yet.
 **Done when:** it picks the correct episode in season and episode order, ongoing shows caught up show "You're up to date", and On Hold and Dropped shows are excluded.
 - [x] Design it (spec): `/architect Up Next`
 - [x] Build it: `/develop Up Next`
@@ -353,7 +353,7 @@ Still open, both yours and outside the repo: the Google Search Console sitemap s
 ## Slice 9: TV history
 
 ### 21. TV history on /watched · in-progress
-The watched page shows movies only. Add the shows and episodes you watched, so `/watched` is your whole history (from spec [0013](../specs/0013-tv-status-and-progress/index.md), Follow-up). The current artboards (`desktop-watched-page.svg`, `mobile-watched-page.svg`) draw movies only, so the layout for shows is the open decision.
+The watched page shows movies only. Add the shows and episodes you watched, so `/watched` is your whole history (from spec [0013](../specs/0013-tv-status-and-progress/index.md), Follow-up). The shipped `/watched` page covers movies only and `/showcase` has no history layout, so the layout for shows is the open decision, to be described and approved in its plan.
 **Done when:** a signed in user sees the shows they watched episodes of on `/watched`, ordered and labeled consistently with the movies there, with personal ratings kept apart from TMDB ratings, specials not counted toward progress, and the empty, signed out and failure states still working.
 - [x] Design it (spec): `/architect TV history on /watched`
 - [x] Build it: `/develop TV history on /watched`
