@@ -363,7 +363,7 @@ The watched page shows movies only. Add the shows and episodes you watched, so `
 - [x] Test it: `/test TV history on /watched`
 - [x] Review it (fresh model): `/check review TV history on /watched`
 - [x] Document it: `/document TV history on /watched`
-spec [0019](../specs/0019-tv-history-on-watched/index.md) · code in `supabase/schemas/06-views.sql`, `lib/tracking/library-lists.ts`, `components/library/`
+spec [0019](../specs/0019-tv-history-on-watched/index.md) · code in `supabase/schemas/06-views.sql`, `lib/tracking/library-lists.ts`, `lib/tracking/show-ratings.ts`, `components/library/`
 
 ## Deferred
 Out of scope for the current build pass, kept so the plan stays honest.

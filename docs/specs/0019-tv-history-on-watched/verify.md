@@ -62,12 +62,12 @@ Every query is far under the 50 ms budget, so the planned partial index on `user
 - AC-2: UI steps 1 to 3, value sourcing steps 1 and 2, pgTAP 150, `library-lists.test.ts`
 - AC-3: UI step 4, value sourcing step 3, `library-section.test.tsx`, `library-lists.test.ts`
 - AC-4: UI step 5, pgTAP 150
-- AC-5: UI steps 6 to 8, value sourcing steps 5, 6 and 8, `library-lists.test.ts` (`getShowRatings`), `library-grid.test.tsx`
+- AC-5: UI steps 6 to 8, value sourcing steps 5, 6 and 8, `show-ratings.test.ts` (`getShowRatings`), `library-grid.test.tsx`
 - AC-6: UI step 9, value sourcing step 4, `library-grid.test.tsx`
 - AC-7: UI steps 10 to 12, value sourcing step 9, `library-grid.test.tsx`
 - AC-8: UI step 13, `library-grid.test.tsx`, `library-section.test.tsx`
 - AC-9: UI step 14, `library-section.test.tsx`
-- AC-10: UI steps 15 and 16, `library-section.test.tsx`, `library-lists.test.ts`
+- AC-10: UI steps 15 and 16, `library-section.test.tsx`, `show-ratings.test.ts`
 - AC-11: UI step 17, `library-section.test.tsx`
 - AC-12: the REST command step, pgTAP 150
 - AC-13: UI step 18, `app/movies/request-scope.test.ts`, `pnpm build`

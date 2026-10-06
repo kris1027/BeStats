@@ -71,15 +71,15 @@ New view `public.user_watched_entries`, `with (security_invoker = true)`:
 
 **API surface**: no new action, route handler or endpoint. Server reads only.
 
-| Read (server only, `lib/tracking/library-lists.ts`) | Key inputs | Key outputs | Auth | Key errors |
+| Read (server only, `lib/tracking/library-lists.ts` unless noted) | Key inputs | Key outputs | Auth | Key errors |
 |---|---|---|---|---|
 | `getWatchedPage(userId, page)`, now over `user_watched_entries` | verified `userId`, parsed `page` | `{ kind: "ok", rows: WatchedRow[], total }` | session from `requireUser()`; RLS through the view | `failed` on any DB error; `PGRST103` → count only reread for the redirect |
-| `getShowRatings(userId, showIds)` (new) | verified `userId`, the page's show ids (at most 20) | `Map<showId, number \| null>`, the unrounded mean | as above | `failed` on any DB error |
+| `getShowRatings(userId, showIds)` (new, in `lib/tracking/show-ratings.ts`) | verified `userId`, the page's show ids (at most 20) | `Map<showId, number \| null>`, the unrounded mean | as above | `failed` on any DB error |
 | `getLibraryTitles(movieIds, showIds)` (unchanged) | ids | titles per kind | public cached TMDB reads | `failed` on systemic TMDB error |
 
 `WatchedRow` becomes `{ kind: "movie" | "tv"; tmdbId: number; watchedAt: string; rating: number | null }`. The query selects `kind, tmdb_id, last_watched_at, rating` and orders `last_watched_at desc, kind asc, tmdb_id asc` with `{ count: "exact" }`, filtered by `user_id` explicitly as well as by RLS (the spec 0007 pattern). The type generator makes every view column nullable, so the mapping skips a row with a null `tmdb_id` or `last_watched_at` or a `kind` other than `movie` or `tv`, as `getWatchlistPage` does; the view never yields one. The `PGRST103` count only reread also switches to `user_watched_entries` (with no `watched_at` filter, which the view already applies).
 
-`getShowRatings` selects `show_id, season_number, rating` from `user_episode_state` with `.eq("user_id", userId).in("show_id", showIds).not("rating", "is", null)`, ordered by `show_id` then `episode_id`, paged by `SHOW_RATINGS_PAGE_SIZE` (1000) until the exact count is reached, the loop `getShowEpisodeRatings` already uses. It groups rows per show and returns `showRating(ratingsBySeason(rows)).mean`.
+`getShowRatings` selects `show_id, season_number, rating` from `user_episode_state` with `.eq("user_id", userId).in("show_id", showIds).not("rating", "is", null)`, ordered by `show_id` then `episode_id`, paged by `SHOW_RATINGS_PAGE_SIZE` (1000) through `readKeysetPages`, the keyset loop it shares with `getShowEpisodeRatings`: each page starts after the last `(show_id, episode_id)` read rather than at an offset, so a rating cleared mid read skips no other row, and reading stops once a page holds the whole remaining count. `getShowEpisodeRatings` moved from offset to keyset paging in the same change, for the same reason. A failure logs `show_tracking.rating_read`. It groups rows per show and returns `showRating(ratingsBySeason(rows)).mean`.
 
 Read order in `LibrarySection` for the watched list: after the page read (and its redirect), `getLibraryTitles` runs first, alone. If it fails, the TMDB panel shows. If it succeeds, `getShowRatings` runs for the show ids TMDB found (a missing show has no card that shows a rating); it is skipped, with no query, when there are none. If it fails, the list panel shows (AC-10). The two reads are sequential on purpose: the rating ids depend on the titles, and the extra round trip is one small indexed query.
 

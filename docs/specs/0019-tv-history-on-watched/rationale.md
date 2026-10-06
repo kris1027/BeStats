@@ -72,7 +72,7 @@ Failing the whole list when the rating read fails, rather than dropping the badg
 
 ## Recommendations settled at write time
 
-- **Rating read location**: a new `getShowRatings` beside `getWatchedPage` in `lib/tracking/library-lists.ts`, reusing the paging loop of `getShowEpisodeRatings`. Runner up: generalise `getShowEpisodeRatings` to many shows, rejected because it is wrapped in React `cache()` keyed on one show for the show page.
+- **Rating read location**: a new `getShowRatings` beside `getShowEpisodeRatings` in `lib/tracking/show-ratings.ts`, sharing its keyset paging loop (`readKeysetPages`). First placed beside `getWatchedPage` in `lib/tracking/library-lists.ts`; moved after review, because it duplicated the loop and made `library-lists.ts` reach into the show rating module. Runner up: generalise `getShowEpisodeRatings` to many shows, rejected because it is wrapped in React `cache()` keyed on one show for the show page.
 - **Badge component**: `CalculatedRatingBadge` with the label "Your show rating", so a mean always shows one decimal and never shares the movie score's formatter. Runner up: `PersonalScoreBadge`, rejected because it would print `7` for a mean of 7.0.
 - **No new index up front**: measure first (AC-15). Runner up: the partial `(user_id, show_id, watched_at desc)` index, kept as a Follow-up item.
 - **pgTAP file**: a new `150-watched-entries.test.sql`, mirroring `110-watchlist-entries.test.sql`.
