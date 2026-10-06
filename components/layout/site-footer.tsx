@@ -53,28 +53,32 @@ export function SiteFooter() {
         </div>
 
         {/*
-         * `gap-3` (12px) on mobile, not less, because the credit link's tap
-         * area below reaches up into exactly that gap.
+         * `gap-1` (4px) on mobile keeps the credit line tucked under the
+         * legal links; the credit link's tap area below reaches up into
+         * exactly that gap.
          */}
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-6">
+        <div className="flex flex-col gap-1 md:flex-row md:items-center md:gap-6">
           <nav aria-label="Legal" className="flex flex-wrap gap-x-6">
             <FooterLink href="/privacy">Privacy Policy</FooterLink>
             <FooterLink href="/terms">Terms of Service</FooterLink>
           </nav>
           {/*
            * The credit link is drawn as 16px of `text-xs` line, so its tap
-           * area is a pseudo element rather than a taller line box
-           * (`components/AGENTS.md`, touch targets). `inline-block` makes the
-           * link's box the full 16px line, so the insets measure from a known
-           * edge.
+           * area is a pseudo element rather than a taller line box.
+           * `inline-block` makes the link's box the full 16px line, so the
+           * insets measure from a known edge.
            *
-           * Mobile: 12px up fills the `gap-3` to the bottom edge of the
-           * 44px Privacy and Terms links without overlapping them, and
+           * 36px, not the 44px mobile target (`components/AGENTS.md`, touch
+           * targets): a deliberate exception that keeps the credit line where
+           * it sits. Mobile: 4px up fills the `gap-1` to the bottom edge of
+           * the 44px Privacy and Terms links without overlapping them, and
            * 16px down fills the footer's `py-4` to its bottom edge without
-           * overflowing the page: 12 + 16 + 16 = 44px. From `md` the line
-           * is centred beside the 36px links, so the same box overlaps
-           * nothing: it runs 2px above and 6px below that row, inside the
-           * footer's `py-4`. 8px each side stays inside the `px-4` gutter.
+           * overflowing the page: 4 + 16 + 16 = 36px. A 44px box would have
+           * to take taps from the legal links or grow the page. From `md`
+           * the line is centred beside the 36px links, so the same box
+           * overlaps nothing: it runs 6px inside that row's top and 6px
+           * below it, within the footer's `py-4`. 8px each side stays inside
+           * the `px-4` gutter.
            */}
           <p className="text-xs text-muted-foreground">
             © BeStats · Crafted with love by{" "}
@@ -84,7 +88,7 @@ export function SiteFooter() {
               rel="noopener noreferrer"
               className={cn(
                 FOOTER_LINK_CLASS,
-                "relative inline-block after:absolute after:-inset-x-2 after:-top-3 after:-bottom-4 after:content-['']",
+                "relative inline-block after:absolute after:-inset-x-2 after:-top-1 after:-bottom-4 after:content-['']",
               )}
             >
               {OPERATOR_HANDLE}
