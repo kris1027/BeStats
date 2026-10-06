@@ -5,7 +5,8 @@ import { describe, expect, it } from "vitest";
 import {
   CONTACT_EMAIL,
   OPERATOR_COUNTRY,
-  OPERATOR_NAME,
+  OPERATOR_GITHUB_URL,
+  OPERATOR_HANDLE,
   SUPERVISORY_AUTHORITY,
 } from "./operator";
 
@@ -62,7 +63,8 @@ describe("one home for each legal fact", () => {
     (page) => {
       const source = readFileSync(page, "utf8");
       for (const value of [
-        OPERATOR_NAME,
+        OPERATOR_HANDLE,
+        OPERATOR_GITHUB_URL,
         OPERATOR_COUNTRY,
         CONTACT_EMAIL,
         SUPERVISORY_AUTHORITY.address,

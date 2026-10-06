@@ -26,10 +26,10 @@ function glassPillClassName(tone: GlassPillTone = "neutral"): string {
 /**
  * The badge shell: plate, then glass, then rim, fully rounded.
  *
- * Geometry taken from the rating badge in `design/show-movie-card.svg`, which
- * spec 0004 names the canonical pill (AC-10). `design/badge-legend.svg` draws
- * the same marks with no pill at all, so it is the source for icons and
- * colours only, never for shape.
+ * Geometry taken from the rating badge on the poster card, which spec 0004
+ * names the canonical pill (AC-10). The badge legend shows the same marks with
+ * no pill at all, so it is the source for icons and colours only, never for
+ * shape.
  *
  * The opaque plate is applied here rather than left to the caller. A pill is
  * the one surface in this system that routinely lands on poster artwork, and

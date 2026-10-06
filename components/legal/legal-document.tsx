@@ -1,6 +1,11 @@
 import type * as React from "react";
 
-import { CONTACT_EMAIL, LEGAL_LAST_UPDATED } from "@/lib/legal/operator";
+import {
+  CONTACT_EMAIL,
+  LEGAL_LAST_UPDATED,
+  OPERATOR_GITHUB_URL,
+  OPERATOR_HANDLE,
+} from "@/lib/legal/operator";
 
 /**
  * `3 October 2026`, from the fixed constant and never the clock, parsed and
@@ -18,7 +23,7 @@ const LAST_UPDATED_LABEL = new Intl.DateTimeFormat("en-GB", {
  * The reading column both legal pages share: a centred measure of at most
  * 72 characters, the page title and the `Last updated` line (spec 0017, AC-7).
  *
- * There is no reference artboard for these pages, so it reuses the type scale
+ * There is no original design for these pages, so it reuses the type scale
  * the rest of the app already draws (the auth panel's heading, the movie
  * overview's body text) rather than inventing a look. There is no typography
  * plugin, so lists and links are styled explicitly by the helpers below.
@@ -48,8 +53,7 @@ export function LegalDocument({
 
 /**
  * The section's title in kebab case, so `/privacy#cookies` is a stable link
- * and a test can check the sections by id. The root layout's scroll padding
- * keeps a linked heading clear of the sticky navbar.
+ * and a test can check the sections by id.
  */
 export function sectionId(title: string): string {
   return title
@@ -121,6 +125,19 @@ export function ExternalLink({
     >
       {children}
     </a>
+  );
+}
+
+/**
+ * The operator's handle, always linked to their GitHub profile. The pages name
+ * the operator by handle rather than legal name, and the profile carries the
+ * full name, so the data controller stays identifiable (plan
+ * `prompts/navbar-footer-slim-and-drop-design-refs.md`, decisions 7 and 9).
+ * Both values come from `lib/legal/operator.ts` (spec 0017, AC-10).
+ */
+export function OperatorLink() {
+  return (
+    <ExternalLink href={OPERATOR_GITHUB_URL}>{OPERATOR_HANDLE}</ExternalLink>
   );
 }
 

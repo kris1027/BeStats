@@ -2,9 +2,8 @@ import { cn } from "cn";
 import type * as React from "react";
 
 /**
- * The round glass button on a poster card, per `bookmark-button` in
- * `design/show-movie-card.svg` and the status circles on the list artboards
- * (spec 0007, AC-16; spec 0008).
+ * The round glass button on a poster card, the bookmark and the status
+ * circles on the list pages (spec 0007, AC-16; spec 0008).
  *
  * Presentational only: it holds no state and calls no action, so the grid
  * bookmark, which saves itself, and the list pages' remove buttons, whose

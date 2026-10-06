@@ -8,8 +8,7 @@ import { showProgress } from "@/lib/tv/progress";
 import { NextEpisodeIcon } from "./tracking-icons";
 
 /**
- * The Next episode pill on a watchlist show card, per `next-episode` in the
- * watchlist artboards (spec 0013, AC-15).
+ * The Next episode pill on a watchlist show card (spec 0013, AC-15).
  *
  * `S{season}E{episode}` of the first aired regular episode not watched, or
  * "Up to date" once every aired one is. Nothing at all when nothing has aired,

@@ -7,9 +7,9 @@ import { CalendarIcon } from "@/components/tracking/tracking-icons";
 const ENDS_IN_YEAR = /\d{4}$/;
 
 /**
- * The calendar pill of the Upcoming artboards (spec 0014, AC-5, AC-12): the
- * calendar glyph and a short date, sized as `mobile-upcoming-page.svg` draws
- * it below `md` (32px, 11px text) and as the desktop artboard above.
+ * The calendar pill on the Upcoming page (spec 0014, AC-5, AC-12): the
+ * calendar glyph and a short date, smaller below `md` (32px, 11px text) than
+ * above it.
  *
  * At a 375px two column grid the 44px touch target leaves no room for the
  * glyph beside a date with a year, so below `sm` that pill drops the glyph

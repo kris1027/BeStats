@@ -7,13 +7,13 @@ import {
   LegalDocument,
   LegalList,
   LegalSection,
+  OperatorLink,
 } from "@/components/legal/legal-document";
 import {
   COMPLAINT_RESPONSE_DAYS,
   DELETION_DAYS,
   MINIMUM_AGE,
   OPERATOR_COUNTRY,
-  OPERATOR_NAME,
 } from "@/lib/legal/operator";
 import { catalogMetadata } from "@/lib/seo/metadata";
 import { TMDB_ATTRIBUTION } from "@/lib/tmdb";
@@ -41,8 +41,8 @@ export default function TermsPage() {
       <LegalSection title="About BeStats">
         <p>
           BeStats is a free website for tracking the movies and TV shows you
-          watch, run by {OPERATOR_NAME} as a non commercial personal project. It
-          is not a streaming service and hosts no video.
+          watch, run by <OperatorLink /> as a non commercial personal project.
+          It is not a streaming service and hosts no video.
         </p>
         <p>
           By creating an account you accept these terms. The agreement starts
@@ -147,7 +147,7 @@ export default function TermsPage() {
 
       <LegalSection title="Contact">
         <p>
-          {OPERATOR_NAME}, <ContactEmail />
+          <OperatorLink />, <ContactEmail />
         </p>
       </LegalSection>
     </LegalDocument>

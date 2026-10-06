@@ -7,9 +7,8 @@ import { usePathname } from "next/navigation";
 import { UPCOMING_PATH } from "@/components/upcoming/ids";
 
 /**
- * The signed in library links: `library-navigation` in
- * `design/desktop-navbar-signed-in.svg` and the links in
- * `design/mobile-menu-open.svg` (spec 0008, AC-14, AC-15).
+ * The signed in library links: the pill in the desktop navbar and the list in
+ * the mobile menu sheet (spec 0008, AC-14, AC-15).
  *
  * As with `MediaTypeTabs`, the lit link comes from the pathname, never client
  * state, and `aria-current="page"` carries it to assistive technology.
@@ -17,10 +16,13 @@ import { UPCOMING_PATH } from "@/components/upcoming/ids";
  * inside `AccountSlot`, which is already request scoped behind its own
  * Suspense boundary, so it costs no route its static shell.
  *
- * Upcoming sits between the two, as both artboards draw it (spec 0014, AC-1).
+ * Upcoming sits between the two (spec 0014, AC-1).
  *
- * @param variant `bar` is the glass pill in the desktop navbar; `sheet` is the
- * stacked list inside the mobile menu, with 44px rows for touch.
+ * @param variant `bar` is the glass pill in the desktop navbar, 40px tall like
+ * every navbar control, with `hit-area-tab` widening each link to a 44px tap
+ * target like the media tabs (the 4px pill gap keeps neighbours from
+ * overlapping); `sheet` is the stacked list inside the mobile menu,
+ * with 44px rows for touch.
  */
 const LINKS = [
   { href: "/watchlist", label: "Watchlist" },
@@ -36,7 +38,7 @@ function LibraryNav({ variant }: { variant: "bar" | "sheet" }) {
       aria-label="Library"
       className={
         variant === "bar"
-          ? "glass glass-rim glass-plate glass-shadow flex items-center gap-1 rounded-full p-1.5"
+          ? "glass glass-rim glass-plate glass-shadow flex items-center gap-1 rounded-full p-[4.5px]"
           : "flex flex-col gap-1"
       }
     >
@@ -51,7 +53,9 @@ function LibraryNav({ variant }: { variant: "bar" | "sheet" }) {
             aria-current={selected ? "page" : undefined}
             className={cn(
               "flex items-center rounded-full font-bold transition-[filter,color]",
-              variant === "bar" ? "h-9 px-5 text-sm" : "h-11 px-4 text-base",
+              variant === "bar"
+                ? "hit-area-tab h-7 px-4 text-sm"
+                : "h-11 px-4 text-base",
               selected
                 ? "glass-selected glass-rim text-foreground"
                 : "text-text-link hover:text-foreground",

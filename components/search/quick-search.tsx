@@ -47,8 +47,8 @@ function panelView(state: QuickSearchState, trimmed: string): PanelView {
 }
 
 /**
- * The navbar's quick search: a field whose results drop down as you type,
- * from `design/desktop-search-open.svg` (spec 0010, AC-2 to AC-5).
+ * The navbar's quick search: a field whose results drop down as you type
+ * (spec 0010, AC-2 to AC-5).
  *
  * Built on Base UI's `Autocomplete`, verified against the installed 1.8.0: with
  * `filter={null}` and `mode="none"` it lists the server's rows as they are,
@@ -237,7 +237,7 @@ function QuickSearch({
           <>
             <Autocomplete.Clear
               aria-label="Clear search"
-              className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-text-secondary hover:text-foreground md:size-9"
+              className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-text-secondary hover:text-foreground md:size-8"
             >
               <XIcon className="size-4" aria-hidden="true" />
             </Autocomplete.Clear>

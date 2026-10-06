@@ -5,10 +5,10 @@
 /*
  * One palette, no light theme, no `.dark` variant (spec 0004, AC-1).
  *
- * Every one of the sixteen references in `design/` is drawn on pure black, so a
- * light palette here would be a half maintained theme nothing renders. Deleting
- * it makes the absence honest: adding light later is a restructure, which is the
- * tradeoff spec 0004 accepted.
+ * Every screen is drawn on pure black, so a light palette here would be a
+ * half maintained theme nothing renders. Deleting it makes the absence honest:
+ * adding light later is a restructure, which is the tradeoff spec 0004
+ * accepted.
  */
 
 @theme inline {
@@ -46,7 +46,7 @@
 }
 
 /*
- * Product tokens: the values `design/` actually uses (spec 0004, AC-4).
+ * Product tokens: the values the UI actually uses (spec 0004, AC-4).
  *
  * These sit in `@theme` rather than `:root` so Tailwind generates real
  * utilities for them (`text-rating-tmdb`, `bg-glass-plate-panel`,
@@ -71,7 +71,7 @@
   --color-glass-plate-sheet: #090a0d;
   --color-glass-plate-score: #0c1419;
 
-  /* Text greys from the references, beyond the shadcn semantic set. */
+  /* Text greys, beyond the shadcn semantic set. */
   --color-text-label: #e2e5ef;
   --color-text-link: #d7d9e0;
   --color-text-secondary: #ced1dc;
@@ -81,9 +81,9 @@
   --radius-panel: 1.5rem;
 
   /*
-   * 16px, no saturation adjustment. `design/` supplies no blur at all: every
-   * file states the glass is simulated, so this is the one value spec 0004
-   * settles rather than reads (AC-16).
+   * 16px, no saturation adjustment. The original designs supplied no blur:
+   * they only simulated the glass, so this is the one value spec 0004
+   * settled rather than read (AC-16).
    */
   --blur-glass: 16px;
 }
@@ -107,9 +107,9 @@
   --accent: #17181a;
   --accent-foreground: #f6f7f8;
   /*
-   * `design/` draws no error state, so this is the one shadcn token with no
-   * reference value. It carries no product meaning and is not one of the three
-   * colours above.
+   * The original designs drew no error state, so this is the one shadcn
+   * token with no product value. It carries no product meaning and is not one
+   * of the three colours above.
    *
    * The first pick, `#F87171`, measured 3.90:1 against the brightest point of
    * the glass gradient over the control plate, which fails AA for body text.
@@ -134,12 +134,12 @@
 /*
  * The glass system (spec 0004, AC-3).
  *
- * Three gradients and one shadow, defined once. The rim is the hard part: every
- * reference draws it as an SVG stroke with a gradient on a rounded shape, and
- * the obvious CSS translation (`border-image`) ignores `border-radius`, so it
- * would square off every pill. The technique that works is a two layer
- * background over a transparent border: fill and plate clipped to `padding-box`,
- * rim gradient clipped to `border-box`.
+ * Three gradients and one shadow, defined once. The rim is the hard part: the
+ * original designs drew it as an SVG stroke with a gradient on a rounded
+ * shape, and the obvious CSS translation (`border-image`) ignores
+ * `border-radius`, so it would square off every pill. The technique that works
+ * is a two layer background over a transparent border: fill and plate clipped
+ * to `padding-box`, rim gradient clipped to `border-box`.
  *
  * `glass` and `glass-selected` own that stack; `glass-rim` and the plate
  * utilities feed it through custom properties, which resolve on the element
@@ -206,8 +206,8 @@
 }
 
 /*
- * The rim alone, over artwork: the poster frame in
- * `design/show-movie-card.svg`, which is a bare gradient stroke on a photo.
+ * The rim alone, over artwork: the poster frame, which is a bare gradient
+ * stroke on a photo.
  *
  * There is no plate to reduce the gradient to a ring here, so this masks the
  * padding box out instead and paints only the border ring. That also means the
@@ -260,12 +260,47 @@
 }
 
 /*
- * `feDropShadow dy=5 stdDeviation=5` in the references. An SVG standard
+ * `feDropShadow dy=5 stdDeviation=5` in the original designs. An SVG standard
  * deviation of 5 is roughly a 10px CSS blur radius, which is the conversion
  * used here.
  */
 @utility glass-shadow {
   box-shadow: 0 5px 10px rgb(6 10 25 / 0.22);
+}
+
+/*
+ * A tap area of at least 44px around a 40px control. The navbar draws every
+ * control at 40px, below the 44px touch target AGENTS.md section 3 asks for,
+ * so this stretches an invisible pseudo element past each edge. The pseudo
+ * element is placed from the padding box, inside the 1.5px glass border, so
+ * the offset is that border plus 2px: 44px on a glass control, 47px on a
+ * borderless one. None of the glass utilities paint a pseudo element, so it
+ * collides with nothing.
+ */
+@utility hit-area {
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -3.5px;
+  }
+}
+
+/*
+ * The same for a 28px tab inside a 40px pill: 9.5px above and below reach
+ * 44px on the selected tab (which has the 1.5px border) and 47px on the
+ * others, and only 2px to each side, so neighbouring tabs a 4px gap apart
+ * never overlap.
+ */
+@utility hit-area-tab {
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -9.5px -2px;
+  }
 }
 
 /*

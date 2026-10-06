@@ -23,7 +23,7 @@ export const metadata: Metadata = {
  * reading it makes a component request scoped. The footer link carries `next`
  * back to sign in through its own boundary, for the same reason (AC-10).
  *
- * The Google button the sign in artboard draws is absent here too. Feature 20
+ * The Google button the sign in design has a slot for is absent here too. Feature 20
  * restores it to both pages in the slot this leaves above the fields.
  *
  * The terms line sits outside the form's boundary, so it is in the static

@@ -28,8 +28,7 @@ import { publicEnvProblems } from "@/lib/env";
  * shows the library links, the account button and Sign out in a row; below
  * `lg` the account button drops its visible name so the row fits at `md`. The
  * mobile bar keeps only the avatar letter and a menu button; the menu sheet
- * holds the library links, the account row and Sign out, as
- * `design/mobile-menu-open.svg` draws it. `MobileMenuSheet` is a Client
+ * holds the library links, the account row and Sign out. `MobileMenuSheet` is a Client
  * Component, so this Server Component passes the rendered pieces in as
  * children.
  *
@@ -46,7 +45,7 @@ async function AccountSlot({ variant }: { variant: "desktop" | "mobile" }) {
 
   if (!user) {
     return (
-      <ButtonLink size="touch" href="/sign-in" className="md:h-9 md:px-4">
+      <ButtonLink size="bar" href="/sign-in">
         Sign in
       </ButtonLink>
     );
@@ -60,11 +59,11 @@ async function AccountSlot({ variant }: { variant: "desktop" | "mobile" }) {
       <div className="flex items-center gap-2">
         <ButtonLink
           href="/account"
-          size="icon-touch"
+          size="icon-bar"
           variant="ghost"
           className="p-0"
         >
-          <Avatar letter={letter} className="size-9" />
+          <Avatar letter={letter} className="size-8" />
           <span className="sr-only">{name}</span>
         </ButtonLink>
 
@@ -103,9 +102,9 @@ async function AccountSlot({ variant }: { variant: "desktop" | "mobile" }) {
          * the name stays as its accessible label.
          */}
         <ButtonLink
-          size="touch"
+          size="bar"
           href="/account"
-          className="h-9 gap-2.5 px-1 lg:pr-5"
+          className="gap-2.5 px-1.5 lg:pr-5"
         >
           <Avatar letter={letter} className="size-7" />
           <span className="sr-only max-w-[12ch] truncate lg:not-sr-only">
@@ -114,7 +113,7 @@ async function AccountSlot({ variant }: { variant: "desktop" | "mobile" }) {
         </ButtonLink>
 
         <form action={signOutAction}>
-          <Button type="submit" size="touch" className="h-9 px-4">
+          <Button type="submit" size="bar">
             Sign out
           </Button>
         </form>
@@ -123,7 +122,7 @@ async function AccountSlot({ variant }: { variant: "desktop" | "mobile" }) {
   );
 }
 
-/** The avatar letter on the brighter selected glass, from both artboards. */
+/** The avatar letter on the brighter selected glass. */
 function Avatar({ letter, className }: { letter: string; className: string }) {
   return (
     <span

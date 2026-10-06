@@ -35,7 +35,7 @@ type DetailHeroProps = {
  * AC-3).
  *
  * Extracted from the movie hero so the show page reuses the same geometry
- * rather than a second design (spec 0009). No reference in `design/` draws
+ * rather than a second design (spec 0009). No original design drew
  * this screen; the layout is the one spec 0006 proposed and approved, built
  * only from pieces spec 0004 already made.
  *

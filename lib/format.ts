@@ -190,7 +190,7 @@ const SHORT_DATE_FORMAT = new Intl.DateTimeFormat("en-US", {
 });
 
 /**
- * A TMDB date as the Upcoming artboard prints it on a pill: `Dec 25` inside
+ * A TMDB date as the Upcoming page prints it on a pill: `Dec 25` inside
  * today's UTC year, `Feb 3, 2027` outside it (spec 0014, AC-5). The year is
  * compared as TMDB writes it, against the same UTC day `airStatus` uses, so a
  * pill and the rule that chose its episode never disagree about the year.

@@ -2,10 +2,9 @@ import { cn } from "cn";
 import type * as React from "react";
 
 /**
- * The card every auth screen sits in, taken from the two sign in artboards
- * (spec 0005, AC-21).
+ * The card every auth screen sits in (spec 0005, AC-21).
  *
- * The references draw one card at two widths: 480px wide with a 32px radius on
+ * One card at two widths: 480px wide with a 32px radius on
  * desktop, 358px with 28px on mobile, both on the panel plate with the glass
  * gradient and the rim. That is `rounded-panel` plus `glass-plate-panel`, the
  * same combination `StatePanel` already uses, so the two read as one family.

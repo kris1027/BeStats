@@ -8,12 +8,12 @@ import {
   LegalDocument,
   LegalList,
   LegalSection,
+  OperatorLink,
 } from "@/components/legal/legal-document";
 import {
   DELETION_DAYS,
   MINIMUM_AGE,
   OPERATOR_COUNTRY,
-  OPERATOR_NAME,
   PROCESSORS,
   RIGHTS_RESPONSE,
   SUPABASE_REGION,
@@ -45,7 +45,7 @@ export default function PrivacyPage() {
       <LegalSection title="Who runs BeStats">
         <p>
           BeStats is a free, non commercial personal project run by{" "}
-          {OPERATOR_NAME} in {OPERATOR_COUNTRY}. {OPERATOR_NAME} is the data
+          <OperatorLink /> in {OPERATOR_COUNTRY}. <OperatorLink /> is the data
           controller for the personal data described here, which this policy
           calls &ldquo;we&rdquo;. You can reach us at <ContactEmail />.
         </p>
@@ -210,7 +210,7 @@ export default function PrivacyPage() {
 
       <LegalSection title="Contact">
         <p>
-          {OPERATOR_NAME}, <ContactEmail />
+          <OperatorLink />, <ContactEmail />
         </p>
       </LegalSection>
     </LegalDocument>

@@ -13,8 +13,7 @@ import type { AuthEmailDelivery } from "@/lib/env";
 import { signInAction } from "../actions";
 
 /**
- * The sign in form from `design/desktop-sign-in-page.svg` (spec 0005, AC-4,
- * AC-5, AC-6).
+ * The sign in form (spec 0005, AC-4, AC-5, AC-6).
  *
  * A client component because `useActionState` is what renders the message the
  * action returned. The action itself still runs on the server, so no credential
@@ -24,7 +23,7 @@ import { signInAction } from "../actions";
  * action posts to itself and would otherwise lose it. It is validated again
  * server side; a hidden field is no more trustworthy than a query string.
  *
- * The Google button and its divider the artboard draws are deliberately absent.
+ * The Google button and its divider are deliberately absent.
  * Feature 20 creates the OAuth client and restores them to the slot above the
  * fields; a button that cannot sign anyone in is a false affordance, so it is
  * omitted rather than faked (spec 0005, Consequences).

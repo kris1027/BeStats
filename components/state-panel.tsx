@@ -3,8 +3,8 @@ import { InboxIcon, TriangleAlertIcon, UserRoundIcon } from "lucide-react";
 import type * as React from "react";
 
 /**
- * One panel for the three states `design/` never drew: empty, error and signed
- * out (spec 0004, AC-11).
+ * One panel for the three states the original designs never drew: empty,
+ * error and signed out (spec 0004, AC-11).
  *
  * Its look was proposed in the spec and approved rather than invented here,
  * which is what AGENTS.md section 3 requires for a screen with no reference:

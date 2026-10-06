@@ -5,7 +5,7 @@ import Link from "next/link";
 import type * as React from "react";
 
 /**
- * The button shapes `design/` actually draws (spec 0004, task 5).
+ * The button shapes the glass system uses (spec 0004, task 5).
  *
  * Generated with the shadcn CLI and then stripped back rather than restyled on
  * top: the stock variants carry `dark:` pairs that no longer resolve (there is
@@ -37,16 +37,19 @@ const buttonVariants = cva(
       },
       size: {
         /*
-         * Heights split from the references for touch. The mobile artboards
-         * draw a 35px control, which is below the 44px touch target
-         * AGENTS.md section 3 asks for, so `touch` exists for the mobile
-         * shell and `sm` for the pointer sized desktop one.
+         * Heights split for touch. `touch` meets the 44px target AGENTS.md
+         * section 3 asks for, and `sm` is the pointer sized desktop control.
+         * `bar` and `icon-bar` are the navbar's one 40px height at every
+         * width; `hit-area` stretches their tap area back to 44px, so the
+         * bar can be slim without failing the touch rule.
          */
         sm: "h-9 rounded-full px-4 text-[13px] font-bold",
         touch: "h-11 rounded-full px-5 text-sm font-bold",
+        bar: "hit-area h-10 rounded-full px-4 text-[13px] font-bold",
         lg: "h-14 rounded-full px-6 text-lg font-bold",
         icon: "size-9 rounded-full",
         "icon-touch": "size-11 rounded-full",
+        "icon-bar": "hit-area size-10 rounded-full",
       },
     },
     defaultVariants: {

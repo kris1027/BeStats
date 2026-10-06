@@ -20,7 +20,7 @@ export type UpNextItem = {
 
 /**
  * One card in the Up Next section (spec 0014, AC-5 to AC-8, AC-16), on
- * `PosterCard` as the Upcoming artboard draws it, with no TMDB rating badge.
+ * `PosterCard`, with no TMDB rating badge.
  *
  * The poster and the name render at once. The pill, the Mark watched button
  * and the caught up caption wait on the show's episodes, each in a Suspense

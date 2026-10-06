@@ -2,13 +2,14 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { sectionId } from "@/components/legal/legal-document";
+import { expectOperatorLinks } from "@/components/legal/test-helpers";
 import {
   CONTACT_EMAIL,
   DELETION_DAYS,
   LEGAL_LAST_UPDATED,
   MINIMUM_AGE,
   OPERATOR_COUNTRY,
-  OPERATOR_NAME,
+  OPERATOR_HANDLE,
   PROCESSORS,
   RIGHTS_RESPONSE,
   SUPABASE_REGION,
@@ -67,7 +68,7 @@ describe("/privacy", () => {
     const text = container.textContent ?? "";
 
     for (const fact of [
-      OPERATOR_NAME,
+      OPERATOR_HANDLE,
       OPERATOR_COUNTRY,
       CONTACT_EMAIL,
       SUPERVISORY_AUTHORITY.name,
@@ -82,6 +83,7 @@ describe("/privacy", () => {
     expect(
       container.querySelector(`a[href="mailto:${CONTACT_EMAIL}"]`),
     ).not.toBeNull();
+    expectOperatorLinks(container);
   });
 
   it("opens external links in a new tab, safely (AC-7)", () => {

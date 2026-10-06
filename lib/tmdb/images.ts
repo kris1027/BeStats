@@ -23,8 +23,7 @@ export type TmdbImageSize =
  * Pinned by the module rather than chosen per call site, so every poster in the
  * app is the same width and a page cannot quietly request `original` for a
  * thumbnail grid. `imageUrl` stays exported for the deliberate exception.
- * These are sensible defaults and should be checked against `design/` when
- * scope feature 5 builds the UI foundation.
+ * Feature 5 kept these widths when it built the UI foundation.
  */
 export const POSTER_SIZE: TmdbImageSize = "w500";
 export const BACKDROP_SIZE: TmdbImageSize = "w1280";

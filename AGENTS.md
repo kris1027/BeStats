@@ -37,9 +37,9 @@ Follow this loop for each implementation request:
 
 1. Read this specification and any applicable repository instructions.
 2. Read any skills explicitly named by the user and relevant available supporting skills. Do not assume that a skill or tool exists.
-3. Inspect the existing code, configuration, and relevant files in `design/` before choosing an implementation.
+3. Inspect the existing code, configuration, and the related UI (the shipped pages and `/showcase`) before choosing an implementation.
 4. Ask focused questions when a material requirement is ambiguous. Use the agent's native question panel when available.
-5. Write an implementation plan in `prompts/<descriptive-name>.md`. Include the goal, inspected code and designs, skills used, decisions and assumptions, expected files, requirements, security considerations, acceptance criteria, automated checks, and exact manual test steps.
+5. Write an implementation plan in `prompts/<descriptive-name>.md`. Include the goal, inspected code, skills used, decisions and assumptions, expected files, requirements, security considerations, acceptance criteria, automated checks, and exact manual test steps.
 6. Ask: “I prepared the implementation plan at prompts/<name>.md. Is this good to execute?” Offer Yes and No in the question panel when available.
 7. Wait for approval before writing implementation code, unless the user explicitly waives this requirement. Approval to prepare a plan is not approval to implement it.
 8. Implement the approved scope, run the appropriate checks, and report the actual results. Seek approval for material scope changes.
@@ -54,9 +54,9 @@ Keep detailed rationale in the plan. Never claim that a check passed without run
 
 ## 3. UI and design
 
-The user provides reference designs in `design/`. Those references are the source of truth for layout, spacing, typography, colors, and visible states.
+The shipped interface and `/showcase` are the source of truth for layout, spacing, typography, colors, and visible states. The original reference artboards in `design/` were removed on 2026-10-06; the UI built from them carries their decisions forward.
 
-Use Tailwind CSS and shadcn/ui, adapting components to the reference rather than imposing their default appearance. Reuse existing components and patterns first. Do not redesign supplied views or introduce features simply because a component supports them.
+Use Tailwind CSS and shadcn/ui, adapting components to the existing glass system rather than imposing their default appearance. Reuse existing components and patterns first. Do not redesign existing views or introduce features simply because a component supports them.
 
 When no mobile reference exists, adapt the desktop layout sensibly for small screens while preserving its visual style. Ensure usable navigation, touch targets, keyboard interaction, visible focus, and readable content.
 
@@ -110,7 +110,7 @@ Supabase Auth may use its supported browser client with a public key. TMDB crede
 - TMDB API for movie, TV, cast, season, and episode metadata.
 - Vercel for the Next.js deployment.
 - Supabase Cloud for the database and authentication.
-- Biome for linting and formatting. It replaces ESLint (installed today) in scope feature 2; until then `pnpm lint` still runs ESLint. Do not add Prettier.
+- Biome for linting and formatting: `pnpm lint` runs `biome check` and `pnpm lint:ci` runs `biome ci`. It replaced ESLint in scope feature 2, and ESLint is no longer installed. Do not add ESLint or Prettier.
 - pnpm as the package manager.
 
 This section is the only place the stack is defined. Installed versions live in `package.json`; check it instead of trusting a list here. Choose compatible supported package versions at implementation time and commit the lockfile.
@@ -209,7 +209,7 @@ TMDB title search and filtered discovery may have different capabilities. Verify
 
 When combining a title query with filters, ensure every displayed result meets the selected filters. If filtering upstream search pages locally, continue pagination appropriately and never present the unfiltered total as the filtered result count. If an exact count is unavailable, omit it or explicitly indicate that it is partial.
 
-Keep upstream relevance ordering for title searches unless the approved design specifies another supported order. Never claim semantic matching or comprehensive AI recommendations.
+Keep upstream relevance ordering for title searches unless an approved plan specifies another supported order. Never claim semantic matching or comprehensive AI recommendations.
 
 Show clear loading and empty states, preserve filters when opening and returning from a title, and provide a retry path for failures. Do not fabricate results, metadata, availability, ratings, or counts.
 
@@ -263,14 +263,14 @@ At minimum, verify these behaviors before considering the MVP complete:
 11. Manual status changes preserve episode history and ratings.
 12. Combined search filters apply correctly, pagination works, and result counts remain truthful.
 13. Loading, failure, empty, and missing-metadata states remain usable on desktop and mobile.
-14. The interface matches supplied references in `design/`.
+14. The interface stays consistent with the existing UI and `/showcase`.
 15. Secrets are absent from browser bundles, and private data is not served through shared caches.
 
-If credentials, provider configuration, or reference designs prevent a check, report it as blocked or unverified. Do not substitute a mock-only check for a claimed live integration result.
+If credentials or provider configuration prevent a check, report it as blocked or unverified. Do not substitute a mock-only check for a claimed live integration result.
 
 ## 14. When in doubt
 
-Keep the scope small. Follow the designs. Use TMDB for catalog metadata and Supabase for private user state. Preserve the distinction between ratings, watched progress, and tracking status. Never invent unavailable data.
+Keep the scope small. Follow the existing UI. Use TMDB for catalog metadata and Supabase for private user state. Preserve the distinction between ratings, watched progress, and tracking status. Never invent unavailable data.
 
 Inspect the code and current documentation, record material decisions in `prompts/`, obtain approval before coding, run the relevant checks, and provide clear verification steps.
 
@@ -283,7 +283,7 @@ Tracer Bullet: prove the whole pipe works with one thin real thread, then thicke
 - Imports use the `@/*` alias, which maps to the repo root (set in `tsconfig.json`). Prefer it over long relative paths.
 - Scripts: `pnpm dev`, `pnpm dev:docker` (the dev server against the local Supabase stack, see `scripts/dev-docker.sh`), `pnpm build`, `pnpm start`, `pnpm typecheck`, `pnpm lint`, `pnpm lint:ci`, `pnpm format`, `pnpm test`, `pnpm test:db`, `pnpm tmdb:live`, `pnpm db:types`, `pnpm db:types:check`.
 - Supabase, Zod, shadcn/ui and `server-only` are installed. `zod` validates every external input; `server-only` is what makes a Client Component import of a server module a build failure.
-- Routes live in `app/` at the repo root (there is no `src/` directory). `design/`, `supabase/` and `components/` exist; `prompts/` does not, create it when needed.
+- Routes live in `app/` at the repo root (there is no `src/` directory). `supabase/`, `components/` and `prompts/` exist; there is no `design/` folder any more.
 - `/` is a temporary (307) redirect to `/shows`, declared in `redirects()` in `next.config.ts` rather than a Server Component, so nothing renders and no browser caches it permanently. There is no `app/page.tsx`.
 - `.gitignore` ignores `.env*`, which also hides `.env.example`. Add a `!.env.example` exception before committing it, as section 11 requires.
 - Middleware lives in `proxy.ts` at the repo root and exports `proxy`. Next.js 16 renamed it; a `middleware.ts` would be ignored.
@@ -299,7 +299,8 @@ Tracer Bullet: prove the whole pipe works with one thin real thread, then thicke
 - The TMDB token is server only. Only `lib/tmdb/env.ts` may read `TMDB_READ_ACCESS_TOKEN`, and `security-boundary.test.ts` fails if any other file names it or gives it a `NEXT_PUBLIC_` prefix, the same rule the Supabase service role key carries.
 - Two server renders write: `/shows/{id}` and `/upcoming` run the automatic completion check of spec 0015 (`lib/tracking/auto-completion.ts`) before they read the status, and only on rows whose `status_source` is `system`. No other page writes on load; keep it that way unless a spec says otherwise.
 - TMDB images render through `next/image`; `image.tmdb.org` is the one allowed remote pattern.
-- Legal facts (operator, contact email, processors, `LEGAL_LAST_UPDATED`) live only in `lib/legal/operator.ts`, and TMDB's notice only in `TMDB_ATTRIBUTION`; `lib/legal/boundary.test.ts` fails if either is pasted elsewhere. `/privacy` and `/terms` describe only what the code does, so a change that adds a processor, email provider or analytics updates `PROCESSORS`, the policy text and `LEGAL_LAST_UPDATED` in the same PR (spec 0017). `public/tmdb-logo.svg` is TMDB's official file, hash checked; never edit it.
+- The navbar is transparent (no background, border or blur) and not sticky, so it scrolls away with the page; every control in it is 40px tall at every width, with the `hit-area` utilities keeping a 44px tap target. The footer is borderless. See [components/AGENTS.md](components/AGENTS.md).
+- Legal facts (operator handle and GitHub URL, contact email, processors, `LEGAL_LAST_UPDATED`) live only in `lib/legal/operator.ts`, and TMDB's notice only in `TMDB_ATTRIBUTION`; `lib/legal/boundary.test.ts` fails if either is pasted elsewhere. `/privacy` and `/terms` describe only what the code does, so a change that adds a processor, email provider or analytics updates `PROCESSORS`, the policy text and `LEGAL_LAST_UPDATED` in the same PR (spec 0017). `public/tmdb-logo.svg` is TMDB's official file, hash checked; never edit it.
 - Production runs from [docs/deploy.md](docs/deploy.md), the runbook of spec 0018: push a migration with `supabase db push` before merging the PR that adds it, and auth settings reach the cloud only through `supabase config push` (never the dashboard). Run both pushes yourself; from an agent shell the CLI applies them without stopping at the prompt. `vercel.json` pins functions to `fra1`, next to the Supabase region `eu-central-1`. The `/api/search` rate limit is a Vercel Firewall rule, recorded only in `docs/deploy.md`.
 - `NEXT_PUBLIC_AUTH_EMAIL_DELIVERY` (`on` or `off`, unset meaning `off`) is read only through `getAuthEmailDelivery()` in `lib/env.ts`, separate from `getPublicEnv()` so previews with no Supabase variables still build. Production is `off`: no auth email is sent or promised. Being a `NEXT_PUBLIC_` value, a change takes a redeploy.
 

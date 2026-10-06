@@ -10,7 +10,7 @@ import type { SearchType } from "@/lib/search/params";
 import { QuickSearch } from "./quick-search";
 
 /**
- * The mobile search: the round icon from `design/mobile-menu-open.svg`, which
+ * The mobile search: the round icon in the mobile navbar, which
  * opens a full screen overlay holding the same quick search (spec 0010, AC-6).
  *
  * Base UI's modal Dialog supplies what AC-6 asks of the overlay, as it does
@@ -28,7 +28,7 @@ function MobileSearchOverlay({ type }: { type: SearchType }) {
   return (
     <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
       <DialogPrimitive.Trigger
-        render={<Button size="icon-touch" aria-label="Search" />}
+        render={<Button size="icon-bar" aria-label="Search" />}
       >
         <SearchIcon className="size-5" aria-hidden="true" />
       </DialogPrimitive.Trigger>

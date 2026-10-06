@@ -1,4 +1,4 @@
-import { CircleStopIcon, TvIcon } from "lucide-react";
+import { CircleStopIcon, SearchIcon, TvIcon } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import type * as React from "react";
@@ -232,6 +232,10 @@ export default function ShowcasePage() {
         <div className="flex flex-wrap items-center gap-3">
           <Button size="sm">Glass, sm</Button>
           <Button size="touch">Glass, touch</Button>
+          <Button size="bar">Glass, bar</Button>
+          <Button size="icon-bar" aria-label="Icon bar">
+            <SearchIcon className="size-5" aria-hidden="true" />
+          </Button>
           <Button size="lg" variant="selected">
             Selected, lg
           </Button>

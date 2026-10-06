@@ -12,17 +12,20 @@ import {
 } from "@/components/search/navbar-search";
 
 /**
- * The sticky top navigation, in its signed out form (spec 0004, AC-13).
+ * The top navigation, in its signed out form (spec 0004, AC-13).
  *
- * Two layouts that swap at `md`, taken from the two navbar artboards: one row
+ * Two layouts that swap at `md`: one row
  * on desktop with the brand, the tabs and Sign in, and two rows on mobile with
  * the brand and Sign in above a centred tab control. They are rendered as one
  * tree with responsive classes rather than two components, so the tab control
  * keeps a single tab stop and a single DOM node at every width.
  *
- * Backdrop blur at 16px, because this is a surface that content scrolls
- * underneath (AC-16). `scroll-padding-top` on the root layout keeps an
- * anchored heading from landing behind it.
+ * Transparent and not sticky: no background, border or blur, and it scrolls
+ * away with the page. A transparent bar pinned over scrolling content left the
+ * wordmark and the gaps between pills unreadable, so it sits at the top of the
+ * document instead and never overlaps anything. Every control is 40px tall at
+ * every width, with `hit-area` restoring a 44px tap target on mobile
+ * (AGENTS.md section 3).
  *
  * The search sits between the tabs and the account controls on desktop, and
  * as a round icon beside the account control on mobile (spec 0010, AC-1,
@@ -50,8 +53,8 @@ function Navbar({
   desktopAccountSlot: React.ReactNode;
 }) {
   return (
-    <header className="sticky top-0 z-30 w-full border-b border-border bg-background/70 backdrop-blur-glass">
-      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:gap-6 md:py-2.5">
+    <header className="w-full">
+      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-2 px-4 py-2 md:flex-row md:items-center md:gap-6">
         <div className="flex items-center justify-between gap-4">
           <Link
             href="/shows"

@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { sectionId } from "@/components/legal/legal-document";
+import { expectOperatorLinks } from "@/components/legal/test-helpers";
 import {
   COMPLAINT_RESPONSE_DAYS,
   CONTACT_EMAIL,
@@ -9,7 +10,7 @@ import {
   LEGAL_LAST_UPDATED,
   MINIMUM_AGE,
   OPERATOR_COUNTRY,
-  OPERATOR_NAME,
+  OPERATOR_HANDLE,
 } from "@/lib/legal/operator";
 import { TMDB_ATTRIBUTION } from "@/lib/tmdb/constants";
 
@@ -79,7 +80,7 @@ describe("/terms", () => {
     const text = container.textContent ?? "";
 
     for (const fact of [
-      OPERATOR_NAME,
+      OPERATOR_HANDLE,
       OPERATOR_COUNTRY,
       CONTACT_EMAIL,
       `at least ${MINIMUM_AGE}`,
@@ -91,6 +92,7 @@ describe("/terms", () => {
     expect(
       container.querySelector(`a[href="mailto:${CONTACT_EMAIL}"]`),
     ).not.toBeNull();
+    expectOperatorLinks(container);
   });
 
   it("builds its metadata through catalogMetadata (AC-12)", () => {

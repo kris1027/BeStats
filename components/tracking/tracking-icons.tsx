@@ -1,14 +1,14 @@
 import { cn } from "cn";
 
 /**
- * The tracking marks, drawn from `design/` rather than approximated with a
+ * The tracking marks, drawn as custom paths rather than approximated with a
  * stock icon (spec 0007, movie page row and card bookmark).
  *
- * `design/badge-legend.svg` draws Planned as a filled green bookmark with a
- * dark check cut into it. A stock `BookmarkCheck` strokes its outline and its
- * check in one colour, so it cannot put a green body behind a dark check. The
- * paths below are the legend's own, kept in its coordinates through the
- * `viewBox`. Colours come from the theme tokens, never literals.
+ * Planned is a filled green bookmark with a dark check cut into it. A stock
+ * `BookmarkCheck` strokes its outline and its check in one colour, so it
+ * cannot put a green body behind a dark check. The paths below come from the
+ * original badge legend, kept in its coordinates through the `viewBox`.
+ * Colours come from the theme tokens, never literals.
  *
  * All of them are decorative: the button around each one carries the name.
  */
@@ -59,9 +59,9 @@ function PlannedIcon({ className }: IconProps) {
 }
 
 /**
- * Watched and not watched: a circle check, outlined or filled near white. No
- * reference draws a watched mark, so it deliberately uses none of the three
- * meaning colours (`components/AGENTS.md`).
+ * Watched and not watched: a circle check, outlined or filled near white. The
+ * original designs drew no watched mark, so it deliberately uses none of the
+ * three meaning colours (`components/AGENTS.md`).
  */
 function WatchedIcon({ filled, className }: IconProps & { filled: boolean }) {
   return (
@@ -90,9 +90,8 @@ function WatchedIcon({ filled, className }: IconProps & { filled: boolean }) {
 }
 
 /**
- * Stop watching: a square inside a circle, from `stop` in the watchlist
- * artboards and the legend (spec 0013, AC-16). The show status pill reuses it
- * for On Hold, the status it sets.
+ * Stop watching: a square inside a circle (spec 0013, AC-16). The show status
+ * pill reuses it for On Hold, the status it sets.
  */
 function StopWatchingIcon({ className }: IconProps) {
   return (
@@ -117,8 +116,8 @@ function StopWatchingIcon({ className }: IconProps) {
 }
 
 /**
- * Next episode: the television from `tv` in the watchlist artboards, in the
- * artboard's grey (spec 0013, AC-15). The status pill uses it for Watching.
+ * Next episode: a television, in the legend grey (spec 0013, AC-15). The
+ * status pill uses it for Watching.
  */
 function NextEpisodeIcon({ className }: IconProps) {
   return (
@@ -141,8 +140,8 @@ function NextEpisodeIcon({ className }: IconProps) {
 }
 
 /**
- * Release date: the calendar from `calendar` in the Upcoming artboards, in the
- * same grey as the Next episode television (spec 0014, AC-5, AC-12).
+ * Release date: a calendar, in the same grey as the Next episode television
+ * (spec 0014, AC-5, AC-12).
  */
 function CalendarIcon({ className }: IconProps) {
   return (
@@ -169,8 +168,9 @@ function CalendarIcon({ className }: IconProps) {
 }
 
 /**
- * Dropped: a circle crossed by a slash. No reference draws it, so it follows
- * the Stop watching circle's weight and uses none of the meaning colours.
+ * Dropped: a circle crossed by a slash. The original designs never drew it,
+ * so it follows the Stop watching circle's weight and uses none of the meaning
+ * colours.
  */
 function DroppedIcon({ className }: IconProps) {
   return (
@@ -192,8 +192,8 @@ function DroppedIcon({ className }: IconProps) {
 }
 
 /**
- * Completed: a check. No reference draws it; like Dropped it keeps the
- * neutral colour, so it is never mistaken for Planned green.
+ * Completed: a check. The original designs never drew it; like Dropped it
+ * keeps the neutral colour, so it is never mistaken for Planned green.
  */
 function CompletedIcon({ className }: IconProps) {
   return (
