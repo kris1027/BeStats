@@ -20,11 +20,18 @@ import {
   type WatchedRow,
   type WatchlistRow,
 } from "@/lib/tracking/library-lists";
+import { getShowRatings } from "@/lib/tracking/show-ratings";
 import { showIdsKey } from "@/lib/tracking/show-state";
+import type { TvStatus } from "@/lib/tracking/types";
 
 import { BadgeLegend } from "./badge-legend";
 import { LibraryGrid } from "./library-grid";
-import { type LibraryItem, type LibraryList, libraryItemKey } from "./types";
+import {
+  type LibraryItem,
+  type LibraryList,
+  libraryItemKey,
+  SHOW_CARD,
+} from "./types";
 
 /** Every piece of copy that differs between the two pages. */
 const COPY = {
@@ -41,13 +48,17 @@ const COPY = {
     failed: "Couldn't load your watchlist",
   },
   watched: {
-    grid: "Movies you watched",
+    grid: "Titles you watched",
     empty: {
       title: "Nothing watched yet",
-      description: "Movies you mark watched show up here.",
+      description:
+        "Movies you mark watched and shows you complete show up here.",
     },
-    browse: [{ label: "Browse movies", href: "/movies" }],
-    failed: "Couldn't load your watched movies",
+    browse: [
+      { label: "Browse movies", href: "/movies" },
+      { label: "Browse shows", href: "/shows" },
+    ],
+    failed: "Couldn't load your watched titles",
   },
 } as const;
 
@@ -66,11 +77,14 @@ function pageHref(list: LibraryList, page: number): string {
  * malformed or out of range value never costs a query (AC-9). Then one
  * Postgres read for the page and its exact count, a redirect when the page is
  * past the end, and only then the TMDB titles for the rows actually shown.
- * `redirect()` stays outside any `try`.
+ * On `/watched` the found shows' rated episodes come last, for their
+ * calculated rating badge (spec 0019, AC-5). `redirect()` stays outside any
+ * `try`.
  *
- * A failure of either read replaces the grid with an error panel and a retry
+ * A failure of any read replaces the grid with an error panel and a retry
  * link. It never renders the empty state, which would tell the user their
- * list is gone (AC-11).
+ * list is gone, nor show cards without their rating (AC-11; spec 0019,
+ * AC-10).
  */
 async function LibrarySection({
   list,
@@ -86,16 +100,10 @@ async function LibrarySection({
 
   const result: LibraryPage<LibraryRow> =
     list === "watchlist"
-      ? toLibraryRows(await getWatchlistPage(user.id, page))
-      : toLibraryRows(await getWatchedPage(user.id, page));
+      ? watchlistRows(await getWatchlistPage(user.id, page))
+      : watchedRows(await getWatchedPage(user.id, page));
   if (result.kind === "failed") {
-    return (
-      <LoadFailed
-        title={COPY[list].failed}
-        description="Your list didn't load. Try again in a moment."
-        href={pageHref(list, page)}
-      />
-    );
+    return <ListFailed list={list} page={page} />;
   }
 
   const lastPage = libraryLastPage(result.total);
@@ -139,34 +147,46 @@ async function LibrarySection({
     );
   }
 
-  const items: LibraryItem[] = result.rows.map((row) => {
-    const found =
-      row.kind === "tv"
-        ? titleOf(titles.shows.get(row.tmdbId))
-        : titleOf(titles.movies.get(row.tmdbId));
+  // A watched show's badge comes from its episode ratings, read only for the
+  // shows TMDB found: a missing title's card shows no rating. A failed read
+  // shows the list panel rather than cards that look unrated (spec 0019,
+  // AC-10). Sequential on purpose, since the ids depend on the titles.
+  let showRatings = new Map<number, number | null>();
+  const ratedIds = SHOW_CARD[list].calculatedRating
+    ? showIds.filter((id) => titles.shows.has(id))
+    : [];
+  if (ratedIds.length > 0) {
+    const read = await getShowRatings(user.id, ratedIds);
+    if (read.kind === "failed") return <ListFailed list={list} page={page} />;
+    showRatings = read.ratings;
+  }
+
+  const items = result.rows.map((row): LibraryItem => {
+    if (row.kind === "movie") {
+      return { ...row, ...titleOf(titles.movies.get(row.tmdbId)) };
+    }
     return {
-      kind: row.kind,
-      tmdbId: row.tmdbId,
-      status: row.status,
-      title: found?.title ?? null,
-      posterUrl: found?.posterUrl ?? null,
-      tmdbRating: found?.tmdbRating ?? null,
-      rating: row.rating,
-      watchedAt: row.watchedAt,
+      ...row,
+      ...titleOf(titles.shows.get(row.tmdbId)),
+      showRating: showRatings.get(row.tmdbId) ?? null,
     };
   });
 
-  // Each show card's Next episode pill streams on its own (spec 0013,
-  // AC-15). One key for the page, so every pill shares one watched ids read.
-  const watchedIdsKey = showIdsKey(showIds);
+  // Each watchlist show card's Next episode pill streams on its own
+  // (spec 0013, AC-15). One key for the page, so every pill shares one
+  // watched ids read. A Completed show on `/watched` has no next episode to
+  // show, so that page builds none.
   const nextEpisodes: Record<string, ReactNode> = {};
-  for (const item of items) {
-    if (item.kind !== "tv" || item.title === null) continue;
-    nextEpisodes[libraryItemKey(item)] = (
-      <Suspense fallback={null}>
-        <NextEpisodePill showId={item.tmdbId} watchedIdsKey={watchedIdsKey} />
-      </Suspense>
-    );
+  if (SHOW_CARD[list].nextEpisode) {
+    const watchedIdsKey = showIdsKey(showIds);
+    for (const item of items) {
+      if (item.kind !== "tv" || item.title === null) continue;
+      nextEpisodes[libraryItemKey(item)] = (
+        <Suspense fallback={null}>
+          <NextEpisodePill showId={item.tmdbId} watchedIdsKey={watchedIdsKey} />
+        </Suspense>
+      );
+    }
   }
 
   return (
@@ -193,42 +213,68 @@ async function LibrarySection({
   );
 }
 
-/** One row of either list, in the shape the page joins with TMDB. */
-type LibraryRow = WatchlistRow & {
-  rating: number | null;
-  watchedAt: string | null;
-};
+/**
+ * One row of either list, in the shape the page joins with TMDB: a movie with
+ * its score and watched time (both null on the watchlist), or a show with its
+ * status.
+ */
+type LibraryRow =
+  | {
+      kind: "movie";
+      tmdbId: number;
+      rating: number | null;
+      watchedAt: string | null;
+    }
+  | { kind: "tv"; tmdbId: number; status: TvStatus };
 
-/** Both list reads, reduced to one row shape. The watched page is movies only. */
-function toLibraryRows(
-  page: LibraryPage<WatchlistRow> | LibraryPage<WatchedRow>,
+/** The watchlist read, in the shared row shape: no score, no watched time. */
+function watchlistRows(
+  page: LibraryPage<WatchlistRow>,
 ): LibraryPage<LibraryRow> {
   if (page.kind === "failed") return page;
   return {
     kind: "ok",
     total: page.total,
     rows: page.rows.map((row) =>
-      "movieId" in row
-        ? {
-            kind: "movie",
-            tmdbId: row.movieId,
-            status: null,
-            rating: row.rating,
-            watchedAt: row.watchedAt,
-          }
-        : { ...row, rating: null, watchedAt: null },
+      row.kind === "movie"
+        ? { kind: "movie", tmdbId: row.tmdbId, rating: null, watchedAt: null }
+        : row,
     ),
   };
 }
 
-/** The fields a card shows, from a movie or a show summary. */
+/**
+ * The watched read, in the shared row shape (spec 0019). A movie keeps its
+ * score and its exact watched time, for Undo. A show is `completed`, the
+ * view's own filter, with no score of its own and no time, because nothing on
+ * this page removes or restores it (AC-6).
+ */
+function watchedRows(page: LibraryPage<WatchedRow>): LibraryPage<LibraryRow> {
+  if (page.kind === "failed") return page;
+  return {
+    kind: "ok",
+    total: page.total,
+    rows: page.rows.map((row) =>
+      row.kind === "movie"
+        ? {
+            kind: "movie",
+            tmdbId: row.tmdbId,
+            rating: row.rating,
+            watchedAt: row.watchedAt,
+          }
+        : { kind: "tv", tmdbId: row.tmdbId, status: "completed" },
+    ),
+  };
+}
+
+/** The fields a card shows, from a movie or a show summary, or none. */
 function titleOf(
   summary:
     | { title: string; posterUrl: string | null; tmdbRating: number | null }
     | { name: string; posterUrl: string | null; tmdbRating: number | null }
     | undefined,
 ) {
-  if (!summary) return null;
+  if (!summary) return { title: null, posterUrl: null, tmdbRating: null };
   return {
     title: "title" in summary ? summary.title : summary.name,
     posterUrl: summary.posterUrl,
@@ -251,6 +297,17 @@ function NoSuchPage({ list }: { list: LibraryList }) {
         }
       />
     </div>
+  );
+}
+
+/** A failed read of the list itself, or of the ratings its cards show. */
+function ListFailed({ list, page }: { list: LibraryList; page: number }) {
+  return (
+    <LoadFailed
+      title={COPY[list].failed}
+      description="Your list didn't load. Try again in a moment."
+      href={pageHref(list, page)}
+    />
   );
 }
 

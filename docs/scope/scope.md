@@ -7,7 +7,7 @@ A movie and TV tracking web app powered by TMDB. Anyone can browse and search th
 
 _These are recommendations to keep your build orderly, not requirements. Skip anything that does not fit: if you already know how to build a feature, use `/develop` and skip `/architect`. You decide when a feature is `done`._
 
-_The stack, tooling and product rules (ratings, progress, statuses, security) live only in `AGENTS.md`; this file does not repeat them. Specs below only record the decisions `AGENTS.md` leaves open. Every UI feature waits on files in `design/`, which does not exist yet._
+_The stack, tooling and product rules (ratings, progress, statuses, security) live only in `AGENTS.md`; this file does not repeat them. Specs below only record the decisions `AGENTS.md` leaves open. Every UI feature follows the artboards in `design/`._
 
 ## At a glance
 
@@ -33,6 +33,7 @@ _The stack, tooling and product rules (ratings, progress, statuses, security) li
 | 18 | Legal pages and TMDB attribution | Slice 8 | done |
 | 19 | Security and acceptance verification | Slice 8 | done |
 | 20 | Deploy and provider setup | Slice 8 | done |
+| 21 | TV history on /watched | Slice 9 | in-progress |
 
 ## Foundations
 
@@ -345,14 +346,32 @@ spec [0018](../specs/0018-deploy-and-provider-setup/index.md) · code in [docs/d
 - [x] Review it (fresh model): `/check review deploy and provider setup`
 - [x] Document it: `/document deploy and provider setup`
 
+Still open, both yours and outside the repo: the Google Search Console sitemap step in [verify.md](../specs/0018-deploy-and-provider-setup/verify.md) (AC-22), and the launch gate in [docs/deploy.md](../deploy.md) (read `/privacy` and `/terms` in full on production, run `pnpm tmdb:live` once).
+
+## Slice 9: TV history
+
+### 21. TV history on /watched · in-progress
+The watched page shows movies only. Add the shows and episodes you watched, so `/watched` is your whole history (from spec [0013](../specs/0013-tv-status-and-progress/index.md), Follow-up). The current artboards (`desktop-watched-page.svg`, `mobile-watched-page.svg`) draw movies only, so the layout for shows is the open decision.
+**Done when:** a signed in user sees the shows they watched episodes of on `/watched`, ordered and labeled consistently with the movies there, with personal ratings kept apart from TMDB ratings, specials not counted toward progress, and the empty, signed out and failure states still working.
+- [x] Design it (spec): `/architect TV history on /watched`
+- [x] Build it: `/develop TV history on /watched`
+  - [x] The thin thread: the `user_watched_entries` view with grants, types and pgTAP, `getWatchedPage` over it, and Completed show cards with no button on `/watched` — AC-1, AC-2, AC-4, AC-6, AC-11, AC-12
+  - [x] The rating strand: `getShowRatings` and the calculated show rating badge, with its failure routed to the list panel — AC-5, AC-10
+  - [x] The page strand: merged pagination, the new copy, the missing title show card, and movie unmark, Undo and focus with shows present — AC-3, AC-7 to AC-10
+  - [x] Proof: 375 px and keyboard passes, purity tests, all checks, and the `explain analyze` timing — AC-13 to AC-15
+- [x] Verify it: `/check verify TV history on /watched`
+- [x] Test it: `/test TV history on /watched`
+- [x] Review it (fresh model): `/check review TV history on /watched`
+- [x] Document it: `/document TV history on /watched`
+spec [0019](../specs/0019-tv-history-on-watched/index.md) · code in `supabase/schemas/06-views.sql`, `lib/tracking/library-lists.ts`, `lib/tracking/show-ratings.ts`, `components/library/`
+
 ## Deferred
 Out of scope for the current build pass, kept so the plan stays honest.
 - **Public profiles and social features**: ruled out of the MVP by `AGENTS.md`
 - **Error monitoring and product analytics**: not selected for this pass
-- **Self serve account deletion and data export** (from spec 0017): GDPR requests are handled by email for now; a `/account` flow needs the Supabase admin API or a security definer function
-- **Account deletion**: from spec 0005. Undesigned, and it needs an elevated server side call that nothing else in the app uses, so it deserves its own decision before it is built
-- **TV history on `/watched`**: from spec 0013. The watched page stays movies only; it has no artboard for shows and no scope row yet
-- **Rate limit on `/api/search`**: from spec 0010. Now planned as a Vercel Firewall rule in feature 20 (spec 0018 AC-20); returns here only if the Hobby plan does not offer one
+- **Self serve account deletion and data export** (from specs 0005 and 0017): GDPR requests are handled by email for now. Undesigned; a `/account` flow needs the Supabase admin API or a security definer function, an elevated call nothing else in the app uses, so it deserves its own decision, including what happens to the cascading tracking data
+- **Rate limit on sign in and sign up** (from spec 0018): Supabase counts Vercel's addresses, so its auth limit is shared by every visitor ([docs/deploy.md](../deploy.md) section 6). If it bites, add a second Vercel Firewall rule on sign in and sign up posts per IP. (The `/api/search` limit from spec 0010 shipped as a firewall rule in feature 20.)
+- **Scheduled automatic completion** (from spec 0015): completion runs only when you open a show or `/upcoming`. If "a change you never visit waits" becomes a real complaint, a scheduled job is next; it needs an elevated server role and its own spec
 - **A paid Supabase plan** (from spec 0018): the Free project pauses after about a week idle and has no automatic backups; revisit if that bites, or before inviting more than a handful of users
 - **Email delivery and Google sign in** (from spec 0018): an SMTP provider (your own domain, or Gmail SMTP), `enable_confirmations = true` and `NEXT_PUBLIC_AUTH_EMAIL_DELIVERY=on`, password recovery back, a browser pass of spec 0005's email steps, the Google button restored, a pre account takeover guard for accounts created while confirmation was off, `secure_password_change = true`, Google and the email provider added to `PROCESSORS`, and leaked password protection if you move to Pro
 

@@ -45,17 +45,23 @@ export type LibraryPage<Row> =
  * One watchlist entry: a planned movie, or a show that is Want to Watch or
  * Watching (spec 0013, AC-13). `status` is the show's, and null for a movie.
  */
-export type WatchlistRow = {
+export type WatchlistRow =
+  | { kind: "movie"; tmdbId: number; status: null }
+  | { kind: "tv"; tmdbId: number; status: TvStatus };
+
+/**
+ * One watched entry: a watched movie, or a show with status Completed
+ * (spec 0019, AC-1, AC-4).
+ */
+export type WatchedRow = {
   kind: "movie" | "tv";
   tmdbId: number;
-  status: TvStatus | null;
-};
-
-export type WatchedRow = {
-  movieId: number;
-  /** As PostgREST returned it, so Undo can put back the exact instant. */
+  /**
+   * The entry's sort time (AC-2). For a movie it is `watched_at` as PostgREST
+   * returned it, so Undo can put back the exact instant.
+   */
   watchedAt: string;
-  /** The personal score, or null when unrated. */
+  /** A movie's personal score, or null when unrated; always null for a show. */
   rating: number | null;
 };
 
@@ -116,10 +122,14 @@ export async function getWatchlistPage(
     const rows: WatchlistRow[] = [];
     for (const row of data) {
       // A view's columns are all nullable to the type generator; the view
-      // itself never yields a null id or an unknown kind.
+      // itself never yields a null id, an unknown kind or a show without a
+      // status.
       if (row.tmdb_id === null) continue;
-      if (row.kind !== "movie" && row.kind !== "tv") continue;
-      rows.push({ kind: row.kind, tmdbId: row.tmdb_id, status: row.status });
+      if (row.kind === "movie") {
+        rows.push({ kind: "movie", tmdbId: row.tmdb_id, status: null });
+      } else if (row.kind === "tv" && row.status !== null) {
+        rows.push({ kind: "tv", tmdbId: row.tmdb_id, status: row.status });
+      }
     }
     return { kind: "ok", rows, total: count };
   } catch {
@@ -130,7 +140,14 @@ export async function getWatchlistPage(
 }
 
 /**
- * One page of the user's watched movies, most recent first (AC-2).
+ * One page of the user's watched history: watched movies and Completed shows
+ * in one order, most recent first (spec 0008, AC-2; spec 0019, AC-1 to AC-3).
+ *
+ * Read from the `user_watched_entries` view, which runs with the reader's
+ * rights, so every table's row level security applies. One ordered query with
+ * an exact count, so the page and the total are the truthful merged ones:
+ * `last_watched_at` descending, then `kind` (movies before shows on a tie),
+ * then the TMDB id.
  *
  * @param userId The verified session's user, never a client value.
  * @param page A page already parsed by `parsePageParam`.
@@ -142,33 +159,34 @@ export async function getWatchedPage(
   try {
     const supabase = await createClient();
     const { data, error, count } = await supabase
-      .from("user_movie_state")
-      .select("movie_id, watched_at, rating", { count: "exact" })
+      .from("user_watched_entries")
+      .select("kind, tmdb_id, last_watched_at, rating", { count: "exact" })
       .eq("user_id", userId)
-      .not("watched_at", "is", null)
-      .order("watched_at", { ascending: false })
-      .order("movie_id", { ascending: true })
+      .order("last_watched_at", { ascending: false })
+      .order("kind", { ascending: true })
+      .order("tmdb_id", { ascending: true })
       .range(...pageRange(page));
 
     if (error?.code === RANGE_NOT_SATISFIABLE) {
       return pastTheEnd(
         await supabase
-          .from("user_movie_state")
-          .select("movie_id", { count: "exact", head: true })
-          .eq("user_id", userId)
-          .not("watched_at", "is", null),
+          .from("user_watched_entries")
+          .select("tmdb_id", { count: "exact", head: true })
+          .eq("user_id", userId),
       );
     }
     if (error || count === null) return failed();
 
     const rows: WatchedRow[] = [];
     for (const row of data) {
-      // The filter already excludes null; this narrows the type honestly
-      // rather than asserting it.
-      if (row.watched_at === null) continue;
+      // A view's columns are all nullable to the type generator; the view
+      // itself never yields a null id or time, or an unknown kind.
+      if (row.tmdb_id === null || row.last_watched_at === null) continue;
+      if (row.kind !== "movie" && row.kind !== "tv") continue;
       rows.push({
-        movieId: row.movie_id,
-        watchedAt: row.watched_at,
+        kind: row.kind,
+        tmdbId: row.tmdb_id,
+        watchedAt: row.last_watched_at,
         rating: row.rating,
       });
     }

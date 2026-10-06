@@ -1,5 +1,5 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 /**
@@ -160,6 +160,77 @@ describe("search reads no request scoped value (spec 0010, AC-22)", () => {
   it("reads nothing from the request but its query in the Route Handler (AC-20)", () => {
     const source = readFileSync("app/api/search/route.ts", "utf8");
     expect(source).not.toMatch(/request\.(cookies|headers)/);
+  });
+});
+
+/**
+ * The repo files a render of `entry` reaches: its relative and `@/` imports,
+ * followed transitively. A Server Actions file (`"use server"`) is not
+ * followed: a click runs it, not the render. Packages are not followed.
+ */
+function renderGraph(entry: string): string[] {
+  const seen = new Set<string>();
+  const pending = [entry];
+  while (pending.length > 0) {
+    const file = pending.pop() as string;
+    if (seen.has(file)) continue;
+    const source = readFileSync(file, "utf8");
+    if (/^\s*["']use server["']/.test(source)) continue;
+    seen.add(file);
+    for (const [, specifier] of source.matchAll(
+      /(?:from|import)\s*\(?\s*["']([^"']+)["']/g,
+    )) {
+      const base = specifier.startsWith("@/")
+        ? specifier.slice(2)
+        : specifier.startsWith(".")
+          ? join(dirname(file), specifier)
+          : null;
+      if (base === null) continue;
+      const resolved = [".ts", ".tsx", "/index.ts", "/index.tsx"]
+        .map((extension) => base + extension)
+        .find((candidate) => existsSync(candidate));
+      if (resolved) pending.push(resolved);
+    }
+  }
+  return [...seen];
+}
+
+/**
+ * covers: spec 0019, AC-13
+ *
+ * `/watched` writes nothing on load: only `/shows/{id}` and `/upcoming` run
+ * the automatic completion check (`AGENTS.md`, Commands and repo facts). So
+ * no file its render reaches, followed through every import, holds a write
+ * call or imports that check. The grid's own removal goes through Server
+ * Actions, which a click runs, not the render, so those are not followed.
+ */
+describe("the watched page writes nothing on load (spec 0019, AC-13)", () => {
+  const files = renderGraph("app/watched/page.tsx");
+
+  it("follows the render into the reads it makes", () => {
+    expect(files).toEqual(
+      expect.arrayContaining([
+        "components/library/library-section.tsx",
+        "components/library/library-card.tsx",
+        "lib/tracking/library-lists.ts",
+        "lib/tracking/show-ratings.ts",
+      ]),
+    );
+    expect(files).not.toContain("app/movies/actions.ts");
+  });
+
+  it.each(files)("%s holds no write and no completion check", (path) => {
+    const source = readFileSync(path, "utf8");
+    for (const write of [
+      ".rpc(",
+      ".insert(",
+      ".update(",
+      ".upsert(",
+      ".delete(",
+      "auto-completion",
+    ]) {
+      expect(source, `${path} must not use ${write}`).not.toContain(write);
+    }
   });
 });
 

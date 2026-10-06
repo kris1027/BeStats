@@ -121,6 +121,16 @@ export type Database = {
         }
         Relationships: []
       }
+      user_watched_entries: {
+        Row: {
+          kind: string | null
+          last_watched_at: string | null
+          rating: number | null
+          tmdb_id: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
       user_watchlist_entries: {
         Row: {
           kind: string | null

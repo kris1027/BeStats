@@ -2,10 +2,11 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { LibraryItem } from "./types";
+import type { LibraryItem, LibraryMovieItem, LibraryShowItem } from "./types";
 
 /**
- * covers: spec 0008, AC-1, AC-2, AC-5 to AC-7, AC-11, AC-16, AC-18
+ * covers: spec 0008, AC-1, AC-2, AC-5 to AC-7, AC-11, AC-16, AC-18;
+ * spec 0019, AC-5 to AC-8
  *
  * The four actions, the router and Sonner are the boundaries. Each action
  * returns a promise the test settles by hand, so a test can look at the grid
@@ -51,18 +52,36 @@ vi.mock("sonner", () => ({
 const { LibraryGrid } = await import("./library-grid");
 const { LibraryHeading } = await import("./library-heading");
 
-function item(movieId: number, overrides: Partial<LibraryItem> = {}) {
+function item(
+  movieId: number,
+  overrides: Partial<LibraryMovieItem> = {},
+): LibraryMovieItem {
   return {
     kind: "movie",
     tmdbId: movieId,
-    status: null,
     title: `Movie ${movieId}`,
     posterUrl: null,
     tmdbRating: 7.5,
     rating: null,
     watchedAt: null,
     ...overrides,
-  } satisfies LibraryItem;
+  };
+}
+
+function show(
+  showId: number,
+  overrides: Partial<LibraryShowItem> = {},
+): LibraryShowItem {
+  return {
+    kind: "tv",
+    tmdbId: showId,
+    status: "want_to_watch",
+    title: `Show ${showId}`,
+    posterUrl: null,
+    tmdbRating: 7.5,
+    showRating: null,
+    ...overrides,
+  };
 }
 
 function grid(list: "watchlist" | "watched", items: LibraryItem[], page = 1) {
@@ -359,8 +378,8 @@ describe("a title TMDB no longer has (AC-11)", () => {
     const user = userEvent.setup();
     render(
       grid("watchlist", [
-        item(1, { kind: "tv", status: "want_to_watch", title: null }),
-        item(2, { kind: "tv", status: "watching", title: null }),
+        show(1, { status: "want_to_watch", title: null }),
+        show(2, { status: "watching", title: null }),
       ]),
     );
 
@@ -386,8 +405,8 @@ describe("a show whose status changed elsewhere (spec 0013 review fix)", () => {
     const user = userEvent.setup();
     render(
       grid("watchlist", [
-        item(1, { kind: "tv", status: "want_to_watch", title: "Planned" }),
-        item(2, { kind: "tv", status: "watching", title: "Started" }),
+        show(1, { status: "want_to_watch", title: "Planned" }),
+        show(2, { status: "watching", title: "Started" }),
       ]),
     );
     const [planned, stop] = screen.getAllByRole("button");
@@ -405,7 +424,7 @@ describe("a show whose status changed elsewhere (spec 0013 review fix)", () => {
     const user = userEvent.setup();
     render(
       grid("watchlist", [
-        item(1, { kind: "tv", status: "want_to_watch", title: "Planned" }),
+        show(1, { status: "want_to_watch", title: "Planned" }),
       ]),
     );
     await user.click(screen.getByRole("button"));
@@ -418,6 +437,157 @@ describe("a show whose status changed elsewhere (spec 0013 review fix)", () => {
       "This show's status changed elsewhere. Showing the current one.",
       expect.objectContaining({ action: undefined }),
     );
+  });
+});
+
+/** A Completed show as the watched page hands it to the grid (spec 0019). */
+function completed(showId: number, overrides: Partial<LibraryShowItem> = {}) {
+  return show(showId, { status: "completed", ...overrides });
+}
+
+describe("Completed shows on the watched page (spec 0019)", () => {
+  it("links the show and carries its calculated rating to one decimal, never the TMDB rating (AC-5)", () => {
+    render(grid("watched", [completed(1396, { showRating: 22 / 3 })]));
+    expect(screen.getByRole("link", { name: "Show 1396" })).toHaveAttribute(
+      "href",
+      "/shows/1396",
+    );
+    expect(screen.getByText("Your show rating")).toBeInTheDocument();
+    expect(screen.getByText("7.3")).toBeInTheDocument();
+    expect(screen.queryByText("TMDB rating")).not.toBeInTheDocument();
+    expect(screen.queryByText("Your score")).not.toBeInTheDocument();
+  });
+
+  it("shows no badge at all for a show with no eligible rating (AC-5)", () => {
+    render(grid("watched", [completed(1396)]));
+    expect(screen.queryByText("Your show rating")).not.toBeInTheDocument();
+    expect(screen.queryByText("Not rated")).not.toBeInTheDocument();
+    expect(screen.queryByText("TMDB rating")).not.toBeInTheDocument();
+  });
+
+  it("has no button, found or missing, while a movie beside it keeps Unmark (AC-6, AC-8)", () => {
+    render(
+      grid("watched", [
+        completed(1396, { showRating: 8 }),
+        completed(1399, { title: null }),
+        item(550, { watchedAt: "2026-09-23T12:00:00Z" }),
+      ]),
+    );
+    expect(screen.getAllByRole("button")).toEqual([
+      screen.getByRole("button", { name: "Unmark Movie 550 as watched" }),
+    ]);
+    expect(screen.getAllByText("No longer on TMDB").length).toBeGreaterThan(0);
+    expect(
+      screen.queryByRole("link", { name: "No longer on TMDB" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("unmarks a movie beside show cards and moves focus to the next show's link (AC-7)", async () => {
+    const user = userEvent.setup();
+    render(
+      grid("watched", [
+        item(550, { watchedAt: "2026-09-23T12:00:00Z" }),
+        completed(1396),
+      ]),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Unmark Movie 550 as watched" }),
+    );
+    expect(setMovieWatched).toHaveBeenCalledWith(550, false);
+    expect(setShowStatus).not.toHaveBeenCalled();
+    expect(screen.getByRole("link", { name: "Show 1396" })).toHaveFocus();
+  });
+
+  it("skips a missing title show, which has nothing to focus, for the previous card (AC-7)", async () => {
+    const user = userEvent.setup();
+    render(
+      grid("watched", [
+        item(1, { watchedAt: "2026-09-23T12:00:00Z" }),
+        item(2, { watchedAt: "2026-09-22T12:00:00Z" }),
+        completed(1399, { title: null }),
+      ]),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Unmark Movie 2 as watched" }),
+    );
+    expect(screen.getByRole("link", { name: "Movie 1" })).toHaveFocus();
+  });
+
+  it("keeps a movie and a show sharing an id as two cards, and unmarking the movie leaves the show (AC-5, AC-7)", async () => {
+    const user = userEvent.setup();
+    render(
+      grid("watched", [
+        item(550, { watchedAt: "2026-09-23T12:00:00Z" }),
+        completed(550, { showRating: 8 }),
+      ]),
+    );
+    expect(screen.getByRole("link", { name: "Movie 550" })).toHaveAttribute(
+      "href",
+      "/movies/550",
+    );
+    expect(screen.getByRole("link", { name: "Show 550" })).toHaveAttribute(
+      "href",
+      "/shows/550",
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Unmark Movie 550 as watched" }),
+    );
+    expect(
+      screen.queryByRole("link", { name: "Movie 550" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Show 550" })).toHaveFocus();
+    expect(screen.getByText("8.0")).toBeInTheDocument();
+  });
+
+  it("brings an unmarked movie back beside a show when the write fails (AC-7)", async () => {
+    const user = userEvent.setup();
+    render(
+      grid("watched", [
+        item(550, { watchedAt: "2026-09-23T12:00:00Z" }),
+        completed(1396),
+      ]),
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Unmark Movie 550 as watched" }),
+    );
+    await settleNext({ ok: false, error: "write_failed" });
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("link", { name: "Movie 550" }),
+      ).toBeInTheDocument(),
+    );
+    expect(screen.getByRole("link", { name: "Show 1396" })).toBeInTheDocument();
+    expect(toast).toHaveBeenCalledWith(
+      "Couldn't save that change. Try again.",
+      expect.anything(),
+    );
+  });
+
+  it("keeps the Unmark button on a missing title movie, the only card it suppresses being a show (AC-8)", () => {
+    render(
+      grid("watched", [
+        item(1, { title: null, watchedAt: "2026-09-23T12:00:00Z" }),
+      ]),
+    );
+    expect(screen.getAllByRole("button")).toHaveLength(1);
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
+  });
+
+  it("falls back to the heading when only a missing title show is left (AC-7)", async () => {
+    const user = userEvent.setup();
+    render(
+      grid("watched", [
+        item(1, { watchedAt: "2026-09-23T12:00:00Z" }),
+        completed(1399, { title: null }),
+      ]),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Unmark Movie 1 as watched" }),
+    );
+    expect(screen.getByRole("heading", { name: "Heading" })).toHaveFocus();
   });
 });
 

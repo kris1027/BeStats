@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
- * covers: spec 0008, AC-1, AC-2, AC-9, AC-11, AC-19; spec 0013, AC-13, AC-17
+ * covers: spec 0008, AC-1, AC-2, AC-9, AC-11, AC-19; spec 0013, AC-13, AC-17;
+ * spec 0019, AC-1 to AC-3, AC-12
  *
  * The database and TMDB are the boundaries, so those are replaced. The query
  * builder records what it was asked, so each test asserts the order, the
@@ -120,6 +121,7 @@ describe("getWatchlistPage (AC-1; spec 0013, AC-13)", () => {
         data: [
           { kind: "person", tmdb_id: 1, status: null },
           { kind: "movie", tmdb_id: null, status: null },
+          { kind: "tv", tmdb_id: 1400, status: null },
           { kind: "tv", tmdb_id: 1399, status: "want_to_watch" },
         ],
         error: null,
@@ -196,43 +198,110 @@ describe("getWatchlistPage (AC-1; spec 0013, AC-13)", () => {
   });
 });
 
-describe("getWatchedPage (AC-2)", () => {
-  it("reads the owner's watched rows, most recent first, with the score", async () => {
+describe("getWatchedPage (AC-2; spec 0019, AC-1 to AC-3)", () => {
+  it("reads the owner's merged entries, newest first, movies first on a tie, 20 per page, with an exact count", async () => {
     responses = [
       {
         data: [
-          { movie_id: 603, watched_at: "2026-09-23T12:00:00+00:00", rating: 9 },
           {
-            movie_id: 550,
-            watched_at: "2026-09-22T12:00:00+00:00",
+            kind: "tv",
+            tmdb_id: 1396,
+            last_watched_at: "2026-09-24T12:00:00+00:00",
+            rating: null,
+          },
+          {
+            kind: "movie",
+            tmdb_id: 603,
+            last_watched_at: "2026-09-23T12:00:00+00:00",
+            rating: 9,
+          },
+          {
+            kind: "movie",
+            tmdb_id: 550,
+            last_watched_at: "2026-09-22T12:00:00+00:00",
             rating: null,
           },
         ],
         error: null,
-        count: 2,
+        count: 23,
+      },
+    ];
+    expect(await getWatchedPage("user-a", 2)).toEqual({
+      kind: "ok",
+      rows: [
+        {
+          kind: "tv",
+          tmdbId: 1396,
+          watchedAt: "2026-09-24T12:00:00+00:00",
+          rating: null,
+        },
+        {
+          kind: "movie",
+          tmdbId: 603,
+          watchedAt: "2026-09-23T12:00:00+00:00",
+          rating: 9,
+        },
+        {
+          kind: "movie",
+          tmdbId: 550,
+          watchedAt: "2026-09-22T12:00:00+00:00",
+          rating: null,
+        },
+      ],
+      total: 23,
+    });
+    expect(calls).toEqual([
+      { method: "from", args: ["user_watched_entries"] },
+      {
+        method: "select",
+        args: ["kind, tmdb_id, last_watched_at, rating", { count: "exact" }],
+      },
+      { method: "eq", args: ["user_id", "user-a"] },
+      { method: "order", args: ["last_watched_at", { ascending: false }] },
+      { method: "order", args: ["kind", { ascending: true }] },
+      { method: "order", args: ["tmdb_id", { ascending: true }] },
+      { method: "range", args: [20, 39] },
+    ]);
+  });
+
+  it("drops a row the view could never yield rather than inventing one", async () => {
+    responses = [
+      {
+        data: [
+          {
+            kind: "person",
+            tmdb_id: 1,
+            last_watched_at: "2026-09-24",
+            rating: null,
+          },
+          {
+            kind: "movie",
+            tmdb_id: null,
+            last_watched_at: "2026-09-24",
+            rating: 7,
+          },
+          { kind: "tv", tmdb_id: 1399, last_watched_at: null, rating: null },
+          {
+            kind: "tv",
+            tmdb_id: 1396,
+            last_watched_at: "2026-09-23",
+            rating: null,
+          },
+        ],
+        error: null,
+        count: 1,
       },
     ];
     expect(await getWatchedPage("user-a", 1)).toEqual({
       kind: "ok",
       rows: [
-        { movieId: 603, watchedAt: "2026-09-23T12:00:00+00:00", rating: 9 },
-        { movieId: 550, watchedAt: "2026-09-22T12:00:00+00:00", rating: null },
+        { kind: "tv", tmdbId: 1396, watchedAt: "2026-09-23", rating: null },
       ],
-      total: 2,
+      total: 1,
     });
-    expect(calls).toContainEqual({ method: "eq", args: ["user_id", "user-a"] });
-    expect(calls).toContainEqual({
-      method: "not",
-      args: ["watched_at", "is", null],
-    });
-    expect(calls).toContainEqual({
-      method: "order",
-      args: ["watched_at", { ascending: false }],
-    });
-    expect(calls).toContainEqual({ method: "range", args: [0, 19] });
   });
 
-  it("counts a past the end page with the same owner and watched filter (AC-9)", async () => {
+  it("counts a past the end page over the same view and owner (AC-3)", async () => {
     responses = [
       { data: null, error: { code: "PGRST103" }, count: null },
       { data: null, error: null, count: 5 },
@@ -246,13 +315,12 @@ describe("getWatchedPage (AC-2)", () => {
       calls.findLastIndex((call) => call.method === "from"),
     );
     expect(countRead).toEqual([
-      { method: "from", args: ["user_movie_state"] },
+      { method: "from", args: ["user_watched_entries"] },
       {
         method: "select",
-        args: ["movie_id", { count: "exact", head: true }],
+        args: ["tmdb_id", { count: "exact", head: true }],
       },
       { method: "eq", args: ["user_id", "user-a"] },
-      { method: "not", args: ["watched_at", "is", null] },
     ]);
   });
 
