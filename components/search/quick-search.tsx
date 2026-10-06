@@ -237,7 +237,7 @@ function QuickSearch({
           <>
             <Autocomplete.Clear
               aria-label="Clear search"
-              className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-text-secondary hover:text-foreground md:size-9"
+              className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-text-secondary hover:text-foreground md:size-8"
             >
               <XIcon className="size-4" aria-hidden="true" />
             </Autocomplete.Clear>

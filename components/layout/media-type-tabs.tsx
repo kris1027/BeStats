@@ -46,7 +46,7 @@ function MediaTypeTabsView({
     <nav
       aria-label="Media type"
       className={cn(
-        "glass glass-rim glass-plate glass-shadow flex items-center gap-1 rounded-full p-1.5",
+        "glass glass-rim glass-plate glass-shadow flex items-center gap-1 rounded-full p-[4.5px]",
         className,
       )}
     >
@@ -61,7 +61,7 @@ function MediaTypeTabsView({
             href={tab.href}
             aria-current={selected ? "page" : undefined}
             className={cn(
-              "flex h-9 items-center rounded-full px-5 text-xs font-semibold tracking-[0.07em] transition-[filter,color]",
+              "hit-area-tab flex h-7 items-center rounded-full px-4 text-xs font-semibold tracking-[0.07em] transition-[filter,color]",
               selected
                 ? "glass-selected glass-rim text-foreground"
                 : "text-text-secondary hover:text-foreground",

@@ -43,7 +43,7 @@ function MobileMenuSheet({
   return (
     <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
       <DialogPrimitive.Trigger
-        render={<Button size="icon-touch" aria-label={triggerLabel} />}
+        render={<Button size="icon-bar" aria-label={triggerLabel} />}
       >
         <MenuIcon className="size-5" aria-hidden="true" />
       </DialogPrimitive.Trigger>

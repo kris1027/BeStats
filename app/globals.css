@@ -269,6 +269,41 @@
 }
 
 /*
+ * A tap area of at least 44px around a 40px control. The navbar draws every
+ * control at 40px, below the 44px touch target AGENTS.md section 3 asks for,
+ * so this stretches an invisible pseudo element past each edge. The pseudo
+ * element is placed from the padding box, inside the 1.5px glass border, so
+ * the offset is that border plus 2px: 44px on a glass control, 47px on a
+ * borderless one. None of the glass utilities paint a pseudo element, so it
+ * collides with nothing.
+ */
+@utility hit-area {
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -3.5px;
+  }
+}
+
+/*
+ * The same for a 28px tab inside a 40px pill: 9.5px above and below reach
+ * 44px on the selected tab (which has the 1.5px border) and 47px on the
+ * others, and only 2px to each side, so neighbouring tabs a 4px gap apart
+ * never overlap.
+ */
+@utility hit-area-tab {
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -9.5px -2px;
+  }
+}
+
+/*
  * Loading pulse, 2 seconds ease in out, cut entirely under reduced motion
  * rather than merely slowed: a permanently animating page is the thing the
  * setting exists to prevent (AC-12).

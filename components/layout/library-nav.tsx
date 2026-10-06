@@ -18,8 +18,9 @@ import { UPCOMING_PATH } from "@/components/upcoming/ids";
  *
  * Upcoming sits between the two (spec 0014, AC-1).
  *
- * @param variant `bar` is the glass pill in the desktop navbar; `sheet` is the
- * stacked list inside the mobile menu, with 44px rows for touch.
+ * @param variant `bar` is the glass pill in the desktop navbar, 40px tall like
+ * every navbar control; `sheet` is the stacked list inside the mobile menu,
+ * with 44px rows for touch.
  */
 const LINKS = [
   { href: "/watchlist", label: "Watchlist" },
@@ -35,7 +36,7 @@ function LibraryNav({ variant }: { variant: "bar" | "sheet" }) {
       aria-label="Library"
       className={
         variant === "bar"
-          ? "glass glass-rim glass-plate glass-shadow flex items-center gap-1 rounded-full p-1.5"
+          ? "glass glass-rim glass-plate glass-shadow flex items-center gap-1 rounded-full p-[4.5px]"
           : "flex flex-col gap-1"
       }
     >
@@ -50,7 +51,7 @@ function LibraryNav({ variant }: { variant: "bar" | "sheet" }) {
             aria-current={selected ? "page" : undefined}
             className={cn(
               "flex items-center rounded-full font-bold transition-[filter,color]",
-              variant === "bar" ? "h-9 px-5 text-sm" : "h-11 px-4 text-base",
+              variant === "bar" ? "h-7 px-4 text-sm" : "h-11 px-4 text-base",
               selected
                 ? "glass-selected glass-rim text-foreground"
                 : "text-text-link hover:text-foreground",

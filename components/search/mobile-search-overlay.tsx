@@ -28,7 +28,7 @@ function MobileSearchOverlay({ type }: { type: SearchType }) {
   return (
     <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
       <DialogPrimitive.Trigger
-        render={<Button size="icon-touch" aria-label="Search" />}
+        render={<Button size="icon-bar" aria-label="Search" />}
       >
         <SearchIcon className="size-5" aria-hidden="true" />
       </DialogPrimitive.Trigger>

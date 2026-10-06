@@ -72,7 +72,7 @@ function NavbarSearchFor({
   type: SearchType;
 }) {
   if (layout === "mobile") return <MobileSearchOverlay type={type} />;
-  return <QuickSearch type={type} className="w-[22.5rem]" />;
+  return <QuickSearch type={type} className="h-10 w-[22.5rem]" />;
 }
 
 /**
@@ -91,7 +91,7 @@ function NavbarSearchFallback({
     return (
       <span
         aria-hidden="true"
-        className="glass glass-rim glass-plate glass-shadow flex size-11 items-center justify-center rounded-full text-foreground"
+        className="glass glass-rim glass-plate glass-shadow flex size-10 items-center justify-center rounded-full text-foreground"
       >
         <SearchIcon className="size-5" />
       </span>
@@ -101,7 +101,7 @@ function NavbarSearchFallback({
     <div
       aria-hidden="true"
       className={cn(
-        "glass glass-rim glass-plate glass-shadow flex h-12 w-[22.5rem] items-center gap-3 rounded-full pr-2 pl-4",
+        "glass glass-rim glass-plate glass-shadow flex h-10 w-[22.5rem] items-center gap-3 rounded-full pr-2 pl-4",
       )}
     >
       <SearchIcon className="size-4 shrink-0 text-text-secondary" />
