@@ -45,11 +45,9 @@ export type LibraryPage<Row> =
  * One watchlist entry: a planned movie, or a show that is Want to Watch or
  * Watching (spec 0013, AC-13). `status` is the show's, and null for a movie.
  */
-export type WatchlistRow = {
-  kind: "movie" | "tv";
-  tmdbId: number;
-  status: TvStatus | null;
-};
+export type WatchlistRow =
+  | { kind: "movie"; tmdbId: number; status: null }
+  | { kind: "tv"; tmdbId: number; status: TvStatus };
 
 /**
  * One watched entry: a watched movie, or a show with status Completed
@@ -124,10 +122,14 @@ export async function getWatchlistPage(
     const rows: WatchlistRow[] = [];
     for (const row of data) {
       // A view's columns are all nullable to the type generator; the view
-      // itself never yields a null id or an unknown kind.
+      // itself never yields a null id, an unknown kind or a show without a
+      // status.
       if (row.tmdb_id === null) continue;
-      if (row.kind !== "movie" && row.kind !== "tv") continue;
-      rows.push({ kind: row.kind, tmdbId: row.tmdb_id, status: row.status });
+      if (row.kind === "movie") {
+        rows.push({ kind: "movie", tmdbId: row.tmdb_id, status: null });
+      } else if (row.kind === "tv" && row.status !== null) {
+        rows.push({ kind: "tv", tmdbId: row.tmdb_id, status: row.status });
+      }
     }
     return { kind: "ok", rows, total: count };
   } catch {

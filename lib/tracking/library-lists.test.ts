@@ -121,6 +121,7 @@ describe("getWatchlistPage (AC-1; spec 0013, AC-13)", () => {
         data: [
           { kind: "person", tmdb_id: 1, status: null },
           { kind: "movie", tmdb_id: null, status: null },
+          { kind: "tv", tmdb_id: 1400, status: null },
           { kind: "tv", tmdb_id: 1399, status: "want_to_watch" },
         ],
         error: null,

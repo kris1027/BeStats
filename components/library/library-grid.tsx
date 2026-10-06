@@ -271,7 +271,7 @@ function LibraryGrid({
       toast(result.message, {
         id: toastId(list, item),
         description:
-          list === "watched" && item.rating !== null
+          list === "watched" && item.kind === "movie" && item.rating !== null
             ? LIBRARY_MESSAGES.watched.scoreKept
             : undefined,
         duration: UNDO_TOAST_MS,

@@ -22,10 +22,16 @@ import {
 } from "@/lib/tracking/library-lists";
 import { getShowRatings } from "@/lib/tracking/show-ratings";
 import { showIdsKey } from "@/lib/tracking/show-state";
+import type { TvStatus } from "@/lib/tracking/types";
 
 import { BadgeLegend } from "./badge-legend";
 import { LibraryGrid } from "./library-grid";
-import { type LibraryItem, type LibraryList, libraryItemKey } from "./types";
+import {
+  type LibraryItem,
+  type LibraryList,
+  libraryItemKey,
+  SHOW_CARD,
+} from "./types";
 
 /** Every piece of copy that differs between the two pages. */
 const COPY = {
@@ -146,31 +152,23 @@ async function LibrarySection({
   // shows the list panel rather than cards that look unrated (spec 0019,
   // AC-10). Sequential on purpose, since the ids depend on the titles.
   let showRatings = new Map<number, number | null>();
-  if (list === "watched") {
-    const ratedIds = showIds.filter((id) => titles.shows.has(id));
-    if (ratedIds.length > 0) {
-      const read = await getShowRatings(user.id, ratedIds);
-      if (read.kind === "failed") return <ListFailed list={list} page={page} />;
-      showRatings = read.ratings;
-    }
+  const ratedIds = SHOW_CARD[list].calculatedRating
+    ? showIds.filter((id) => titles.shows.has(id))
+    : [];
+  if (ratedIds.length > 0) {
+    const read = await getShowRatings(user.id, ratedIds);
+    if (read.kind === "failed") return <ListFailed list={list} page={page} />;
+    showRatings = read.ratings;
   }
 
-  const items: LibraryItem[] = result.rows.map((row) => {
-    const found =
-      row.kind === "tv"
-        ? titleOf(titles.shows.get(row.tmdbId))
-        : titleOf(titles.movies.get(row.tmdbId));
+  const items = result.rows.map((row): LibraryItem => {
+    if (row.kind === "movie") {
+      return { ...row, ...titleOf(titles.movies.get(row.tmdbId)) };
+    }
     return {
-      kind: row.kind,
-      tmdbId: row.tmdbId,
-      status: row.status,
-      title: found?.title ?? null,
-      posterUrl: found?.posterUrl ?? null,
-      tmdbRating: found?.tmdbRating ?? null,
-      rating: row.rating,
-      showRating:
-        row.kind === "tv" ? (showRatings.get(row.tmdbId) ?? null) : null,
-      watchedAt: row.watchedAt,
+      ...row,
+      ...titleOf(titles.shows.get(row.tmdbId)),
+      showRating: showRatings.get(row.tmdbId) ?? null,
     };
   });
 
@@ -178,16 +176,17 @@ async function LibrarySection({
   // (spec 0013, AC-15). One key for the page, so every pill shares one
   // watched ids read. A Completed show on `/watched` has no next episode to
   // show, so that page builds none.
-  const watchedIdsKey = showIdsKey(showIds);
   const nextEpisodes: Record<string, ReactNode> = {};
-  for (const item of items) {
-    if (list !== "watchlist") break;
-    if (item.kind !== "tv" || item.title === null) continue;
-    nextEpisodes[libraryItemKey(item)] = (
-      <Suspense fallback={null}>
-        <NextEpisodePill showId={item.tmdbId} watchedIdsKey={watchedIdsKey} />
-      </Suspense>
-    );
+  if (SHOW_CARD[list].nextEpisode) {
+    const watchedIdsKey = showIdsKey(showIds);
+    for (const item of items) {
+      if (item.kind !== "tv" || item.title === null) continue;
+      nextEpisodes[libraryItemKey(item)] = (
+        <Suspense fallback={null}>
+          <NextEpisodePill showId={item.tmdbId} watchedIdsKey={watchedIdsKey} />
+        </Suspense>
+      );
+    }
   }
 
   return (
@@ -214,11 +213,19 @@ async function LibrarySection({
   );
 }
 
-/** One row of either list, in the shape the page joins with TMDB. */
-type LibraryRow = WatchlistRow & {
-  rating: number | null;
-  watchedAt: string | null;
-};
+/**
+ * One row of either list, in the shape the page joins with TMDB: a movie with
+ * its score and watched time (both null on the watchlist), or a show with its
+ * status.
+ */
+type LibraryRow =
+  | {
+      kind: "movie";
+      tmdbId: number;
+      rating: number | null;
+      watchedAt: string | null;
+    }
+  | { kind: "tv"; tmdbId: number; status: TvStatus };
 
 /** The watchlist read, in the shared row shape: no score, no watched time. */
 function watchlistRows(
@@ -228,7 +235,11 @@ function watchlistRows(
   return {
     kind: "ok",
     total: page.total,
-    rows: page.rows.map((row) => ({ ...row, rating: null, watchedAt: null })),
+    rows: page.rows.map((row) =>
+      row.kind === "movie"
+        ? { kind: "movie", tmdbId: row.tmdbId, rating: null, watchedAt: null }
+        : row,
+    ),
   };
 }
 
@@ -248,29 +259,22 @@ function watchedRows(page: LibraryPage<WatchedRow>): LibraryPage<LibraryRow> {
         ? {
             kind: "movie",
             tmdbId: row.tmdbId,
-            status: null,
             rating: row.rating,
             watchedAt: row.watchedAt,
           }
-        : {
-            kind: "tv",
-            tmdbId: row.tmdbId,
-            status: "completed",
-            rating: null,
-            watchedAt: null,
-          },
+        : { kind: "tv", tmdbId: row.tmdbId, status: "completed" },
     ),
   };
 }
 
-/** The fields a card shows, from a movie or a show summary. */
+/** The fields a card shows, from a movie or a show summary, or none. */
 function titleOf(
   summary:
     | { title: string; posterUrl: string | null; tmdbRating: number | null }
     | { name: string; posterUrl: string | null; tmdbRating: number | null }
     | undefined,
 ) {
-  if (!summary) return null;
+  if (!summary) return { title: null, posterUrl: null, tmdbRating: null };
   return {
     title: "title" in summary ? summary.title : summary.name,
     posterUrl: summary.posterUrl,

@@ -2,7 +2,7 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { LibraryItem } from "./types";
+import type { LibraryItem, LibraryMovieItem, LibraryShowItem } from "./types";
 
 /**
  * covers: spec 0008, AC-1, AC-2, AC-5 to AC-7, AC-11, AC-16, AC-18;
@@ -52,19 +52,36 @@ vi.mock("sonner", () => ({
 const { LibraryGrid } = await import("./library-grid");
 const { LibraryHeading } = await import("./library-heading");
 
-function item(movieId: number, overrides: Partial<LibraryItem> = {}) {
+function item(
+  movieId: number,
+  overrides: Partial<LibraryMovieItem> = {},
+): LibraryMovieItem {
   return {
     kind: "movie",
     tmdbId: movieId,
-    status: null,
     title: `Movie ${movieId}`,
     posterUrl: null,
     tmdbRating: 7.5,
     rating: null,
-    showRating: null,
     watchedAt: null,
     ...overrides,
-  } satisfies LibraryItem;
+  };
+}
+
+function show(
+  showId: number,
+  overrides: Partial<LibraryShowItem> = {},
+): LibraryShowItem {
+  return {
+    kind: "tv",
+    tmdbId: showId,
+    status: "want_to_watch",
+    title: `Show ${showId}`,
+    posterUrl: null,
+    tmdbRating: 7.5,
+    showRating: null,
+    ...overrides,
+  };
 }
 
 function grid(list: "watchlist" | "watched", items: LibraryItem[], page = 1) {
@@ -361,8 +378,8 @@ describe("a title TMDB no longer has (AC-11)", () => {
     const user = userEvent.setup();
     render(
       grid("watchlist", [
-        item(1, { kind: "tv", status: "want_to_watch", title: null }),
-        item(2, { kind: "tv", status: "watching", title: null }),
+        show(1, { status: "want_to_watch", title: null }),
+        show(2, { status: "watching", title: null }),
       ]),
     );
 
@@ -388,8 +405,8 @@ describe("a show whose status changed elsewhere (spec 0013 review fix)", () => {
     const user = userEvent.setup();
     render(
       grid("watchlist", [
-        item(1, { kind: "tv", status: "want_to_watch", title: "Planned" }),
-        item(2, { kind: "tv", status: "watching", title: "Started" }),
+        show(1, { status: "want_to_watch", title: "Planned" }),
+        show(2, { status: "watching", title: "Started" }),
       ]),
     );
     const [planned, stop] = screen.getAllByRole("button");
@@ -407,7 +424,7 @@ describe("a show whose status changed elsewhere (spec 0013 review fix)", () => {
     const user = userEvent.setup();
     render(
       grid("watchlist", [
-        item(1, { kind: "tv", status: "want_to_watch", title: "Planned" }),
+        show(1, { status: "want_to_watch", title: "Planned" }),
       ]),
     );
     await user.click(screen.getByRole("button"));
@@ -424,13 +441,8 @@ describe("a show whose status changed elsewhere (spec 0013 review fix)", () => {
 });
 
 /** A Completed show as the watched page hands it to the grid (spec 0019). */
-function completed(showId: number, overrides: Partial<LibraryItem> = {}) {
-  return item(showId, {
-    kind: "tv",
-    status: "completed",
-    title: `Show ${showId}`,
-    ...overrides,
-  });
+function completed(showId: number, overrides: Partial<LibraryShowItem> = {}) {
+  return show(showId, { status: "completed", ...overrides });
 }
 
 describe("Completed shows on the watched page (spec 0019)", () => {

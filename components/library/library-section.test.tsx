@@ -90,7 +90,10 @@ async function renderSection(
 }
 
 /** The item the grid stub received for one card. */
-function received(id: number, kind: "movie" | "tv" = "movie"): LibraryItem {
+function received<Kind extends LibraryItem["kind"] = "movie">(
+  id: number,
+  kind = "movie" as Kind,
+): Extract<LibraryItem, { kind: Kind }> {
   return JSON.parse(screen.getByTestId(`item-${kind}-${id}`).textContent ?? "");
 }
 
@@ -275,12 +278,10 @@ describe("failures never look like an empty list (AC-11)", () => {
     expect(received(2147480000)).toEqual({
       kind: "movie",
       tmdbId: 2147480000,
-      status: null,
       title: null,
       posterUrl: null,
       tmdbRating: null,
       rating: null,
-      showRating: null,
       watchedAt: null,
     });
   });
@@ -328,10 +329,13 @@ describe("a page of cards (AC-1, AC-2, AC-9, AC-13)", () => {
       total: 2,
     });
     await renderSection("watched");
-    expect(received(550)).toMatchObject({
-      status: null,
+    expect(received(550)).toEqual({
+      kind: "movie",
+      tmdbId: 550,
+      title: null,
+      posterUrl: null,
+      tmdbRating: null,
       rating: 9,
-      showRating: null,
       watchedAt: "2026-09-23T12:00:00+00:00",
     });
     expect(received(603)).toMatchObject({ rating: null });
@@ -495,12 +499,14 @@ describe("Completed shows on the watched page (spec 0019)", () => {
         .map((item) => item.dataset.testid),
     ).toEqual(["item-tv-1396", "item-movie-550"]);
     // Completed is the view's filter; a show has no score and no Undo time.
-    expect(received(1396, "tv")).toMatchObject({
+    expect(received(1396, "tv")).toEqual({
       kind: "tv",
+      tmdbId: 1396,
       status: "completed",
       title: "Breaking Bad",
-      rating: null,
-      watchedAt: null,
+      posterUrl: null,
+      tmdbRating: 8.9,
+      showRating: null,
     });
   });
 
@@ -640,13 +646,13 @@ describe("Completed shows on the watched page (spec 0019)", () => {
     expect(received(1396, "movie")).toMatchObject({
       title: "A movie",
       rating: 4,
-      showRating: null,
     });
+    expect(received(1396, "movie")).not.toHaveProperty("showRating");
     expect(received(1396, "tv")).toMatchObject({
       title: "Breaking Bad",
-      rating: null,
       showRating: 9.5,
     });
+    expect(received(1396, "tv")).not.toHaveProperty("rating");
   });
 
   it("keeps the legend to the single Your score entry with shows on the page (AC-9)", async () => {
