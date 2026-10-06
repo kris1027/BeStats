@@ -9,7 +9,14 @@ import {
   type TvShowSummary,
 } from "@/lib/tmdb";
 
+import {
+  ratingsBySeason,
+  type SeasonEpisodeRating,
+  showRating,
+} from "@/lib/tv/ratings";
+
 import { logTrackingEvent, TRACKING_EVENT } from "./log";
+import { SHOW_RATINGS_PAGE_SIZE } from "./show-ratings";
 import type { TvStatus } from "./types";
 
 /**
@@ -51,11 +58,19 @@ export type WatchlistRow = {
   status: TvStatus | null;
 };
 
+/**
+ * One watched entry: a watched movie, or a show with status Completed
+ * (spec 0019, AC-1, AC-4).
+ */
 export type WatchedRow = {
-  movieId: number;
-  /** As PostgREST returned it, so Undo can put back the exact instant. */
+  kind: "movie" | "tv";
+  tmdbId: number;
+  /**
+   * The entry's sort time (AC-2). For a movie it is `watched_at` as PostgREST
+   * returned it, so Undo can put back the exact instant.
+   */
   watchedAt: string;
-  /** The personal score, or null when unrated. */
+  /** A movie's personal score, or null when unrated; always null for a show. */
   rating: number | null;
 };
 
@@ -130,7 +145,14 @@ export async function getWatchlistPage(
 }
 
 /**
- * One page of the user's watched movies, most recent first (AC-2).
+ * One page of the user's watched history: watched movies and Completed shows
+ * in one order, most recent first (spec 0008, AC-2; spec 0019, AC-1 to AC-3).
+ *
+ * Read from the `user_watched_entries` view, which runs with the reader's
+ * rights, so every table's row level security applies. One ordered query with
+ * an exact count, so the page and the total are the truthful merged ones:
+ * `last_watched_at` descending, then `kind` (movies before shows on a tie),
+ * then the TMDB id.
  *
  * @param userId The verified session's user, never a client value.
  * @param page A page already parsed by `parsePageParam`.
@@ -142,33 +164,34 @@ export async function getWatchedPage(
   try {
     const supabase = await createClient();
     const { data, error, count } = await supabase
-      .from("user_movie_state")
-      .select("movie_id, watched_at, rating", { count: "exact" })
+      .from("user_watched_entries")
+      .select("kind, tmdb_id, last_watched_at, rating", { count: "exact" })
       .eq("user_id", userId)
-      .not("watched_at", "is", null)
-      .order("watched_at", { ascending: false })
-      .order("movie_id", { ascending: true })
+      .order("last_watched_at", { ascending: false })
+      .order("kind", { ascending: true })
+      .order("tmdb_id", { ascending: true })
       .range(...pageRange(page));
 
     if (error?.code === RANGE_NOT_SATISFIABLE) {
       return pastTheEnd(
         await supabase
-          .from("user_movie_state")
-          .select("movie_id", { count: "exact", head: true })
-          .eq("user_id", userId)
-          .not("watched_at", "is", null),
+          .from("user_watched_entries")
+          .select("tmdb_id", { count: "exact", head: true })
+          .eq("user_id", userId),
       );
     }
     if (error || count === null) return failed();
 
     const rows: WatchedRow[] = [];
     for (const row of data) {
-      // The filter already excludes null; this narrows the type honestly
-      // rather than asserting it.
-      if (row.watched_at === null) continue;
+      // A view's columns are all nullable to the type generator; the view
+      // itself never yields a null id or time, or an unknown kind.
+      if (row.tmdb_id === null || row.last_watched_at === null) continue;
+      if (row.kind !== "movie" && row.kind !== "tv") continue;
       rows.push({
-        movieId: row.movie_id,
-        watchedAt: row.watched_at,
+        kind: row.kind,
+        tmdbId: row.tmdb_id,
+        watchedAt: row.last_watched_at,
         rating: row.rating,
       });
     }
@@ -176,6 +199,82 @@ export async function getWatchedPage(
   } catch {
     return failed();
   }
+}
+
+/**
+ * Each listed show's calculated rating: the equal weight mean of its rated
+ * regular seasons, unrounded, or null when none is rated (spec 0019, AC-5;
+ * `AGENTS.md` section 9). The rule itself lives once, in `lib/tv/ratings.ts`.
+ *
+ * One query for the whole page rather than one per card, read in pages
+ * because the API truncates past `max_rows` without an error and a short read
+ * would average the wrong ratings. Each page starts after the last
+ * `(show_id, episode_id)` read, not at an offset: a rating cleared or added
+ * mid read would shift an offset, skipping or repeating a row of another
+ * season. Keyset pages read each row at most once, and every row that stays
+ * put is read.
+ *
+ * A failed read is `failed`, never a short map: a show missing from the map
+ * would render with no badge, a false "not rated" (AC-10).
+ *
+ * @param userId The verified session's user, never a client value.
+ * @param showIds The page's show ids, at most `LIBRARY_PAGE_SIZE`.
+ */
+export async function getShowRatings(
+  userId: string,
+  showIds: readonly number[],
+): Promise<
+  { kind: "ok"; ratings: Map<number, number | null> } | { kind: "failed" }
+> {
+  const rows = new Map<number, SeasonEpisodeRating[]>(
+    showIds.map((id) => [id, []]),
+  );
+  if (showIds.length === 0) return { kind: "ok", ratings: new Map() };
+
+  try {
+    const supabase = await createClient();
+    let after: { showId: number; episodeId: number } | null = null;
+    for (;;) {
+      let query = supabase
+        .from("user_episode_state")
+        .select("show_id, episode_id, season_number, rating", {
+          count: "exact",
+        })
+        .eq("user_id", userId)
+        .in("show_id", [...showIds])
+        .not("rating", "is", null);
+      if (after) {
+        query = query.or(
+          `show_id.gt.${after.showId},and(show_id.eq.${after.showId},episode_id.gt.${after.episodeId})`,
+        );
+      }
+      const { data, count, error } = await query
+        .order("show_id")
+        .order("episode_id")
+        .range(0, SHOW_RATINGS_PAGE_SIZE - 1);
+      if (error || count === null) return failed();
+
+      for (const row of data) {
+        if (row.rating === null) continue;
+        rows
+          .get(row.show_id)
+          ?.push({ seasonNumber: row.season_number, rating: row.rating });
+      }
+      // `count` is what remains past the cursor, so a page holding all of it
+      // is the last. An empty page ends the loop whatever the count says.
+      const last = data.at(-1);
+      if (!last || data.length >= count) break;
+      after = { showId: last.show_id, episodeId: last.episode_id };
+    }
+  } catch {
+    return failed();
+  }
+
+  const ratings = new Map<number, number | null>();
+  for (const [showId, showRows] of rows) {
+    ratings.set(showId, showRating(ratingsBySeason(showRows)).mean);
+  }
+  return { kind: "ok", ratings };
 }
 
 /** A page's titles, keyed by TMDB id per kind, or a systemic TMDB failure. */

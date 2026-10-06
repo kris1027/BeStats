@@ -5,7 +5,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  *
  * The show page's one private read. The session and the database are the
  * boundaries; the query builder records what it was asked, which pins the
- * owner scope, the stable order and the paging.
+ * owner scope, the stable order and the keyset paging. A page's `count` is
+ * what remains past its cursor, as PostgREST reports it for the filtered
+ * query.
  */
 const getOptionalUser = vi.fn();
 vi.mock("@/lib/auth/user", () => ({ getOptionalUser }));
@@ -21,7 +23,15 @@ function page(data: unknown[]): Response {
 
 function builder() {
   const chain: Record<string, unknown> = {};
-  for (const method of ["from", "select", "eq", "not", "order", "range"]) {
+  for (const method of [
+    "from",
+    "select",
+    "eq",
+    "gt",
+    "not",
+    "order",
+    "range",
+  ]) {
     chain[method] = (...args: unknown[]) => {
       calls.push({ method, args });
       return chain;
@@ -65,8 +75,8 @@ describe("getShowEpisodeRatings", () => {
   it("reads the owner's rated rows for the show and places them by season", async () => {
     responses = [
       page([
-        { season_number: 1, rating: 8 },
-        { season_number: 0, rating: 10 },
+        { episode_id: 62085, season_number: 1, rating: 8 },
+        { episode_id: 62090, season_number: 0, rating: 10 },
       ]),
     ];
     await expect(getShowEpisodeRatings(1396)).resolves.toEqual({
@@ -80,7 +90,7 @@ describe("getShowEpisodeRatings", () => {
       { method: "from", args: ["user_episode_state"] },
       {
         method: "select",
-        args: ["season_number, rating", { count: "exact" }],
+        args: ["episode_id, season_number, rating", { count: "exact" }],
       },
       { method: "eq", args: ["user_id", "user-a"] },
       { method: "eq", args: ["show_id", 1396] },
@@ -91,31 +101,67 @@ describe("getShowEpisodeRatings", () => {
   });
 
   it("pages past the API row cap instead of dropping ratings", async () => {
+    let id = 0;
     const rows = (n: number, rating: number) =>
-      Array.from({ length: n }, () => ({ season_number: 1, rating }));
+      Array.from({ length: n }, () => ({
+        episode_id: ++id,
+        season_number: 1,
+        rating,
+      }));
     // A server cap below the page size: each response holds 600 rows.
     responses = [
       { data: rows(600, 8), count: 1500, error: null },
-      { data: rows(600, 6), count: 1500, error: null },
-      { data: rows(300, 4), count: 1500, error: null },
+      { data: rows(600, 6), count: 900, error: null },
+      { data: rows(300, 4), count: 300, error: null },
     ];
     const result = await getShowEpisodeRatings(37854);
     expect(result.kind).toBe("ok");
     if (result.kind !== "ok") return;
     expect(result.state).toHaveLength(1500);
-    const ranges = calls
-      .filter((call) => call.method === "range")
-      .map((call) => call.args);
-    expect(ranges).toEqual([
-      [0, SHOW_RATINGS_PAGE_SIZE - 1],
-      [600, 600 + SHOW_RATINGS_PAGE_SIZE - 1],
-      [1200, 1200 + SHOW_RATINGS_PAGE_SIZE - 1],
+    expect(calls.filter((call) => call.method === "range")).toEqual(
+      Array(3).fill({ method: "range", args: [0, SHOW_RATINGS_PAGE_SIZE - 1] }),
+    );
+  });
+
+  it("starts each page after the last episode read, so a rating cleared mid read skips no other row", async () => {
+    // Page 1 ends at episode 600. Whatever changed below it since, page 2
+    // asks for the rows past 600, never for an offset that shifted.
+    responses = [
+      {
+        data: [
+          { episode_id: 10, season_number: 1, rating: 6 },
+          { episode_id: 600, season_number: 1, rating: 6 },
+        ],
+        count: 3,
+        error: null,
+      },
+      {
+        data: [{ episode_id: 601, season_number: 2, rating: 10 }],
+        count: 1,
+        error: null,
+      },
+    ];
+    const result = await getShowEpisodeRatings(37854);
+    expect(result).toEqual({
+      kind: "ok",
+      state: [
+        { seasonNumber: 1, rating: 6 },
+        { seasonNumber: 1, rating: 6 },
+        { seasonNumber: 2, rating: 10 },
+      ],
+    });
+    expect(calls.filter((call) => call.method === "gt")).toEqual([
+      { method: "gt", args: ["episode_id", 600] },
     ]);
   });
 
   it("stops on an empty page when rows vanish mid read", async () => {
     responses = [
-      { data: [{ season_number: 1, rating: 9 }], count: 5, error: null },
+      {
+        data: [{ episode_id: 1, season_number: 1, rating: 9 }],
+        count: 5,
+        error: null,
+      },
       { data: [], count: 1, error: null },
     ];
     await expect(getShowEpisodeRatings(6)).resolves.toEqual({
@@ -127,7 +173,7 @@ describe("getShowEpisodeRatings", () => {
   it("fails when a later page fails rather than returning a partial average", async () => {
     responses = [
       {
-        data: [{ season_number: 1, rating: 9 }],
+        data: [{ episode_id: 1, season_number: 1, rating: 9 }],
         count: SHOW_RATINGS_PAGE_SIZE + 1,
         error: null,
       },
@@ -148,8 +194,8 @@ describe("getShowEpisodeRatings", () => {
   it("drops a row with no rating instead of counting it as zero", async () => {
     responses = [
       page([
-        { season_number: 1, rating: null },
-        { season_number: 1, rating: 7 },
+        { episode_id: 1, season_number: 1, rating: null },
+        { episode_id: 2, season_number: 1, rating: 7 },
       ]),
     ];
     await expect(getShowEpisodeRatings(5)).resolves.toEqual({

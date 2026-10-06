@@ -30,8 +30,10 @@ export const SHOW_RATINGS_PAGE_SIZE = 1000;
  *
  * Reads in pages ordered by the primary key until the exact count is reached,
  * so a show with more rated episodes than one response holds (One Piece, a
- * daily soap) still averages every rating. The loop advances by the rows
- * actually returned, so a server cap below the page size cannot skip rows.
+ * daily soap) still averages every rating. Each page starts after the last
+ * episode id read, not at an offset, so a rating cleared or added mid read
+ * cannot skip or repeat another row, and a server cap below the page size
+ * cannot skip rows either.
  *
  * Never called inside `use cache`: the result belongs to one person
  * (`AGENTS.md` section 11, AC-13).
@@ -47,16 +49,18 @@ export const getShowEpisodeRatings = cache(
 
     const supabase = await createClient();
     const state: SeasonEpisodeRating[] = [];
-    let offset = 0;
+    let after: number | null = null;
     for (;;) {
-      const { data, count, error } = await supabase
+      let query = supabase
         .from("user_episode_state")
-        .select("season_number, rating", { count: "exact" })
+        .select("episode_id, season_number, rating", { count: "exact" })
         .eq("user_id", user.id)
         .eq("show_id", showId)
-        .not("rating", "is", null)
+        .not("rating", "is", null);
+      if (after !== null) query = query.gt("episode_id", after);
+      const { data, count, error } = await query
         .order("episode_id")
-        .range(offset, offset + SHOW_RATINGS_PAGE_SIZE - 1);
+        .range(0, SHOW_RATINGS_PAGE_SIZE - 1);
 
       if (error || count === null) {
         logTrackingEvent(TRACKING_EVENT.showRatingRead, "db_error");
@@ -68,9 +72,11 @@ export const getShowEpisodeRatings = cache(
           state.push({ seasonNumber: row.season_number, rating: row.rating });
         }
       }
-      offset += data.length;
-      // An empty page ends the loop even if rows were deleted mid read.
-      if (data.length === 0 || offset >= count) break;
+      // `count` is what remains past the cursor, so a page holding all of it
+      // is the last. An empty page ends the loop whatever the count says.
+      const last = data.at(-1);
+      if (!last || data.length >= count) break;
+      after = last.episode_id;
     }
     return { kind: "ok", state };
   },
