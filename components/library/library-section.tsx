@@ -12,7 +12,6 @@ import { requireUser } from "@/lib/auth/user";
 import { parsePageParam } from "@/lib/catalog/pages";
 import {
   getLibraryTitles,
-  getShowRatings,
   getWatchedPage,
   getWatchlistPage,
   LIBRARY_PAGE_SIZE,
@@ -21,6 +20,7 @@ import {
   type WatchedRow,
   type WatchlistRow,
 } from "@/lib/tracking/library-lists";
+import { getShowRatings } from "@/lib/tracking/show-ratings";
 import { showIdsKey } from "@/lib/tracking/show-state";
 
 import { BadgeLegend } from "./badge-legend";

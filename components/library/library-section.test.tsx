@@ -34,6 +34,8 @@ vi.mock("@/lib/tracking/library-lists", async (importOriginal) => ({
   getWatchlistPage: (...args: unknown[]) => getWatchlistPage(...args),
   getWatchedPage: (...args: unknown[]) => getWatchedPage(...args),
   getLibraryTitles: (...args: unknown[]) => getLibraryTitles(...args),
+}));
+vi.mock("@/lib/tracking/show-ratings", () => ({
   getShowRatings: (...args: unknown[]) => getShowRatings(...args),
 }));
 
