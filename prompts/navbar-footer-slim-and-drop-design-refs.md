@@ -24,10 +24,11 @@ Lighten the app shell. The navbar loses its background, border and blur, and eve
 2. **One 40px control height at every width:**
    - `MediaTypeTabs` and `LibraryNav variant="bar"` links: `h-9` → `h-7`. The pill padding becomes `p-[4.5px]`, so tab, padding and the 1.5px rim add up to exactly 40px (found during the runtime check: `p-1.5` measured 43px).
    - Desktop search field and its fallback (`QuickSearch` in the navbar, `NavbarSearchFallback`): `h-12` → `h-10`. Only the navbar instance shrinks: the `/search` page and the mobile overlay pass their own class, so `QuickSearch` takes the height through `className`.
+   - The `QuickSearch` Clear button: `md:size-9` → `md:size-8`, so it fits inside the 40px navbar field.
    - Sign in, account and Sign out: `h-10`. Desktop avatar stays `size-7`. Mobile avatar goes from `size-9` to `size-8`, inside a 40px button.
    - Mobile search trigger, avatar button and menu trigger: `size-10`.
    - The bar's own padding tightens to `py-2` mobile and `md:py-2`, with `gap-2` between the mobile rows.
-3. **Hidden 44px tap area on mobile (AGENTS.md section 3 still holds).** A new `@utility hit-area` in `globals.css` sets `position: relative`, plus an `::after` with `content: ""; position: absolute; inset: -3.5px`. The pseudo element is placed from the padding box, inside the 1.5px glass border, so the offset is the border plus 2px: 44px on a glass control, 47px on a borderless one. `hit-area-tab` (`inset: -9.5px -2px`) does the same for a 28px tab. The runtime check found that `-2px` gave only 41px. The glass utilities use no pseudo elements, so nothing collides. Every 40px navbar control carries `hit-area`, which is harmless on desktop. Two new button sizes, `bar` (`h-10 rounded-full px-4 text-[13px] font-bold hit-area`) and `icon-bar` (`size-10 rounded-full hit-area`), keep this in one place instead of overriding classes at each call site.
+3. **Hidden 44px tap area on mobile (AGENTS.md section 3 still holds).** A new `@utility hit-area` in `globals.css` sets `position: relative`, plus an `::after` with `content: ""; position: absolute; inset: -3.5px`. The pseudo element is placed from the padding box, inside the 1.5px glass border, so the offset is the border plus 2px: 44px on a glass control, 47px on a borderless one. `hit-area-tab` (`inset: -9.5px -2px`) does the same for a 28px tab. The runtime check found that `-2px` gave only 41px. The glass utilities use no pseudo elements, so nothing collides. Every 40px navbar control carries `hit-area`, which is harmless on desktop. The `LibraryNav variant="bar"` links carry `hit-area-tab`, like the `MediaTypeTabs` links; the pill's `gap-1` (4px) against the tab's 2px side extension means neighbours never overlap. Two new button sizes, `bar` (`h-10 rounded-full px-4 text-[13px] font-bold hit-area`) and `icon-bar` (`size-10 rounded-full hit-area`), keep this in one place instead of overriding classes at each call site.
 4. **The mobile menu sheet doesn't change.** It keeps 44px rows and buttons.
 
 ### Footer
@@ -58,7 +59,8 @@ Lighten the app shell. The navbar loses its background, border and blur, and eve
 - `app/globals.css` (`hit-area` utility, comment fixes)
 - `components/ui/button.tsx` (`bar`, `icon-bar` sizes)
 - `components/layout/navbar.tsx`, `media-type-tabs.tsx`, `library-nav.tsx`, `account-slot.tsx`, `mobile-menu-sheet.tsx` (the trigger only), `site-footer.tsx`
-- `components/search/navbar-search.tsx`, `quick-search.tsx`, `mobile-search-overlay.tsx` (the trigger only)
+- `components/search/navbar-search.tsx`, `quick-search.tsx` (navbar height through `className`, Clear button `md:size-8`), `mobile-search-overlay.tsx` (the trigger only)
+- `app/showcase/page.tsx` (`bar` and `icon-bar` button samples, since `/showcase` is now the UI reference)
 - `lib/legal/operator.ts`, `app/privacy/page.tsx`, `app/terms/page.tsx`
 - Tests: `navbar.test.tsx`, `site-footer.test.tsx`, `operator.test.ts`, `boundary.test.ts`, `app/privacy/page.test.tsx`, `app/terms/page.test.tsx`, plus any class assertions on the changed sizes
 - Comment-only edits in the remaining `design/`-citing files under `app/`, `components/` and `lib/`
