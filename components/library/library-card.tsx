@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { PosterCard } from "@/components/poster-card";
 import {
+  CalculatedRatingBadge,
   PersonalScoreBadge,
   TmdbRatingBadge,
 } from "@/components/rating-badges";
@@ -29,9 +30,12 @@ const MISSING_TITLE = "No longer on TMDB";
  * or a Want to Watch show, Stop watching for a Watching show. A show card
  * also carries its Next episode pill bottom left, streamed from the server.
  * The watched card carries the cyan personal score, only when the movie has
- * one, and the filled watched mark. Every button only reports the tap through
- * `onRemove`: `LibraryGrid` owns the optimistic hide, the action call and the
- * toast.
+ * one, and the filled watched mark. A Completed show on the watched page
+ * carries its calculated show rating, only when it has one, never the TMDB
+ * rating, and no button at all: its history is edited on the show page,
+ * never from this grid (spec 0019, AC-5, AC-6). Every button only reports the
+ * tap through `onRemove`: `LibraryGrid` owns the optimistic hide, the action
+ * call and the toast.
  *
  * @param nextEpisode A show card's Next episode pill, already wrapped in its
  * own Suspense boundary so the card never waits for it.
@@ -56,6 +60,13 @@ function LibraryCard({
   const badge =
     list === "watchlist" ? (
       <TmdbRatingBadge value={item.tmdbRating} />
+    ) : item.kind === "tv" ? (
+      item.showRating !== null ? (
+        <CalculatedRatingBadge
+          value={item.showRating}
+          label="Your show rating"
+        />
+      ) : undefined
     ) : item.rating !== null ? (
       <PersonalScoreBadge value={item.rating} />
     ) : undefined;
@@ -69,15 +80,17 @@ function LibraryCard({
       }
       badge={badge}
       controls={
-        <>
-          {item.kind === "tv" ? nextEpisode : null}
-          <RemoveButton
-            list={list}
-            item={item}
-            title={item.title}
-            onRemove={onRemove}
-          />
-        </>
+        isRemovable(list, item) ? (
+          <>
+            {item.kind === "tv" ? nextEpisode : null}
+            <RemoveButton
+              list={list}
+              item={item}
+              title={item.title}
+              onRemove={onRemove}
+            />
+          </>
+        ) : undefined
       }
       priority={priority}
     />
@@ -85,10 +98,24 @@ function LibraryCard({
 }
 
 /**
+ * Whether a card carries a button. Every card does, except a show on the
+ * watched page: nothing there unmarks, removes or changes a show (spec 0019,
+ * AC-6). Explicit here rather than a side effect of `RemoveButton`'s
+ * branches, which would otherwise draw an Unmark button for it.
+ */
+function isRemovable(
+  list: LibraryList,
+  item: Pick<LibraryItem, "kind">,
+): boolean {
+  return !(list === "watched" && item.kind === "tv");
+}
+
+/**
  * A row whose title TMDB no longer has (`missingIds`). It keeps the card's
  * footprint and the removal its status implies, so the user can clear the
  * row, but has no title link because there is no page to open (spec 0008,
- * AC-11; spec 0013, AC-17).
+ * AC-11; spec 0013, AC-17). A show on the watched page has no removal, so its
+ * card has no button either (spec 0019, AC-8).
  */
 function MissingTitleCard({
   list,
@@ -104,12 +131,14 @@ function MissingTitleCard({
       title={MISSING_TITLE}
       posterUrl={null}
       controls={
-        <RemoveButton
-          list={list}
-          item={item}
-          title={null}
-          onRemove={onRemove}
-        />
+        isRemovable(list, item) ? (
+          <RemoveButton
+            list={list}
+            item={item}
+            title={null}
+            onRemove={onRemove}
+          />
+        ) : undefined
       }
     />
   );

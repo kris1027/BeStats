@@ -163,6 +163,38 @@ describe("search reads no request scoped value (spec 0010, AC-22)", () => {
   });
 });
 
+/**
+ * covers: spec 0019, AC-13
+ *
+ * `/watched` writes nothing on load: only `/shows/{id}` and `/upcoming` run
+ * the automatic completion check (`AGENTS.md`, Commands and repo facts). So
+ * the files its render reaches hold no write call and never import that
+ * check. The grid's own removal goes through Server Actions, which a click
+ * runs, not the render.
+ */
+describe("the watched page writes nothing on load (spec 0019, AC-13)", () => {
+  const files = [
+    "app/watched/page.tsx",
+    "components/library/library-section.tsx",
+    "components/library/library-card.tsx",
+    "lib/tracking/library-lists.ts",
+  ];
+
+  it.each(files)("%s holds no write and no completion check", (path) => {
+    const source = readFileSync(path, "utf8");
+    for (const write of [
+      ".rpc(",
+      ".insert(",
+      ".update(",
+      ".upsert(",
+      ".delete(",
+      "auto-completion",
+    ]) {
+      expect(source, `${path} must not use ${write}`).not.toContain(write);
+    }
+  });
+});
+
 describe("private tracking state never enters a cache scope (spec 0007, AC-19; spec 0008, AC-17; spec 0011, AC-20)", () => {
   const files = [
     ...sourceFiles("components/tracking"),

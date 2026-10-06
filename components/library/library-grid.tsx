@@ -112,28 +112,35 @@ function LibraryGrid({
   }, [items]);
 
   /**
-   * Focus leaves the card before it disappears: to the next card's title
-   * link, else the previous card's, else the heading. A card with no title
-   * link (a missing title) takes the focus on its remove button (AC-16).
+   * Focus leaves the card before it disappears: to the nearest following
+   * card's title link, else the nearest preceding one's, else the heading. A
+   * card with no title link (a missing title) takes the focus on its remove
+   * button (AC-16); one with neither (a missing title show on `/watched`,
+   * spec 0019) is skipped.
    */
   function moveFocusFrom(key: string) {
     const index = visible.findIndex((item) => libraryItemKey(item) === key);
-    const target = visible[index + 1] ?? visible[index - 1];
+    const candidates = [
+      ...visible.slice(index + 1),
+      ...visible.slice(0, index).reverse(),
+    ];
 
-    if (!target) {
-      const remountFor = page > 1 ? key : null;
-      headingFocusFor.current = remountFor;
-      focusLibraryHeading({ remountFor });
-      return;
+    for (const target of candidates) {
+      const card = gridRef.current?.querySelector(
+        `[data-item-key="${libraryItemKey(target)}"]`,
+      );
+      const focusable =
+        card?.querySelector<HTMLElement>("h3 a") ??
+        card?.querySelector<HTMLElement>("button");
+      if (focusable) {
+        focusable.focus();
+        return;
+      }
     }
 
-    const card = gridRef.current?.querySelector(
-      `[data-item-key="${libraryItemKey(target)}"]`,
-    );
-    const focusable =
-      card?.querySelector<HTMLElement>("h3 a") ??
-      card?.querySelector<HTMLElement>("button");
-    focusable?.focus();
+    const remountFor = page > 1 ? key : null;
+    headingFocusFor.current = remountFor;
+    focusLibraryHeading({ remountFor });
   }
 
   function onError(error: ShowStatusError, item: LibraryItem) {

@@ -5,10 +5,10 @@ import type { LibraryItem } from "./types";
 
 /**
  * covers: spec 0008, AC-1 to AC-3, AC-9 to AC-11, AC-13; spec 0013, AC-13,
- * AC-15, AC-17
+ * AC-15, AC-17; spec 0019, AC-1, AC-3, AC-5, AC-6, AC-8 to AC-11
  *
  * `LibrarySection` is an async Server Component, so each test awaits it and
- * renders what it returns. The session, the two Postgres reads and the TMDB
+ * renders what it returns. The session, the Postgres reads and the TMDB
  * read are the boundaries and are replaced; `libraryLastPage` stays real, so
  * the redirect follows the same arithmetic the app uses. `LibraryGrid` is a
  * Client Component with its own suite, so here it is a stub that shows the
@@ -20,6 +20,7 @@ vi.mock("@/lib/auth/user", () => ({ requireUser: () => requireUser() }));
 const getWatchlistPage = vi.fn();
 const getWatchedPage = vi.fn();
 const getLibraryTitles = vi.fn();
+const getShowRatings = vi.fn();
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/tmdb", () => ({
@@ -33,6 +34,7 @@ vi.mock("@/lib/tracking/library-lists", async (importOriginal) => ({
   getWatchlistPage: (...args: unknown[]) => getWatchlistPage(...args),
   getWatchedPage: (...args: unknown[]) => getWatchedPage(...args),
   getLibraryTitles: (...args: unknown[]) => getLibraryTitles(...args),
+  getShowRatings: (...args: unknown[]) => getShowRatings(...args),
 }));
 
 class RedirectSignal extends Error {
@@ -93,6 +95,20 @@ function received(id: number, kind: "movie" | "tv" = "movie"): LibraryItem {
 /** A watchlist row for a planned movie. */
 function planned(id: number) {
   return { kind: "movie", tmdbId: id, status: null };
+}
+
+/** A watched page row for a movie. */
+function watchedMovie(id: number, watchedAt: string, rating: number | null) {
+  return { kind: "movie", tmdbId: id, watchedAt, rating };
+}
+
+/** A watched page row for a Completed show. */
+function completedShow(id: number, watchedAt = "2026-09-20T12:00:00+00:00") {
+  return { kind: "tv", tmdbId: id, watchedAt, rating: null };
+}
+
+function showSummary(id: number, name: string) {
+  return { id, name, posterUrl: null, tmdbRating: 8.9 };
 }
 
 /** The titles read with only these movies found. */
@@ -182,9 +198,13 @@ describe("empty lists (AC-10)", () => {
       "Your watchlist is empty",
       "Plan a movie or a show to see it here.",
     ],
-    ["watched", "Nothing watched yet", "Movies you mark watched show up here."],
+    [
+      "watched",
+      "Nothing watched yet",
+      "Movies you mark watched and shows you complete show up here.",
+    ],
   ] as const)(
-    "the %s page shows its empty panel with Browse movies",
+    "the %s page shows its empty panel with Browse movies and Browse shows",
     async (list, title, body) => {
       const read = list === "watchlist" ? getWatchlistPage : getWatchedPage;
       read.mockResolvedValue({ kind: "ok", rows: [], total: 0 });
@@ -194,24 +214,18 @@ describe("empty lists (AC-10)", () => {
       expect(
         screen.getByRole("link", { name: "Browse movies" }),
       ).toHaveAttribute("href", "/movies");
+      expect(
+        screen.getByRole("link", { name: "Browse shows" }),
+      ).toHaveAttribute("href", "/shows");
       expect(getLibraryTitles).not.toHaveBeenCalled();
     },
   );
-
-  it("offers Browse shows only on the watchlist, which can hold shows", async () => {
-    getWatchlistPage.mockResolvedValue({ kind: "ok", rows: [], total: 0 });
-    await renderSection("watchlist");
-    expect(screen.getByRole("link", { name: "Browse shows" })).toHaveAttribute(
-      "href",
-      "/shows",
-    );
-  });
 });
 
 describe("failures never look like an empty list (AC-11)", () => {
   it.each([
     ["watchlist", "Couldn't load your watchlist"],
-    ["watched", "Couldn't load your watched movies"],
+    ["watched", "Couldn't load your watched titles"],
   ] as const)(
     "a failed %s read shows the error panel with Try again on the same page",
     async (list, title) => {
@@ -264,6 +278,7 @@ describe("failures never look like an empty list (AC-11)", () => {
       posterUrl: null,
       tmdbRating: null,
       rating: null,
+      showRating: null,
       watchedAt: null,
     });
   });
@@ -305,17 +320,21 @@ describe("a page of cards (AC-1, AC-2, AC-9, AC-13)", () => {
     getWatchedPage.mockResolvedValue({
       kind: "ok",
       rows: [
-        { movieId: 550, watchedAt: "2026-09-23T12:00:00+00:00", rating: 9 },
-        { movieId: 603, watchedAt: "2026-09-22T12:00:00+00:00", rating: null },
+        watchedMovie(550, "2026-09-23T12:00:00+00:00", 9),
+        watchedMovie(603, "2026-09-22T12:00:00+00:00", null),
       ],
       total: 2,
     });
     await renderSection("watched");
     expect(received(550)).toMatchObject({
+      status: null,
       rating: 9,
+      showRating: null,
       watchedAt: "2026-09-23T12:00:00+00:00",
     });
     expect(received(603)).toMatchObject({ rating: null });
+    // No show on the page, so no rating read.
+    expect(getShowRatings).not.toHaveBeenCalled();
   });
 
   it("shows no pagination when the list fits on one page", async () => {
@@ -356,7 +375,7 @@ describe("a page of cards (AC-1, AC-2, AC-9, AC-13)", () => {
       rows: [
         list === "watchlist"
           ? planned(550)
-          : { movieId: 550, watchedAt: "2026-09-23T12:00:00+00:00", rating: 7 },
+          : watchedMovie(550, "2026-09-23T12:00:00+00:00", 7),
       ],
       total: 1,
     });
@@ -440,6 +459,244 @@ describe("shows on the watchlist (spec 0013, AC-13, AC-15, AC-17)", () => {
     expect(
       screen.getByRole("list", { name: "Your watchlist, page 1" }),
     ).toHaveAttribute("data-next-episodes", "tv-1396");
+  });
+});
+
+describe("Completed shows on the watched page (spec 0019)", () => {
+  beforeEach(() => {
+    getShowRatings.mockResolvedValue({ kind: "ok", ratings: new Map() });
+  });
+
+  it("merges shows and movies in the Postgres order, labeled as titles (AC-1, AC-9)", async () => {
+    getWatchedPage.mockResolvedValue({
+      kind: "ok",
+      rows: [
+        completedShow(1396),
+        watchedMovie(550, "2026-09-19T12:00:00+00:00", 9),
+      ],
+      total: 2,
+    });
+    getLibraryTitles.mockResolvedValue({
+      kind: "ok",
+      movies: new Map([[550, summary(550, "Fight Club")]]),
+      shows: new Map([[1396, showSummary(1396, "Breaking Bad")]]),
+    });
+    await renderSection("watched");
+
+    expect(getLibraryTitles).toHaveBeenCalledWith([550], [1396]);
+    const grid = screen.getByRole("list", {
+      name: "Titles you watched, page 1",
+    });
+    expect(
+      within(grid)
+        .getAllByRole("listitem")
+        .map((item) => item.dataset.testid),
+    ).toEqual(["item-tv-1396", "item-movie-550"]);
+    // Completed is the view's filter; a show has no score and no Undo time.
+    expect(received(1396, "tv")).toMatchObject({
+      kind: "tv",
+      status: "completed",
+      title: "Breaking Bad",
+      rating: null,
+      watchedAt: null,
+    });
+  });
+
+  it("carries each show's calculated rating unrounded, and none for an unrated show (AC-5)", async () => {
+    getWatchedPage.mockResolvedValue({
+      kind: "ok",
+      rows: [completedShow(1396), completedShow(1399)],
+      total: 2,
+    });
+    getLibraryTitles.mockResolvedValue({
+      kind: "ok",
+      movies: new Map(),
+      shows: new Map([
+        [1396, showSummary(1396, "Breaking Bad")],
+        [1399, showSummary(1399, "Game of Thrones")],
+      ]),
+    });
+    getShowRatings.mockResolvedValue({
+      kind: "ok",
+      ratings: new Map([
+        [1396, 22 / 3],
+        [1399, null],
+      ]),
+    });
+    await renderSection("watched", { page: "1" });
+
+    expect(getShowRatings).toHaveBeenCalledWith("user-a", [1396, 1399]);
+    expect(received(1396, "tv").showRating).toBeCloseTo(22 / 3, 10);
+    expect(received(1399, "tv").showRating).toBeNull();
+  });
+
+  it("reads ratings only for shows TMDB found, and none when it found none (AC-8)", async () => {
+    getWatchedPage.mockResolvedValue({
+      kind: "ok",
+      rows: [completedShow(1396), completedShow(2147480000)],
+      total: 2,
+    });
+    getLibraryTitles.mockResolvedValue({
+      kind: "ok",
+      movies: new Map(),
+      shows: new Map([[1396, showSummary(1396, "Breaking Bad")]]),
+    });
+    await renderSection("watched");
+    expect(getShowRatings).toHaveBeenCalledWith("user-a", [1396]);
+    expect(received(2147480000, "tv")).toMatchObject({
+      title: null,
+      showRating: null,
+    });
+
+    getShowRatings.mockClear();
+    getLibraryTitles.mockResolvedValue({
+      kind: "ok",
+      movies: new Map(),
+      shows: new Map(),
+    });
+    await renderSection("watched");
+    expect(getShowRatings).not.toHaveBeenCalled();
+  });
+
+  it("a failed rating read shows the list failure panel, never unbadged cards (AC-10)", async () => {
+    getWatchedPage.mockResolvedValue({
+      kind: "ok",
+      rows: [completedShow(1396)],
+      total: 21,
+    });
+    getLibraryTitles.mockResolvedValue({
+      kind: "ok",
+      movies: new Map(),
+      shows: new Map([[1396, showSummary(1396, "Breaking Bad")]]),
+    });
+    getShowRatings.mockResolvedValue({ kind: "failed" });
+    await renderSection("watched", { page: "2" });
+
+    expect(
+      screen.getByRole("heading", {
+        name: "Couldn't load your watched titles",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Try again" })).toHaveAttribute(
+      "href",
+      "/watched?page=2",
+    );
+    expect(screen.queryByTestId("item-tv-1396")).toBeNull();
+  });
+
+  it("a TMDB outage shows the TMDB panel before any rating read (AC-10)", async () => {
+    getWatchedPage.mockResolvedValue({
+      kind: "ok",
+      rows: [completedShow(1396)],
+      total: 1,
+    });
+    getLibraryTitles.mockResolvedValue({ kind: "failed" });
+    await renderSection("watched");
+    expect(
+      screen.getByRole("heading", { name: "Couldn't reach TMDB" }),
+    ).toBeInTheDocument();
+    expect(getShowRatings).not.toHaveBeenCalled();
+  });
+
+  it("builds no Next episode pill on the watched page", async () => {
+    getWatchedPage.mockResolvedValue({
+      kind: "ok",
+      rows: [completedShow(1396)],
+      total: 1,
+    });
+    getLibraryTitles.mockResolvedValue({
+      kind: "ok",
+      movies: new Map(),
+      shows: new Map([[1396, showSummary(1396, "Breaking Bad")]]),
+    });
+    await renderSection("watched");
+    expect(
+      screen.getByRole("list", { name: "Titles you watched, page 1" }),
+    ).toHaveAttribute("data-next-episodes", "");
+  });
+
+  it("keeps a movie and a show sharing an id apart: the show's rating never reaches the movie (AC-5)", async () => {
+    getWatchedPage.mockResolvedValue({
+      kind: "ok",
+      rows: [
+        watchedMovie(1396, "2026-09-21T12:00:00+00:00", 4),
+        completedShow(1396),
+      ],
+      total: 2,
+    });
+    getLibraryTitles.mockResolvedValue({
+      kind: "ok",
+      movies: new Map([[1396, summary(1396, "A movie")]]),
+      shows: new Map([[1396, showSummary(1396, "Breaking Bad")]]),
+    });
+    getShowRatings.mockResolvedValue({
+      kind: "ok",
+      ratings: new Map([[1396, 9.5]]),
+    });
+    await renderSection("watched");
+
+    expect(received(1396, "movie")).toMatchObject({
+      title: "A movie",
+      rating: 4,
+      showRating: null,
+    });
+    expect(received(1396, "tv")).toMatchObject({
+      title: "Breaking Bad",
+      rating: null,
+      showRating: 9.5,
+    });
+  });
+
+  it("keeps the legend to the single Your score entry with shows on the page (AC-9)", async () => {
+    getWatchedPage.mockResolvedValue({
+      kind: "ok",
+      rows: [completedShow(1396)],
+      total: 1,
+    });
+    getLibraryTitles.mockResolvedValue({
+      kind: "ok",
+      movies: new Map(),
+      shows: new Map([[1396, showSummary(1396, "Breaking Bad")]]),
+    });
+    await renderSection("watched");
+    const legend = screen.getByRole("list", { name: "Badge legend" });
+    expect(
+      within(legend)
+        .getAllByRole("listitem")
+        .map((item) => item.textContent),
+    ).toEqual(["Your score"]);
+  });
+
+  it("shows 'That page doesn't exist' for a malformed watched page, before any read (AC-3)", async () => {
+    await renderSection("watched", { page: "abc" });
+    expect(
+      screen.getByRole("heading", { name: "That page doesn't exist" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Back to page 1" }),
+    ).toHaveAttribute("href", "/watched");
+    expect(getWatchedPage).not.toHaveBeenCalled();
+    expect(getShowRatings).not.toHaveBeenCalled();
+  });
+
+  it("pages the merged total and redirects past its end (AC-3)", async () => {
+    getWatchedPage.mockResolvedValue({ kind: "ok", rows: [], total: 21 });
+    await expect(renderSection("watched", { page: "3" })).rejects.toMatchObject(
+      { url: "/watched?page=2" },
+    );
+
+    getWatchedPage.mockResolvedValue({
+      kind: "ok",
+      rows: [completedShow(1396)],
+      total: 21,
+    });
+    getLibraryTitles.mockResolvedValue({
+      kind: "ok",
+      movies: new Map(),
+      shows: new Map([[1396, showSummary(1396, "Breaking Bad")]]),
+    });
+    await renderSection("watched", { page: "2" });
+    expect(screen.getByText("Page 2 of 2")).toBeInTheDocument();
   });
 });
 
