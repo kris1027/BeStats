@@ -50,20 +50,11 @@ export const metadata: Metadata = {
 };
 
 /**
- * The application shell: the sticky navbar, a single main region, and the
- * footer.
+ * The application shell: the navbar, a single main region, and the footer.
  *
- * The scroll padding is what keeps an anchored heading from landing underneath
- * the sticky navbar, which is the half of AC-13 that is easy to miss because it
- * only shows up when someone follows a fragment link.
- *
- * It has to be responsive because the navbar is. `Navbar` switches to
- * `md:flex-row` at the same breakpoint, so below `md` it stacks into two rows
- * and measures 132px, while at `md` and above it is one row of 72px. A single
- * value sized for the desktop bar leaves the mobile bar covering the heading by
- * 36px, which is exactly the bug this pair of values fixes. Keep both numbers
- * above the heights in `NAVBAR_HEIGHTS` in `app/layout.test.ts`, which is the
- * guard that fails if either one drifts.
+ * There is no scroll padding. The navbar scrolls away with the page rather
+ * than sticking, so nothing covers an anchored heading, and padding sized for
+ * a bar that is no longer there would only push the heading down.
  *
  * Everything here is a Server Component. The only client boundaries in the
  * shell are the media type tabs and the menu sheet, neither of which reads a
@@ -88,10 +79,7 @@ export const metadata: Metadata = {
  */
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="en"
-      className={`${inter.variable} h-full scroll-pt-36 md:scroll-pt-24`}
-    >
+    <html lang="en" className={`${inter.variable} h-full`}>
       <body className="flex min-h-full flex-col antialiased">
         {/*
          * Each fallback is the signed out button's footprint, so the bar does

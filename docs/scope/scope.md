@@ -9,7 +9,7 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 
 _The stack, tooling and product rules (ratings, progress, statuses, security) live only in `AGENTS.md`; this file does not repeat them. Specs below only record the decisions `AGENTS.md` leaves open. The UI reference is the shipped interface plus `/showcase`._
 
-_2026-10-06: the `design/` artboards were removed. The UI built from them carries their decisions forward; a screen with no precedent is described and approved in its plan. Same day: the navbar became transparent with 40px controls, the footer lost its border, and the operator is named by handle (`kris1027`, linked to GitHub) instead of a legal name._
+_2026-10-06: the `design/` artboards were removed. The UI built from them carries their decisions forward; a screen with no precedent is described and approved in its plan. Same day: the navbar became transparent and non sticky with 40px controls, the footer lost its border, and the operator is named by handle (`kris1027`, linked to GitHub) instead of a legal name._
 
 ## At a glance
 

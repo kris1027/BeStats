@@ -20,7 +20,7 @@ Lighten the app shell. The navbar loses its background, border and blur, and eve
 
 ### Navbar
 
-1. **Sticky and transparent.** `<header>` keeps `sticky top-0 z-30` and drops `border-b border-border bg-background/70 backdrop-blur-glass`. Content scrolls visibly underneath. The pills stay readable through their own glass plates. The `BeStats` wordmark sits directly over content, and that is accepted. `scroll-padding-top` stays because the bar is still sticky.
+1. **Transparent and not sticky** (revised after the first runtime review). `<header>` drops `sticky top-0 z-30` along with `border-b border-border bg-background/70 backdrop-blur-glass`, so it scrolls away with the page. A transparent bar pinned over scrolling content left the wordmark and the gaps between pills unreadable. `scroll-pt-*` on `<html>` goes too, since nothing covers an anchored heading any more, and the `app/layout.test.ts` guard now asserts no scroll padding is left.
 2. **One 40px control height at every width:**
    - `MediaTypeTabs` and `LibraryNav variant="bar"` links: `h-9` → `h-7`. The pill padding becomes `p-[4.5px]`, so tab, padding and the 1.5px rim add up to exactly 40px (found during the runtime check: `p-1.5` measured 43px).
    - Desktop search field and its fallback (`QuickSearch` in the navbar, `NavbarSearchFallback`): `h-12` → `h-10`. Only the navbar instance shrinks: the `/search` page and the mobile overlay pass their own class, so `QuickSearch` takes the height through `className`.
@@ -71,7 +71,7 @@ No change to auth, data or caching. The footer stays a Server Component that rea
 
 ## Acceptance criteria
 
-1. At any scroll position the navbar has no background, border or blur. Content is visible between and behind the controls, and the bar stays at the top.
+1. The navbar has no background, border or blur, and it scrolls away with the page instead of sticking.
 2. At 1440px and 390px, every navbar control (tabs pill, library pill, search field or icon, Sign in, avatar, account, Sign out, menu) renders 40px tall.
 3. On mobile each of those controls responds to taps across a 44×44px area.
 4. The mobile menu sheet looks exactly as it did before.

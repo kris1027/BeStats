@@ -31,10 +31,10 @@ function ACCOUNT_SLOT() {
  * without a viewport. There must be exactly one tab control in the document at
  * any width, or a mobile user tabs through the tabs twice.
  *
- * The sticky behaviour and the transparent bar are asserted as classes for
- * the same reason the glass tests are: the bar is deliberately bare, so a
- * background, border or blur creeping back is a regression. Whether it looks
- * right stays a `/check verify` step.
+ * The transparent, non sticky bar is asserted as classes for the same reason
+ * the glass tests are: a transparent bar pinned over scrolling content is
+ * unreadable, so `sticky` or `fixed` creeping back without a background is a
+ * regression. Whether it looks right stays a `/check verify` step.
  */
 describe("Navbar", () => {
   it("is a banner landmark", () => {
@@ -148,7 +148,7 @@ describe("Navbar", () => {
     pathname.current = "/shows";
   });
 
-  it("sticks to the top with no background, border or blur", () => {
+  it("scrolls with the page, with no background, border or blur", () => {
     render(
       <Navbar
         mobileAccountSlot={<ACCOUNT_SLOT />}
@@ -157,7 +157,8 @@ describe("Navbar", () => {
     );
 
     const banner = screen.getByRole("banner");
-    expect(banner).toHaveClass("sticky", "top-0");
-    expect(banner.className).not.toMatch(/\b(bg-|border|backdrop-blur)/);
+    expect(banner.className).not.toMatch(
+      /\b(sticky|fixed|bg-|border|backdrop-blur)/,
+    );
   });
 });

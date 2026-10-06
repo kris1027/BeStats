@@ -53,8 +53,7 @@ export function LegalDocument({
 
 /**
  * The section's title in kebab case, so `/privacy#cookies` is a stable link
- * and a test can check the sections by id. The root layout's scroll padding
- * keeps a linked heading clear of the sticky navbar.
+ * and a test can check the sections by id.
  */
 export function sectionId(title: string): string {
   return title
