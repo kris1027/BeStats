@@ -5,7 +5,7 @@
 /*
  * One palette, no light theme, no `.dark` variant (spec 0004, AC-1).
  *
- * Every one of the sixteen references in `design/` is drawn on pure black, so a
+ * Every screen is drawn on pure black, so a
  * light palette here would be a half maintained theme nothing renders. Deleting
  * it makes the absence honest: adding light later is a restructure, which is the
  * tradeoff spec 0004 accepted.
@@ -46,7 +46,7 @@
 }
 
 /*
- * Product tokens: the values `design/` actually uses (spec 0004, AC-4).
+ * Product tokens: the values the UI actually uses (spec 0004, AC-4).
  *
  * These sit in `@theme` rather than `:root` so Tailwind generates real
  * utilities for them (`text-rating-tmdb`, `bg-glass-plate-panel`,
@@ -71,7 +71,7 @@
   --color-glass-plate-sheet: #090a0d;
   --color-glass-plate-score: #0c1419;
 
-  /* Text greys from the references, beyond the shadcn semantic set. */
+  /* Text greys, beyond the shadcn semantic set. */
   --color-text-label: #e2e5ef;
   --color-text-link: #d7d9e0;
   --color-text-secondary: #ced1dc;
@@ -81,9 +81,9 @@
   --radius-panel: 1.5rem;
 
   /*
-   * 16px, no saturation adjustment. `design/` supplies no blur at all: every
-   * file states the glass is simulated, so this is the one value spec 0004
-   * settles rather than reads (AC-16).
+   * 16px, no saturation adjustment. The original designs supplied no blur:
+   * they only simulated the glass, so this is the one value spec 0004
+   * settled rather than read (AC-16).
    */
   --blur-glass: 16px;
 }
@@ -107,8 +107,8 @@
   --accent: #17181a;
   --accent-foreground: #f6f7f8;
   /*
-   * `design/` draws no error state, so this is the one shadcn token with no
-   * reference value. It carries no product meaning and is not one of the three
+   * The original designs drew no error state, so this is the one shadcn
+   * token with no product value. It carries no product meaning and is not one of the three
    * colours above.
    *
    * The first pick, `#F87171`, measured 3.90:1 against the brightest point of
@@ -206,8 +206,8 @@
 }
 
 /*
- * The rim alone, over artwork: the poster frame in
- * `design/show-movie-card.svg`, which is a bare gradient stroke on a photo.
+ * The rim alone, over artwork: the poster frame, which is a bare gradient
+ * stroke on a photo.
  *
  * There is no plate to reduce the gradient to a ring here, so this masks the
  * padding box out instead and paints only the border ring. That also means the
@@ -260,7 +260,7 @@
 }
 
 /*
- * `feDropShadow dy=5 stdDeviation=5` in the references. An SVG standard
+ * `feDropShadow dy=5 stdDeviation=5` in the original designs. An SVG standard
  * deviation of 5 is roughly a 10px CSS blur radius, which is the conversion
  * used here.
  */

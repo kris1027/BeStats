@@ -5,10 +5,10 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "cn";
 
 /**
- * The segmented control pill from the navbar artboards, generalised.
+ * The segmented control pill from the navbar, generalised.
  *
  * Off is plain text on the enclosing glass track; on is the `selected-glass`
- * gradient with its own rim, which is exactly how `design/` draws the active
+ * gradient with its own rim, which is exactly how the navbar draws the active
  * SHOWS tab. The stock `outline-none` and ring focus are dropped so the single
  * outline ring in `globals.css` survives (spec 0004, AC-6).
  *

@@ -5,14 +5,9 @@ import Image from "next/image";
 import type { QuickResult } from "@/lib/search/quick";
 
 /**
- * One result row from `design/desktop-search-open.svg`: the poster, the title
- * over its year, and the TMDB rating on the right (spec 0010, AC-2).
- *
- * That artboard is exported at about 1.6 times CSS scale (its field is 85px
- * tall and its title is set at 29px), so every size here is the drawn one
- * divided by that factor rather than read off as pixels, the rule
- * `components/AGENTS.md` sets for posters. The poster keeps the drawn 2:3
- * frame.
+ * One result row in the quick search: the poster, the title over its year,
+ * and the TMDB rating on the right (spec 0010, AC-2). The poster keeps the
+ * 2:3 frame every poster in the app uses.
  *
  * The year and the rating are simply absent when TMDB has neither, never a
  * placeholder. The star is amber because this is always TMDB's community

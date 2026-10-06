@@ -9,7 +9,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
 /**
- * The expanded mobile menu from `design/mobile-menu-open.svg`: a glass sheet on
+ * The expanded mobile menu: a glass sheet on
  * the sheet plate, dropping below the navbar rather than centring on screen
  * (spec 0004, AC-15).
  *
@@ -19,14 +19,14 @@ import { Button } from "@/components/ui/button";
  * close; Escape dismisses; the page behind is scroll locked and hidden from
  * assistive technology. Nothing here reimplements any of it.
  *
- * The reference draws this menu only in its signed in form, and every link in
+ * The menu exists only in its signed in form, and every link in
  * it is private. `AccountSlot` fills it with the library links, the account row
  * and Sign out (spec 0008, AC-15).
  *
  * Choosing a link closes the sheet as it navigates, so the next page is not
  * hidden behind it. The dialog is controlled for that one reason: a click that
  * lands on any link inside the popup closes it, whatever the link, including
- * one to the page already open. The artboard draws no title, so `Menu` is kept
+ * one to the page already open. The sheet shows no title, so `Menu` is kept
  * for screen readers only, which keeps the dialog named.
  */
 function MobileMenuSheet({

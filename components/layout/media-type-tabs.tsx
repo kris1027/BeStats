@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 /**
- * The SHOWS and MOVIES control from every navbar artboard (spec 0004, AC-14).
+ * The SHOWS and MOVIES control in the navbar (spec 0004, AC-14).
  *
  * These are links, not toggles. Selection comes from the current pathname, so
  * a deep link, a browser back button and a server render all agree on which

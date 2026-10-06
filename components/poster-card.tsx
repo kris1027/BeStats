@@ -17,14 +17,14 @@ const POSTER_SIZES =
   "(min-width: 1280px) 16vw, (min-width: 1024px) 20vw, (min-width: 768px) 25vw, (min-width: 640px) 33vw, 50vw";
 
 /**
- * The single most repeated element in `design/`: a 2:3 poster inside a rounded
+ * The single most repeated element in the UI: a 2:3 poster inside a rounded
  * frame with a gradient rim, a title caption underneath, and two slots the
  * tracking features fill later.
  *
  * The frame is `fill` inside an `aspect-2/3` container rather than fixed
- * pixels. Every poster artboard in `design/` is exported at a different scale,
- * so reading pixel dimensions out of them would bake one artboard's scale into
- * the build; an aspect ratio survives that (AC-8).
+ * pixels. Posters render at many widths across the app, so fixed pixel
+ * dimensions would suit one of them and break the rest; an aspect ratio
+ * survives that (AC-8).
  *
  * The rim is drawn on a decorative overlay, not on the frame. The two layer
  * background technique paints the rim as a background layer, which would sit
@@ -87,7 +87,7 @@ function PosterCard({
            * and it repeats the title rather than inventing a placeholder
            * image (AGENTS.md section 3, AC-8).
            *
-           * Flat plate, no glass gradient. `design/` only ever puts glass on
+           * Flat plate, no glass gradient. The UI only ever puts glass on
            * short surfaces; stretched over a 2:3 frame the same gradient reads
            * as a deliberate ramp rather than a quiet absence, which is the
            * opposite of what a missing poster should say.

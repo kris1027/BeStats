@@ -10,8 +10,7 @@ import { PlanIcon, PlannedIcon } from "./tracking-icons";
 import { settleTrackingCall, showTrackingError } from "./tracking-toast";
 
 /**
- * The round glass bookmark on a poster card, per `bookmark-button` in
- * `design/show-movie-card.svg` (spec 0007, AC-16).
+ * The round glass bookmark on a poster card (spec 0007, AC-16).
  *
  * The round glass button itself is `CardRoundButton`. It sits above the
  * card's link overlay, so a click toggles the bookmark without opening the

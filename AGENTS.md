@@ -37,9 +37,9 @@ Follow this loop for each implementation request:
 
 1. Read this specification and any applicable repository instructions.
 2. Read any skills explicitly named by the user and relevant available supporting skills. Do not assume that a skill or tool exists.
-3. Inspect the existing code, configuration, and relevant files in `design/` before choosing an implementation.
+3. Inspect the existing code, configuration, and the related UI (the shipped pages and `/showcase`) before choosing an implementation.
 4. Ask focused questions when a material requirement is ambiguous. Use the agent's native question panel when available.
-5. Write an implementation plan in `prompts/<descriptive-name>.md`. Include the goal, inspected code and designs, skills used, decisions and assumptions, expected files, requirements, security considerations, acceptance criteria, automated checks, and exact manual test steps.
+5. Write an implementation plan in `prompts/<descriptive-name>.md`. Include the goal, inspected code, skills used, decisions and assumptions, expected files, requirements, security considerations, acceptance criteria, automated checks, and exact manual test steps.
 6. Ask: “I prepared the implementation plan at prompts/<name>.md. Is this good to execute?” Offer Yes and No in the question panel when available.
 7. Wait for approval before writing implementation code, unless the user explicitly waives this requirement. Approval to prepare a plan is not approval to implement it.
 8. Implement the approved scope, run the appropriate checks, and report the actual results. Seek approval for material scope changes.
@@ -54,9 +54,9 @@ Keep detailed rationale in the plan. Never claim that a check passed without run
 
 ## 3. UI and design
 
-The user provides reference designs in `design/`. Those references are the source of truth for layout, spacing, typography, colors, and visible states.
+The shipped interface and `/showcase` are the source of truth for layout, spacing, typography, colors, and visible states. The original reference artboards in `design/` were removed on 2026-10-06; the UI built from them carries their decisions forward.
 
-Use Tailwind CSS and shadcn/ui, adapting components to the reference rather than imposing their default appearance. Reuse existing components and patterns first. Do not redesign supplied views or introduce features simply because a component supports them.
+Use Tailwind CSS and shadcn/ui, adapting components to the existing glass system rather than imposing their default appearance. Reuse existing components and patterns first. Do not redesign existing views or introduce features simply because a component supports them.
 
 When no mobile reference exists, adapt the desktop layout sensibly for small screens while preserving its visual style. Ensure usable navigation, touch targets, keyboard interaction, visible focus, and readable content.
 
@@ -209,7 +209,7 @@ TMDB title search and filtered discovery may have different capabilities. Verify
 
 When combining a title query with filters, ensure every displayed result meets the selected filters. If filtering upstream search pages locally, continue pagination appropriately and never present the unfiltered total as the filtered result count. If an exact count is unavailable, omit it or explicitly indicate that it is partial.
 
-Keep upstream relevance ordering for title searches unless the approved design specifies another supported order. Never claim semantic matching or comprehensive AI recommendations.
+Keep upstream relevance ordering for title searches unless an approved plan specifies another supported order. Never claim semantic matching or comprehensive AI recommendations.
 
 Show clear loading and empty states, preserve filters when opening and returning from a title, and provide a retry path for failures. Do not fabricate results, metadata, availability, ratings, or counts.
 
@@ -263,14 +263,14 @@ At minimum, verify these behaviors before considering the MVP complete:
 11. Manual status changes preserve episode history and ratings.
 12. Combined search filters apply correctly, pagination works, and result counts remain truthful.
 13. Loading, failure, empty, and missing-metadata states remain usable on desktop and mobile.
-14. The interface matches supplied references in `design/`.
+14. The interface stays consistent with the existing UI and `/showcase`.
 15. Secrets are absent from browser bundles, and private data is not served through shared caches.
 
-If credentials, provider configuration, or reference designs prevent a check, report it as blocked or unverified. Do not substitute a mock-only check for a claimed live integration result.
+If credentials or provider configuration prevent a check, report it as blocked or unverified. Do not substitute a mock-only check for a claimed live integration result.
 
 ## 14. When in doubt
 
-Keep the scope small. Follow the designs. Use TMDB for catalog metadata and Supabase for private user state. Preserve the distinction between ratings, watched progress, and tracking status. Never invent unavailable data.
+Keep the scope small. Follow the existing UI. Use TMDB for catalog metadata and Supabase for private user state. Preserve the distinction between ratings, watched progress, and tracking status. Never invent unavailable data.
 
 Inspect the code and current documentation, record material decisions in `prompts/`, obtain approval before coding, run the relevant checks, and provide clear verification steps.
 
@@ -283,7 +283,7 @@ Tracer Bullet: prove the whole pipe works with one thin real thread, then thicke
 - Imports use the `@/*` alias, which maps to the repo root (set in `tsconfig.json`). Prefer it over long relative paths.
 - Scripts: `pnpm dev`, `pnpm dev:docker` (the dev server against the local Supabase stack, see `scripts/dev-docker.sh`), `pnpm build`, `pnpm start`, `pnpm typecheck`, `pnpm lint`, `pnpm lint:ci`, `pnpm format`, `pnpm test`, `pnpm test:db`, `pnpm tmdb:live`, `pnpm db:types`, `pnpm db:types:check`.
 - Supabase, Zod, shadcn/ui and `server-only` are installed. `zod` validates every external input; `server-only` is what makes a Client Component import of a server module a build failure.
-- Routes live in `app/` at the repo root (there is no `src/` directory). `design/`, `supabase/` and `components/` exist; `prompts/` does not, create it when needed.
+- Routes live in `app/` at the repo root (there is no `src/` directory). `supabase/`, `components/` and `prompts/` exist; there is no `design/` folder any more.
 - `/` is a temporary (307) redirect to `/shows`, declared in `redirects()` in `next.config.ts` rather than a Server Component, so nothing renders and no browser caches it permanently. There is no `app/page.tsx`.
 - `.gitignore` ignores `.env*`, which also hides `.env.example`. Add a `!.env.example` exception before committing it, as section 11 requires.
 - Middleware lives in `proxy.ts` at the repo root and exports `proxy`. Next.js 16 renamed it; a `middleware.ts` would be ignored.

@@ -14,7 +14,7 @@ import {
 /**
  * The sticky top navigation, in its signed out form (spec 0004, AC-13).
  *
- * Two layouts that swap at `md`, taken from the two navbar artboards: one row
+ * Two layouts that swap at `md`: one row
  * on desktop with the brand, the tabs and Sign in, and two rows on mobile with
  * the brand and Sign in above a centred tab control. They are rendered as one
  * tree with responsive classes rather than two components, so the tab control

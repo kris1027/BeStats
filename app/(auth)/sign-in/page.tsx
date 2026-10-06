@@ -21,8 +21,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * `/sign-in`, built from `design/desktop-sign-in-page.svg` and its mobile pair
- * (spec 0005, AC-4, AC-21).
+ * `/sign-in` (spec 0005, AC-4, AC-21).
  *
  * The page shell is static and the form sits behind a Suspense boundary,
  * because the form needs `searchParams` (`next`, and the `error` the callback

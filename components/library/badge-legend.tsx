@@ -7,13 +7,12 @@ import {
 } from "@/components/tracking/tracking-icons";
 
 /**
- * The key under a list page's grid, per `badge-legend` in
- * `design/desktop-watchlist-page.svg`: a hairline above, then each badge's
+ * The key under a list page's grid: a hairline above, then each badge's
  * mark beside its name in the legend grey (spec 0008, AC-13).
  *
  * The marks reuse the badges' own icons and meaning colours, so the key can
  * never drift from what the cards show. Only the badges a page can actually
- * show are listed, in the artboard's order: the watchlist adds Stop watching
+ * show are listed, in a fixed order: the watchlist adds Stop watching
  * and Next episode for its show cards (spec 0013, AC-17).
  */
 const ENTRIES = {

@@ -1,14 +1,14 @@
 import { cn } from "cn";
 
 /**
- * The tracking marks, drawn from `design/` rather than approximated with a
+ * The tracking marks, drawn as custom paths rather than approximated with a
  * stock icon (spec 0007, movie page row and card bookmark).
  *
- * `design/badge-legend.svg` draws Planned as a filled green bookmark with a
+ * Planned is a filled green bookmark with a
  * dark check cut into it. A stock `BookmarkCheck` strokes its outline and its
  * check in one colour, so it cannot put a green body behind a dark check. The
- * paths below are the legend's own, kept in its coordinates through the
- * `viewBox`. Colours come from the theme tokens, never literals.
+ * paths below come from the original badge legend, kept in its coordinates
+ * through the `viewBox`. Colours come from the theme tokens, never literals.
  *
  * All of them are decorative: the button around each one carries the name.
  */
@@ -90,8 +90,7 @@ function WatchedIcon({ filled, className }: IconProps & { filled: boolean }) {
 }
 
 /**
- * Stop watching: a square inside a circle, from `stop` in the watchlist
- * artboards and the legend (spec 0013, AC-16). The show status pill reuses it
+ * Stop watching: a square inside a circle (spec 0013, AC-16). The show status pill reuses it
  * for On Hold, the status it sets.
  */
 function StopWatchingIcon({ className }: IconProps) {
@@ -117,8 +116,7 @@ function StopWatchingIcon({ className }: IconProps) {
 }
 
 /**
- * Next episode: the television from `tv` in the watchlist artboards, in the
- * artboard's grey (spec 0013, AC-15). The status pill uses it for Watching.
+ * Next episode: a television, in the legend grey (spec 0013, AC-15). The status pill uses it for Watching.
  */
 function NextEpisodeIcon({ className }: IconProps) {
   return (
@@ -141,7 +139,7 @@ function NextEpisodeIcon({ className }: IconProps) {
 }
 
 /**
- * Release date: the calendar from `calendar` in the Upcoming artboards, in the
+ * Release date: a calendar, in the
  * same grey as the Next episode television (spec 0014, AC-5, AC-12).
  */
 function CalendarIcon({ className }: IconProps) {

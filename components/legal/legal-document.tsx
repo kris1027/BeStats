@@ -18,7 +18,7 @@ const LAST_UPDATED_LABEL = new Intl.DateTimeFormat("en-GB", {
  * The reading column both legal pages share: a centred measure of at most
  * 72 characters, the page title and the `Last updated` line (spec 0017, AC-7).
  *
- * There is no reference artboard for these pages, so it reuses the type scale
+ * There is no original design for these pages, so it reuses the type scale
  * the rest of the app already draws (the auth panel's heading, the movie
  * overview's body text) rather than inventing a look. There is no typography
  * plugin, so lists and links are styled explicitly by the helpers below.

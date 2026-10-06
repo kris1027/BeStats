@@ -7,9 +7,8 @@ import { usePathname } from "next/navigation";
 import { UPCOMING_PATH } from "@/components/upcoming/ids";
 
 /**
- * The signed in library links: `library-navigation` in
- * `design/desktop-navbar-signed-in.svg` and the links in
- * `design/mobile-menu-open.svg` (spec 0008, AC-14, AC-15).
+ * The signed in library links: the pill in the desktop navbar and the list in
+ * the mobile menu sheet (spec 0008, AC-14, AC-15).
  *
  * As with `MediaTypeTabs`, the lit link comes from the pathname, never client
  * state, and `aria-current="page"` carries it to assistive technology.
@@ -17,7 +16,7 @@ import { UPCOMING_PATH } from "@/components/upcoming/ids";
  * inside `AccountSlot`, which is already request scoped behind its own
  * Suspense boundary, so it costs no route its static shell.
  *
- * Upcoming sits between the two, as both artboards draw it (spec 0014, AC-1).
+ * Upcoming sits between the two (spec 0014, AC-1).
  *
  * @param variant `bar` is the glass pill in the desktop navbar; `sheet` is the
  * stacked list inside the mobile menu, with 44px rows for touch.

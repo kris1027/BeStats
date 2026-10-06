@@ -3,7 +3,7 @@ import { InboxIcon, TriangleAlertIcon, UserRoundIcon } from "lucide-react";
 import type * as React from "react";
 
 /**
- * One panel for the three states `design/` never drew: empty, error and signed
+ * One panel for the three states the original designs never drew: empty, error and signed
  * out (spec 0004, AC-11).
  *
  * Its look was proposed in the spec and approved rather than invented here,

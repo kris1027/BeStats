@@ -12,13 +12,13 @@ import { siteUrl } from "@/lib/seo/site";
 import "./globals.css";
 
 /**
- * Inter, the typeface every one of the sixteen references sets (spec 0004,
+ * Inter, the typeface every one of the original designs set (spec 0004,
  * AC-2). Loaded as the variable font, so weights 400 through 800 arrive in one
  * file rather than five requests, and `display: "swap"` so text is readable
  * while it loads instead of invisible.
  *
- * The two typefaces the Next.js starter installed are gone: nothing in
- * `design/` uses either of them.
+ * The two typefaces the Next.js starter installed are gone: nothing in the
+ * UI uses either of them.
  */
 const inter = Inter({
   variable: "--font-inter",

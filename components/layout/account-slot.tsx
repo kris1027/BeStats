@@ -28,8 +28,7 @@ import { publicEnvProblems } from "@/lib/env";
  * shows the library links, the account button and Sign out in a row; below
  * `lg` the account button drops its visible name so the row fits at `md`. The
  * mobile bar keeps only the avatar letter and a menu button; the menu sheet
- * holds the library links, the account row and Sign out, as
- * `design/mobile-menu-open.svg` draws it. `MobileMenuSheet` is a Client
+ * holds the library links, the account row and Sign out. `MobileMenuSheet` is a Client
  * Component, so this Server Component passes the rendered pieces in as
  * children.
  *
@@ -123,7 +122,7 @@ async function AccountSlot({ variant }: { variant: "desktop" | "mobile" }) {
   );
 }
 
-/** The avatar letter on the brighter selected glass, from both artboards. */
+/** The avatar letter on the brighter selected glass. */
 function Avatar({ letter, className }: { letter: string; className: string }) {
   return (
     <span

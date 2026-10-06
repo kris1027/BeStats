@@ -7,7 +7,7 @@ import type * as React from "react";
  * Column counts are fixed here and mirrored by `POSTER_SIZES` in
  * `poster-card.tsx`; changing one without the other ships wrong sized images.
  * Two columns at 390px keeps a poster wide enough to read its caption with no
- * horizontal page scroll, which is the narrow case the references never draw.
+ * horizontal page scroll at the narrowest width.
  *
  * A `<ul>` rather than a bare div: a collection of titles is a list, and that
  * is what tells a screen reader how many results there are.

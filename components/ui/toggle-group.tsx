@@ -9,14 +9,14 @@ import * as React from "react";
 import { toggleVariants } from "@/components/ui/toggle";
 
 /**
- * The glass track that holds a row of toggles, from the navbar artboards: a
+ * The glass track that holds a row of toggles, as in the navbar: a
  * fully rounded glass pill on the control plate, with the items sitting inside
  * it (spec 0004, task 5).
  *
  * The stock version carried a large block of joined-edge styling for a
- * `spacing=0` segmented look that `design/` never draws; it is dropped. The
+ * `spacing=0` segmented look the UI never uses; it is dropped. The
  * track keeps its own padding so the selected item's rim never touches the
- * track's rim, which is how every reference draws it.
+ * track's rim, as in every pill in the app.
  */
 const ToggleGroupContext = React.createContext<
   VariantProps<typeof toggleVariants>
