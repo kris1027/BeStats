@@ -15,6 +15,7 @@ import "server-only";
  * token (AC-2).
  */
 
+export type { SettledBatch } from "./batch";
 export { TMDB_ATTRIBUTION } from "./constants";
 export { isTmdbNotFound, TmdbError, type TmdbErrorKind } from "./errors";
 export { imageUrl, resizeImageUrl, type TmdbImageSize } from "./images";
@@ -25,12 +26,14 @@ export {
   getMovieGenres,
   getMovieSummaries,
   getMoviesByIds,
+  getMoviesSettled,
   getSeason,
   getShowCast,
   getShowEpisodes,
   getTvGenres,
   getTvShow,
   getTvShowsByIds,
+  getTvShowsSettled,
   searchMovies,
   searchTvShows,
 } from "./reads";
@@ -39,6 +42,7 @@ export type {
   CastMember,
   DiscoverOptions,
   Episode,
+  EpisodeToAir,
   Genre,
   Movie,
   MovieSummary,

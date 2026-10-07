@@ -196,27 +196,41 @@ function renderGraph(entry: string): string[] {
 }
 
 /**
- * covers: spec 0019, AC-13
+ * covers: spec 0019, AC-13; spec 0020, AC-21
  *
- * `/watched` writes nothing on load: only `/shows/{id}` and `/upcoming` run
- * the automatic completion check (`AGENTS.md`, Commands and repo facts). So
- * no file its render reaches, followed through every import, holds a write
- * call or imports that check. The grid's own removal goes through Server
- * Actions, which a click runs, not the render, so those are not followed.
+ * No page writes on load (spec 0020, AC-21): automatic completion and its
+ * writes on `/shows/{id}` and `/upcoming` are gone. So no file a library page
+ * or the show page reaches, followed through every import, holds a write call
+ * or imports a completion check. The grids' own removals and marks go
+ * through Server Actions, which a click runs, not the render, so those are
+ * not followed.
  */
-describe("the watched page writes nothing on load (spec 0019, AC-13)", () => {
-  const files = renderGraph("app/watched/page.tsx");
+describe.each([
+  "app/watchlist/page.tsx",
+  "app/upcoming/page.tsx",
+  "app/watched/page.tsx",
+  "app/shows/[id]/page.tsx",
+])("%s writes nothing on load (spec 0020, AC-21)", (page) => {
+  const files = renderGraph(page);
 
   it("follows the render into the reads it makes", () => {
     expect(files).toEqual(
-      expect.arrayContaining([
-        "components/library/library-section.tsx",
-        "components/library/library-card.tsx",
-        "lib/tracking/library-lists.ts",
-        "lib/tracking/show-ratings.ts",
-      ]),
+      expect.arrayContaining(
+        page.startsWith("app/shows")
+          ? [
+              "components/tracking/show-tracking-slot.tsx",
+              "lib/tracking/show-state.ts",
+            ]
+          : [
+              "components/library/library-section.tsx",
+              "components/library/library-card.tsx",
+              "lib/tracking/library-lists.ts",
+              "lib/tracking/show-ratings.ts",
+            ],
+      ),
     );
     expect(files).not.toContain("app/movies/actions.ts");
+    expect(files).not.toContain("app/shows/actions.ts");
   });
 
   it.each(files)("%s holds no write and no completion check", (path) => {
@@ -239,6 +253,7 @@ describe("private tracking state never enters a cache scope (spec 0007, AC-19; s
     ...sourceFiles("components/tracking"),
     ...sourceFiles("lib/tracking"),
     ...sourceFiles("app/watchlist"),
+    ...sourceFiles("app/upcoming"),
     ...sourceFiles("app/watched"),
     ...sourceFiles("components/library"),
     ACTIONS,
@@ -257,7 +272,11 @@ describe("private tracking state never enters a cache scope (spec 0007, AC-19; s
   });
 
   it("keeps each list page's private read behind its Suspense boundary (spec 0008, AC-12)", () => {
-    for (const path of ["app/watchlist/page.tsx", "app/watched/page.tsx"]) {
+    for (const path of [
+      "app/watchlist/page.tsx",
+      "app/upcoming/page.tsx",
+      "app/watched/page.tsx",
+    ]) {
       expect(readFileSync(path, "utf8")).toMatch(
         /<Suspense fallback=\{<LibrarySkeleton \/>\}>\s*<LibrarySection/,
       );
@@ -277,9 +296,9 @@ describe("private tracking state never enters a cache scope (spec 0007, AC-19; s
     );
   });
 
-  it("keeps the show status, progress and TV bookmarks each behind their own boundary (spec 0013, AC-11, AC-18, AC-22)", () => {
+  it("keeps the show tracking, progress and TV bookmarks each behind their own boundary (spec 0013, AC-11, AC-22; spec 0020, AC-2, AC-6)", () => {
     const show = readFileSync("app/shows/[id]/page.tsx", "utf8");
-    expect(show).toMatch(/<Suspense fallback=\{null\}>\s*<ShowStatusSlot/);
+    expect(show).toMatch(/<Suspense fallback=\{null\}>\s*<ShowTrackingSlot/);
     expect(show).toMatch(/<Suspense fallback=\{null\}>\s*<ShowProgressSlot/);
     expect(readFileSync("app/shows/page.tsx", "utf8")).toMatch(
       /<Suspense fallback=\{null\}>\s*<ShowCardBookmark/,
@@ -288,8 +307,8 @@ describe("private tracking state never enters a cache scope (spec 0007, AC-19; s
       readFileSync("components/search/search-results.tsx", "utf8"),
     ).toMatch(/<Suspense fallback=\{null\}>\s*<ShowCardBookmark/);
     expect(
-      readFileSync("components/library/library-section.tsx", "utf8"),
-    ).toMatch(/<Suspense fallback=\{null\}>\s*<NextEpisodePill/);
+      readFileSync("components/library/watchlist-show-card.tsx", "utf8"),
+    ).toMatch(/<Suspense fallback=\{null\}>\s*<NextEpisodeName/);
   });
 
   it("gives no show route an instant = false opt out (spec 0013, AC-22)", () => {

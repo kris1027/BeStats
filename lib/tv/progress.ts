@@ -37,9 +37,10 @@ export type ShowProgress =
 
 /**
  * Progress through a show: watched out of aired regular episodes, and the
- * next one to watch. The one place this rule exists; the show hero, the
- * watchlist's Next episode pill, and later Up Next (feature 15) and automatic
- * completion (feature 16) all call it.
+ * next one to watch, for the show hero's progress line (spec 0013, AC-10).
+ * The library pages place a show from its details read instead
+ * (`lib/tv/library-page.ts`, spec 0020), with the same aired and specials
+ * rules.
  *
  * Eligible means a regular season episode whose `airStatus` is `aired`, the
  * spec 0011 UTC calendar date rule, unchanged. An upcoming episode, one with
@@ -87,25 +88,22 @@ export function showProgress(
 }
 
 /**
- * Whether a season counts toward progress, Up Next, the show rating and
- * automatic completion. TMDB season 0 holds specials, which AGENTS.md
- * sections 7 and 9 let a user track and rate but exclude from all of those;
- * one named test keeps every caller agreeing on that boundary.
+ * Whether a season counts toward progress. TMDB season 0 holds specials,
+ * which AGENTS.md sections 7 and 9 let a user track and rate but exclude
+ * from progress, the library pages and the show rating.
  */
-export function isRegularSeason(seasonNumber: number): boolean {
+function isRegularSeason(seasonNumber: number): boolean {
   return seasonNumber >= 1;
 }
 
 /**
  * The episodes progress counts: regular season (1 or later) and `aired` by
- * the spec 0011 UTC date rule, in season then episode order. Exported so
- * automatic completion (spec 0015, AC-1) sends the database exactly the ids
- * this rule counted, never a second copy of it.
+ * the spec 0011 UTC date rule, in season then episode order.
  *
  * @param episodes The show's episodes, in any order.
  * @param today `requestTodayUtc()`.
  */
-export function eligibleEpisodes<T extends ProgressEpisode>(
+function eligibleEpisodes<T extends ProgressEpisode>(
   episodes: readonly T[],
   today: string,
 ): T[] {

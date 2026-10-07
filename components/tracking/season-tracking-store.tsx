@@ -14,21 +14,20 @@ import {
   type EpisodeIntent,
   type EpisodeStates,
 } from "@/lib/tracking/episode-intent";
-import { SHOW_STATUS_MESSAGES } from "@/lib/tracking/messages";
+import { SHOW_TRACKING_COPY } from "@/lib/tracking/messages";
 import type {
   EpisodeTrackingError,
-  ShowStatusFlags,
+  ShowTrackingFlags,
 } from "@/lib/tracking/types";
 
 import { showEpisodeTrackingError } from "./tracking-toast";
 
 /**
  * Any action result: a success with whatever it carries, or a refusal. Every
- * success says whether it moved the show to Watching (spec 0013, AC-8) or to
- * Completed (spec 0015, AC-4).
+ * success says whether it tracked the show (spec 0020, AC-5).
  */
 type ActionResult =
-  | ({ ok: true } & ShowStatusFlags)
+  | ({ ok: true } & ShowTrackingFlags)
   | { ok: false; error: EpisodeTrackingError };
 
 /** What a rejected call (offline, a server error, a deploy) settles as. */
@@ -48,15 +47,11 @@ type SeasonTrackingContext = {
    * last exactly as long as the call's transition, so a success gives way to
    * the rows `refresh()` delivers and a failure to the unchanged ones, which
    * is the rollback (AC-13). A rejected call settles as `write_failed`.
-   *
-   * `announcesCompletion` is for a control whose own toast already names the
-   * move to Completed (Mark season watched), so the store stays quiet.
    */
   run: <R extends ActionResult>(
     intents: readonly EpisodeIntent[],
     call: () => Promise<R>,
     onSettled: (result: R | WriteFailed) => void,
-    options?: { announcesCompletion?: boolean },
   ) => void;
   /** Shows a failure toast under the given id. */
   fail: (error: EpisodeTrackingError, toastId: string) => void;
@@ -76,12 +71,11 @@ const Context = createContext<SeasonTrackingContext | null>(null);
  * Calls queue in the Next.js action queue rather than being dropped, and each
  * carries a target value, so rapid clicks settle on the last one (AC-16).
  *
- * It is also the one place that announces the automatic moves (spec 0013,
- * AC-8; spec 0015, AC-5): whichever control's write started or completed the
- * show, the store shows "{show} moved to Watching" or "{show} moved to
- * Completed" once, under one id, so it never stacks. Completed wins when one
- * write did both, and it carries no Undo: unticking the episode is the way
- * back, and the database reopens the show (spec 0015, AC-8).
+ * It is also the one place that announces tracking a show on its own (spec
+ * 0020, AC-5): whichever control's write tracked an untracked show, the store
+ * shows "{show} added to your shows" once, under one id, so it never stacks.
+ * It carries no Undo: Stop tracking on the show page is the way back, and it
+ * keeps every mark.
  *
  * @param showName The show's TMDB name, which the season header renders.
  */
@@ -104,21 +98,11 @@ function SeasonTrackingStore({
     readonly EpisodeIntent[]
   >([], (list, added) => [...list, ...added]);
 
-  function announceStatusMove(
-    flags: ShowStatusFlags,
-    options: { announcesCompletion?: boolean } | undefined,
-  ) {
-    const id = `show-auto-status-${showId}`;
-    if (flags.showCompleted) {
-      if (options?.announcesCompletion) return;
-      toast(SHOW_STATUS_MESSAGES.completed(showName), {
-        id,
-        action: undefined,
+  function announceTracked(flags: ShowTrackingFlags) {
+    if (flags.showTracked) {
+      toast(SHOW_TRACKING_COPY.added(showName), {
+        id: `show-tracked-${showId}`,
       });
-      return;
-    }
-    if (flags.showStarted) {
-      toast(SHOW_STATUS_MESSAGES.started(showName), { id });
     }
   }
 
@@ -128,14 +112,14 @@ function SeasonTrackingStore({
     seasonNumber,
     returnPath,
     pending,
-    run(intents, call, onSettled, options) {
+    run(intents, call, onSettled) {
       startTransition(async () => {
         addPending(intents);
         const result = await call().then(
           (settled): typeof settled | WriteFailed => settled,
           (): WriteFailed => ({ ok: false, error: "write_failed" }),
         );
-        if (result.ok) announceStatusMove(result, options);
+        if (result.ok) announceTracked(result);
         onSettled(result);
       });
     },

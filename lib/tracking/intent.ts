@@ -16,10 +16,11 @@ export type TrackingIntent =
  *
  * It mirrors the SQL in `supabase/schemas/05-functions.sql` exactly, because a
  * control whose optimistic guess disagrees with the database would flip twice:
- * once on the click and again when `refresh()` delivers the truth. The two
- * couplings are the first transition into watched clearing the bookmark, and a
- * rating on an unwatched movie counting as that first transition. Unwatching
- * and clearing a rating touch only their own field (`AGENTS.md` section 7).
+ * once on the click and again when `refresh()` delivers the truth. The one
+ * coupling is a rating on an unwatched movie also marking it watched. Since
+ * spec 0020 (AC-14) marking never touches the bookmark, so the Add to
+ * watchlist pill stays planned on a watched movie. Unwatching and clearing a
+ * rating touch only their own field (`AGENTS.md` section 7).
  *
  * @param state The state to build on: the server prop, or an earlier guess.
  * @param intent The click.
@@ -44,5 +45,5 @@ export function applyTrackingIntent(
 }
 
 function markWatched(state: MovieTrackingState): MovieTrackingState {
-  return { ...state, watched: true, inWatchlist: false };
+  return { ...state, watched: true };
 }

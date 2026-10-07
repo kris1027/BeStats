@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
- * covers: spec 0013, AC-1, AC-5, AC-9, AC-10, AC-12, AC-15, AC-18, AC-20
+ * covers: spec 0013, AC-9, AC-10, AC-12, AC-20; spec 0020, AC-1, AC-2, AC-6
  *
- * The request scoped reads behind the status pill, the progress line, the
- * Next episode pills and the grid bookmarks. The session and the database are
+ * The request scoped reads behind the tracking pill, the progress line and
+ * the grid bookmarks. The session and the database are
  * the boundaries, so those are replaced; the query builder records what it was
  * asked and answers from a queue, so a test can script a paged read.
  */
@@ -46,8 +46,8 @@ const createClient = vi.fn(async () => ({
 vi.mock("@/lib/supabase/server", () => ({ createClient }));
 
 const {
-  getShowStatus,
-  getShowStatuses,
+  getShowTracking,
+  getTrackedShows,
   getWatchedEpisodeIds,
   showIdsKey,
   WATCHED_IDS_PAGE_SIZE,
@@ -98,31 +98,29 @@ describe("showIdsKey", () => {
   });
 });
 
-describe("getShowStatus (AC-1, AC-5)", () => {
+describe("getShowTracking (spec 0020, AC-1, AC-2)", () => {
   it("is signed out, with no session read, when the public env is missing", async () => {
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", undefined);
-    expect(await getShowStatus(1396)).toEqual({ kind: "signed_out" });
+    expect(await getShowTracking(1396)).toEqual({ kind: "signed_out" });
     expect(getOptionalUser).not.toHaveBeenCalled();
   });
 
   it("is signed out, with no query, for a visitor", async () => {
     getOptionalUser.mockResolvedValue(null);
-    expect(await getShowStatus(1396)).toEqual({ kind: "signed_out" });
+    expect(await getShowTracking(1396)).toEqual({ kind: "signed_out" });
     expect(createClient).not.toHaveBeenCalled();
   });
 
-  it("returns null, not a sixth status, when there is no row", async () => {
+  it("returns null, untracked, when there is no row", async () => {
     responses = [{ data: null, error: null }];
-    expect(await getShowStatus(1396)).toEqual({ kind: "ok", state: null });
+    expect(await getShowTracking(1396)).toEqual({ kind: "ok", state: null });
   });
 
   it("maps the row and scopes the query to the session user (AC-20)", async () => {
-    responses = [
-      { data: { status: "on_hold", status_source: "user" }, error: null },
-    ];
-    expect(await getShowStatus(1396)).toEqual({
+    responses = [{ data: { hold_state: "paused" }, error: null }];
+    expect(await getShowTracking(1396)).toEqual({
       kind: "ok",
-      state: { status: "on_hold", source: "user" },
+      state: { hold: "paused" },
     });
     expect(called("from")).toEqual([["user_show_state"]]);
     expect(called("eq")).toEqual([
@@ -133,26 +131,26 @@ describe("getShowStatus (AC-1, AC-5)", () => {
 
   it("reports a Supabase error as failed, never as untracked (AC-5)", async () => {
     responses = [{ data: null, error: { code: "42501" } }];
-    expect(await getShowStatus(1396)).toEqual({ kind: "failed" });
-    expectAnonymousLog("show_tracking.status_read");
+    expect(await getShowTracking(1396)).toEqual({ kind: "failed" });
+    expectAnonymousLog("show_tracking.read");
   });
 
   it("reports a thrown client as failed instead of throwing (AC-5)", async () => {
     createClient.mockRejectedValueOnce(new Error("fetch failed for user-a"));
-    expect(await getShowStatus(1396)).toEqual({ kind: "failed" });
-    expectAnonymousLog("show_tracking.status_read");
+    expect(await getShowTracking(1396)).toEqual({ kind: "failed" });
+    expectAnonymousLog("show_tracking.read");
   });
 });
 
-describe("getShowStatuses (AC-18)", () => {
+describe("getTrackedShows (spec 0020, AC-6)", () => {
   it("is signed out for a visitor, so the grid renders no bookmark", async () => {
     getOptionalUser.mockResolvedValue(null);
-    expect(await getShowStatuses("1396,1399")).toEqual({ kind: "signed_out" });
+    expect(await getTrackedShows("1396,1399")).toEqual({ kind: "signed_out" });
     expect(createClient).not.toHaveBeenCalled();
   });
 
   it("answers an empty grid with an empty map and no query", async () => {
-    const result = await getShowStatuses("");
+    const result = await getTrackedShows("");
     expect(result).toEqual({ kind: "ok", state: new Map() });
     expect(createClient).not.toHaveBeenCalled();
   });
@@ -161,18 +159,18 @@ describe("getShowStatuses (AC-18)", () => {
     responses = [
       {
         data: [
-          { show_id: 1396, status: "watching" },
-          { show_id: 1399, status: "want_to_watch" },
+          { show_id: 1396, hold_state: null },
+          { show_id: 1399, hold_state: "dropped" },
         ],
         error: null,
       },
     ];
-    const result = await getShowStatuses("1396,1399,60059");
+    const result = await getTrackedShows("1396,1399,60059");
     expect(result).toEqual({
       kind: "ok",
       state: new Map([
-        [1396, "watching"],
-        [1399, "want_to_watch"],
+        [1396, null],
+        [1399, "dropped"],
       ]),
     });
     expect(called("from")).toHaveLength(1);
@@ -182,8 +180,8 @@ describe("getShowStatuses (AC-18)", () => {
 
   it("reports a failed read as failed, logging no identifiers", async () => {
     responses = [{ data: null, error: { code: "PGRST000" } }];
-    expect(await getShowStatuses("1396")).toEqual({ kind: "failed" });
-    expectAnonymousLog("show_tracking.status_read");
+    expect(await getTrackedShows("1396")).toEqual({ kind: "failed" });
+    expectAnonymousLog("show_tracking.read");
   });
 });
 

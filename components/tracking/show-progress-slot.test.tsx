@@ -10,13 +10,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const getShowStatus = vi.fn();
 const getWatchedEpisodeIds = vi.fn();
 vi.mock("@/lib/tracking/show-state", () => ({
+  getShowTracking: (...args: unknown[]) => getShowStatus(...args),
   getWatchedEpisodeIds: (...args: unknown[]) => getWatchedEpisodeIds(...args),
   showIdsKey: (ids: number[]) => ids.join(","),
-}));
-// The status after the automatic completion check (spec 0015, AC-10); the
-// check itself has its own tests.
-vi.mock("@/lib/tracking/auto-completion", () => ({
-  getReconciledShowStatus: (...args: unknown[]) => getShowStatus(...args),
 }));
 const getShowEpisodes = vi.fn();
 vi.mock("@/lib/tmdb", () => ({

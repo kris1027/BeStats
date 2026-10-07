@@ -7,12 +7,11 @@ import { publicEnvProblems } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 
 import { logTrackingEvent, TRACKING_EVENT } from "./log";
-import type { ShowStatusState, TrackingRead, TvStatus } from "./types";
+import type { ShowHold, ShowTrackingState, TrackingRead } from "./types";
 
 /**
- * The request scoped reads behind the TV status control, the progress line,
- * the watchlist's Next episode pills and the grid bookmarks (spec 0013, API
- * surface).
+ * The request scoped reads behind the show tracking control, the progress
+ * line and the grid bookmarks (spec 0013, API surface; spec 0020).
  *
  * None may ever run inside `use cache`: every result belongs to one person
  * (`AGENTS.md` section 11, AC-12, AC-22). Each is wrapped in React `cache()`
@@ -29,13 +28,13 @@ import type { ShowStatusState, TrackingRead, TvStatus } from "./types";
 export const WATCHED_IDS_PAGE_SIZE = 1000;
 
 /**
- * The signed in user's status for one show: the row's status and source, or
- * null when there is no row (spec 0013, AC-1, AC-5).
+ * The signed in user's tracking for one show: its hold, or null when the
+ * show is not tracked (spec 0020, AC-1, AC-2).
  *
  * @param showId The show, already confirmed by `loadShow`.
  */
-export const getShowStatus = cache(
-  async (showId: number): Promise<TrackingRead<ShowStatusState | null>> => {
+export const getShowTracking = cache(
+  async (showId: number): Promise<TrackingRead<ShowTrackingState | null>> => {
     if (publicEnvProblems()) return { kind: "signed_out" };
 
     const user = await getOptionalUser();
@@ -45,35 +44,35 @@ export const getShowStatus = cache(
       const supabase = await createClient();
       const { data, error } = await supabase
         .from("user_show_state")
-        .select("status, status_source")
+        .select("hold_state")
         .eq("user_id", user.id)
         .eq("show_id", showId)
         .maybeSingle();
 
-      if (error) return statusReadFailed();
+      if (error) return trackingReadFailed();
       return {
         kind: "ok",
-        state: data
-          ? { status: data.status, source: data.status_source }
-          : null,
+        state: data ? { hold: data.hold_state } : null,
       };
     } catch {
       // A network failure inside supabase-js. The error is dropped: its
       // message can carry request details (AC-21).
-      return statusReadFailed();
+      return trackingReadFailed();
     }
   },
 );
 
 /**
- * The statuses of every show on a grid, in one query for the whole grid
- * (spec 0013, AC-18), the `getWatchlistedMovieIds` pattern. A show with no
- * row is absent from the map.
+ * Which shows on a grid are tracked, with each one's hold, in one query for
+ * the whole grid (spec 0020, AC-6), the `getWatchlistedMovieIds` pattern. A
+ * show that is not tracked is absent from the map.
  *
  * @param idsKey The grid's show ids, from `showIdsKey`.
  */
-export const getShowStatuses = cache(
-  async (idsKey: string): Promise<TrackingRead<Map<number, TvStatus>>> => {
+export const getTrackedShows = cache(
+  async (
+    idsKey: string,
+  ): Promise<TrackingRead<Map<number, ShowHold | null>>> => {
     if (publicEnvProblems()) return { kind: "signed_out" };
 
     const user = await getOptionalUser();
@@ -86,17 +85,17 @@ export const getShowStatuses = cache(
       const supabase = await createClient();
       const { data, error } = await supabase
         .from("user_show_state")
-        .select("show_id, status")
+        .select("show_id, hold_state")
         .eq("user_id", user.id)
         .in("show_id", ids);
 
-      if (error) return statusReadFailed();
+      if (error) return trackingReadFailed();
       return {
         kind: "ok",
-        state: new Map(data.map((row) => [row.show_id, row.status])),
+        state: new Map(data.map((row) => [row.show_id, row.hold_state])),
       };
     } catch {
-      return statusReadFailed();
+      return trackingReadFailed();
     }
   },
 );
@@ -112,8 +111,7 @@ export const getShowStatuses = cache(
  * exact count is reached, as `getShowEpisodeRatings` does, so a long running
  * show never loses rows to the response cap.
  *
- * @param idsKey The show ids, from `showIdsKey`: one for the show hero, every
- * TV card's for the watchlist page.
+ * @param idsKey The show ids, from `showIdsKey`: one for the show hero.
  */
 export const getWatchedEpisodeIds = cache(
   async (idsKey: string): Promise<TrackingRead<Map<number, Set<number>>>> => {
@@ -169,8 +167,8 @@ function parseIdsKey(idsKey: string): number[] {
   return idsKey === "" ? [] : idsKey.split(",").map(Number);
 }
 
-function statusReadFailed(): { kind: "failed" } {
-  logTrackingEvent(TRACKING_EVENT.showStatusRead, "db_error");
+function trackingReadFailed(): { kind: "failed" } {
+  logTrackingEvent(TRACKING_EVENT.showTrackingRead, "db_error");
   return { kind: "failed" };
 }
 

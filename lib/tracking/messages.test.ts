@@ -1,18 +1,21 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  COMING_SOON_MESSAGES,
   EPISODE_TRACKING_MESSAGES,
+  HELD_SHOWS_COPY,
+  LIBRARY_COPY,
+  LIBRARY_NOTES,
+  MARK_NEXT_MESSAGES,
   NEXT_EPISODE_MESSAGES,
   SEASON_MESSAGES,
   SHOW_PROGRESS_MESSAGES,
-  SHOW_STATUS_MESSAGES,
+  SHOW_TRACKING_COPY,
+  SHOW_TRACKING_LABELS,
   SHOW_TRACKING_MESSAGES,
   TRACKING_MESSAGES,
-  TV_STATUS_LABELS,
-  UP_NEXT_MESSAGES,
+  UPCOMING_MESSAGES,
+  WATCHED_SHOW_LABELS,
 } from "./messages";
-import { TV_STATUSES } from "./types";
 
 /**
  * covers: spec 0011, AC-7, AC-10, AC-11, AC-14
@@ -67,28 +70,34 @@ describe("EPISODE_TRACKING_MESSAGES", () => {
 });
 
 /** covers: spec 0013, AC-1, AC-4, AC-8, AC-10, AC-11, AC-15 */
-describe("TV_STATUS_LABELS (spec 0013, AC-1)", () => {
-  it("lists the five statuses in menu order with their exact labels", () => {
-    expect(TV_STATUSES.map((status) => TV_STATUS_LABELS[status])).toEqual([
-      "Want to Watch",
-      "Watching",
-      "On Hold",
-      "Dropped",
-      "Completed",
-    ]);
+describe("SHOW_TRACKING_LABELS and SHOW_TRACKING_COPY (spec 0020, AC-2 to AC-5)", () => {
+  it("labels the pill Tracking, Paused or Dropped", () => {
+    expect(SHOW_TRACKING_LABELS).toEqual({
+      none: "Tracking",
+      paused: "Paused",
+      dropped: "Dropped",
+    });
   });
-});
 
-describe("SHOW_STATUS_MESSAGES (spec 0013)", () => {
-  it("names the show in each toast (AC-4, AC-8, AC-16)", () => {
-    expect(SHOW_STATUS_MESSAGES.removed("Breaking Bad")).toBe(
-      "Removed Breaking Bad from your shows",
+  it("offers Plan to watch and names the show in each toast", () => {
+    expect(SHOW_TRACKING_COPY.plan).toBe("Plan to watch");
+    expect(SHOW_TRACKING_COPY.added("Severance")).toBe(
+      "Severance added to your shows",
     );
-    expect(SHOW_STATUS_MESSAGES.started("Breaking Bad")).toBe(
-      "Breaking Bad moved to Watching",
+    expect(SHOW_TRACKING_COPY.stopped("Severance")).toBe(
+      "Stopped tracking Severance",
     );
-    expect(SHOW_STATUS_MESSAGES.stopped("Breaking Bad")).toBe(
-      "Breaking Bad moved to On Hold",
+    expect(SHOW_TRACKING_COPY.undoExpired).toBe(
+      "Couldn't undo. Track the show again from its page.",
+    );
+  });
+
+  it("says the show changed elsewhere for a stale write (AC-4)", () => {
+    expect(SHOW_TRACKING_MESSAGES.hold_changed).toBe(
+      "This show changed elsewhere. Showing the current one.",
+    );
+    expect(SHOW_TRACKING_MESSAGES.not_tracked).toBe(
+      SHOW_TRACKING_MESSAGES.hold_changed,
     );
   });
 
@@ -96,15 +105,12 @@ describe("SHOW_STATUS_MESSAGES (spec 0013)", () => {
     expect(SHOW_TRACKING_MESSAGES.not_found).toBe(
       "This show isn't available to track.",
     );
-    expect(SHOW_TRACKING_MESSAGES.undo_expired).toBe(
-      "Couldn't undo. Change the status from the show page.",
-    );
     for (const line of Object.values(SHOW_TRACKING_MESSAGES)) {
       expect(line).not.toMatch(/movie/i);
     }
   });
 
-  it("keeps the shared session copy, so the Sign in toast reads the same (AC-21)", () => {
+  it("keeps the shared session copy, so the Sign in toast reads the same", () => {
     expect(SHOW_TRACKING_MESSAGES.session_expired).toBe(
       TRACKING_MESSAGES.session_expired,
     );
@@ -131,99 +137,104 @@ describe("SHOW_PROGRESS_MESSAGES (spec 0013, AC-10, AC-11)", () => {
   });
 });
 
-describe("NEXT_EPISODE_MESSAGES (spec 0013, AC-15)", () => {
+describe("NEXT_EPISODE_MESSAGES and MARK_NEXT_MESSAGES (spec 0020, AC-9)", () => {
   it("shows the short code on the pill and spells it out for screen readers", () => {
-    expect(NEXT_EPISODE_MESSAGES.pill(2, 10)).toBe("S2E10");
-    expect(NEXT_EPISODE_MESSAGES.accessible(2, 10)).toBe(
-      "Next episode, season 2 episode 10",
-    );
-    expect(NEXT_EPISODE_MESSAGES.upToDate).toBe("Up to date");
-  });
-});
-
-describe("UP_NEXT_MESSAGES (spec 0014, AC-5, AC-7 to AC-9, AC-13)", () => {
-  it("uses the AGENTS.md section 9 caught up wording", () => {
-    expect(UP_NEXT_MESSAGES.caughtUp).toBe("You're up to date");
-  });
-
-  it("puts the short date on the pill and the full date in the spoken text (AC-5)", () => {
-    expect(UP_NEXT_MESSAGES.datedPill(2, 3, "Oct 2")).toBe("S2E3 · Oct 2");
-    expect(UP_NEXT_MESSAGES.nextAirs(2, 3, "Oct 2, 2026")).toBe(
-      "Next episode, season 2 episode 3, airs Oct 2, 2026",
-    );
-    expect(UP_NEXT_MESSAGES.firstAirs(1, 1, "Jan 21, 2027")).toBe(
-      "Season 1 episode 1 airs Jan 21, 2027",
+    expect(NEXT_EPISODE_MESSAGES.pill(2, 5)).toBe("S2E5");
+    expect(NEXT_EPISODE_MESSAGES.accessible(2, 5)).toBe(
+      "Next episode, season 2 episode 5",
     );
   });
 
-  it("names the show and episode on the button and both toasts (AC-8, AC-9)", () => {
-    expect(UP_NEXT_MESSAGES.markLabel("Breaking Bad", 1, 2)).toBe(
-      "Mark Breaking Bad season 1 episode 2 watched",
+  it("names the show and episode on the button and both toasts", () => {
+    expect(MARK_NEXT_MESSAGES.markLabel("Severance", 1, 3)).toBe(
+      "Mark Severance season 1 episode 3 watched",
     );
-    expect(UP_NEXT_MESSAGES.marked("Breaking Bad", 1, 2)).toBe(
-      "Marked Breaking Bad S1E2 watched",
+    expect(MARK_NEXT_MESSAGES.marked("Severance", 1, 3)).toBe(
+      "Marked Severance S1E3 watched",
     );
-    expect(UP_NEXT_MESSAGES.alreadyWatched("Breaking Bad", 1, 2)).toBe(
-      "Breaking Bad S1E2 was already watched",
-    );
-  });
-
-  it("keeps the unavailable and empty copy (AC-7, AC-13)", () => {
-    expect(UP_NEXT_MESSAGES.unavailable).toBe("Next episode unavailable");
-    expect(UP_NEXT_MESSAGES.empty).toBe(
-      "Start watching a show and its next episode shows up here.",
+    expect(MARK_NEXT_MESSAGES.alreadyWatched("Severance", 1, 3)).toBe(
+      "Severance S1E3 was already watched",
     );
   });
 });
 
-describe("COMING_SOON_MESSAGES (spec 0014, AC-11 to AC-13)", () => {
-  it("spells out the release date and the bookmark action (AC-12)", () => {
-    expect(COMING_SOON_MESSAGES.releases("Oct 21, 2026")).toBe(
-      "Releases Oct 21, 2026",
+describe("UPCOMING_MESSAGES (spec 0020, AC-11, AC-13)", () => {
+  it("puts the short date on the pill and the full date in the spoken text", () => {
+    expect(UPCOMING_MESSAGES.datedPill(2, 1, "Oct 20")).toBe("S2E1 · Oct 20");
+    expect(UPCOMING_MESSAGES.episodeAirs(2, 1, "October 20, 2026")).toBe(
+      "Season 2 episode 1 airs October 20, 2026",
     );
-    expect(COMING_SOON_MESSAGES.remove("Dune")).toBe(
-      "Remove Dune from watchlist",
-    );
-  });
-
-  it("says how many plans were checked past the ceiling (AC-11)", () => {
-    expect(COMING_SOON_MESSAGES.checkedLimit(200)).toBe(
-      "Checked your 200 most recently planned movies",
+    expect(UPCOMING_MESSAGES.releases("October 20, 2026")).toBe(
+      "Releases October 20, 2026",
     );
   });
 
-  it("keeps the Coming soon tab's empty copy (AC-13; feature 22)", () => {
-    expect(COMING_SOON_MESSAGES.empty).toBe(
-      "No planned movies are waiting for release.",
-    );
+  it("says Date TBA with no date", () => {
+    expect(UPCOMING_MESSAGES.dateTba).toBe("Date TBA");
   });
 });
 
-/**
- * covers: spec 0015, AC-5
- *
- * The automatic completion toasts, pinned word for word: Up Next and the
- * season mark fold it into their own toast, a single tick says it alone.
- */
-describe("automatic completion copy (spec 0015, AC-5)", () => {
-  it("joins the Up Next mark and the move", () => {
-    expect(UP_NEXT_MESSAGES.markedCompleted("Dark", 3, 8)).toBe(
-      "Marked Dark S3E8 watched · Moved to Completed",
+describe("LIBRARY_COPY (spec 0020, AC-18)", () => {
+  it("pins every empty state", () => {
+    expect(LIBRARY_COPY.watchlist.tv.empty).toEqual({
+      title: "Nothing to watch right now",
+      description:
+        "Plan a show or catch up on one and its next episode shows up here.",
+    });
+    expect(LIBRARY_COPY.upcoming.tv.empty).toEqual({
+      title: "Nothing coming up",
+      description:
+        "Planned shows not out yet, and shows you're caught up on with a dated next episode, show up here.",
+    });
+    expect(LIBRARY_COPY.watched.tv.empty).toEqual({
+      title: "No watched shows yet",
+      description: "Shows you're caught up on show up here.",
+    });
+    expect(LIBRARY_COPY.watchlist.movie.empty).toEqual({
+      title: "No movies to watch",
+      description: "Planned movies that are already out show up here.",
+    });
+    expect(LIBRARY_COPY.upcoming.movie.empty).toEqual({
+      title: "No upcoming movies",
+      description: "Planned movies not released yet show up here.",
+    });
+    expect(LIBRARY_COPY.watched.movie.empty).toEqual({
+      title: "No watched movies yet",
+      description: "Movies you mark watched show up here.",
+    });
+  });
+
+  it("offers the catalog the tab lists", () => {
+    expect(LIBRARY_COPY.upcoming.tv.browse).toBe("Browse shows");
+    expect(LIBRARY_COPY.upcoming.movie.browse).toBe("Browse movies");
+  });
+});
+
+describe("LIBRARY_NOTES, labels and the held section (spec 0020, AC-10, AC-12, AC-16, AC-17)", () => {
+  it("states the ceiling per media type", () => {
+    expect(LIBRARY_NOTES.checked(500, "tv")).toBe(
+      "Checked your 500 most recent shows",
+    );
+    expect(LIBRARY_NOTES.checked(500, "movie")).toBe(
+      "Checked your 500 most recent movies",
     );
   });
 
-  it("joins the season mark and the move, with the show's name", () => {
-    expect(SEASON_MESSAGES.markedCompleted(1, "Dark")).toBe(
-      "Marked 1 episode watched · Dark moved to Completed",
-    );
-    expect(SEASON_MESSAGES.markedCompleted(8, "Dark")).toBe(
-      "Marked 8 episodes watched · Dark moved to Completed",
+  it("counts the failed titles in the singular and plural", () => {
+    expect(LIBRARY_NOTES.failed(1, "tv")).toBe("1 show couldn't be loaded");
+    expect(LIBRARY_NOTES.failed(3, "movie")).toBe(
+      "3 movies couldn't be loaded",
     );
   });
 
-  it("says the move alone after a single tick or rating", () => {
-    expect(SHOW_STATUS_MESSAGES.completed("Dark")).toBe(
-      "Dark moved to Completed",
-    );
+  it("labels a Watched show Finished or Caught up", () => {
+    expect(WATCHED_SHOW_LABELS).toEqual({
+      finished: "Finished",
+      caught_up: "Caught up",
+    });
+  });
+
+  it("titles the held section with its exact count", () => {
+    expect(HELD_SHOWS_COPY.summary(4)).toBe("Paused & dropped (4)");
   });
 });

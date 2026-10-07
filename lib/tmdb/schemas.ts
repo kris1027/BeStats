@@ -121,6 +121,23 @@ export const tvShowSchema = tvSummarySchema.extend({
   genres: z.array(genreSchema).nullish(),
   translations: translationsSchema,
   seasons: z.array(seasonSummarySchema).nullish(),
+  /**
+   * Left unparsed here and checked one by one in the normalizer, so a
+   * malformed value is read as null rather than failing the whole show
+   * (spec 0020, AC-7).
+   */
+  last_episode_to_air: z.unknown().optional(),
+  next_episode_to_air: z.unknown().optional(),
+});
+
+/**
+ * `last_episode_to_air` and `next_episode_to_air` on `/tv/{id}`. Only the
+ * three fields library classification reads (spec 0020, AC-7).
+ */
+export const episodeToAirSchema = z.object({
+  season_number: z.number().int().min(0),
+  episode_number: z.number().int().min(1),
+  air_date: nullableString,
 });
 
 /**

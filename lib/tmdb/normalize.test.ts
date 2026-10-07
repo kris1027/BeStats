@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { SHOW_CAST_LIMIT } from "./constants";
 import {
   normalizeCast,
+  normalizeEpisodeToAir,
   normalizeSeasonDetail,
   normalizeSeasonSummary,
   normalizeShowCast,
@@ -234,5 +235,60 @@ describe("season name fallback", () => {
     expect(normalizeSeasonSummary({ ...summary, name: "Book One" }).name).toBe(
       "Book One",
     );
+  });
+});
+
+/** covers: spec 0020, AC-7 (a malformed last or next episode is null) */
+describe("normalizeEpisodeToAir", () => {
+  it("keeps the place and the date", () => {
+    expect(
+      normalizeEpisodeToAir({
+        season_number: 2,
+        episode_number: 5,
+        air_date: "2026-10-01",
+        id: 9,
+      }),
+    ).toEqual({ seasonNumber: 2, episodeNumber: 5, airDate: "2026-10-01" });
+  });
+
+  it("keeps a special and an episode with no date", () => {
+    expect(
+      normalizeEpisodeToAir({
+        season_number: 0,
+        episode_number: 1,
+        air_date: null,
+      }),
+    ).toEqual({ seasonNumber: 0, episodeNumber: 1, airDate: null });
+    expect(
+      normalizeEpisodeToAir({ season_number: 1, episode_number: 1 }),
+    ).toEqual({
+      seasonNumber: 1,
+      episodeNumber: 1,
+      airDate: null,
+    });
+  });
+
+  it.each([
+    ["no value", null],
+    ["a string", "S1E1"],
+    ["no episode number", { season_number: 1, air_date: "2026-10-01" }],
+    [
+      "episode number 0",
+      { season_number: 1, episode_number: 0, air_date: "2026-10-01" },
+    ],
+    [
+      "a negative season",
+      { season_number: -1, episode_number: 1, air_date: null },
+    ],
+    [
+      "a fractional number",
+      { season_number: 1, episode_number: 1.5, air_date: null },
+    ],
+    [
+      "a date that is not a day",
+      { season_number: 1, episode_number: 2, air_date: "2026-02-30" },
+    ],
+  ])("reads %s as null", (_label, raw) => {
+    expect(normalizeEpisodeToAir(raw)).toBeNull();
   });
 });

@@ -2,13 +2,13 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { ShowStatusState } from "@/lib/tracking/types";
+import type { ShowTrackingState } from "@/lib/tracking/types";
 
 /**
- * covers: spec 0013, AC-1, AC-2, AC-4, AC-21; spec 0015, AC-19
+ * covers: spec 0020, AC-2 to AC-4
  *
  * The Server Actions, the router and Sonner are the boundaries. Each action is
- * a deferred promise the test settles by hand, so the optimistic label can be
+ * a deferred promise the test settles by hand, so the optimistic pill can be
  * asserted while the write is in flight and again once it settles.
  */
 const pending: ((value: unknown) => void)[] = [];
@@ -19,8 +19,10 @@ const action = vi.fn(
     }),
 );
 vi.mock("@/app/shows/actions", () => ({
-  setShowStatus: (...args: unknown[]) => action("set", ...args),
-  restoreShowStatus: (...args: unknown[]) => action("restore", ...args),
+  trackShow: (...args: unknown[]) => action("track", ...args),
+  setShowHold: (...args: unknown[]) => action("hold", ...args),
+  untrackShow: (...args: unknown[]) => action("untrack", ...args),
+  restoreShowTracking: (...args: unknown[]) => action("restore", ...args),
 }));
 
 const push = vi.fn();
@@ -34,11 +36,11 @@ vi.mock("sonner", () => ({
   }),
 }));
 
-const { ShowStatusControl } = await import("./show-status-control");
+const { ShowTrackingControl } = await import("./show-tracking-control");
 
-function renderControl(state: ShowStatusState | null) {
+function renderControl(state: ShowTrackingState | null) {
   return render(
-    <ShowStatusControl
+    <ShowTrackingControl
       showId={1396}
       showName="Breaking Bad"
       state={state}
@@ -48,7 +50,7 @@ function renderControl(state: ShowStatusState | null) {
 }
 
 const pill = () =>
-  screen.getByRole("button", { name: /status for Breaking Bad/ });
+  screen.getByRole("button", { name: /tracking for Breaking Bad/ });
 
 async function settle(value: unknown) {
   await act(async () => {
@@ -61,126 +63,112 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-describe("ShowStatusControl", () => {
-  it("reads Add to my shows with no row, and lists the five statuses without Remove (AC-1)", async () => {
+describe("ShowTrackingControl", () => {
+  it("offers Plan to watch for an untracked show, and tracks it optimistically (AC-2)", async () => {
     const user = userEvent.setup();
     renderControl(null);
-    expect(pill()).toHaveAccessibleName(
-      "Add to my shows, status for Breaking Bad",
+    const plan = screen.getByRole("button", {
+      name: "Plan to watch: Breaking Bad",
+    });
+    expect(plan).toHaveClass("h-11", "md:h-9");
+    await user.click(plan);
+    expect(action).toHaveBeenCalledWith("track", 1396);
+    await waitFor(() =>
+      expect(pill()).toHaveAccessibleName(
+        "Tracking, tracking for Breaking Bad",
+      ),
     );
-    expect(pill()).toHaveClass("h-11", "md:h-9");
+    // Settled, so no transition is left open for the next case.
+    await settle({ ok: true });
+  });
 
+  it("offers Pause, Drop and Stop tracking with no hold (AC-2)", async () => {
+    const user = userEvent.setup();
+    renderControl({ hold: null });
+    expect(pill()).toHaveAccessibleName("Tracking, tracking for Breaking Bad");
     await user.click(pill());
-    const items = await screen.findAllByRole("menuitemradio");
+    const items = await screen.findAllByRole("menuitem");
     expect(items.map((item) => item.textContent)).toEqual([
-      "Want to Watch",
-      "Watching",
-      "On Hold",
-      "Dropped",
-      "Completed",
+      "Pause",
+      "Drop",
+      "Stop tracking",
     ]);
-    expect(
-      items.every((item) => item.getAttribute("aria-checked") === "false"),
-    ).toBe(true);
-    expect(
-      screen.queryByRole("menuitem", { name: "Remove status" }),
-    ).toBeNull();
   });
 
-  it("checks the current status and offers Remove status when a row exists (AC-1)", async () => {
-    const user = userEvent.setup();
-    renderControl({ status: "watching", source: "system" });
-    expect(pill()).toHaveAccessibleName("Watching, status for Breaking Bad");
-    await user.click(pill());
-    expect(
-      await screen.findByRole("menuitemradio", { name: "Watching" }),
-    ).toHaveAttribute("aria-checked", "true");
-    expect(
-      screen.getByRole("menuitem", { name: "Remove status" }),
-    ).toBeInTheDocument();
-  });
+  it.each([
+    ["paused", "Paused", ["Resume", "Drop", "Stop tracking"]],
+    ["dropped", "Dropped", ["Resume", "Pause", "Stop tracking"]],
+  ] as const)(
+    "offers Resume, the other hold and Stop tracking when %s (AC-2)",
+    async (hold, label, menu) => {
+      const user = userEvent.setup();
+      renderControl({ hold });
+      expect(pill()).toHaveAccessibleName(
+        `${label}, tracking for Breaking Bad`,
+      );
+      await user.click(pill());
+      const items = await screen.findAllByRole("menuitem");
+      expect(items.map((item) => item.textContent)).toEqual(menu);
+    },
+  );
 
-  it("opens with the keyboard and picks a status optimistically, rolling back on failure (AC-1, AC-2)", async () => {
+  it("pauses over the hold it showed, rolling back on failure (AC-4)", async () => {
     const user = userEvent.setup();
-    renderControl({ status: "watching", source: "user" });
+    renderControl({ hold: null });
     pill().focus();
     await user.keyboard("{Enter}");
     await screen.findByRole("menu");
-    await user.click(screen.getByRole("menuitemradio", { name: "Dropped" }));
+    await user.click(screen.getByRole("menuitem", { name: "Pause" }));
 
-    expect(action).toHaveBeenCalledWith("set", 1396, "dropped", "watching");
+    expect(action).toHaveBeenCalledWith("hold", 1396, "paused", null);
     await waitFor(() =>
-      expect(pill()).toHaveAccessibleName("Dropped, status for Breaking Bad"),
+      expect(pill()).toHaveAccessibleName("Paused, tracking for Breaking Bad"),
     );
 
-    await settle({ ok: false, error: "session_expired" });
-    expect(pill()).toHaveAccessibleName("Watching, status for Breaking Bad");
-    expect(toast).toHaveBeenCalledWith(
-      "Your session expired. Sign in to save this.",
-      expect.objectContaining({ id: "show-status-1396" }),
-    );
-  });
-
-  it("sends nothing when the current status the user chose is chosen again", async () => {
-    const user = userEvent.setup();
-    renderControl({ status: "watching", source: "user" });
-    await user.click(pill());
-    await user.click(
-      await screen.findByRole("menuitemradio", { name: "Watching" }),
-    );
-    expect(action).not.toHaveBeenCalled();
-  });
-
-  it("pins a status the system set when it is chosen again, quietly (spec 0015, AC-19)", async () => {
-    const user = userEvent.setup();
-    renderControl({ status: "completed", source: "system" });
-    await user.click(pill());
-    await user.click(
-      await screen.findByRole("menuitemradio", { name: "Completed" }),
-    );
-    expect(action).toHaveBeenCalledWith("set", 1396, "completed", "completed");
-    expect(pill()).toHaveAccessibleName("Completed, status for Breaking Bad");
-
-    await settle({
-      ok: true,
-      undo: {
-        expected: "completed",
-        status: "completed",
-        source: "system",
-        listedAt: null,
-        removedAt: null,
-      },
-    });
-    expect(pill()).toHaveAccessibleName("Completed, status for Breaking Bad");
-    expect(toast).not.toHaveBeenCalled();
-  });
-
-  it("removes the status and offers Undo with the reported values (AC-4)", async () => {
-    const user = userEvent.setup();
-    renderControl({ status: "on_hold", source: "user" });
-    await user.click(pill());
-    await user.click(
-      await screen.findByRole("menuitem", { name: "Remove status" }),
-    );
-
-    expect(action).toHaveBeenCalledWith("set", 1396, null, "on_hold");
+    await settle({ ok: false, error: "hold_changed" });
     await waitFor(() =>
       expect(pill()).toHaveAccessibleName(
-        "Add to my shows, status for Breaking Bad",
+        "Tracking, tracking for Breaking Bad",
       ),
+    );
+    expect(toast).toHaveBeenCalledWith(
+      "This show changed elsewhere. Showing the current one.",
+      expect.objectContaining({ id: "show-tracking-1396" }),
+    );
+  });
+
+  it("resumes a dropped show over the hold it showed", async () => {
+    const user = userEvent.setup();
+    renderControl({ hold: "dropped" });
+    await user.click(pill());
+    await user.click(await screen.findByRole("menuitem", { name: "Resume" }));
+    expect(action).toHaveBeenCalledWith("hold", 1396, null, "dropped");
+  });
+
+  it("stops tracking and offers Undo with the reported values (AC-3)", async () => {
+    const user = userEvent.setup();
+    renderControl({ hold: "paused" });
+    await user.click(pill());
+    await user.click(
+      await screen.findByRole("menuitem", { name: "Stop tracking" }),
+    );
+
+    expect(action).toHaveBeenCalledWith("untrack", 1396, "paused");
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Plan to watch: Breaking Bad" }),
+      ).toBeInTheDocument(),
     );
 
     const undo = {
-      expected: null,
-      status: "on_hold",
-      source: "user",
-      listedAt: null,
-      removedAt: "2026-09-26T10:00:00+00:00",
+      trackedAt: "2026-09-01T10:00:00+00:00",
+      hold: "paused",
+      holdChangedAt: "2026-09-02T10:00:00+00:00",
     };
     await settle({ ok: true, undo });
     expect(toast).toHaveBeenLastCalledWith(
-      "Removed Breaking Bad from your shows",
-      expect.objectContaining({ id: "show-status-1396" }),
+      "Stopped tracking Breaking Bad",
+      expect.objectContaining({ id: "show-tracking-1396" }),
     );
 
     const options = toast.mock.calls.at(-1)?.[1] as {
@@ -188,7 +176,7 @@ describe("ShowStatusControl", () => {
     };
     act(() => options.action.onClick({ preventDefault: vi.fn() }));
     expect(action).toHaveBeenLastCalledWith("restore", 1396, undo);
-    await settle({ ok: true, undo: null });
-    expect(dismiss).toHaveBeenCalledWith("show-status-1396");
+    await settle({ ok: true });
+    expect(dismiss).toHaveBeenCalledWith("show-tracking-1396");
   });
 });

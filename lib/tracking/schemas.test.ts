@@ -7,13 +7,15 @@ import {
   movieIdSchema,
   ratingInputSchema,
   ratingSchema,
-  restoreShowStatusInputSchema,
+  restoreShowTrackingInputSchema,
   restoreWatchedInputSchema,
   restoreWatchlistInputSchema,
   seasonNumberSchema,
   seasonUndoInputSchema,
   seasonWatchedInputSchema,
-  showStatusInputSchema,
+  showHoldInputSchema,
+  trackShowInputSchema,
+  untrackShowInputSchema,
   watchedInputSchema,
   watchlistInputSchema,
 } from "./schemas";
@@ -257,128 +259,112 @@ describe("seasonUndoInputSchema restore dates (spec 0011, AC-11, AC-15)", () => 
 });
 
 /** covers: spec 0013, AC-19, AC-21 */
-describe("showStatusInputSchema (spec 0013, AC-21)", () => {
-  it("accepts each of the five statuses and null, which removes the row", () => {
-    for (const status of [
-      "want_to_watch",
-      "watching",
-      "on_hold",
-      "dropped",
-      "completed",
-      null,
-    ]) {
-      expect(
-        showStatusInputSchema.safeParse({
-          showId: 1,
-          status,
-          expected: "watching",
-        }).success,
-      ).toBe(true);
+describe("tracking input schemas (spec 0020, AC-2 to AC-4)", () => {
+  it("tracks a show by id alone", () => {
+    expect(trackShowInputSchema.safeParse({ showId: 1396 }).success).toBe(true);
+    expect(trackShowInputSchema.safeParse({ showId: 0 }).success).toBe(false);
+  });
+
+  it("accepts every hold and none, as the target and as the expected value", () => {
+    for (const hold of ["paused", "dropped", null]) {
+      for (const expected of ["paused", "dropped", null]) {
+        expect(
+          showHoldInputSchema.safeParse({ showId: 1396, hold, expected })
+            .success,
+        ).toBe(true);
+      }
     }
   });
 
-  it("accepts null as the expected status of a first write, but not of a removal", () => {
+  it("refuses a status word or a missing expected value", () => {
     expect(
-      showStatusInputSchema.safeParse({
-        showId: 1,
-        status: "watching",
-        expected: null,
-      }).success,
-    ).toBe(true);
-    expect(
-      showStatusInputSchema.safeParse({
-        showId: 1,
-        status: null,
+      showHoldInputSchema.safeParse({
+        showId: 1396,
+        hold: "on_hold",
         expected: null,
       }).success,
     ).toBe(false);
-  });
-
-  it("refuses a missing expected status rather than reading it as no row", () => {
     expect(
-      showStatusInputSchema.safeParse({ showId: 1, status: "watching" })
-        .success,
+      showHoldInputSchema.safeParse({ showId: 1396, hold: "paused" }).success,
     ).toBe(false);
-  });
-
-  it("refuses a missing status rather than reading it as a removal", () => {
-    expect(showStatusInputSchema.safeParse({ showId: 1396 }).success).toBe(
+    expect(untrackShowInputSchema.safeParse({ showId: 1396 }).success).toBe(
       false,
     );
-  });
-
-  it("drops a client supplied owner or source instead of passing it on", () => {
-    const parsed = showStatusInputSchema.parse({
-      showId: 1396,
-      status: "watching",
-      expected: null,
-      userId: "user-b",
-      source: "system",
-    });
-    expect(parsed).toEqual({
-      showId: 1396,
-      status: "watching",
-      expected: null,
-    });
+    expect(
+      untrackShowInputSchema.safeParse({ showId: 1396, expected: null })
+        .success,
+    ).toBe(true);
   });
 });
 
-describe("restoreShowStatusInputSchema (spec 0013, AC-19, AC-21)", () => {
+describe("restoreShowTrackingInputSchema (spec 0020, AC-3)", () => {
   afterEach(() => {
     vi.useRealTimers();
   });
 
-  const stopWatching = {
-    expected: "on_hold",
-    status: "watching",
-    source: "system",
-    listedAt: "2026-09-01T10:00:00Z",
-    removedAt: null,
-  };
+  const parse = (undo: object) =>
+    restoreShowTrackingInputSchema.safeParse({ showId: 1396, undo }).success;
 
-  it("accepts a Stop watching Undo, which needs no removal time", () => {
+  it("accepts an Undo with no hold, and one with a hold and its time", () => {
     expect(
-      restoreShowStatusInputSchema.safeParse({
-        showId: 1396,
-        undo: stopWatching,
-      }).success,
+      parse({
+        trackedAt: "2026-09-01T10:00:00Z",
+        hold: null,
+        holdChangedAt: null,
+      }),
+    ).toBe(true);
+    expect(
+      parse({
+        trackedAt: "2026-09-01T10:00:00Z",
+        hold: "paused",
+        holdChangedAt: "2026-09-02T10:00:00.123456+00:00",
+      }),
     ).toBe(true);
   });
 
-  it("accepts a removal's Undo with no listed_at, since the row may predate it", () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-09-25T12:00:00Z"));
+  it("refuses a hold without its time, or a time without its hold", () => {
     expect(
-      restoreShowStatusInputSchema.safeParse({
-        showId: 1396,
-        undo: {
-          ...stopWatching,
-          expected: null,
-          listedAt: null,
-          removedAt: "2026-09-25T11:59:00Z",
-        },
-      }).success,
-    ).toBe(true);
-  });
-
-  it("accepts a removal time equal to now, and refuses one a millisecond later", () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-09-25T12:00:00.000Z"));
-    const removal = (removedAt: string) =>
-      restoreShowStatusInputSchema.safeParse({
-        showId: 1396,
-        undo: { ...stopWatching, expected: null, removedAt },
-      }).success;
-    expect(removal("2026-09-25T12:00:00.000Z")).toBe(true);
-    expect(removal("2026-09-25T12:00:00.001Z")).toBe(false);
-  });
-
-  it("refuses an expected status that is not one of the five", () => {
-    expect(
-      restoreShowStatusInputSchema.safeParse({
-        showId: 1396,
-        undo: { ...stopWatching, expected: "paused" },
-      }).success,
+      parse({
+        trackedAt: "2026-09-01T10:00:00Z",
+        hold: "paused",
+        holdChangedAt: null,
+      }),
     ).toBe(false);
+    expect(
+      parse({
+        trackedAt: "2026-09-01T10:00:00Z",
+        hold: null,
+        holdChangedAt: "2026-09-02T10:00:00Z",
+      }),
+    ).toBe(false);
+  });
+
+  it("refuses a hold changed before the show was tracked", () => {
+    expect(
+      parse({
+        trackedAt: "2026-09-03T10:00:00Z",
+        hold: "dropped",
+        holdChangedAt: "2026-09-02T10:00:00Z",
+      }),
+    ).toBe(false);
+  });
+
+  it("refuses a time in the future", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-26T10:00:00Z"));
+    expect(
+      parse({
+        trackedAt: "2026-09-26T10:00:00.001Z",
+        hold: null,
+        holdChangedAt: null,
+      }),
+    ).toBe(false);
+    expect(
+      parse({
+        trackedAt: "2026-09-26T10:00:00Z",
+        hold: null,
+        holdChangedAt: null,
+      }),
+    ).toBe(true);
   });
 });

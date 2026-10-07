@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { EpisodeTrackingError, ShowStatusError } from "./types";
+import type { EpisodeTrackingError, ShowTrackingError } from "./types";
 
 /**
  * The only way a tracking path writes to the log (spec 0007, AC-21).
@@ -18,7 +18,6 @@ export const TRACKING_EVENT = {
   listRead: "movie_tracking.list_read",
   restoreWatchlist: "movie_tracking.restore_watchlist",
   restoreWatched: "movie_tracking.restore_watched",
-  comingSoonRead: "movie_tracking.coming_soon_read",
   episodeWatched: "episode_tracking.watched",
   episodeUndoMark: "episode_tracking.undo_mark",
   episodeRate: "episode_tracking.rate",
@@ -26,12 +25,13 @@ export const TRACKING_EVENT = {
   seasonWatched: "season_tracking.watched",
   seasonUndo: "season_tracking.undo",
   showRatingRead: "show_tracking.rating_read",
-  showStatus: "show_tracking.status",
-  restoreShowStatus: "show_tracking.restore_status",
-  showStatusRead: "show_tracking.status_read",
+  trackShow: "show_tracking.track",
+  showHold: "show_tracking.hold",
+  untrackShow: "show_tracking.untrack",
+  restoreShowTracking: "show_tracking.restore",
+  showTrackingRead: "show_tracking.read",
   watchedEpisodesRead: "show_tracking.watched_read",
-  upNextRead: "show_tracking.up_next_read",
-  autoComplete: "show_tracking.auto_complete",
+  heldShowsRead: "show_tracking.held_read",
 } as const;
 
 export type TrackingEvent =
@@ -41,16 +41,13 @@ export type TrackingEvent =
  * The classified reason. `forbidden` is a `42501` (a missing grant or a policy
  * refusal, which means a bug) and `db_error` is anything else from Postgres;
  * both reach the client as `write_failed` but stay apart here, so a broken
- * grant is not mistaken for a flaky network. `incomplete` is an automatic
- * completion check whose TMDB episode read had a failed season, so it could
- * not decide (spec 0015, AC-6, AC-12).
+ * grant is not mistaken for a flaky network.
  */
 export type TrackingOutcome =
   | EpisodeTrackingError
-  | ShowStatusError
+  | ShowTrackingError
   | "forbidden"
-  | "db_error"
-  | "incomplete";
+  | "db_error";
 
 /**
  * Records one failed or refused tracking attempt. Successful writes are not

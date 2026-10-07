@@ -2,18 +2,15 @@ import type { ReactNode } from "react";
 
 import { PosterCard } from "@/components/poster-card";
 import {
-  CalculatedRatingBadge,
   PersonalScoreBadge,
   TmdbRatingBadge,
 } from "@/components/rating-badges";
 import { CardRoundButton } from "@/components/tracking/card-round-button";
-import {
-  PlannedIcon,
-  StopWatchingIcon,
-  WatchedIcon,
-} from "@/components/tracking/tracking-icons";
+import { PlannedIcon, WatchedIcon } from "@/components/tracking/tracking-icons";
+import { UPCOMING_MESSAGES } from "@/lib/tracking/messages";
 
-import { type LibraryItem, type LibraryList, SHOW_CARD } from "./types";
+import { DatedPill, DateTbaPill } from "./dated-pill";
+import type { LibraryList, LibraryMovieItem } from "./types";
 
 /**
  * The caption and fallback tile text for a title TMDB no longer has
@@ -22,145 +19,103 @@ import { type LibraryItem, type LibraryList, SHOW_CARD } from "./types";
 const MISSING_TITLE = "No longer on TMDB";
 
 /**
- * One card on a list page (spec 0008, AC-1, AC-2; spec 0013, AC-15 to
- * AC-17), built on `PosterCard`.
+ * One movie card on a library page (spec 0008, AC-1, AC-2; spec 0020,
+ * AC-13), built on `PosterCard`.
  *
- * The watchlist card carries the amber TMDB rating and, bottom right, the
- * button that takes it off the list: the green Planned bookmark for a movie
- * or a Want to Watch show, Stop watching for a Watching show. A show card
- * also carries its Next episode pill bottom left, streamed from the server.
- * The watched card carries the cyan personal score, only when the movie has
- * one, and the filled watched mark. A Completed show on the watched page
- * carries its calculated show rating, only when it has one, never the TMDB
- * rating, and no button at all: its history is edited on the show page,
- * never from this grid (spec 0019, AC-5, AC-6; `SHOW_CARD`). Every button only reports the
- * tap through `onRemove`: `LibraryGrid` owns the optimistic hide, the action
- * call and the toast.
- *
- * @param nextEpisode A show card's Next episode pill, already wrapped in its
- * own Suspense boundary so the card never waits for it.
+ * The Watchlist card carries the amber TMDB rating and the green Planned
+ * bookmark that unplans it. The Upcoming card carries its release date, or
+ * Date TBA, bottom left, and the same bookmark, with no rating badge (the
+ * spec 0014 Coming soon card). The Watched card carries the cyan personal
+ * score, only when the movie has one, and the filled watched mark. Every
+ * button only reports the tap through `onRemove`: `LibraryGrid` owns the
+ * optimistic hide, the action call and the toast.
  */
 function LibraryCard({
   list,
   item,
-  nextEpisode,
   onRemove,
   priority,
 }: {
   list: LibraryList;
-  item: LibraryItem;
-  nextEpisode?: ReactNode;
+  item: LibraryMovieItem;
   onRemove: () => void;
   priority: boolean;
 }) {
   if (item.title === null) {
-    return <MissingTitleCard list={list} item={item} onRemove={onRemove} />;
+    return <MissingTitleCard list={list} onRemove={onRemove} />;
   }
-
-  const button = hasButton(list, item) ? (
-    <RemoveButton
-      list={list}
-      item={item}
-      title={item.title}
-      onRemove={onRemove}
-    />
-  ) : null;
-  const pill = item.kind === "tv" ? nextEpisode : null;
 
   return (
     <PosterCard
       title={item.title}
       posterUrl={item.posterUrl}
-      href={
-        item.kind === "tv" ? `/shows/${item.tmdbId}` : `/movies/${item.tmdbId}`
-      }
+      href={`/movies/${item.tmdbId}`}
       badge={cardBadge(list, item)}
       controls={
-        button || pill ? (
-          <>
-            {pill}
-            {button}
-          </>
-        ) : undefined
+        <>
+          {list === "upcoming" ? <ReleasePill item={item} /> : null}
+          <RemoveButton list={list} title={item.title} onRemove={onRemove} />
+        </>
       }
       priority={priority}
     />
   );
 }
 
-/**
- * The badge a card carries: the amber TMDB rating on the watchlist; on
- * `/watched`, the cyan personal score of a movie or the calculated rating of
- * a show, only when it has one (spec 0019, AC-5).
- */
-function cardBadge(list: LibraryList, item: LibraryItem): ReactNode {
-  if (list === "watchlist") return <TmdbRatingBadge value={item.tmdbRating} />;
-  if (item.kind === "tv") {
-    if (!SHOW_CARD[list].calculatedRating || item.showRating === null) {
-      return undefined;
-    }
-    return (
-      <CalculatedRatingBadge value={item.showRating} label="Your show rating" />
-    );
+/** The release date on an Upcoming card, or Date TBA (AC-13). */
+function ReleasePill({ item }: { item: LibraryMovieItem }) {
+  if (item.release === null) {
+    return <DateTbaPill label={UPCOMING_MESSAGES.releaseTba} />;
   }
-  return item.rating !== null ? (
-    <PersonalScoreBadge value={item.rating} />
-  ) : undefined;
+  return (
+    <DatedPill
+      slot="release-date"
+      label={UPCOMING_MESSAGES.releases(item.release.fullDate)}
+      text={item.release.shortDate}
+    />
+  );
 }
 
 /**
- * Whether a card carries a button. Every movie card does; a show card only
- * where `SHOW_CARD` says so, since nothing on `/watched` unmarks, removes or
- * changes a show (spec 0019, AC-6). Explicit here rather than a side effect
- * of `RemoveButton`'s branches, which would otherwise draw an Unmark button
- * for it.
+ * The badge a card carries: the amber TMDB rating on Watchlist, the cyan
+ * personal score on Watched when there is one, and none on Upcoming.
  */
-function hasButton(list: LibraryList, item: Pick<LibraryItem, "kind">) {
-  return item.kind === "movie" || SHOW_CARD[list].button;
+function cardBadge(list: LibraryList, item: LibraryMovieItem): ReactNode {
+  if (list === "watchlist") return <TmdbRatingBadge value={item.tmdbRating} />;
+  if (list === "watched" && item.rating !== null) {
+    return <PersonalScoreBadge value={item.rating} />;
+  }
+  return undefined;
 }
 
 /**
  * A row whose title TMDB no longer has (`missingIds`). It keeps the card's
- * footprint and the removal its status implies, so the user can clear the
- * row, but has no title link because there is no page to open (spec 0008,
- * AC-11; spec 0013, AC-17). A show on the watched page has no removal, so its
- * card has no button either (spec 0019, AC-8).
+ * footprint and its removal, so the user can clear the row, but has no title
+ * link because there is no page to open (spec 0008, AC-11; spec 0020,
+ * AC-17).
  */
 function MissingTitleCard({
   list,
-  item,
   onRemove,
 }: {
   list: LibraryList;
-  item: LibraryItem;
   onRemove: () => void;
 }) {
   return (
     <PosterCard
       title={MISSING_TITLE}
       posterUrl={null}
-      controls={
-        hasButton(list, item) ? (
-          <RemoveButton
-            list={list}
-            item={item}
-            title={null}
-            onRemove={onRemove}
-          />
-        ) : undefined
-      }
+      controls={<RemoveButton list={list} title={null} onRemove={onRemove} />}
     />
   );
 }
 
 function RemoveButton({
   list,
-  item,
   title,
   onRemove,
 }: {
   list: LibraryList;
-  item: LibraryItem;
   title: string | null;
   onRemove: () => void;
 }) {
@@ -178,21 +133,9 @@ function RemoveButton({
     );
   }
 
-  if (item.kind === "tv" && item.status === "watching") {
-    return (
-      <CardRoundButton
-        label={`Stop watching ${name}`}
-        onClick={onRemove}
-        className="ml-auto"
-      >
-        <StopWatchingIcon className="size-4" />
-      </CardRoundButton>
-    );
-  }
-
   return (
     <CardRoundButton
-      label={`Remove ${name} from Watchlist`}
+      label={`Remove ${name} from ${list === "upcoming" ? "Upcoming" : "Watchlist"}`}
       onClick={onRemove}
       className="ml-auto"
     >

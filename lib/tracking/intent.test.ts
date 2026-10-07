@@ -4,7 +4,7 @@ import { applyTrackingIntent } from "./intent";
 import { EMPTY_MOVIE_TRACKING, type MovieTrackingState } from "./types";
 
 /**
- * covers: spec 0007, AC-4, AC-5, AC-6, AC-8, AC-9, AC-15
+ * covers: spec 0007, AC-4, AC-5, AC-6, AC-8, AC-9, AC-15; spec 0020, AC-14
  *
  * The optimistic reducer must agree with `mark_movie_watched` and `rate_movie`
  * exactly, or a control flips twice. Each case here mirrors one in
@@ -21,11 +21,11 @@ const watchedAndPlanned: MovieTrackingState = {
 };
 
 describe("applyTrackingIntent", () => {
-  it("the first watch sets watched and clears the bookmark (AC-4)", () => {
+  it("the first watch sets watched and keeps the bookmark (spec 0020, AC-14)", () => {
     expect(
       applyTrackingIntent(planned, { kind: "watched", value: true }),
     ).toEqual({
-      inWatchlist: false,
+      inWatchlist: true,
       watched: true,
       rating: null,
     });
@@ -53,9 +53,9 @@ describe("applyTrackingIntent", () => {
     });
   });
 
-  it("rating an unwatched, planned movie sets all three (AC-8)", () => {
+  it("rating an unwatched, planned movie marks it and keeps the plan (AC-8; spec 0020, AC-14)", () => {
     expect(applyTrackingIntent(planned, { kind: "rating", value: 8 })).toEqual({
-      inWatchlist: false,
+      inWatchlist: true,
       watched: true,
       rating: 8,
     });

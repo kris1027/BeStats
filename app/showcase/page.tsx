@@ -11,6 +11,7 @@ import {
   LegalList,
   LegalSection,
 } from "@/components/legal/legal-document";
+import { DatedPill, DateTbaPill } from "@/components/library/dated-pill";
 import { PosterCard } from "@/components/poster-card";
 import { PosterGrid } from "@/components/poster-grid";
 import {
@@ -38,7 +39,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { DatedPill } from "@/components/upcoming/dated-pill";
 
 import { CardRoundButtonDemo } from "./card-round-button-demo";
 
@@ -206,7 +206,6 @@ export default function ShowcasePage() {
             Stop watching
           </GlassPill>
           <GlassPill icon={<NextEpisodeIcon />}>S2E4</GlassPill>
-          <GlassPill icon={<NextEpisodeIcon />}>Up to date</GlassPill>
           <DatedPill
             slot="showcase-dated-pill"
             label="Releases December 25, 2026"
@@ -217,14 +216,16 @@ export default function ShowcasePage() {
             label="Releases February 3, 2027"
             text="Feb 3, 2027"
           />
+          <DateTbaPill label="Release date to be announced" />
         </div>
         <p className="max-w-[65ch] text-sm text-muted-foreground">
           A TMDB badge with no value renders nothing; a personal score with no
           value renders &ldquo;Not rated&rdquo;. Plan, Planned and the watched
           marks are the movie tracking marks from spec 0007, drawn from the
-          legend&rsquo;s own paths. Next episode and Release date are the Up
-          Next and Coming soon pills from spec 0014; below <code>sm</code> a
-          release date that carries its year drops the calendar glyph.
+          legend&rsquo;s own paths. Next episode is the Watchlist show
+          card&rsquo;s pill, and the dated and Date TBA pills sit on Upcoming
+          cards (spec 0020); below <code>sm</code> a date that carries its year
+          drops the calendar glyph.
         </p>
       </Section>
 

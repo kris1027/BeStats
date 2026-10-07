@@ -1,69 +1,55 @@
 import { Suspense } from "react";
 
-import { MISSING_TITLE } from "@/components/library/library-card";
 import { PosterCard } from "@/components/poster-card";
+import type { LibraryTitle } from "@/lib/tracking/library-lists";
+import type { EpisodePlace } from "@/lib/tv/library-page";
 
-import { upNextCardLinkId } from "./ids";
+import { showCardLinkId } from "./ids";
 import {
-  UpNextCaption,
-  UpNextControls,
-  UpNextPillSkeleton,
-} from "./up-next-pill";
-
-/** One Up Next card: a Watching show, or one TMDB no longer has. */
-export type UpNextItem = {
-  showId: number;
-  /** Null when TMDB no longer has the show (`missingIds`). */
-  name: string | null;
-  posterUrl: string | null;
-};
+  NextEpisodeName,
+  WatchlistShowControls,
+  WatchlistShowControlsPending,
+} from "./watchlist-show-controls";
 
 /**
- * One card in the Up Next section (spec 0014, AC-5 to AC-8, AC-16), on
- * `PosterCard`, with no TMDB rating badge.
+ * One show on Watchlist (spec 0020, AC-9), the spec 0014 Up Next card on
+ * `PosterCard`: the poster, the name linking to the show, the next episode
+ * as "S1E3" with its name once it loads, and Mark watched. No rating badge.
  *
- * The poster and the name render at once. The pill, the Mark watched button
- * and the caught up caption wait on the show's episodes, each in a Suspense
- * boundary of its own that reads the same cached card state, so no card
- * holds up another and the caption always agrees with the pill (AC-6).
- *
- * A show TMDB no longer has keeps its footprint as a "No longer on TMDB"
- * card with no link, pill or button: there is nothing to open or mark (AC-7).
- *
- * @param watchedIdsKey Every Up Next show id, so one watched ids read serves
- * the whole section.
+ * The poster, the name and the pill render at once: classification already
+ * named the episode. The button and the episode name wait on the season
+ * read, each in a Suspense boundary of its own that reads the same cached
+ * state, so no card holds up another.
  */
-function UpNextCard({
-  item,
-  watchedIdsKey,
+function WatchlistShowCard({
+  showId,
+  title,
+  next,
   priority,
 }: {
-  item: UpNextItem;
-  watchedIdsKey: string;
+  showId: number;
+  title: LibraryTitle;
+  next: EpisodePlace;
   priority: boolean;
 }) {
-  if (item.name === null) {
-    return <PosterCard title={MISSING_TITLE} posterUrl={null} />;
-  }
-
   return (
     <PosterCard
-      title={item.name}
-      posterUrl={item.posterUrl}
-      href={`/shows/${item.showId}`}
-      linkId={upNextCardLinkId(item.showId)}
+      title={title.name}
+      posterUrl={title.posterUrl}
+      href={`/shows/${showId}`}
+      linkId={showCardLinkId(showId)}
       controls={
-        <Suspense fallback={<UpNextPillSkeleton />}>
-          <UpNextControls
-            showId={item.showId}
-            showName={item.name}
-            watchedIdsKey={watchedIdsKey}
+        <Suspense fallback={<WatchlistShowControlsPending next={next} />}>
+          <WatchlistShowControls
+            showId={showId}
+            showName={title.name}
+            next={next}
           />
         </Suspense>
       }
       meta={
         <Suspense fallback={null}>
-          <UpNextCaption showId={item.showId} watchedIdsKey={watchedIdsKey} />
+          <NextEpisodeName showId={showId} next={next} />
         </Suspense>
       }
       priority={priority}
@@ -71,4 +57,4 @@ function UpNextCard({
   );
 }
 
-export { UpNextCard };
+export { WatchlistShowCard };

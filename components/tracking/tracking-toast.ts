@@ -11,7 +11,7 @@ import {
 import type {
   EpisodeTrackingError,
   MovieTrackingError,
-  ShowStatusError,
+  ShowTrackingError,
 } from "@/lib/tracking/types";
 
 /** Which control failed, so each keeps one toast of its own. */
@@ -29,7 +29,7 @@ export type TrackingControl = "watchlist" | "watched" | "rating";
  * @returns The error class, or null when the write landed.
  */
 export async function settleTrackingCall<
-  E extends EpisodeTrackingError | ShowStatusError,
+  E extends EpisodeTrackingError | ShowTrackingError,
 >(
   call: () => Promise<{ ok: true } | { ok: false; error: E }>,
 ): Promise<E | "write_failed" | null> {
@@ -100,13 +100,13 @@ export function showEpisodeTrackingError(
 }
 
 /**
- * Runs a status action and keeps its whole result, which carries the Undo
- * (spec 0013). A rejected call settles as `write_failed`, as
+ * Runs an action and keeps its whole result, which can carry an Undo (spec
+ * 0013, spec 0020). A rejected call settles as `write_failed`, as
  * `settleTrackingCall` does, so the control rolls back with a toast.
  *
  * @param call The Server Action call.
  */
-export async function settleStatusCall<R extends { ok: boolean }>(
+export async function settleResultCall<R extends { ok: boolean }>(
   call: () => Promise<R>,
 ): Promise<R | { ok: false; error: "write_failed" }> {
   try {
@@ -117,17 +117,18 @@ export async function settleStatusCall<R extends { ok: boolean }>(
 }
 
 /**
- * Shows the toast for a failed show status write (spec 0013, AC-2, AC-21).
- * The caller names the toast id, one per show and surface, so repeated
- * failures replace each other and an Undo's outcome rewrites its own toast.
+ * Shows the toast for a failed show tracking write (spec 0020, AC-2 to
+ * AC-4). The caller names the toast id, one per show and surface, so
+ * repeated failures replace each other and an Undo's outcome rewrites its
+ * own toast.
  *
  * @param error The error class the action returned.
  * @param options.id The toast id.
  * @param options.returnPath The page to come back to after signing in.
  * @param options.navigate The router push, for the Sign in action.
  */
-export function showStatusError(
-  error: ShowStatusError,
+export function showShowTrackingError(
+  error: ShowTrackingError,
   {
     id,
     returnPath,
@@ -143,7 +144,7 @@ export function showStatusError(
 
 /** The Sign in action a session expired toast carries, and no other. */
 function signInAction(
-  error: EpisodeTrackingError | ShowStatusError,
+  error: EpisodeTrackingError | ShowTrackingError,
   returnPath: string,
   navigate: (href: string) => void,
 ) {

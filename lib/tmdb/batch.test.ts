@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { restoreFetchMock } from "./__fixtures__/helpers";
-import { fetchMoviesByIds, fetchTvShowsByIds } from "./batch";
+import { fetchMoviesByIds, fetchTvShowsByIds, readEachSettled } from "./batch";
 import { mapWithConcurrency } from "./concurrency";
 import { TMDB_CONCURRENCY_LIMIT } from "./constants";
 import { TmdbError } from "./errors";
@@ -69,6 +69,8 @@ function show(id: number, seasonNumbers: number[]): TvShow {
       posterUrl: null,
       isSpecials: seasonNumber === 0,
     })),
+    lastEpisodeToAir: null,
+    nextEpisodeToAir: null,
   };
 }
 
@@ -233,5 +235,47 @@ describe("fetchShowEpisodes", () => {
 
     expect(result.episodes).toEqual([]);
     expect(result.complete).toBe(true);
+  });
+});
+
+/** covers: spec 0020, AC-17 */
+describe("readEachSettled", () => {
+  const fail = (kind: TmdbError["kind"]) => () =>
+    Promise.reject(new TmdbError(kind, "/movie/1", kind));
+
+  it("keeps a failure to its own title, in input order", async () => {
+    const readers: Record<number, () => Promise<string>> = {
+      1: () => Promise.resolve("one"),
+      2: fail("not_found"),
+      3: fail("timeout"),
+      4: fail("upstream"),
+      5: () => Promise.resolve("five"),
+    };
+    const result = await readEachSettled([1, 2, 3, 4, 5], (id) =>
+      readers[id](),
+    );
+    expect([...result.found.entries()]).toEqual([
+      [1, "one"],
+      [5, "five"],
+    ]);
+    expect(result.missingIds).toEqual([2]);
+    expect(result.failedIds).toEqual([3, 4]);
+  });
+
+  it.each(["unauthorized", "rate_limited"] as const)(
+    "raises a systemic %s failure",
+    async (kind) => {
+      await expect(
+        readEachSettled([1, 2], (id) =>
+          id === 2 ? fail(kind)() : Promise.resolve(id),
+        ),
+      ).rejects.toMatchObject({ kind });
+    },
+  );
+
+  it("rethrows anything that is not a TMDB error", async () => {
+    await expect(
+      readEachSettled([1], () => Promise.reject(new Error("bug"))),
+    ).rejects.toThrow("bug");
   });
 });

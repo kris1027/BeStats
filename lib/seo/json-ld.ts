@@ -1,5 +1,5 @@
 import type { TmdbShowStatus } from "@/lib/tmdb/types";
-import { isFinishedShowStatus } from "@/lib/tv/auto-completion";
+import { isFinishedShowStatus } from "@/lib/tv/library-page";
 
 import { absoluteUrl } from "./site";
 

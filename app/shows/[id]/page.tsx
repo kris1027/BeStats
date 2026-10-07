@@ -13,7 +13,7 @@ import { ShowMeta } from "@/components/show/show-meta";
 import { StatePanel } from "@/components/state-panel";
 import { ShowProgressSlot } from "@/components/tracking/show-progress-slot";
 import { ShowRatingSlot } from "@/components/tracking/show-rating-slot";
-import { ShowStatusSlot } from "@/components/tracking/show-status-slot";
+import { ShowTrackingSlot } from "@/components/tracking/show-tracking-slot";
 import { parseTmdbId } from "@/lib/catalog/ids";
 import { orderSeasons } from "@/lib/catalog/seasons";
 import { formatAirSpan, truncateAtWord } from "@/lib/format";
@@ -75,8 +75,8 @@ export async function generateMetadata({
  *
  * Nothing here reads a cookie, a header or a session (AC-18). The signed in
  * user's calculated ratings (spec 0012) stream from `components/tracking/`
- * beside the Seasons heading and on each season card, and the hero's status
- * pill and progress line (spec 0013) stream into its tracking place.
+ * beside the Seasons heading and on each season card, and the hero's tracking
+ * pill (spec 0020) and progress line (spec 0013) stream into its tracking place.
  */
 export default function ShowPage({ params }: PageProps<"/shows/[id]">) {
   return (
@@ -136,7 +136,7 @@ async function ShowDetail({
           // empty slots add no gap to the hero (AC-5).
           <>
             <Suspense fallback={null}>
-              <ShowStatusSlot showId={id} showName={show.name} />
+              <ShowTrackingSlot showId={id} showName={show.name} />
             </Suspense>
             <Suspense fallback={null}>
               <ShowProgressSlot showId={id} />
