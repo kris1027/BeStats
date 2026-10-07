@@ -390,8 +390,8 @@ Statuses are replaced by tracked plus an optional Pause or Drop. Every title sit
   - [x] The movie and state strands: `classifyMovie`, movie tabs, failure notes, missing titles, empty copy — AC-13, AC-14, AC-16 to AC-18
   - [ ] Docs and proof: `AGENTS.md`, checks, 375px and keyboard, timing, `verify.md`, expand push and deploy — AC-23, AC-24
   - [ ] Contract migration as a follow up PR after production is verified — AC-1, AC-21
-- [ ] Verify it: `/check verify progress based library pages`
-- [ ] Test it: `/test progress based library pages`
+- [x] Verify it: `/check verify progress based library pages`
+- [x] Test it: `/test progress based library pages`
 - [ ] Review it (fresh model): `/check review progress based library pages`
 - [ ] Document it: `/document progress based library pages`
 spec [0020](../specs/0020-progress-based-library-pages/index.md) · code in `lib/tv/library-page.ts`, `lib/catalog/movie-page.ts`, `lib/tracking/library-lists.ts`, `components/library/`, `components/tracking/`, `supabase/migrations/20261007120000_show_tracking_expand.sql`
