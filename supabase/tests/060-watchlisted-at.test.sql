@@ -142,13 +142,13 @@ select is(
   'an unrelated update that also sends null keeps the stored time'
 );
 
--- The spec 0007 first watch rule still holds, and keeps the time.
+-- The first watch keeps the plan and its time (spec 0020, AC-14).
 select public.mark_movie_watched(900104);
 select ok(
-  (select not in_watchlist and watchlisted_at = '2020-01-01T00:00:00Z'::timestamptz
+  (select in_watchlist and watchlisted_at = '2020-01-01T00:00:00Z'::timestamptz
    from public.user_movie_state
    where user_id = '11111111-1111-1111-1111-111111111111' and movie_id = 900104),
-  'the first watch clears the bookmark and keeps the old time'
+  'the first watch keeps the bookmark and its old time'
 );
 
 -- An upsert that plans an unplanned row takes the update branch: now().

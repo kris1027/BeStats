@@ -81,31 +81,40 @@ export type Database = {
       user_show_state: {
         Row: {
           created_at: string
+          hold_changed_at: string | null
+          hold_state: Database["public"]["Enums"]["show_hold"] | null
           listed_at: string | null
           show_id: number
-          status: Database["public"]["Enums"]["tv_status"]
+          status: Database["public"]["Enums"]["tv_status"] | null
           status_changed_at: string
           status_source: Database["public"]["Enums"]["status_source"]
+          tracked_at: string
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          hold_changed_at?: string | null
+          hold_state?: Database["public"]["Enums"]["show_hold"] | null
           listed_at?: string | null
           show_id: number
-          status: Database["public"]["Enums"]["tv_status"]
+          status?: Database["public"]["Enums"]["tv_status"] | null
           status_changed_at?: string
           status_source?: Database["public"]["Enums"]["status_source"]
+          tracked_at?: string
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
+          hold_changed_at?: string | null
+          hold_state?: Database["public"]["Enums"]["show_hold"] | null
           listed_at?: string | null
           show_id?: number
-          status?: Database["public"]["Enums"]["tv_status"]
+          status?: Database["public"]["Enums"]["tv_status"] | null
           status_changed_at?: string
           status_source?: Database["public"]["Enums"]["status_source"]
+          tracked_at?: string
           updated_at?: string
           user_id?: string
         }
@@ -113,6 +122,19 @@ export type Database = {
       }
     }
     Views: {
+      user_tracked_shows: {
+        Row: {
+          hold_changed_at: string | null
+          hold_state: Database["public"]["Enums"]["show_hold"] | null
+          last_activity_at: string | null
+          last_regular_watched_at: string | null
+          last_watched_at: string | null
+          show_id: number | null
+          tracked_at: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
       user_up_next_shows: {
         Row: {
           last_activity_at: string | null
@@ -283,11 +305,14 @@ export type Database = {
         }
         Returns: {
           created_at: string
+          hold_changed_at: string | null
+          hold_state: Database["public"]["Enums"]["show_hold"] | null
           listed_at: string | null
           show_id: number
-          status: Database["public"]["Enums"]["tv_status"]
+          status: Database["public"]["Enums"]["tv_status"] | null
           status_changed_at: string
           status_source: Database["public"]["Enums"]["status_source"]
+          tracked_at: string
           updated_at: string
           user_id: string
         }
@@ -297,6 +322,41 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      restore_show_tracking: {
+        Args: {
+          p_hold?: Database["public"]["Enums"]["show_hold"]
+          p_hold_changed_at?: string
+          p_show_id: number
+          p_tracked_at: string
+        }
+        Returns: {
+          created_at: string
+          hold_changed_at: string | null
+          hold_state: Database["public"]["Enums"]["show_hold"] | null
+          listed_at: string | null
+          show_id: number
+          status: Database["public"]["Enums"]["tv_status"] | null
+          status_changed_at: string
+          status_source: Database["public"]["Enums"]["status_source"]
+          tracked_at: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "user_show_state"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      set_show_hold: {
+        Args: {
+          p_expected: Database["public"]["Enums"]["show_hold"]
+          p_hold: Database["public"]["Enums"]["show_hold"]
+          p_show_id: number
+        }
+        Returns: Database["public"]["Enums"]["show_hold"]
       }
       set_show_status: {
         Args: {
@@ -317,6 +377,7 @@ export type Database = {
         Args: { p_should_start: boolean; p_show_id: number }
         Returns: boolean
       }
+      track_show: { Args: { p_show_id: number }; Returns: boolean }
       unmark_episodes_watched: {
         Args: { p_episode_ids: number[]; p_show_id: number }
         Returns: {
@@ -324,8 +385,20 @@ export type Database = {
           watched_at: string
         }[]
       }
+      untrack_show: {
+        Args: {
+          p_expected: Database["public"]["Enums"]["show_hold"]
+          p_show_id: number
+        }
+        Returns: {
+          hold_changed_at: string
+          hold_state: Database["public"]["Enums"]["show_hold"]
+          tracked_at: string
+        }[]
+      }
     }
     Enums: {
+      show_hold: "paused" | "dropped"
       status_source: "user" | "system"
       tv_status:
         | "want_to_watch"
@@ -460,6 +533,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      show_hold: ["paused", "dropped"],
       status_source: ["user", "system"],
       tv_status: [
         "want_to_watch",

@@ -66,8 +66,8 @@ select is(
     where not t.tgisinternal
       and c.relname in ('user_movie_state', 'user_show_state', 'user_episode_state')
   ),
-  8::bigint,
-  'eight triggers exist: three for updated_at, one each for status_changed_at, watchlisted_at and listed_at, and the two that reopen an automatic completion (spec 0015)'
+  9::bigint,
+  'nine triggers exist: three for updated_at, one each for status_changed_at, watchlisted_at, listed_at and the spec 0020 tracking times, and the two that reopen an automatic completion (spec 0015)'
 );
 
 -- Owner deletion cascades, which is what AC-11 asserts behaviourally.

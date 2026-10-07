@@ -22,3 +22,12 @@ create type public.status_source as enum (
   'user',
   'system'
 );
+
+-- The one hand set part of tracking a show (spec 0020, AC-1): a tracked show
+-- with no hold is placed on a library page by its progress, and a held one is
+-- parked in the Paused & dropped section. Null in `user_show_state.hold_state`
+-- means no hold, so there is no third value for it.
+create type public.show_hold as enum (
+  'paused',
+  'dropped'
+);

@@ -38,22 +38,33 @@ create table public.user_movie_state (
     check (not in_watchlist or watchlisted_at is not null)
 );
 
--- The two private list pages (spec 0008), one per page. Each is partial, so
--- it holds only the rows its page can show, and each ends in `movie_id`, the
--- tiebreak, so the page order and the exact count come straight off the index.
+-- The two private list reads (spec 0008), one per kind of row. Each is
+-- partial, so it holds only the rows its read can use, and each ends in
+-- `movie_id`, the tiebreak, so the order comes straight off the index. The
+-- first holds only planned movies not yet watched, the ones Watchlist and
+-- Upcoming classify (spec 0020, AC-13): a watched movie is on Watched whatever
+-- its plan says.
 create index user_movie_state_watchlist_idx
   on public.user_movie_state (user_id, watchlisted_at desc, movie_id)
-  where in_watchlist;
+  where in_watchlist and watched_at is null;
 
 create index user_movie_state_watched_idx
   on public.user_movie_state (user_id, watched_at desc, movie_id)
   where watched_at is not null;
 
--- One row per person per TMDB show, holding exactly one status.
+-- One row per person per TMDB show: the show is tracked while the row exists
+-- (spec 0020, AC-1), with an optional hold. Which library page it sits on is
+-- never stored; it is worked out per request from its episodes and TMDB.
+--
+-- The four legacy columns (`status`, `status_source`, `status_changed_at`,
+-- `listed_at`) stay until the spec 0020 contract migration, so the app
+-- deployed before it keeps working during the rollout. `status` is nullable
+-- with a default for the same reason, and `track_show` and `set_show_hold`
+-- mirror into it. Nothing in the new app reads them.
 create table public.user_show_state (
   user_id uuid not null references auth.users (id) on delete cascade,
   show_id integer not null,
-  status public.tv_status not null,
+  status public.tv_status default 'watching',
   -- The default fires on insert only. Every caller passes this explicitly on
   -- every write, because on the update branch of an upsert an omitted column
   -- keeps its old value instead of falling back to the default. See spec 0001,
@@ -67,13 +78,26 @@ create table public.user_show_state (
   -- planned show does not move its card; leaving them keeps it too, so Undo
   -- of Stop watching puts the card back in its old place.
   listed_at timestamptz,
+  -- When the show was tracked, the Watchlist order's fallback for a show with
+  -- nothing watched (spec 0020, AC-9). Owned by
+  -- `user_show_state_set_tracking_times` in `03-triggers.sql`, so no client
+  -- chooses it; only `restore_show_tracking` puts back an earlier one.
+  tracked_at timestamptz not null default now(),
+  -- Null is no hold. Set only by `set_show_hold`, never by an episode write.
+  hold_state public.show_hold,
+  -- When the hold last changed, the Paused & dropped order (AC-10). Owned by
+  -- the same trigger as `tracked_at`.
+  hold_changed_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint user_show_state_pkey primary key (user_id, show_id),
   constraint user_show_state_show_id_check check (show_id > 0),
   -- A show on the watchlist always has a time to sort by.
   constraint user_show_state_listed_at_check
-    check (status not in ('want_to_watch', 'watching') or listed_at is not null)
+    check (status not in ('want_to_watch', 'watching') or listed_at is not null),
+  -- A hold always has a time, and no hold never has one.
+  constraint user_show_state_hold_changed_at_check
+    check ((hold_state is null) = (hold_changed_at is null))
 );
 
 -- The show half of the watchlist page (spec 0013, AC-13): only the rows the
@@ -81,6 +105,12 @@ create table public.user_show_state (
 create index user_show_state_watchlist_idx
   on public.user_show_state (user_id, listed_at desc, show_id)
   where status in ('want_to_watch', 'watching');
+
+-- The Paused & dropped section (spec 0020, AC-10): held rows only, in the
+-- section's order, ending in `show_id`, the tiebreak.
+create index user_show_state_held_idx
+  on public.user_show_state (user_id, hold_changed_at desc, show_id)
+  where hold_state is not null;
 
 -- One row per person per TMDB episode. Deliberately not tied to
 -- `user_show_state` by a foreign key: AGENTS.md section 7 requires episode

@@ -111,6 +111,44 @@ begin
 end;
 $$;
 
+-- Owns `user_show_state.tracked_at` and `hold_changed_at` (spec 0020, data
+-- model). An insert stamps `tracked_at` now, and `hold_changed_at` now when
+-- it carries a hold; an update keeps `tracked_at` and moves
+-- `hold_changed_at` only when the hold genuinely changes (to null when the
+-- hold is cleared). Whatever the client sent is overwritten, so neither
+-- column is ever writable from outside.
+--
+-- The one exception is Undo of Stop tracking. `restore_show_tracking` in
+-- `05-functions.sql` sets the transaction local `bestats.restore_tracking` to
+-- `on` before it inserts the row again, and only then does an insert keep the
+-- times it was given, so the show returns to its old place. PostgREST gives
+-- a client no way to set a custom setting.
+create or replace function public.set_tracking_times()
+returns trigger
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+begin
+  if tg_op = 'INSERT' then
+    if coalesce(current_setting('bestats.restore_tracking', true), '') = 'on' then
+      return new;
+    end if;
+    new.tracked_at := now();
+    new.hold_changed_at := case when new.hold_state is null then null else now() end;
+    return new;
+  end if;
+
+  new.tracked_at := old.tracked_at;
+  if new.hold_state is distinct from old.hold_state then
+    new.hold_changed_at := case when new.hold_state is null then null else now() end;
+  else
+    new.hold_changed_at := old.hold_changed_at;
+  end if;
+  return new;
+end;
+$$;
+
 -- Triggers on one table fire in name order. This one does not read
 -- `updated_at`, so its place beside `user_movie_state_set_updated_at` does not
 -- matter.
@@ -125,6 +163,10 @@ create trigger user_movie_state_set_updated_at
 create trigger user_show_state_set_listed_at
   before insert or update on public.user_show_state
   for each row execute function public.set_listed_at();
+
+create trigger user_show_state_set_tracking_times
+  before insert or update on public.user_show_state
+  for each row execute function public.set_tracking_times();
 
 create trigger user_show_state_set_updated_at
   before update on public.user_show_state
