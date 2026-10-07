@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { classifyShow, episodeKey, type ShowDetails } from "./library-page";
+import {
+  classifyShow,
+  type EpisodeKey,
+  episodeKey,
+  type ShowDetails,
+} from "./library-page";
 
 /**
  * covers: spec 0020, AC-7, AC-8
@@ -30,7 +35,7 @@ function show(overrides: Partial<ShowDetails> = {}): ShowDetails {
   };
 }
 
-function watched(...places: [number, number][]): Set<string> {
+function watched(...places: [number, number][]): Set<EpisodeKey> {
   return new Set(places.map(([s, e]) => episodeKey(s, e)));
 }
 
@@ -206,6 +211,62 @@ describe("classifyShow (AC-7)", () => {
       page: "watchlist",
       next: { season: 1, episode: 2 },
     });
+  });
+
+  it("puts an undecidable show whose next episode is dated on Upcoming, not Watchlist", () => {
+    const details = show({
+      lastEpisodeToAir: {
+        seasonNumber: 0,
+        episodeNumber: 2,
+        airDate: "2026-09-01",
+      },
+      nextEpisodeToAir: {
+        seasonNumber: 1,
+        episodeNumber: 1,
+        airDate: "2026-10-14",
+      },
+      seasons: [{ seasonNumber: 1, episodeCount: 3, airDate: null }],
+    });
+    expect(classifyShow(details, watched(), today)).toEqual({
+      page: "upcoming",
+      airDate: "2026-10-14",
+      next: { season: 1, episode: 1 },
+    });
+  });
+
+  it("offers an undecidable show's unwatched episode before a dated next episode", () => {
+    const details = show({
+      lastEpisodeToAir: {
+        seasonNumber: 0,
+        episodeNumber: 2,
+        airDate: "2026-09-01",
+      },
+      nextEpisodeToAir: {
+        seasonNumber: 1,
+        episodeNumber: 3,
+        airDate: "2026-10-14",
+      },
+      seasons: [{ seasonNumber: 1, episodeCount: 3, airDate: null }],
+    });
+    expect(classifyShow(details, watched([1, 1]), today)).toEqual({
+      page: "watchlist",
+      next: { season: 1, episode: 2 },
+    });
+  });
+
+  it("puts an undecidable show with every listed episode watched on Upcoming, never Watched", () => {
+    const details = show({
+      lastEpisodeToAir: {
+        seasonNumber: 0,
+        episodeNumber: 2,
+        airDate: "2026-09-01",
+      },
+      seasons: [{ seasonNumber: 1, episodeCount: 3, airDate: null }],
+      status: "Ended",
+    });
+    expect(
+      classifyShow(details, watched([1, 1], [1, 2], [1, 3]), today),
+    ).toEqual({ page: "upcoming", airDate: null, next: null });
   });
 
   it("counts a last episode in a season missing from the list", () => {

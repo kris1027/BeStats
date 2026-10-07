@@ -1,3 +1,4 @@
+import type { LibraryList } from "@/lib/catalog/library-list";
 import type { EpisodeToAir, SeasonSummary, TmdbShowStatus } from "@/lib/tmdb";
 
 import { airStatus } from "./air-status";
@@ -21,9 +22,16 @@ export type ShowDetails = {
  * AC-7), with what its card shows there.
  */
 export type ShowPage =
-  | { page: "watchlist"; next: EpisodePlace }
-  | { page: "upcoming"; airDate: string | null; next: EpisodePlace | null }
-  | { page: "watched"; label: "finished" | "caught_up" };
+  | { page: Extract<LibraryList, "watchlist">; next: EpisodePlace }
+  | {
+      page: Extract<LibraryList, "upcoming">;
+      airDate: string | null;
+      next: EpisodePlace | null;
+    }
+  | {
+      page: Extract<LibraryList, "watched">;
+      label: "finished" | "caught_up";
+    };
 
 /**
  * Whether TMDB says the show has ended or been canceled, the Watched card's
@@ -37,9 +45,16 @@ export function isFinishedShowStatus(status: TmdbShowStatus): boolean {
   return status === "Ended" || status === "Canceled";
 }
 
+/**
+ * A regular episode in the watched set. Branded so only `episodeKey` makes
+ * one: a `Set` compares objects by identity, so an `EpisodePlace` cannot be
+ * its member, and a stray string would silently never match.
+ */
+export type EpisodeKey = string & { readonly __brand: "EpisodeKey" };
+
 /** The key of a regular episode in the watched set. */
-export function episodeKey(season: number, episode: number): string {
-  return `${season}:${episode}`;
+export function episodeKey(season: number, episode: number): EpisodeKey {
+  return `${season}:${episode}` as EpisodeKey;
 }
 
 /**
@@ -59,9 +74,12 @@ export function episodeKey(season: number, episode: number): string {
  * When `last_episode_to_air` is a special, it says nothing about the regular
  * seasons, so a regular season counts as aired when its own air date is on
  * or before today. If that leaves a regular season whose airing is unknown
- * (no date) and no aired episode at all, the show goes on Watchlist at its
- * first unwatched episode rather than on Watched, since the source cannot
- * show it is caught up (AC-7).
+ * (no date) and no aired episode at all, the source cannot show the user is
+ * caught up, so the show never goes on Watched (AC-7). It goes on Watchlist
+ * at its first unwatched episode when that sorts before a dated
+ * `next_episode_to_air`, so Mark watched is never offered for an episode
+ * still to come; on Upcoming at that dated episode otherwise; and on
+ * Upcoming as Date TBA when every listed episode is already watched.
  *
  * Specials never count: the watched set holds regular episodes only, and a
  * special `next_episode_to_air` is ignored. Want to Watch and Completed are
@@ -73,7 +91,7 @@ export function episodeKey(season: number, episode: number): string {
  */
 export function classifyShow(
   details: ShowDetails,
-  watched: ReadonlySet<string>,
+  watched: ReadonlySet<EpisodeKey>,
   today: string,
 ): ShowPage {
   const seasons = regularSeasons(details.seasons);
@@ -104,16 +122,24 @@ export function classifyShow(
     }
   }
 
-  if (fallback && !anyAired) {
-    const unknown = seasons.some(
-      (season) => airStatus(season.airDate, today) === "unknown",
-    );
-    const first = unknown ? firstUnwatched(seasons, watched) : null;
-    if (first !== null) return { page: "watchlist", next: first };
+  const dated =
+    next !== null && airStatus(next.airDate, today) === "upcoming"
+      ? next
+      : null;
+
+  const unknown = seasons.some(
+    (season) => airStatus(season.airDate, today) === "unknown",
+  );
+  if (fallback && !anyAired && unknown) {
+    const first = firstUnwatched(seasons, watched);
+    if (first !== null && (dated === null || before(first, placeOf(dated)))) {
+      return { page: "watchlist", next: first };
+    }
+    if (dated === null) return { page: "upcoming", airDate: null, next: null };
   }
 
-  if (next !== null && airStatus(next.airDate, today) === "upcoming") {
-    return { page: "upcoming", airDate: next.airDate, next: placeOf(next) };
+  if (dated !== null) {
+    return { page: "upcoming", airDate: dated.airDate, next: placeOf(dated) };
   }
 
   if (watched.size === 0) {
@@ -179,7 +205,7 @@ function* airedPlaces(
 
 function firstUnwatched(
   seasons: readonly RegularSeason[],
-  watched: ReadonlySet<string>,
+  watched: ReadonlySet<EpisodeKey>,
 ): EpisodePlace | null {
   for (const season of seasons) {
     for (let episode = 1; episode <= season.episodeCount; episode++) {
@@ -197,6 +223,10 @@ function regularOrNull(episode: EpisodeToAir | null): EpisodeToAir | null {
 
 function placeOf(episode: EpisodeToAir): EpisodePlace {
   return { season: episode.seasonNumber, episode: episode.episodeNumber };
+}
+
+function before(a: EpisodePlace, b: EpisodePlace): boolean {
+  return a.season !== b.season ? a.season < b.season : a.episode < b.episode;
 }
 
 function later(a: EpisodePlace | null, b: EpisodePlace): EpisodePlace {
