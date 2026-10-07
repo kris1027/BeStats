@@ -1,16 +1,19 @@
 import { RetryLink } from "@/components/retry-link";
 import { getShowEpisodes, type ShowEpisodes, TmdbError } from "@/lib/tmdb";
-import { getReconciledShowStatus } from "@/lib/tracking/auto-completion";
 import { requestTodayUtc } from "@/lib/tracking/episode-state";
 import { SHOW_PROGRESS_MESSAGES } from "@/lib/tracking/messages";
-import { getWatchedEpisodeIds, showIdsKey } from "@/lib/tracking/show-state";
+import {
+  getShowTracking,
+  getWatchedEpisodeIds,
+  showIdsKey,
+} from "@/lib/tracking/show-state";
 import { type ShowProgress, showProgress } from "@/lib/tv/progress";
 
 /**
- * The progress line under the show hero's status pill (spec 0013, AC-10 to
- * AC-12).
+ * The progress line under the show hero's tracking pill (spec 0013, AC-10 to
+ * AC-12; unchanged by spec 0020, AC-2).
  *
- * It appears once the show matters to the user: a status row, or at least one
+ * It appears once the show matters to the user: a tracked show, or at least one
  * watched episode among the regular episodes TMDB lists (a watched special
  * alone does not count). Then it says "{watched} of {total} episodes
  * watched" with a bar, or "No episodes have aired yet". When the episode read
@@ -19,24 +22,23 @@ import { type ShowProgress, showProgress } from "@/lib/tv/progress";
  * section 9).
  *
  * The TMDB episode list comes from its public `hours` cache; the watched ids
- * and today are read per request, outside any cache (AC-12). The status is
- * the one after the automatic completion check (spec 0015, AC-10), shared
- * with the pill through React `cache()`. The page renders
+ * and today are read per request, outside any cache (AC-12). The tracking
+ * read is shared with the pill through React `cache()`. The page renders
  * this in its own Suspense boundary with a `null` fallback, so nothing
- * shifts while it loads and the status pill never waits for it.
+ * shifts while it loads and the pill never waits for it.
  *
  * @param showId The show, already confirmed by `loadShow`.
  */
 async function ShowProgressSlot({ showId }: { showId: number }) {
   const [status, watched] = await Promise.all([
-    getReconciledShowStatus(showId),
+    getShowTracking(showId),
     getWatchedEpisodeIds(showIdsKey([showId])),
   ]);
   if (status.kind === "signed_out" || watched.kind === "signed_out") {
     return null;
   }
   const retry = `/shows/${showId}`;
-  // A failed status read cannot tell whether the show is tracked, so it gets
+  // A failed tracking read cannot tell whether the show is tracked, so it gets
   // the same Try again as a failed watched read rather than no line at all.
   if (watched.kind === "failed" || status.kind === "failed") {
     return <Unavailable retryHref={retry} />;

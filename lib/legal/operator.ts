@@ -42,7 +42,7 @@ export const MINIMUM_AGE = 16;
  * whenever the text changes materially. Pages format it in UTC and never read
  * the clock (spec 0017, AC-7).
  */
-export const LEGAL_LAST_UPDATED = "2026-10-06";
+export const LEGAL_LAST_UPDATED = "2026-10-07";
 
 /**
  * Where the production Supabase project stores your data, read from

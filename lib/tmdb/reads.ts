@@ -1,6 +1,11 @@
 import "server-only";
 import { cacheLife } from "next/cache";
-import { fetchMoviesByIds, fetchTvShowsByIds } from "./batch";
+import {
+  fetchMoviesByIds,
+  fetchTvShowsByIds,
+  readEachSettled,
+  type SettledBatch,
+} from "./batch";
 import { fetchMovieGenres, fetchTvGenres } from "./genres";
 import { fetchMovie } from "./movies";
 import {
@@ -376,4 +381,26 @@ export async function getTvShowsByIds(
   ids: readonly number[],
 ): Promise<BatchResult<TvShowSummary>> {
   return unwrap(await getTvShowsByIdsCached(ids));
+}
+
+/**
+ * Many shows, each through the cached `getTvShow`, with a failure kept to
+ * the show it happened to (spec 0020, AC-17, AC-22). No batch level entry,
+ * for the reason `getMovieSummaries` gives: a library's id set belongs to
+ * one person and would only ever be read once.
+ *
+ * @throws {TmdbError} A systemic failure (a rejected credential or an
+ * exhausted rate limit).
+ */
+export async function getTvShowsSettled(
+  ids: readonly number[],
+): Promise<SettledBatch<TvShow>> {
+  return readEachSettled(ids, getTvShow);
+}
+
+/** The movie twin of `getTvShowsSettled`, through the cached `getMovie`. */
+export async function getMoviesSettled(
+  ids: readonly number[],
+): Promise<SettledBatch<Movie>> {
+  return readEachSettled(ids, getMovie);
 }

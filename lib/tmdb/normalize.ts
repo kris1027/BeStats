@@ -1,3 +1,5 @@
+import { parseTmdbDate } from "@/lib/format";
+
 import { SHOW_CAST_LIMIT } from "./constants";
 import {
   BACKDROP_SIZE,
@@ -9,6 +11,7 @@ import {
 import {
   aggregateCastMemberSchema,
   castMemberSchema,
+  episodeToAirSchema,
   type RawEpisode,
   type RawMovie,
   type RawMovieSummary,
@@ -21,6 +24,7 @@ import {
 import type {
   CastMember,
   Episode,
+  EpisodeToAir,
   Genre,
   Movie,
   MovieSummary,
@@ -215,8 +219,8 @@ const KNOWN_SHOW_STATUSES: Record<Exclude<TmdbShowStatus, "">, true> = {
 
 /**
  * TMDB's status narrowed to `TmdbShowStatus`. A missing or undocumented value
- * becomes `""`, which automatic completion reads as ongoing, so a new upstream
- * word can never complete a show (`AGENTS.md` section 9).
+ * becomes `""`, which reads as ongoing, so a new upstream word can never
+ * label a show Finished (spec 0020, AC-12).
  */
 export function showStatusOf(raw: string | null | undefined): TmdbShowStatus {
   return raw != null && Object.hasOwn(KNOWN_SHOW_STATUSES, raw)
@@ -237,8 +241,8 @@ export function normalizeTvShow(raw: RawTvShow): TvShow {
     originalLanguage: raw.original_language,
     tagline: textOrNull(raw.tagline),
     backdropUrl: imageUrl(raw.backdrop_path, BACKDROP_SIZE),
-    // Narrowed, not interpreted. What `Ended` or `Canceled` means for
-    // automatic completion belongs to scope feature 16, not to this module.
+    // Narrowed, not interpreted. What `Ended` or `Canceled` means for a
+    // library page belongs to `lib/tv/library-page.ts`, not to this module.
     status: showStatusOf(raw.status),
     inProduction: raw.in_production ?? false,
     lastAirDate,
@@ -248,6 +252,27 @@ export function normalizeTvShow(raw: RawTvShow): TvShow {
     genres: normalizeGenres(raw.genres),
     genreIds: normalizeGenres(raw.genres).map((genre) => genre.id),
     seasons: (raw.seasons ?? []).map(normalizeSeasonSummary),
+    lastEpisodeToAir: normalizeEpisodeToAir(raw.last_episode_to_air),
+    nextEpisodeToAir: normalizeEpisodeToAir(raw.next_episode_to_air),
+  };
+}
+
+/**
+ * One of a show's `last_episode_to_air` and `next_episode_to_air`, or null
+ * (spec 0020, AC-7). Malformed means null, never a thrown error: the field
+ * only places the show on a library page, and a show must never fail to load
+ * over it. A missing date keeps the episode with `airDate` null; a date that
+ * is present but not a real day makes the whole value null.
+ */
+export function normalizeEpisodeToAir(raw: unknown): EpisodeToAir | null {
+  const parsed = episodeToAirSchema.safeParse(raw);
+  if (!parsed.success) return null;
+  const airDate = textOrNull(parsed.data.air_date);
+  if (airDate !== null && parseTmdbDate(airDate) === null) return null;
+  return {
+    seasonNumber: parsed.data.season_number,
+    episodeNumber: parsed.data.episode_number,
+    airDate,
   };
 }
 

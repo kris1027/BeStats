@@ -1,4 +1,8 @@
--- Spec 0013 AC-6 to AC-8: the automatic move to Watching.
+-- Spec 0013 AC-6 to AC-8: the automatic move to Watching, as spec 0020 AC-5
+-- amends it. Since the spec 0020 expand migration the episode functions track
+-- an untracked show (`track_show`, mirrored as `watching` by the user) and
+-- change nothing on a tracked one, Want to Watch included. The contract
+-- migration deletes this file; `160-show-tracking.test.sql` pins the new rule.
 --
 -- Every row of AC-6 and AC-7: which episode writes start a show, which never
 -- do, which statuses they may move, and what `show_started` reports. The
@@ -41,8 +45,8 @@ select is(
   (select status::text || '/' || status_source::text || '/' || (listed_at = now())::text
    from public.user_show_state
    where user_id = '11111111-1111-1111-1111-111111111111' and show_id = 920001),
-  'watching/system/true',
-  'the show is Watching, set by the system, and listed now'
+  'watching/user/true',
+  'the show is tracked, mirrored as Watching by the user, and listed now'
 );
 select is(
   (select show_started from public.mark_episode_watched(920001, 1::smallint, 2::smallint, 950002)),
@@ -69,18 +73,18 @@ select is(
   'the season mark wrote Watching'
 );
 
--- AC-6: Want to Watch moves, and keeps its place on the watchlist.
+-- Spec 0020 AC-5: a Want to Watch row is already tracked, so nothing moves.
 select is(
   (select show_started from public.mark_episode_watched(920003, 1::smallint, 1::smallint, 950030)),
-  true,
-  'a Want to Watch show moves to Watching'
+  false,
+  'a Want to Watch show is already tracked and reports nothing'
 );
 select is(
   (select status::text || '/' || status_source::text || '/' || listed_at::text
    from public.user_show_state
    where user_id = '11111111-1111-1111-1111-111111111111' and show_id = 920003),
-  'watching/system/' || '2020-02-02T00:00:00Z'::timestamptz::text,
-  'the moved show keeps its listed_at'
+  'want_to_watch/user/' || '2020-02-02T00:00:00Z'::timestamptz::text,
+  'the row keeps its status and listed_at'
 );
 
 -- AC-6: On Hold, Dropped, Completed and Watching never move.
@@ -183,8 +187,8 @@ where user_id = '11111111-1111-1111-1111-111111111111' and episode_id = 950010;
 select is(
   (select status::text || '/' || status_source::text from public.user_show_state
    where user_id = '11111111-1111-1111-1111-111111111111' and show_id = 920001),
-  'watching/system',
-  'unmarking the episode that started a show leaves it Watching'
+  'watching/user',
+  'unmarking the episode that started a show leaves it tracked'
 );
 select is(
   public.restore_episodes_watched(920001, jsonb_build_array(

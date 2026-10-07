@@ -1,22 +1,24 @@
 import { StarIcon } from "lucide-react";
 
 import {
+  CalendarIcon,
   NextEpisodeIcon,
   PlannedIcon,
-  StopWatchingIcon,
+  WatchedIcon,
 } from "@/components/tracking/tracking-icons";
 import type { MediaType } from "@/lib/catalog/media-type";
 
+import type { LibraryList } from "./types";
+
 /**
- * The key under a list page's grid: a hairline above, then each badge's
+ * The key under a library page's grid: a hairline above, then each badge's
  * mark beside its name in the legend grey (spec 0008, AC-13).
  *
  * The marks reuse the badges' own icons and meaning colours, so the key can
- * never drift from what the cards show. Only the badges a page can actually
- * show are listed, in a fixed order: the watchlist's show tab adds Stop
- * watching and Next episode for its show cards (spec 0013, AC-17). Each
- * navbar tab lists only its own media type, so each has its own key
- * (feature 22).
+ * never drift from what the cards show. Only the badges a tab can actually
+ * show are listed, in a fixed order: each page and navbar tab has its own
+ * cards (spec 0020, AC-9, AC-11 to AC-13; feature 22), so each has its own
+ * key.
  */
 const TMDB_RATING = {
   label: "TMDB rating",
@@ -37,27 +39,31 @@ const YOUR_SCORE = {
     />
   ),
 };
+const NEXT_EPISODE = {
+  label: "Next episode",
+  icon: <NextEpisodeIcon className="size-4" />,
+};
+const MARK_WATCHED = {
+  label: "Mark watched",
+  icon: <WatchedIcon filled={false} className="size-4" />,
+};
 
 const ENTRIES = {
   watchlist: {
     movie: [TMDB_RATING, PLANNED],
-    tv: [
-      TMDB_RATING,
+    tv: [NEXT_EPISODE, MARK_WATCHED],
+  },
+  upcoming: {
+    movie: [
+      { label: "Release date", icon: <CalendarIcon className="size-4" /> },
       PLANNED,
-      { label: "Stop watching", icon: <StopWatchingIcon className="size-4" /> },
-      { label: "Next episode", icon: <NextEpisodeIcon className="size-4" /> },
     ],
+    tv: [{ label: "Air date", icon: <CalendarIcon className="size-4" /> }],
   },
   watched: { movie: [YOUR_SCORE], tv: [YOUR_SCORE] },
 } as const;
 
-function BadgeLegend({
-  list,
-  type,
-}: {
-  list: "watchlist" | "watched";
-  type: MediaType;
-}) {
+function BadgeLegend({ list, type }: { list: LibraryList; type: MediaType }) {
   return (
     <div className="border-t border-border pt-6">
       <ul

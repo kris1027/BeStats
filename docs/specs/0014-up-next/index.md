@@ -5,6 +5,8 @@
 
 Scope feature: [15. Up Next](../../scope/scope.md) · Beta tier
 
+> **Superseded in part by [0020](../0020-progress-based-library-pages/index.md)** (proposed 2026-10-07). The Up Next card moves to Watchlist show cards. `/upcoming` lists only titles with a future or unknown date: shows you're caught up on with a dated next episode, unstarted shows, and planned movies not out yet.
+
 > **Amended 2026-10-07 by scope feature 22** ([plan](../../../prompts/media-tabs-everywhere.md)). `/upcoming` now shows one section per navbar tab: Up Next on `?type=tv` (the default) and Coming soon on `?type=movie`. Each section keeps its own empty state and Retry. The single "Nothing upcoming yet" panel of AC-13 is removed, and the spec 0015 completion check runs only on the shows tab. An invalid `type` shows a "That page doesn't exist" panel with "Back to Upcoming".
 
 ## Summary

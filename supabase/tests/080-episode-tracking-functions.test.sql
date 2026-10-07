@@ -413,9 +413,10 @@ select is(
   'user A''s calls landed on user A''s own row'
 );
 
--- AC-24, as spec 0013 AC-6 amends it: the only change to user_show_state is
--- the automatic start of show 900301 for user A. Every other row is exactly
--- as it was. `100-automatic-watching.test.sql` covers the rule itself.
+-- AC-24, as spec 0013 AC-6 and spec 0020 AC-5 amend it: the only change to
+-- user_show_state is that show 900301 became tracked for user A, mirrored as
+-- `watching` by the user. Every other row is exactly as it was.
+-- `160-show-tracking.test.sql` covers the rule itself.
 select set_eq(
   $$ select * from public.user_show_state
      where not (user_id = '11111111-1111-1111-1111-111111111111' and show_id = 900301) $$,
@@ -425,8 +426,8 @@ select set_eq(
 select is(
   (select status::text || '/' || status_source::text from public.user_show_state
    where user_id = '11111111-1111-1111-1111-111111111111' and show_id = 900301),
-  'watching/system',
-  'the first regular episode watched started the show, and nothing else did'
+  'watching/user',
+  'the first regular episode watched tracked the show, and nothing else did'
 );
 
 -- anon cannot call any of them.

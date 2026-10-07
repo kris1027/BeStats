@@ -12,7 +12,7 @@
 -- file; 900250 and 900251 belong to user B.
 
 begin;
-select plan(27);
+select plan(29);
 
 -- Shape (AC-4)
 
@@ -76,6 +76,8 @@ values
   ('11111111-1111-1111-1111-111111111111', 900205, false, null, null, null, now()),
   -- unmarked 11 minutes ago
   ('11111111-1111-1111-1111-111111111111', 900206, false, null, null, null, now() - interval '11 minutes'),
+  -- watched and rated, just unplanned (spec 0020, AC-14: both can hold)
+  ('11111111-1111-1111-1111-111111111111', 900207, false, '2020-01-01T00:00:00Z', '2021-05-05T12:00:00Z', 8, now()),
   -- user B, both restorable by B
   ('22222222-2222-2222-2222-222222222222', 900250, false, '2020-01-01T00:00:00Z', null, null, now()),
   ('22222222-2222-2222-2222-222222222222', 900251, false, null, null, null, now());
@@ -130,6 +132,22 @@ select throws_ok(
   'P0002',
   'undo_expired',
   'restoring a row changed more than 10 minutes ago is refused'
+);
+
+-- Spec 0020, AC-14: a plan and a watched mark live side by side, so the
+-- watchlist restore on a watched movie keeps its watched date and rating.
+select lives_ok(
+  $$ select public.restore_movie_watchlist(900207) $$,
+  'restoring the plan of a watched movie succeeds'
+);
+select ok(
+  (select in_watchlist
+      and watchlisted_at = '2020-01-01T00:00:00Z'::timestamptz
+      and watched_at = '2021-05-05T12:00:00Z'::timestamptz
+      and rating = 8
+   from public.user_movie_state
+   where user_id = '11111111-1111-1111-1111-111111111111' and movie_id = 900207),
+  'the restored plan leaves the watched date and the rating alone'
 );
 
 -- AC-7: the watched restore puts back the original date, and only that.

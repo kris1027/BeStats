@@ -9,11 +9,7 @@ import type {
   EpisodeIntent,
   EpisodeStates,
 } from "@/lib/tracking/episode-intent";
-import {
-  SEASON_MESSAGES,
-  SHOW_STATUS_MESSAGES,
-  UNDO_ACTION_LABEL,
-} from "@/lib/tracking/messages";
+import { SEASON_MESSAGES, UNDO_ACTION_LABEL } from "@/lib/tracking/messages";
 import type { SeasonUndo } from "@/lib/tracking/types";
 import {
   airedEpisodesForMarking,
@@ -61,7 +57,7 @@ function SeasonWatchedControl({
   states: EpisodeStates;
   today: string;
 }) {
-  const { showId, showName, seasonNumber, run, fail } = useSeasonTracking();
+  const { showId, seasonNumber, run, fail } = useSeasonTracking();
   const shown = useEpisodeStates(states);
   const summary = seasonWatchSummary(episodes, shown, today);
   const toastId = `season-${showId}-${seasonNumber}`;
@@ -74,27 +70,16 @@ function SeasonWatchedControl({
       (result) => {
         if (!result.ok) return fail(result.error, toastId);
         if (result.undo === null) {
-          toast(
-            result.showCompleted
-              ? SHOW_STATUS_MESSAGES.completed(showName)
-              : SEASON_MESSAGES.nothingToMark,
-            {
-              id: toastId,
-              description: undefined,
-              action: undefined,
-            },
-          );
+          toast(SEASON_MESSAGES.nothingToMark, {
+            id: toastId,
+            description: undefined,
+            action: undefined,
+          });
           return;
         }
         const count = countOf(result.undo);
-        offerUndo(
-          result.showCompleted
-            ? SEASON_MESSAGES.markedCompleted(count, showName)
-            : SEASON_MESSAGES.marked(count),
-          result.undo,
-        );
+        offerUndo(SEASON_MESSAGES.marked(count), result.undo);
       },
-      { announcesCompletion: true },
     );
   }
 

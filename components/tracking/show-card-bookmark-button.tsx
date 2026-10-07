@@ -1,69 +1,63 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { startTransition, useOptimistic } from "react";
+import { useOptimistic } from "react";
 
-import { setShowStatus } from "@/app/shows/actions";
+import type { ShowTrackingState } from "@/lib/tracking/types";
 
 import { CardRoundButton } from "./card-round-button";
 import { PlanIcon, PlannedIcon } from "./tracking-icons";
-import { settleStatusCall, showStatusError } from "./tracking-toast";
+import { useShowTracking } from "./use-show-tracking";
 
 /**
- * The round glass TV bookmark on a poster card (spec 0013, AC-18), the show
+ * The round glass TV bookmark on a poster card (spec 0020, AC-6), the show
  * twin of `CardBookmarkButton`.
  *
- * Plan sets Want to Watch; Planned removes the status. It sits above the
- * card's link overlay, so a click never opens the show. The same optimistic
- * and rollback rules as every tracking control apply: the icon flips at once
- * and returns to the server's state if the write fails. Each write names the
- * status this icon stood for, so a card rendered before the status changed
- * elsewhere refreshes instead of replacing or deleting the newer one. The
- * accessible name says what the click will do, since the two states act
- * differently.
+ * Empty, a click tracks the show; filled (tracked, held or not), a click
+ * stops tracking it, with the Undo of the show page's Stop tracking (AC-3).
+ * It sits above the card's link overlay, so a click never opens the show.
+ * The icon flips at once and returns to the server's state if the write
+ * fails. Stop tracking names the hold this card showed, so a card rendered
+ * before the show changed elsewhere refreshes instead (AC-4). The accessible
+ * name says what the click will do, since the two states act differently.
  */
 function ShowCardBookmarkButton({
   showId,
   name,
-  planned,
+  state,
   returnPath,
 }: {
   showId: number;
   name: string;
-  planned: boolean;
+  state: ShowTrackingState | null;
   returnPath: string;
 }) {
-  const router = useRouter();
-  const [optimistic, setOptimistic] = useOptimistic(planned);
+  const [shown, setShown] = useOptimistic(state);
+  const tracking = useShowTracking({
+    showId,
+    showName: name,
+    returnPath,
+    toastId: `show-bookmark-${showId}`,
+  });
 
   function toggle() {
-    const value = !optimistic;
-    startTransition(async () => {
-      setOptimistic(value);
-      const result = await settleStatusCall(() =>
-        setShowStatus(
-          showId,
-          value ? "want_to_watch" : null,
-          value ? null : "want_to_watch",
-        ),
-      );
-      if (!result.ok) {
-        showStatusError(result.error, {
-          id: `show-bookmark-${showId}`,
-          returnPath,
-          navigate: router.push,
-        });
-      }
+    if (shown === null) {
+      tracking.track({ before: () => setShown({ hold: null }) });
+      return;
+    }
+    const expected = shown.hold;
+    tracking.untrack(expected, {
+      before: () => setShown(null),
+      restoring: () => setShown({ hold: expected }),
     });
   }
 
   return (
     <CardRoundButton
-      label={optimistic ? `Remove ${name} from Watchlist` : `Plan ${name}`}
+      label={shown ? `Stop tracking ${name}` : `Track ${name}`}
       onClick={toggle}
       className="ml-auto"
     >
-      {optimistic ? (
+      {shown ? (
         <PlannedIcon className="size-4" />
       ) : (
         <PlanIcon className="size-4" />

@@ -9,11 +9,10 @@
 
 /**
  * A show's status in TMDB's documented wording, or `""` when TMDB sends none
- * or a value outside this list. A closed union so automatic completion
- * (spec 0015) compares against known words a typo cannot slip past, and the
- * normalizer maps anything new to `""`, which reads as ongoing: an unknown
- * status must never complete a show (`AGENTS.md` section 9). No page displays
- * this text, so narrowing an unknown value hides nothing.
+ * or a value outside this list. A closed union so the Watched card's Finished
+ * label (spec 0020, AC-12) compares against known words a typo cannot slip
+ * past, and the normalizer maps anything new to `""`, which reads as
+ * ongoing: an unknown status never labels a show Finished.
  */
 export type TmdbShowStatus =
   | "Returning Series"
@@ -122,6 +121,19 @@ export type SeasonSummary = {
  */
 export type ShowCastMember = CastMember;
 
+/**
+ * TMDB's `last_episode_to_air` or `next_episode_to_air`, reduced to the
+ * episode's place and date (spec 0020, AC-7). Null when TMDB sends none, or
+ * a value that is malformed (no numbers, an episode number of 0, a date that
+ * is not a real day), so one bad field never fails the whole show.
+ */
+export type EpisodeToAir = {
+  seasonNumber: number;
+  episodeNumber: number;
+  /** TMDB's `air_date`, a real `YYYY-MM-DD` day, or null when it has none. */
+  airDate: string | null;
+};
+
 export type TvShow = Omit<TvShowSummary, "overview"> & {
   /** As on `Movie`: a read by id does not exclude adult titles (spec 0009, AC-14). */
   adult: boolean;
@@ -148,6 +160,10 @@ export type TvShow = Omit<TvShowSummary, "overview"> & {
    * read that progress and list screens reuse stays small (spec 0009, AC-20).
    */
   seasons: SeasonSummary[];
+  /** The latest episode TMDB says has aired, which classification counts from. */
+  lastEpisodeToAir: EpisodeToAir | null;
+  /** The next episode TMDB has announced, dated or not. */
+  nextEpisodeToAir: EpisodeToAir | null;
 };
 
 export type Episode = {
@@ -188,8 +204,8 @@ export type ShowEpisodes = {
   /** Every regular episode, ordered by season number then episode number. */
   episodes: Episode[];
   /**
-   * True only when every regular season was read successfully. Scope feature 16
-   * must treat false as a bar to automatic completion, per AGENTS.md section 9.
+   * True only when every regular season was read successfully. A false read
+   * must never show a progress number, per AGENTS.md section 9.
    */
   complete: boolean;
   failedSeasonNumbers: number[];

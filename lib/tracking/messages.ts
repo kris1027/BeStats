@@ -1,8 +1,10 @@
+import type { MediaType } from "@/lib/catalog/media-type";
+
 import type {
   EpisodeTrackingError,
   MovieTrackingError,
-  ShowStatusError,
-  TvStatus,
+  ShowHold,
+  ShowTrackingError,
 } from "./types";
 
 /**
@@ -32,6 +34,7 @@ export const TRACKING_MESSAGES: Record<MovieTrackingError, string> = {
  */
 export const LIBRARY_MESSAGES = {
   watchlist: { removed: "Removed from Watchlist" },
+  upcoming: { removed: "Removed from Upcoming" },
   watched: {
     removed: "Removed from Watched",
     scoreKept: "Your score is kept.",
@@ -41,6 +44,7 @@ export const LIBRARY_MESSAGES = {
 /** What a refused Undo says, per list (spec 0008, AC-6, AC-7). */
 export const UNDO_EXPIRED_MESSAGES = {
   watchlist: "Couldn't undo. Plan it again from the movie page.",
+  upcoming: "Couldn't undo. Plan it again from the movie page.",
   watched: "Couldn't undo. Mark it watched again from the movie page.",
 } as const;
 
@@ -77,50 +81,48 @@ function episodes(n: number): string {
  */
 export const SEASON_MESSAGES = {
   marked: (n: number) => `Marked ${episodes(n)} watched`,
-  /** The mark also completed the show (spec 0015, AC-5). */
-  markedCompleted: (n: number, show: string) =>
-    `Marked ${episodes(n)} watched · ${show} moved to Completed`,
   nothingToMark: "Every aired episode is already watched",
   unmarked: (n: number) => `Unmarked ${episodes(n)}`,
 } as const;
 
-/** The status names every TV surface shows (spec 0013, AC-1). */
-export const TV_STATUS_LABELS: Record<TvStatus, string> = {
-  want_to_watch: "Want to Watch",
-  watching: "Watching",
-  on_hold: "On Hold",
+/**
+ * The tracking pill's label for each state (spec 0020, AC-2): tracked with no
+ * hold, paused or dropped.
+ */
+export const SHOW_TRACKING_LABELS: Record<ShowHold | "none", string> = {
+  none: "Tracking",
+  paused: "Paused",
   dropped: "Dropped",
-  completed: "Completed",
 };
 
 /**
- * The show status control's copy and toasts (spec 0013, AC-1, AC-4, AC-5,
- * AC-8, AC-16). A status change shows itself on the pill; only a removal or
- * a Stop watching, whose card or label is gone, confirms with a toast, and
- * that toast carries the Undo. The automatic moves to Watching and to
- * Completed (spec 0015, AC-5) are announced because the person never chose
- * them.
+ * The show tracking control's copy and toasts (spec 0020, AC-2 to AC-6,
+ * AC-10). A hold change shows itself on the pill; Stop tracking, whose pill
+ * goes back to Plan to watch, confirms with a toast that carries the Undo,
+ * and an episode write that tracked the show is announced because the person
+ * never chose it.
  */
-export const SHOW_STATUS_MESSAGES = {
-  untracked: "Add to my shows",
-  unavailable: "Status unavailable",
-  remove: "Remove status",
-  menuLabel: "Show status",
-  removed: (show: string) => `Removed ${show} from your shows`,
-  stopped: (show: string) => `${show} moved to On Hold`,
-  started: (show: string) => `${show} moved to Watching`,
-  /** An episode write completed the show (spec 0015, AC-5). */
-  completed: (show: string) => `${show} moved to Completed`,
-  undoExpired: "Couldn't undo. Change the status from the show page.",
+export const SHOW_TRACKING_COPY = {
+  plan: "Plan to watch",
+  unavailable: "Tracking unavailable",
+  menuLabel: "Show tracking",
+  pause: "Pause",
+  drop: "Drop",
+  resume: "Resume",
+  stop: "Stop tracking",
+  added: (show: string) => `${show} added to your shows`,
+  stopped: (show: string) => `Stopped tracking ${show}`,
+  resumed: (show: string) => `Resumed ${show}`,
+  undoExpired: "Couldn't undo. Track the show again from its page.",
 } as const;
 
-/** The show status failure copy: the movie copy, naming a show. */
-export const SHOW_TRACKING_MESSAGES: Record<ShowStatusError, string> = {
+/** The show tracking failure copy: the movie copy, naming a show. */
+export const SHOW_TRACKING_MESSAGES: Record<ShowTrackingError, string> = {
   ...TRACKING_MESSAGES,
   not_found: "This show isn't available to track.",
-  undo_expired: SHOW_STATUS_MESSAGES.undoExpired,
-  status_changed:
-    "This show's status changed elsewhere. Showing the current one.",
+  undo_expired: SHOW_TRACKING_COPY.undoExpired,
+  hold_changed: "This show changed elsewhere. Showing the current one.",
+  not_tracked: "This show changed elsewhere. Showing the current one.",
 };
 
 /**
@@ -136,53 +138,152 @@ export const SHOW_PROGRESS_MESSAGES = {
   barLabel: "Aired episodes watched",
 } as const;
 
-/** The Next episode pill on a watchlist TV card (spec 0013, AC-15). */
+/** The Next episode pill on a Watchlist show card (spec 0020, AC-9). */
 export const NEXT_EPISODE_MESSAGES = {
-  upToDate: "Up to date",
   pill: (season: number, episode: number) => `S${season}E${episode}`,
   accessible: (season: number, episode: number) =>
     `Next episode, season ${season} episode ${episode}`,
 } as const;
 
 /**
- * The Up Next section of `/upcoming` (spec 0014, AC-5, AC-7 to AC-9, AC-13,
- * AC-14). The caught up caption is the `AGENTS.md` section 9 wording.
+ * A Watchlist show card's Mark watched button and its toasts (spec 0020,
+ * AC-9, carrying spec 0014's Up Next behaviour over unchanged).
  */
-export const UP_NEXT_MESSAGES = {
-  heading: "Up Next",
-  gridLabel: "Shows you're watching",
-  caughtUp: "You're up to date",
-  datedPill: (season: number, episode: number, date: string) =>
-    `S${season}E${episode} · ${date}`,
-  nextAirs: (season: number, episode: number, fullDate: string) =>
-    `Next episode, season ${season} episode ${episode}, airs ${fullDate}`,
-  firstAirs: (season: number, episode: number, fullDate: string) =>
-    `Season ${season} episode ${episode} airs ${fullDate}`,
+export const MARK_NEXT_MESSAGES = {
   unavailable: "Next episode unavailable",
   markLabel: (show: string, season: number, episode: number) =>
     `Mark ${show} season ${season} episode ${episode} watched`,
   marked: (show: string, season: number, episode: number) =>
     `Marked ${show} S${season}E${episode} watched`,
-  /** The mark also completed the show (spec 0015, AC-5). */
-  markedCompleted: (show: string, season: number, episode: number) =>
-    `Marked ${show} S${season}E${episode} watched · Moved to Completed`,
   alreadyWatched: (show: string, season: number, episode: number) =>
     `${show} S${season}E${episode} was already watched`,
   undoChanged: "Couldn't undo. This episode changed in another tab.",
-  empty: "Start watching a show and its next episode shows up here.",
-  browse: "Browse shows",
-  failed: "Couldn't load your shows. Try again in a moment.",
 } as const;
 
-/** The Coming soon section of `/upcoming` (spec 0014, AC-11 to AC-14). */
-export const COMING_SOON_MESSAGES = {
-  heading: "Coming soon",
-  gridLabel: "Planned movies coming soon",
+/** An Upcoming card's date pill (spec 0020, AC-11, AC-13). */
+export const UPCOMING_MESSAGES = {
+  datedPill: (season: number, episode: number, date: string) =>
+    `S${season}E${episode} · ${date}`,
+  episodeAirs: (season: number, episode: number, fullDate: string) =>
+    `Season ${season} episode ${episode} airs ${fullDate}`,
+  dateTba: "Date TBA",
+  episodeDateTba: (season: number, episode: number) =>
+    `Season ${season} episode ${episode}, date to be announced`,
+  showDateTba: "Next episode date to be announced",
   releases: (fullDate: string) => `Releases ${fullDate}`,
-  remove: (title: string) => `Remove ${title} from watchlist`,
-  checkedLimit: (limit: number) =>
-    `Checked your ${limit} most recently planned movies`,
-  empty: "No planned movies are waiting for release.",
-  browse: "Browse movies",
-  failed: "Couldn't load your planned movies. Try again in a moment.",
+  releaseTba: "Release date to be announced",
+} as const;
+
+/** What a list page's grid, empty state and notes say (spec 0020, AC-18). */
+type ListCopy = {
+  grid: string;
+  empty: { title: string; description: string };
+  browse: string;
+};
+
+/**
+ * Every piece of copy that differs between the three library pages and their
+ * two tabs (spec 0020, AC-12, AC-15, AC-18; feature 22). Each empty state
+ * offers the one catalog its tab lists.
+ */
+export const LIBRARY_COPY: Record<
+  "watchlist" | "upcoming" | "watched",
+  Record<MediaType, ListCopy> & { failed: string }
+> = {
+  watchlist: {
+    tv: {
+      grid: "Shows to watch",
+      empty: {
+        title: "Nothing to watch right now",
+        description:
+          "Plan a show or catch up on one and its next episode shows up here.",
+      },
+      browse: "Browse shows",
+    },
+    movie: {
+      grid: "Movies to watch",
+      empty: {
+        title: "No movies to watch",
+        description: "Planned movies that are already out show up here.",
+      },
+      browse: "Browse movies",
+    },
+    failed: "Couldn't load your watchlist",
+  },
+  upcoming: {
+    tv: {
+      grid: "Shows coming up",
+      empty: {
+        title: "Nothing coming up",
+        description:
+          "Planned shows not out yet, and shows you're caught up on with a dated next episode, show up here.",
+      },
+      browse: "Browse shows",
+    },
+    movie: {
+      grid: "Movies coming up",
+      empty: {
+        title: "No upcoming movies",
+        description: "Planned movies not released yet show up here.",
+      },
+      browse: "Browse movies",
+    },
+    failed: "Couldn't load your upcoming titles",
+  },
+  watched: {
+    tv: {
+      grid: "Shows you're caught up on",
+      empty: {
+        title: "No watched shows yet",
+        description: "Shows you're caught up on show up here.",
+      },
+      browse: "Browse shows",
+    },
+    movie: {
+      grid: "Movies you watched",
+      empty: {
+        title: "No watched movies yet",
+        description: "Movies you mark watched show up here.",
+      },
+      browse: "Browse movies",
+    },
+    failed: "Couldn't load your watched titles",
+  },
+};
+
+/** "1 show", "4 movies". */
+function titles(n: number, type: MediaType): string {
+  const noun = type === "tv" ? "show" : "movie";
+  return `${n} ${noun}${n === 1 ? "" : "s"}`;
+}
+
+/**
+ * The notes above a classified tab (spec 0020, AC-16, AC-17): the 500 title
+ * ceiling, and the titles whose TMDB read failed, which are on no page.
+ */
+export const LIBRARY_NOTES = {
+  checked: (limit: number, type: MediaType) =>
+    `Checked your ${limit} most recent ${type === "tv" ? "shows" : "movies"}`,
+  failed: (n: number, type: MediaType) =>
+    `${titles(n, type)} couldn't be loaded`,
+} as const;
+
+/** The labels a Watched show card carries (spec 0020, AC-12). */
+export const WATCHED_SHOW_LABELS = {
+  finished: "Finished",
+  caught_up: "Caught up",
+} as const;
+
+/** The Paused & dropped section on Watchlist (spec 0020, AC-10). */
+export const HELD_SHOWS_COPY = {
+  summary: (n: number) => `Paused & dropped (${n})`,
+  gridLabel: "Paused and dropped shows",
+  more: (limit: number) => `Showing your ${limit} most recently changed`,
+  resumeLabel: (show: string) => `Resume ${show}`,
+  stopLabel: (show: string) => `Stop tracking ${show}`,
+  unavailable: "Show unavailable",
+  /** The toast's name for a show TMDB no longer has (AC-17). */
+  missingShowName: "this show",
+  /** The Stop tracking label's name for a show TMDB no longer has. */
+  missingShowLabel: "missing title",
 } as const;

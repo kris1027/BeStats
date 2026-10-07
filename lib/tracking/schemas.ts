@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { TV_STATUSES } from "./types";
+import { SHOW_HOLDS } from "./types";
 
 /**
  * The input rules every movie tracking action applies before any Supabase or
@@ -129,23 +129,28 @@ export const seasonUndoInputSchema = z.object({
   ]),
 });
 
-/** One of the five statuses, exactly as `tv_status` spells them. */
-export const tvStatusSchema = z.enum(TV_STATUSES);
+/** One of the two holds, exactly as `show_hold` spells them, or none. */
+export const showHoldSchema = z.enum(SHOW_HOLDS).nullable();
+
+/** Tracking a show (spec 0020, AC-2, AC-6): the show alone. */
+export const trackShowInputSchema = z.object({ showId: tmdbIdSchema });
 
 /**
- * A status write (spec 0013, AC-21): the show, the status to set or null to
- * remove it, and the status the caller last saw (null for none), which the
- * database compares before writing. The source is never an input: a choice
- * made by hand is always `user`, fixed inside `set_show_status`. A removal
- * must name the status it removes.
+ * A hold change (spec 0020, AC-2, AC-4, AC-10): the hold to set (null to
+ * resume) and the hold the caller last saw, which the database compares
+ * before writing.
  */
-export const showStatusInputSchema = z
-  .object({
-    showId: tmdbIdSchema,
-    status: tvStatusSchema.nullable(),
-    expected: tvStatusSchema.nullable(),
-  })
-  .refine((input) => input.status !== null || input.expected !== null);
+export const showHoldInputSchema = z.object({
+  showId: tmdbIdSchema,
+  hold: showHoldSchema,
+  expected: showHoldSchema,
+});
+
+/** Stop tracking (spec 0020, AC-3, AC-4), over the hold the caller saw. */
+export const untrackShowInputSchema = z.object({
+  showId: tmdbIdSchema,
+  expected: showHoldSchema,
+});
 
 /** A time the client carries back for an Undo: full ISO, never in the future. */
 const pastInstantSchema = z.iso
@@ -153,22 +158,23 @@ const pastInstantSchema = z.iso
   .refine((value) => Date.parse(value) <= Date.now());
 
 /**
- * The Undo of a status removal or of Stop watching (spec 0013, AC-19, AC-21):
- * the values `set_show_status` or `remove_show_status` reported. A removal's
- * Undo must carry the time of the removal, which bounds the window;
- * `restore_show_status` applies every bound again.
+ * The Undo of Stop tracking (spec 0020, AC-3): the values `untrack_show`
+ * reported. A hold and its time come together or not at all, and the hold
+ * never changed before the show was tracked; `restore_show_tracking` applies
+ * every bound again.
  */
-export const restoreShowStatusInputSchema = z
+export const restoreShowTrackingInputSchema = z
   .object({
     showId: tmdbIdSchema,
     undo: z.object({
-      expected: tvStatusSchema.nullable(),
-      status: tvStatusSchema,
-      source: z.enum(["user", "system"]),
-      listedAt: pastInstantSchema.nullable(),
-      removedAt: pastInstantSchema.nullable(),
+      trackedAt: pastInstantSchema,
+      hold: showHoldSchema,
+      holdChangedAt: pastInstantSchema.nullable(),
     }),
   })
   .refine(
-    (input) => input.undo.expected !== null || input.undo.removedAt !== null,
+    ({ undo }) =>
+      (undo.hold === null) === (undo.holdChangedAt === null) &&
+      (undo.holdChangedAt === null ||
+        Date.parse(undo.holdChangedAt) >= Date.parse(undo.trackedAt)),
   );

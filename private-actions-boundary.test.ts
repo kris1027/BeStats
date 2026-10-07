@@ -104,15 +104,14 @@ const PRIVATE_ACTIONS: Record<
           kind: "unmark",
           episodeIds: [62085],
         }),
-      setShowStatus: () =>
-        showActions.setShowStatus(SHOW, "dropped", "watching"),
-      restoreShowStatus: () =>
-        showActions.restoreShowStatus(SHOW, {
-          expected: null,
-          status: "watching",
-          source: "system",
-          listedAt: "2026-09-01T10:00:00+00:00",
-          removedAt: "2026-09-25T23:29:00+00:00",
+      trackShow: () => showActions.trackShow(SHOW),
+      setShowHold: () => showActions.setShowHold(SHOW, "paused", null),
+      untrackShow: () => showActions.untrackShow(SHOW, "dropped"),
+      restoreShowTracking: () =>
+        showActions.restoreShowTracking(SHOW, {
+          trackedAt: "2026-09-01T10:00:00+00:00",
+          hold: "dropped",
+          holdChangedAt: "2026-09-25T23:29:00+00:00",
         }),
     },
   },

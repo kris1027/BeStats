@@ -90,8 +90,8 @@ function WatchedIcon({ filled, className }: IconProps & { filled: boolean }) {
 }
 
 /**
- * Stop watching: a square inside a circle (spec 0013, AC-16). The show status
- * pill reuses it for On Hold, the status it sets.
+ * Stop watching: a square inside a circle (spec 0013, AC-16). The show
+ * tracking pill uses it for Paused (spec 0020, AC-2).
  */
 function StopWatchingIcon({ className }: IconProps) {
   return (

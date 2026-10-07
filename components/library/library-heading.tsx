@@ -2,8 +2,7 @@
 
 import { type ReactNode, useEffect } from "react";
 
-/** The id of each list page's heading, which takes focus when a list empties. */
-const LIBRARY_HEADING_ID = "library-heading";
+import { LIBRARY_HEADING_ID } from "./ids";
 
 /**
  * The card whose removal looked like it emptied a page past page 1. The
@@ -40,7 +39,7 @@ function cancelLibraryHeadingFocus(key: string) {
 }
 
 /**
- * The `h1` of `/watchlist` and `/watched`. It can take focus
+ * The `h1` of `/watchlist`, `/upcoming` and `/watched`. It can take focus
  * (`tabIndex={-1}`), because removing the last card on a page moves focus
  * here, including after the redirect that follows emptying a later page
  * (AC-9, AC-16).

@@ -63,17 +63,17 @@ select ok(
 set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
 set local role authenticated;
 
--- AC-4: the first watch clears the bookmark.
+-- AC-4, as amended by spec 0020 AC-14: the first watch keeps the bookmark.
 insert into public.user_movie_state (user_id, movie_id, in_watchlist)
 values ('11111111-1111-1111-1111-111111111111', 900001, true);
 
 select public.mark_movie_watched(900001);
 
 select ok(
-  (select watched_at is not null and in_watchlist = false
+  (select watched_at is not null and in_watchlist
    from public.user_movie_state
    where user_id = '11111111-1111-1111-1111-111111111111' and movie_id = 900001),
-  'the first watch sets watched_at and clears the bookmark'
+  'the first watch sets watched_at and keeps the bookmark'
 );
 
 -- AC-4 and AC-6: a rewatch bookmark, then a stale second Mark watched. The
@@ -108,17 +108,18 @@ select ok(
   'marking an untracked movie watched creates a watched row'
 );
 
--- AC-8: rating an unwatched, planned movie sets all three in one call.
+-- AC-8: rating an unwatched, planned movie rates and marks it in one call,
+-- and keeps the plan (spec 0020, AC-14).
 insert into public.user_movie_state (user_id, movie_id, in_watchlist)
 values ('11111111-1111-1111-1111-111111111111', 900003, true);
 
 select public.rate_movie(900003, 8::smallint);
 
 select ok(
-  (select rating = 8 and watched_at is not null and in_watchlist = false
+  (select rating = 8 and watched_at is not null and in_watchlist
    from public.user_movie_state
    where user_id = '11111111-1111-1111-1111-111111111111' and movie_id = 900003),
-  'rating an unwatched movie stores the rating, marks it watched and clears the bookmark'
+  'rating an unwatched movie stores the rating, marks it watched and keeps the bookmark'
 );
 
 -- AC-8: rating a watched movie touches only the rating.

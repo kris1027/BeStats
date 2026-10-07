@@ -108,3 +108,69 @@ export async function fetchTvShowsByIds(
   );
   return collect(ids, outcomes, toTvSummary);
 }
+
+/** What `readEachSettled` returns: every id is in exactly one of the three. */
+export type SettledBatch<T> = {
+  found: Map<number, T>;
+  missingIds: number[];
+  failedIds: number[];
+};
+
+/**
+ * A failure that says nothing about one title and everything about the
+ * request: a rejected credential or an exhausted rate limit (spec 0020,
+ * AC-17). Any other title would fail the same way, so the whole read fails.
+ */
+const SYSTEMIC_KINDS: ReadonlySet<TmdbError["kind"]> = new Set([
+  "unauthorized",
+  "rate_limited",
+]);
+
+/**
+ * Reads many titles, keeping a failure to the title it happened to (spec
+ * 0020, AC-17), for the library pages that must place every title they hold.
+ *
+ * Unlike the batch helpers above, a single title's timeout, upstream error or
+ * bad response does not fail the whole read: that title is reported in
+ * `failedIds` and the page leaves it out with a note. A title TMDB no longer
+ * has is in `missingIds`, as above. Only a systemic failure raises, because a
+ * page full of "couldn't load" would hide the real cause. Up to
+ * `TMDB_CONCURRENCY_LIMIT` reads run at a time, and the two id lists keep the
+ * input order.
+ *
+ * @param ids The titles, in the caller's order.
+ * @param read The cached single title reader from `reads.ts`.
+ * @throws {TmdbError} The first systemic failure.
+ */
+export async function readEachSettled<T>(
+  ids: readonly number[],
+  read: (id: number) => Promise<T>,
+): Promise<SettledBatch<T>> {
+  const outcomes = await mapWithConcurrency(
+    ids,
+    TMDB_CONCURRENCY_LIMIT,
+    async (id): Promise<{ value: T } | "missing" | "failed"> => {
+      try {
+        return { value: await read(id) };
+      } catch (error) {
+        if (!(error instanceof TmdbError)) throw error;
+        if (error.kind === "not_found") return "missing";
+        if (SYSTEMIC_KINDS.has(error.kind)) throw error;
+        return "failed";
+      }
+    },
+  );
+
+  const result: SettledBatch<T> = {
+    found: new Map(),
+    missingIds: [],
+    failedIds: [],
+  };
+  outcomes.forEach((outcome, index) => {
+    const id = ids[index];
+    if (outcome === "missing") result.missingIds.push(id);
+    else if (outcome === "failed") result.failedIds.push(id);
+    else result.found.set(id, outcome.value);
+  });
+  return result;
+}

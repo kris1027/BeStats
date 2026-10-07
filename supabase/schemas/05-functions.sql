@@ -4,11 +4,12 @@
 -- read the row they change and would race between two tabs if the app read
 -- first and wrote second:
 --
---   1. The first transition into watched takes the movie off the watchlist.
---      Marking an already watched movie watched again changes nothing, so a
---      stale tab can neither move the original date nor clear a rewatch
---      bookmark set since.
---   2. Rating an unwatched movie counts as that first transition.
+--   1. Marking an already watched movie watched again changes nothing, so a
+--      stale tab cannot move the original date. Marking never touches the
+--      plan: since spec 0020 (AC-14) a watched movie keeps `in_watchlist`, so
+--      unmarking it puts a planned movie straight back on Watchlist or
+--      Upcoming.
+--   2. Rating an unwatched movie marks it watched, in the same statement.
 --
 -- `lib/tracking/intent.ts` mirrors these rules for the optimistic UI, and
 -- `supabase/tests/050-movie-tracking-functions.test.sql` pins them here.
@@ -27,11 +28,10 @@ volatile
 security invoker
 set search_path = ''
 as $$
-  insert into public.user_movie_state as s (user_id, movie_id, watched_at, in_watchlist)
-  values (auth.uid(), p_movie_id, now(), false)
+  insert into public.user_movie_state as s (user_id, movie_id, watched_at)
+  values (auth.uid(), p_movie_id, now())
   on conflict (user_id, movie_id) do update
-    set watched_at = coalesce(s.watched_at, now()),
-        in_watchlist = case when s.watched_at is null then false else s.in_watchlist end
+    set watched_at = coalesce(s.watched_at, now())
   returning *;
 $$;
 
@@ -42,12 +42,11 @@ volatile
 security invoker
 set search_path = ''
 as $$
-  insert into public.user_movie_state as s (user_id, movie_id, rating, watched_at, in_watchlist)
-  values (auth.uid(), p_movie_id, p_rating, now(), false)
+  insert into public.user_movie_state as s (user_id, movie_id, rating, watched_at)
+  values (auth.uid(), p_movie_id, p_rating, now())
   on conflict (user_id, movie_id) do update
     set rating = excluded.rating,
-        watched_at = coalesce(s.watched_at, now()),
-        in_watchlist = case when s.watched_at is null then false else s.in_watchlist end
+        watched_at = coalesce(s.watched_at, now())
   returning *;
 $$;
 
@@ -159,8 +158,13 @@ grant execute on function public.restore_movie_watched(integer, timestamptz) to 
 -- row keeps the numbers it was created with, and only `watched_at` and
 -- `rating` ever change.
 
--- Starts a show on its own (spec 0013, AC-6): the one write to
--- `user_show_state` any episode function makes. It moves nothing or Want to
+-- Legacy, kept only for the app deployed before spec 0020 and dropped by its
+-- contract migration: since spec 0020 the episode functions call
+-- `track_show` instead, and nothing calls this.
+--
+-- Legacy since spec 0020: the app no longer calls it, and it stays only so a
+-- rollback to the earlier deploy works. The contract migration drops it.
+-- Starts a show on its own (spec 0013, AC-6). It moves nothing or Want to
 -- Watch to Watching with `status_source = 'system'`, and never touches On
 -- Hold, Dropped, Completed or Watching, whatever their source. Each episode
 -- function decides `p_should_start` inline, in the same statement as its own
@@ -201,11 +205,239 @@ $$;
 revoke all on function public.start_watching_show(integer, boolean) from public, anon, authenticated;
 grant execute on function public.start_watching_show(integer, boolean) to authenticated;
 
+-- The two directions of the legacy mapping (AC-19, Migration plan), each
+-- written once: the backfill reads `legacy_hold_for_status`, and the mirror
+-- into `status` that keeps a rollback working reads `legacy_status_for_hold`.
+-- Both go with the contract migration. Pure and immutable, they read no
+-- table. `legacy_status_for_hold` runs inside the caller's SECURITY INVOKER
+-- functions, so `authenticated` may execute it; `legacy_hold_for_status` is
+-- for the migration and pgTAP only. `supabase/tests/165-show-status-mapping.test.sql`
+-- pins both.
+create or replace function public.legacy_hold_for_status(p_status public.tv_status)
+returns public.show_hold
+language sql
+immutable
+security invoker
+set search_path = ''
+as $$
+  select case p_status
+    when 'on_hold' then 'paused'::public.show_hold
+    when 'dropped' then 'dropped'::public.show_hold
+  end;
+$$;
+
+create or replace function public.legacy_status_for_hold(p_hold public.show_hold)
+returns public.tv_status
+language sql
+immutable
+security invoker
+set search_path = ''
+as $$
+  select case p_hold
+    when 'paused' then 'on_hold'::public.tv_status
+    when 'dropped' then 'dropped'::public.tv_status
+    else 'watching'::public.tv_status
+  end;
+$$;
+
+revoke all on function public.legacy_hold_for_status(public.tv_status) from public, anon, authenticated;
+revoke all on function public.legacy_status_for_hold(public.show_hold) from public, anon, authenticated;
+grant execute on function public.legacy_status_for_hold(public.show_hold) to authenticated;
+
+-- Tracking a show (spec 0020, API surface).
+--
+-- A show is tracked while the caller has a `user_show_state` row for it, with
+-- an optional hold (AC-1). These four are the only writes of `hold_state`,
+-- and none touches `user_episode_state`. The same shape as every function in
+-- this file: SECURITY INVOKER with an empty `search_path`, so the four row
+-- level security policies apply inside, and `user_id` always `auth.uid()`,
+-- never an argument. `tracked_at` and `hold_changed_at` are the
+-- `set_tracking_times` trigger's. `supabase/tests/160-show-tracking.test.sql`
+-- pins them.
+--
+-- Until the contract migration they also mirror into the legacy `status`
+-- column (Migration plan), so a rollback to the app deployed before spec 0020
+-- shows what the new app set: tracked is `watching`, a pause `on_hold`, a
+-- drop `dropped`, all with source `user`.
+
+-- Tracks a show with no hold (AC-2, AC-5, AC-6). Tracking a tracked show is a
+-- no op that keeps its hold, so an episode mark never clears a Pause or a
+-- Drop. Returns whether this call created the row, the "added to your shows"
+-- toast's cue. Executable by `authenticated` because the episode functions
+-- below run it as the caller; called directly, it only ever tracks the
+-- caller's own show.
+create or replace function public.track_show(p_show_id integer)
+returns boolean
+language sql
+volatile
+security invoker
+set search_path = ''
+as $$
+  with inserted as (
+    insert into public.user_show_state as s (user_id, show_id, status, status_source)
+    values (auth.uid(), p_show_id, 'watching', 'user')
+    on conflict (user_id, show_id) do nothing
+    returning 1
+  )
+  select exists (select 1 from inserted);
+$$;
+
+-- Pauses, drops or resumes a show (AC-2, AC-4, AC-10), but only over the
+-- hold the caller last saw: `p_expected` is that hold, null for none. A
+-- mismatch raises `BS409`, which reaches the user as `hold_changed`, and
+-- writes nothing. No row raises `BS404`, `not_tracked`. Choosing the hold the
+-- row already holds writes nothing. Returns the hold as stored.
+create or replace function public.set_show_hold(
+  p_show_id integer,
+  p_hold public.show_hold,
+  p_expected public.show_hold
+)
+returns public.show_hold
+language plpgsql
+volatile
+security invoker
+set search_path = ''
+as $$
+declare
+  v_prior public.user_show_state;
+begin
+  select * into v_prior
+  from public.user_show_state as s
+  where s.user_id = auth.uid() and s.show_id = p_show_id
+  for update;
+
+  if v_prior.user_id is null then
+    raise exception 'not_tracked' using errcode = 'BS404';
+  end if;
+  if v_prior.hold_state is distinct from p_expected then
+    raise exception 'hold_changed' using errcode = 'BS409';
+  end if;
+  if v_prior.hold_state is not distinct from p_hold then
+    return p_hold;
+  end if;
+
+  update public.user_show_state as s
+  set hold_state = p_hold,
+      status = public.legacy_status_for_hold(p_hold),
+      status_source = 'user'
+  where s.user_id = auth.uid() and s.show_id = p_show_id;
+
+  return p_hold;
+end;
+$$;
+
+-- Stops tracking a show (AC-3, AC-4): the row goes, every episode mark and
+-- rating stays. Only the hold the caller saw is removed: a row that now holds
+-- another raises `BS409` and stays, and no row raises `BS404`. Returns the
+-- deleted row's times and hold, which the client keeps as the Undo.
+create or replace function public.untrack_show(
+  p_show_id integer,
+  p_expected public.show_hold
+)
+returns table (
+  tracked_at timestamptz,
+  hold_state public.show_hold,
+  hold_changed_at timestamptz
+)
+language plpgsql
+volatile
+security invoker
+set search_path = ''
+as $$
+#variable_conflict use_column
+declare
+  v_row public.user_show_state;
+begin
+  delete from public.user_show_state as s
+  where s.user_id = auth.uid()
+    and s.show_id = p_show_id
+    and s.hold_state is not distinct from p_expected
+  returning s.* into v_row;
+
+  if v_row.user_id is null then
+    if exists (
+      select 1 from public.user_show_state as s
+      where s.user_id = auth.uid() and s.show_id = p_show_id
+    ) then
+      raise exception 'hold_changed' using errcode = 'BS409';
+    end if;
+    raise exception 'not_tracked' using errcode = 'BS404';
+  end if;
+
+  return query select v_row.tracked_at, v_row.hold_state, v_row.hold_changed_at;
+end;
+$$;
+
+-- The Undo of Stop tracking (AC-3): puts the row back with the times and hold
+-- `untrack_show` reported, so the show returns to its old place. It stores
+-- client supplied times, so they are bounded: none in the future,
+-- `hold_changed_at` never before `tracked_at`, and a hold and its time both
+-- set or both null. A supplied `tracked_at` can only move the caller's own
+-- sort order, which is accepted. A row that is already back (tracked again
+-- since, or a second Undo) raises `P0002`, which reaches the user as
+-- `undo_expired`, and so does anything out of bounds.
+create or replace function public.restore_show_tracking(
+  p_show_id integer,
+  p_tracked_at timestamptz,
+  p_hold public.show_hold default null,
+  p_hold_changed_at timestamptz default null
+)
+returns public.user_show_state
+language plpgsql
+volatile
+security invoker
+set search_path = ''
+as $$
+declare
+  v_row public.user_show_state;
+begin
+  if p_tracked_at is null
+    or p_tracked_at > now()
+    or p_hold_changed_at > now()
+    or (p_hold is null) <> (p_hold_changed_at is null)
+    or p_hold_changed_at < p_tracked_at
+  then
+    raise exception 'undo_expired' using errcode = 'P0002';
+  end if;
+
+  perform set_config('bestats.restore_tracking', 'on', true);
+
+  insert into public.user_show_state as s
+    (user_id, show_id, tracked_at, hold_state, hold_changed_at, status, status_source)
+  values (
+    auth.uid(), p_show_id, p_tracked_at, p_hold, p_hold_changed_at,
+    public.legacy_status_for_hold(p_hold),
+    'user'
+  )
+  on conflict (user_id, show_id) do nothing
+  returning s.* into v_row;
+
+  perform set_config('bestats.restore_tracking', 'off', true);
+
+  if v_row.user_id is null then
+    raise exception 'already_tracked' using errcode = 'P0002';
+  end if;
+  return v_row;
+end;
+$$;
+
+revoke all on function public.track_show(integer) from public, anon, authenticated;
+revoke all on function public.set_show_hold(integer, public.show_hold, public.show_hold) from public, anon, authenticated;
+revoke all on function public.untrack_show(integer, public.show_hold) from public, anon, authenticated;
+revoke all on function public.restore_show_tracking(integer, timestamptz, public.show_hold, timestamptz) from public, anon, authenticated;
+grant execute on function public.track_show(integer) to authenticated;
+grant execute on function public.set_show_hold(integer, public.show_hold, public.show_hold) to authenticated;
+grant execute on function public.untrack_show(integer, public.show_hold) to authenticated;
+grant execute on function public.restore_show_tracking(integer, timestamptz, public.show_hold, timestamptz) to authenticated;
+
 -- Marks one episode watched. Marking an already watched episode again changes
 -- nothing, so a stale second tab cannot move the first watched date (AC-5).
 -- It never touches `rating`. `prior` reads the row as it was before the
 -- upsert (every part of one statement sees the same snapshot), which is how
--- `show_started` knows whether this call is the one that watched it.
+-- it knows whether this call is the one that watched it. Only that first
+-- watch of a regular episode tracks the show (spec 0020, AC-5);
+-- `show_started` reports whether it newly did, keeping the name the app
+-- deployed before spec 0020 reads.
 -- `newly_marked` (spec 0014, AC-9) is whether this transaction set the mark:
 -- `now()` is the transaction's start, and `coalesce` keeps an earlier
 -- writer's time. It does not read `prior`, whose snapshot two racing tabs
@@ -251,11 +483,12 @@ as $$
   select
     u.user_id, u.episode_id, u.show_id, u.season_number, u.episode_number,
     u.watched_at, u.rating, u.created_at, u.updated_at,
-    public.start_watching_show(
-      p_show_id,
-      p_season_number >= 1
+    case
+      when p_season_number >= 1
         and not exists (select 1 from prior where prior.watched_at is not null)
-    ),
+      then public.track_show(p_show_id)
+      else false
+    end,
     u.watched_at = now()
   from upserted as u;
 $$;
@@ -265,11 +498,12 @@ grant execute on function public.mark_episode_watched(integer, smallint, smallin
 
 -- Rates one episode. Rating an unwatched episode also marks it watched, in the
 -- same statement; a watched one keeps its date (AC-6). That first watch can
--- start the show, exactly as `mark_episode_watched` does; rating an episode
--- already watched never does (spec 0013, AC-7).
+-- track the show, exactly as `mark_episode_watched` does; rating an episode
+-- already watched never does (spec 0013, AC-7; spec 0020, AC-5).
 -- `newly_marked` (spec 0015, AC-4) is whether this call set the watched mark,
--- worked out as in `mark_episode_watched`; it tells the automatic completion
--- check that a rating was also a new watch.
+-- worked out as in `mark_episode_watched`. The app no longer reads it; it
+-- stays for the automatic completion check of the app deployed before spec
+-- 0020, so a rollback keeps working, and goes with the contract migration.
 create or replace function public.rate_episode(
   p_show_id integer,
   p_season_number smallint,
@@ -313,11 +547,12 @@ as $$
   select
     u.user_id, u.episode_id, u.show_id, u.season_number, u.episode_number,
     u.watched_at, u.rating, u.created_at, u.updated_at,
-    public.start_watching_show(
-      p_show_id,
-      p_season_number >= 1
+    case
+      when p_season_number >= 1
         and not exists (select 1 from prior where prior.watched_at is not null)
-    ),
+      then public.track_show(p_show_id)
+      else false
+    end,
     u.watched_at = now()
   from upserted as u;
 $$;
@@ -329,7 +564,7 @@ grant execute on function public.rate_episode(integer, smallint, smallint, integ
 -- season, ids and numbers as parallel arrays. One statement: it succeeds or
 -- fails as a whole, and it returns the ids it newly marked, which is exactly
 -- what the Undo clears (AC-10). No rating is touched. Newly marking any
--- regular episode can start the show (spec 0013, AC-6), reported as
+-- regular episode tracks an untracked show (spec 0020, AC-5), reported as
 -- `show_started`.
 --
 -- `distinct on` keeps one entry per id even if the TypeScript deduplication
@@ -378,10 +613,11 @@ begin
 
   return query select
     v_marked,
-    public.start_watching_show(
-      p_show_id,
-      p_season_number >= 1 and cardinality(v_marked) > 0
-    );
+    case
+      when p_season_number >= 1 and cardinality(v_marked) > 0
+      then public.track_show(p_show_id)
+      else false
+    end;
 end;
 $$;
 
@@ -484,6 +720,8 @@ grant execute on function public.mark_season_watched(integer, smallint, integer[
 grant execute on function public.unmark_episodes_watched(integer, integer[]) to authenticated;
 grant execute on function public.restore_episodes_watched(integer, jsonb) to authenticated;
 
+-- Legacy since spec 0020: the app no longer calls these, and they stay only so a
+-- rollback to the earlier deploy works. The contract migration drops them.
 -- TV status writes (spec 0013).
 --
 -- A status is only ever written through these three, so `status_source` can
@@ -715,6 +953,8 @@ grant execute on function public.set_show_status(integer, public.tv_status, publ
 grant execute on function public.remove_show_status(integer, public.tv_status) to authenticated;
 grant execute on function public.restore_show_status(integer, public.tv_status, public.status_source, public.tv_status, timestamptz, timestamptz) to authenticated;
 
+-- Legacy since spec 0020: the app no longer calls it, and it stays only so a
+-- rollback to the earlier deploy works. The contract migration drops it.
 -- Automatic completion (spec 0015, AC-3): moves the caller's Watching row to
 -- Completed with `status_source = 'system'`, the one path that writes that
 -- pair. The app sends the ids of every aired regular episode from one whole
@@ -794,6 +1034,8 @@ $$;
 revoke all on function public.complete_show_automatically(integer, integer[], boolean) from public, anon, authenticated;
 grant execute on function public.complete_show_automatically(integer, integer[], boolean) to authenticated;
 
+-- Legacy since spec 0020: the app no longer calls it, and it stays only so a
+-- rollback to the earlier deploy works. The contract migration drops it.
 -- Reopens an automatic completion on a visit (spec 0015, AC-10, AC-11):
 -- the page's own check found a whole TMDB read that no longer says finished
 -- and watched. Moves only the caller's Completed row whose source is `system`

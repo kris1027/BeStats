@@ -27,8 +27,8 @@ The first version includes:
 - Google and email/password authentication.
 - A private watchlist and watched movie history.
 - Episode and season completion controls.
-- TV statuses: Want to Watch, Watching, On Hold, Dropped, and Completed.
-- A private Up Next view for tracked TV shows.
+- Tracked TV shows, with an optional Pause or Drop.
+- Progress based library pages: every tracked show and planned movie sits on Watchlist, Upcoming or Watched, worked out from what you watched and what TMDB has aired or dated (spec 0020).
 - Movie and episode ratings from 1 to 10, with calculated season and TV show ratings.
 
 ## 2. How to work
@@ -91,8 +91,8 @@ Keep these responsibilities separate:
 - **Pages and UI:** render catalog information and private user state. Use Server Components by default and Client Components for interactions that need them.
 - **TMDB integration:** a server-only module handles authenticated TMDB requests, normalizes responses, and applies appropriate caching and error handling.
 - **Authentication:** Supabase Auth manages identity, sessions, and account recovery.
-- **User data access:** authenticated server operations read and write watchlists, progress, statuses, and ratings under the current user's session.
-- **Business rules:** reusable domain functions define rating calculations, episode eligibility, Up Next selection, and automatic completion.
+- **User data access:** authenticated server operations read and write watchlists, progress, tracking, and ratings under the current user's session.
+- **Business rules:** reusable domain functions define rating calculations, episode eligibility, and which library page a title belongs on.
 - **Database security:** PostgreSQL constraints and Supabase Row Level Security enforce ownership and valid data independently of UI checks.
 
 Use Server Actions or Route Handlers for application data mutations, following a consistent existing project pattern. Validate input and authenticate each protected operation. Derive the user ID from the verified session, never from a client-supplied ownership field.
@@ -118,16 +118,16 @@ This section is the only place the stack is defined. Installed versions live in 
 ## 7. Decisions already made
 
 - Catalog browsing, search, and title detail pages are public.
-- Watchlists, history, statuses, ratings, and Up Next require authentication and are private to their owner.
+- Watchlists, history, tracking, ratings, and the library pages require authentication and are private to their owner.
 - Authentication supports Google and email/password, including the necessary verification, sign-out, and password recovery flows.
 - TMDB is the source of catalog metadata. Supabase is the source of user state.
 - Movies can be marked watched and rated directly from 1 to 10.
 - TV episodes can be marked watched and rated directly from 1 to 10.
 - Seasons and TV shows cannot be rated directly. Their ratings are calculated from the user's episode ratings.
 - Watched state and rating are separate: marking something watched does not require a rating, and removing a watched mark does not silently delete its rating.
-- TV status and episode history are separate: changing a status must preserve watched episodes and ratings.
+- TV tracking and episode history are separate: pausing, dropping or stopping tracking must preserve watched episodes and ratings.
 - Marking a season watched marks only eligible episodes that have already aired, never future or unknown-date episodes.
-- Specials, represented by TMDB season 0, can be marked watched and rated but are excluded from overall TV progress, Up Next, and the TV show's calculated rating.
+- Specials, represented by TMDB season 0, can be marked watched and rated but are excluded from overall TV progress, library page placement, and the TV show's calculated rating.
 - Search includes title queries and genre, release year, and minimum TMDB rating filters. It uses no AI.
 - There are no public user profiles or social features in the MVP.
 
@@ -153,15 +153,15 @@ One record per user and movie contains watchlist membership, watched state, an o
 
 ### TV tracking state
 
-One record per user and TV show contains one status: Want to Watch, Watching, On Hold, Dropped, or Completed. Store enough information to distinguish manual status choices from automatic transitions so background refreshes do not overwrite deliberate user choices.
+A show is tracked while one record exists per user and TV show (spec 0020). The record holds when it was tracked and an optional hold, Paused or Dropped, with when the hold changed. The hold is the only hand set choice; nothing derived, such as the page a show sits on, is stored.
 
-Want to Watch is the TV watchlist state; avoid a second conflicting TV watchlist flag. A private watchlist view combines these TV entries with movie watchlist entries.
+There is no TV watchlist flag and no stored status. Which library page a show is on is worked out per request from the user's episodes and TMDB's air dates.
 
 ### Episode state
 
 One record per user and episode contains its TV and episode identity, watched state, an optional watched timestamp, and an optional integer rating from 1 to 10.
 
-Enforce ownership references, uniqueness, rating bounds, and valid status values in the database. Repeated writes must not create duplicate state records.
+Enforce ownership references, uniqueness, rating bounds, and valid hold values in the database. Repeated writes must not create duplicate state records.
 
 Do not persist rounded season or TV ratings as independent editable values. Derive them from episode ratings, or use a consistently maintained database projection if needed.
 
@@ -181,23 +181,19 @@ For example, if one season has a personal average of 8 and another has an averag
 
 Clearly distinguish personal ratings from TMDB community ratings everywhere. Search's minimum-rating filter uses the TMDB rating.
 
-### Progress and Up Next
+### Progress and library pages
 
-Calculate overall progress using aired regular episodes. Exclude specials, unaired episodes, and episodes with no confirmed air date from the eligible total. A zero eligible total must produce a sensible empty state, not a division error or automatic completion.
+Calculate overall progress using aired regular episodes. Exclude specials, unaired episodes, and episodes with no confirmed air date from the eligible total. A zero eligible total must produce a sensible empty state, not a division error.
 
 Use the available TMDB air date consistently; do not imply a precise local release time that the source does not provide. Document the date boundary chosen in the implementation plan.
 
-Up Next shows the first unwatched eligible episode in season and episode order for each show with Watching status. A Watching show with all eligible episodes watched displays “You're up to date.” On Hold and Dropped shows are excluded from the active queue until the user resumes them.
+Every tracked show with no hold is on exactly one page (spec 0020, AC-7). Watchlist: an aired regular episode is unwatched, and the card offers the first one in season and episode order with Mark watched. Upcoming: caught up with a next regular episode dated after today, or nothing watched and nothing dated (Date TBA). Watched: caught up with nothing dated, labelled Finished when TMDB says Ended or Canceled and Caught up otherwise. Aired episodes come from the show details read (`last_episode_to_air`, plus a `next_episode_to_air` dated on or before today). Paused and Dropped shows are on none of the three; they wait in the Paused & dropped section of Watchlist until resumed. A planned movie is on Watchlist from its release day and on Upcoming before it or with no date; a watched movie is on Watched whatever its plan says.
 
 Marking a whole season watched must be idempotent and preserve existing ratings. New episodes remain unwatched when they become available later.
 
-### Automatic status
+### Tracking and holds
 
-A TV show may become Completed automatically only when TMDB identifies it as ended or canceled and the user has watched all aired regular episodes. Require complete episode metadata before making this decision; a partial fetch must never establish completion.
-
-An ongoing show stays Watching when the user catches up. Users can change status manually. Preserve intentional On Hold, Dropped, or manually selected statuses during metadata refreshes. Watching an episode may move a new or Want to Watch entry to Watching; do not use it to silently resume an On Hold or Dropped show.
-
-Keep automatic completion reversible when its underlying condition changes, while preserving explicit manual choices. Describe and verify these transitions in the implementation plan.
+Marking an episode or a season watched tracks an untracked show with no hold. It never clears a Pause or a Drop. Stop tracking removes the record and keeps every mark and rating, with an Undo that restores its old place. Hold changes and Stop tracking name the hold the user last saw, so a stale page never overwrites a newer choice. No page writes when it loads.
 
 ## 10. Search and discovery
 
@@ -219,13 +215,13 @@ Enable RLS on every table containing user-owned data. Policies must constrain re
 
 Private page redirects are a UX measure, not the security boundary. Recheck authentication and authorization in server operations, and enforce ownership in PostgreSQL.
 
-Test that one user cannot read or change another user's lists, episode state, ratings, or tracking status, including through direct data requests.
+Test that one user cannot read or change another user's lists, episode state, ratings, or tracking, including through direct data requests.
 
 Keep secrets in environment variables. Maintain a committed `.env.example` with placeholder values and descriptions. Only explicitly public Supabase configuration may reach the browser; TMDB credentials and elevated database keys must not.
 
 Do not place private user responses in shared caches. Cache public catalog metadata independently from user-specific state. Avoid logging tokens, session material, passwords, or unnecessary personal data.
 
-Validate IDs, media types, ratings, statuses, pagination, and filter inputs. Handle session expiry and failed writes visibly without leaving the UI in a false success state.
+Validate IDs, media types, ratings, holds, pagination, and filter inputs. Handle session expiry and failed writes visibly without leaving the UI in a false success state.
 
 ## 12. Integration and deployment considerations
 
@@ -244,7 +240,7 @@ Run checks from the correct application directory and report actual results:
 
 - Type checking and linting for implementation changes.
 - A production build when routes, configuration, dependencies, or server code change.
-- Targeted tests for rating calculations, progress eligibility, automatic status transitions, and security-sensitive behavior.
+- Targeted tests for rating calculations, progress eligibility, library page classification, and security-sensitive behavior.
 - Runtime verification in the running application for the changed flows.
 - Migration and RLS verification against an appropriate Supabase development or test environment when database behavior changes.
 
@@ -258,9 +254,9 @@ At minimum, verify these behaviors before considering the MVP complete:
 6. Episode and whole-season completion work without including future episodes or overwriting ratings.
 7. Unrated episodes and seasons are excluded from averages; unequal season lengths do not change equal season weighting.
 8. Specials can be tracked and rated without affecting overall TV progress or rating.
-9. Up Next selects the correct aired episode and excludes On Hold and Dropped shows.
-10. Ongoing shows display “You're up to date”; ended or canceled shows meet the agreed automatic completion rule.
-11. Manual status changes preserve episode history and ratings.
+9. Each tracked show is on the one page its progress and air dates give, Watchlist offers the correct aired episode, and Paused and Dropped shows wait in their own section.
+10. Caught up shows move to Upcoming when a next episode is dated and to Watched when nothing is, labelled Finished or Caught up.
+11. Pause, Drop, Resume and Stop tracking preserve episode history and ratings.
 12. Combined search filters apply correctly, pagination works, and result counts remain truthful.
 13. Loading, failure, empty, and missing-metadata states remain usable on desktop and mobile.
 14. The interface stays consistent with the existing UI and `/showcase`.
@@ -270,7 +266,7 @@ If credentials or provider configuration prevent a check, report it as blocked o
 
 ## 14. When in doubt
 
-Keep the scope small. Follow the existing UI. Use TMDB for catalog metadata and Supabase for private user state. Preserve the distinction between ratings, watched progress, and tracking status. Never invent unavailable data.
+Keep the scope small. Follow the existing UI. Use TMDB for catalog metadata and Supabase for private user state. Preserve the distinction between ratings, watched progress, and tracking. Never invent unavailable data.
 
 Inspect the code and current documentation, record material decisions in `prompts/`, obtain approval before coding, run the relevant checks, and provide clear verification steps.
 
@@ -297,7 +293,8 @@ Tracer Bullet: prove the whole pipe works with one thin real thread, then thicke
 - `pnpm-workspace.yaml` exists only to pin `allowBuilds`. This is a single package repo, not a monorepo.
 - `cacheComponents: true` is on in `next.config.ts`. Every route must be prerenderable or opt out with `export const instant = false`, and every cached read calls `cacheLife` inside its own `use cache` scope. A rejection thrown inside a cached scope loses its class and its fields, so return a plain result and rebuild the error outside the scope.
 - The TMDB token is server only. Only `lib/tmdb/env.ts` may read `TMDB_READ_ACCESS_TOKEN`, and `security-boundary.test.ts` fails if any other file names it or gives it a `NEXT_PUBLIC_` prefix, the same rule the Supabase service role key carries.
-- Two server renders write: `/shows/{id}` and the shows tab of `/upcoming` (`?type=tv`, the default) run the automatic completion check of spec 0015 (`lib/tracking/auto-completion.ts`) before they read the status, and only on rows whose `status_source` is `system`. `/upcoming?type=movie` writes nothing. No other page writes on load; keep it that way unless a spec says otherwise.
+- No page writes when it loads (spec 0020, AC-21): the library pages and `/shows/{id}` only read. A library tab classifies every tracked show with no hold (or every planned unwatched movie) per request, at most 500 per media type, from one cached TMDB details read per title (`lib/tracking/library-lists.ts`, the pure `lib/tv/library-page.ts` and `lib/catalog/movie-page.ts`). Keep it that way unless a spec says otherwise.
+- `user_show_state` still carries the legacy `status`, `status_source`, `status_changed_at` and `listed_at` columns until the spec 0020 contract migration; the app never reads them, and `track_show` and `set_show_hold` mirror into `status` only so a rollback to the earlier deploy keeps working.
 - The navbar's SHOWS | MOVIES tabs filter every page (scope feature 22, [prompts/media-tabs-everywhere.md](prompts/media-tabs-everywhere.md)). `/watchlist`, `/upcoming`, `/watched` and `/search` take their media type from `?type=tv|movie`. A bare URL means `tv`, and an invalid value shows a "That page doesn't exist" panel, never a redirect. Each tab has its own reads, count and pages. The parsing and URL building live only in `lib/catalog/media-type.ts`, so use `typedHref` for any link to these pages and always write `type`. The client shell reads `useSearchParams` only on those four paths, inside its own Suspense boundary; reading it anywhere else takes `/shows`, `/movies` and the title pages out of their prerendered shells.
 - TMDB images render through `next/image`; `image.tmdb.org` is the one allowed remote pattern.
 - The navbar is transparent (no background, border or blur) and not sticky, so it scrolls away with the page; every control in it is 40px tall at every width, with the `hit-area` utilities keeping a 44px tap target. The footer is borderless. See [components/AGENTS.md](components/AGENTS.md).

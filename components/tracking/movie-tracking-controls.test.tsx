@@ -111,12 +111,12 @@ describe("MovieTrackingControls", () => {
     expect(deferredAction).toHaveBeenCalledWith("watchlist", 550, true);
   });
 
-  it("a first watch also clears the bookmark optimistically", async () => {
+  it("a first watch keeps the bookmark planned (spec 0020, AC-14)", async () => {
     const user = userEvent.setup();
     renderControls({ ...EMPTY, inWatchlist: true });
     await user.click(watched());
     expect(watched()).toHaveAttribute("aria-pressed", "true");
-    expect(plan()).toHaveAttribute("aria-pressed", "false");
+    expect(plan()).toHaveAttribute("aria-pressed", "true");
   });
 
   it("rolls back and toasts when the action refuses (AC-11)", async () => {
