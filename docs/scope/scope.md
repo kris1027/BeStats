@@ -385,16 +385,16 @@ Statuses are replaced by tracked plus an optional Pause or Drop. Every title sit
 **Done when:** every tracked show and planned movie is on the one page its progress and air dates give, Pause and Drop park a show in the Paused & dropped section, no page writes on load, the rollout keeps the old app working until the contract migration, and `AGENTS.md` describes the new model.
 - [x] Design it (spec): `/architect progress based library pages`
 - [ ] Build it: `/develop progress based library pages`
-  - [ ] The thin thread: expand migration with the legacy mirror, pgTAP, `classifyShow`, and `/watchlist?type=tv` with Mark watched cards — AC-1, AC-4, AC-5, AC-7 to AC-9, AC-14, AC-16, AC-19, AC-20, AC-22
-  - [ ] The show strands: Upcoming and Watched show tabs, the tracking control and card bookmark, Paused & dropped — AC-2, AC-3, AC-6, AC-10 to AC-12, AC-15, AC-21
-  - [ ] The movie and state strands: `classifyMovie`, movie tabs, failure notes, missing titles, empty copy — AC-13, AC-14, AC-16 to AC-18
+  - [x] The thin thread: expand migration with the legacy mirror, pgTAP, `classifyShow`, and `/watchlist?type=tv` with Mark watched cards — AC-1, AC-4, AC-5, AC-7 to AC-9, AC-14, AC-16, AC-19, AC-20, AC-22
+  - [x] The show strands: Upcoming and Watched show tabs, the tracking control and card bookmark, Paused & dropped — AC-2, AC-3, AC-6, AC-10 to AC-12, AC-15, AC-21
+  - [x] The movie and state strands: `classifyMovie`, movie tabs, failure notes, missing titles, empty copy — AC-13, AC-14, AC-16 to AC-18
   - [ ] Docs and proof: `AGENTS.md`, checks, 375px and keyboard, timing, `verify.md`, expand push and deploy — AC-23, AC-24
   - [ ] Contract migration as a follow up PR after production is verified — AC-1, AC-21
 - [ ] Verify it: `/check verify progress based library pages`
 - [ ] Test it: `/test progress based library pages`
 - [ ] Review it (fresh model): `/check review progress based library pages`
 - [ ] Document it: `/document progress based library pages`
-spec [0020](../specs/0020-progress-based-library-pages/index.md)
+spec [0020](../specs/0020-progress-based-library-pages/index.md) · code in `lib/tv/library-page.ts`, `lib/catalog/movie-page.ts`, `lib/tracking/library-lists.ts`, `components/library/`, `components/tracking/`, `supabase/migrations/20261007120000_show_tracking_expand.sql`
 
 ## Deferred
 Out of scope for the current build pass, kept so the plan stays honest.

@@ -61,8 +61,8 @@ export default function PrivacyPage() {
           <li>
             <strong className="text-foreground">Tracking data:</strong> your
             watchlist entries, the movies and episodes you mark watched with the
-            dates you watched them, your 1 to 10 ratings, and the status you
-            give each TV show.
+            dates you watched them, your 1 to 10 ratings, the TV shows you
+            track, and whether you paused or dropped one.
           </li>
           <li>
             <strong className="text-foreground">Technical data:</strong> your IP
