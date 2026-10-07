@@ -11,6 +11,7 @@ import {
   settleStatusCall,
   showEpisodeTrackingError,
 } from "@/components/tracking/tracking-toast";
+import { typedHref } from "@/lib/catalog/media-type";
 import {
   SHOW_STATUS_MESSAGES,
   UNDO_ACTION_LABEL,
@@ -20,8 +21,6 @@ import {
 import {
   UP_NEXT_CARD_LINK_SELECTOR,
   UP_NEXT_HEADING_ID,
-  UPCOMING_EMPTY_HEADING_ID,
-  UPCOMING_PATH,
   upNextCardLinkId,
 } from "./ids";
 
@@ -40,16 +39,12 @@ const UNDO_TOAST_MS = 10_000;
 let focusAfterRefresh: { showId: number; targetId: string } | null = null;
 
 /**
- * The empty page's heading stands in when the target went with the refresh:
- * completing the last card, with Coming soon empty too, swaps both sections
- * for the one empty panel, so the Up Next heading no longer exists (spec
- * 0015, AC-7).
+ * The Up Next heading stays on the shows tab when its last card goes, since
+ * the section shows its own empty state there (feature 22), so it is always
+ * there to take the focus (spec 0015, AC-7).
  */
 function focusById(id: string) {
-  (
-    document.getElementById(id) ??
-    document.getElementById(UPCOMING_EMPTY_HEADING_ID)
-  )?.focus();
+  document.getElementById(id)?.focus();
 }
 
 /**
@@ -162,7 +157,7 @@ function MarkNextWatchedButton({
   function onError(error: Parameters<typeof showEpisodeTrackingError>[0]) {
     showEpisodeTrackingError(error, {
       id: toastId,
-      returnPath: UPCOMING_PATH,
+      returnPath: typedHref("/upcoming", "tv"),
       navigate: router.push,
     });
   }

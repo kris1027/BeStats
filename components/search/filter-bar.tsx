@@ -25,6 +25,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { typedHref } from "@/lib/catalog/media-type";
 import {
   FILTER_DEBOUNCE_MS,
   MAX_QUERY_LENGTH,
@@ -34,11 +35,9 @@ import {
   type RatingStep,
 } from "@/lib/search/constants";
 import { mediaNoun } from "@/lib/search/count";
-import { mapGenresAcrossTypes } from "@/lib/search/genres";
 import {
   emptySearchParams,
   type SearchParams,
-  type SearchType,
   searchHref,
 } from "@/lib/search/params";
 import type { Genre } from "@/lib/tmdb/types";
@@ -68,7 +67,9 @@ const CONTROL =
  *
  * Genre checkboxes live in a popover, which only exists once hydrated, so the
  * selected genres also travel as hidden inputs and a submit before hydration
- * keeps them.
+ * keeps them. The type has no control here: it is the navbar's SHOWS | MOVIES
+ * tab (feature 22), so it travels as a hidden input too, and a switch arrives
+ * as a new URL this bar did not produce.
  */
 function FilterBar({
   initial,
@@ -86,7 +87,6 @@ function FilterBar({
 
   const [values, setValues] = useState(initial);
   const [text, setText] = useState(initial.q ?? "");
-  const [removed, setRemoved] = useState<string[]>([]);
 
   // Every URL this bar has asked for. A render for one of them is the echo of
   // our own change and must not reset what the person has typed since.
@@ -98,16 +98,14 @@ function FilterBar({
     if (!produced.current.has(incoming)) {
       setValues(initial);
       setText(initial.q ?? "");
-      setRemoved([]);
     }
   }
 
-  function apply(next: SearchParams, dropped: string[] = []) {
+  function apply(next: SearchParams) {
     const params = { ...next, page: 1 };
     const href = searchHref(params);
     produced.current.add(href);
     setValues(params);
-    setRemoved(dropped);
     startTransition(() => {
       router.replace(href, { scroll: false });
     });
@@ -130,16 +128,6 @@ function FilterBar({
     current.genreIds.length > 0 ||
     current.year !== null ||
     current.rating !== null;
-
-  function switchType(type: SearchType) {
-    if (type === values.type) return;
-    const { kept, dropped } = mapGenresAcrossTypes(
-      values.genreIds,
-      genres[values.type] ?? [],
-      genres[type] ?? [],
-    );
-    apply({ ...current, type, genreIds: kept }, dropped);
-  }
 
   function toggleGenre(id: number) {
     const genreIds = values.genreIds.includes(id)
@@ -165,6 +153,7 @@ function FilterBar({
       }}
       className="flex flex-col gap-3"
     >
+      <input type="hidden" name="type" value={values.type} />
       {values.genreIds.map((id) => (
         <input key={id} type="hidden" name="genre" value={id} />
       ))}
@@ -192,24 +181,6 @@ function FilterBar({
             className="h-full min-w-0 flex-1 bg-transparent text-base text-foreground placeholder:text-muted-foreground focus-visible:outline-none md:text-sm"
           />
         </div>
-
-        <fieldset
-          className={cn(CONTROL, "glass-shadow flex items-center gap-1 p-1")}
-        >
-          <legend className="sr-only">Type</legend>
-          <TypeOption
-            value="tv"
-            label="Shows"
-            checked={values.type === "tv"}
-            onSelect={switchType}
-          />
-          <TypeOption
-            value="movie"
-            label="Movies"
-            checked={values.type === "movie"}
-            onSelect={switchType}
-          />
-        </fieldset>
 
         <GenrePicker
           genres={typeGenres}
@@ -272,7 +243,7 @@ function FilterBar({
 
         {anySet ? (
           <Link
-            href={`/search?type=${values.type}`}
+            href={typedHref("/search", values.type)}
             onClick={(event) => {
               event.preventDefault();
               setText("");
@@ -299,50 +270,7 @@ function FilterBar({
           ) : null}
         </span>
       </div>
-
-      {removed.length > 0 ? (
-        <p className="text-sm text-muted-foreground">
-          Removed: {removed.join(", ")}
-        </p>
-      ) : null}
     </form>
-  );
-}
-
-/**
- * One half of the `Shows | Movies` switch: a native radio, so the form
- * submits `type` before hydration, dressed as the navbar's segmented control.
- */
-function TypeOption({
-  value,
-  label,
-  checked,
-  onSelect,
-}: {
-  value: SearchType;
-  label: string;
-  checked: boolean;
-  onSelect: (type: SearchType) => void;
-}) {
-  return (
-    <label
-      className={cn(
-        "flex h-9 cursor-pointer items-center rounded-full px-4 text-xs font-semibold tracking-[0.07em] has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring md:h-7",
-        checked
-          ? "glass-selected glass-rim text-foreground"
-          : "text-text-secondary hover:text-foreground",
-      )}
-    >
-      <input
-        type="radio"
-        name="type"
-        value={value}
-        checked={checked}
-        onChange={() => onSelect(value)}
-        className="sr-only"
-      />
-      {label.toUpperCase()}
-    </label>
   );
 }
 

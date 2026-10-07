@@ -2,9 +2,10 @@
 
 import { cn } from "cn";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 
-import { UPCOMING_PATH } from "@/components/upcoming/ids";
+import { type MediaType, typedHref } from "@/lib/catalog/media-type";
+
+import { WithPageMediaType } from "./page-media-type";
 
 /**
  * The signed in library links: the pill in the desktop navbar and the list in
@@ -12,11 +13,15 @@ import { UPCOMING_PATH } from "@/components/upcoming/ids";
  *
  * As with `MediaTypeTabs`, the lit link comes from the pathname, never client
  * state, and `aria-current="page"` carries it to assistive technology.
- * `usePathname` is the only reason this is a Client Component. It renders only
+ * Reading the URL is the only reason this is a Client Component. It renders only
  * inside `AccountSlot`, which is already request scoped behind its own
  * Suspense boundary, so it costs no route its static shell.
  *
  * Upcoming sits between the two (spec 0014, AC-1).
+ *
+ * Each link carries the media type of the page being viewed, so the navbar
+ * tab chosen on `/movies` is still lit on `/watchlist` (feature 22), read
+ * through `WithPageMediaType`; the fallback links to the default type.
  *
  * @param variant `bar` is the glass pill in the desktop navbar, 40px tall like
  * every navbar control, with `hit-area-tab` widening each link to a 44px tap
@@ -25,14 +30,40 @@ import { UPCOMING_PATH } from "@/components/upcoming/ids";
  * with 44px rows for touch.
  */
 const LINKS = [
-  { href: "/watchlist", label: "Watchlist" },
-  { href: UPCOMING_PATH, label: "Upcoming" },
-  { href: "/watched", label: "Watched" },
+  { path: "/watchlist", label: "Watchlist" },
+  { path: "/upcoming", label: "Upcoming" },
+  { path: "/watched", label: "Watched" },
 ] as const;
 
-function LibraryNav({ variant }: { variant: "bar" | "sheet" }) {
-  const pathname = usePathname();
+type Variant = "bar" | "sheet";
 
+function LibraryNav({ variant }: { variant: Variant }) {
+  return (
+    <WithPageMediaType
+      fallback={(pathname) => (
+        <LibraryNavView variant={variant} pathname={pathname} type="tv" />
+      )}
+    >
+      {({ pathname, type }) => (
+        <LibraryNavView
+          variant={variant}
+          pathname={pathname}
+          type={type ?? "tv"}
+        />
+      )}
+    </WithPageMediaType>
+  );
+}
+
+function LibraryNavView({
+  variant,
+  pathname,
+  type,
+}: {
+  variant: Variant;
+  pathname: string;
+  type: MediaType;
+}) {
   return (
     <nav
       aria-label="Library"
@@ -44,12 +75,12 @@ function LibraryNav({ variant }: { variant: "bar" | "sheet" }) {
     >
       {LINKS.map((link) => {
         const selected =
-          pathname === link.href || pathname.startsWith(`${link.href}/`);
+          pathname === link.path || pathname.startsWith(`${link.path}/`);
 
         return (
           <Link
-            key={link.href}
-            href={link.href}
+            key={link.path}
+            href={typedHref(link.path, type)}
             aria-current={selected ? "page" : undefined}
             className={cn(
               "flex items-center rounded-full font-bold transition-[filter,color]",

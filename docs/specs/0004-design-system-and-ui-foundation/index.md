@@ -5,6 +5,8 @@
 
 Scope feature: [5. Design system and UI foundation](../../scope/scope.md) · Beta tier
 
+> **Amended 2026-10-07 by scope feature 22** ([plan](../../../prompts/media-tabs-everywhere.md)). AC-14's tabs no longer only link to `/shows` and `/movies`. On `/watchlist`, `/upcoming`, `/watched` and `/search` they switch that page's `?type=tv|movie` in place, lit from the parameter (`tv` when absent). On the title pages the tab of their catalog is lit, and pages about neither catalog light nothing. `MediaTypeTabsView` now takes `selected` instead of `pathname`.
+
 ## Summary
 
 BeStats gets one dark visual language, taken literally from the sixteen reference drawings in `design/`: a pure black page with translucent "glass" surfaces (panels that let a little of what is behind them show through) sitting on solid dark plates. This spec turns those drawings into code: one set of theme values, a small set of reusable pieces (buttons, inputs, pills, cards, skeletons), the shared loading, empty, error, missing poster and signed out states that the drawings never covered, and the top navigation bar that every page will sit under. It exists so that every later feature composes pieces that already exist instead of inventing a look of its own.

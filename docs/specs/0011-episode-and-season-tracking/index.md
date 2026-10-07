@@ -1,7 +1,7 @@
 # 0011. Episode and season tracking: watched, personal rating and mark season watched
 
 **Date**: 2026-09-25
-**Status**: In Progress
+**Status**: Accepted
 
 Scope feature: [12. Episode and season tracking](../../scope/scope.md) · GA tier
 

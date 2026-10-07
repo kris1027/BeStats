@@ -1,9 +1,6 @@
 import { Skeleton } from "@/components/skeleton";
-import {
-  emptySearchParams,
-  parseSearchParams,
-  parseSearchType,
-} from "@/lib/search/params";
+import { parseMediaTypeParam } from "@/lib/catalog/media-type";
+import { emptySearchParams, parseSearchParams } from "@/lib/search/params";
 import { type Genre, getMovieGenres, getTvGenres, TmdbError } from "@/lib/tmdb";
 
 import { FilterBar } from "./filter-bar";
@@ -23,9 +20,9 @@ async function settleGenres(read: () => Promise<Genre[]>) {
 /**
  * The server half of the filter bar (spec 0010, AC-8, AC-19, AC-24).
  *
- * It reads both cached genre lists, because switching type maps the selected
- * genres onto the other list, and the current UTC year, at request time, for
- * the year options. A genre list that fails leaves only the genre control
+ * It reads the cached genre lists, of which the bar shows the one for the
+ * navbar tab's type (feature 22), and the current UTC year, at request time,
+ * for the year options. A genre list that fails leaves only the genre control
  * disabled. An invalid URL fills the bar with the valid type and nothing
  * else; the results panel below says what was wrong.
  */
@@ -35,7 +32,7 @@ async function SearchFilters({ raw }: { raw: RawParams }) {
     settleGenres(getMovieGenres),
   ]);
   const currentYear = new Date().getUTCFullYear();
-  const type = parseSearchType(raw.type) ?? "tv";
+  const type = parseMediaTypeParam(raw.type) ?? "tv";
   const parsed = parseSearchParams(
     raw,
     (type === "movie" ? movie : tv) ?? [],

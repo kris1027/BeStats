@@ -186,10 +186,3 @@ export const COMING_SOON_MESSAGES = {
   browse: "Browse movies",
   failed: "Couldn't load your planned movies. Try again in a moment.",
 } as const;
-
-/** The one panel when both sections are empty (spec 0014, AC-13). */
-export const UPCOMING_EMPTY_MESSAGES = {
-  title: "Nothing upcoming yet",
-  description:
-    "Shows you're watching and planned movies that aren't out yet show up here.",
-} as const;

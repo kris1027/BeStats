@@ -27,8 +27,7 @@ vi.mock("sonner", () => ({
 }));
 
 const { MarkNextWatchedButton } = await import("./mark-next-watched-button");
-const { UP_NEXT_HEADING_ID, UPCOMING_EMPTY_HEADING_ID, upNextCardLinkId } =
-  await import("./ids");
+const { UP_NEXT_HEADING_ID, upNextCardLinkId } = await import("./ids");
 
 /**
  * The Up Next section as the page renders it, with a button on each card.
@@ -122,29 +121,6 @@ describe("a mark that completes the show (spec 0015)", () => {
     await markAndRefresh(1, [1], []);
     await waitFor(() =>
       expect(document.activeElement?.id).toBe(UP_NEXT_HEADING_ID),
-    );
-  });
-
-  it("falls back to the empty page's heading when the page empties (AC-7)", async () => {
-    setEpisodeWatched.mockResolvedValue(marked(true));
-    const view = render(list([1]));
-    await userEvent.click(
-      screen.getByRole("button", {
-        name: "Mark Show 1 season 1 episode 8 watched",
-      }),
-    );
-    await waitFor(() => expect(toast).toHaveBeenCalled());
-    // With Coming soon empty too, the page renders its one empty panel, and
-    // neither section heading is left.
-    view.rerender(
-      <section>
-        <h2 id={UPCOMING_EMPTY_HEADING_ID} tabIndex={-1}>
-          Nothing upcoming yet
-        </h2>
-      </section>,
-    );
-    await waitFor(() =>
-      expect(document.activeElement?.id).toBe(UPCOMING_EMPTY_HEADING_ID),
     );
   });
 

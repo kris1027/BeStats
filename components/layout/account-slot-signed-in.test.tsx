@@ -15,7 +15,10 @@ vi.mock("@/lib/auth/user", () => ({
     email: "kris1027@example.test",
   })),
 }));
-vi.mock("next/navigation", () => ({ usePathname: () => "/watched" }));
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/watched",
+  useSearchParams: () => new URLSearchParams("type=movie"),
+}));
 
 const { AccountSlot } = await import("./account-slot");
 

@@ -1,9 +1,11 @@
 # 0019. TV history on /watched: completed shows join watched movies in one grid
 
 **Date**: 2026-10-05
-**Status**: In Progress
+**Status**: Accepted
 
 Scope feature: [21. TV history on /watched](../../scope/scope.md) · GA tier
+
+> **Amended 2026-10-07 by scope feature 22** ([plan](../../../prompts/media-tabs-everywhere.md)). Completed shows and watched movies no longer share one grid. `/watched?type=tv` (the default) lists Completed shows and `?type=movie` lists watched movies. Each tab has its own count, pages and empty state ("No completed shows yet", "No watched movies yet").
 
 ## Summary
 

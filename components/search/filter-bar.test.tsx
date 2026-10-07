@@ -126,17 +126,34 @@ describe("FilterBar", () => {
     expect(replace).toHaveBeenCalledTimes(1);
   });
 
-  it("maps genres across a type switch and names the ones it drops", async () => {
-    const user = userEvent.setup();
-    render(bar({ q: "x", genreIds: [18, 10766], year: 2020, rating: 8 }));
+  it("has no type control of its own, and submits the type it was given (feature 22)", () => {
+    const { container } = render(bar({ type: "movie" }));
 
-    await user.click(screen.getByRole("radio", { name: "MOVIES" }));
-
-    expect(replace).toHaveBeenCalledWith(
-      "/search?type=movie&q=x&genre=18&year=2020&rating=8",
-      { scroll: false },
+    expect(screen.queryByRole("radio")).not.toBeInTheDocument();
+    expect(
+      container.querySelector('input[type="hidden"][name="type"]'),
+    ).toHaveValue("movie");
+    expect(screen.getByRole("searchbox", { name: "Title" })).toHaveAttribute(
+      "placeholder",
+      "Search movies by title",
     );
-    expect(screen.getByText("Removed: Soap")).toBeInTheDocument();
+  });
+
+  it("resets to a type switch made from the navbar, dropping genres (feature 22)", () => {
+    const view = render(bar({ q: "x", genreIds: [10766] }));
+    view.rerender(
+      <FilterBar
+        initial={{ ...emptySearchParams("movie"), q: "x" }}
+        genres={GENRES}
+        currentYear={2026}
+      />,
+    );
+
+    expect(screen.getByRole("searchbox", { name: "Title" })).toHaveValue("x");
+    expect(
+      view.container.querySelector('input[type="hidden"][name="genre"]'),
+    ).toBeNull();
+    expect(replace).not.toHaveBeenCalled();
   });
 
   it("disables only the genre control when TMDB's genre list failed", () => {

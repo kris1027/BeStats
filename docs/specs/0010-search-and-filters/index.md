@@ -1,9 +1,11 @@
 # 0010. Search and filters: navbar quick search and the /search results page
 
 **Date**: 2026-09-24
-**Status**: In Progress
+**Status**: Accepted
 
 Scope feature: [11. Search and filters](../../scope/scope.md) · Beta tier
+
+> **Amended 2026-10-07 by scope feature 22** ([plan](../../../prompts/media-tabs-everywhere.md)). The filter bar no longer has its own Shows | Movies control (AC-8). The navbar tab sets `type`: switching keeps `q`, `year` and `rating`, drops every genre and resets `page`, so the "Removed: …" genre mapping is gone. The form still submits `type`, as a hidden input. The navbar search (AC-1) takes `type` from the current page, including the list pages.
 
 ## Summary
 
@@ -95,7 +97,7 @@ Switching `type` in the filter bar maps genres across types as AC-24 states.
 | `scanFilteredSearch(params)` (`lib/search/scan.ts`, server only) | fn | params in filtered_search mode | `{ results, fromIndex, toIndex, totalResults, nextPage \| null }` | n/a | rethrows `TmdbError` |
 | `matchesFilters(summary, params)` (`lib/search/scan.ts` helper, pure) | fn | a summary with `genreIds`, `tmdbRating`, `tmdbVoteCount` | boolean | n/a | none |
 | `formatResultCount(n, type, endpoint)` (`lib/search/count.ts`, pure) | fn | TMDB total, type, `"search" \| "discover"` | `1 show`, `1,234 movies`, `10,000+ shows` (search), `20,000+ shows` (discover) | n/a | none |
-| `mapGenresAcrossTypes(ids, from, to)` (`lib/search/genres.ts`, pure) | fn | genre ids, both genre lists | `{ kept: number[], dropped: string[] }` | n/a | none |
+| ~~`mapGenresAcrossTypes(ids, from, to)` (`lib/search/genres.ts`, pure)~~ | fn | removed 2026-10-07 by scope feature 22: a tab switch drops every genre | n/a | n/a | none |
 
 **Value sourcing**:
 
@@ -114,7 +116,7 @@ Switching `type` in the filter bar maps genres across types as AC-24 states.
 | `/search` filtered search | results, `{from}–{to}`, total, next cursor | `scanFilteredSearch`: `fromIndex = (page − 1) × 20 + 1`, `toIndex = min(lastPageRead × 20, totalResults)`, `totalResults` from the first page read, `nextPage = lastPageRead + 1` when ≤ `lastReachablePage(totalPages)` |
 | `/search` | a result's genres, rating, vote count for filtering | `genreIds`, `tmdbRating`, `tmdbVoteCount` on the summary (TMDB `genre_ids`, `vote_average`, `vote_count`); a null `tmdbRating` fails any rating filter |
 | `/search` movie card | bookmark state, `returnPath` | existing `CardBookmark` (spec 0007) with `gridMovieIds` of the shown results and `returnPath = searchHref(params, {})` |
-| `/search` | the kept genre ids and the removed genres note after a type switch | `mapGenresAcrossTypes` over both cached genre lists; the note lives in client state of the filter bar (not in the URL) |
+| `/search` | ~~the kept genre ids and the removed genres note after a type switch~~ | removed 2026-10-07 by scope feature 22: the navbar tab's `typedHref` drops every genre, so nothing is kept or noted |
 | `/search` | page `<title>` | `q` from parsed params |
 
 **Key invariants**:

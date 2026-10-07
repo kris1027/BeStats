@@ -135,31 +135,6 @@ export function comingSoonMovies(
     );
 }
 
-/**
- * Whether `/upcoming` shows the one "Nothing upcoming yet" panel in place of
- * both sections (AC-13, AC-14).
- *
- * Only when both reads succeeded, both came back empty, and Coming soon
- * checked every planned movie. Past the ceiling an older plan may still be
- * upcoming, so the panel would claim more than was checked; the sections stay,
- * and Coming soon keeps its "Checked your 200…" line (`AGENTS.md` section 10,
- * truthful counts).
- *
- * @param upNextCount The Watching shows listed, or null when the read failed.
- * @param comingSoon The kept movies and the planned total, or null when failed.
- */
-export function showsNothingUpcomingPanel(
-  upNextCount: number | null,
-  comingSoon: { count: number; total: number } | null,
-): boolean {
-  return (
-    upNextCount === 0 &&
-    comingSoon !== null &&
-    comingSoon.count === 0 &&
-    comingSoon.total <= UPCOMING_MOVIE_CHECK_LIMIT
-  );
-}
-
 function upNextReadFailed(): { kind: "failed" } {
   logTrackingEvent(TRACKING_EVENT.upNextRead, "db_error");
   return { kind: "failed" };

@@ -2,46 +2,89 @@
 
 import { cn } from "cn";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+
+import {
+  CATALOG_PATHS,
+  type MediaType,
+  typedHref,
+} from "@/lib/catalog/media-type";
+
+import { WithPageMediaType } from "./page-media-type";
 
 /**
- * The SHOWS and MOVIES control in the navbar (spec 0004, AC-14).
+ * The SHOWS and MOVIES control in the navbar (spec 0004, AC-14; feature 22).
  *
- * These are links, not toggles. Selection comes from the current pathname, so
- * a deep link, a browser back button and a server render all agree on which
- * tab is lit; client state would let them disagree. `aria-current="page"`
- * carries that same fact to assistive technology, which the glass gradient on
- * its own cannot.
+ * These are links, not toggles. Selection comes from the URL, so a deep link,
+ * a browser back button and a server render all agree on which tab is lit;
+ * client state would let them disagree. `aria-current="page"` carries that
+ * same fact to assistive technology, which the glass gradient on its own
+ * cannot.
  *
- * `usePathname` is the only reason this is a Client Component. It reads no
- * server dynamic API, so the shell around it stays in the static shell under
- * `cacheComponents` and the routes still prerender (AC-18).
+ * On `/watchlist`, `/upcoming`, `/watched` and `/search` the tabs switch the
+ * page's own `type` parameter in place; everywhere else they lead to `/shows`
+ * and `/movies`. `WithPageMediaType` reads the page's type, and on those four
+ * pages the current query, which `/search` keeps across a switch.
  *
  * On a route with a dynamic param (`/movies/[id]`, spec 0006) the pathname is
  * not known at prerender time, so `usePathname` suspends there. `Navbar` wraps
- * this in a Suspense boundary whose fallback is `MediaTypeTabsView` with no
- * pathname: the same control, nothing lit, at the same footprint.
+ * this in a Suspense boundary whose fallback is `MediaTypeTabsView` with
+ * nothing lit: the same control at the same footprint.
  */
-const TABS = [
-  { href: "/shows", label: "SHOWS" },
-  { href: "/movies", label: "MOVIES" },
-] as const;
-
 function MediaTypeTabs({ className }: { className?: string }) {
-  return <MediaTypeTabsView pathname={usePathname()} className={className} />;
+  return (
+    <WithPageMediaType
+      fallback={(pathname) => (
+        <MediaTypeTabsView
+          selected={null}
+          hrefs={{
+            tv: typedHref(pathname, "tv"),
+            movie: typedHref(pathname, "movie"),
+          }}
+          className={className}
+        />
+      )}
+    >
+      {(page) => (
+        // On a typed page the lit tab is its `type`, and each tab rewrites it.
+        <MediaTypeTabsView
+          selected={page.type}
+          hrefs={
+            page.params === null
+              ? undefined
+              : {
+                  tv: typedHref(page.pathname, "tv", { current: page.params }),
+                  movie: typedHref(page.pathname, "movie", {
+                    current: page.params,
+                  }),
+                }
+          }
+          className={className}
+        />
+      )}
+    </WithPageMediaType>
+  );
 }
 
 /**
- * The tabs for a known pathname, or with no tab lit when `pathname` is null,
- * which is the prerendered fallback on a dynamic route.
+ * The tabs for a known selection, or with no tab lit when `selected` is null:
+ * the prerendered fallback, and any page that is about neither catalog.
+ *
+ * @param hrefs Where each tab leads, `/shows` and `/movies` by default.
  */
 function MediaTypeTabsView({
-  pathname,
+  selected,
+  hrefs = CATALOG_PATHS,
   className,
 }: {
-  pathname: string | null;
+  selected: MediaType | null;
+  hrefs?: Record<MediaType, string>;
   className?: string;
 }) {
+  const tabs = [
+    { type: "tv", label: "SHOWS" },
+    { type: "movie", label: "MOVIES" },
+  ] as const;
+
   return (
     <nav
       aria-label="Media type"
@@ -50,19 +93,17 @@ function MediaTypeTabsView({
         className,
       )}
     >
-      {TABS.map((tab) => {
-        const selected =
-          pathname !== null &&
-          (pathname === tab.href || pathname.startsWith(`${tab.href}/`));
+      {tabs.map((tab) => {
+        const isSelected = selected === tab.type;
 
         return (
           <Link
-            key={tab.href}
-            href={tab.href}
-            aria-current={selected ? "page" : undefined}
+            key={tab.type}
+            href={hrefs[tab.type]}
+            aria-current={isSelected ? "page" : undefined}
             className={cn(
               "hit-area-tab flex h-7 items-center rounded-full px-4 text-xs font-semibold tracking-[0.07em] transition-[filter,color]",
-              selected
+              isSelected
                 ? "glass-selected glass-rim text-foreground"
                 : "text-text-secondary hover:text-foreground",
             )}

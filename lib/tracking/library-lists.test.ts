@@ -85,7 +85,7 @@ describe("libraryLastPage (AC-9)", () => {
 });
 
 describe("getWatchlistPage (AC-1; spec 0013, AC-13)", () => {
-  it("reads the owner's merged entries, newest first, movies first on a tie, 20 per page, with an exact count", async () => {
+  it("reads the owner's entries of one media type, newest first, 20 per page, with an exact count (feature 22)", async () => {
     responses = [
       {
         data: [
@@ -96,7 +96,7 @@ describe("getWatchlistPage (AC-1; spec 0013, AC-13)", () => {
         count: 22,
       },
     ];
-    expect(await getWatchlistPage("user-a", 2)).toEqual({
+    expect(await getWatchlistPage("user-a", "tv", 2)).toEqual({
       kind: "ok",
       rows: [
         { kind: "movie", tmdbId: 603, status: null },
@@ -108,8 +108,8 @@ describe("getWatchlistPage (AC-1; spec 0013, AC-13)", () => {
       { method: "from", args: ["user_watchlist_entries"] },
       { method: "select", args: ["kind, tmdb_id, status", { count: "exact" }] },
       { method: "eq", args: ["user_id", "user-a"] },
+      { method: "eq", args: ["kind", "tv"] },
       { method: "order", args: ["listed_at", { ascending: false }] },
-      { method: "order", args: ["kind", { ascending: true }] },
       { method: "order", args: ["tmdb_id", { ascending: true }] },
       { method: "range", args: [20, 39] },
     ]);
@@ -128,7 +128,7 @@ describe("getWatchlistPage (AC-1; spec 0013, AC-13)", () => {
         count: 1,
       },
     ];
-    expect(await getWatchlistPage("user-a", 1)).toEqual({
+    expect(await getWatchlistPage("user-a", "tv", 1)).toEqual({
       kind: "ok",
       rows: [{ kind: "tv", tmdbId: 1399, status: "want_to_watch" }],
       total: 1,
@@ -140,7 +140,7 @@ describe("getWatchlistPage (AC-1; spec 0013, AC-13)", () => {
       { data: null, error: { code: "PGRST103" }, count: null },
       { data: null, error: null, count: 3 },
     ];
-    expect(await getWatchlistPage("user-a", 4)).toEqual({
+    expect(await getWatchlistPage("user-a", "tv", 4)).toEqual({
       kind: "ok",
       rows: [],
       total: 3,
@@ -151,7 +151,9 @@ describe("getWatchlistPage (AC-1; spec 0013, AC-13)", () => {
     });
     expect(calls.filter((call) => call.method === "eq")).toEqual([
       { method: "eq", args: ["user_id", "user-a"] },
+      { method: "eq", args: ["kind", "tv"] },
       { method: "eq", args: ["user_id", "user-a"] },
+      { method: "eq", args: ["kind", "tv"] },
     ]);
   });
 
@@ -163,7 +165,9 @@ describe("getWatchlistPage (AC-1; spec 0013, AC-13)", () => {
         count: null,
       },
     ];
-    expect(await getWatchlistPage("user-a", 1)).toEqual({ kind: "failed" });
+    expect(await getWatchlistPage("user-a", "tv", 1)).toEqual({
+      kind: "failed",
+    });
     expect(warn).toHaveBeenCalledWith(
       "movie_tracking.list_read refused db_error",
     );
@@ -171,7 +175,9 @@ describe("getWatchlistPage (AC-1; spec 0013, AC-13)", () => {
 
   it("reports a thrown client as a failed read, never an empty list (AC-11)", async () => {
     createClient.mockRejectedValueOnce(new Error("offline"));
-    expect(await getWatchlistPage("user-a", 1)).toEqual({ kind: "failed" });
+    expect(await getWatchlistPage("user-a", "tv", 1)).toEqual({
+      kind: "failed",
+    });
   });
 
   it("reports a read with no count as failed, since the last page can't be known (AC-9)", async () => {
@@ -182,7 +188,9 @@ describe("getWatchlistPage (AC-1; spec 0013, AC-13)", () => {
         count: null,
       },
     ];
-    expect(await getWatchlistPage("user-a", 1)).toEqual({ kind: "failed" });
+    expect(await getWatchlistPage("user-a", "tv", 1)).toEqual({
+      kind: "failed",
+    });
   });
 
   it("answers an empty list's past the end page with a total of 0, not a failure (AC-9)", async () => {
@@ -190,7 +198,7 @@ describe("getWatchlistPage (AC-1; spec 0013, AC-13)", () => {
       { data: null, error: { code: "PGRST103" }, count: null },
       { data: null, error: null, count: 0 },
     ];
-    expect(await getWatchlistPage("user-a", 2)).toEqual({
+    expect(await getWatchlistPage("user-a", "tv", 2)).toEqual({
       kind: "ok",
       rows: [],
       total: 0,
@@ -199,7 +207,7 @@ describe("getWatchlistPage (AC-1; spec 0013, AC-13)", () => {
 });
 
 describe("getWatchedPage (AC-2; spec 0019, AC-1 to AC-3)", () => {
-  it("reads the owner's merged entries, newest first, movies first on a tie, 20 per page, with an exact count", async () => {
+  it("reads the owner's entries of one media type, newest first, 20 per page, with an exact count (feature 22)", async () => {
     responses = [
       {
         data: [
@@ -226,7 +234,7 @@ describe("getWatchedPage (AC-2; spec 0019, AC-1 to AC-3)", () => {
         count: 23,
       },
     ];
-    expect(await getWatchedPage("user-a", 2)).toEqual({
+    expect(await getWatchedPage("user-a", "tv", 2)).toEqual({
       kind: "ok",
       rows: [
         {
@@ -257,8 +265,8 @@ describe("getWatchedPage (AC-2; spec 0019, AC-1 to AC-3)", () => {
         args: ["kind, tmdb_id, last_watched_at, rating", { count: "exact" }],
       },
       { method: "eq", args: ["user_id", "user-a"] },
+      { method: "eq", args: ["kind", "tv"] },
       { method: "order", args: ["last_watched_at", { ascending: false }] },
-      { method: "order", args: ["kind", { ascending: true }] },
       { method: "order", args: ["tmdb_id", { ascending: true }] },
       { method: "range", args: [20, 39] },
     ]);
@@ -292,7 +300,7 @@ describe("getWatchedPage (AC-2; spec 0019, AC-1 to AC-3)", () => {
         count: 1,
       },
     ];
-    expect(await getWatchedPage("user-a", 1)).toEqual({
+    expect(await getWatchedPage("user-a", "tv", 1)).toEqual({
       kind: "ok",
       rows: [
         { kind: "tv", tmdbId: 1396, watchedAt: "2026-09-23", rating: null },
@@ -306,7 +314,7 @@ describe("getWatchedPage (AC-2; spec 0019, AC-1 to AC-3)", () => {
       { data: null, error: { code: "PGRST103" }, count: null },
       { data: null, error: null, count: 5 },
     ];
-    expect(await getWatchedPage("user-a", 2)).toEqual({
+    expect(await getWatchedPage("user-a", "tv", 2)).toEqual({
       kind: "ok",
       rows: [],
       total: 5,
@@ -321,12 +329,13 @@ describe("getWatchedPage (AC-2; spec 0019, AC-1 to AC-3)", () => {
         args: ["tmdb_id", { count: "exact", head: true }],
       },
       { method: "eq", args: ["user_id", "user-a"] },
+      { method: "eq", args: ["kind", "tv"] },
     ]);
   });
 
   it("reports a thrown client as a failed read, logging no identifiers (AC-11, AC-19)", async () => {
     createClient.mockRejectedValueOnce(new Error("offline user-a"));
-    expect(await getWatchedPage("user-a", 1)).toEqual({ kind: "failed" });
+    expect(await getWatchedPage("user-a", "tv", 1)).toEqual({ kind: "failed" });
     expect(warn).toHaveBeenCalledWith(
       "movie_tracking.list_read refused db_error",
     );
@@ -337,7 +346,7 @@ describe("getWatchedPage (AC-2; spec 0019, AC-1 to AC-3)", () => {
       { data: null, error: { code: "PGRST103" }, count: null },
       { data: null, error: { code: "PGRST000" }, count: null },
     ];
-    expect(await getWatchedPage("user-a", 3)).toEqual({ kind: "failed" });
+    expect(await getWatchedPage("user-a", "tv", 3)).toEqual({ kind: "failed" });
   });
 });
 

@@ -1,4 +1,4 @@
-import { type ReactNode, Suspense } from "react";
+import type { ReactNode } from "react";
 
 import { PosterGrid } from "@/components/poster-grid";
 import { RetryLink } from "@/components/retry-link";
@@ -6,6 +6,11 @@ import { PosterCardSkeleton, Skeleton } from "@/components/skeleton";
 import { StatePanel } from "@/components/state-panel";
 import { ButtonLink } from "@/components/ui/button";
 import { requireUser } from "@/lib/auth/user";
+import {
+  type MediaType,
+  parseMediaTypeParam,
+  typedHref,
+} from "@/lib/catalog/media-type";
 import { formatAirDate, formatShortDate } from "@/lib/format";
 import { getMovieSummaries, getTvShowsByIds, TmdbError } from "@/lib/tmdb";
 import { reconcileUpNextShows } from "@/lib/tracking/auto-completion";
@@ -14,25 +19,18 @@ import { logTrackingEvent, TRACKING_EVENT } from "@/lib/tracking/log";
 import {
   COMING_SOON_MESSAGES,
   UP_NEXT_MESSAGES,
-  UPCOMING_EMPTY_MESSAGES,
 } from "@/lib/tracking/messages";
 import { showIdsKey } from "@/lib/tracking/show-state";
 import {
   comingSoonMovies,
   getUpcomingMovieCandidates,
   getUpNextShows,
-  showsNothingUpcomingPanel,
   UPCOMING_MOVIE_CHECK_LIMIT,
 } from "@/lib/tracking/up-next";
 
 import type { ComingSoonItem } from "./coming-soon-card";
 import { ComingSoonGrid } from "./coming-soon-grid";
-import {
-  COMING_SOON_HEADING_ID,
-  UP_NEXT_HEADING_ID,
-  UPCOMING_EMPTY_HEADING_ID,
-  UPCOMING_PATH,
-} from "./ids";
+import { COMING_SOON_HEADING_ID, UP_NEXT_HEADING_ID } from "./ids";
 import { UpNextCard, type UpNextItem } from "./up-next-card";
 
 /** Posters that load eagerly: one full row at the widest grid. */
@@ -46,80 +44,57 @@ type ComingSoonSection =
 
 /**
  * Everything on `/upcoming` below its heading (spec 0014, AC-2, AC-3, AC-11,
- * AC-13, AC-14). It streams behind the page's one Suspense boundary, because
- * it reads the session and the user's rows.
+ * AC-14). It streams behind the page's one Suspense boundary, because it
+ * reads the session, the search params and the user's rows.
  *
  * `requireUser()` first, outside any `try`, so a request that got past the
- * proxy still reads nothing (AC-1). Then both sections' reads start at once,
- * but only Up Next is awaited: the Coming soon read (up to 200 movie
- * summaries, the slow part of a cold load) streams in its own boundary, so
- * it never holds back the Up Next cards. Only an empty Up Next waits for it,
- * because the one "Nothing upcoming yet" panel appears only when both reads
- * succeeded, both came back empty, and no planned movie went unchecked
- * (AC-13). Each read fails on its own (AC-14).
+ * proxy still reads nothing (AC-1). Then the navbar tab's `type` parameter
+ * picks the one section shown (feature 22): Up Next on the shows tab, Coming
+ * soon on the movies tab, each with its own empty state and its own Retry.
+ * An invalid type shows a panel before any read, never a redirect. Only the
+ * shows tab runs the automatic completion check, because it exists to keep
+ * the Up Next list right (spec 0015, AC-11); the movies tab writes nothing.
  */
-async function UpcomingSections() {
+async function UpcomingSections({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   await requireUser();
-  const today = requestTodayUtc();
 
-  const comingSoon = loadComingSoon(today);
-  // Handled by whichever branch awaits it; this only stops a rejection from
-  // being reported as unhandled when the Up Next read throws first.
-  comingSoon.catch(() => {});
-  const upNext = await loadUpNext();
+  const type = parseMediaTypeParam((await searchParams).type);
+  if (type === null) return <NoSuchTab />;
 
-  let comingSoonBody: ReactNode = (
-    <Suspense fallback={<SectionGridSkeleton />}>
-      <StreamedComingSoon section={comingSoon} />
-    </Suspense>
-  );
-
-  if (upNext.kind === "ok" && upNext.items.length === 0) {
-    const settled = await comingSoon;
-    if (
-      showsNothingUpcomingPanel(
-        0,
-        settled.kind === "ok"
-          ? { count: settled.items.length, total: settled.total }
-          : null,
-      )
-    ) {
-      return (
-        <div className="py-12">
-          <StatePanel
-            variant="empty"
-            headingId={UPCOMING_EMPTY_HEADING_ID}
-            title={UPCOMING_EMPTY_MESSAGES.title}
-            description={UPCOMING_EMPTY_MESSAGES.description}
-            action={
-              <div className="flex flex-wrap justify-center gap-2">
-                <ButtonLink size="touch" href="/shows">
-                  {UP_NEXT_MESSAGES.browse}
-                </ButtonLink>
-                <ButtonLink size="touch" href="/movies">
-                  {COMING_SOON_MESSAGES.browse}
-                </ButtonLink>
-              </div>
-            }
-          />
-        </div>
-      );
-    }
-    comingSoonBody = <ComingSoonBody section={settled} />;
+  if (type === "tv") {
+    return (
+      <Section id={UP_NEXT_HEADING_ID} heading={UP_NEXT_MESSAGES.heading}>
+        <UpNextBody section={await loadUpNext()} />
+      </Section>
+    );
   }
 
   return (
-    <>
-      <Section id={UP_NEXT_HEADING_ID} heading={UP_NEXT_MESSAGES.heading}>
-        <UpNextBody section={upNext} />
-      </Section>
-      <Section
-        id={COMING_SOON_HEADING_ID}
-        heading={COMING_SOON_MESSAGES.heading}
-      >
-        {comingSoonBody}
-      </Section>
-    </>
+    <Section id={COMING_SOON_HEADING_ID} heading={COMING_SOON_MESSAGES.heading}>
+      <ComingSoonBody section={await loadComingSoon(requestTodayUtc())} />
+    </Section>
+  );
+}
+
+/** Shown for a `type` that names neither catalog, before any read. */
+function NoSuchTab() {
+  return (
+    <div className="py-12">
+      <StatePanel
+        variant="empty"
+        title="That page doesn't exist"
+        description="There is no Upcoming list at this address."
+        action={
+          <ButtonLink size="touch" href={typedHref("/upcoming", "tv")}>
+            Back to Upcoming
+          </ButtonLink>
+        }
+      />
+    </div>
   );
 }
 
@@ -132,8 +107,8 @@ async function UpcomingSections() {
  */
 async function loadUpNext(): Promise<UpNextSection> {
   // The automatic completion check first, so the list below already holds
-  // its result (spec 0015, AC-11). Coming soon started before this and never
-  // waits for it.
+  // its result (spec 0015, AC-11). Only the shows tab gets here, so the
+  // movies tab never writes (feature 22).
   await reconcileUpNextShows();
   const shows = await getUpNextShows();
   if (shows.kind !== "ok") return { kind: "failed" };
@@ -198,7 +173,7 @@ async function loadComingSoon(today: string): Promise<ComingSoonSection> {
 
 function UpNextBody({ section }: { section: UpNextSection }) {
   if (section.kind === "failed") {
-    return <SectionFailed message={UP_NEXT_MESSAGES.failed} />;
+    return <SectionFailed message={UP_NEXT_MESSAGES.failed} type="tv" />;
   }
   if (section.items.length === 0) {
     return (
@@ -228,18 +203,9 @@ function UpNextBody({ section }: { section: UpNextSection }) {
   );
 }
 
-/** The Coming soon read already running, awaited inside its own boundary. */
-async function StreamedComingSoon({
-  section,
-}: {
-  section: Promise<ComingSoonSection>;
-}) {
-  return <ComingSoonBody section={await section} />;
-}
-
 function ComingSoonBody({ section }: { section: ComingSoonSection }) {
   if (section.kind === "failed") {
-    return <SectionFailed message={COMING_SOON_MESSAGES.failed} />;
+    return <SectionFailed message={COMING_SOON_MESSAGES.failed} type="movie" />;
   }
 
   // Only the ceiling is stated, never a count of upcoming movies beyond what
@@ -273,8 +239,8 @@ function ComingSoonBody({ section }: { section: ComingSoonSection }) {
 }
 
 /**
- * One section: an h2 in the page heading's style, a step smaller. Both
- * headings can take the focus: removing the last Coming soon card moves it
+ * One section: an h2 in the page heading's style, a step smaller. Either
+ * heading can take the focus: removing the last Coming soon card moves it
  * there (AC-12), and so does a mark that completes the last Up Next show
  * (spec 0015, AC-7).
  */
@@ -321,25 +287,27 @@ function SectionEmpty({
 }
 
 /** A section whose read failed: its own message and a full page Retry. */
-function SectionFailed({ message }: { message: string }) {
+function SectionFailed({
+  message,
+  type,
+}: {
+  message: string;
+  type: MediaType;
+}) {
   return (
     <div role="alert" className="flex flex-col items-start gap-3">
       <p className="text-sm text-text-secondary">{message}</p>
-      <RetryLink href={UPCOMING_PATH} />
+      <RetryLink href={typedHref("/upcoming", type)} />
     </div>
   );
 }
 
-/** The static shell's stand in for both sections (AC-2). */
+/** The static shell's stand in for the tab's one section (AC-2). */
 function UpcomingSkeleton() {
   return (
-    <div aria-hidden="true" className="flex flex-col gap-8">
-      {[0, 1].map((section) => (
-        <div key={section} className="flex flex-col gap-5">
-          <Skeleton shape="line" className="h-7 w-40" />
-          <SectionGridSkeleton />
-        </div>
-      ))}
+    <div aria-hidden="true" className="flex flex-col gap-5">
+      <Skeleton shape="line" className="h-7 w-40" />
+      <SectionGridSkeleton />
     </div>
   );
 }

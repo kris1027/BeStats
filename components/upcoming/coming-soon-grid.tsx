@@ -10,6 +10,7 @@ import {
   settleTrackingCall,
   showTrackingError,
 } from "@/components/tracking/tracking-toast";
+import { typedHref } from "@/lib/catalog/media-type";
 import {
   COMING_SOON_MESSAGES,
   LIBRARY_MESSAGES,
@@ -19,7 +20,7 @@ import {
 import type { MovieTrackingError } from "@/lib/tracking/types";
 
 import { ComingSoonCard, type ComingSoonItem } from "./coming-soon-card";
-import { COMING_SOON_HEADING_ID, UPCOMING_PATH } from "./ids";
+import { COMING_SOON_HEADING_ID } from "./ids";
 
 /** One full row at the widest grid loads eagerly, as on the list pages. */
 const EAGER_POSTERS = 6;
@@ -62,7 +63,7 @@ function ComingSoonGrid({ items }: { items: ComingSoonItem[] }) {
     showTrackingError(error, {
       movieId,
       control: "watchlist",
-      returnPath: UPCOMING_PATH,
+      returnPath: typedHref("/upcoming", "movie"),
       navigate: router.push,
     });
   }

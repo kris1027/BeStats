@@ -1,5 +1,4 @@
-import { z } from "zod";
-
+import { type MediaType, parseMediaTypeParam } from "@/lib/catalog/media-type";
 import { parsePageParam } from "@/lib/catalog/pages";
 import type { Genre } from "@/lib/tmdb/types";
 
@@ -10,8 +9,11 @@ import {
   type RatingStep,
 } from "./constants";
 
-/** The two catalogs `/search` covers. */
-export type SearchType = "tv" | "movie";
+/**
+ * The two catalogs `/search` covers: the navbar tab's media type, so search
+ * and the other typed pages share one definition (feature 22).
+ */
+export type SearchType = MediaType;
 
 /**
  * Everything `/search` shows is decided by this, and this is decided by the
@@ -44,18 +46,9 @@ export type ParseResult =
 type RawValue = string | string[] | undefined;
 type RawParams = Record<string, RawValue>;
 
-const typeSchema = z.enum(["tv", "movie"]);
 /** Digits only, no sign, no leading zero. The genre list does the rest. */
 const GENRE_ID = /^[1-9]\d{0,9}$/;
 const YEAR = /^\d{4}$/;
-
-/** The search type a URL asks for, or null when it names neither catalog. */
-export function parseSearchType(value: RawValue): SearchType | null {
-  if (value === undefined) return "tv";
-  if (Array.isArray(value)) return null;
-  const parsed = typeSchema.safeParse(value);
-  return parsed.success ? parsed.data : null;
-}
 
 /**
  * One value, with a repeat refused and a blank read as absent.
@@ -91,7 +84,7 @@ export function parseSearchParams(
   genres: readonly Genre[],
   currentYear: number,
 ): ParseResult {
-  const type = parseSearchType(raw.type);
+  const type = parseMediaTypeParam(raw.type);
   if (type === null) return { ok: false, param: "type" };
 
   const q = single(raw.q);

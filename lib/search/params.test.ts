@@ -7,7 +7,6 @@ import {
   emptySearchParams,
   hasAnyFilter,
   parseSearchParams,
-  parseSearchType,
   type SearchParams,
   searchHref,
 } from "./params";
@@ -131,15 +130,6 @@ describe("parseSearchParams", () => {
 
   it("ignores parameters it does not know", () => {
     expect(parse({ utm_source: "x" }).ok).toBe(true);
-  });
-});
-
-describe("parseSearchType", () => {
-  it("defaults to tv and refuses anything else", () => {
-    expect(parseSearchType(undefined)).toBe("tv");
-    expect(parseSearchType("movie")).toBe("movie");
-    expect(parseSearchType("film")).toBeNull();
-    expect(parseSearchType(["tv"])).toBeNull();
   });
 });
 
