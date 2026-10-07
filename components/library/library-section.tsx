@@ -10,6 +10,7 @@ import { NextEpisodePill } from "@/components/tracking/next-episode-pill";
 import { ButtonLink } from "@/components/ui/button";
 import { requireUser } from "@/lib/auth/user";
 import {
+  CATALOG_PATHS,
   type MediaType,
   parseMediaTypeParam,
   typedHref,
@@ -50,7 +51,7 @@ const COPY = {
         title: "Your show watchlist is empty",
         description: "Plan a show to see it here.",
       },
-      browse: { label: "Browse shows", href: "/shows" },
+      browse: { label: "Browse shows", href: CATALOG_PATHS.tv },
     },
     movie: {
       grid: "Movies on your watchlist",
@@ -58,7 +59,7 @@ const COPY = {
         title: "Your movie watchlist is empty",
         description: "Plan a movie to see it here.",
       },
-      browse: { label: "Browse movies", href: "/movies" },
+      browse: { label: "Browse movies", href: CATALOG_PATHS.movie },
     },
     failed: "Couldn't load your watchlist",
   },
@@ -69,7 +70,7 @@ const COPY = {
         title: "No completed shows yet",
         description: "Shows you complete show up here.",
       },
-      browse: { label: "Browse shows", href: "/shows" },
+      browse: { label: "Browse shows", href: CATALOG_PATHS.tv },
     },
     movie: {
       grid: "Movies you watched",
@@ -77,7 +78,7 @@ const COPY = {
         title: "No watched movies yet",
         description: "Movies you mark watched show up here.",
       },
-      browse: { label: "Browse movies", href: "/movies" },
+      browse: { label: "Browse movies", href: CATALOG_PATHS.movie },
     },
     failed: "Couldn't load your watched titles",
   },
@@ -88,8 +89,7 @@ const COPY = {
  * and `page` from page 2, as on `/movies`.
  */
 function pageHref(list: LibraryList, type: MediaType, page: number): string {
-  const href = typedHref(`/${list}`, type);
-  return page === 1 ? href : `${href}&page=${page}`;
+  return typedHref(`/${list}`, type, { page });
 }
 
 /**
@@ -125,7 +125,8 @@ async function LibrarySection({
   const raw = await searchParams;
   const type = parseMediaTypeParam(raw.type);
   const page = parsePageParam(raw.page);
-  if (type === null || page === null) return <NoSuchPage list={list} />;
+  if (type === null) return <NoSuchPage list={list} type={null} />;
+  if (page === null) return <NoSuchPage list={list} type={type} />;
 
   const result: LibraryPage<LibraryRow> =
     list === "watchlist"
@@ -309,21 +310,37 @@ function titleOf(
   };
 }
 
+/** The page names a bad `type` panel sends the user back to. */
+const LIST_NAMES = { watchlist: "Watchlist", watched: "Watched" } as const;
+
 /**
  * Shown for a malformed page number or media type, before any read (AC-9;
  * feature 22). Never a silent redirect: the link was wrong, and the panel
- * says so.
+ * says which part, a bad type worded like `/upcoming`'s. A bad page keeps
+ * its tab; a bad type leads to the default one.
+ *
+ * @param type The parsed type, or null when the type itself is the problem.
  */
-function NoSuchPage({ list }: { list: LibraryList }) {
+function NoSuchPage({
+  list,
+  type,
+}: {
+  list: LibraryList;
+  type: MediaType | null;
+}) {
   return (
     <div className="py-12">
       <StatePanel
         variant="empty"
         title="That page doesn't exist"
-        description="There are no titles at this page number."
+        description={
+          type === null
+            ? `There is no ${LIST_NAMES[list]} list at this address.`
+            : "There are no titles at this page number."
+        }
         action={
-          <ButtonLink size="touch" href={pageHref(list, "tv", 1)}>
-            Back to page 1
+          <ButtonLink size="touch" href={pageHref(list, type ?? "tv", 1)}>
+            {type === null ? `Back to ${LIST_NAMES[list]}` : "Back to page 1"}
           </ButtonLink>
         }
       />

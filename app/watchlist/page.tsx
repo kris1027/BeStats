@@ -13,13 +13,14 @@ export const metadata: Metadata = {
 };
 
 /**
- * The private watchlist: the movies the user plans to watch, newest plan
- * first (spec 0008, AC-1, AC-3, AC-12).
+ * The private watchlist: the movies the user plans to watch, or the shows
+ * they plan or are watching, by the navbar tab's `type`, newest first
+ * (spec 0008, AC-1, AC-3, AC-12; spec 0013, AC-13; feature 22).
  *
  * The heading and a skeleton grid are the static shell. Everything that reads
- * the session, the `page` parameter or the user's rows streams in behind the
- * Suspense boundary, inside `LibrarySection`, which calls `requireUser()`
- * itself: the proxy's redirect is only the convenience layer.
+ * the session, the `type` and `page` parameters or the user's rows streams in
+ * behind the Suspense boundary, inside `LibrarySection`, which calls
+ * `requireUser()` itself: the proxy's redirect is only the convenience layer.
  *
  * `LibraryHeading` takes the focus when a removal empties the page (AC-16).
  */

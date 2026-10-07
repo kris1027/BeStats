@@ -194,11 +194,22 @@ describe("the page parameter (AC-9)", () => {
         screen.getByRole("heading", { name: "That page doesn't exist" }),
       ).toBeInTheDocument();
       expect(
-        screen.getByRole("link", { name: "Back to page 1" }),
+        screen.getByText("There is no Watched list at this address."),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("link", { name: "Back to Watched" }),
       ).toHaveAttribute("href", "/watched?type=tv");
       expect(getWatchedPage).not.toHaveBeenCalled();
     },
   );
+
+  it("keeps the movies tab on a malformed page", async () => {
+    await renderSection("watchlist", { type: "movie", page: "abc" });
+    expect(
+      screen.getByRole("link", { name: "Back to page 1" }),
+    ).toHaveAttribute("href", "/watchlist?type=movie");
+    expect(getWatchlistPage).not.toHaveBeenCalled();
+  });
 
   it("redirects a page past the end to the last page", async () => {
     getWatchedPage.mockResolvedValue({ kind: "ok", rows: [], total: 21 });

@@ -93,12 +93,13 @@ function pageRange(page: number): [number, number] {
  * that type: `listed_at` descending, then the TMDB id.
  *
  * @param userId The verified session's user, never a client value.
- * @param kind The page's media type, already parsed.
+ * @param type The page's media type, already parsed; the views call it
+ *   `kind`.
  * @param page A page already parsed by `parsePageParam`.
  */
 export async function getWatchlistPage(
   userId: string,
-  kind: MediaType,
+  type: MediaType,
   page: number,
 ): Promise<LibraryPage<WatchlistRow>> {
   try {
@@ -107,7 +108,7 @@ export async function getWatchlistPage(
       .from("user_watchlist_entries")
       .select("kind, tmdb_id, status", { count: "exact" })
       .eq("user_id", userId)
-      .eq("kind", kind)
+      .eq("kind", type)
       .order("listed_at", { ascending: false })
       .order("tmdb_id", { ascending: true })
       .range(...pageRange(page));
@@ -118,7 +119,7 @@ export async function getWatchlistPage(
           .from("user_watchlist_entries")
           .select("tmdb_id", { count: "exact", head: true })
           .eq("user_id", userId)
-          .eq("kind", kind),
+          .eq("kind", type),
       );
     }
     if (error || count === null) return failed();
@@ -154,12 +155,13 @@ export async function getWatchlistPage(
  * type: `last_watched_at` descending, then the TMDB id.
  *
  * @param userId The verified session's user, never a client value.
- * @param kind The page's media type, already parsed.
+ * @param type The page's media type, already parsed; the views call it
+ *   `kind`.
  * @param page A page already parsed by `parsePageParam`.
  */
 export async function getWatchedPage(
   userId: string,
-  kind: MediaType,
+  type: MediaType,
   page: number,
 ): Promise<LibraryPage<WatchedRow>> {
   try {
@@ -168,7 +170,7 @@ export async function getWatchedPage(
       .from("user_watched_entries")
       .select("kind, tmdb_id, last_watched_at, rating", { count: "exact" })
       .eq("user_id", userId)
-      .eq("kind", kind)
+      .eq("kind", type)
       .order("last_watched_at", { ascending: false })
       .order("tmdb_id", { ascending: true })
       .range(...pageRange(page));
@@ -179,7 +181,7 @@ export async function getWatchedPage(
           .from("user_watched_entries")
           .select("tmdb_id", { count: "exact", head: true })
           .eq("user_id", userId)
-          .eq("kind", kind),
+          .eq("kind", type),
       );
     }
     if (error || count === null) return failed();
