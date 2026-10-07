@@ -162,6 +162,8 @@ grant execute on function public.restore_movie_watched(integer, timestamptz) to 
 -- contract migration: since spec 0020 the episode functions call
 -- `track_show` instead, and nothing calls this.
 --
+-- Legacy since spec 0020: the app no longer calls it, and it stays only so a
+-- rollback to the earlier deploy works. The contract migration drops it.
 -- Starts a show on its own (spec 0013, AC-6). It moves nothing or Want to
 -- Watch to Watching with `status_source = 'system'`, and never touches On
 -- Hold, Dropped, Completed or Watching, whatever their source. Each episode
@@ -202,6 +204,45 @@ $$;
 
 revoke all on function public.start_watching_show(integer, boolean) from public, anon, authenticated;
 grant execute on function public.start_watching_show(integer, boolean) to authenticated;
+
+-- The two directions of the legacy mapping (AC-19, Migration plan), each
+-- written once: the backfill reads `legacy_hold_for_status`, and the mirror
+-- into `status` that keeps a rollback working reads `legacy_status_for_hold`.
+-- Both go with the contract migration. Pure and immutable, they read no
+-- table. `legacy_status_for_hold` runs inside the caller's SECURITY INVOKER
+-- functions, so `authenticated` may execute it; `legacy_hold_for_status` is
+-- for the migration and pgTAP only. `supabase/tests/165-show-status-mapping.test.sql`
+-- pins both.
+create or replace function public.legacy_hold_for_status(p_status public.tv_status)
+returns public.show_hold
+language sql
+immutable
+security invoker
+set search_path = ''
+as $$
+  select case p_status
+    when 'on_hold' then 'paused'::public.show_hold
+    when 'dropped' then 'dropped'::public.show_hold
+  end;
+$$;
+
+create or replace function public.legacy_status_for_hold(p_hold public.show_hold)
+returns public.tv_status
+language sql
+immutable
+security invoker
+set search_path = ''
+as $$
+  select case p_hold
+    when 'paused' then 'on_hold'::public.tv_status
+    when 'dropped' then 'dropped'::public.tv_status
+    else 'watching'::public.tv_status
+  end;
+$$;
+
+revoke all on function public.legacy_hold_for_status(public.tv_status) from public, anon, authenticated;
+revoke all on function public.legacy_status_for_hold(public.show_hold) from public, anon, authenticated;
+grant execute on function public.legacy_status_for_hold(public.show_hold) to authenticated;
 
 -- Tracking a show (spec 0020, API surface).
 --
@@ -277,11 +318,7 @@ begin
 
   update public.user_show_state as s
   set hold_state = p_hold,
-      status = case p_hold
-        when 'paused' then 'on_hold'::public.tv_status
-        when 'dropped' then 'dropped'::public.tv_status
-        else 'watching'::public.tv_status
-      end,
+      status = public.legacy_status_for_hold(p_hold),
       status_source = 'user'
   where s.user_id = auth.uid() and s.show_id = p_show_id;
 
@@ -369,11 +406,7 @@ begin
     (user_id, show_id, tracked_at, hold_state, hold_changed_at, status, status_source)
   values (
     auth.uid(), p_show_id, p_tracked_at, p_hold, p_hold_changed_at,
-    case p_hold
-      when 'paused' then 'on_hold'::public.tv_status
-      when 'dropped' then 'dropped'::public.tv_status
-      else 'watching'::public.tv_status
-    end,
+    public.legacy_status_for_hold(p_hold),
     'user'
   )
   on conflict (user_id, show_id) do nothing
@@ -468,8 +501,9 @@ grant execute on function public.mark_episode_watched(integer, smallint, smallin
 -- track the show, exactly as `mark_episode_watched` does; rating an episode
 -- already watched never does (spec 0013, AC-7; spec 0020, AC-5).
 -- `newly_marked` (spec 0015, AC-4) is whether this call set the watched mark,
--- worked out as in `mark_episode_watched`; it tells the automatic completion
--- check that a rating was also a new watch.
+-- worked out as in `mark_episode_watched`. The app no longer reads it; it
+-- stays for the automatic completion check of the app deployed before spec
+-- 0020, so a rollback keeps working, and goes with the contract migration.
 create or replace function public.rate_episode(
   p_show_id integer,
   p_season_number smallint,
@@ -686,6 +720,8 @@ grant execute on function public.mark_season_watched(integer, smallint, integer[
 grant execute on function public.unmark_episodes_watched(integer, integer[]) to authenticated;
 grant execute on function public.restore_episodes_watched(integer, jsonb) to authenticated;
 
+-- Legacy since spec 0020: the app no longer calls these, and they stay only so a
+-- rollback to the earlier deploy works. The contract migration drops them.
 -- TV status writes (spec 0013).
 --
 -- A status is only ever written through these three, so `status_source` can
@@ -917,6 +953,8 @@ grant execute on function public.set_show_status(integer, public.tv_status, publ
 grant execute on function public.remove_show_status(integer, public.tv_status) to authenticated;
 grant execute on function public.restore_show_status(integer, public.tv_status, public.status_source, public.tv_status, timestamptz, timestamptz) to authenticated;
 
+-- Legacy since spec 0020: the app no longer calls it, and it stays only so a
+-- rollback to the earlier deploy works. The contract migration drops it.
 -- Automatic completion (spec 0015, AC-3): moves the caller's Watching row to
 -- Completed with `status_source = 'system'`, the one path that writes that
 -- pair. The app sends the ids of every aired regular episode from one whole
@@ -996,6 +1034,8 @@ $$;
 revoke all on function public.complete_show_automatically(integer, integer[], boolean) from public, anon, authenticated;
 grant execute on function public.complete_show_automatically(integer, integer[], boolean) to authenticated;
 
+-- Legacy since spec 0020: the app no longer calls it, and it stays only so a
+-- rollback to the earlier deploy works. The contract migration drops it.
 -- Reopens an automatic completion on a visit (spec 0015, AC-10, AC-11):
 -- the page's own check found a whole TMDB read that no longer says finished
 -- and watched. Moves only the caller's Completed row whose source is `system`

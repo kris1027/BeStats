@@ -26,6 +26,45 @@ alter table public.user_show_state
   add column hold_state public.show_hold,
   add column hold_changed_at timestamptz;
 
+-- The two directions of the legacy mapping (AC-19, Migration plan), each
+-- written once: the backfill reads `legacy_hold_for_status`, and the mirror
+-- into `status` that keeps a rollback working reads `legacy_status_for_hold`.
+-- Both go with the contract migration. Pure and immutable, they read no
+-- table. `legacy_status_for_hold` runs inside the caller's SECURITY INVOKER
+-- functions, so `authenticated` may execute it; `legacy_hold_for_status` is
+-- for the migration and pgTAP only. `supabase/tests/165-show-status-mapping.test.sql`
+-- pins both.
+create or replace function public.legacy_hold_for_status(p_status public.tv_status)
+returns public.show_hold
+language sql
+immutable
+security invoker
+set search_path = ''
+as $$
+  select case p_status
+    when 'on_hold' then 'paused'::public.show_hold
+    when 'dropped' then 'dropped'::public.show_hold
+  end;
+$$;
+
+create or replace function public.legacy_status_for_hold(p_hold public.show_hold)
+returns public.tv_status
+language sql
+immutable
+security invoker
+set search_path = ''
+as $$
+  select case p_hold
+    when 'paused' then 'on_hold'::public.tv_status
+    when 'dropped' then 'dropped'::public.tv_status
+    else 'watching'::public.tv_status
+  end;
+$$;
+
+revoke all on function public.legacy_hold_for_status(public.tv_status) from public, anon, authenticated;
+revoke all on function public.legacy_status_for_hold(public.show_hold) from public, anon, authenticated;
+grant execute on function public.legacy_status_for_hold(public.show_hold) to authenticated;
+
 -- AC-19: every existing row, mapped. Want to Watch, Watching and Completed
 -- become tracked with no hold; On Hold becomes paused and Dropped dropped.
 -- The table's triggers are off for this one statement, so the backfill moves
@@ -35,12 +74,9 @@ alter table public.user_show_state disable trigger user;
 
 update public.user_show_state
 set tracked_at = coalesce(listed_at, status_changed_at),
-    hold_state = case status
-      when 'on_hold' then 'paused'::public.show_hold
-      when 'dropped' then 'dropped'::public.show_hold
-    end,
+    hold_state = public.legacy_hold_for_status(status),
     hold_changed_at = case
-      when status in ('on_hold', 'dropped') then status_changed_at
+      when public.legacy_hold_for_status(status) is not null then status_changed_at
     end;
 
 alter table public.user_show_state enable trigger user;
@@ -207,11 +243,7 @@ begin
 
   update public.user_show_state as s
   set hold_state = p_hold,
-      status = case p_hold
-        when 'paused' then 'on_hold'::public.tv_status
-        when 'dropped' then 'dropped'::public.tv_status
-        else 'watching'::public.tv_status
-      end,
+      status = public.legacy_status_for_hold(p_hold),
       status_source = 'user'
   where s.user_id = auth.uid() and s.show_id = p_show_id;
 
@@ -299,11 +331,7 @@ begin
     (user_id, show_id, tracked_at, hold_state, hold_changed_at, status, status_source)
   values (
     auth.uid(), p_show_id, p_tracked_at, p_hold, p_hold_changed_at,
-    case p_hold
-      when 'paused' then 'on_hold'::public.tv_status
-      when 'dropped' then 'dropped'::public.tv_status
-      else 'watching'::public.tv_status
-    end,
+    public.legacy_status_for_hold(p_hold),
     'user'
   )
   on conflict (user_id, show_id) do nothing
@@ -396,8 +424,9 @@ $$;
 -- track the show, exactly as `mark_episode_watched` does; rating an episode
 -- already watched never does (spec 0013, AC-7; spec 0020, AC-5).
 -- `newly_marked` (spec 0015, AC-4) is whether this call set the watched mark,
--- worked out as in `mark_episode_watched`; it tells the automatic completion
--- check that a rating was also a new watch.
+-- worked out as in `mark_episode_watched`. The app no longer reads it; it
+-- stays for the automatic completion check of the app deployed before spec
+-- 0020, so a rollback keeps working, and goes with the contract migration.
 create or replace function public.rate_episode(
   p_show_id integer,
   p_season_number smallint,

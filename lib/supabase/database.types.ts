@@ -173,6 +173,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      legacy_hold_for_status: {
+        Args: { p_status: Database["public"]["Enums"]["tv_status"] }
+        Returns: Database["public"]["Enums"]["show_hold"]
+      }
+      legacy_status_for_hold: {
+        Args: { p_hold: Database["public"]["Enums"]["show_hold"] }
+        Returns: Database["public"]["Enums"]["tv_status"]
+      }
       mark_episode_watched: {
         Args: {
           p_episode_id: number

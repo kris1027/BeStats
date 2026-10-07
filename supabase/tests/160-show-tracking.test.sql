@@ -8,8 +8,7 @@
 -- never clears a hold, the legacy status mirror, and that user A can never
 -- read or change user B's rows through any of them.
 --
--- The AC-19 mapping runs once, inside the expand migration, so it is proved
--- against that migration itself (spec 0020 `verify.md`), not here.
+-- The AC-19 mapping is pinned in `165-show-status-mapping.test.sql`.
 --
 -- Shows 960001 to 960049 and episodes 970001 to 970099 are free for user A in
 -- this file; show 960050 belongs to user B. Rows that need past times are
