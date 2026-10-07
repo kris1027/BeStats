@@ -2,12 +2,10 @@
 
 import { cn } from "cn";
 import { SearchIcon } from "lucide-react";
-import { usePathname, useSearchParams } from "next/navigation";
-import { Suspense } from "react";
 
-import { isTypedPath, mediaTypeForLocation } from "@/lib/catalog/media-type";
+import { WithPageMediaType } from "@/components/layout/page-media-type";
+import type { MediaType } from "@/lib/catalog/media-type";
 import { mediaNoun } from "@/lib/search/count";
-import type { SearchType } from "@/lib/search/params";
 
 import { MobileSearchOverlay } from "./mobile-search-overlay";
 import { QuickSearch } from "./quick-search";
@@ -20,45 +18,27 @@ type Layout = "desktop" | "mobile";
  *
  * The type follows the page (feature 22): movies under `/movies`, shows
  * under `/shows`, the `type` parameter on `/watchlist`, `/upcoming`,
- * `/watched` and `/search`, and shows everywhere else. `usePathname`
- * suspends on a route with a dynamic param at prerender time, so `Navbar`
- * wraps this in Suspense with `NavbarSearchFallback`. Only on a typed page is
- * `useSearchParams` read, in its own small boundary, because reading it
- * anywhere else would pull `/shows`, `/movies` and every other route out of
- * their prerendered shells.
+ * `/watched` and `/search`, and shows everywhere else, read through
+ * `WithPageMediaType`. `usePathname` suspends on a route with a dynamic param
+ * at prerender time, so `Navbar` wraps this in Suspense with
+ * `NavbarSearchFallback`.
  *
  * The field is keyed on the pathname and type, so it starts empty on every
  * page (AC-17).
  */
 function NavbarSearch({ layout }: { layout: Layout }) {
-  const pathname = usePathname();
-
-  if (isTypedPath(pathname)) {
-    return (
-      <Suspense fallback={<NavbarSearchFallback layout={layout} type="tv" />}>
-        <TypedPageNavbarSearch layout={layout} pathname={pathname} />
-      </Suspense>
-    );
-  }
-
-  const type = mediaTypeForLocation(pathname, null) ?? "tv";
   return (
-    <NavbarSearchFor key={`${pathname}:${type}`} layout={layout} type={type} />
-  );
-}
-
-/** On a typed page the type is the page's own `type` parameter. */
-function TypedPageNavbarSearch({
-  layout,
-  pathname,
-}: {
-  layout: Layout;
-  pathname: string;
-}) {
-  const type =
-    mediaTypeForLocation(pathname, useSearchParams().get("type")) ?? "tv";
-  return (
-    <NavbarSearchFor key={`${pathname}:${type}`} layout={layout} type={type} />
+    <WithPageMediaType
+      fallback={() => <NavbarSearchFallback layout={layout} type="tv" />}
+    >
+      {({ pathname, type }) => (
+        <NavbarSearchFor
+          key={`${pathname}:${type ?? "tv"}`}
+          layout={layout}
+          type={type ?? "tv"}
+        />
+      )}
+    </WithPageMediaType>
   );
 }
 
@@ -67,7 +47,7 @@ function NavbarSearchFor({
   type,
 }: {
   layout: Layout;
-  type: SearchType;
+  type: MediaType;
 }) {
   if (layout === "mobile") return <MobileSearchOverlay type={type} />;
   return <QuickSearch type={type} className="h-10 w-[22.5rem]" />;
@@ -83,7 +63,7 @@ function NavbarSearchFallback({
   type = "tv",
 }: {
   layout: Layout;
-  type?: SearchType;
+  type?: MediaType;
 }) {
   if (layout === "mobile") {
     return (

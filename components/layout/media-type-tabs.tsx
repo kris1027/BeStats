@@ -2,16 +2,14 @@
 
 import { cn } from "cn";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
-import { Suspense } from "react";
 
 import {
-  isTypedPath,
+  CATALOG_PATHS,
   type MediaType,
-  mediaTypeForLocation,
-  type TypedPath,
   typedHref,
 } from "@/lib/catalog/media-type";
+
+import { WithPageMediaType } from "./page-media-type";
 
 /**
  * The SHOWS and MOVIES control in the navbar (spec 0004, AC-14; feature 22).
@@ -24,66 +22,46 @@ import {
  *
  * On `/watchlist`, `/upcoming`, `/watched` and `/search` the tabs switch the
  * page's own `type` parameter in place; everywhere else they lead to `/shows`
- * and `/movies`. Only on those four pages is `useSearchParams` read, in its
- * own Suspense boundary, because reading it anywhere else would pull `/shows`,
- * `/movies` and every other route out of their prerendered shells, the same
- * rule `NavbarSearch` follows.
+ * and `/movies`. `WithPageMediaType` reads the page's type, and on those four
+ * pages the current query, which `/search` keeps across a switch.
  *
  * On a route with a dynamic param (`/movies/[id]`, spec 0006) the pathname is
  * not known at prerender time, so `usePathname` suspends there. `Navbar` wraps
  * this in a Suspense boundary whose fallback is `MediaTypeTabsView` with
  * nothing lit: the same control at the same footprint.
  */
-const CATALOG_HREFS = { tv: "/shows", movie: "/movies" } as const;
-
 function MediaTypeTabs({ className }: { className?: string }) {
-  const pathname = usePathname();
-
-  if (isTypedPath(pathname)) {
-    return (
-      <Suspense
-        fallback={
-          <MediaTypeTabsView
-            selected={null}
-            hrefs={{
-              tv: typedHref(pathname, "tv"),
-              movie: typedHref(pathname, "movie"),
-            }}
-            className={className}
-          />
-        }
-      >
-        <TypedPageTabs path={pathname} className={className} />
-      </Suspense>
-    );
-  }
-
   return (
-    <MediaTypeTabsView
-      selected={mediaTypeForLocation(pathname, null)}
-      className={className}
-    />
-  );
-}
-
-/** On a typed page the lit tab is its `type`, and each tab rewrites it. */
-function TypedPageTabs({
-  path,
-  className,
-}: {
-  path: TypedPath;
-  className?: string;
-}) {
-  const params = useSearchParams();
-  return (
-    <MediaTypeTabsView
-      selected={mediaTypeForLocation(path, params.get("type"))}
-      hrefs={{
-        tv: typedHref(path, "tv", params),
-        movie: typedHref(path, "movie", params),
-      }}
-      className={className}
-    />
+    <WithPageMediaType
+      fallback={(pathname) => (
+        <MediaTypeTabsView
+          selected={null}
+          hrefs={{
+            tv: typedHref(pathname, "tv"),
+            movie: typedHref(pathname, "movie"),
+          }}
+          className={className}
+        />
+      )}
+    >
+      {(page) => (
+        // On a typed page the lit tab is its `type`, and each tab rewrites it.
+        <MediaTypeTabsView
+          selected={page.type}
+          hrefs={
+            page.params === null
+              ? undefined
+              : {
+                  tv: typedHref(page.pathname, "tv", { current: page.params }),
+                  movie: typedHref(page.pathname, "movie", {
+                    current: page.params,
+                  }),
+                }
+          }
+          className={className}
+        />
+      )}
+    </WithPageMediaType>
   );
 }
 
@@ -95,7 +73,7 @@ function TypedPageTabs({
  */
 function MediaTypeTabsView({
   selected,
-  hrefs = CATALOG_HREFS,
+  hrefs = CATALOG_PATHS,
   className,
 }: {
   selected: MediaType | null;

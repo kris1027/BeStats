@@ -2,15 +2,10 @@
 
 import { cn } from "cn";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
-import { Suspense } from "react";
 
-import {
-  isTypedPath,
-  type MediaType,
-  mediaTypeForLocation,
-  typedHref,
-} from "@/lib/catalog/media-type";
+import { type MediaType, typedHref } from "@/lib/catalog/media-type";
+
+import { WithPageMediaType } from "./page-media-type";
 
 /**
  * The signed in library links: the pill in the desktop navbar and the list in
@@ -18,16 +13,15 @@ import {
  *
  * As with `MediaTypeTabs`, the lit link comes from the pathname, never client
  * state, and `aria-current="page"` carries it to assistive technology.
- * `usePathname` is the only reason this is a Client Component. It renders only
+ * Reading the URL is the only reason this is a Client Component. It renders only
  * inside `AccountSlot`, which is already request scoped behind its own
  * Suspense boundary, so it costs no route its static shell.
  *
  * Upcoming sits between the two (spec 0014, AC-1).
  *
  * Each link carries the media type of the page being viewed, so the navbar
- * tab chosen on `/movies` is still lit on `/watchlist` (feature 22). On a
- * typed page that type is its `type` parameter, read in its own Suspense
- * boundary as `MediaTypeTabs` does; the fallback links to the default type.
+ * tab chosen on `/movies` is still lit on `/watchlist` (feature 22), read
+ * through `WithPageMediaType`; the fallback links to the default type.
  *
  * @param variant `bar` is the glass pill in the desktop navbar, 40px tall like
  * every navbar control, with `hit-area-tab` widening each link to a 44px tap
@@ -44,43 +38,20 @@ const LINKS = [
 type Variant = "bar" | "sheet";
 
 function LibraryNav({ variant }: { variant: Variant }) {
-  const pathname = usePathname();
-
-  if (isTypedPath(pathname)) {
-    return (
-      <Suspense
-        fallback={
-          <LibraryNavView variant={variant} pathname={pathname} type="tv" />
-        }
-      >
-        <TypedPageLibraryNav variant={variant} pathname={pathname} />
-      </Suspense>
-    );
-  }
-
   return (
-    <LibraryNavView
-      variant={variant}
-      pathname={pathname}
-      type={mediaTypeForLocation(pathname, null) ?? "tv"}
-    />
-  );
-}
-
-function TypedPageLibraryNav({
-  variant,
-  pathname,
-}: {
-  variant: Variant;
-  pathname: string;
-}) {
-  const type = useSearchParams().get("type");
-  return (
-    <LibraryNavView
-      variant={variant}
-      pathname={pathname}
-      type={mediaTypeForLocation(pathname, type) ?? "tv"}
-    />
+    <WithPageMediaType
+      fallback={(pathname) => (
+        <LibraryNavView variant={variant} pathname={pathname} type="tv" />
+      )}
+    >
+      {({ pathname, type }) => (
+        <LibraryNavView
+          variant={variant}
+          pathname={pathname}
+          type={type ?? "tv"}
+        />
+      )}
+    </WithPageMediaType>
   );
 }
 

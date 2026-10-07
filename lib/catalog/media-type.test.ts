@@ -53,19 +53,28 @@ describe("typedHref", () => {
 
   it("drops every other parameter of a list page", () => {
     expect(
-      typedHref("/watched", "movie", new URLSearchParams("type=tv&page=4")),
+      typedHref("/watched", "movie", {
+        current: new URLSearchParams("type=tv&page=4"),
+      }),
     ).toBe("/watched?type=movie");
+  });
+
+  it("writes a page only from page 2", () => {
+    expect(typedHref("/watchlist", "movie", { page: 1 })).toBe(
+      "/watchlist?type=movie",
+    );
+    expect(typedHref("/watched", "tv", { page: 3 })).toBe(
+      "/watched?type=tv&page=3",
+    );
   });
 
   it("keeps a search's query, year and rating, not its genres or page", () => {
     expect(
-      typedHref(
-        "/search",
-        "movie",
-        new URLSearchParams(
+      typedHref("/search", "movie", {
+        current: new URLSearchParams(
           "type=tv&q=a+b&genre=18&genre=35&year=1999&rating=8&page=2",
         ),
-      ),
+      }),
     ).toBe("/search?type=movie&q=a+b&year=1999&rating=8");
   });
 
