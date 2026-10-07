@@ -16,7 +16,7 @@ import { getWatchedEpisodeIds } from "@/lib/tracking/show-state";
 import { type UpNextState, upNextState } from "@/lib/tv/up-next";
 
 import { DatedPill } from "./dated-pill";
-import { UPCOMING_PATH } from "./ids";
+import { upcomingHref } from "./ids";
 import { MarkNextWatchedButton } from "./mark-next-watched-button";
 
 /** A card's state, or `unavailable` when it may not show any number. */
@@ -84,7 +84,7 @@ async function UpNextControls({
         <span className="px-1 text-sm text-text-secondary">
           {UP_NEXT_MESSAGES.unavailable}
         </span>
-        <RetryLink href={UPCOMING_PATH} className="md:h-9" />
+        <RetryLink href={upcomingHref("tv")} className="md:h-9" />
       </div>
     );
   }

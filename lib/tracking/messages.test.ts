@@ -11,7 +11,6 @@ import {
   TRACKING_MESSAGES,
   TV_STATUS_LABELS,
   UP_NEXT_MESSAGES,
-  UPCOMING_EMPTY_MESSAGES,
 } from "./messages";
 import { TV_STATUSES } from "./types";
 
@@ -193,11 +192,10 @@ describe("COMING_SOON_MESSAGES (spec 0014, AC-11 to AC-13)", () => {
     );
   });
 
-  it("keeps the empty copy, and one panel title when both are empty (AC-13)", () => {
+  it("keeps the Coming soon tab's empty copy (AC-13; feature 22)", () => {
     expect(COMING_SOON_MESSAGES.empty).toBe(
       "No planned movies are waiting for release.",
     );
-    expect(UPCOMING_EMPTY_MESSAGES.title).toBe("Nothing upcoming yet");
   });
 });
 

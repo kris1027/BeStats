@@ -41,7 +41,6 @@ const {
   comingSoonMovies,
   getUpcomingMovieCandidates,
   getUpNextShows,
-  showsNothingUpcomingPanel,
   UPCOMING_MOVIE_CHECK_LIMIT,
 } = await import("./up-next");
 
@@ -187,39 +186,5 @@ describe("comingSoonMovies (AC-11)", () => {
       today,
     );
     expect(kept.map((item) => item.id)).toEqual([10, 20, 30]);
-  });
-});
-
-describe("showsNothingUpcomingPanel (AC-13, AC-14)", () => {
-  it("shows the panel when both sections are empty and every plan was checked", () => {
-    expect(
-      showsNothingUpcomingPanel(0, {
-        count: 0,
-        total: UPCOMING_MOVIE_CHECK_LIMIT,
-      }),
-    ).toBe(true);
-  });
-
-  it("keeps the sections when the ceiling left plans unchecked", () => {
-    expect(
-      showsNothingUpcomingPanel(0, {
-        count: 0,
-        total: UPCOMING_MOVIE_CHECK_LIMIT + 1,
-      }),
-    ).toBe(false);
-  });
-
-  it("shows the panel for a user with nothing planned at all", () => {
-    expect(showsNothingUpcomingPanel(0, { count: 0, total: 0 })).toBe(true);
-  });
-
-  it("keeps the sections when either one has something", () => {
-    expect(showsNothingUpcomingPanel(1, { count: 0, total: 0 })).toBe(false);
-    expect(showsNothingUpcomingPanel(0, { count: 1, total: 1 })).toBe(false);
-  });
-
-  it("never shows the panel when a read failed", () => {
-    expect(showsNothingUpcomingPanel(null, { count: 0, total: 0 })).toBe(false);
-    expect(showsNothingUpcomingPanel(0, null)).toBe(false);
   });
 });

@@ -57,7 +57,7 @@ describe("/upcoming keeps private values out of shared caches (AC-15)", () => {
       expect(source, `${PAGE} must not use ${api}`).not.toContain(api);
     }
     expect(source).toMatch(
-      /<Suspense fallback=\{<UpcomingSkeleton \/>\}>[\s\S]*<UpcomingSections \/>/,
+      /<Suspense fallback=\{<UpcomingSkeleton \/>\}>[\s\S]*<UpcomingSections searchParams=\{searchParams\} \/>/,
     );
   });
 
@@ -69,11 +69,11 @@ describe("/upcoming keeps private values out of shared caches (AC-15)", () => {
     );
   });
 
-  it("checks the session in the streamed section itself (AC-1)", () => {
+  it("checks the session in the streamed section itself, before reading the tab (AC-1; feature 22)", () => {
     expect(
       readFileSync("components/upcoming/upcoming-sections.tsx", "utf8"),
     ).toMatch(
-      /async function UpcomingSections\(\) \{\s*await requireUser\(\);/,
+      /async function UpcomingSections\([^)]*\}\) \{\s*await requireUser\(\);\s*const type = parseMediaTypeParam/,
     );
   });
 
@@ -90,5 +90,20 @@ describe("/upcoming keeps private values out of shared caches (AC-15)", () => {
       /user_up_next_shows/.test(readFileSync(path, "utf8")),
     );
     expect(readers).toEqual(["lib/tracking/up-next.ts"]);
+  });
+
+  it("runs the completion check only on the shows tab, and reads one section per tab (feature 22)", () => {
+    const source = readFileSync(
+      "components/upcoming/upcoming-sections.tsx",
+      "utf8",
+    );
+    // Called once, inside the shows tab's branch; the movies tab only reads
+    // Coming soon, so it writes nothing.
+    expect(source.match(/await loadUpNext\(\)/g)).toHaveLength(1);
+    expect(source.match(/await loadComingSoon\(/g)).toHaveLength(1);
+    expect(source).toMatch(
+      /if \(type === "tv"\) \{(?:(?!loadComingSoon)[\s\S])*await loadUpNext\(\)[\s\S]*?\n {2}\}\n/,
+    );
+    expect(source.match(/reconcileUpNextShows\(/g)).toHaveLength(1);
   });
 });
