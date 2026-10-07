@@ -25,6 +25,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { typedHref } from "@/lib/catalog/media-type";
 import {
   FILTER_DEBOUNCE_MS,
   MAX_QUERY_LENGTH,
@@ -242,7 +243,7 @@ function FilterBar({
 
         {anySet ? (
           <Link
-            href={`/search?type=${values.type}`}
+            href={typedHref("/search", values.type)}
             onClick={(event) => {
               event.preventDefault();
               setText("");

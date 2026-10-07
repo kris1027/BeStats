@@ -10,12 +10,12 @@ import { StatePanel } from "@/components/state-panel";
 import { CardBookmark } from "@/components/tracking/card-bookmark";
 import { ShowCardBookmark } from "@/components/tracking/show-card-bookmark";
 import { ButtonLink } from "@/components/ui/button";
+import { parseMediaTypeParam, typedHref } from "@/lib/catalog/media-type";
 import { lastReachablePage } from "@/lib/catalog/pages";
 import { formatRange, mediaNoun } from "@/lib/search/count";
 import { searchMode } from "@/lib/search/mode";
 import {
   parseSearchParams,
-  parseSearchType,
   type SearchParamName,
   type SearchParams,
   type SearchType,
@@ -58,7 +58,7 @@ const EAGER_POSTERS = 6;
  * 0013, AC-18).
  */
 async function SearchResults({ raw }: { raw: RawParams }) {
-  const type = parseSearchType(raw.type);
+  const type = parseMediaTypeParam(raw.type);
   if (type === null) return <InvalidFilter param="type" type={null} />;
 
   const retryHref = rawHref(raw);
@@ -325,7 +325,7 @@ function TmdbFailure({ retryHref }: { retryHref: string }) {
 
 function ClearFilters({ type }: { type: SearchType | null }) {
   return (
-    <ButtonLink size="touch" href={type ? `/search?type=${type}` : "/search"}>
+    <ButtonLink size="touch" href={typedHref("/search", type ?? "tv")}>
       Clear filters
     </ButtonLink>
   );
