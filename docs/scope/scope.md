@@ -35,7 +35,7 @@ _2026-10-06: the `design/` artboards were removed. The UI built from them carrie
 | 18 | Legal pages and TMDB attribution | Slice 8 | done |
 | 19 | Security and acceptance verification | Slice 8 | done |
 | 20 | Deploy and provider setup | Slice 8 | done |
-| 21 | TV history on /watched | Slice 9 | in-progress |
+| 21 | TV history on /watched | Slice 9 | done |
 | 22 | Media tabs on every page | Slice 9 | in-progress |
 
 ## Foundations
@@ -353,7 +353,7 @@ Still open, both yours and outside the repo: the Google Search Console sitemap s
 
 ## Slice 9: TV history
 
-### 21. TV history on /watched · in-progress
+### 21. TV history on /watched · done
 The watched page shows movies only. Add the shows and episodes you watched, so `/watched` is your whole history (from spec [0013](../specs/0013-tv-status-and-progress/index.md), Follow-up). The shipped `/watched` page covers movies only and `/showcase` has no history layout, so the layout for shows is the open decision, to be described and approved in its plan.
 **Done when:** a signed in user sees the shows they watched episodes of on `/watched`, ordered and labeled consistently with the movies there, with personal ratings kept apart from TMDB ratings, specials not counted toward progress, and the empty, signed out and failure states still working.
 - [x] Design it (spec): `/architect TV history on /watched`
@@ -373,7 +373,8 @@ The navbar's SHOWS | MOVIES tabs filter every page, not just the catalog. On `/w
 **Done when:** every list page shows only the active tab's media type, with its own count, pages, empty and error states; the Library links and navbar search carry the current type; `/shows` and `/movies` behave as before and keep their prerendered shells.
 - [x] Plan it: [prompts/media-tabs-everywhere.md](../../prompts/media-tabs-everywhere.md)
 - [x] Build it: `/develop media tabs on every page`
-- [ ] Verify it: `/check verify media tabs on every page`
+- [x] Verify it: `/check verify media tabs on every page`
+- [x] Review it (fresh model): `/check review media tabs on every page`
 Code in `lib/catalog/media-type.ts`, `components/layout/`, `components/library/`, `components/upcoming/`, `components/search/filter-bar.tsx`, `lib/tracking/library-lists.ts`
 
 ## Deferred

@@ -1,7 +1,7 @@
 # 0010. Search and filters: navbar quick search and the /search results page
 
 **Date**: 2026-09-24
-**Status**: In Progress
+**Status**: Accepted
 
 Scope feature: [11. Search and filters](../../scope/scope.md) · Beta tier
 

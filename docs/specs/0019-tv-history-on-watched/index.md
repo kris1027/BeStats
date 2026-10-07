@@ -1,7 +1,7 @@
 # 0019. TV history on /watched: completed shows join watched movies in one grid
 
 **Date**: 2026-10-05
-**Status**: In Progress
+**Status**: Accepted
 
 Scope feature: [21. TV history on /watched](../../scope/scope.md) · GA tier
 
