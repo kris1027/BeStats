@@ -1,9 +1,11 @@
 # 0015. Automatic completion: move a finished show to Completed, and back when it changes
 
 **Date**: 2026-09-30
-**Status**: Accepted
+**Status**: Superseded by [0020](../0020-progress-based-library-pages/index.md)
 
 Scope feature: [16. Automatic completion](../../scope/scope.md) · GA tier
+
+> **Superseded by [0020](../0020-progress-based-library-pages/index.md)** (proposed 2026-10-07). Completed is no longer stored. A show you're caught up on with nothing dated lands on Watched by classification, so automatic completion, its pins and its writes on page load are removed.
 
 > **Amended 2026-10-07 by scope feature 22** ([plan](../../../prompts/media-tabs-everywhere.md)). `/upcoming` shows one section per navbar tab, so the shows tab can never empty into a whole page panel. AC-7's empty page fallback (`UPCOMING_EMPTY_HEADING_ID` and `StatePanel`'s `headingId` prop) is removed; the Up Next heading is the last focus target.
 

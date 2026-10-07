@@ -5,6 +5,8 @@
 
 Scope feature: [14. TV status and progress](../../scope/scope.md) · GA tier
 
+> **Superseded in part by [0020](../0020-progress-based-library-pages/index.md)** (proposed 2026-10-07). The five statuses and the status control give way to tracked plus an optional Pause or Drop. Which page a show sits on is worked out from progress and TMDB air dates. The progress line stays.
+
 ## Summary
 
 This decides how you give a show one of the five statuses (Want to Watch, Watching, On Hold, Dropped, Completed), how BeStats counts how far you are through a show, and how shows join movies on your watchlist. You set the status from one pill with a menu in the show page hero; watching a regular episode moves an untracked or Want to Watch show to Watching on its own, inside the same database write, and tells you. Progress is "watched out of aired regular episodes", worked out on each view from TMDB and your episode rows and never stored. The watchlist becomes one mixed grid of planned movies plus Want to Watch and Watching shows, each show card carrying the Next episode pill from the artboard, with Stop watching (On Hold) and the Planned bookmark (remove) both undoable.

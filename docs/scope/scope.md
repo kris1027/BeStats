@@ -37,6 +37,7 @@ _2026-10-06: the `design/` artboards were removed. The UI built from them carrie
 | 20 | Deploy and provider setup | Slice 8 | done |
 | 21 | TV history on /watched | Slice 9 | done |
 | 22 | Media tabs on every page | Slice 9 | done |
+| 23 | Progress based library pages | Slice 10 | in-progress |
 
 ## Foundations
 
@@ -377,13 +378,30 @@ The navbar's SHOWS | MOVIES tabs filter every page, not just the catalog. On `/w
 - [x] Review it (fresh model): `/check review media tabs on every page`
 Code in `lib/catalog/media-type.ts`, `components/layout/`, `components/library/`, `components/upcoming/`, `components/search/filter-bar.tsx`, `lib/tracking/library-lists.ts`
 
+## Slice 10: Progress based pages
+
+### 23. Progress based library pages · in-progress · GA
+Statuses are replaced by tracked plus an optional Pause or Drop. Every title sits on exactly one page, worked out from what you watched and what TMDB has aired or dated: Watchlist (something aired to watch), Upcoming (a future or unknown date), Watched (caught up, nothing dated). Movies follow the same rule. Settled in a grilling session on 2026-10-07 (supersedes 0015 and parts of 0013, 0014 and 0019).
+**Done when:** every tracked show and planned movie is on the one page its progress and air dates give, Pause and Drop park a show in the Paused & dropped section, no page writes on load, the rollout keeps the old app working until the contract migration, and `AGENTS.md` describes the new model.
+- [x] Design it (spec): `/architect progress based library pages`
+- [ ] Build it: `/develop progress based library pages`
+  - [ ] The thin thread: expand migration with the legacy mirror, pgTAP, `classifyShow`, and `/watchlist?type=tv` with Mark watched cards — AC-1, AC-4, AC-5, AC-7 to AC-9, AC-14, AC-16, AC-19, AC-20, AC-22
+  - [ ] The show strands: Upcoming and Watched show tabs, the tracking control and card bookmark, Paused & dropped — AC-2, AC-3, AC-6, AC-10 to AC-12, AC-15, AC-21
+  - [ ] The movie and state strands: `classifyMovie`, movie tabs, failure notes, missing titles, empty copy — AC-13, AC-14, AC-16 to AC-18
+  - [ ] Docs and proof: `AGENTS.md`, checks, 375px and keyboard, timing, `verify.md`, expand push and deploy — AC-23, AC-24
+  - [ ] Contract migration as a follow up PR after production is verified — AC-1, AC-21
+- [ ] Verify it: `/check verify progress based library pages`
+- [ ] Test it: `/test progress based library pages`
+- [ ] Review it (fresh model): `/check review progress based library pages`
+- [ ] Document it: `/document progress based library pages`
+spec [0020](../specs/0020-progress-based-library-pages/index.md)
+
 ## Deferred
 Out of scope for the current build pass, kept so the plan stays honest.
 - **Public profiles and social features**: ruled out of the MVP by `AGENTS.md`
 - **Error monitoring and product analytics**: not selected for this pass
 - **Self serve account deletion and data export** (from specs 0005 and 0017): GDPR requests are handled by email for now. Undesigned; a `/account` flow needs the Supabase admin API or a security definer function, an elevated call nothing else in the app uses, so it deserves its own decision, including what happens to the cascading tracking data
 - **Rate limit on sign in and sign up** (from spec 0018): Supabase counts Vercel's addresses, so its auth limit is shared by every visitor ([docs/deploy.md](../deploy.md) section 6). If it bites, add a second Vercel Firewall rule on sign in and sign up posts per IP. (The `/api/search` limit from spec 0010 shipped as a firewall rule in feature 20.)
-- **Scheduled automatic completion** (from spec 0015): completion runs only when you open a show or `/upcoming`. If "a change you never visit waits" becomes a real complaint, a scheduled job is next; it needs an elevated server role and its own spec
 - **A paid Supabase plan** (from spec 0018): the Free project pauses after about a week idle and has no automatic backups; revisit if that bites, or before inviting more than a handful of users
 - **Email delivery and Google sign in** (from spec 0018): an SMTP provider (your own domain, or Gmail SMTP), `enable_confirmations = true` and `NEXT_PUBLIC_AUTH_EMAIL_DELIVERY=on`, password recovery back, a browser pass of spec 0005's email steps, the Google button restored, a pre account takeover guard for accounts created while confirmation was off, `secure_password_change = true`, Google and the email provider added to `PROCESSORS`, and leaked password protection if you move to Pro
 
