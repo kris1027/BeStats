@@ -1,7 +1,8 @@
+import type { LibraryList } from "@/lib/catalog/library-list";
 import { airStatus } from "@/lib/tv/air-status";
 
 /** The library pages a movie can sit on (spec 0020, AC-13). */
-export type MoviePage = "watched" | "watchlist" | "upcoming";
+export type MoviePage = LibraryList;
 
 /** The user's own state for one movie, and the release date TMDB gives. */
 export type MoviePlacement = {
@@ -32,4 +33,19 @@ export function classifyMovie(
   return airStatus(movie.releaseDate, today) === "aired"
     ? "watchlist"
     : "upcoming";
+}
+
+/**
+ * The date an Upcoming movie card shows, or null for Date TBA (spec 0020,
+ * AC-13). The same `airStatus` reading `classifyMovie` places the movie by,
+ * so a missing or malformed date can never be shown as a real one.
+ *
+ * @param releaseDate `Movie.releaseDate`.
+ * @param today `requestTodayUtc()`, read once per request (AC-22).
+ */
+export function upcomingReleaseDate(
+  releaseDate: string | null,
+  today: string,
+): string | null {
+  return airStatus(releaseDate, today) === "upcoming" ? releaseDate : null;
 }

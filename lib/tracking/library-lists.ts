@@ -1,18 +1,23 @@
 import "server-only";
 
-import { classifyMovie, type MoviePage } from "@/lib/catalog/movie-page";
+import type { LibraryList } from "@/lib/catalog/library-list";
+import {
+  classifyMovie,
+  type MoviePage,
+  upcomingReleaseDate,
+} from "@/lib/catalog/movie-page";
 import { createClient } from "@/lib/supabase/server";
 import {
   getMovieSummaries,
   getMoviesSettled,
   getTvShowsSettled,
   type MovieSummary,
+  type SettledBatch,
   TmdbError,
 } from "@/lib/tmdb";
-import { airStatus } from "@/lib/tv/air-status";
 import {
   classifyShow,
-  type EpisodePlace,
+  type EpisodeKey,
   episodeKey,
   type ShowPage,
 } from "@/lib/tv/library-page";
@@ -93,47 +98,44 @@ export type LibraryTitle = {
 };
 
 /** The show tabs (AC-8). */
-export type ShowTab = ShowPage["page"];
+export type ShowTab = LibraryList;
 
 /**
- * One show card. A show TMDB no longer has is `missing`, and only ever on
- * the Watchlist tab, at its end (AC-17).
+ * What one tab read is asked for (AC-16). The four always travel together
+ * from the page to the reader.
+ */
+export type LibraryTabQuery<Tab extends LibraryList> = {
+  /** The verified session's user, never a client value. */
+  userId: string;
+  tab: Tab;
+  /** A page already parsed by `parsePageParam`. */
+  page: number;
+  /** `requestTodayUtc()`, read once per request (AC-22). */
+  today: string;
+};
+
+/**
+ * One show card: the page `classifyShow` gave it, with the title. A show
+ * TMDB no longer has is `missing`, and only ever on the Watchlist tab, at its
+ * end (AC-17).
  */
 export type ShowTabCard =
-  | {
-      kind: "watchlist";
-      showId: number;
-      title: LibraryTitle;
-      next: EpisodePlace;
-    }
-  | {
-      kind: "upcoming";
-      showId: number;
-      title: LibraryTitle;
-      airDate: string | null;
-      next: EpisodePlace | null;
-    }
-  | {
-      kind: "watched";
-      showId: number;
-      title: LibraryTitle;
-      label: "finished" | "caught_up";
-    }
-  | { kind: "missing"; showId: number };
+  | (ShowPage & { showId: number; title: LibraryTitle })
+  | { page: "missing"; showId: number };
 
 /** The movie tabs that need classifying; Watched movies need none (AC-16). */
 export type MovieTab = Exclude<MoviePage, "watched">;
 
 /** One movie card on Watchlist or Upcoming, or one TMDB no longer has. */
 export type MovieTabCard =
-  | { kind: "watchlist"; movieId: number; title: LibraryTitle }
+  | { page: "watchlist"; movieId: number; title: LibraryTitle }
   | {
-      kind: "upcoming";
+      page: "upcoming";
       movieId: number;
       title: LibraryTitle;
       releaseDate: string | null;
     }
-  | { kind: "missing"; movieId: number };
+  | { page: "missing"; movieId: number };
 
 /** Rows asked for per request; the API caps responses at `max_rows` (1000). */
 const EPISODE_PAGE_SIZE = 1000;
@@ -153,11 +155,102 @@ function pageSlice<T>(items: readonly T[], page: number): T[] {
   return items.slice(from, from + LIBRARY_PAGE_SIZE);
 }
 
+/**
+ * The capped rows a tab classifies: at most `LIBRARY_CLASSIFY_LIMIT`, and
+ * whether the query's one extra row said there were more (AC-16).
+ */
+function capRows<Row>(all: readonly Row[]): { rows: Row[]; capped: boolean } {
+  return {
+    rows: all.slice(0, LIBRARY_CLASSIFY_LIMIT),
+    capped: all.length > LIBRARY_CLASSIFY_LIMIT,
+  };
+}
+
+/**
+ * A settled TMDB batch read, or null after a systemic failure (a rejected
+ * credential or an exhausted rate limit), logged once here so every library
+ * read reports it the same way (AC-17). Anything that is not a `TmdbError`
+ * is a bug and still throws.
+ */
+async function settledTmdbRead<T>(read: () => Promise<T>): Promise<T | null> {
+  try {
+    return await read();
+  } catch (error) {
+    if (!(error instanceof TmdbError)) throw error;
+    logTrackingEvent(TRACKING_EVENT.listRead, "tmdb_unavailable");
+    return null;
+  }
+}
+
+/**
+ * The part every classified tab shares (AC-8, AC-16, AC-17): read the
+ * capped titles' TMDB details, keep the ones `place` puts on this tab, order
+ * them, add a "No longer on TMDB" card for each missing title on Watchlist
+ * only, and slice the page. Titles whose own read failed are on no page and
+ * only counted.
+ */
+async function classifyTab<Row extends { id: number }, Title, Placed, Card>({
+  query,
+  rows,
+  capped,
+  read,
+  place,
+  order,
+  card,
+  missing,
+}: {
+  query: LibraryTabQuery<LibraryList>;
+  rows: readonly Row[];
+  capped: boolean;
+  read: (ids: readonly number[]) => Promise<SettledBatch<Title>>;
+  place: (row: Row, title: Title) => Placed | null;
+  order?: (a: Placed, b: Placed) => number;
+  card: (placed: Placed) => Card;
+  missing: (id: number) => Card;
+}): Promise<LibraryTab<Card>> {
+  if (rows.length === 0) {
+    return { kind: "ok", cards: [], total: 0, failedCount: 0, capped };
+  }
+
+  const titles = await settledTmdbRead(() => read(rows.map((row) => row.id)));
+  if (titles === null) return { kind: "tmdb_failed" };
+
+  const placed: Placed[] = [];
+  const gone: Card[] = [];
+  for (const row of rows) {
+    const title = titles.found.get(row.id);
+    if (title === undefined) {
+      if (query.tab === "watchlist" && titles.missingIds.includes(row.id)) {
+        gone.push(missing(row.id));
+      }
+      continue;
+    }
+    const item = place(row, title);
+    if (item !== null) placed.push(item);
+  }
+  if (order !== undefined) placed.sort(order);
+
+  const cards = [...placed.map(card), ...gone];
+  return {
+    kind: "ok",
+    cards: pageSlice(cards, query.page),
+    total: cards.length,
+    failedCount: titles.failedIds.length,
+    capped,
+  };
+}
+
 /** One tracked show with no hold, as `user_tracked_shows` gives it. */
 type TrackedShowRow = {
-  showId: number;
+  id: number;
   trackedAt: string;
   lastWatchedAt: string | null;
+};
+
+/** A show placed on the tab, with the row its order reads. */
+type PlacedShow = {
+  row: TrackedShowRow;
+  card: ShowTabCard;
 };
 
 /**
@@ -177,21 +270,14 @@ type TrackedShowRow = {
  *   newest first (AC-12).
  *
  * Every order ends in `show_id`.
- *
- * @param userId The verified session's user, never a client value.
- * @param tab The page.
- * @param page A page already parsed by `parsePageParam`.
- * @param today `requestTodayUtc()`, read once per request.
  */
 export async function getShowLibraryTab(
-  userId: string,
-  tab: ShowTab,
-  page: number,
-  today: string,
+  query: LibraryTabQuery<ShowTab>,
 ): Promise<LibraryTab<ShowTabCard>> {
+  const { userId, tab, today } = query;
   let rows: TrackedShowRow[];
   let capped: boolean;
-  let watched: Map<number, Set<string>>;
+  let watched: Map<number, Set<EpisodeKey>>;
   try {
     const supabase = await createClient();
     const { data, error } = await supabase
@@ -206,19 +292,19 @@ export async function getShowLibraryTab(
 
     // A view's columns are all nullable to the type generator; the view
     // itself never yields a null id or `tracked_at`.
-    const all = data.flatMap((row) =>
-      row.show_id === null || row.tracked_at === null
-        ? []
-        : [
-            {
-              showId: row.show_id,
-              trackedAt: row.tracked_at,
-              lastWatchedAt: row.last_watched_at,
-            },
-          ],
-    );
-    capped = all.length > LIBRARY_CLASSIFY_LIMIT;
-    rows = all.slice(0, LIBRARY_CLASSIFY_LIMIT);
+    ({ rows, capped } = capRows(
+      data.flatMap((row) =>
+        row.show_id === null || row.tracked_at === null
+          ? []
+          : [
+              {
+                id: row.show_id,
+                trackedAt: row.tracked_at,
+                lastWatchedAt: row.last_watched_at,
+              },
+            ],
+      ),
+    ));
     if (rows.length === 0) {
       return { kind: "ok", cards: [], total: 0, failedCount: 0, capped };
     }
@@ -226,7 +312,7 @@ export async function getShowLibraryTab(
     const read = await readWatchedRegular(
       supabase,
       userId,
-      rows.map((row) => row.showId),
+      rows.map((row) => row.id),
     );
     if (read === null) return failed();
     watched = read;
@@ -236,99 +322,54 @@ export async function getShowLibraryTab(
     return failed();
   }
 
-  let shows: Awaited<ReturnType<typeof getTvShowsSettled>>;
-  try {
-    shows = await getTvShowsSettled(rows.map((row) => row.showId));
-  } catch (error) {
-    if (!(error instanceof TmdbError)) throw error;
-    logTrackingEvent(TRACKING_EVENT.listRead, "tmdb_unavailable");
-    return { kind: "tmdb_failed" };
-  }
-
-  type Placed = { row: TrackedShowRow; card: ShowTabCard };
-  const placed: Placed[] = [];
-  const missing: ShowTabCard[] = [];
-  for (const row of rows) {
-    const show = shows.found.get(row.showId);
-    if (show === undefined) {
-      if (tab === "watchlist" && shows.missingIds.includes(row.showId)) {
-        missing.push({ kind: "missing", showId: row.showId });
-      }
-      continue;
-    }
-
-    const result = classifyShow(
-      show,
-      watched.get(row.showId) ?? new Set(),
-      today,
-    );
-    if (result.page !== tab) continue;
-    const title = {
-      name: show.name,
-      posterUrl: show.posterUrl,
-      tmdbRating: show.tmdbRating,
-    };
-    placed.push({ row, card: showCard(row.showId, title, result) });
-  }
-
-  if (tab === "upcoming") placed.sort(upcomingShowOrder);
-  if (tab === "watched") placed.sort(watchedShowOrder);
-
-  const cards = [...placed.map((item) => item.card), ...missing];
-  return {
-    kind: "ok",
-    cards: pageSlice(cards, page),
-    total: cards.length,
-    failedCount: shows.failedIds.length,
+  return classifyTab({
+    query,
+    rows,
     capped,
-  };
-}
-
-function showCard(
-  showId: number,
-  title: LibraryTitle,
-  result: ShowPage,
-): ShowTabCard {
-  switch (result.page) {
-    case "watchlist":
-      return { kind: "watchlist", showId, title, next: result.next };
-    case "upcoming":
-      return {
-        kind: "upcoming",
-        showId,
-        title,
-        airDate: result.airDate,
-        next: result.next,
+    read: getTvShowsSettled,
+    place: (row, show): PlacedShow | null => {
+      const result = classifyShow(
+        show,
+        watched.get(row.id) ?? new Set(),
+        today,
+      );
+      if (result.page !== tab) return null;
+      const title = {
+        name: show.name,
+        posterUrl: show.posterUrl,
+        tmdbRating: show.tmdbRating,
       };
-    case "watched":
-      return { kind: "watched", showId, title, label: result.label };
-  }
+      return { row, card: { ...result, showId: row.id, title } };
+    },
+    order:
+      tab === "upcoming"
+        ? upcomingShowOrder
+        : tab === "watched"
+          ? watchedShowOrder
+          : undefined,
+    card: (placed) => placed.card,
+    missing: (showId) => ({ page: "missing", showId }),
+  });
 }
 
 /** Dated first, soonest first; then `tracked_at` newest first; then the id. */
-function upcomingShowOrder(
-  a: { row: TrackedShowRow; card: ShowTabCard },
-  b: { row: TrackedShowRow; card: ShowTabCard },
-): number {
-  const dateA = a.card.kind === "upcoming" ? a.card.airDate : null;
-  const dateB = b.card.kind === "upcoming" ? b.card.airDate : null;
+function upcomingShowOrder(a: PlacedShow, b: PlacedShow): number {
+  const dateA = a.card.page === "upcoming" ? a.card.airDate : null;
+  const dateB = b.card.page === "upcoming" ? b.card.airDate : null;
   return (
     compareDates(dateA, dateB) ||
     compareDesc(a.row.trackedAt, b.row.trackedAt) ||
-    a.row.showId - b.row.showId
+    a.row.id - b.row.id
   );
 }
 
 /** The newest watched episode, else `tracked_at`, newest first; then the id. */
-function watchedShowOrder(
-  a: { row: TrackedShowRow },
-  b: { row: TrackedShowRow },
-): number {
+function watchedShowOrder(a: PlacedShow, b: PlacedShow): number {
   return (
     compareDesc(
       a.row.lastWatchedAt ?? a.row.trackedAt,
       b.row.lastWatchedAt ?? b.row.trackedAt,
-    ) || a.row.showId - b.row.showId
+    ) || a.row.id - b.row.id
   );
 }
 
@@ -363,7 +404,7 @@ async function readWatchedRegular(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
   showIds: readonly number[],
-): Promise<Map<number, Set<string>> | null> {
+): Promise<Map<number, Set<EpisodeKey>> | null> {
   const query = (offset: number) =>
     supabase
       .from("user_episode_state")
@@ -375,7 +416,7 @@ async function readWatchedRegular(
       .order("episode_id")
       .range(offset, offset + EPISODE_PAGE_SIZE - 1);
 
-  const watched = new Map<number, Set<string>>();
+  const watched = new Map<number, Set<EpisodeKey>>();
   for (let offset = 0; ; offset += EPISODE_PAGE_SIZE) {
     const page = await query(offset);
     if (page.error || page.count === null) return null;
@@ -396,7 +437,7 @@ async function readWatchedRegular(
 }
 
 /** One planned movie not yet watched, as `user_movie_state` holds it. */
-type PlannedMovieRow = { movieId: number; watchlistedAt: string };
+type PlannedMovieRow = { id: number };
 
 /**
  * One page of a movie tab: Watchlist or Upcoming (AC-13, AC-16, AC-17).
@@ -406,18 +447,11 @@ type PlannedMovieRow = { movieId: number; watchlistedAt: string };
  * details read and `classifyMovie`. Watchlist keeps the plan order, with any
  * movie TMDB no longer has at the end; Upcoming goes soonest release first,
  * Date TBA last, then the plan order. Every order ends in `movie_id`.
- *
- * @param userId The verified session's user, never a client value.
- * @param tab The page.
- * @param page A page already parsed by `parsePageParam`.
- * @param today `requestTodayUtc()`, read once per request.
  */
 export async function getMovieLibraryTab(
-  userId: string,
-  tab: MovieTab,
-  page: number,
-  today: string,
+  query: LibraryTabQuery<MovieTab>,
 ): Promise<LibraryTab<MovieTabCard>> {
+  const { userId, tab, today } = query;
   let rows: PlannedMovieRow[];
   let capped: boolean;
   try {
@@ -434,86 +468,53 @@ export async function getMovieLibraryTab(
     if (error) return failed();
 
     // A planned row always has a plan time (a check constraint).
-    const all = data.flatMap((row) =>
-      row.watchlisted_at === null
-        ? []
-        : [{ movieId: row.movie_id, watchlistedAt: row.watchlisted_at }],
-    );
-    capped = all.length > LIBRARY_CLASSIFY_LIMIT;
-    rows = all.slice(0, LIBRARY_CLASSIFY_LIMIT);
+    ({ rows, capped } = capRows(
+      data.flatMap((row) =>
+        row.watchlisted_at === null ? [] : [{ id: row.movie_id }],
+      ),
+    ));
   } catch {
     return failed();
-  }
-  if (rows.length === 0) {
-    return { kind: "ok", cards: [], total: 0, failedCount: 0, capped };
-  }
-
-  let movies: Awaited<ReturnType<typeof getMoviesSettled>>;
-  try {
-    movies = await getMoviesSettled(rows.map((row) => row.movieId));
-  } catch (error) {
-    if (!(error instanceof TmdbError)) throw error;
-    logTrackingEvent(TRACKING_EVENT.listRead, "tmdb_unavailable");
-    return { kind: "tmdb_failed" };
-  }
-
-  const placed: MovieTabCard[] = [];
-  const missing: MovieTabCard[] = [];
-  for (const row of rows) {
-    const movie = movies.found.get(row.movieId);
-    if (movie === undefined) {
-      if (tab === "watchlist" && movies.missingIds.includes(row.movieId)) {
-        missing.push({ kind: "missing", movieId: row.movieId });
-      }
-      continue;
-    }
-
-    const result = classifyMovie(
-      { releaseDate: movie.releaseDate, inWatchlist: true, watchedAt: null },
-      today,
-    );
-    if (result !== tab) continue;
-    const title = {
-      name: movie.title,
-      posterUrl: movie.posterUrl,
-      tmdbRating: movie.tmdbRating,
-    };
-    placed.push(
-      result === "watchlist"
-        ? { kind: "watchlist", movieId: row.movieId, title }
-        : {
-            kind: "upcoming",
-            movieId: row.movieId,
-            title,
-            // Only a real day after today is dated; anything else, a
-            // missing or malformed date, is Date TBA.
-            releaseDate:
-              airStatus(movie.releaseDate, today) === "upcoming"
-                ? movie.releaseDate
-                : null,
-          },
-    );
   }
 
   // The rows are already in plan order, so a stable sort on the date alone
   // keeps that order, and the id after it, within a day (AC-13).
-  if (tab === "upcoming") {
-    placed.sort((a, b) =>
-      compareDates(
-        a.kind === "upcoming" ? a.releaseDate : null,
-        b.kind === "upcoming" ? b.releaseDate : null,
-      ),
-    );
-  }
-
-  const cards = [...placed, ...missing];
-  return {
-    kind: "ok",
-    cards: pageSlice(cards, page),
-    total: cards.length,
-    failedCount: movies.failedIds.length,
+  return classifyTab({
+    query,
+    rows,
     capped,
-  };
+    read: getMoviesSettled,
+    place: (row, movie): MovieTabCard | null => {
+      const result = classifyMovie(
+        { releaseDate: movie.releaseDate, inWatchlist: true, watchedAt: null },
+        today,
+      );
+      if (result !== tab) return null;
+      const title = {
+        name: movie.title,
+        posterUrl: movie.posterUrl,
+        tmdbRating: movie.tmdbRating,
+      };
+      return result === "watchlist"
+        ? { page: "watchlist", movieId: row.id, title }
+        : {
+            page: "upcoming",
+            movieId: row.id,
+            title,
+            releaseDate: upcomingReleaseDate(movie.releaseDate, today),
+          };
+    },
+    order:
+      tab === "upcoming"
+        ? (a, b) =>
+            compareDates(
+              a.page === "upcoming" ? a.releaseDate : null,
+              b.page === "upcoming" ? b.releaseDate : null,
+            )
+        : undefined,
+    card: (placed) => placed,
+    missing: (movieId) => ({ page: "missing", movieId }),
+  });
 }
 
 /** One watched movie: its score, and its exact watched time for Undo. */
@@ -600,17 +601,12 @@ export async function getLibraryMovieTitles(
   movieIds: readonly number[],
 ): Promise<LibraryMovieTitles> {
   if (movieIds.length === 0) return { kind: "ok", movies: new Map() };
-  try {
-    const { found } = await getMovieSummaries(movieIds);
-    return {
-      kind: "ok",
-      movies: new Map(found.map((movie) => [movie.id, movie])),
-    };
-  } catch (error) {
-    if (!(error instanceof TmdbError)) throw error;
-    logTrackingEvent(TRACKING_EVENT.listRead, "tmdb_unavailable");
-    return { kind: "failed" };
-  }
+  const read = await settledTmdbRead(() => getMovieSummaries(movieIds));
+  if (read === null) return { kind: "failed" };
+  return {
+    kind: "ok",
+    movies: new Map(read.found.map((movie) => [movie.id, movie])),
+  };
 }
 
 /** One paused or dropped show (AC-10). */

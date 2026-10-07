@@ -12,6 +12,18 @@ export function showCardLinkId(showId: number): string {
 }
 
 /**
+ * The link every show card on a library page carries: the show's page, and
+ * the id the focus returns to (spec 0020, AC-9). One place, so the four show
+ * cards cannot drift apart. Spread into `PosterCard`.
+ */
+export function showCardLink(showId: number): {
+  href: string;
+  linkId: string;
+} {
+  return { href: `/shows/${showId}`, linkId: showCardLinkId(showId) };
+}
+
+/**
  * Finds any show card's title link from the shared prefix, so the selector
  * cannot drift from `showCardLinkId`.
  */

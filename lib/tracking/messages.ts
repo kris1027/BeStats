@@ -282,4 +282,8 @@ export const HELD_SHOWS_COPY = {
   resumeLabel: (show: string) => `Resume ${show}`,
   stopLabel: (show: string) => `Stop tracking ${show}`,
   unavailable: "Show unavailable",
+  /** The toast's name for a show TMDB no longer has (AC-17). */
+  missingShowName: "this show",
+  /** The Stop tracking label's name for a show TMDB no longer has. */
+  missingShowLabel: "missing title",
 } as const;

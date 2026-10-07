@@ -17,7 +17,7 @@ import {
 } from "@/lib/tracking/messages";
 import type { ShowHold } from "@/lib/tracking/types";
 
-import { HELD_SHOWS_SUMMARY_ID, showCardLinkId } from "./ids";
+import { HELD_SHOWS_SUMMARY_ID, showCardLink } from "./ids";
 import { MISSING_TITLE } from "./library-card";
 
 /** The Watchlist shows tab, where every card here lives (AC-10, AC-17). */
@@ -145,8 +145,7 @@ function HeldShowCard({
     <PosterCard
       title={title.name}
       posterUrl={title.posterUrl}
-      href={`/shows/${showId}`}
-      linkId={showCardLinkId(showId)}
+      {...showCardLink(showId)}
       meta={label}
       controls={resumeButton}
     />
@@ -173,7 +172,7 @@ function MissingShowCard({
   const [hidden, setHidden] = useOptimistic(false);
   const tracking = useShowTracking({
     showId,
-    showName: "this show",
+    showName: HELD_SHOWS_COPY.missingShowName,
     returnPath: RETURN_PATH,
     toastId: `missing-show-${showId}`,
   });
@@ -186,7 +185,7 @@ function MissingShowCard({
       posterUrl={null}
       controls={
         <CardRoundButton
-          label={HELD_SHOWS_COPY.stopLabel("missing title")}
+          label={HELD_SHOWS_COPY.stopLabel(HELD_SHOWS_COPY.missingShowLabel)}
           onClick={() => {
             focusNeighbour(itemId, fallbackId);
             tracking.untrack(null, { before: () => setHidden(true) });

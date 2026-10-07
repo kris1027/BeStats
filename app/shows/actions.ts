@@ -80,14 +80,15 @@ type Outcome<T, E extends TrackingOutcome = EpisodeTrackingError> =
   | { ok: false; error: E | MovieTrackingError };
 
 /**
- * The shared shape of every episode action after its input is parsed: the
- * session, the body, the error mapping and the log line.
+ * The shared shape of every tracking write after its input is parsed, an
+ * episode mark or a show's tracking alike: the session, the body, the error
+ * mapping and the log line.
  *
  * @param event The log event for a refusal.
  * @param body The TMDB check and the Supabase call, given the request client
  * and the verified user id.
  */
-async function runEpisodeWrite<
+async function runTrackingWrite<
   T,
   E extends TrackingOutcome = EpisodeTrackingError,
 >(
@@ -123,6 +124,16 @@ async function runEpisodeWrite<
 
   refresh();
   return { ok: true, value };
+}
+
+/**
+ * A write whose caller needs only whether it landed: the show tracking
+ * actions answer `{ ok: true }`, never the body's placeholder value.
+ */
+function withoutValue<E>(
+  outcome: { ok: true } | { ok: false; error: E },
+): { ok: true } | { ok: false; error: E } {
+  return outcome.ok ? { ok: true } : outcome;
 }
 
 /** A PostgREST response reduced to a `Step`; it never refuses on its own. */
@@ -242,7 +253,7 @@ export async function setEpisodeWatched(
   if (!input) return { ok: false, error: "invalid_input" };
 
   const outcome = input.watched
-    ? await runEpisodeWrite(event, async (supabase) => {
+    ? await runTrackingWrite(event, async (supabase) => {
         const episode = await confirmEpisode(
           input.showId,
           input.seasonNumber,
@@ -265,7 +276,7 @@ export async function setEpisodeWatched(
           markedAt: newlyMarked ? (row?.watched_at ?? null) : null,
         });
       })
-    : await runEpisodeWrite(event, async (supabase, userId) => {
+    : await runTrackingWrite(event, async (supabase, userId) => {
         const { error } = await supabase
           .from("user_episode_state")
           .update({ watched_at: null })
@@ -307,7 +318,7 @@ export async function undoEpisodeMark(
   if (!input) return { ok: false, error: "invalid_input" };
 
   return withShowFlags(
-    await runEpisodeWrite(event, async (supabase, userId) => {
+    await runTrackingWrite(event, async (supabase, userId) => {
       const { data, error } = await supabase
         .from("user_episode_state")
         .update({ watched_at: null })
@@ -348,7 +359,7 @@ export async function setEpisodeRating(
   const score = input.rating;
   if (score !== null) {
     return withShowFlags(
-      await runEpisodeWrite(event, async (supabase) => {
+      await runTrackingWrite(event, async (supabase) => {
         const episode = await confirmEpisode(
           input.showId,
           input.seasonNumber,
@@ -368,7 +379,7 @@ export async function setEpisodeRating(
   }
 
   return withShowFlags(
-    await runEpisodeWrite(event, async (supabase, userId) => {
+    await runTrackingWrite(event, async (supabase, userId) => {
       const { error } = await supabase
         .from("user_episode_state")
         .update({ rating: null })
@@ -409,7 +420,7 @@ export async function setSeasonWatched(
 
   type SeasonWrite = { undo: SeasonUndo | null } & ShowTrackingFlags;
   const outcome = input.watched
-    ? await runEpisodeWrite<SeasonWrite>(event, async (supabase) => {
+    ? await runTrackingWrite<SeasonWrite>(event, async (supabase) => {
         const confirmed = await confirmSeason(input.showId, input.seasonNumber);
         if (confirmed.kind === "refused") return confirmed;
 
@@ -436,7 +447,7 @@ export async function setSeasonWatched(
           showTracked: showTrackedFrom(data),
         });
       })
-    : await runEpisodeWrite<SeasonWrite>(event, async (supabase) => {
+    : await runTrackingWrite<SeasonWrite>(event, async (supabase) => {
         const { data, error } = await supabase.rpc("unmark_episodes_watched", {
           p_show_id: input.showId,
           p_episode_ids: input.episodeIds,
@@ -478,7 +489,7 @@ export async function undoSeasonWatched(
 
   const request = input.undo;
   return withShowFlags(
-    await runEpisodeWrite(event, async (supabase) => {
+    await runTrackingWrite(event, async (supabase) => {
       if (request.kind === "unmark") {
         const { error } = await supabase.rpc("unmark_episodes_watched", {
           p_show_id: input.showId,
@@ -550,7 +561,7 @@ export async function trackShow(showId: number): Promise<ShowTrackingResult> {
   const input = parse(trackShowInputSchema, { showId }, event);
   if (!input) return { ok: false, error: "invalid_input" };
 
-  const outcome = await runEpisodeWrite<null, ShowTrackingError>(
+  const outcome = await runTrackingWrite<null, ShowTrackingError>(
     event,
     async (supabase) => {
       const show = await loadShow(input.showId);
@@ -566,7 +577,7 @@ export async function trackShow(showId: number): Promise<ShowTrackingResult> {
       return settled(error, null);
     },
   );
-  return outcome.ok ? { ok: true } : outcome;
+  return withoutValue(outcome);
 }
 
 /**
@@ -588,7 +599,7 @@ export async function setShowHold(
   if (!input) return { ok: false, error: "invalid_input" };
 
   const outcome = refreshOnStale(
-    await runEpisodeWrite<null, ShowTrackingError>(event, async (supabase) => {
+    await runTrackingWrite<null, ShowTrackingError>(event, async (supabase) => {
       const { error } = await supabase.rpc("set_show_hold", {
         p_show_id: input.showId,
         // Sent as null for "no hold": the arguments have no default, on
@@ -599,7 +610,7 @@ export async function setShowHold(
       return settledTracking(error, null);
     }),
   );
-  return outcome.ok ? { ok: true } : outcome;
+  return withoutValue(outcome);
 }
 
 /**
@@ -617,7 +628,7 @@ export async function untrackShow(
   if (!input) return { ok: false, error: "invalid_input" };
 
   const outcome = refreshOnStale(
-    await runEpisodeWrite<ShowTrackingUndo | null, ShowTrackingError>(
+    await runTrackingWrite<ShowTrackingUndo | null, ShowTrackingError>(
       event,
       async (supabase) => {
         const { data, error } = await supabase.rpc("untrack_show", {
@@ -661,7 +672,7 @@ export async function restoreShowTracking(
   if (!input) return { ok: false, error: "invalid_input" };
 
   const request = input.undo;
-  const outcome = await runEpisodeWrite<null, ShowTrackingError>(
+  const outcome = await runTrackingWrite<null, ShowTrackingError>(
     event,
     async (supabase) => {
       const { error } = await supabase.rpc("restore_show_tracking", {
@@ -676,5 +687,5 @@ export async function restoreShowTracking(
       return settled(error, null);
     },
   );
-  return outcome.ok ? { ok: true } : outcome;
+  return withoutValue(outcome);
 }

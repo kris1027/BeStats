@@ -175,7 +175,12 @@ describe("getShowLibraryTab (AC-7 to AC-12, AC-16)", () => {
     ];
     getTvShowsSettled.mockResolvedValue(settled([show(1), show(2)]));
 
-    const tab = await getShowLibraryTab("user-a", "watchlist", 1, TODAY);
+    const tab = await getShowLibraryTab({
+      userId: "user-a",
+      tab: "watchlist",
+      page: 1,
+      today: TODAY,
+    });
     expect(calls.slice(0, 8)).toEqual([
       { method: "from", args: ["user_tracked_shows"] },
       { method: "select", args: ["show_id, tracked_at, last_watched_at"] },
@@ -198,13 +203,13 @@ describe("getShowLibraryTab (AC-7 to AC-12, AC-16)", () => {
       kind: "ok",
       cards: [
         {
-          kind: "watchlist",
+          page: "watchlist",
           showId: 1,
           title: { name: "Show 1", posterUrl: null, tmdbRating: 8 },
           next: { season: 1, episode: 2 },
         },
         {
-          kind: "watchlist",
+          page: "watchlist",
           showId: 2,
           title: { name: "Show 2", posterUrl: null, tmdbRating: 8 },
           next: { season: 1, episode: 1 },
@@ -248,7 +253,12 @@ describe("getShowLibraryTab (AC-7 to AC-12, AC-16)", () => {
     const ids = {} as Record<string, number[]>;
     for (const tab of ["watchlist", "upcoming", "watched"] as const) {
       responses = script();
-      const result = await getShowLibraryTab("user-a", tab, 1, TODAY);
+      const result = await getShowLibraryTab({
+        userId: "user-a",
+        tab: tab,
+        page: 1,
+        today: TODAY,
+      });
       if (result.kind !== "ok") throw new Error("read failed");
       ids[tab] = result.cards.map((card) => card.showId);
     }
@@ -291,7 +301,12 @@ describe("getShowLibraryTab (AC-7 to AC-12, AC-16)", () => {
         show(4, unaired),
       ]),
     );
-    const tab = await getShowLibraryTab("user-a", "upcoming", 1, TODAY);
+    const tab = await getShowLibraryTab({
+      userId: "user-a",
+      tab: "upcoming",
+      page: 1,
+      today: TODAY,
+    });
     if (tab.kind !== "ok") throw new Error("read failed");
     expect(tab.cards.map((card) => card.showId)).toEqual([3, 1, 4, 2]);
   });
@@ -326,7 +341,12 @@ describe("getShowLibraryTab (AC-7 to AC-12, AC-16)", () => {
       ]),
     );
     // Show 2 has nothing aired and nothing watched, so it is on Upcoming.
-    const tab = await getShowLibraryTab("user-a", "watched", 1, TODAY);
+    const tab = await getShowLibraryTab({
+      userId: "user-a",
+      tab: "watched",
+      page: 1,
+      today: TODAY,
+    });
     if (tab.kind !== "ok") throw new Error("read failed");
     expect(tab.cards.map((card) => card.showId)).toEqual([3, 1]);
   });
@@ -338,7 +358,12 @@ describe("getShowLibraryTab (AC-7 to AC-12, AC-16)", () => {
       { data: [], error: null, count: 0 },
     ];
     getTvShowsSettled.mockResolvedValue(settled([]));
-    const tab = await getShowLibraryTab("user-a", "watchlist", 1, TODAY);
+    const tab = await getShowLibraryTab({
+      userId: "user-a",
+      tab: "watchlist",
+      page: 1,
+      today: TODAY,
+    });
     expect(tab).toMatchObject({ kind: "ok", capped: true });
     expect(getTvShowsSettled.mock.calls[0][0]).toHaveLength(500);
   });
@@ -352,7 +377,12 @@ describe("getShowLibraryTab (AC-7 to AC-12, AC-16)", () => {
     getTvShowsSettled.mockResolvedValue(
       settled(rows.map((row) => show(row.show_id))),
     );
-    const tab = await getShowLibraryTab("user-a", "watchlist", 2, TODAY);
+    const tab = await getShowLibraryTab({
+      userId: "user-a",
+      tab: "watchlist",
+      page: 2,
+      today: TODAY,
+    });
     if (tab.kind !== "ok") throw new Error("read failed");
     expect(tab.total).toBe(25);
     expect(tab.cards.map((card) => card.showId)).toEqual([21, 22, 23, 24, 25]);
@@ -373,7 +403,12 @@ describe("getShowLibraryTab (AC-7 to AC-12, AC-16)", () => {
       },
     ];
     getTvShowsSettled.mockResolvedValue(settled([show(1)]));
-    const tab = await getShowLibraryTab("user-a", "watchlist", 1, TODAY);
+    const tab = await getShowLibraryTab({
+      userId: "user-a",
+      tab: "watchlist",
+      page: 1,
+      today: TODAY,
+    });
     expect(
       calls.filter((call) => call.method === "range").map((call) => call.args),
     ).toEqual([
@@ -396,7 +431,12 @@ describe("getShowLibraryTab (AC-7 to AC-12, AC-16)", () => {
       ...[1, 2, 3, 4, 5].map(page),
     ];
     getTvShowsSettled.mockResolvedValue(settled([show(1)]));
-    await getShowLibraryTab("user-a", "watchlist", 1, TODAY);
+    await getShowLibraryTab({
+      userId: "user-a",
+      tab: "watchlist",
+      page: 1,
+      today: TODAY,
+    });
     expect(
       calls.filter((call) => call.method === "range").map((call) => call.args),
     ).toEqual([
@@ -419,7 +459,12 @@ describe("getShowLibraryTab (AC-7 to AC-12, AC-16)", () => {
       },
     ];
     getTvShowsSettled.mockResolvedValue(settled([show(1)]));
-    await getShowLibraryTab("user-a", "watchlist", 1, TODAY);
+    await getShowLibraryTab({
+      userId: "user-a",
+      tab: "watchlist",
+      page: 1,
+      today: TODAY,
+    });
     expect(
       calls.filter((call) => call.method === "range").map((call) => call.args),
     ).toEqual([[0, 999]]);
@@ -436,7 +481,12 @@ describe("getShowLibraryTab (AC-7 to AC-12, AC-16)", () => {
       { data: [], error: null, count: 3000 },
     ];
     getTvShowsSettled.mockResolvedValue(settled([show(1)]));
-    const tab = await getShowLibraryTab("user-a", "watchlist", 1, TODAY);
+    const tab = await getShowLibraryTab({
+      userId: "user-a",
+      tab: "watchlist",
+      page: 1,
+      today: TODAY,
+    });
     expect(
       calls.filter((call) => call.method === "range").map((call) => call.args),
     ).toEqual([
@@ -465,7 +515,12 @@ describe("getShowLibraryTab (AC-7 to AC-12, AC-16)", () => {
         broken,
       ];
       getTvShowsSettled.mockResolvedValue(settled([show(1)]));
-      const tab = await getShowLibraryTab("user-a", "watchlist", 1, TODAY);
+      const tab = await getShowLibraryTab({
+        userId: "user-a",
+        tab: "watchlist",
+        page: 1,
+        today: TODAY,
+      });
       expect(tab).toEqual({ kind: "failed" });
       expect(getTvShowsSettled).not.toHaveBeenCalled();
     },
@@ -477,19 +532,29 @@ describe("getShowLibraryTab (AC-7 to AC-12, AC-16)", () => {
       { data: [], error: null, count: 0 },
     ];
     getTvShowsSettled.mockResolvedValue(settled([show(1)], [2], [3]));
-    const tab = await getShowLibraryTab("user-a", "watchlist", 1, TODAY);
+    const tab = await getShowLibraryTab({
+      userId: "user-a",
+      tab: "watchlist",
+      page: 1,
+      today: TODAY,
+    });
     expect(tab).toMatchObject({
       kind: "ok",
       total: 2,
       failedCount: 1,
-      cards: [{ showId: 1 }, { kind: "missing", showId: 2 }],
+      cards: [{ showId: 1 }, { page: "missing", showId: 2 }],
     });
 
     responses = [
       { data: [tracked(1), tracked(2), tracked(3)], error: null },
       { data: [], error: null, count: 0 },
     ];
-    const upcoming = await getShowLibraryTab("user-a", "upcoming", 1, TODAY);
+    const upcoming = await getShowLibraryTab({
+      userId: "user-a",
+      tab: "upcoming",
+      page: 1,
+      today: TODAY,
+    });
     expect(upcoming).toMatchObject({ kind: "ok", total: 0, failedCount: 1 });
   });
 
@@ -499,14 +564,28 @@ describe("getShowLibraryTab (AC-7 to AC-12, AC-16)", () => {
       { data: [], error: null, count: 0 },
     ];
     getTvShowsSettled.mockRejectedValue(new FakeTmdbError("rate limited"));
-    expect(await getShowLibraryTab("user-a", "watchlist", 1, TODAY)).toEqual({
+    expect(
+      await getShowLibraryTab({
+        userId: "user-a",
+        tab: "watchlist",
+        page: 1,
+        today: TODAY,
+      }),
+    ).toEqual({
       kind: "tmdb_failed",
     });
   });
 
   it("reports a failed Postgres read as failed, never an empty tab, logging no identifiers", async () => {
     responses = [{ data: null, error: { code: "PGRST000" } }];
-    expect(await getShowLibraryTab("user-a", "watchlist", 1, TODAY)).toEqual({
+    expect(
+      await getShowLibraryTab({
+        userId: "user-a",
+        tab: "watchlist",
+        page: 1,
+        today: TODAY,
+      }),
+    ).toEqual({
       kind: "failed",
     });
     expect(warn).toHaveBeenCalledWith(
@@ -517,7 +596,14 @@ describe("getShowLibraryTab (AC-7 to AC-12, AC-16)", () => {
 
   it("answers no tracked shows with an empty tab and no TMDB read", async () => {
     responses = [{ data: [], error: null }];
-    expect(await getShowLibraryTab("user-a", "watched", 1, TODAY)).toEqual({
+    expect(
+      await getShowLibraryTab({
+        userId: "user-a",
+        tab: "watched",
+        page: 1,
+        today: TODAY,
+      }),
+    ).toEqual({
       kind: "ok",
       cards: [],
       total: 0,
@@ -552,7 +638,12 @@ describe("getMovieLibraryTab (AC-13, AC-16, AC-17)", () => {
     getMoviesSettled.mockResolvedValue(
       settled([movie(1, "2026-01-01"), movie(2, "2026-12-01")] as never),
     );
-    const tab = await getMovieLibraryTab("user-a", "watchlist", 1, TODAY);
+    const tab = await getMovieLibraryTab({
+      userId: "user-a",
+      tab: "watchlist",
+      page: 1,
+      today: TODAY,
+    });
     expect(calls).toEqual([
       { method: "from", args: ["user_movie_state"] },
       { method: "select", args: ["movie_id, watchlisted_at"] },
@@ -566,7 +657,7 @@ describe("getMovieLibraryTab (AC-13, AC-16, AC-17)", () => {
     expect(tab).toMatchObject({
       kind: "ok",
       total: 1,
-      cards: [{ kind: "watchlist", movieId: 1 }],
+      cards: [{ page: "watchlist", movieId: 1 }],
     });
   });
 
@@ -588,7 +679,12 @@ describe("getMovieLibraryTab (AC-13, AC-16, AC-17)", () => {
         movie(4, "2026-11-01"),
       ] as never),
     );
-    const tab = await getMovieLibraryTab("user-a", "upcoming", 1, TODAY);
+    const tab = await getMovieLibraryTab({
+      userId: "user-a",
+      tab: "upcoming",
+      page: 1,
+      today: TODAY,
+    });
     if (tab.kind !== "ok") throw new Error("read failed");
     expect(tab.cards).toEqual([
       expect.objectContaining({ movieId: 4, releaseDate: "2026-11-01" }),
@@ -612,11 +708,16 @@ describe("getMovieLibraryTab (AC-13, AC-16, AC-17)", () => {
       settled([movie(1, "2026-01-01")] as never, [2], [3]),
     );
     expect(
-      await getMovieLibraryTab("user-a", "watchlist", 1, TODAY),
+      await getMovieLibraryTab({
+        userId: "user-a",
+        tab: "watchlist",
+        page: 1,
+        today: TODAY,
+      }),
     ).toMatchObject({
       total: 2,
       failedCount: 1,
-      cards: [{ movieId: 1 }, { kind: "missing", movieId: 2 }],
+      cards: [{ movieId: 1 }, { page: "missing", movieId: 2 }],
     });
   });
 
@@ -628,7 +729,14 @@ describe("getMovieLibraryTab (AC-13, AC-16, AC-17)", () => {
       },
     ];
     getMoviesSettled.mockRejectedValue(new FakeTmdbError("unauthorized"));
-    expect(await getMovieLibraryTab("user-a", "upcoming", 1, TODAY)).toEqual({
+    expect(
+      await getMovieLibraryTab({
+        userId: "user-a",
+        tab: "upcoming",
+        page: 1,
+        today: TODAY,
+      }),
+    ).toEqual({
       kind: "tmdb_failed",
     });
   });

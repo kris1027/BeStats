@@ -4,7 +4,7 @@ import { PosterCard } from "@/components/poster-card";
 import type { LibraryTitle } from "@/lib/tracking/library-lists";
 import type { EpisodePlace } from "@/lib/tv/library-page";
 
-import { showCardLinkId } from "./ids";
+import { showCardLink } from "./ids";
 import {
   NextEpisodeName,
   WatchlistShowControls,
@@ -36,8 +36,7 @@ function WatchlistShowCard({
     <PosterCard
       title={title.name}
       posterUrl={title.posterUrl}
-      href={`/shows/${showId}`}
-      linkId={showCardLinkId(showId)}
+      {...showCardLink(showId)}
       controls={
         <Suspense fallback={<WatchlistShowControlsPending next={next} />}>
           <WatchlistShowControls

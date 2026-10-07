@@ -162,12 +162,12 @@ describe("the reads each tab makes (AC-15, AC-16)", () => {
     "classifies the %s shows tab for the session user, page and today",
     async (list) => {
       await renderSection(list, { type: "tv", page: "1" });
-      expect(getShowLibraryTab).toHaveBeenCalledWith(
-        "user-a",
-        list,
-        1,
-        "2026-10-07",
-      );
+      expect(getShowLibraryTab).toHaveBeenCalledWith({
+        userId: "user-a",
+        tab: list,
+        page: 1,
+        today: "2026-10-07",
+      });
     },
   );
 
@@ -175,12 +175,12 @@ describe("the reads each tab makes (AC-15, AC-16)", () => {
     "classifies the %s movies tab",
     async (list) => {
       await renderSection(list, { type: "movie" });
-      expect(getMovieLibraryTab).toHaveBeenCalledWith(
-        "user-a",
-        list,
-        1,
-        "2026-10-07",
-      );
+      expect(getMovieLibraryTab).toHaveBeenCalledWith({
+        userId: "user-a",
+        tab: list,
+        page: 1,
+        today: "2026-10-07",
+      });
       expect(getWatchedMoviesPage).not.toHaveBeenCalled();
     },
   );
@@ -193,7 +193,7 @@ describe("the reads each tab makes (AC-15, AC-16)", () => {
 
   it("redirects a page past the end to the last page", async () => {
     getShowLibraryTab.mockResolvedValue(
-      tab([{ kind: "watched", showId: 1, title: TITLE, label: "finished" }], {
+      tab([{ page: "watched", showId: 1, title: TITLE, label: "finished" }], {
         total: 21,
       }),
     );
@@ -227,7 +227,7 @@ describe("failures never look like an empty list (AC-17)", () => {
       tab(
         [
           {
-            kind: "upcoming",
+            page: "upcoming",
             showId: 1,
             title: TITLE,
             airDate: null,
@@ -256,7 +256,7 @@ describe("failures never look like an empty list (AC-17)", () => {
 
   it("shows the list panel when the watched show ratings fail (spec 0019, AC-10)", async () => {
     getShowLibraryTab.mockResolvedValue(
-      tab([{ kind: "watched", showId: 1, title: TITLE, label: "finished" }]),
+      tab([{ page: "watched", showId: 1, title: TITLE, label: "finished" }]),
     );
     getShowRatings.mockResolvedValue({ kind: "failed" });
     await renderSection("watched", { type: "tv" });
@@ -301,12 +301,12 @@ describe("show cards (AC-9 to AC-12)", () => {
     getShowLibraryTab.mockResolvedValue(
       tab([
         {
-          kind: "watchlist",
+          page: "watchlist",
           showId: 1,
           title: TITLE,
           next: { season: 1, episode: 3 },
         },
-        { kind: "missing", showId: 2 },
+        { page: "missing", showId: 2 },
       ]),
     );
     await renderSection("watchlist", { type: "tv" });
@@ -320,7 +320,7 @@ describe("show cards (AC-9 to AC-12)", () => {
       tab(
         [
           {
-            kind: "watchlist",
+            page: "watchlist",
             showId: 1,
             title: TITLE,
             next: { season: 1, episode: 1 },
@@ -337,14 +337,14 @@ describe("show cards (AC-9 to AC-12)", () => {
     getShowLibraryTab.mockResolvedValue(
       tab([
         {
-          kind: "upcoming",
+          page: "upcoming",
           showId: 1,
           title: TITLE,
           airDate: "2026-10-20",
           next: { season: 2, episode: 1 },
         },
         {
-          kind: "upcoming",
+          page: "upcoming",
           showId: 2,
           title: { ...TITLE, name: "Andor" },
           airDate: null,
@@ -364,9 +364,9 @@ describe("show cards (AC-9 to AC-12)", () => {
   it("renders Watched cards with the calculated rating and their label (AC-12)", async () => {
     getShowLibraryTab.mockResolvedValue(
       tab([
-        { kind: "watched", showId: 1, title: TITLE, label: "finished" },
+        { page: "watched", showId: 1, title: TITLE, label: "finished" },
         {
-          kind: "watched",
+          page: "watched",
           showId: 2,
           title: { ...TITLE, name: "Andor" },
           label: "caught_up",
@@ -399,20 +399,20 @@ describe("show cards (AC-9 to AC-12)", () => {
         tab([
           list === "watchlist"
             ? {
-                kind: "watchlist",
+                page: "watchlist",
                 showId: 1,
                 title: TITLE,
                 next: { season: 1, episode: 1 },
               }
             : list === "upcoming"
               ? {
-                  kind: "upcoming",
+                  page: "upcoming",
                   showId: 1,
                   title: TITLE,
                   airDate: null,
                   next: null,
                 }
-              : { kind: "watched", showId: 1, title: TITLE, label: "finished" },
+              : { page: "watched", showId: 1, title: TITLE, label: "finished" },
         ]),
       );
       await renderSection(list, { type: "tv" });
@@ -431,13 +431,13 @@ describe("movie cards (AC-13)", () => {
     getMovieLibraryTab.mockResolvedValue(
       tab([
         {
-          kind: "upcoming",
+          page: "upcoming",
           movieId: 1,
           title: { name: "Dune", posterUrl: null, tmdbRating: 8 },
           releaseDate: "2027-02-03",
         },
         {
-          kind: "upcoming",
+          page: "upcoming",
           movieId: 2,
           title: { name: "Untitled", posterUrl: null, tmdbRating: null },
           releaseDate: null,
@@ -457,7 +457,7 @@ describe("movie cards (AC-13)", () => {
 
   it("hands a missing Watchlist movie to the grid with no title (AC-17)", async () => {
     getMovieLibraryTab.mockResolvedValue(
-      tab([{ kind: "missing", movieId: 9 }]),
+      tab([{ page: "missing", movieId: 9 }]),
     );
     await renderSection("watchlist", { type: "movie" });
     expect(received(9)).toMatchObject({ title: null, tmdbRating: null });

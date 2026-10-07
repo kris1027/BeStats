@@ -9,7 +9,7 @@ import {
 import type { EpisodePlace } from "@/lib/tv/library-page";
 
 import { DatedPill, DateTbaPill } from "./dated-pill";
-import { showCardLinkId } from "./ids";
+import { showCardLink } from "./ids";
 
 /**
  * One show on Upcoming (spec 0020, AC-11): the poster, the name, and either
@@ -38,8 +38,7 @@ function UpcomingShowCard({
     <PosterCard
       title={title.name}
       posterUrl={title.posterUrl}
-      href={`/shows/${showId}`}
-      linkId={showCardLinkId(showId)}
+      {...showCardLink(showId)}
       controls={
         <UpcomingShowPill airDate={airDate} next={next} today={today} />
       }
@@ -109,8 +108,7 @@ function WatchedShowCard({
     <PosterCard
       title={title.name}
       posterUrl={title.posterUrl}
-      href={`/shows/${showId}`}
-      linkId={showCardLinkId(showId)}
+      {...showCardLink(showId)}
       badge={
         showRating === null ? undefined : (
           <CalculatedRatingBadge value={showRating} label="Your show rating" />

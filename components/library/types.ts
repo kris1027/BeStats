@@ -4,8 +4,7 @@
  * Client Component.
  */
 
-/** Which private library page a section shows (spec 0020, AC-8). */
-export type LibraryList = "watchlist" | "upcoming" | "watched";
+export type { LibraryList } from "@/lib/catalog/library-list";
 
 /**
  * A movie's release date on an Upcoming card, formatted on the server beside
