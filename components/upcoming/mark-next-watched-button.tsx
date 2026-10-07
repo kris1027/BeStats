@@ -11,6 +11,7 @@ import {
   settleStatusCall,
   showEpisodeTrackingError,
 } from "@/components/tracking/tracking-toast";
+import { typedHref } from "@/lib/catalog/media-type";
 import {
   SHOW_STATUS_MESSAGES,
   UNDO_ACTION_LABEL,
@@ -20,7 +21,6 @@ import {
 import {
   UP_NEXT_CARD_LINK_SELECTOR,
   UP_NEXT_HEADING_ID,
-  upcomingHref,
   upNextCardLinkId,
 } from "./ids";
 
@@ -157,7 +157,7 @@ function MarkNextWatchedButton({
   function onError(error: Parameters<typeof showEpisodeTrackingError>[0]) {
     showEpisodeTrackingError(error, {
       id: toastId,
-      returnPath: upcomingHref("tv"),
+      returnPath: typedHref("/upcoming", "tv"),
       navigate: router.push,
     });
   }

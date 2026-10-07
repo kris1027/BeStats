@@ -4,6 +4,7 @@ import { GlassPill } from "@/components/glass-pill";
 import { RetryLink } from "@/components/retry-link";
 import { Skeleton } from "@/components/skeleton";
 import { NextEpisodeIcon } from "@/components/tracking/tracking-icons";
+import { typedHref } from "@/lib/catalog/media-type";
 import { formatAirDate, formatShortDate } from "@/lib/format";
 import { getShowEpisodes, TmdbError } from "@/lib/tmdb";
 import { requestTodayUtc } from "@/lib/tracking/episode-state";
@@ -16,7 +17,6 @@ import { getWatchedEpisodeIds } from "@/lib/tracking/show-state";
 import { type UpNextState, upNextState } from "@/lib/tv/up-next";
 
 import { DatedPill } from "./dated-pill";
-import { upcomingHref } from "./ids";
 import { MarkNextWatchedButton } from "./mark-next-watched-button";
 
 /** A card's state, or `unavailable` when it may not show any number. */
@@ -84,7 +84,7 @@ async function UpNextControls({
         <span className="px-1 text-sm text-text-secondary">
           {UP_NEXT_MESSAGES.unavailable}
         </span>
-        <RetryLink href={upcomingHref("tv")} className="md:h-9" />
+        <RetryLink href={typedHref("/upcoming", "tv")} className="md:h-9" />
       </div>
     );
   }

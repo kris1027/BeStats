@@ -1,21 +1,9 @@
 /**
  * The ids `/upcoming` moves the focus to (spec 0014, AC-12, AC-16; spec 0015,
- * AC-7), and the page's own path. Plain values in a plain module, so the
- * server cards and the client controls share them.
+ * AC-7). Plain values in a plain module, so the server cards and the client
+ * controls share them. The page's URLs come from `typedHref`, whose
+ * `TypedPath` type already refuses a misspelt `"/upcoming"` (feature 22).
  */
-
-import { type MediaType, typedHref } from "@/lib/catalog/media-type";
-
-/** The page's path, without the navbar tab's `type`. */
-export const UPCOMING_PATH = "/upcoming";
-
-/**
- * The page for one navbar tab (feature 22): what every Retry reloads and
- * every Sign in toast returns to, so neither lands on the other tab.
- */
-export function upcomingHref(type: MediaType): string {
-  return typedHref(UPCOMING_PATH, type);
-}
 
 const UP_NEXT_CARD_LINK_PREFIX = "up-next-";
 

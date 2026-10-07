@@ -6,7 +6,11 @@ import { PosterCardSkeleton, Skeleton } from "@/components/skeleton";
 import { StatePanel } from "@/components/state-panel";
 import { ButtonLink } from "@/components/ui/button";
 import { requireUser } from "@/lib/auth/user";
-import { type MediaType, parseMediaTypeParam } from "@/lib/catalog/media-type";
+import {
+  type MediaType,
+  parseMediaTypeParam,
+  typedHref,
+} from "@/lib/catalog/media-type";
 import { formatAirDate, formatShortDate } from "@/lib/format";
 import { getMovieSummaries, getTvShowsByIds, TmdbError } from "@/lib/tmdb";
 import { reconcileUpNextShows } from "@/lib/tracking/auto-completion";
@@ -26,11 +30,7 @@ import {
 
 import type { ComingSoonItem } from "./coming-soon-card";
 import { ComingSoonGrid } from "./coming-soon-grid";
-import {
-  COMING_SOON_HEADING_ID,
-  UP_NEXT_HEADING_ID,
-  upcomingHref,
-} from "./ids";
+import { COMING_SOON_HEADING_ID, UP_NEXT_HEADING_ID } from "./ids";
 import { UpNextCard, type UpNextItem } from "./up-next-card";
 
 /** Posters that load eagerly: one full row at the widest grid. */
@@ -89,7 +89,7 @@ function NoSuchTab() {
         title="That page doesn't exist"
         description="There is no Upcoming list at this address."
         action={
-          <ButtonLink size="touch" href={upcomingHref("tv")}>
+          <ButtonLink size="touch" href={typedHref("/upcoming", "tv")}>
             Back to Upcoming
           </ButtonLink>
         }
@@ -107,8 +107,8 @@ function NoSuchTab() {
  */
 async function loadUpNext(): Promise<UpNextSection> {
   // The automatic completion check first, so the list below already holds
-  // its result (spec 0015, AC-11). Coming soon started before this and never
-  // waits for it.
+  // its result (spec 0015, AC-11). Only the shows tab gets here, so the
+  // movies tab never writes (feature 22).
   await reconcileUpNextShows();
   const shows = await getUpNextShows();
   if (shows.kind !== "ok") return { kind: "failed" };
@@ -297,7 +297,7 @@ function SectionFailed({
   return (
     <div role="alert" className="flex flex-col items-start gap-3">
       <p className="text-sm text-text-secondary">{message}</p>
-      <RetryLink href={upcomingHref(type)} />
+      <RetryLink href={typedHref("/upcoming", type)} />
     </div>
   );
 }
