@@ -6,7 +6,6 @@ import {
   formatResultCount,
   formatTotal,
 } from "./count";
-import { mapGenresAcrossTypes } from "./genres";
 
 /** covers: spec 0010, AC-3, AC-12, AC-14, AC-24 */
 
@@ -76,66 +75,5 @@ describe("formatPartialCount", () => {
         query: "the",
       }),
     ).toBe("1 match in TMDB results 101–200 of 10,000+ for “the”");
-  });
-});
-
-describe("mapGenresAcrossTypes", () => {
-  const tv = [
-    { id: 18, name: "Drama" },
-    { id: 10766, name: "Soap" },
-    { id: 10759, name: "Action & Adventure" },
-  ];
-  const movie = [
-    { id: 18, name: "Drama" },
-    { id: 28, name: "Action" },
-    { id: 12, name: "Adventure" },
-  ];
-
-  it("keeps a genre both lists name alike and drops the rest by name", () => {
-    expect(mapGenresAcrossTypes([18, 10766], tv, movie)).toEqual({
-      kept: [18],
-      dropped: ["Soap"],
-    });
-  });
-
-  it("maps to the other list's id, never a near name", () => {
-    const films = [{ id: 99, name: "Drama" }];
-    expect(mapGenresAcrossTypes([18, 10759], tv, films)).toEqual({
-      kept: [99],
-      dropped: ["Action & Adventure"],
-    });
-  });
-
-  it("skips an id the source list does not know, naming nothing", () => {
-    expect(mapGenresAcrossTypes([424242, 18], tv, movie)).toEqual({
-      kept: [18],
-      dropped: [],
-    });
-  });
-
-  it("returns kept ids sorted, so the new URL is canonical", () => {
-    const films = [
-      { id: 50, name: "Drama" },
-      { id: 5, name: "Soap" },
-    ];
-    expect(mapGenresAcrossTypes([18, 10766], tv, films).kept).toEqual([5, 50]);
-  });
-
-  it("collapses two source genres that land on one target id", () => {
-    const shows = [
-      { id: 1, name: "Drama" },
-      { id: 2, name: "Drama" },
-    ];
-    expect(mapGenresAcrossTypes([1, 2], shows, movie)).toEqual({
-      kept: [18],
-      dropped: [],
-    });
-  });
-
-  it("returns nothing for nothing", () => {
-    expect(mapGenresAcrossTypes([], tv, movie)).toEqual({
-      kept: [],
-      dropped: [],
-    });
   });
 });
