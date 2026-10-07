@@ -10,7 +10,7 @@ Setup you may want first: `pnpm exec supabase db reset`, then `pnpm dev:docker`,
 - [x] Untick the special of a show you completed (any show with a season 0), or clear a rating alone → the status stays `completed|system` → AC-8, AC-9
 - [x] Untick episode 5, open `/upcoming` with a second Watching show listed after it, click Mark watched on Chernobyl → toast "Marked Chernobyl S1E5 watched · Moved to Completed" with Undo, the card leaves, focus lands on the next card's title link → AC-5, AC-7
 - [x] Repeat with Chernobyl as the last card (focus goes to the previous card) and as the only card (focus goes to the "Up Next" heading) → AC-7
-- [ ] With Chernobyl the only card and Coming soon empty, Mark watched → the page swaps to its empty panel and focus lands on that panel's heading (`UPCOMING_EMPTY_HEADING_ID`) → AC-7
+- ~~With Chernobyl the only card and Coming soon empty, Mark watched → the page swaps to its empty panel and focus lands on that panel's heading (`UPCOMING_EMPTY_HEADING_ID`) → AC-7~~ Retired 2026-10-07 by scope feature 22: Coming soon moved to the movies tab, so the only card case above already covers it.
 - [ ] Mark season watched on a season another tab already marked, the show `Ended` and otherwise caught up → toast "Chernobyl moved to Completed" with no Undo, not the nothing-to-mark message → AC-5
 - [x] Focus the toast's Undo with the keyboard and press Enter → Chernobyl comes back first in Up Next and its title link has the focus → AC-7, AC-8
 - [x] `Q "update user_episode_state set watched_at = now() where show_id = 87108"` with the row `watching|system`, then open `/shows/87108` → the pill reads Completed and the line "5 of 5 episodes watched" → AC-10

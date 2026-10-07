@@ -35,15 +35,15 @@ Scope feature 22, branch `feat/media-tabs-everywhere`. There is no spec: these d
    Generated links always write `type`, for example `/watchlist?type=movie`.
 5. **The prerendered shell is kept.** `useSearchParams` is read only when the pathname is a typed page, inside its own Suspense boundary. This is the pattern `NavbarSearch` already uses for `/search`. The boundary's fallback is the same control with nothing lit (tabs) or with the `tv` links (Library nav), at the same footprint. `/shows`, `/movies` and the title pages never read search params, so their static shells don't change.
 6. **One pure helper** in `lib/catalog/media-type.ts`. It is free of `server-only`, so the client components and tests can import it.
-   - `MediaType`: an alias of `SearchType`.
+   - `MediaType`, of which `SearchType` is now an alias (review fixes, below).
    - `parseMediaTypeParam(raw)`: returns `tv` when the value is absent, the type for `tv` or `movie`, and `null` otherwise.
    - `TYPED_PATHS`.
    - `mediaTypeForLocation(pathname, typeParam)`.
-   - `typedHref(path, type, extra?)`.
-   `parseSearchType` stays the parser behind `/search`.
+   - `typedHref(path, type, { current?, page? })`.
+   ~~`parseSearchType` stays the parser behind `/search`.~~ `parseMediaTypeParam` is now the one parser, `/search` included (review fixes, below).
 7. **`/watchlist`.**
    - SHOWS lists Want to Watch and Watching shows, as today. MOVIES lists planned movies.
-   - `getWatchlistPage(userId, kind, page)` and `getWatchedPage(userId, kind, page)` add `.eq("kind", kind)` to the page query and to the count query. The order stays `listed_at` / `last_watched_at` descending, then `tmdb_id`.
+   - `getWatchlistPage(userId, type, page)` and `getWatchedPage(userId, type, page)` add `.eq("kind", type)` to the page query and to the count query. The order stays `listed_at` / `last_watched_at` descending, then `tmdb_id`.
    - Each tab has its own count, page numbers and past-the-end redirect. `pageHref(list, type, page)` builds `/watchlist?type=movie`, with `&page=n` added from page 2.
    - Only the needed TMDB titles are fetched: movies or shows, never both.
 8. **`/watched`.** SHOWS lists Completed shows with their calculated rating, and MOVIES lists watched movies with their score. Paging is split the same way as on `/watchlist`.
@@ -63,13 +63,14 @@ Scope feature 22, branch `feat/media-tabs-everywhere`. There is no spec: these d
     - Each section keeps its heading, its own empty state (the existing `SectionEmpty` message and Browse button) and its own error with Retry.
     - The combined "Nothing upcoming yet" panel goes away, along with `showsNothingUpcomingPanel`, `UPCOMING_EMPTY_MESSAGES` and `UPCOMING_EMPTY_HEADING_ID`.
     - When a mark completes the last Up Next show, the focus goes to the Up Next heading.
-    - Every Retry link and Sign in return path uses `upcomingHref(type)`.
+    - Every Retry link and Sign in return path uses `typedHref("/upcoming", type)`.
 12. **`/search`.**
     - The `TypeOption` radios and `switchType` are removed. The form submits `type` through a hidden input, so it still works without JavaScript.
     - The genre list, placeholder and Clear link follow `values.type`, which now changes only from the navbar.
     - `mapGenresAcrossTypes`, its "Removed: …" line and their tests are deleted if nothing else uses them.
 13. **An invalid `?type=` value.**
-    - On `/watchlist` and `/watched`, the existing `NoSuchPage` panel ("That page doesn't exist") shows, with its button pointing to `?type=tv`.
+    - On `/watchlist` and `/watched`, the `NoSuchPage` panel ("That page doesn't exist") shows "There is no Watchlist list at this address." (or Watched), with the button "Back to Watchlist" (or "Back to Watched") pointing to `?type=tv`. A malformed `page` keeps its own copy and stays on the current tab.
+    - An empty `?type=` is a value, not an absence, so it gets the panel too. Only a URL with no `type` means `tv`.
     - On `/upcoming`, which has no page parameter, the same panel shows with the button "Back to Upcoming" (`/upcoming?type=tv`).
     - `/search` keeps its current handling of a bad parameter.
     - There is no redirect. The check runs after `requireUser()` and before any read.
@@ -92,7 +93,7 @@ Scope feature 22, branch `feat/media-tabs-everywhere`. There is no spec: these d
 ## Security
 
 - The reads don't change: they run in the same user session under RLS, still behind `requireUser()` and outside any `use cache` scope. `kind` is a parsed enum value, never raw input.
-- The `type` parameter is validated with Zod (through `parseSearchType`) before it reaches a query.
+- The `type` parameter is validated with Zod (through `parseMediaTypeParam`) before it reaches a query.
 - No new client boundary reads a server dynamic API. `useSearchParams` reads only the URL.
 
 ## Acceptance criteria
@@ -135,3 +136,18 @@ Changes that were not spelled out above:
 - **A mark that completes the last Up Next show** moves the focus to the Up Next heading, which stays on the page above its own empty state. The fallback to the old empty-panel heading was removed, along with its test.
 - **The search page's "Removed: …" line** went with the type switch. It was only ever set by that switch.
 - **An invalid `type`** lights SHOWS in the navbar while the page shows its error panel, because the tab and Library links fall back to the default type.
+
+## Review fixes (2026-10-07)
+
+The code review of this branch (standards and spec) found no bugs. These follow ups were applied on the same branch at the user's request:
+
+- **One media type and one parser.** `SearchType` is an alias of `MediaType`, `parseSearchType` is gone, and `/search` parses `type` through `parseMediaTypeParam`.
+- **`WithPageMediaType`** (`components/layout/page-media-type.tsx`) holds the typed page rule (read `useSearchParams` only on a typed path, in its own Suspense boundary) that `MediaTypeTabs`, `LibraryNav` and `NavbarSearch` had each restated. It carries no `"use client"`, so the shell's client boundary list is unchanged.
+- **`CATALOG_PATHS`** in `media-type.ts` is the one place `/shows` and `/movies` are paired; the tabs, the empty states and `mediaTypeForLocation` read it.
+- **`typedHref` takes `{ current, page }`**, so `pageHref` no longer appends `&page=` to its output.
+- **`upcomingHref` and `UPCOMING_PATH` are removed.** Callers use `typedHref("/upcoming", type)`; `TypedPath` already refuses a misspelt path.
+- **`typedHref` everywhere:** the filter bar's Clear filters link and the invalid filter panel's Clear filters button no longer build `/search` URLs by hand.
+- **`NoSuchPage` copy** distinguishes a bad `type` from a bad `page` (decision 13).
+- **Dead code:** `StatePanel`'s `headingId` prop lost its only caller with `UPCOMING_EMPTY_HEADING_ID` and is removed.
+- **Docs:** stale comments in `loadUpNext`, `SearchFilters` and the `/watchlist` and `/watched` pages; specs 0010 (`mapGenresAcrossTypes` rows) and 0015 (AC-7's empty page fallback) amended; `components/AGENTS.md` updated.
+- **Left as is:** commit `aa8d006` marking specs 0010, 0011 and 0019 Accepted. It was a deliberate change outside this plan, so reverting it is the user's call.
