@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { MediaType } from "@/lib/catalog/media-type";
 import { createClient } from "@/lib/supabase/server";
 import {
   getMovieSummaries,
@@ -14,7 +15,8 @@ import type { TvStatus } from "./types";
 
 /**
  * The paged reads behind `/watchlist` and `/watched` (spec 0008, API surface;
- * spec 0013 for the merged watchlist).
+ * spec 0013 for the merged watchlist). Each reads one media type, the page's
+ * navbar tab (feature 22), so a tab has its own count and its own pages.
  *
  * Postgres decides which titles are on a page and in what order; TMDB only
  * supplies their titles afterwards, 20 at most. Neither read may ever run
@@ -81,21 +83,22 @@ function pageRange(page: number): [number, number] {
 }
 
 /**
- * One page of the user's watchlist: planned movies and Want to Watch or
- * Watching shows in one order, newest first (spec 0008, AC-1; spec 0013,
- * AC-13).
+ * One page of the user's watchlist for one media type: planned movies, or
+ * Want to Watch and Watching shows, newest first (spec 0008, AC-1; spec 0013,
+ * AC-13; feature 22).
  *
  * Read from the `user_watchlist_entries` view, which runs with the reader's
  * rights, so both tables' row level security applies. One ordered query with
- * an exact count, so the page and the total are always the truthful merged
- * ones: `listed_at` descending, then `kind` (movies before shows on a tie),
- * then the TMDB id.
+ * an exact count, so the page and the total are always the truthful ones for
+ * that type: `listed_at` descending, then the TMDB id.
  *
  * @param userId The verified session's user, never a client value.
+ * @param kind The page's media type, already parsed.
  * @param page A page already parsed by `parsePageParam`.
  */
 export async function getWatchlistPage(
   userId: string,
+  kind: MediaType,
   page: number,
 ): Promise<LibraryPage<WatchlistRow>> {
   try {
@@ -104,8 +107,8 @@ export async function getWatchlistPage(
       .from("user_watchlist_entries")
       .select("kind, tmdb_id, status", { count: "exact" })
       .eq("user_id", userId)
+      .eq("kind", kind)
       .order("listed_at", { ascending: false })
-      .order("kind", { ascending: true })
       .order("tmdb_id", { ascending: true })
       .range(...pageRange(page));
 
@@ -114,7 +117,8 @@ export async function getWatchlistPage(
         await supabase
           .from("user_watchlist_entries")
           .select("tmdb_id", { count: "exact", head: true })
-          .eq("user_id", userId),
+          .eq("user_id", userId)
+          .eq("kind", kind),
       );
     }
     if (error || count === null) return failed();
@@ -140,20 +144,22 @@ export async function getWatchlistPage(
 }
 
 /**
- * One page of the user's watched history: watched movies and Completed shows
- * in one order, most recent first (spec 0008, AC-2; spec 0019, AC-1 to AC-3).
+ * One page of the user's watched history for one media type: watched movies,
+ * or Completed shows, most recent first (spec 0008, AC-2; spec 0019, AC-1 to
+ * AC-3; feature 22).
  *
  * Read from the `user_watched_entries` view, which runs with the reader's
  * rights, so every table's row level security applies. One ordered query with
- * an exact count, so the page and the total are the truthful merged ones:
- * `last_watched_at` descending, then `kind` (movies before shows on a tie),
- * then the TMDB id.
+ * an exact count, so the page and the total are the truthful ones for that
+ * type: `last_watched_at` descending, then the TMDB id.
  *
  * @param userId The verified session's user, never a client value.
+ * @param kind The page's media type, already parsed.
  * @param page A page already parsed by `parsePageParam`.
  */
 export async function getWatchedPage(
   userId: string,
+  kind: MediaType,
   page: number,
 ): Promise<LibraryPage<WatchedRow>> {
   try {
@@ -162,8 +168,8 @@ export async function getWatchedPage(
       .from("user_watched_entries")
       .select("kind, tmdb_id, last_watched_at, rating", { count: "exact" })
       .eq("user_id", userId)
+      .eq("kind", kind)
       .order("last_watched_at", { ascending: false })
-      .order("kind", { ascending: true })
       .order("tmdb_id", { ascending: true })
       .range(...pageRange(page));
 
@@ -172,7 +178,8 @@ export async function getWatchedPage(
         await supabase
           .from("user_watched_entries")
           .select("tmdb_id", { count: "exact", head: true })
-          .eq("user_id", userId),
+          .eq("user_id", userId)
+          .eq("kind", kind),
       );
     }
     if (error || count === null) return failed();

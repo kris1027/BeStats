@@ -5,7 +5,7 @@ import type { LibraryItem } from "./types";
 
 /**
  * covers: spec 0008, AC-1 to AC-3, AC-9 to AC-11, AC-13; spec 0013, AC-13,
- * AC-15, AC-17; spec 0019, AC-1, AC-3, AC-5, AC-6, AC-8 to AC-11
+ * AC-15, AC-17; spec 0019, AC-1, AC-3, AC-5, AC-6, AC-8 to AC-11; feature 22
  *
  * `LibrarySection` is an async Server Component, so each test awaits it and
  * renders what it returns. The session, the Postgres reads and the TMDB
@@ -154,7 +154,7 @@ describe("the session comes first (AC-3)", () => {
   it("reads the rows of the verified user only", async () => {
     getWatchedPage.mockResolvedValue({ kind: "ok", rows: [], total: 0 });
     await renderSection("watched", { page: "1" });
-    expect(getWatchedPage).toHaveBeenCalledWith("user-a", 1);
+    expect(getWatchedPage).toHaveBeenCalledWith("user-a", "tv", 1);
     expect(getWatchlistPage).not.toHaveBeenCalled();
   });
 });
@@ -169,59 +169,100 @@ describe("the page parameter (AC-9)", () => {
       ).toBeInTheDocument();
       expect(
         screen.getByRole("link", { name: "Back to page 1" }),
-      ).toHaveAttribute("href", "/watchlist");
+      ).toHaveAttribute("href", "/watchlist?type=tv");
       expect(getWatchlistPage).not.toHaveBeenCalled();
     },
   );
 
-  it("treats a missing page as page 1", async () => {
+  it("treats a missing page as page 1, and a missing type as shows", async () => {
     getWatchlistPage.mockResolvedValue({ kind: "ok", rows: [], total: 0 });
     await renderSection("watchlist");
-    expect(getWatchlistPage).toHaveBeenCalledWith("user-a", 1);
+    expect(getWatchlistPage).toHaveBeenCalledWith("user-a", "tv", 1);
   });
+
+  it("reads the media type the navbar tab asks for (feature 22)", async () => {
+    getWatchedPage.mockResolvedValue({ kind: "ok", rows: [], total: 0 });
+    await renderSection("watched", { type: "movie", page: "1" });
+    expect(getWatchedPage).toHaveBeenCalledWith("user-a", "movie", 1);
+  });
+
+  it.each([["foo"], [""], [["tv", "movie"]]])(
+    "shows 'That page doesn't exist' for type %j, before any read, never a redirect (feature 22)",
+    async (type) => {
+      await renderSection("watched", { type });
+      expect(
+        screen.getByRole("heading", { name: "That page doesn't exist" }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("link", { name: "Back to page 1" }),
+      ).toHaveAttribute("href", "/watched?type=tv");
+      expect(getWatchedPage).not.toHaveBeenCalled();
+    },
+  );
 
   it("redirects a page past the end to the last page", async () => {
     getWatchedPage.mockResolvedValue({ kind: "ok", rows: [], total: 21 });
     await expect(renderSection("watched", { page: "7" })).rejects.toMatchObject(
-      { url: "/watched?page=2" },
+      { url: "/watched?type=tv&page=2" },
     );
     expect(getLibraryTitles).not.toHaveBeenCalled();
   });
 
-  it("redirects to the bare path when the list is now empty", async () => {
+  it("redirects to page 1 of the same tab when the list is now empty", async () => {
     getWatchlistPage.mockResolvedValue({ kind: "ok", rows: [], total: 0 });
     await expect(
-      renderSection("watchlist", { page: "2" }),
-    ).rejects.toMatchObject({ url: "/watchlist" });
+      renderSection("watchlist", { type: "movie", page: "2" }),
+    ).rejects.toMatchObject({ url: "/watchlist?type=movie" });
   });
 });
 
-describe("empty lists (AC-10)", () => {
+describe("empty lists (AC-10; feature 22)", () => {
   it.each([
     [
       "watchlist",
-      "Your watchlist is empty",
-      "Plan a movie or a show to see it here.",
+      "tv",
+      "Your show watchlist is empty",
+      "Plan a show to see it here.",
+      "Browse shows",
+      "/shows",
+    ],
+    [
+      "watchlist",
+      "movie",
+      "Your movie watchlist is empty",
+      "Plan a movie to see it here.",
+      "Browse movies",
+      "/movies",
     ],
     [
       "watched",
-      "Nothing watched yet",
-      "Movies you mark watched and shows you complete show up here.",
+      "tv",
+      "No completed shows yet",
+      "Shows you complete show up here.",
+      "Browse shows",
+      "/shows",
+    ],
+    [
+      "watched",
+      "movie",
+      "No watched movies yet",
+      "Movies you mark watched show up here.",
+      "Browse movies",
+      "/movies",
     ],
   ] as const)(
-    "the %s page shows its empty panel with Browse movies and Browse shows",
-    async (list, title, body) => {
+    "the %s page's %s tab shows its own empty panel with one Browse link",
+    async (list, type, title, body, browse, href) => {
       const read = list === "watchlist" ? getWatchlistPage : getWatchedPage;
       read.mockResolvedValue({ kind: "ok", rows: [], total: 0 });
-      await renderSection(list);
+      await renderSection(list, { type });
       expect(screen.getByRole("heading", { name: title })).toBeInTheDocument();
       expect(screen.getByText(body)).toBeInTheDocument();
-      expect(
-        screen.getByRole("link", { name: "Browse movies" }),
-      ).toHaveAttribute("href", "/movies");
-      expect(
-        screen.getByRole("link", { name: "Browse shows" }),
-      ).toHaveAttribute("href", "/shows");
+      expect(screen.getByRole("link", { name: browse })).toHaveAttribute(
+        "href",
+        href,
+      );
+      expect(screen.getAllByRole("link")).toHaveLength(1);
       expect(getLibraryTitles).not.toHaveBeenCalled();
     },
   );
@@ -236,13 +277,13 @@ describe("failures never look like an empty list (AC-11)", () => {
     async (list, title) => {
       const read = list === "watchlist" ? getWatchlistPage : getWatchedPage;
       read.mockResolvedValue({ kind: "failed" });
-      await renderSection(list, { page: "3" });
+      await renderSection(list, { type: "movie", page: "3" });
       expect(screen.getByRole("heading", { name: title })).toBeInTheDocument();
       expect(screen.getByRole("link", { name: "Try again" })).toHaveAttribute(
         "href",
-        `/${list}?page=3`,
+        `/${list}?type=movie&page=3`,
       );
-      expect(screen.queryByText(/is empty|Nothing watched/)).toBeNull();
+      expect(screen.queryByText(/is empty|No watched/)).toBeNull();
       expect(getLibraryTitles).not.toHaveBeenCalled();
     },
   );
@@ -260,7 +301,7 @@ describe("failures never look like an empty list (AC-11)", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Try again" })).toHaveAttribute(
       "href",
-      "/watchlist",
+      "/watchlist?type=tv",
     );
     expect(screen.queryByTestId("item-movie-550")).toBeNull();
   });
@@ -300,11 +341,13 @@ describe("a page of cards (AC-1, AC-2, AC-9, AC-13)", () => {
         [603, summary(603, "The Matrix")],
       ]),
     );
-    await renderSection("watchlist");
+    await renderSection("watchlist", { type: "movie" });
 
     expect(getLibraryTitles).toHaveBeenCalledWith([603, 550], []);
-    const grid = screen.getByRole("list", { name: "Your watchlist, page 1" });
-    expect(grid).toHaveAttribute("data-return-path", "/watchlist");
+    const grid = screen.getByRole("list", {
+      name: "Movies on your watchlist, page 1",
+    });
+    expect(grid).toHaveAttribute("data-return-path", "/watchlist?type=movie");
     expect(
       within(grid)
         .getAllByRole("listitem")
@@ -353,46 +396,55 @@ describe("a page of cards (AC-1, AC-2, AC-9, AC-13)", () => {
     expect(screen.queryByText(/Page 1 of/)).toBeNull();
   });
 
-  it("pages a longer list, with page 1 as the bare path", async () => {
+  it("pages a longer list within its tab, with page 1 carrying no page", async () => {
     getWatchlistPage.mockResolvedValue({
       kind: "ok",
       rows: [planned(550)],
       total: 41,
     });
-    await renderSection("watchlist", { page: "2" });
+    await renderSection("watchlist", { type: "movie", page: "2" });
     expect(screen.getByText("Page 2 of 3")).toBeInTheDocument();
     expect(
-      screen.getByRole("list", { name: "Your watchlist, page 2" }),
-    ).toHaveAttribute("data-return-path", "/watchlist?page=2");
+      screen.getByRole("list", { name: "Movies on your watchlist, page 2" }),
+    ).toHaveAttribute("data-return-path", "/watchlist?type=movie&page=2");
     const hrefs = screen
       .getAllByRole("link")
       .map((link) => link.getAttribute("href"));
-    expect(hrefs).toContain("/watchlist");
-    expect(hrefs).toContain("/watchlist?page=3");
+    expect(hrefs).toContain("/watchlist?type=movie");
+    expect(hrefs).toContain("/watchlist?type=movie&page=3");
   });
 
   it.each([
-    ["watchlist", ["TMDB rating", "Planned", "Stop watching", "Next episode"]],
-    ["watched", ["Your score"]],
-  ] as const)("the %s legend lists %j", async (list, labels) => {
-    const read = list === "watchlist" ? getWatchlistPage : getWatchedPage;
-    read.mockResolvedValue({
-      kind: "ok",
-      rows: [
-        list === "watchlist"
-          ? planned(550)
-          : watchedMovie(550, "2026-09-23T12:00:00+00:00", 7),
-      ],
-      total: 1,
-    });
-    await renderSection(list);
-    const legend = screen.getByRole("list", { name: "Badge legend" });
-    expect(
-      within(legend)
-        .getAllByRole("listitem")
-        .map((item) => item.textContent),
-    ).toEqual(labels);
-  });
+    [
+      "watchlist",
+      "tv",
+      ["TMDB rating", "Planned", "Stop watching", "Next episode"],
+    ],
+    ["watchlist", "movie", ["TMDB rating", "Planned"]],
+    ["watched", "tv", ["Your score"]],
+    ["watched", "movie", ["Your score"]],
+  ] as const)(
+    "the %s legend on the %s tab lists %j",
+    async (list, type, labels) => {
+      const read = list === "watchlist" ? getWatchlistPage : getWatchedPage;
+      read.mockResolvedValue({
+        kind: "ok",
+        rows: [
+          list === "watchlist"
+            ? planned(550)
+            : watchedMovie(550, "2026-09-23T12:00:00+00:00", 7),
+        ],
+        total: 1,
+      });
+      await renderSection(list, { type });
+      const legend = screen.getByRole("list", { name: "Badge legend" });
+      expect(
+        within(legend)
+          .getAllByRole("listitem")
+          .map((item) => item.textContent),
+      ).toEqual(labels);
+    },
+  );
 });
 
 describe("shows on the watchlist (spec 0013, AC-13, AC-15, AC-17)", () => {
@@ -463,7 +515,7 @@ describe("shows on the watchlist (spec 0013, AC-13, AC-15, AC-17)", () => {
     });
     await renderSection("watchlist");
     expect(
-      screen.getByRole("list", { name: "Your watchlist, page 1" }),
+      screen.getByRole("list", { name: "Shows on your watchlist, page 1" }),
     ).toHaveAttribute("data-next-episodes", "tv-1396");
   });
 });
@@ -473,7 +525,7 @@ describe("Completed shows on the watched page (spec 0019)", () => {
     getShowRatings.mockResolvedValue({ kind: "ok", ratings: new Map() });
   });
 
-  it("merges shows and movies in the Postgres order, labeled as titles (AC-1, AC-9)", async () => {
+  it("keeps the Postgres order and joins each row with its titles (AC-1, AC-9)", async () => {
     getWatchedPage.mockResolvedValue({
       kind: "ok",
       rows: [
@@ -491,7 +543,7 @@ describe("Completed shows on the watched page (spec 0019)", () => {
 
     expect(getLibraryTitles).toHaveBeenCalledWith([550], [1396]);
     const grid = screen.getByRole("list", {
-      name: "Titles you watched, page 1",
+      name: "Shows you completed, page 1",
     });
     expect(
       within(grid)
@@ -587,7 +639,7 @@ describe("Completed shows on the watched page (spec 0019)", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Try again" })).toHaveAttribute(
       "href",
-      "/watched?page=2",
+      "/watched?type=tv&page=2",
     );
     expect(screen.queryByTestId("item-tv-1396")).toBeNull();
   });
@@ -619,7 +671,7 @@ describe("Completed shows on the watched page (spec 0019)", () => {
     });
     await renderSection("watched");
     expect(
-      screen.getByRole("list", { name: "Titles you watched, page 1" }),
+      screen.getByRole("list", { name: "Shows you completed, page 1" }),
     ).toHaveAttribute("data-next-episodes", "");
   });
 
@@ -682,15 +734,15 @@ describe("Completed shows on the watched page (spec 0019)", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Back to page 1" }),
-    ).toHaveAttribute("href", "/watched");
+    ).toHaveAttribute("href", "/watched?type=tv");
     expect(getWatchedPage).not.toHaveBeenCalled();
     expect(getShowRatings).not.toHaveBeenCalled();
   });
 
-  it("pages the merged total and redirects past its end (AC-3)", async () => {
+  it("pages the tab's total and redirects past its end (AC-3; feature 22)", async () => {
     getWatchedPage.mockResolvedValue({ kind: "ok", rows: [], total: 21 });
     await expect(renderSection("watched", { page: "3" })).rejects.toMatchObject(
-      { url: "/watched?page=2" },
+      { url: "/watched?type=tv&page=2" },
     );
 
     getWatchedPage.mockResolvedValue({

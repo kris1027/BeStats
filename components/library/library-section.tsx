@@ -9,6 +9,11 @@ import { StatePanel } from "@/components/state-panel";
 import { NextEpisodePill } from "@/components/tracking/next-episode-pill";
 import { ButtonLink } from "@/components/ui/button";
 import { requireUser } from "@/lib/auth/user";
+import {
+  type MediaType,
+  parseMediaTypeParam,
+  typedHref,
+} from "@/lib/catalog/media-type";
 import { parsePageParam } from "@/lib/catalog/pages";
 import {
   getLibraryTitles,
@@ -33,48 +38,70 @@ import {
   SHOW_CARD,
 } from "./types";
 
-/** Every piece of copy that differs between the two pages. */
+/**
+ * Every piece of copy that differs between the two pages and their two tabs
+ * (feature 22). Each empty state offers the one catalog its tab lists.
+ */
 const COPY = {
   watchlist: {
-    grid: "Your watchlist",
-    empty: {
-      title: "Your watchlist is empty",
-      description: "Plan a movie or a show to see it here.",
+    tv: {
+      grid: "Shows on your watchlist",
+      empty: {
+        title: "Your show watchlist is empty",
+        description: "Plan a show to see it here.",
+      },
+      browse: { label: "Browse shows", href: "/shows" },
     },
-    browse: [
-      { label: "Browse movies", href: "/movies" },
-      { label: "Browse shows", href: "/shows" },
-    ],
+    movie: {
+      grid: "Movies on your watchlist",
+      empty: {
+        title: "Your movie watchlist is empty",
+        description: "Plan a movie to see it here.",
+      },
+      browse: { label: "Browse movies", href: "/movies" },
+    },
     failed: "Couldn't load your watchlist",
   },
   watched: {
-    grid: "Titles you watched",
-    empty: {
-      title: "Nothing watched yet",
-      description:
-        "Movies you mark watched and shows you complete show up here.",
+    tv: {
+      grid: "Shows you completed",
+      empty: {
+        title: "No completed shows yet",
+        description: "Shows you complete show up here.",
+      },
+      browse: { label: "Browse shows", href: "/shows" },
     },
-    browse: [
-      { label: "Browse movies", href: "/movies" },
-      { label: "Browse shows", href: "/shows" },
-    ],
+    movie: {
+      grid: "Movies you watched",
+      empty: {
+        title: "No watched movies yet",
+        description: "Movies you mark watched show up here.",
+      },
+      browse: { label: "Browse movies", href: "/movies" },
+    },
     failed: "Couldn't load your watched titles",
   },
 } as const;
 
-/** One URL per page: page 1 is the bare path, as on `/movies`. */
-function pageHref(list: LibraryList, page: number): string {
-  return page === 1 ? `/${list}` : `/${list}?page=${page}`;
+/**
+ * One URL per page and tab: `type` always, as every navbar link writes it,
+ * and `page` from page 2, as on `/movies`.
+ */
+function pageHref(list: LibraryList, type: MediaType, page: number): string {
+  const href = typedHref(`/${list}`, type);
+  return page === 1 ? href : `${href}&page=${page}`;
 }
 
 /**
  * Everything on a list page below its heading (spec 0008, AC-1 to AC-3, AC-9
  * to AC-11, AC-13). It streams behind the page's Suspense boundary, because it
- * reads the session, the search params and the user's rows.
+ * reads the session, the search params and the user's rows. It lists one
+ * media type, the navbar tab's `type` parameter (feature 22).
  *
  * The order is deliberate. `requireUser()` first, so a request that got past
- * the proxy still receives no list data (AC-3). Then the page parameter, so a
- * malformed or out of range value never costs a query (AC-9). Then one
+ * the proxy still receives no list data (AC-3). Then the type and page
+ * parameters, so a malformed or out of range value never costs a query
+ * (AC-9). Then one
  * Postgres read for the page and its exact count, a redirect when the page is
  * past the end, and only then the TMDB titles for the rows actually shown.
  * On `/watched` the found shows' rated episodes come last, for their
@@ -95,35 +122,33 @@ async function LibrarySection({
 }) {
   const user = await requireUser();
 
-  const page = parsePageParam((await searchParams).page);
-  if (page === null) return <NoSuchPage list={list} />;
+  const raw = await searchParams;
+  const type = parseMediaTypeParam(raw.type);
+  const page = parsePageParam(raw.page);
+  if (type === null || page === null) return <NoSuchPage list={list} />;
 
   const result: LibraryPage<LibraryRow> =
     list === "watchlist"
-      ? watchlistRows(await getWatchlistPage(user.id, page))
-      : watchedRows(await getWatchedPage(user.id, page));
+      ? watchlistRows(await getWatchlistPage(user.id, type, page))
+      : watchedRows(await getWatchedPage(user.id, type, page));
   if (result.kind === "failed") {
-    return <ListFailed list={list} page={page} />;
+    return <ListFailed list={list} type={type} page={page} />;
   }
 
   const lastPage = libraryLastPage(result.total);
-  if (page > lastPage) redirect(pageHref(list, lastPage));
+  if (page > lastPage) redirect(pageHref(list, type, lastPage));
 
   if (result.total === 0) {
     return (
       <div className="py-12">
         <StatePanel
           variant="empty"
-          title={COPY[list].empty.title}
-          description={COPY[list].empty.description}
+          title={COPY[list][type].empty.title}
+          description={COPY[list][type].empty.description}
           action={
-            <div className="flex flex-wrap justify-center gap-2">
-              {COPY[list].browse.map(({ label, href }) => (
-                <ButtonLink key={href} size="touch" href={href}>
-                  {label}
-                </ButtonLink>
-              ))}
-            </div>
+            <ButtonLink size="touch" href={COPY[list][type].browse.href}>
+              {COPY[list][type].browse.label}
+            </ButtonLink>
           }
         />
       </div>
@@ -142,7 +167,7 @@ async function LibrarySection({
       <LoadFailed
         title="Couldn't reach TMDB"
         description="TMDB didn't respond, so the titles couldn't load. Try again in a moment."
-        href={pageHref(list, page)}
+        href={pageHref(list, type, page)}
       />
     );
   }
@@ -157,7 +182,9 @@ async function LibrarySection({
     : [];
   if (ratedIds.length > 0) {
     const read = await getShowRatings(user.id, ratedIds);
-    if (read.kind === "failed") return <ListFailed list={list} page={page} />;
+    if (read.kind === "failed") {
+      return <ListFailed list={list} type={type} page={page} />;
+    }
     showRatings = read.ratings;
   }
 
@@ -194,9 +221,9 @@ async function LibrarySection({
       <LibraryGrid
         list={list}
         items={items}
-        label={`${COPY[list].grid}, page ${page}`}
+        label={`${COPY[list][type].grid}, page ${page}`}
         page={page}
-        returnPath={pageHref(list, page)}
+        returnPath={pageHref(list, type, page)}
         nextEpisodes={nextEpisodes}
       />
 
@@ -204,11 +231,11 @@ async function LibrarySection({
         <PaginationLinks
           page={page}
           lastPage={lastPage}
-          href={(target) => pageHref(list, target)}
+          href={(target) => pageHref(list, type, target)}
         />
       ) : null}
 
-      <BadgeLegend list={list} />
+      <BadgeLegend list={list} type={type} />
     </div>
   );
 }
@@ -282,7 +309,11 @@ function titleOf(
   };
 }
 
-/** Shown for a malformed page number, before any read (AC-9). */
+/**
+ * Shown for a malformed page number or media type, before any read (AC-9;
+ * feature 22). Never a silent redirect: the link was wrong, and the panel
+ * says so.
+ */
 function NoSuchPage({ list }: { list: LibraryList }) {
   return (
     <div className="py-12">
@@ -291,7 +322,7 @@ function NoSuchPage({ list }: { list: LibraryList }) {
         title="That page doesn't exist"
         description="There are no titles at this page number."
         action={
-          <ButtonLink size="touch" href={pageHref(list, 1)}>
+          <ButtonLink size="touch" href={pageHref(list, "tv", 1)}>
             Back to page 1
           </ButtonLink>
         }
@@ -301,12 +332,20 @@ function NoSuchPage({ list }: { list: LibraryList }) {
 }
 
 /** A failed read of the list itself, or of the ratings its cards show. */
-function ListFailed({ list, page }: { list: LibraryList; page: number }) {
+function ListFailed({
+  list,
+  type,
+  page,
+}: {
+  list: LibraryList;
+  type: MediaType;
+  page: number;
+}) {
   return (
     <LoadFailed
       title={COPY[list].failed}
       description="Your list didn't load. Try again in a moment."
-      href={pageHref(list, page)}
+      href={pageHref(list, type, page)}
     />
   );
 }
