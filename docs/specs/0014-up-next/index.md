@@ -5,6 +5,8 @@
 
 Scope feature: [15. Up Next](../../scope/scope.md) · Beta tier
 
+> **Amended 2026-10-07 by scope feature 22** ([plan](../../../prompts/media-tabs-everywhere.md)). `/upcoming` now shows one section per navbar tab: Up Next on `?type=tv` (the default) and Coming soon on `?type=movie`. Each section keeps its own empty state and Retry. The single "Nothing upcoming yet" panel of AC-13 is removed, and the spec 0015 completion check runs only on the shows tab. An invalid `type` shows a "That page doesn't exist" panel with "Back to Upcoming".
+
 ## Summary
 
 This decides what the Upcoming link in the navbar opens. `/upcoming` becomes one private page with two sections. "Up Next" lists every show you are Watching, most recently watched first, each showing the next aired episode to watch with a button that marks it watched. "Coming soon" is the page the artboard draws: your planned movies that TMDB says are not released yet, soonest first. Nothing new is stored. One new database view orders the shows, the next episode comes from the existing progress rule, and release dates come from the cached TMDB reads the watchlist already uses.

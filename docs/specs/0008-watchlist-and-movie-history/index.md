@@ -5,6 +5,8 @@
 
 Scope feature: [9. Watchlist and movie history](../../scope/scope.md) · Beta tier
 
+> **Amended 2026-10-07 by scope feature 22** ([plan](../../../prompts/media-tabs-everywhere.md)). Each list page now shows one media type, the navbar tab's `?type=tv|movie` (`tv` when absent). Each tab has its own count, pages, empty state with one Browse link, and badge legend, and its URLs always carry `type`. An invalid `type` shows the AC-9 "That page doesn't exist" panel. The Library links (AC-14, AC-15) carry the current page's type.
+
 ## Summary
 
 This spec designs the two private list pages, `/watchlist` and `/watched`, plus the signed in navigation that reaches them on desktop and mobile. Each page reads one page of 20 rows from Postgres in a fixed order: newest planned first, or most recently watched first. It then fetches the matching titles and posters from TMDB through the existing cached reader. Removing a movie from either list hides its card at once and offers Undo, which puts the movie back exactly where it was. Keeping the old position works because of one new column, `watchlisted_at`, which a database trigger keeps honest. The navbar gains Watchlist and Watched links. On mobile, the menu button and sheet from the artboard replace the loose Sign out button.

@@ -5,6 +5,8 @@
 
 Scope feature: [11. Search and filters](../../scope/scope.md) · Beta tier
 
+> **Amended 2026-10-07 by scope feature 22** ([plan](../../../prompts/media-tabs-everywhere.md)). The filter bar no longer has its own Shows | Movies control (AC-8). The navbar tab sets `type`: switching keeps `q`, `year` and `rating`, drops every genre and resets `page`, so the "Removed: …" genre mapping is gone. The form still submits `type`, as a hidden input. The navbar search (AC-1) takes `type` from the current page, including the list pages.
+
 ## Summary
 
 This decides how a visitor finds a movie or show by name, genre, year and TMDB rating. The navbar gets the drawn quick search: as you type, the top 5 matches of the current type drop down with TMDB's count and a See all link. See all opens `/search`, a public page with a poster grid and a filter bar (type, genres, year, minimum TMDB rating) whose every choice lives in the URL. TMDB's search endpoint ignores genre and rating, so when you combine a title with those filters the server checks each result itself, reads further TMDB pages until a page is full, and labels the count as partial instead of pretending to know the total. Nothing is stored and no session is needed, except the movie bookmark the `/movies` grid already has.

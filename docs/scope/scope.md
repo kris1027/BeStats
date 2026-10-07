@@ -36,6 +36,7 @@ _2026-10-06: the `design/` artboards were removed. The UI built from them carrie
 | 19 | Security and acceptance verification | Slice 8 | done |
 | 20 | Deploy and provider setup | Slice 8 | done |
 | 21 | TV history on /watched | Slice 9 | in-progress |
+| 22 | Media tabs on every page | Slice 9 | in-progress |
 
 ## Foundations
 
@@ -366,6 +367,14 @@ The watched page shows movies only. Add the shows and episodes you watched, so `
 - [x] Review it (fresh model): `/check review TV history on /watched`
 - [x] Document it: `/document TV history on /watched`
 spec [0019](../specs/0019-tv-history-on-watched/index.md) · code in `supabase/schemas/06-views.sql`, `lib/tracking/library-lists.ts`, `lib/tracking/show-ratings.ts`, `components/library/`
+
+### 22. Media tabs on every page · in-progress
+The navbar's SHOWS | MOVIES tabs filter every page, not just the catalog. On `/watchlist`, `/upcoming`, `/watched` and `/search` the active tab is the page's `?type=tv|movie` (`tv` when absent), and `/search` loses its own type control. The decisions were settled in a grilling session and recorded in the plan, not a spec; specs 0004, 0008, 0010, 0014 and 0019 carry an amendment note.
+**Done when:** every list page shows only the active tab's media type, with its own count, pages, empty and error states; the Library links and navbar search carry the current type; `/shows` and `/movies` behave as before and keep their prerendered shells.
+- [x] Plan it: [prompts/media-tabs-everywhere.md](../../prompts/media-tabs-everywhere.md)
+- [x] Build it: `/develop media tabs on every page`
+- [ ] Verify it: `/check verify media tabs on every page`
+Code in `lib/catalog/media-type.ts`, `components/layout/`, `components/library/`, `components/upcoming/`, `components/search/filter-bar.tsx`, `lib/tracking/library-lists.ts`
 
 ## Deferred
 Out of scope for the current build pass, kept so the plan stays honest.
