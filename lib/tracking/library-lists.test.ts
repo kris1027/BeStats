@@ -18,6 +18,9 @@ let responses: {
   error: unknown;
   count?: number | null;
 }[] = [];
+/** How many reads were awaited at once, at most, so a test can bound it. */
+let inFlight = 0;
+let maxInFlight = 0;
 
 function builder() {
   const chain: Record<string, unknown> = {};
@@ -39,8 +42,17 @@ function builder() {
     };
   }
   // biome-ignore lint/suspicious/noThenProperty: stands in for a thenable PostgREST builder.
-  chain.then = (resolve: (value: unknown) => unknown) =>
-    resolve(responses.shift());
+  chain.then = (resolve: (value: unknown) => unknown) => {
+    const response = responses.shift();
+    inFlight += 1;
+    maxInFlight = Math.max(maxInFlight, inFlight);
+    // Settles on a later task, so reads fired together overlap as they would
+    // against PostgREST.
+    return new Promise((settle) => setTimeout(settle, 0)).then(() => {
+      inFlight -= 1;
+      return resolve(response);
+    });
+  };
   return chain;
 }
 
@@ -79,6 +91,8 @@ let warn: ReturnType<typeof vi.spyOn>;
 beforeEach(() => {
   calls.length = 0;
   responses = [];
+  inFlight = 0;
+  maxInFlight = 0;
   warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 });
 
@@ -370,6 +384,92 @@ describe("getShowLibraryTab (AC-7 to AC-12, AC-16)", () => {
       cards: [expect.objectContaining({ next: { season: 1, episode: 3 } })],
     });
   });
+
+  it("reads the watched episode pages one at a time, however long the history", async () => {
+    const page = (episode: number) => ({
+      data: [{ show_id: 1, season_number: 1, episode_number: episode }],
+      error: null,
+      count: 5000,
+    });
+    responses = [
+      { data: [tracked(1)], error: null },
+      ...[1, 2, 3, 4, 5].map(page),
+    ];
+    getTvShowsSettled.mockResolvedValue(settled([show(1)]));
+    await getShowLibraryTab("user-a", "watchlist", 1, TODAY);
+    expect(
+      calls.filter((call) => call.method === "range").map((call) => call.args),
+    ).toEqual([
+      [0, 999],
+      [1000, 1999],
+      [2000, 2999],
+      [3000, 3999],
+      [4000, 4999],
+    ]);
+    expect(maxInFlight).toBe(1);
+  });
+
+  it("stops after one read when the history fits a single page exactly", async () => {
+    responses = [
+      { data: [tracked(1)], error: null },
+      {
+        data: [{ show_id: 1, season_number: 1, episode_number: 1 }],
+        error: null,
+        count: 1000,
+      },
+    ];
+    getTvShowsSettled.mockResolvedValue(settled([show(1)]));
+    await getShowLibraryTab("user-a", "watchlist", 1, TODAY);
+    expect(
+      calls.filter((call) => call.method === "range").map((call) => call.args),
+    ).toEqual([[0, 999]]);
+  });
+
+  it("stops at an empty page when rows were deleted during the read", async () => {
+    responses = [
+      { data: [tracked(1)], error: null },
+      {
+        data: [{ show_id: 1, season_number: 1, episode_number: 1 }],
+        error: null,
+        count: 3000,
+      },
+      { data: [], error: null, count: 3000 },
+    ];
+    getTvShowsSettled.mockResolvedValue(settled([show(1)]));
+    const tab = await getShowLibraryTab("user-a", "watchlist", 1, TODAY);
+    expect(
+      calls.filter((call) => call.method === "range").map((call) => call.args),
+    ).toEqual([
+      [0, 999],
+      [1000, 1999],
+    ]);
+    expect(tab).toMatchObject({
+      kind: "ok",
+      cards: [expect.objectContaining({ next: { season: 1, episode: 2 } })],
+    });
+  });
+
+  it.each([
+    ["an error", { data: null, error: { code: "PGRST000" }, count: null }],
+    ["no count", { data: [], error: null, count: null }],
+  ])(
+    "fails the tab when a later history page comes back with %s, never placing shows on half a history",
+    async (_label, broken) => {
+      responses = [
+        { data: [tracked(1)], error: null },
+        {
+          data: [{ show_id: 1, season_number: 1, episode_number: 1 }],
+          error: null,
+          count: 2500,
+        },
+        broken,
+      ];
+      getTvShowsSettled.mockResolvedValue(settled([show(1)]));
+      const tab = await getShowLibraryTab("user-a", "watchlist", 1, TODAY);
+      expect(tab).toEqual({ kind: "failed" });
+      expect(getTvShowsSettled).not.toHaveBeenCalled();
+    },
+  );
 
   it("leaves a failed title off every tab and counts it, keeping a missing one on Watchlist only (AC-17)", async () => {
     responses = [

@@ -355,8 +355,9 @@ function compareDesc(a: string, b: string): number {
  *
  * Paged by the primary key until the exact count is reached, as
  * `getWatchedEpisodeIds` does, so a long history never loses rows to the
- * response cap: the first page brings the count, and the rest are read
- * together.
+ * response cap. The pages are read one at a time, also as that read does:
+ * every library tab runs this on each request, so a long history must not
+ * open a connection per thousand episodes at once.
  */
 async function readWatchedRegular(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -374,23 +375,12 @@ async function readWatchedRegular(
       .order("episode_id")
       .range(offset, offset + EPISODE_PAGE_SIZE - 1);
 
-  const first = await query(0);
-  if (first.error || first.count === null) return null;
-
-  const offsets: number[] = [];
-  for (
-    let offset = EPISODE_PAGE_SIZE;
-    offset < first.count;
-    offset += EPISODE_PAGE_SIZE
-  ) {
-    offsets.push(offset);
-  }
-  const rest = await Promise.all(offsets.map(query));
-  if (rest.some((page) => page.error)) return null;
-
   const watched = new Map<number, Set<string>>();
-  for (const page of [first, ...rest]) {
-    for (const row of page.data ?? []) {
+  for (let offset = 0; ; offset += EPISODE_PAGE_SIZE) {
+    const page = await query(offset);
+    if (page.error || page.count === null) return null;
+
+    for (const row of page.data) {
       let set = watched.get(row.show_id);
       if (set === undefined) {
         set = new Set();
@@ -398,8 +388,11 @@ async function readWatchedRegular(
       }
       set.add(episodeKey(row.season_number, row.episode_number));
     }
+    // An empty page ends the loop even if rows were deleted mid read.
+    if (page.data.length === 0 || offset + EPISODE_PAGE_SIZE >= page.count) {
+      return watched;
+    }
   }
-  return watched;
 }
 
 /** One planned movie not yet watched, as `user_movie_state` holds it. */

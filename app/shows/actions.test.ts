@@ -792,6 +792,33 @@ describe("untrackShow (spec 0020, AC-3, AC-4)", () => {
     expect(refresh).toHaveBeenCalledOnce();
   });
 
+  it("sends null for a show with no hold and keeps null in the Undo", async () => {
+    result = {
+      data: [
+        {
+          tracked_at: "2026-09-01T10:00:00+00:00",
+          hold_state: null,
+          hold_changed_at: null,
+        },
+      ],
+      error: null,
+    };
+    expect(await untrackShow(SHOW, null)).toEqual({
+      ok: true,
+      undo: {
+        trackedAt: "2026-09-01T10:00:00+00:00",
+        hold: null,
+        holdChangedAt: null,
+      },
+    });
+    expect(writes()).toEqual([
+      {
+        method: "rpc",
+        args: ["untrack_show", { p_show_id: SHOW, p_expected: null }],
+      },
+    ]);
+  });
+
   it("reports a hold changed elsewhere and refreshes, deleting nothing", async () => {
     result = { data: null, error: { code: "BS409" } };
     expect(await untrackShow(SHOW, null)).toEqual({

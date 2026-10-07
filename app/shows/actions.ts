@@ -593,8 +593,8 @@ export async function setShowHold(
         p_show_id: input.showId,
         // Sent as null for "no hold": the arguments have no default, on
         // purpose, so a call can never leave one out by accident.
-        p_hold: input.hold as ShowHold,
-        p_expected: input.expected as ShowHold,
+        p_hold: input.hold,
+        p_expected: input.expected,
       });
       return settledTracking(error, null);
     }),
@@ -622,7 +622,7 @@ export async function untrackShow(
       async (supabase) => {
         const { data, error } = await supabase.rpc("untrack_show", {
           p_show_id: input.showId,
-          p_expected: input.expected as ShowHold,
+          p_expected: input.expected,
         });
         const row = data?.[0];
         return settledTracking(
