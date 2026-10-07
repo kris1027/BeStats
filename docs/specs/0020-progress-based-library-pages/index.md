@@ -30,15 +30,15 @@ Today the status you pick (Want to Watch, Watching, On Hold, Dropped, Completed)
   The progress line under the control is unchanged. A signed out visitor sees the control's existing signed out state.
 - **AC-3**: **Stop tracking** deletes the row and leaves every episode mark and rating untouched. A toast offers Undo, which restores `tracked_at`, `hold_state` and `hold_changed_at` exactly, so the show returns to its old place. An Undo that can no longer apply shows "Couldn't undo. Track the show again from its page."
 - **AC-4**: A hold change or Stop tracking sends the hold the client last saw. If the stored hold differs, nothing is written, the toast reads "This show changed elsewhere. Showing the current one.", and the page refreshes.
-- **AC-5**: Marking an episode or a season watched on an untracked show tracks it with no hold, and the toast says "{Show} added to your shows". On a tracked show it changes nothing about tracking and never clears a Pause or Drop.
+- **AC-5**: Marking an episode or a season watched on an untracked show tracks it with no hold, and the toast says "{Show} added to your shows". On a tracked show it changes nothing about tracking and never clears a Pause or Drop. Only a mark that newly watches a regular episode tracks the show: marking a special, or a mark that changes nothing (an episode already watched, or a season with nothing left to mark), leaves an untracked show untracked.
 - **AC-6**: The bookmark on catalog and search show cards is filled when the show is tracked (held or not) and empty otherwise. On an untracked show, a click tracks it. On a tracked show, a click stops tracking, with the Undo of AC-3.
 
 *Show classification*
 - **AC-7**: For each tracked show with no hold, the page is worked out from that show's TMDB details read and the user's watched regular episodes. Specials (season 0) never count. "Today" is the request's UTC date (`requestTodayUtc()`).
   - **Aired episodes** are every regular episode `(s, e)`, with `e` from 1 to the season's episode count, that sorts at or before `last_episode_to_air`. A `next_episode_to_air` whose air date is on or before today also counts as aired, along with everything before it. With no `last_episode_to_air`, nothing has aired. Edge cases:
     - Seasons with no episode count are skipped.
-    - When `last_episode_to_air` is in a season missing from the seasons list (cache skew), episodes 1 to its number in that season count as aired.
-    - When `last_episode_to_air` is a special (season 0), every regular episode of each regular season whose own air date is on or before today counts as aired. If even that leaves nothing decidable, the show goes on Watchlist, never Watched.
+    - When `last_episode_to_air` is in a season missing from the seasons list, or listed with an episode count below its number (cache skew), episodes 1 to its number in that season count as aired, because TMDB itself says that episode aired.
+    - When `last_episode_to_air` is a special (season 0), every regular episode of each regular season whose own air date is on or before today counts as aired. If even that leaves no aired episode while a regular season has no date, the show never goes on Watched: it goes on Watchlist at its first unwatched episode when that sorts before a dated `next_episode_to_air` (or there is none), on Upcoming (dated) at that next episode otherwise, and on Upcoming (Date TBA) when every listed episode is already watched.
     - A malformed `last_episode_to_air` or `next_episode_to_air` (missing numbers, a number of 0 where a regular episode is expected, an unparseable date) is read as `null`. It never fails the whole show.
   - **Watchlist**: at least one aired episode is unwatched. The card's next episode is the first unwatched aired episode in season and episode order.
   - **Upcoming (dated)**: no aired episode is unwatched, and `next_episode_to_air` is a regular episode with an air date strictly after today.
@@ -256,7 +256,8 @@ Tracer Bullet: the first slice runs the whole pipe for one tab (shows on Watchli
 7. **Failure and empty states**: add the per title failure note with Retry, the "No longer on TMDB" cards with Stop tracking or Remove, the systemic failed panel, and the new empty copy in `lib/tracking/messages.ts`. Satisfies **AC-17**, **AC-18**.
 8. **Contract migration** (second migration, pushed only after the new app is live):
    - drop `status`, `status_source`, `status_changed_at` and `listed_at`, with their checks, indexes and triggers (including the completion and reopen triggers in `03-triggers.sql`) and the legacy mirror writes
-   - drop the `tv_status` and `status_source` enums, the old views, and the old functions
+   - drop the `tv_status` and `status_source` enums, the old views, and the old functions, including the legacy mapping helpers `legacy_hold_for_status` and `legacy_status_for_hold` with pgTAP 165
+   - rename the episode functions' `show_started` result to `show_tracked`, which no deployed app will read by then
    - delete the auto completion modules, their tests and pgTAP files 100, 130 and 131, and rewrite 010, 020, 030, 040, 090, 110, 120, 140 and 150 against the new model, so the full `pnpm test:db` passes on a fresh `db reset`
 
    Satisfies **AC-1**, **AC-21**.
