@@ -80,7 +80,7 @@ function Navbar({
         <Suspense
           fallback={
             <MediaTypeTabsView
-              pathname={null}
+              selected={null}
               className="self-center md:self-auto"
             />
           }

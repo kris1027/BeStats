@@ -5,6 +5,7 @@ import { SearchIcon } from "lucide-react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
+import { isTypedPath, mediaTypeForLocation } from "@/lib/catalog/media-type";
 import { mediaNoun } from "@/lib/search/count";
 import type { SearchType } from "@/lib/search/params";
 
@@ -14,26 +15,17 @@ import { QuickSearch } from "./quick-search";
 type Layout = "desktop" | "mobile";
 
 /**
- * Which catalog the navbar searches on a page (spec 0010, AC-1): movies under
- * `/movies`, shows under `/shows`, and shows everywhere else. `/search` is
- * decided by its `type` parameter instead, in `SearchPageNavbarSearch`.
- */
-export function searchTypeForPath(pathname: string | null): SearchType {
-  if (pathname === "/movies" || pathname?.startsWith("/movies/")) {
-    return "movie";
-  }
-  return "tv";
-}
-
-/**
  * The navbar's search, the desktop field or the mobile icon (spec 0010, AC-1,
  * AC-6).
  *
- * The type follows the URL. `usePathname` suspends on a route with a dynamic
- * param at prerender time, so `Navbar` wraps this in Suspense with
- * `NavbarSearchFallback`. Only on `/search` is `useSearchParams` read, in its
- * own small boundary, because reading it anywhere else would pull `/shows`,
- * `/movies` and every other route out of their prerendered shells.
+ * The type follows the page (feature 22): movies under `/movies`, shows
+ * under `/shows`, the `type` parameter on `/watchlist`, `/upcoming`,
+ * `/watched` and `/search`, and shows everywhere else. `usePathname`
+ * suspends on a route with a dynamic param at prerender time, so `Navbar`
+ * wraps this in Suspense with `NavbarSearchFallback`. Only on a typed page is
+ * `useSearchParams` read, in its own small boundary, because reading it
+ * anywhere else would pull `/shows`, `/movies` and every other route out of
+ * their prerendered shells.
  *
  * The field is keyed on the pathname and type, so it starts empty on every
  * page (AC-17).
@@ -41,26 +33,32 @@ export function searchTypeForPath(pathname: string | null): SearchType {
 function NavbarSearch({ layout }: { layout: Layout }) {
   const pathname = usePathname();
 
-  if (pathname === "/search") {
+  if (isTypedPath(pathname)) {
     return (
       <Suspense fallback={<NavbarSearchFallback layout={layout} type="tv" />}>
-        <SearchPageNavbarSearch layout={layout} />
+        <TypedPageNavbarSearch layout={layout} pathname={pathname} />
       </Suspense>
     );
   }
 
-  const type = searchTypeForPath(pathname);
+  const type = mediaTypeForLocation(pathname, null) ?? "tv";
   return (
     <NavbarSearchFor key={`${pathname}:${type}`} layout={layout} type={type} />
   );
 }
 
-/** On `/search` the type is the page's own `type` parameter. */
-function SearchPageNavbarSearch({ layout }: { layout: Layout }) {
-  const type: SearchType =
-    useSearchParams().get("type") === "movie" ? "movie" : "tv";
+/** On a typed page the type is the page's own `type` parameter. */
+function TypedPageNavbarSearch({
+  layout,
+  pathname,
+}: {
+  layout: Layout;
+  pathname: string;
+}) {
+  const type =
+    mediaTypeForLocation(pathname, useSearchParams().get("type")) ?? "tv";
   return (
-    <NavbarSearchFor key={`/search:${type}`} layout={layout} type={type} />
+    <NavbarSearchFor key={`${pathname}:${type}`} layout={layout} type={type} />
   );
 }
 

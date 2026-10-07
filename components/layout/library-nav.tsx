@@ -2,9 +2,15 @@
 
 import { cn } from "cn";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-import { UPCOMING_PATH } from "@/components/upcoming/ids";
+import {
+  isTypedPath,
+  type MediaType,
+  mediaTypeForLocation,
+  typedHref,
+} from "@/lib/catalog/media-type";
 
 /**
  * The signed in library links: the pill in the desktop navbar and the list in
@@ -18,6 +24,11 @@ import { UPCOMING_PATH } from "@/components/upcoming/ids";
  *
  * Upcoming sits between the two (spec 0014, AC-1).
  *
+ * Each link carries the media type of the page being viewed, so the navbar
+ * tab chosen on `/movies` is still lit on `/watchlist` (feature 22). On a
+ * typed page that type is its `type` parameter, read in its own Suspense
+ * boundary as `MediaTypeTabs` does; the fallback links to the default type.
+ *
  * @param variant `bar` is the glass pill in the desktop navbar, 40px tall like
  * every navbar control, with `hit-area-tab` widening each link to a 44px tap
  * target like the media tabs (the 4px pill gap keeps neighbours from
@@ -25,14 +36,63 @@ import { UPCOMING_PATH } from "@/components/upcoming/ids";
  * with 44px rows for touch.
  */
 const LINKS = [
-  { href: "/watchlist", label: "Watchlist" },
-  { href: UPCOMING_PATH, label: "Upcoming" },
-  { href: "/watched", label: "Watched" },
+  { path: "/watchlist", label: "Watchlist" },
+  { path: "/upcoming", label: "Upcoming" },
+  { path: "/watched", label: "Watched" },
 ] as const;
 
-function LibraryNav({ variant }: { variant: "bar" | "sheet" }) {
+type Variant = "bar" | "sheet";
+
+function LibraryNav({ variant }: { variant: Variant }) {
   const pathname = usePathname();
 
+  if (isTypedPath(pathname)) {
+    return (
+      <Suspense
+        fallback={
+          <LibraryNavView variant={variant} pathname={pathname} type="tv" />
+        }
+      >
+        <TypedPageLibraryNav variant={variant} pathname={pathname} />
+      </Suspense>
+    );
+  }
+
+  return (
+    <LibraryNavView
+      variant={variant}
+      pathname={pathname}
+      type={mediaTypeForLocation(pathname, null) ?? "tv"}
+    />
+  );
+}
+
+function TypedPageLibraryNav({
+  variant,
+  pathname,
+}: {
+  variant: Variant;
+  pathname: string;
+}) {
+  const type = useSearchParams().get("type");
+  return (
+    <LibraryNavView
+      variant={variant}
+      pathname={pathname}
+      type={mediaTypeForLocation(pathname, type) ?? "tv"}
+    />
+  );
+}
+
+function LibraryNavView({
+  variant,
+  pathname,
+  type,
+}: {
+  variant: Variant;
+  pathname: string;
+  type: MediaType;
+}) {
   return (
     <nav
       aria-label="Library"
@@ -44,12 +104,12 @@ function LibraryNav({ variant }: { variant: "bar" | "sheet" }) {
     >
       {LINKS.map((link) => {
         const selected =
-          pathname === link.href || pathname.startsWith(`${link.href}/`);
+          pathname === link.path || pathname.startsWith(`${link.path}/`);
 
         return (
           <Link
-            key={link.href}
-            href={link.href}
+            key={link.path}
+            href={typedHref(link.path, type)}
             aria-current={selected ? "page" : undefined}
             className={cn(
               "flex items-center rounded-full font-bold transition-[filter,color]",

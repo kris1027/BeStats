@@ -119,7 +119,21 @@ describe("Navbar", () => {
     expect(screen.getByRole("button", { name: "Search" })).toBeInTheDocument();
     unmount();
 
+    // A typed page searches its `type` parameter, here `movie` (feature 22).
     pathname.current = "/watchlist";
+    const typed = render(
+      <Navbar
+        mobileAccountSlot={<ACCOUNT_SLOT />}
+        desktopAccountSlot={<ACCOUNT_SLOT />}
+      />,
+    );
+    expect(screen.getByRole("combobox")).toHaveAttribute(
+      "placeholder",
+      "Search movies",
+    );
+    typed.unmount();
+
+    pathname.current = "/account";
     render(
       <Navbar
         mobileAccountSlot={<ACCOUNT_SLOT />}
