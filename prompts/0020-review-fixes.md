@@ -4,6 +4,8 @@
 
 Fix every finding from the two-axis review of `feat/progress-based-library-pages` against `main` (standards axis and spec axis, 2026-10-07), on the same branch, before the PR is opened. Nothing ships to the cloud: the expand migration is still unpushed (`verify.md`, Rollout), so it is edited in place rather than followed by a new migration.
 
+> Correction during rollout: the expand migration had in fact been pushed already (the Rollout checkbox was stale). It was restored byte for byte, and the helpers and the two function rewrites moved to the new migration `20261007130000_legacy_status_helpers.sql`.
+
 ## Inspected
 
 - `lib/tv/library-page.ts` and `library-page.test.ts` (classifier, fallback branch at lines 107-113, `airedPlaces` at 152-178)

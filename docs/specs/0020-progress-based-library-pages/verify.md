@@ -46,7 +46,7 @@ Seeded user B with 100 tracked shows and 100 planned movies (TMDB popular lists)
 The cold time is the first tab of each media type filling the TMDB cache; the other tabs of that type reuse it. Warm is under 1.5 s on every tab.
 
 ## Rollout (Migration plan, needs your approval)
-- [ ] `supabase db push` the expand migration `20261007120000_show_tracking_expand.sql`, then merge and let Vercel deploy → phase 1 and 2
+- [x] `supabase db push` the expand migration `20261007120000_show_tracking_expand.sql` and `20261007130000_legacy_status_helpers.sql`, then merge and let Vercel deploy → phase 1 and 2
 - [ ] On production, open each tab, track, pause, resume, stop and undo on a test account → phase 2
 - [ ] Contract migration as its own follow up PR → phase 3 (Build plan step 8, not in this build)
 

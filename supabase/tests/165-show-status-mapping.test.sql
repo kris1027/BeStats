@@ -1,12 +1,12 @@
 -- Spec 0020 AC-19: the mapping from the five statuses to tracked plus a hold,
 -- and the mirror back into `status` that keeps a rollback working.
 --
--- Both directions are the helpers the expand migration calls,
--- `legacy_hold_for_status` (the backfill) and `legacy_status_for_hold` (the
--- mirror in `set_show_hold` and `restore_show_tracking`), so pinning them
--- pins what the migration wrote. The backfill's column wiring is then run
--- over seeded old rows, exactly as the migration's `update` states it, with
--- the triggers off as they were there.
+-- Both directions are helpers (`20261007130000_legacy_status_helpers.sql`):
+-- `legacy_hold_for_status` is the expand migration's backfill mapping, which
+-- already ran with the same `case` inline, and `legacy_status_for_hold` is
+-- the mirror in `set_show_hold` and `restore_show_tracking`. The backfill's
+-- column wiring is then run over seeded old rows, as the expand migration's
+-- `update` states it, with the triggers off as they were there.
 --
 -- Shows 965001 to 965049 are free for user A in this file. Every row is
 -- pinned as `postgres` with `session_replication_role = replica`.
