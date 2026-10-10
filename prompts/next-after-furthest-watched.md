@@ -78,3 +78,13 @@ None new. The change is a pure function over data the page already reads under t
 6. On the show page, mark the last aired episode of the show. Reload Watchlist: the show is gone; it is on `/watched?type=tv` (Finished for an ended show) or `/upcoming?type=tv` when a next episode is dated, even though S1 has gaps.
 7. On the show page, the progress still counts only the episodes you marked.
 8. Unmark the last aired episode: the show returns to Watchlist, offering that episode.
+
+## Review follow-ups (2026-10-10)
+
+From the two axis code review of `main...HEAD`; the owner asked to fix every finding.
+
+- A dated `next_episode_to_air` at or before the furthest watched episode counts as nothing dated, so the show is caught up on Watched instead of on Upcoming showing an episode already passed. Unit test added; spec AC-7 Upcoming (dated) row, the classifier scenarios and the rationale amended.
+- Spec AC-7 Upcoming (Date TBA) row now names the special `last_episode_to_air` branch as its one exception (behaviour unchanged).
+- AC-9 has a unit test in `lib/tv/progress.test.ts` (a skipped S1E1 reads 1 of the aired total).
+- `placeOfKey` sits beside `episodeKey`, so the key format has one owner; `later` reuses `before`; the Date TBA check reads `furthest === null`.
+- Scope feature 23 is back to in progress, with the amendment's build and running app check listed; it returns to done once manual steps 1 to 8 pass.

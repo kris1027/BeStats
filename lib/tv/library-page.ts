@@ -58,6 +58,17 @@ export function episodeKey(season: number, episode: number): EpisodeKey {
 }
 
 /**
+ * Reads an `episodeKey` back. Kept beside it so the key format has one
+ * owner; only regular places ever become keys.
+ */
+function placeOfKey(key: EpisodeKey): EpisodePlace | null {
+  const [season, episode] = key.split(":").map(Number);
+  if (!Number.isInteger(season) || !Number.isInteger(episode)) return null;
+  if (season < 1 || episode < 1) return null;
+  return { season, episode };
+}
+
+/**
  * Which library page a tracked show belongs on (spec 0020,
  * AC-7, AC-8). Pure: the same TMDB details, watched set and day always give
  * the same page, and nothing it decides is stored (key invariants).
@@ -68,7 +79,8 @@ export function episodeKey(season: number, episode: number): EpisodeKey {
  * offered and never keeping the show on Watchlist, so a show with nothing
  * aired after it is caught up. It is the furthest rather than the latest
  * mark so the page reads no timestamps and going back to mark S1E1 changes
- * nothing.
+ * nothing. The same anchor gates Upcoming: a dated next episode at or
+ * before the furthest watched one counts as nothing dated.
  *
  * The aired episodes are worked out from the show details alone, with no
  * season reads: every regular episode up to `last_episode_to_air`, in season
@@ -88,7 +100,8 @@ export function episodeKey(season: number, episode: number): EpisodeKey {
  * sorts before a dated `next_episode_to_air`, so Mark watched is never
  * offered for an episode still to come; on Upcoming at that dated episode
  * otherwise; and on Upcoming as Date TBA when no listed episode comes after
- * the furthest watched one.
+ * the furthest watched one, even when episodes are watched, because Watched
+ * would claim a caught up the source cannot show.
  *
  * Specials never count: the watched set holds regular episodes only, and a
  * special `next_episode_to_air` is ignored. Want to Watch and Completed are
@@ -132,8 +145,13 @@ export function classifyShow(
     }
   }
 
+  // A dated next episode at or before the furthest watched one is already
+  // behind the user (an undated episode marked by hand, dated later), so it
+  // counts as nothing dated.
   const dated =
-    next !== null && airStatus(next.airDate, today) === "upcoming"
+    next !== null &&
+    airStatus(next.airDate, today) === "upcoming" &&
+    (furthest === null || before(furthest, placeOf(next)))
       ? next
       : null;
 
@@ -152,7 +170,7 @@ export function classifyShow(
     return { page: "upcoming", airDate: dated.airDate, next: placeOf(dated) };
   }
 
-  if (watched.size === 0) {
+  if (furthest === null) {
     return { page: "upcoming", airDate: null, next: next && placeOf(next) };
   }
 
@@ -243,14 +261,6 @@ function regularOrNull(episode: EpisodeToAir | null): EpisodeToAir | null {
   return episode !== null && episode.seasonNumber >= 1 ? episode : null;
 }
 
-/** Reads an `episodeKey` back; only regular places ever become keys. */
-function placeOfKey(key: EpisodeKey): EpisodePlace | null {
-  const [season, episode] = key.split(":").map(Number);
-  if (!Number.isInteger(season) || !Number.isInteger(episode)) return null;
-  if (season < 1 || episode < 1) return null;
-  return { season, episode };
-}
-
 function placeOf(episode: EpisodeToAir): EpisodePlace {
   return { season: episode.seasonNumber, episode: episode.episodeNumber };
 }
@@ -260,7 +270,5 @@ function before(a: EpisodePlace, b: EpisodePlace): boolean {
 }
 
 function later(a: EpisodePlace | null, b: EpisodePlace): EpisodePlace {
-  if (a === null) return b;
-  if (b.season !== a.season) return b.season > a.season ? b : a;
-  return b.episode > a.episode ? b : a;
+  return a === null || before(a, b) ? b : a;
 }

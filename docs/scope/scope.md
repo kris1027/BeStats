@@ -37,7 +37,7 @@ _2026-10-06: the `design/` artboards were removed. The UI built from them carrie
 | 20 | Deploy and provider setup | Slice 8 | done |
 | 21 | TV history on /watched | Slice 9 | done |
 | 22 | Media tabs on every page | Slice 9 | done |
-| 23 | Progress based library pages | Slice 10 | done |
+| 23 | Progress based library pages | Slice 10 | in progress |
 
 ## Foundations
 
@@ -380,8 +380,8 @@ Code in `lib/catalog/media-type.ts`, `components/layout/`, `components/library/`
 
 ## Slice 10: Progress based pages
 
-### 23. Progress based library pages · done · GA
-Statuses are replaced by tracked or not; Stop tracking (with Undo) is the only way off the pages. Every title sits on exactly one page, worked out from what you watched and what TMDB has aired or dated: Watchlist (something aired to watch), Upcoming (a future or unknown date), Watched (caught up, nothing dated). Movies follow the same rule. Settled in a grilling session on 2026-10-07 (supersedes 0015 and parts of 0013, 0014 and 0019). Pause and Drop were removed in a second grilling session on 2026-10-10, and existing holds are cleared (0020 amended in place).
+### 23. Progress based library pages · in progress · GA
+Statuses are replaced by tracked or not; Stop tracking (with Undo) is the only way off the pages. Every title sits on exactly one page, worked out from what you watched and what TMDB has aired or dated: Watchlist (something aired to watch), Upcoming (a future or unknown date), Watched (caught up, nothing dated). Movies follow the same rule. Settled in a grilling session on 2026-10-07 (supersedes 0015 and parts of 0013, 0014 and 0019). Pause and Drop were removed in a second grilling session on 2026-10-10, and existing holds are cleared (0020 amended in place). A third amendment the same day offers the episode after the furthest watched one, not the first unwatched one.
 **Done when:** every tracked show and planned movie is on the one page its progress and air dates give, the show page offers a Plan to watch / Tracking toggle with no Pause or Drop, no page writes on load, the rollout keeps the old app working until the contract migration, and `AGENTS.md` describes the new model.
 - [x] Design it (spec): `/architect progress based library pages`
 - [x] Build it: `/develop progress based library pages`
@@ -390,6 +390,8 @@ Statuses are replaced by tracked or not; Stop tracking (with Undo) is the only w
   - [x] The movie and state strands: `classifyMovie`, movie tabs, failure notes, missing titles, empty copy — AC-13, AC-14, AC-16 to AC-18
   - [x] Docs and proof: `AGENTS.md`, checks, 375px and keyboard, timing, `verify.md`, expand push and deploy — AC-23, AC-24 (production check folded into the contract strand)
   - [x] Contract migration and hold removal, one PR pushed then merged at once, production verified after deploy: [prompts/remove-show-holds.md](../../prompts/remove-show-holds.md) — AC-1 to AC-4, AC-10, AC-21
+  - [x] Amendment 2026-10-10, next episode after the furthest watched: [prompts/next-after-furthest-watched.md](../../prompts/next-after-furthest-watched.md) — AC-7, AC-8
+  - [ ] Verify the amendment in the running app (the plan's manual steps) — AC-7
 - [x] Verify it: `/check verify progress based library pages`
 - [x] Test it: `/test progress based library pages`
 - [x] Review it (fresh model): `/check review progress based library pages`

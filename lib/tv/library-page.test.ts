@@ -217,6 +217,29 @@ describe("classifyShow (AC-7)", () => {
     });
   });
 
+  it("ignores a dated next episode at or before the furthest watched one", () => {
+    const details = show({
+      seasons: [
+        ...seasons,
+        { seasonNumber: 3, episodeCount: 2, airDate: "2026-10-08" },
+      ],
+      nextEpisodeToAir: {
+        seasonNumber: 3,
+        episodeNumber: 1,
+        airDate: "2026-10-08",
+      },
+    });
+    expect(classifyShow(details, watched([2, 3], [3, 1]), today)).toEqual({
+      page: "watched",
+      label: "caught_up",
+    });
+    expect(classifyShow(details, watched([2, 3]), today)).toEqual({
+      page: "upcoming",
+      airDate: "2026-10-08",
+      next: { season: 3, episode: 1 },
+    });
+  });
+
   it("moves the next episode back when the furthest is unmarked, not a gap", () => {
     expect(classifyShow(show(), watched([1, 1], [1, 2]), today)).toEqual({
       page: "watchlist",

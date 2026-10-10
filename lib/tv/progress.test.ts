@@ -32,6 +32,14 @@ describe("showProgress (AC-9)", () => {
     });
   });
 
+  it("counts only marked episodes when an earlier one is skipped (spec 0020)", () => {
+    expect(showProgress(episodes, new Set([102]), today)).toMatchObject({
+      kind: "counted",
+      watched: 1,
+      total: 3,
+    });
+  });
+
   it("never counts a watched special, upcoming or undated episode", () => {
     expect(showProgress(episodes, new Set([1, 103, 205]), today)).toEqual({
       kind: "counted",
