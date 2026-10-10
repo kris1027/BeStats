@@ -22,7 +22,7 @@ A show is tracked or not. Pause, Drop, Resume and the Paused & dropped section d
 1. Existing holds are cleared: paused and dropped shows become ordinary tracked shows and land on the page AC-7 gives them.
 2. One migration: the 0020 contract plus the hold removal. Rollout: `supabase db push`, then merge at once; the few minutes before Vercel deploys are accepted broken. After that, rollback is a forward fix.
 3. Spec 0020 is amended in place (done in this branch's first commit).
-4. The show page control is a toggle: "Plan to watch" untracked; "Tracking" tracked, with `aria-pressed="true"` and `aria-label` "Stop tracking {title}". A click stops tracking with the existing toast and Undo.
+4. The show page control is a toggle: "Plan to watch" untracked; "Tracking" tracked, with `aria-label` "Stop tracking {title}" (no `aria-pressed`: see the rationale amendment). A click stops tracking with the existing toast and Undo.
 5. The Paused & dropped section is deleted, with its components, read, tests and `/showcase` entries. Icons left unused (`DroppedIcon`, `StopWatchingIcon` if nothing else uses it) are deleted.
 6. `untrack_show(p_show_id)` loses `p_expected` and is idempotent. When no row was deleted it returns no row; the action reports success with no Undo and the toast says the show is no longer tracked. `restore_show_tracking(p_show_id, p_tracked_at)` loses its hold arguments. `hold_changed` and `not_tracked` go from the error union and messages.
 7. Current docs are rewritten; specs 0001 to 0019 and `docs/reviews/` stay as history.
@@ -81,7 +81,7 @@ The amended 0020 AC-1 to AC-4, AC-6, AC-8, AC-10 (withdrawn), AC-19 (contract cl
 
 1. On `main`'s local stack, pause one tracked show and drop another. Switch to this branch and apply only the new migration (`pnpm exec supabase migration up`, which keeps the data). Both now appear on Watchlist, Upcoming or Watched; Watchlist has no Paused & dropped section.
 2. Open an untracked show: the control reads "Plan to watch". Click it: "Tracking", and the show appears on its page.
-3. Tab to the control: focus is visible, the screen reader name is "Stop tracking {title}", pressed. Press Enter: the toast offers Undo; the show leaves every page; its episode marks and ratings remain on the show page.
+3. Tab to the control: focus is visible, the screen reader name is "Stop tracking {title}". Press Enter: the toast offers Undo; the show leaves every page; its episode marks and ratings remain on the show page.
 4. Click Undo: the show returns to its old position in the list.
 5. Stop tracking in two tabs: the second tab's click succeeds quietly with no Undo and refreshes.
 6. Catalog card bookmark: fill and empty it; the Undo toast appears when emptying.

@@ -388,13 +388,13 @@ Statuses are replaced by tracked or not; Stop tracking (with Undo) is the only w
   - [x] The thin thread: expand migration with the legacy mirror, pgTAP, `classifyShow`, and `/watchlist?type=tv` with Mark watched cards — AC-1, AC-4, AC-5, AC-7 to AC-9, AC-14, AC-16, AC-19, AC-20, AC-22
   - [x] The show strands: Upcoming and Watched show tabs, the tracking control and card bookmark, Paused & dropped — AC-2, AC-3, AC-6, AC-10 to AC-12, AC-15, AC-21
   - [x] The movie and state strands: `classifyMovie`, movie tabs, failure notes, missing titles, empty copy — AC-13, AC-14, AC-16 to AC-18
-  - [ ] Docs and proof: `AGENTS.md`, checks, 375px and keyboard, timing, `verify.md`, expand push and deploy — AC-23, AC-24
+  - [x] Docs and proof: `AGENTS.md`, checks, 375px and keyboard, timing, `verify.md`, expand push and deploy — AC-23, AC-24 (production check folded into the contract strand)
   - [ ] Contract migration and hold removal, one PR pushed then merged at once, production verified after deploy: [prompts/remove-show-holds.md](../../prompts/remove-show-holds.md) — AC-1 to AC-4, AC-10, AC-21
 - [x] Verify it: `/check verify progress based library pages`
 - [x] Test it: `/test progress based library pages`
 - [x] Review it (fresh model): `/check review progress based library pages`
 - [x] Document it: `/document progress based library pages`
-spec [0020](../specs/0020-progress-based-library-pages/index.md) · code in `lib/tv/library-page.ts`, `lib/catalog/movie-page.ts`, `lib/tracking/library-lists.ts`, `components/library/`, `components/tracking/`, `supabase/migrations/20261007120000_show_tracking_expand.sql`
+spec [0020](../specs/0020-progress-based-library-pages/index.md) · code in `lib/tv/library-page.ts`, `lib/catalog/movie-page.ts`, `lib/tracking/library-lists.ts`, `components/library/`, `components/tracking/`, `supabase/migrations/20261007120000_show_tracking_expand.sql`, `supabase/migrations/20261010120000_show_tracking_contract.sql`
 
 ## Deferred
 Out of scope for the current build pass, kept so the plan stays honest.

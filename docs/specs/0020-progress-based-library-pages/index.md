@@ -24,7 +24,7 @@ Today the status you pick (Want to Watch, Watching, On Hold, Dropped, Completed)
 
 *Tracking model*
 - **AC-1**: A show is **tracked** when the user has a `user_show_state` row for it, and **untracked** otherwise. There is no hold: Pause and Drop were removed (amended 2026-10-10). Want to Watch, Watching, On Hold, Completed, Paused, Dropped and the `tv_status`, `status_source` and `show_hold` types appear nowhere in the UI, the database or the TypeScript types.
-- **AC-2**: On `/shows/{id}`, a signed in user sees a toggle. It reads **Plan to watch** when the show is untracked, and a click tracks it. It reads **Tracking** when the show is tracked, with `aria-pressed="true"` and the accessible name "Stop tracking {title}", and a click stops tracking (AC-3). There is no menu.
+- **AC-2**: On `/shows/{id}`, a signed in user sees a toggle. It reads **Plan to watch** when the show is untracked, and a click tracks it. It reads **Tracking** when the show is tracked, with the accessible name "Stop tracking {title}" (the action the click takes, as the card bookmark names it; no `aria-pressed`, which would contradict an action name), and a click stops tracking (AC-3). There is no menu.
 
   The progress line under the control is unchanged. A signed out visitor sees the control's existing signed out state.
 - **AC-3**: **Stop tracking** deletes the row and leaves every episode mark and rating untouched. A toast offers Undo, which restores `tracked_at` exactly, so the show returns to its old place. An Undo that can no longer apply shows "Couldn't undo. Track the show again from its page."

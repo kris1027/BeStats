@@ -27,7 +27,7 @@ The first version includes:
 - Google and email/password authentication.
 - A private watchlist and watched movie history.
 - Episode and season completion controls.
-- Tracked TV shows, with an optional Pause or Drop.
+- Tracked TV shows, with Stop tracking as the only way off the pages.
 - Progress based library pages: every tracked show and planned movie sits on Watchlist, Upcoming or Watched, worked out from what you watched and what TMDB has aired or dated (spec 0020).
 - Movie and episode ratings from 1 to 10, with calculated season and TV show ratings.
 
@@ -125,7 +125,7 @@ This section is the only place the stack is defined. Installed versions live in 
 - TV episodes can be marked watched and rated directly from 1 to 10.
 - Seasons and TV shows cannot be rated directly. Their ratings are calculated from the user's episode ratings.
 - Watched state and rating are separate: marking something watched does not require a rating, and removing a watched mark does not silently delete its rating.
-- TV tracking and episode history are separate: pausing, dropping or stopping tracking must preserve watched episodes and ratings.
+- TV tracking and episode history are separate: stopping tracking must preserve watched episodes and ratings.
 - Marking a season watched marks only eligible episodes that have already aired, never future or unknown-date episodes.
 - Specials, represented by TMDB season 0, can be marked watched and rated but are excluded from overall TV progress, library page placement, and the TV show's calculated rating.
 - Search includes title queries and genre, release year, and minimum TMDB rating filters. It uses no AI.
@@ -153,7 +153,7 @@ One record per user and movie contains watchlist membership, watched state, an o
 
 ### TV tracking state
 
-A show is tracked while one record exists per user and TV show (spec 0020). The record holds when it was tracked and an optional hold, Paused or Dropped, with when the hold changed. The hold is the only hand set choice; nothing derived, such as the page a show sits on, is stored.
+A show is tracked while one record exists per user and TV show (spec 0020), and untracked otherwise. The record holds only when it was tracked. Tracking is the only hand set choice; there is no Pause, Drop or other hold (removed on 2026-10-10), and nothing derived, such as the page a show sits on, is stored.
 
 There is no TV watchlist flag and no stored status. Which library page a show is on is worked out per request from the user's episodes and TMDB's air dates.
 
@@ -161,7 +161,7 @@ There is no TV watchlist flag and no stored status. Which library page a show is
 
 One record per user and episode contains its TV and episode identity, watched state, an optional watched timestamp, and an optional integer rating from 1 to 10.
 
-Enforce ownership references, uniqueness, rating bounds, and valid hold values in the database. Repeated writes must not create duplicate state records.
+Enforce ownership references, uniqueness, and rating bounds in the database. Repeated writes must not create duplicate state records.
 
 Do not persist rounded season or TV ratings as independent editable values. Derive them from episode ratings, or use a consistently maintained database projection if needed.
 
@@ -187,13 +187,13 @@ Calculate overall progress using aired regular episodes. Exclude specials, unair
 
 Use the available TMDB air date consistently; do not imply a precise local release time that the source does not provide. Document the date boundary chosen in the implementation plan.
 
-Every tracked show with no hold is on exactly one page (spec 0020, AC-7). Watchlist: an aired regular episode is unwatched, and the card offers the first one in season and episode order with Mark watched. Upcoming: caught up with a next regular episode dated after today, or nothing watched and nothing dated (Date TBA). Watched: caught up with nothing dated, labelled Finished when TMDB says Ended or Canceled and Caught up otherwise. Aired episodes come from the show details read (`last_episode_to_air`, plus a `next_episode_to_air` dated on or before today). Paused and Dropped shows are on none of the three; they wait in the Paused & dropped section of Watchlist until resumed. A planned movie is on Watchlist from its release day and on Upcoming before it or with no date; a watched movie is on Watched whatever its plan says.
+Every tracked show is on exactly one page (spec 0020, AC-7). Watchlist: an aired regular episode is unwatched, and the card offers the first one in season and episode order with Mark watched. Upcoming: caught up with a next regular episode dated after today, or nothing watched and nothing dated (Date TBA). Watched: caught up with nothing dated, labelled Finished when TMDB says Ended or Canceled and Caught up otherwise. Aired episodes come from the show details read (`last_episode_to_air`, plus a `next_episode_to_air` dated on or before today). A planned movie is on Watchlist from its release day and on Upcoming before it or with no date; a watched movie is on Watched whatever its plan says.
 
 Marking a whole season watched must be idempotent and preserve existing ratings. New episodes remain unwatched when they become available later.
 
-### Tracking and holds
+### Tracking
 
-Marking an episode or a season watched tracks an untracked show with no hold. It never clears a Pause or a Drop. Stop tracking removes the record and keeps every mark and rating, with an Undo that restores its old place. Hold changes and Stop tracking name the hold the user last saw, so a stale page never overwrites a newer choice. No page writes when it loads.
+Marking a regular episode or a season watched tracks an untracked show. Stop tracking removes the record and keeps every mark and rating, with an Undo that restores its old place. Stop tracking is idempotent: a show another tab already stopped is a quiet success with no Undo. No page writes when it loads.
 
 ## 10. Search and discovery
 
@@ -221,7 +221,7 @@ Keep secrets in environment variables. Maintain a committed `.env.example` with 
 
 Do not place private user responses in shared caches. Cache public catalog metadata independently from user-specific state. Avoid logging tokens, session material, passwords, or unnecessary personal data.
 
-Validate IDs, media types, ratings, holds, pagination, and filter inputs. Handle session expiry and failed writes visibly without leaving the UI in a false success state.
+Validate IDs, media types, ratings, pagination, and filter inputs. Handle session expiry and failed writes visibly without leaving the UI in a false success state.
 
 ## 12. Integration and deployment considerations
 
@@ -254,9 +254,9 @@ At minimum, verify these behaviors before considering the MVP complete:
 6. Episode and whole-season completion work without including future episodes or overwriting ratings.
 7. Unrated episodes and seasons are excluded from averages; unequal season lengths do not change equal season weighting.
 8. Specials can be tracked and rated without affecting overall TV progress or rating.
-9. Each tracked show is on the one page its progress and air dates give, Watchlist offers the correct aired episode, and Paused and Dropped shows wait in their own section.
+9. Each tracked show is on the one page its progress and air dates give, and Watchlist offers the correct aired episode.
 10. Caught up shows move to Upcoming when a next episode is dated and to Watched when nothing is, labelled Finished or Caught up.
-11. Pause, Drop, Resume and Stop tracking preserve episode history and ratings.
+11. Stop tracking and its Undo preserve episode history and ratings.
 12. Combined search filters apply correctly, pagination works, and result counts remain truthful.
 13. Loading, failure, empty, and missing-metadata states remain usable on desktop and mobile.
 14. The interface stays consistent with the existing UI and `/showcase`.
@@ -293,8 +293,8 @@ Tracer Bullet: prove the whole pipe works with one thin real thread, then thicke
 - `pnpm-workspace.yaml` exists only to pin `allowBuilds`. This is a single package repo, not a monorepo.
 - `cacheComponents: true` is on in `next.config.ts`. Every route must be prerenderable or opt out with `export const instant = false`, and every cached read calls `cacheLife` inside its own `use cache` scope. A rejection thrown inside a cached scope loses its class and its fields, so return a plain result and rebuild the error outside the scope.
 - The TMDB token is server only. Only `lib/tmdb/env.ts` may read `TMDB_READ_ACCESS_TOKEN`, and `security-boundary.test.ts` fails if any other file names it or gives it a `NEXT_PUBLIC_` prefix, the same rule the Supabase service role key carries.
-- No page writes when it loads (spec 0020, AC-21): the library pages and `/shows/{id}` only read. A library tab classifies every tracked show with no hold (or every planned unwatched movie) per request, at most 500 per media type, from one cached TMDB details read per title (`lib/tracking/library-lists.ts`, the pure `lib/tv/library-page.ts` and `lib/catalog/movie-page.ts`). Keep it that way unless a spec says otherwise.
-- `user_show_state` still carries the legacy `status`, `status_source`, `status_changed_at` and `listed_at` columns until the spec 0020 contract migration; the app never reads them, and `track_show` and `set_show_hold` mirror into `status` only so a rollback to the earlier deploy keeps working.
+- No page writes when it loads (spec 0020, AC-21): the library pages and `/shows/{id}` only read. A library tab classifies every tracked show (or every planned unwatched movie) per request, at most 500 per media type, from one cached TMDB details read per title (`lib/tracking/library-lists.ts`, the pure `lib/tv/library-page.ts` and `lib/catalog/movie-page.ts`). Keep it that way unless a spec says otherwise.
+- `user_show_state` is `user_id`, `show_id`, `tracked_at` and the timestamps, nothing more: the spec 0020 contract migration (`20261010120000_show_tracking_contract.sql`) dropped the legacy status columns, the `tv_status`, `status_source` and `show_hold` enums, the old views and every status and hold function. `user_tracked_shows` is the one view. A show page control is a Plan to watch / Tracking toggle.
 - The navbar's SHOWS | MOVIES tabs filter every page (scope feature 22, [prompts/media-tabs-everywhere.md](prompts/media-tabs-everywhere.md)). `/watchlist`, `/upcoming`, `/watched` and `/search` take their media type from `?type=tv|movie`. A bare URL means `tv`, and an invalid value shows a "That page doesn't exist" panel, never a redirect. Each tab has its own reads, count and pages. The parsing and URL building live only in `lib/catalog/media-type.ts`, so use `typedHref` for any link to these pages and always write `type`. The client shell reads `useSearchParams` only on those four paths, inside its own Suspense boundary; reading it anywhere else takes `/shows`, `/movies` and the title pages out of their prerendered shells.
 - TMDB images render through `next/image`; `image.tmdb.org` is the one allowed remote pattern.
 - The navbar is transparent (no background, border or blur) and not sticky, so it scrolls away with the page; every control in it is 40px tall at every width, with the `hit-area` utilities keeping a 44px tap target. The footer is borderless. See [components/AGENTS.md](components/AGENTS.md).
