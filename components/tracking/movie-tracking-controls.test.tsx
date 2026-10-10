@@ -5,7 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { MovieTrackingState } from "@/lib/tracking/types";
 
 /**
- * covers: spec 0007, AC-1, AC-7, AC-9, AC-10, AC-11, AC-12, AC-15
+ * covers: spec 0007, AC-1, AC-7, AC-9, AC-10, AC-11, AC-12, AC-15;
+ * prompts/movie-plan-watched-exclusive.md
  *
  * The Server Actions, the router and Sonner are the boundaries. Each action is
  * a deferred promise the test settles by hand, so the optimistic state can be
@@ -28,13 +29,18 @@ vi.mock("@/app/movies/actions", () => ({
     deferredAction("watchlist", ...args),
   setMovieWatched: (...args: unknown[]) => deferredAction("watched", ...args),
   setMovieRating: (...args: unknown[]) => deferredAction("rating", ...args),
+  restoreMovieWatched: (...args: unknown[]) =>
+    deferredAction("restore", ...args),
 }));
 
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 
 const toast = vi.fn();
-vi.mock("sonner", () => ({ toast: (...args: unknown[]) => toast(...args) }));
+const dismiss = vi.fn();
+vi.mock("sonner", () => ({
+  toast: Object.assign((...args: unknown[]) => toast(...args), { dismiss }),
+}));
 
 const { MovieTrackingControls } = await import("./movie-tracking-controls");
 
@@ -87,22 +93,22 @@ afterEach(async () => {
 
 describe("MovieTrackingControls", () => {
   it("renders the stored state with fixed names and aria-pressed (AC-1)", () => {
-    renderControls({ inWatchlist: true, watched: true, rating: 8 });
-    expect(plan()).toHaveAttribute("aria-pressed", "true");
-    expect(plan()).toHaveTextContent("Planned");
+    renderControls({ inWatchlist: false, watched: true, rating: 8 });
+    expect(plan()).toHaveAttribute("aria-pressed", "false");
+    expect(plan()).toHaveTextContent("Plan");
     expect(watched()).toHaveAttribute("aria-pressed", "true");
     expect(watched()).toHaveTextContent("Watched");
     expect(score()).toHaveAccessibleName("Your score for Fight Club: 8");
   });
 
   it("shows an integer score with no decimal and Not rated for none (AC-10)", () => {
-    const { rerender } = renderControls({ ...EMPTY, rating: 8 });
+    const { rerender } = renderControls({ ...EMPTY, watched: true, rating: 8 });
     expect(score()).toHaveTextContent(/^8$/);
     rerender(
       <MovieTrackingControls
         movieId={550}
         title="Fight Club"
-        state={EMPTY}
+        state={{ ...EMPTY, watched: true }}
         returnPath="/movies/550"
         releaseNote={null}
       />,
@@ -118,12 +124,115 @@ describe("MovieTrackingControls", () => {
     expect(deferredAction).toHaveBeenCalledWith("watchlist", 550, true);
   });
 
-  it("a first watch keeps the bookmark planned (spec 0020, AC-14)", async () => {
+  it("hides the score pill until the movie is watched", () => {
+    renderControls({ ...EMPTY, inWatchlist: true });
+    expect(
+      screen.queryByRole("button", { name: /^Your score for Fight Club/ }),
+    ).toBeNull();
+  });
+
+  it("marking a planned movie watched clears the plan and opens the score picker", async () => {
     const user = userEvent.setup();
     renderControls({ ...EMPTY, inWatchlist: true });
     await user.click(watched());
     expect(watched()).toHaveAttribute("aria-pressed", "true");
+    expect(plan()).toHaveAttribute("aria-pressed", "false");
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    expect(screen.getAllByRole("radio")).toHaveLength(10);
+  });
+
+  it("closing the opened picker leaves the movie watched with no score", async () => {
+    const user = userEvent.setup();
+    renderControls();
+    await user.click(watched());
+    await screen.findByRole("dialog");
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(deferredAction).toHaveBeenCalledTimes(1);
+    expect(score()).toHaveAccessibleName(
+      "Your score for Fight Club: Not rated",
+    );
+  });
+
+  it("closes the opened picker when the mark fails", async () => {
+    const user = userEvent.setup();
+    renderControls();
+    await user.click(watched());
+    await screen.findByRole("dialog");
+    await settle(0, { ok: false, error: "write_failed" });
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    await waitFor(() =>
+      expect(watched()).toHaveAttribute("aria-pressed", "false"),
+    );
+  });
+
+  it("planning a watched, scored movie clears both and offers an Undo that restores them", async () => {
+    const user = userEvent.setup();
+    const watchedAt = "2026-09-23T12:16:58.070024+00:00";
+    renderControls({ ...EMPTY, watched: true, rating: 8 });
+    await user.click(plan());
     expect(plan()).toHaveAttribute("aria-pressed", "true");
+    expect(watched()).toHaveAttribute("aria-pressed", "false");
+    await settle(0, { ok: true, cleared: { watchedAt, rating: 8 } });
+
+    const [message, options] = toast.mock.calls.at(-1) ?? [];
+    expect(message).toBe("Moved to your plan. Watched mark and score removed.");
+    expect(options.action.label).toBe("Undo");
+    act(() => options.action.onClick({ preventDefault: () => {} }));
+    expect(deferredAction).toHaveBeenLastCalledWith(
+      "restore",
+      550,
+      watchedAt,
+      8,
+    );
+    await settle(1, { ok: true });
+    expect(dismiss).toHaveBeenCalledWith("movie-cleared-550");
+  });
+
+  it("says the Undo expired when the restore is refused", async () => {
+    const user = userEvent.setup();
+    renderControls({ ...EMPTY, watched: true });
+    await user.click(plan());
+    await settle(0, {
+      ok: true,
+      cleared: { watchedAt: "2026-09-23T12:00:00Z", rating: null },
+    });
+    const [message, options] = toast.mock.calls.at(-1) ?? [];
+    expect(message).toBe("Moved to your plan. Watched mark removed.");
+    act(() => options.action.onClick({ preventDefault: () => {} }));
+    await settle(1, { ok: false, error: "undo_expired" });
+    expect(toast).toHaveBeenLastCalledWith(
+      "Couldn't undo. Mark it watched again.",
+      { id: "movie-cleared-550", action: undefined },
+    );
+  });
+
+  it("unmarking a scored movie removes the score with an Undo toast", async () => {
+    const user = userEvent.setup();
+    renderControls({ ...EMPTY, watched: true, rating: 6 });
+    await user.click(watched());
+    expect(
+      screen.queryByRole("button", { name: /^Your score for Fight Club/ }),
+    ).toBeNull();
+    await settle(0, {
+      ok: true,
+      cleared: { watchedAt: "2026-09-23T12:00:00Z", rating: 6 },
+    });
+    expect(toast).toHaveBeenLastCalledWith(
+      "Score removed too.",
+      expect.objectContaining({ id: "movie-cleared-550" }),
+    );
+  });
+
+  it("unmarking an unscored movie shows no toast", async () => {
+    const user = userEvent.setup();
+    renderControls({ ...EMPTY, watched: true });
+    await user.click(watched());
+    await settle(0, {
+      ok: true,
+      cleared: { watchedAt: "2026-09-23T12:00:00Z", rating: null },
+    });
+    expect(toast).not.toHaveBeenCalled();
   });
 
   it("rolls back and toasts when the action refuses (AC-11)", async () => {
@@ -179,7 +288,7 @@ describe("MovieTrackingControls", () => {
 describe("the score picker (AC-7)", () => {
   it("opens a titled radio group of ten, with no Clear rating when unrated", async () => {
     const user = userEvent.setup();
-    renderControls();
+    renderControls({ ...EMPTY, watched: true });
     await user.click(score());
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
     expect(screen.getByText("Your score")).toBeInTheDocument();
@@ -192,7 +301,7 @@ describe("the score picker (AC-7)", () => {
 
   it("moves focus with the arrows without saving, and commits on Enter", async () => {
     const user = userEvent.setup();
-    renderControls();
+    renderControls({ ...EMPTY, watched: true });
     await user.click(score());
     await screen.findByRole("dialog");
     await waitFor(() =>
@@ -215,7 +324,7 @@ describe("the score picker (AC-7)", () => {
 
   it("closes on Escape without saving and returns focus to the pill", async () => {
     const user = userEvent.setup();
-    renderControls({ ...EMPTY, rating: 6 });
+    renderControls({ ...EMPTY, watched: true, rating: 6 });
     await user.click(score());
     await screen.findByRole("dialog");
     await waitFor(() =>
@@ -275,17 +384,9 @@ describe("before release (prompts/movie-release-gate.md)", () => {
     expect(screen.getByText("Releases Oct 24, 2026")).toBeInTheDocument();
   });
 
-  it("disables Mark watched when only a score is stored (AC-2)", async () => {
-    const user = userEvent.setup();
-    renderControls({ ...EMPTY, rating: 7 }, UNRELEASED);
-    expect(watched()).toHaveAttribute("aria-disabled", "true");
-    await user.click(watched());
-    expect(deferredAction).not.toHaveBeenCalled();
-  });
-
   it("lets a stored score be cleared but not changed (AC-2)", async () => {
     const user = userEvent.setup();
-    renderControls({ ...EMPTY, rating: 7 }, UNRELEASED);
+    renderControls({ ...EMPTY, watched: true, rating: 7 }, UNRELEASED);
     await user.click(score());
     expect(screen.getByText("Releases Oct 24, 2026")).toBeInTheDocument();
     await user.click(screen.getByRole("radio", { name: "8" }));

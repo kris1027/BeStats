@@ -31,10 +31,14 @@ import { ScorePicker } from "./score-picker";
 import { PlanIcon, PlannedIcon, WatchedIcon } from "./tracking-icons";
 import { TRACKING_PILL, TRACKING_PILL_UNAVAILABLE } from "./tracking-pill";
 import {
-  settleTrackingCall,
+  settleResultCall,
   showTrackingError,
   type TrackingControl,
 } from "./tracking-toast";
+import {
+  type MovieClearKind,
+  useMovieClearedUndo,
+} from "./use-movie-cleared-undo";
 
 /**
  * The movie page's three tracking pills: Plan, Mark watched and Your score
@@ -42,8 +46,11 @@ import {
  *
  * One `useOptimistic` holds the whole state, reduced by the same
  * `applyTrackingIntent` the tests pin against the SQL, so a click shows its
- * result at once, including the couplings (a first watch clears the
- * bookmark). The optimistic value lasts only while the action is in flight:
+ * result at once, including the couplings: a movie is planned or watched,
+ * never both, and a score needs a watch mark, so the score pill shows only on
+ * a watched movie and Mark watched opens its picker at once
+ * (prompts/movie-plan-watched-exclusive.md). A write that removed a watch
+ * mark shows a toast whose Undo puts it back with its score. The optimistic value lasts only while the action is in flight:
  * on success it gives way to the prop `refresh()` delivers, on failure to the
  * unchanged prop, which is the rollback (AC-11). The confirmed state is only
  * ever the server's.
@@ -85,29 +92,52 @@ function MovieTrackingControls({
   const [pickerOpen, setPickerOpen] = useState(false);
   const initialFocusRef = useRef<HTMLButtonElement | null>(null);
 
+  const showCleared = useMovieClearedUndo({ movieId, returnPath });
+
+  /** Shows the watch mark and score back at once while an Undo runs. */
+  function restoring(rating: number | null) {
+    return () => {
+      addIntent({ kind: "watched", value: true });
+      addIntent({ kind: "rating", value: rating });
+    };
+  }
+
   function run(
     control: TrackingControl,
     intent: TrackingIntent,
     call: () => Promise<MovieTrackingResult>,
+    options: { clears?: MovieClearKind; onError?: () => void } = {},
   ) {
     startTransition(async () => {
       addIntent(intent);
-      const error = await settleTrackingCall(call);
-      if (error) {
-        showTrackingError(error, {
+      const result = await settleResultCall(call);
+      if (!result.ok) {
+        options.onError?.();
+        showTrackingError(result.error, {
           movieId,
           control,
           returnPath,
           navigate: router.push,
         });
+        return;
+      }
+      if (options.clears && result.cleared) {
+        showCleared(
+          options.clears,
+          result.cleared,
+          restoring(result.cleared.rating),
+        );
       }
     });
   }
 
   function toggleWatchlist() {
     const value = !optimistic.inWatchlist;
-    run("watchlist", { kind: "watchlist", value }, () =>
-      setMovieWatchlist(movieId, value),
+    run(
+      "watchlist",
+      { kind: "watchlist", value },
+      () => setMovieWatchlist(movieId, value),
+      { clears: "planned" },
     );
   }
 
@@ -115,8 +145,14 @@ function MovieTrackingControls({
   function toggleWatched() {
     if (!canMark) return;
     const value = !optimistic.watched;
-    run("watched", { kind: "watched", value }, () =>
-      setMovieWatched(movieId, value),
+    // Marking opens the score picker straight away, so a score is one more
+    // click; closing it leaves the movie watched and unscored.
+    if (value) setPickerOpen(true);
+    run(
+      "watched",
+      { kind: "watched", value },
+      () => setMovieWatched(movieId, value),
+      value ? { onError: () => setPickerOpen(false) } : { clears: "unwatched" },
     );
   }
 
@@ -184,36 +220,38 @@ function MovieTrackingControls({
         </span>
       </button>
 
-      <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
-        <PopoverTrigger
-          aria-label={`Your score for ${title}: ${scoreText}`}
-          aria-haspopup="dialog"
-          className={cn(glassPillClassName("score"), TRACKING_PILL)}
-        >
-          <StarIcon
-            aria-hidden="true"
-            className="size-3.5 fill-score-personal text-score-personal"
-          />
-          <span aria-hidden="true">{scoreText}</span>
-        </PopoverTrigger>
-        <PopoverContent
-          align="start"
-          sideOffset={8}
-          initialFocus={initialFocusRef}
-          className="w-auto max-w-[calc(100vw-2rem)]"
-        >
-          <PopoverTitle className="text-sm font-bold text-foreground">
-            Your score
-          </PopoverTitle>
-          <ScorePicker
-            rating={optimistic.rating}
-            onPick={rate}
-            onClear={() => rate(null)}
-            initialFocusRef={initialFocusRef}
-            unavailableNote={releaseNote ?? undefined}
-          />
-        </PopoverContent>
-      </Popover>
+      {optimistic.watched && (
+        <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+          <PopoverTrigger
+            aria-label={`Your score for ${title}: ${scoreText}`}
+            aria-haspopup="dialog"
+            className={cn(glassPillClassName("score"), TRACKING_PILL)}
+          >
+            <StarIcon
+              aria-hidden="true"
+              className="size-3.5 fill-score-personal text-score-personal"
+            />
+            <span aria-hidden="true">{scoreText}</span>
+          </PopoverTrigger>
+          <PopoverContent
+            align="start"
+            sideOffset={8}
+            initialFocus={initialFocusRef}
+            className="w-auto max-w-[calc(100vw-2rem)]"
+          >
+            <PopoverTitle className="text-sm font-bold text-foreground">
+              Your score
+            </PopoverTitle>
+            <ScorePicker
+              rating={optimistic.rating}
+              onPick={rate}
+              onClear={() => rate(null)}
+              initialFocusRef={initialFocusRef}
+              unavailableNote={releaseNote ?? undefined}
+            />
+          </PopoverContent>
+        </Popover>
+      )}
     </div>
   );
 }
