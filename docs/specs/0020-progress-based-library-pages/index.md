@@ -1,7 +1,7 @@
 # 0020. Progress based library pages: one page per title, worked out from what you watched and what has aired
 
 **Date**: 2026-10-07
-**Status**: In Progress
+**Status**: Accepted
 **Amended**: 2026-10-10. Pause and Drop are removed: a show is tracked or not, Stop tracking is the only way out, every existing hold is cleared, and the hold removal ships inside the contract migration. Settled in a grilling session on 2026-10-10; see [rationale.md](rationale.md#amendment-2026-10-10-pause-and-drop-removed).
 
 Scope feature: [23. Progress based library pages](../../scope/scope.md) · GA tier
