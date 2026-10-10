@@ -14,9 +14,9 @@ export const metadata: Metadata = {
 
 /**
  * The private Watchlist: on the navbar's shows tab the tracked shows with an
- * aired episode left to watch, each with its next episode and Mark watched,
- * and the Paused & dropped section below; on its movies tab the planned
- * movies already out (spec 0020, AC-9, AC-10, AC-13; feature 22).
+ * aired episode left to watch, each with its next episode and Mark watched;
+ * on its movies tab the planned movies already out (spec 0020, AC-9, AC-13;
+ * feature 22).
  *
  * The heading and a skeleton grid are the static shell. Everything that reads
  * the session, the `type` and `page` parameters or the user's rows streams in

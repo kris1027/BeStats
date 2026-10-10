@@ -14,6 +14,7 @@ import {
 import { typedHref } from "@/lib/catalog/media-type";
 import { MARK_NEXT_MESSAGES, UNDO_ACTION_LABEL } from "@/lib/tracking/messages";
 
+import { neighbourCardTarget } from "./card-focus";
 import {
   LIBRARY_HEADING_ID,
   SHOW_CARD_LINK_SELECTOR,
@@ -66,14 +67,8 @@ function releaseToastFocus() {
  */
 function focusTargetIfCardLeaves(showId: number): string {
   const item = document.getElementById(showCardLinkId(showId))?.closest("li");
-  for (const neighbour of [
-    item?.nextElementSibling,
-    item?.previousElementSibling,
-  ]) {
-    const link = neighbour?.querySelector<HTMLElement>(SHOW_CARD_LINK_SELECTOR);
-    if (link?.id) return link.id;
-  }
-  return LIBRARY_HEADING_ID;
+  const link = neighbourCardTarget(item, SHOW_CARD_LINK_SELECTOR);
+  return link?.id || LIBRARY_HEADING_ID;
 }
 
 function focusAfter(showId: number) {

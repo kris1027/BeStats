@@ -7,7 +7,7 @@ import { publicEnvProblems } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 
 import { logTrackingEvent, TRACKING_EVENT } from "./log";
-import type { ShowHold, ShowTrackingState, TrackingRead } from "./types";
+import type { TrackingRead } from "./types";
 
 /**
  * The request scoped reads behind the show tracking control, the progress
@@ -28,13 +28,13 @@ import type { ShowHold, ShowTrackingState, TrackingRead } from "./types";
 export const WATCHED_IDS_PAGE_SIZE = 1000;
 
 /**
- * The signed in user's tracking for one show: its hold, or null when the
- * show is not tracked (spec 0020, AC-1, AC-2).
+ * Whether the signed in user tracks one show (spec 0020, AC-1, AC-2): a show
+ * is tracked while its row exists, with nothing else to read.
  *
  * @param showId The show, already confirmed by `loadShow`.
  */
 export const getShowTracking = cache(
-  async (showId: number): Promise<TrackingRead<ShowTrackingState | null>> => {
+  async (showId: number): Promise<TrackingRead<boolean>> => {
     if (publicEnvProblems()) return { kind: "signed_out" };
 
     const user = await getOptionalUser();
@@ -44,16 +44,13 @@ export const getShowTracking = cache(
       const supabase = await createClient();
       const { data, error } = await supabase
         .from("user_show_state")
-        .select("hold_state")
+        .select("show_id")
         .eq("user_id", user.id)
         .eq("show_id", showId)
         .maybeSingle();
 
       if (error) return trackingReadFailed();
-      return {
-        kind: "ok",
-        state: data ? { hold: data.hold_state } : null,
-      };
+      return { kind: "ok", state: data !== null };
     } catch {
       // A network failure inside supabase-js. The error is dropped: its
       // message can carry request details (AC-21).
@@ -63,37 +60,31 @@ export const getShowTracking = cache(
 );
 
 /**
- * Which shows on a grid are tracked, with each one's hold, in one query for
- * the whole grid (spec 0020, AC-6), the `getWatchlistedMovieIds` pattern. A
- * show that is not tracked is absent from the map.
+ * Which shows on a grid are tracked, in one query for the whole grid (spec
+ * 0020, AC-6), the `getWatchlistedMovieIds` pattern.
  *
  * @param idsKey The grid's show ids, from `showIdsKey`.
  */
 export const getTrackedShows = cache(
-  async (
-    idsKey: string,
-  ): Promise<TrackingRead<Map<number, ShowHold | null>>> => {
+  async (idsKey: string): Promise<TrackingRead<Set<number>>> => {
     if (publicEnvProblems()) return { kind: "signed_out" };
 
     const user = await getOptionalUser();
     if (!user) return { kind: "signed_out" };
 
     const ids = parseIdsKey(idsKey);
-    if (ids.length === 0) return { kind: "ok", state: new Map() };
+    if (ids.length === 0) return { kind: "ok", state: new Set() };
 
     try {
       const supabase = await createClient();
       const { data, error } = await supabase
         .from("user_show_state")
-        .select("show_id, hold_state")
+        .select("show_id")
         .eq("user_id", user.id)
         .in("show_id", ids);
 
       if (error) return trackingReadFailed();
-      return {
-        kind: "ok",
-        state: new Map(data.map((row) => [row.show_id, row.hold_state])),
-      };
+      return { kind: "ok", state: new Set(data.map((row) => row.show_id)) };
     } catch {
       return trackingReadFailed();
     }

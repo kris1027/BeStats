@@ -70,15 +70,13 @@ select is(
 
 -- AC-6, the third shape. AC-6 names movies, shows and episodes; without this
 -- the show table is the one whose idempotency nothing proves.
-insert into public.user_show_state (user_id, show_id, status, status_source)
-values ('11111111-1111-1111-1111-111111111111', 5555, 'watching', 'user')
-on conflict (user_id, show_id) do update
-  set status = excluded.status, status_source = excluded.status_source;
+insert into public.user_show_state (user_id, show_id)
+values ('11111111-1111-1111-1111-111111111111', 5555)
+on conflict (user_id, show_id) do nothing;
 
-insert into public.user_show_state (user_id, show_id, status, status_source)
-values ('11111111-1111-1111-1111-111111111111', 5555, 'on_hold', 'user')
-on conflict (user_id, show_id) do update
-  set status = excluded.status, status_source = excluded.status_source;
+insert into public.user_show_state (user_id, show_id)
+values ('11111111-1111-1111-1111-111111111111', 5555)
+on conflict (user_id, show_id) do nothing;
 
 select is(
   (select count(*) from public.user_show_state
@@ -87,10 +85,9 @@ select is(
   'writing the same show twice leaves one row'
 );
 select is(
-  (select status from public.user_show_state
-   where user_id = '11111111-1111-1111-1111-111111111111' and show_id = 5555),
-  'on_hold'::public.tv_status,
-  'the later show write wins'
+  public.track_show(5555),
+  false,
+  'tracking the same show again through track_show is a no op'
 );
 
 -- AC-10: watched state and rating are independent in both directions.
@@ -147,16 +144,17 @@ select lives_ok(
   'a rating of 10 is accepted, so the upper bound is inclusive'
 );
 
--- AC-8: only the five statuses and the two sources exist.
+-- AC-8, as spec 0020 (amended 2026-10-10) replaces it: a show is tracked
+-- or not, so no status or hold can be stored at all.
 select throws_ok(
-  $$insert into public.user_show_state (user_id, show_id, status, status_source)
-    values ('11111111-1111-1111-1111-111111111111', 700, 'binging', 'user')$$,
-  '22P02', null, 'a status outside the five is rejected'
+  $$insert into public.user_show_state (user_id, show_id, status)
+    values ('11111111-1111-1111-1111-111111111111', 700, 'watching')$$,
+  '42703', null, 'a show row has no status to store'
 );
 select throws_ok(
-  $$insert into public.user_show_state (user_id, show_id, status, status_source)
-    values ('11111111-1111-1111-1111-111111111111', 701, 'watching', 'robot')$$,
-  '22P02', null, 'a status_source outside user and system is rejected'
+  $$insert into public.user_show_state (user_id, show_id, hold_state)
+    values ('11111111-1111-1111-1111-111111111111', 701, 'paused')$$,
+  '42703', null, 'a show row has no hold to store'
 );
 
 -- AC-9: season 0 is storable so specials can be tracked; episode 0 is not.
@@ -188,8 +186,8 @@ select throws_ok(
   '23514', null, 'a movie id of 0 is rejected'
 );
 select throws_ok(
-  $$insert into public.user_show_state (user_id, show_id, status, status_source)
-    values ('11111111-1111-1111-1111-111111111111', -1, 'watching', 'user')$$,
+  $$insert into public.user_show_state (user_id, show_id)
+    values ('11111111-1111-1111-1111-111111111111', -1)$$,
   '23514', null, 'a negative show id is rejected'
 );
 select throws_ok(
@@ -199,24 +197,21 @@ select throws_ok(
   '23514', null, 'an episode id of 0 is rejected'
 );
 
--- AC-13: an episode row needs no show status row. Show 4242 has none.
+-- AC-13: an episode row needs no tracked show row. Show 4242 has none.
 select lives_ok(
   $$insert into public.user_episode_state
       (user_id, episode_id, show_id, season_number, episode_number)
     values ('11111111-1111-1111-1111-111111111111', 705, 4242, 1, 1)$$,
-  'an episode row can be written for a show with no status row'
+  'an episode row can be written for a show that is not tracked'
 );
 
 -- AC-12: timestamps maintained by triggers, never by the write path. The
 -- fixture rows are inserted with an old timestamp so the advance is visible
 -- inside a single transaction, where now() is fixed at transaction start.
-insert into public.user_show_state
-  (user_id, show_id, status, status_source, status_changed_at, created_at, updated_at)
-values
-  ('11111111-1111-1111-1111-111111111111', 4242, 'watching', 'user',
-   '2020-01-01', '2020-01-01', '2020-01-01');
+insert into public.user_show_state (user_id, show_id, created_at, updated_at)
+values ('11111111-1111-1111-1111-111111111111', 4242, '2020-01-01', '2020-01-01');
 
-update public.user_show_state set status_source = 'system'
+update public.user_show_state set created_at = '2020-01-01'
   where user_id = '11111111-1111-1111-1111-111111111111' and show_id = 4242;
 
 select ok(
@@ -226,20 +221,20 @@ select ok(
   'updated_at advanced on update without the write path setting it'
 );
 select is(
-  (select status_changed_at from public.user_show_state
+  (select tracked_at from public.user_show_state
    where user_id = '11111111-1111-1111-1111-111111111111' and show_id = 4242),
-  '2020-01-01'::timestamptz,
-  'status_changed_at did not move when only another column changed'
+  now(),
+  'tracked_at was stamped on insert and did not move on update'
 );
 
-update public.user_show_state set status = 'completed'
+update public.user_show_state set tracked_at = '2020-01-01'
   where user_id = '11111111-1111-1111-1111-111111111111' and show_id = 4242;
 
-select ok(
-  (select status_changed_at from public.user_show_state
-   where user_id = '11111111-1111-1111-1111-111111111111' and show_id = 4242)
-  > '2020-06-01'::timestamptz,
-  'status_changed_at advanced when the status actually changed'
+select is(
+  (select tracked_at from public.user_show_state
+   where user_id = '11111111-1111-1111-1111-111111111111' and show_id = 4242),
+  now(),
+  'an update that sends tracked_at keeps the stored one'
 );
 
 -- AC-11: deleting an account takes every row it owned with it.

@@ -73,16 +73,16 @@ values
   ('11111111-1111-1111-1111-111111111111', 27205, true, null, null),
   ('22222222-2222-2222-2222-222222222222', 603, true, null, null);
 
--- Show state. 1396 is Breaking Bad, 1399 is Game of Thrones.
-insert into public.user_show_state (user_id, show_id, status, status_source)
+-- Tracked shows. 1396 is Breaking Bad, 1399 is Game of Thrones.
+insert into public.user_show_state (user_id, show_id)
 values
-  ('11111111-1111-1111-1111-111111111111', 1396, 'watching', 'user'),
-  ('11111111-1111-1111-1111-111111111111', 1399, 'want_to_watch', 'user'),
-  ('22222222-2222-2222-2222-222222222222', 1396, 'completed', 'system');
+  ('11111111-1111-1111-1111-111111111111', 1396),
+  ('11111111-1111-1111-1111-111111111111', 1399),
+  ('22222222-2222-2222-2222-222222222222', 1396);
 
 -- Episode state. Breaking Bad season 1 for user A, including one special
 -- (season 0) to prove specials are storable, and one episode row for a show
--- user B has no status row for, which AC-13 requires to be legal.
+-- user B does not track, which AC-13 requires to be legal.
 insert into public.user_episode_state (user_id, episode_id, show_id, season_number, episode_number, watched_at, rating)
 values
   ('11111111-1111-1111-1111-111111111111', 62085, 1396, 1, 1, now(), 10),

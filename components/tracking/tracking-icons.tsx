@@ -90,34 +90,8 @@ function WatchedIcon({ filled, className }: IconProps & { filled: boolean }) {
 }
 
 /**
- * Stop watching: a square inside a circle (spec 0013, AC-16). The show
- * tracking pill uses it for Paused (spec 0020, AC-2).
- */
-function StopWatchingIcon({ className }: IconProps) {
-  return (
-    <svg
-      viewBox="-12 -12 24 24"
-      fill="none"
-      aria-hidden="true"
-      className={cn("size-3.5", className)}
-    >
-      <circle r="10" className="stroke-foreground" strokeWidth="1.8" />
-      <rect
-        x="-3"
-        y="-3"
-        width="6"
-        height="6"
-        rx=".7"
-        className="stroke-foreground"
-        strokeWidth="1.8"
-      />
-    </svg>
-  );
-}
-
-/**
- * Next episode: a television, in the legend grey (spec 0013, AC-15). The
- * status pill uses it for Watching.
+ * Next episode: a television, in the legend grey (spec 0013, AC-15), beside
+ * the S{n}E{n} pill on a Watchlist show card.
  */
 function NextEpisodeIcon({ className }: IconProps) {
   return (
@@ -167,60 +141,4 @@ function CalendarIcon({ className }: IconProps) {
   );
 }
 
-/**
- * Dropped: a circle crossed by a slash. The original designs never drew it,
- * so it follows the Stop watching circle's weight and uses none of the meaning
- * colours.
- */
-function DroppedIcon({ className }: IconProps) {
-  return (
-    <svg
-      viewBox="-12 -12 24 24"
-      fill="none"
-      aria-hidden="true"
-      className={cn("size-3.5", className)}
-    >
-      <circle r="10" className="stroke-foreground" strokeWidth="1.8" />
-      <path
-        d="M-7 7 7-7"
-        className="stroke-foreground"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-/**
- * Completed: a check. The original designs never drew it; like Dropped it
- * keeps the neutral colour, so it is never mistaken for Planned green.
- */
-function CompletedIcon({ className }: IconProps) {
-  return (
-    <svg
-      viewBox="-12 -12 24 24"
-      fill="none"
-      aria-hidden="true"
-      className={cn("size-3.5", className)}
-    >
-      <path
-        d="m-8 0 5 5L8-6"
-        className="stroke-foreground"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-export {
-  CalendarIcon,
-  CompletedIcon,
-  DroppedIcon,
-  NextEpisodeIcon,
-  PlanIcon,
-  PlannedIcon,
-  StopWatchingIcon,
-  WatchedIcon,
-};
+export { CalendarIcon, NextEpisodeIcon, PlanIcon, PlannedIcon, WatchedIcon };

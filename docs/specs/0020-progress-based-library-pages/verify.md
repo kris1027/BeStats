@@ -1,4 +1,4 @@
-# Verify: Progress based library pages · spec 0020 · updated 2026-10-07
+# Verify: Progress based library pages · spec 0020 · updated 2026-10-10
 _Steps derived from spec 0020 acceptance criteria. `/check verify` runs these; `/test` locks the durable ones._
 
 Setup: `pnpm exec supabase db reset`, then `pnpm dev:docker`, and sign in as `user-a@example.test` / `password-a`. The fixtures below are SQL against the local stack (`docker exec -i supabase_db_BeStats psql -U postgres`); reset again when you finish.
@@ -48,9 +48,20 @@ The cold time is the first tab of each media type filling the TMDB cache; the ot
 ## Rollout (Migration plan, needs your approval)
 - [x] `supabase db push` the expand migration `20261007120000_show_tracking_expand.sql` and `20261007130000_legacy_status_helpers.sql`, then merge and let Vercel deploy → phase 1 and 2
 - [ ] On production, open each tab, track, pause, resume, stop and undo on a test account → phase 2
-- [ ] Contract migration as its own follow up PR → phase 3 (Build plan step 8, not in this build)
+- [ ] Contract migration and hold removal (`feat/remove-show-holds`): `supabase db push`, then merge at once → phase 3
+- [ ] On production after that deploy: open each tab, track, stop tracking and undo on a test account; a show that was paused or dropped is now on a page
 
-AC-1 and AC-21 stay open until that contract PR: the `tv_status` and `status_source` types, the legacy columns and the completion and reopen triggers are still in the database and in `database.types.ts`, on purpose, so a rollback to the earlier deploy works.
+## Amendment 2026-10-10: Pause and Drop removed, contract migration
+The UI steps above that pause, drop, resume or open the Paused & dropped section describe the shipped 0020 build and no longer apply; these replace them.
+
+- [x] `/shows/1399` (tracked in the seed): the hero shows one button, visible text **Tracking**, accessible name "Stop tracking Game of Thrones", no menu. Click → **Plan to watch**, toast "Stopped tracking Game of Thrones" with Undo; Undo → back to Tracking after reload (checked 2026-10-10 in the running app) → AC-2, AC-3
+- [x] `/watchlist?type=tv` shows Breaking Bad S1E3 and Game of Thrones S1E1 with Mark watched, and no Paused & dropped section (checked 2026-10-10) → AC-8, AC-10 withdrawn
+- [x] Stop tracking a show another tab already stopped → success with no Undo (`show-tracking-control.test.tsx`, pgTAP 160 `is_empty` on a second `untrack_show`) → AC-4
+- [x] `pnpm typecheck`, `pnpm lint`, `pnpm build` → pass; `pnpm test` → 2060 tests pass (2026-10-10)
+- [x] `pnpm exec supabase db reset && pnpm test:db` → 12 files, 285 tests pass; 160 pins the absence of every status and hold column, type and function (2026-10-10) → AC-1, AC-3 to AC-5, AC-20
+- [x] `pnpm db:types:check` → matches the database schema
+- [x] Hold clearing on real data: `pnpm exec supabase db reset --version 20261007130000 --no-seed`, insert one `paused`, one `dropped` and one unheld row with episode marks and ratings (`session_replication_role = replica`), then `pnpm exec supabase migration up` → all three rows stay with their `tracked_at`, every episode mark and rating unchanged, and all three appear in `user_tracked_shows`, which feeds the pages (checked 2026-10-10) → AC-19 (amended)
+- [x] `user_tracked_shows` for one user plans as index scans on `user_show_state_pkey` and `user_episode_state_show_order_idx`, then an in memory sort; no index replaces the dropped `user_show_state_watchlist_idx`, since the order is an aggregate (checked 2026-10-10) → AC-16, AC-24
 
 ## Acceptance-criteria coverage
-- AC-1 pgTAP 160, grep · AC-2 UI 1, 2, `show-tracking-control.test.tsx` · AC-3 UI 3, pgTAP 160 · AC-4 UI 4, pgTAP 160 · AC-5 UI 5, pgTAP 160 · AC-6 UI 6, `show-card-bookmark-button.test.tsx` · AC-7 UI 7, 8, `library-page.test.ts` · AC-8 UI 10, 11, `library-lists.test.ts` · AC-9 UI 7 to 9, `mark-next-watched-button.test.tsx` · AC-10 UI 11, 12 · AC-11 UI 8 · AC-12 UI 10 · AC-13 UI 13, `movie-page.test.ts` · AC-14 UI 13, pgTAP 050, 070 · AC-15 UI 14 · AC-16 UI 15 · AC-17 UI 16, `library-section.test.tsx` · AC-18 UI 12, 17, 18 · AC-19 mapping command, pgTAP 165 · AC-20 pgTAP 160 · AC-21 request scope scan · AC-22 build · AC-23 `AGENTS.md`, spec notes · AC-24 timing table
+- AC-1 pgTAP 160, grep · AC-2 UI 1, 2, `show-tracking-control.test.tsx` · AC-3 UI 3, pgTAP 160 · AC-4 UI 4, pgTAP 160 · AC-5 UI 5, pgTAP 160 · AC-6 UI 6, `show-card-bookmark-button.test.tsx` · AC-7 UI 7, 8, `library-page.test.ts` · AC-8 UI 10, 11, `library-lists.test.ts` · AC-9 UI 7 to 9, `mark-next-watched-button.test.tsx` · AC-10 withdrawn 2026-10-10 · AC-11 UI 8 · AC-12 UI 10 · AC-13 UI 13, `movie-page.test.ts` · AC-14 UI 13, pgTAP 050, 070 · AC-15 UI 14 · AC-16 UI 15 · AC-17 UI 16, `library-section.test.tsx` · AC-18 UI 12, 17, 18 · AC-19 mapping command (expand), the hold clearing step (contract) · AC-20 pgTAP 160 · AC-21 request scope scan · AC-22 build · AC-23 `AGENTS.md`, spec notes · AC-24 timing table

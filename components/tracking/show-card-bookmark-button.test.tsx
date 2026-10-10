@@ -8,11 +8,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const trackShow = vi.fn(async (..._args: unknown[]) => ({ ok: true }));
 const untrackShow = vi.fn(async (..._args: unknown[]) => ({
   ok: true,
-  undo: {
-    trackedAt: "2026-09-01T10:00:00+00:00",
-    hold: "paused",
-    holdChangedAt: "2026-09-02T10:00:00+00:00",
-  },
+  undo: { trackedAt: "2026-09-01T10:00:00+00:00" },
 }));
 const restoreShowTracking = vi.fn(async (..._args: unknown[]) => ({
   ok: true,
@@ -21,7 +17,6 @@ vi.mock("@/app/shows/actions", () => ({
   trackShow: (...args: unknown[]) => trackShow(...args),
   untrackShow: (...args: unknown[]) => untrackShow(...args),
   restoreShowTracking: (...args: unknown[]) => restoreShowTracking(...args),
-  setShowHold: vi.fn(),
 }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 const toast = vi.fn();
@@ -44,7 +39,7 @@ describe("ShowCardBookmarkButton (AC-6)", () => {
       <ShowCardBookmarkButton
         showId={1399}
         name="Game of Thrones"
-        state={null}
+        tracked={false}
         returnPath="/shows"
       />,
     );
@@ -54,24 +49,21 @@ describe("ShowCardBookmarkButton (AC-6)", () => {
     expect(trackShow).toHaveBeenCalledWith(1399);
   });
 
-  it.each([null, "paused", "dropped"] as const)(
-    "is filled for a tracked show (hold %s), and a click stops tracking over that hold (AC-4)",
-    async (hold) => {
-      const user = userEvent.setup();
-      render(
-        <ShowCardBookmarkButton
-          showId={1399}
-          name="Game of Thrones"
-          state={{ hold }}
-          returnPath="/shows"
-        />,
-      );
-      await user.click(
-        screen.getByRole("button", { name: "Stop tracking Game of Thrones" }),
-      );
-      expect(untrackShow).toHaveBeenCalledWith(1399, hold);
-    },
-  );
+  it("is filled for a tracked show, and a click stops tracking it", async () => {
+    const user = userEvent.setup();
+    render(
+      <ShowCardBookmarkButton
+        showId={1399}
+        name="Game of Thrones"
+        tracked
+        returnPath="/shows"
+      />,
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Stop tracking Game of Thrones" }),
+    );
+    expect(untrackShow).toHaveBeenCalledWith(1399);
+  });
 
   it("offers the Undo of Stop tracking with the reported values (AC-3)", async () => {
     const user = userEvent.setup();
@@ -79,7 +71,7 @@ describe("ShowCardBookmarkButton (AC-6)", () => {
       <ShowCardBookmarkButton
         showId={1399}
         name="Game of Thrones"
-        state={{ hold: "paused" }}
+        tracked
         returnPath="/shows"
       />,
     );
@@ -94,8 +86,6 @@ describe("ShowCardBookmarkButton (AC-6)", () => {
     await act(async () => options.action.onClick({ preventDefault: vi.fn() }));
     expect(restoreShowTracking).toHaveBeenCalledWith(1399, {
       trackedAt: "2026-09-01T10:00:00+00:00",
-      hold: "paused",
-      holdChangedAt: "2026-09-02T10:00:00+00:00",
     });
   });
 
@@ -109,7 +99,7 @@ describe("ShowCardBookmarkButton (AC-6)", () => {
       <ShowCardBookmarkButton
         showId={1399}
         name="Game of Thrones"
-        state={{ hold: null }}
+        tracked
         returnPath="/shows"
       />,
     );

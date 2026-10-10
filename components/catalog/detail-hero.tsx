@@ -23,7 +23,8 @@ type DetailHeroProps = {
   /**
    * The tracking row, rendered under the rating block. The movie page passes
    * a Suspense wrapped `MovieTrackingSlot` (spec 0007); the show page passes
-   * its status pill and progress line, each in its own boundary (spec 0013).
+   * its tracking toggle and progress line, each in its own boundary (spec
+   * 0013, spec 0020).
    * This component reads no session itself, so it stays a plain catalog piece.
    */
   tracking?: React.ReactNode;

@@ -3,7 +3,6 @@ import type { MediaType } from "@/lib/catalog/media-type";
 import type {
   EpisodeTrackingError,
   MovieTrackingError,
-  ShowHold,
   ShowTrackingError,
 } from "./types";
 
@@ -86,33 +85,19 @@ export const SEASON_MESSAGES = {
 } as const;
 
 /**
- * The tracking pill's label for each state (spec 0020, AC-2): tracked with no
- * hold, paused or dropped.
- */
-export const SHOW_TRACKING_LABELS: Record<ShowHold | "none", string> = {
-  none: "Tracking",
-  paused: "Paused",
-  dropped: "Dropped",
-};
-
-/**
- * The show tracking control's copy and toasts (spec 0020, AC-2 to AC-6,
- * AC-10). A hold change shows itself on the pill; Stop tracking, whose pill
- * goes back to Plan to watch, confirms with a toast that carries the Undo,
- * and an episode write that tracked the show is announced because the person
- * never chose it.
+ * The show tracking toggle's copy and toasts (spec 0020, AC-2 to AC-6). Stop
+ * tracking, whose toggle goes back to Plan to watch, confirms with a toast
+ * that carries the Undo; one that found the show already untracked confirms
+ * without it (AC-4). An episode write that tracked the show is announced
+ * because the person never chose it.
  */
 export const SHOW_TRACKING_COPY = {
   plan: "Plan to watch",
+  tracking: "Tracking",
   unavailable: "Tracking unavailable",
-  menuLabel: "Show tracking",
-  pause: "Pause",
-  drop: "Drop",
-  resume: "Resume",
-  stop: "Stop tracking",
+  stopLabel: (show: string) => `Stop tracking ${show}`,
   added: (show: string) => `${show} added to your shows`,
   stopped: (show: string) => `Stopped tracking ${show}`,
-  resumed: (show: string) => `Resumed ${show}`,
   undoExpired: "Couldn't undo. Track the show again from its page.",
 } as const;
 
@@ -121,12 +106,10 @@ export const SHOW_TRACKING_MESSAGES: Record<ShowTrackingError, string> = {
   ...TRACKING_MESSAGES,
   not_found: "This show isn't available to track.",
   undo_expired: SHOW_TRACKING_COPY.undoExpired,
-  hold_changed: "This show changed elsewhere. Showing the current one.",
-  not_tracked: "This show changed elsewhere. Showing the current one.",
 };
 
 /**
- * The progress line under the show hero's status pill (spec 0013, AC-10,
+ * The progress line under the show hero's tracking toggle (spec 0013, AC-10,
  * AC-11). Counts only aired regular episodes, so it never says "0%" for a
  * show with nothing aired, and never shows a number from a partial read.
  */
@@ -274,16 +257,13 @@ export const WATCHED_SHOW_LABELS = {
   caught_up: "Caught up",
 } as const;
 
-/** The Paused & dropped section on Watchlist (spec 0020, AC-10). */
-export const HELD_SHOWS_COPY = {
-  summary: (n: number) => `Paused & dropped (${n})`,
-  gridLabel: "Paused and dropped shows",
-  more: (limit: number) => `Showing your ${limit} most recently changed`,
-  resumeLabel: (show: string) => `Resume ${show}`,
-  stopLabel: (show: string) => `Stop tracking ${show}`,
-  unavailable: "Show unavailable",
-  /** The toast's name for a show TMDB no longer has (AC-17). */
-  missingShowName: "this show",
-  /** The Stop tracking label's name for a show TMDB no longer has. */
-  missingShowLabel: "missing title",
+/** A Watchlist show TMDB no longer has (spec 0020, AC-17). */
+export const MISSING_SHOW_COPY = {
+  /**
+   * Stands in for the show's name in the shared toasts, which TMDB no longer
+   * gives: "Stopped tracking this show".
+   */
+  toastName: "this show",
+  /** The Stop tracking button's accessible name. */
+  stopLabel: "Stop tracking missing title",
 } as const;

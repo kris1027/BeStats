@@ -50,7 +50,6 @@ const {
   setEpisodeRating,
   setEpisodeWatched,
   setSeasonWatched,
-  setShowHold,
   trackShow,
   undoEpisodeMark,
   undoSeasonWatched,
@@ -321,7 +320,7 @@ describe("the session (AC-14, AC-19)", () => {
 describe("setSeasonWatched", () => {
   it("marks only the aired episodes TMDB lists, and offers their Undo (AC-9, AC-10)", async () => {
     result = {
-      data: [{ marked_ids: [62086], show_started: false }],
+      data: [{ marked_ids: [62086], show_tracked: false }],
       error: null,
     };
     expect(await setSeasonWatched(SHOW, 1, true)).toEqual({
@@ -347,7 +346,7 @@ describe("setSeasonWatched", () => {
   });
 
   it("offers no Undo when nothing was newly marked (AC-10)", async () => {
-    result = { data: [{ marked_ids: [], show_started: false }], error: null };
+    result = { data: [{ marked_ids: [], show_tracked: false }], error: null };
     expect(await setSeasonWatched(SHOW, 1, true)).toEqual({
       ok: true,
       undo: null,
@@ -525,7 +524,7 @@ describe("newlyMarked (spec 0014, AC-9)", () => {
     result = {
       data: [
         {
-          show_started: false,
+          show_tracked: false,
           newly_marked: true,
           watched_at: "2026-09-25T23:30:00.123456+00:00",
         },
@@ -542,7 +541,7 @@ describe("newlyMarked (spec 0014, AC-9)", () => {
 
   it("is false when another call had already marked it", async () => {
     result = {
-      data: [{ show_started: false, newly_marked: false }],
+      data: [{ show_tracked: false, newly_marked: false }],
       error: null,
     };
     expect(await setEpisodeWatched(SHOW, 1, 62085, true)).toEqual({
@@ -639,8 +638,8 @@ describe("undoEpisodeMark (spec 0014, AC-9)", () => {
 });
 
 describe("showTracked (spec 0020, AC-5)", () => {
-  it("reports the tracking the episode function returned as show_started", async () => {
-    result = { data: [{ show_started: true }], error: null };
+  it("reports the tracking the episode function returned as show_tracked", async () => {
+    result = { data: [{ show_tracked: true }], error: null };
     expect(await setEpisodeWatched(SHOW, 1, 62085, true)).toEqual({
       ok: true,
       showTracked: true,
@@ -655,7 +654,7 @@ describe("showTracked (spec 0020, AC-5)", () => {
 
   it("reports it from a season mark beside the Undo", async () => {
     result = {
-      data: [{ marked_ids: [62085], show_started: true }],
+      data: [{ marked_ids: [62085], show_tracked: true }],
       error: null,
     };
     expect(await setSeasonWatched(SHOW, 1, true)).toEqual({
@@ -704,146 +703,52 @@ describe("trackShow (spec 0020, AC-2, AC-6)", () => {
   });
 });
 
-describe("setShowHold (spec 0020, AC-2, AC-4, AC-10)", () => {
-  it("sets a hold over the expected one, without TMDB", async () => {
-    loadShow.mockResolvedValue({ kind: "failed" });
-    expect(await setShowHold(SHOW, "paused", null)).toEqual({ ok: true });
+describe("untrackShow (spec 0020, AC-3, AC-4)", () => {
+  it("stops tracking without TMDB and returns tracked_at as the Undo", async () => {
+    result = {
+      data: [{ tracked_at: "2026-09-01T10:00:00+00:00" }],
+      error: null,
+    };
+    expect(await untrackShow(SHOW)).toEqual({
+      ok: true,
+      undo: { trackedAt: "2026-09-01T10:00:00+00:00" },
+    });
     expect(loadShow).not.toHaveBeenCalled();
     expect(writes()).toEqual([
-      {
-        method: "rpc",
-        args: [
-          "set_show_hold",
-          { p_show_id: SHOW, p_hold: "paused", p_expected: null },
-        ],
-      },
+      { method: "rpc", args: ["untrack_show", { p_show_id: SHOW }] },
     ]);
     expect(refresh).toHaveBeenCalledOnce();
   });
 
-  it("resumes with a null hold", async () => {
-    expect(await setShowHold(SHOW, null, "dropped")).toEqual({ ok: true });
-    expect(writes()[0].args).toEqual([
-      "set_show_hold",
-      { p_show_id: SHOW, p_hold: null, p_expected: "dropped" },
-    ]);
+  it("succeeds with no Undo when the show was already untracked (AC-4)", async () => {
+    result = { data: [], error: null };
+    expect(await untrackShow(SHOW)).toEqual({ ok: true, undo: null });
+    expect(refresh).toHaveBeenCalledOnce();
   });
 
-  it.each([
-    ["BS409", "hold_changed"],
-    ["BS404", "not_tracked"],
-  ])(
-    "reports %s as %s and refreshes to the stored state (AC-4)",
-    async (code, error) => {
-      result = { data: null, error: { code } };
-      expect(await setShowHold(SHOW, "dropped", null)).toEqual({
-        ok: false,
-        error,
-      });
-      expect(refresh).toHaveBeenCalledOnce();
-    },
-  );
-
-  it("refuses a status word as invalid_input", async () => {
-    expect(await setShowHold(SHOW, "on_hold" as never, null)).toEqual({
-      ok: false,
-      error: "invalid_input",
-    });
-    expect(calls).toEqual([]);
-  });
-
-  it("reports a failed write as write_failed with no refresh, so the pill rolls back", async () => {
+  it("reports a failed write as write_failed with no refresh, so the toggle rolls back", async () => {
     result = { data: null, error: { code: "PGRST000" } };
-    expect(await setShowHold(SHOW, "paused", null)).toEqual({
+    expect(await untrackShow(SHOW)).toEqual({
       ok: false,
       error: "write_failed",
     });
     expect(refresh).not.toHaveBeenCalled();
   });
-});
 
-describe("untrackShow (spec 0020, AC-3, AC-4)", () => {
-  it("stops tracking without TMDB and returns the deleted row as the Undo", async () => {
-    result = {
-      data: [
-        {
-          tracked_at: "2026-09-01T10:00:00+00:00",
-          hold_state: "paused",
-          hold_changed_at: "2026-09-02T10:00:00+00:00",
-        },
-      ],
-      error: null,
-    };
-    expect(await untrackShow(SHOW, "paused")).toEqual({
-      ok: true,
-      undo: {
-        trackedAt: "2026-09-01T10:00:00+00:00",
-        hold: "paused",
-        holdChangedAt: "2026-09-02T10:00:00+00:00",
-      },
-    });
-    expect(loadShow).not.toHaveBeenCalled();
-    expect(writes()).toEqual([
-      {
-        method: "rpc",
-        args: ["untrack_show", { p_show_id: SHOW, p_expected: "paused" }],
-      },
-    ]);
-    expect(refresh).toHaveBeenCalledOnce();
-  });
-
-  it("sends null for a show with no hold and keeps null in the Undo", async () => {
-    result = {
-      data: [
-        {
-          tracked_at: "2026-09-01T10:00:00+00:00",
-          hold_state: null,
-          hold_changed_at: null,
-        },
-      ],
-      error: null,
-    };
-    expect(await untrackShow(SHOW, null)).toEqual({
-      ok: true,
-      undo: {
-        trackedAt: "2026-09-01T10:00:00+00:00",
-        hold: null,
-        holdChangedAt: null,
-      },
-    });
-    expect(writes()).toEqual([
-      {
-        method: "rpc",
-        args: ["untrack_show", { p_show_id: SHOW, p_expected: null }],
-      },
-    ]);
-  });
-
-  it("reports a hold changed elsewhere and refreshes, deleting nothing", async () => {
-    result = { data: null, error: { code: "BS409" } };
-    expect(await untrackShow(SHOW, null)).toEqual({
+  it("refuses a malformed id as invalid_input", async () => {
+    expect(await untrackShow(0)).toEqual({
       ok: false,
-      error: "hold_changed",
+      error: "invalid_input",
     });
-    expect(refresh).toHaveBeenCalledOnce();
-  });
-
-  it("treats no row back as a failed write, never a false Undo", async () => {
-    result = { data: [], error: null };
-    expect(await untrackShow(SHOW, null)).toEqual({
-      ok: false,
-      error: "write_failed",
-    });
+    expect(calls).toEqual([]);
   });
 });
 
 describe("restoreShowTracking (spec 0020, AC-3)", () => {
-  it("sends the reported times and hold, without TMDB", async () => {
+  it("sends the reported tracked_at, without TMDB", async () => {
     expect(
       await restoreShowTracking(SHOW, {
         trackedAt: "2026-09-01T10:00:00+00:00",
-        hold: "dropped",
-        holdChangedAt: "2026-09-02T10:00:00+00:00",
       }),
     ).toEqual({ ok: true });
     expect(loadShow).not.toHaveBeenCalled();
@@ -852,26 +757,9 @@ describe("restoreShowTracking (spec 0020, AC-3)", () => {
         method: "rpc",
         args: [
           "restore_show_tracking",
-          {
-            p_show_id: SHOW,
-            p_tracked_at: "2026-09-01T10:00:00+00:00",
-            p_hold: "dropped",
-            p_hold_changed_at: "2026-09-02T10:00:00+00:00",
-          },
+          { p_show_id: SHOW, p_tracked_at: "2026-09-01T10:00:00+00:00" },
         ],
       },
-    ]);
-  });
-
-  it("leaves the hold arguments out when there was no hold", async () => {
-    await restoreShowTracking(SHOW, {
-      trackedAt: "2026-09-01T10:00:00+00:00",
-      hold: null,
-      holdChangedAt: null,
-    });
-    expect(writes()[0].args).toEqual([
-      "restore_show_tracking",
-      { p_show_id: SHOW, p_tracked_at: "2026-09-01T10:00:00+00:00" },
     ]);
   });
 
@@ -880,8 +768,6 @@ describe("restoreShowTracking (spec 0020, AC-3)", () => {
     expect(
       await restoreShowTracking(SHOW, {
         trackedAt: "2026-09-01T10:00:00+00:00",
-        hold: null,
-        holdChangedAt: null,
       }),
     ).toEqual({ ok: false, error: "undo_expired" });
     expect(refresh).not.toHaveBeenCalled();
@@ -891,8 +777,6 @@ describe("restoreShowTracking (spec 0020, AC-3)", () => {
     expect(
       await restoreShowTracking(SHOW, {
         trackedAt: "2026-09-26T10:00:00+00:00",
-        hold: null,
-        holdChangedAt: null,
       }),
     ).toEqual({ ok: false, error: "invalid_input" });
     expect(calls).toEqual([]);
@@ -900,12 +784,9 @@ describe("restoreShowTracking (spec 0020, AC-3)", () => {
 
   it("never sends a user id; the owner comes from the session in SQL (AC-20)", async () => {
     await trackShow(SHOW);
-    await setShowHold(SHOW, "paused", null);
-    await untrackShow(SHOW, null);
+    await untrackShow(SHOW);
     await restoreShowTracking(SHOW, {
       trackedAt: "2026-09-01T10:00:00+00:00",
-      hold: null,
-      holdChangedAt: null,
     });
     expect(JSON.stringify(calls)).not.toContain("user-a");
   });

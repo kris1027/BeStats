@@ -1,7 +1,7 @@
 -- Scope feature 19 (AGENTS.md section 13, items 3, 4 and 15): the whole
 -- `public` schema, swept from the catalog.
 --
--- 020 to 131 each prove the objects their own spec created, by name. That is
+-- 020 to 160 each prove the objects their own spec created, by name. That is
 -- the right shape for behaviour and the wrong one for a boundary: a table, view
 -- or function a later migration adds is exactly the one no named list
 -- mentions, and Supabase's default privileges hand `anon` every new object in
@@ -149,8 +149,7 @@ select is_empty(
 );
 
 -- Every function a client can call over the API is refused to anon at the
--- privilege layer. Trigger functions are left to the next assertion: Postgres
--- refuses to run one as a plain call, whoever holds EXECUTE.
+-- privilege layer. Trigger functions are left to the next assertion.
 select is_empty(
   $$select p.oid::regprocedure::text from pg_proc p
     where p.pronamespace = 'public'::regnamespace
@@ -162,16 +161,18 @@ select is_empty(
   'anon can execute no callable function in public'
 );
 
--- Proof that a trigger function anon can reach is still not a way in: the
--- direct call fails before the body runs.
-set local role anon;
-select throws_ok(
-  $$select public.reopen_completed_show()$$,
-  '0A000',
-  null,
-  'a trigger function cannot be called directly, even by a role holding execute'
+-- Trigger functions too: Postgres refuses a direct call anyway, but every
+-- one is narrowed in `04-policies.sql`, so none is left for anon to reach.
+select is_empty(
+  $$select p.oid::regprocedure::text from pg_proc p
+    where p.pronamespace = 'public'::regnamespace
+      and p.prorettype = 'trigger'::regtype
+      and has_function_privilege('anon', p.oid, 'execute')
+      and not exists (
+        select 1 from pg_depend d where d.objid = p.oid and d.deptype = 'e'
+      )$$,
+  'anon can execute no trigger function in public'
 );
-reset role;
 
 select * from finish();
 rollback;

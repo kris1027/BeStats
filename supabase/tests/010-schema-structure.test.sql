@@ -1,25 +1,13 @@
--- Spec 0001 AC-1: the migration creates every type, table, key, index,
--- function and trigger the data model calls for.
+-- Spec 0001 AC-1: the migration creates every table, key, index, function
+-- and trigger the data model calls for. Since the spec 0020 contract a show
+-- is tracked or not, so no enum type is left (`160-show-tracking.test.sql`
+-- pins their absence).
 --
 -- Runs against the seeded local database. Everything is wrapped in a
 -- transaction that is rolled back, so the fixture is untouched.
 
 begin;
-select plan(20);
-
--- Enum types and their exact vocabularies (AC-8's storage side).
-select has_type('public', 'tv_status', 'the tv_status enum exists');
-select has_type('public', 'status_source', 'the status_source enum exists');
-select enum_has_labels(
-  'public', 'tv_status',
-  array['want_to_watch', 'watching', 'on_hold', 'dropped', 'completed'],
-  'tv_status carries exactly the five statuses'
-);
-select enum_has_labels(
-  'public', 'status_source',
-  array['user', 'system'],
-  'status_source carries exactly user and system'
-);
+select plan(16);
 
 -- The three tables and their composite primary keys. The key is what makes a
 -- repeated write idempotent, so it is part of the contract, not an detail.
@@ -55,8 +43,8 @@ select has_function(
   'set_updated_at() exists'
 );
 select has_function(
-  'public'::name, 'set_status_changed_at'::name, '{}'::name[],
-  'set_status_changed_at() exists'
+  'public'::name, 'set_tracked_at'::name, '{}'::name[],
+  'set_tracked_at() exists'
 );
 select is(
   (
@@ -66,8 +54,8 @@ select is(
     where not t.tgisinternal
       and c.relname in ('user_movie_state', 'user_show_state', 'user_episode_state')
   ),
-  9::bigint,
-  'nine triggers exist: three for updated_at, one each for status_changed_at, watchlisted_at, listed_at and the spec 0020 tracking times, and the two that reopen an automatic completion (spec 0015)'
+  5::bigint,
+  'five triggers exist: three for updated_at, one each for watchlisted_at and tracked_at'
 );
 
 -- Owner deletion cascades, which is what AC-11 asserts behaviourally.
@@ -84,8 +72,8 @@ select is(
   'all three tables cascade on owner delete'
 );
 
--- The deliberate absence: no foreign key ties episodes to a show status row,
--- so episode history can outlive any status (AGENTS.md section 7).
+-- The deliberate absence: no foreign key ties episodes to a tracked show
+-- row, so episode history outlives Stop tracking (AGENTS.md section 7).
 select is(
   (
     select count(*)
@@ -95,7 +83,7 @@ select is(
       and confrelid = 'public.user_show_state'::regclass
   ),
   0::bigint,
-  'episode rows are deliberately not tied to a show status row'
+  'episode rows are deliberately not tied to a tracked show row'
 );
 
 -- Nothing anywhere stores a derived rating (AGENTS.md section 8).

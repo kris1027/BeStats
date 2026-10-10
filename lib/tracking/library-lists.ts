@@ -23,7 +23,6 @@ import {
 } from "@/lib/tv/library-page";
 
 import { logTrackingEvent, TRACKING_EVENT } from "./log";
-import type { ShowHold } from "./types";
 
 /**
  * The reads behind `/watchlist`, `/upcoming` and `/watched` (spec 0020, API
@@ -240,7 +239,7 @@ async function classifyTab<Row extends { id: number }, Title, Placed, Card>({
   };
 }
 
-/** One tracked show with no hold, as `user_tracked_shows` gives it. */
+/** One tracked show, as `user_tracked_shows` gives it. */
 type TrackedShowRow = {
   id: number;
   trackedAt: string;
@@ -257,7 +256,7 @@ type PlacedShow = {
  * One page of a show tab: Watchlist, Upcoming or Watched (AC-7 to AC-12,
  * AC-16, AC-17).
  *
- * The user's tracked shows with no hold, at most `LIBRARY_CLASSIFY_LIMIT`,
+ * The user's tracked shows, at most `LIBRARY_CLASSIFY_LIMIT`,
  * most recently active first (AC-16), then their watched regular episodes,
  * then each show's cached details read, then `classifyShow` for each. The
  * tab keeps its own shows in its own order:
@@ -284,7 +283,6 @@ export async function getShowLibraryTab(
       .from("user_tracked_shows")
       .select("show_id, tracked_at, last_watched_at")
       .eq("user_id", userId)
-      .is("hold_state", null)
       .order("last_activity_at", { ascending: false })
       .order("show_id", { ascending: true })
       .limit(LIBRARY_CLASSIFY_LIMIT + 1);
@@ -609,62 +607,7 @@ export async function getLibraryMovieTitles(
   };
 }
 
-/** One paused or dropped show (AC-10). */
-export type HeldShowRow = {
-  showId: number;
-  hold: ShowHold;
-  holdChangedAt: string;
-};
-
-/**
- * The user's paused and dropped shows, most recently changed first, at most
- * `LIBRARY_CLASSIFY_LIMIT`, with the exact number held (spec 0020, AC-10).
- * Membership needs no TMDB read: it is the hold alone. Served by the partial
- * held index, which ends in `show_id`, the tiebreak.
- *
- * @param userId The verified session's user, never a client value.
- */
-export async function getHeldShows(
-  userId: string,
-): Promise<LibraryPage<HeldShowRow>> {
-  try {
-    const supabase = await createClient();
-    const { data, error, count } = await supabase
-      .from("user_show_state")
-      .select("show_id, hold_state, hold_changed_at", { count: "exact" })
-      .eq("user_id", userId)
-      .not("hold_state", "is", null)
-      .order("hold_changed_at", { ascending: false })
-      .order("show_id", { ascending: true })
-      .limit(LIBRARY_CLASSIFY_LIMIT);
-    if (error || count === null) return heldFailed();
-
-    return {
-      kind: "ok",
-      total: count,
-      rows: data.flatMap((row) =>
-        row.hold_state === null || row.hold_changed_at === null
-          ? []
-          : [
-              {
-                showId: row.show_id,
-                hold: row.hold_state,
-                holdChangedAt: row.hold_changed_at,
-              },
-            ],
-      ),
-    };
-  } catch {
-    return heldFailed();
-  }
-}
-
 function failed(): { kind: "failed" } {
   logTrackingEvent(TRACKING_EVENT.listRead, "db_error");
-  return { kind: "failed" };
-}
-
-function heldFailed(): { kind: "failed" } {
-  logTrackingEvent(TRACKING_EVENT.heldShowsRead, "db_error");
   return { kind: "failed" };
 }

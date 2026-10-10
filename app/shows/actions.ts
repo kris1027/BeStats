@@ -19,7 +19,6 @@ import {
   restoreShowTrackingInputSchema,
   seasonUndoInputSchema,
   seasonWatchedInputSchema,
-  showHoldInputSchema,
   trackShowInputSchema,
   untrackShowInputSchema,
 } from "@/lib/tracking/schemas";
@@ -31,7 +30,6 @@ import type {
   MovieTrackingError,
   SeasonUndo,
   SeasonWatchedResult,
-  ShowHold,
   ShowTrackingError,
   ShowTrackingFlags,
   ShowTrackingResult,
@@ -217,15 +215,14 @@ function withShowFlags(
 const NOT_TRACKED: ShowTrackingFlags = { showTracked: false };
 
 /**
- * The `show_started` column the three episode functions return beside their
- * own result, which since spec 0020 means "this write tracked the show"
- * (AC-5). A missing row reads as false: only a `true` the database reported
- * may raise the toast.
+ * The `show_tracked` column the three episode functions return beside their
+ * own result: "this write tracked the show" (spec 0020, AC-5). A missing row
+ * reads as false: only a `true` the database reported may raise the toast.
  */
 function showTrackedFrom(
-  data: readonly { show_started: boolean | null }[] | null,
+  data: readonly { show_tracked: boolean | null }[] | null,
 ): boolean {
-  return data?.[0]?.show_started === true;
+  return data?.[0]?.show_tracked === true;
 }
 
 /**
@@ -266,7 +263,7 @@ export async function setEpisodeWatched(
           p_episode_number: episode.episodeNumber,
           p_episode_id: input.episodeId,
         });
-        // As with `show_started`, only a `true` the database reported
+        // As with `show_tracked`, only a `true` the database reported
         // counts: a missing row offers no Undo.
         const row = data?.[0];
         const newlyMarked = row?.newly_marked === true;
@@ -509,52 +506,12 @@ export async function undoSeasonWatched(
   );
 }
 
-/** A tracking write's body: its own refusals are tracking classes. */
-type TrackingStep<T> = Step<T, ShowTrackingError>;
-
 /**
- * `BS409` is what `set_show_hold` and `untrack_show` raise when the row no
- * longer holds the hold the caller saw, and `BS404` when there is no row, so
- * a stale pill or card never overwrites or deletes a newer state (spec 0020,
- * AC-4). Read here rather than in `classifyTrackingError`, since only these
- * raise them.
- */
-function settledTracking<T>(
-  error: { code?: string | null } | null,
-  value: T,
-): TrackingStep<T> {
-  if (error?.code === "BS409") {
-    return { kind: "refused", error: "hold_changed" };
-  }
-  if (error?.code === "BS404") {
-    return { kind: "refused", error: "not_tracked" };
-  }
-  return settled(error, value);
-}
-
-/**
- * A changed elsewhere refusal refreshes the page as a success does: nothing
- * was written, and the pill or card should now show what is really stored
- * (AC-4).
- */
-function refreshOnStale<T>(
-  outcome: Outcome<T, ShowTrackingError>,
-): Outcome<T, ShowTrackingError> {
-  if (
-    !outcome.ok &&
-    (outcome.error === "hold_changed" || outcome.error === "not_tracked")
-  ) {
-    refresh();
-  }
-  return outcome;
-}
-
-/**
- * Tracks a show with no hold: Plan to watch, and the empty card bookmark
- * (spec 0020, AC-2, AC-6). It creates a row, so it first confirms the show
- * with TMDB (an unknown or adult show is `not_found`, an outage
- * `tmdb_unavailable`), and no row is ever stored for a show the app cannot
- * render. Tracking a tracked show changes nothing, its hold included.
+ * Tracks a show: Plan to watch, and the empty card bookmark (spec 0020,
+ * AC-2, AC-6). It creates a row, so it first confirms the show with TMDB (an
+ * unknown or adult show is `not_found`, an outage `tmdb_unavailable`), and no
+ * row is ever stored for a show the app cannot render. Tracking a tracked
+ * show changes nothing.
  */
 export async function trackShow(showId: number): Promise<ShowTrackingResult> {
   const event = TRACKING_EVENT.trackShow;
@@ -581,87 +538,38 @@ export async function trackShow(showId: number): Promise<ShowTrackingResult> {
 }
 
 /**
- * Pauses, drops or resumes a tracked show (spec 0020, AC-2, AC-4, AC-10).
- *
- * `expected` is the hold the caller last saw. The database writes only while
- * the row still holds it, and otherwise refuses with `hold_changed` and the
- * page refreshes. It only ever updates an existing row, so it skips TMDB:
- * Resume works during an outage and for a show TMDB later drops. It never
- * touches an episode row.
- */
-export async function setShowHold(
-  showId: number,
-  hold: ShowHold | null,
-  expected: ShowHold | null,
-): Promise<ShowTrackingResult> {
-  const event = TRACKING_EVENT.showHold;
-  const input = parse(showHoldInputSchema, { showId, hold, expected }, event);
-  if (!input) return { ok: false, error: "invalid_input" };
-
-  const outcome = refreshOnStale(
-    await runTrackingWrite<null, ShowTrackingError>(event, async (supabase) => {
-      const { error } = await supabase.rpc("set_show_hold", {
-        p_show_id: input.showId,
-        // Sent as null for "no hold": the arguments have no default, on
-        // purpose, so a call can never leave one out by accident.
-        p_hold: input.hold,
-        p_expected: input.expected,
-      });
-      return settledTracking(error, null);
-    }),
-  );
-  return withoutValue(outcome);
-}
-
-/**
  * Stops tracking a show (spec 0020, AC-3, AC-4, AC-6): the row goes, and
- * every episode mark and rating stays. Over the hold the caller last saw, as
- * `setShowHold` is. Like every removal it skips TMDB. The result carries the
- * Undo: the times and hold the database reported deleting.
+ * every episode mark and rating stays. Idempotent: a show another tab
+ * already stopped deletes nothing and comes back with no Undo. Like every
+ * removal it skips TMDB. Otherwise the result carries the Undo: the
+ * `tracked_at` the database reported deleting.
  */
-export async function untrackShow(
-  showId: number,
-  expected: ShowHold | null,
-): Promise<UntrackShowResult> {
+export async function untrackShow(showId: number): Promise<UntrackShowResult> {
   const event = TRACKING_EVENT.untrackShow;
-  const input = parse(untrackShowInputSchema, { showId, expected }, event);
+  const input = parse(untrackShowInputSchema, { showId }, event);
   if (!input) return { ok: false, error: "invalid_input" };
 
-  const outcome = refreshOnStale(
-    await runTrackingWrite<ShowTrackingUndo | null, ShowTrackingError>(
-      event,
-      async (supabase) => {
-        const { data, error } = await supabase.rpc("untrack_show", {
-          p_show_id: input.showId,
-          p_expected: input.expected,
-        });
-        const row = data?.[0];
-        return settledTracking(
-          error,
-          row
-            ? {
-                trackedAt: row.tracked_at,
-                hold: row.hold_state ?? null,
-                holdChangedAt: row.hold_changed_at ?? null,
-              }
-            : null,
-        );
-      },
-    ),
-  );
+  const outcome = await runTrackingWrite<
+    ShowTrackingUndo | null,
+    ShowTrackingError
+  >(event, async (supabase) => {
+    const { data, error } = await supabase.rpc("untrack_show", {
+      p_show_id: input.showId,
+    });
+    const row = data?.[0];
+    return settled(error, row ? { trackedAt: row.tracked_at } : null);
+  });
   if (!outcome.ok) return outcome;
-  // The function raises rather than returning no row; this guards a bug.
-  if (outcome.value === null) return { ok: false, error: "write_failed" };
   return { ok: true, undo: outcome.value };
 }
 
 /**
  * The Undo of Stop tracking (spec 0020, AC-3): puts the row back with the
- * values `untrackShow` returned, so the show returns to its old place. It
- * recreates the row only with values the database itself reported a moment
- * ago, so it needs no TMDB check. `restore_show_tracking` bounds them again,
- * and a show that is tracked again already, or a value out of bounds, comes
- * back as `undo_expired`.
+ * `tracked_at` `untrackShow` returned, so the show returns to its old place.
+ * It recreates the row only with a value the database itself reported a
+ * moment ago, so it needs no TMDB check. `restore_show_tracking` bounds it
+ * again, and a show that is tracked again already, or a time out of bounds,
+ * comes back as `undo_expired`.
  */
 export async function restoreShowTracking(
   showId: number,
@@ -671,18 +579,12 @@ export async function restoreShowTracking(
   const input = parse(restoreShowTrackingInputSchema, { showId, undo }, event);
   if (!input) return { ok: false, error: "invalid_input" };
 
-  const request = input.undo;
   const outcome = await runTrackingWrite<null, ShowTrackingError>(
     event,
     async (supabase) => {
       const { error } = await supabase.rpc("restore_show_tracking", {
         p_show_id: input.showId,
-        p_tracked_at: request.trackedAt,
-        // Left out rather than sent as null: both carry null defaults.
-        ...(request.hold !== null && { p_hold: request.hold }),
-        ...(request.holdChangedAt !== null && {
-          p_hold_changed_at: request.holdChangedAt,
-        }),
+        p_tracked_at: input.undo.trackedAt,
       });
       return settled(error, null);
     },

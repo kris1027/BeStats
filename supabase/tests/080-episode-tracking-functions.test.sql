@@ -164,23 +164,23 @@ select ok(
   'rating an unwatched episode with a row marks it watched again'
 );
 
--- Spec 0015 AC-4: `newly_marked` says whether this rating was also the
--- watch. 930108 has no row at first; its watched date is then moved into the
--- past, since inside this one transaction `now()` never moves.
+-- A rating that is also the watch stamps it now; one on a watched episode
+-- keeps the date. 930108 has no row at first; its watched date is then moved
+-- into the past, since inside this one transaction `now()` never moves.
 select is(
-  (select newly_marked
+  (select watched_at = now()
    from public.rate_episode(900301, 1::smallint, 8::smallint, 930108, 7::smallint)),
   true,
-  'rating an untracked episode reports newly_marked'
+  'rating an episode with no row marks it watched now'
 );
 update public.user_episode_state
 set watched_at = '2020-01-01T00:00:00Z'
 where user_id = '11111111-1111-1111-1111-111111111111' and episode_id = 930108;
 select is(
-  (select newly_marked
+  (select watched_at
    from public.rate_episode(900301, 1::smallint, 8::smallint, 930108, 9::smallint)),
-  false,
-  'rating a watched episode does not report newly_marked'
+  '2020-01-01T00:00:00Z'::timestamptz,
+  'rating a watched episode keeps its date'
 );
 
 select throws_ok(
@@ -414,8 +414,8 @@ select is(
 );
 
 -- AC-24, as spec 0013 AC-6 and spec 0020 AC-5 amend it: the only change to
--- user_show_state is that show 900301 became tracked for user A, mirrored as
--- `watching` by the user. Every other row is exactly as it was.
+-- user_show_state is that show 900301 became tracked for user A. Every other
+-- row is exactly as it was.
 -- `160-show-tracking.test.sql` covers the rule itself.
 select set_eq(
   $$ select * from public.user_show_state
@@ -424,9 +424,9 @@ select set_eq(
   'user_show_state is otherwise unchanged after every write path'
 );
 select is(
-  (select status::text || '/' || status_source::text from public.user_show_state
+  (select count(*)::int from public.user_show_state
    where user_id = '11111111-1111-1111-1111-111111111111' and show_id = 900301),
-  'watching/user',
+  1,
   'the first regular episode watched tracked the show, and nothing else did'
 );
 

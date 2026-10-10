@@ -77,14 +77,13 @@ export type EpisodeTrackingError = MovieTrackingError | "not_aired";
 /**
  * What an episode write did to tracking on its own (spec 0020, AC-5):
  * `showTracked` is true only when the write tracked a show that was not
- * tracked, which the "added to your shows" toast confirms. A write never
- * changes a tracked show's hold.
+ * tracked, which the "added to your shows" toast confirms.
  */
 export type ShowTrackingFlags = { showTracked: boolean };
 
 /**
- * What the single episode actions and the season Undo return, with the
- * status flags the season page and Up Next confirm with a toast.
+ * What the single episode actions and the season Undo return, with
+ * `showTracked`, which the season page and Up Next confirm with a toast.
  */
 export type EpisodeTrackingResult =
   | ({ ok: true } & ShowTrackingFlags)
@@ -122,43 +121,27 @@ export type SeasonWatchedResult =
   | { ok: false; error: EpisodeTrackingError };
 
 /**
- * The two holds a tracked show can carry (spec 0020, AC-1), the `show_hold`
- * enum's values, so they cross to Postgres unchanged. No hold is `null`.
+ * The Undo of Stop tracking (spec 0020, AC-3): the `tracked_at` that
+ * `untrack_show` reported deleting, so the show returns to its old place.
+ * A show is tracked or not; there is no hold (amended 2026-10-10).
  */
-export const SHOW_HOLDS = ["paused", "dropped"] as const;
-
-export type ShowHold = (typeof SHOW_HOLDS)[number];
-
-/** One show's stored tracking: its hold, or null for none. No row is `null`. */
-export type ShowTrackingState = { hold: ShowHold | null };
+export type ShowTrackingUndo = { trackedAt: string };
 
 /**
- * The Undo of Stop tracking (spec 0020, AC-3): exactly what `untrack_show`
- * reported deleting, so the show returns to its old place.
+ * A tracking write's failure: exactly the movie classes. Stop tracking is
+ * idempotent (AC-4), so no stale state class exists.
  */
-export type ShowTrackingUndo = {
-  trackedAt: string;
-  hold: ShowHold | null;
-  holdChangedAt: string | null;
-};
+export type ShowTrackingError = MovieTrackingError;
 
-/**
- * A tracking write's failure: the movie classes, plus `hold_changed` when the
- * row no longer holds the hold the caller last saw (AC-4), and `not_tracked`
- * when there is no row to change. Nothing is written for either, and the page
- * refreshes to the current state rather than overwriting it.
- */
-export type ShowTrackingError =
-  | MovieTrackingError
-  | "hold_changed"
-  | "not_tracked";
-
-/** What `trackShow` and `setShowHold` return. */
+/** What `trackShow` and `restoreShowTracking` return. */
 export type ShowTrackingResult =
   | { ok: true }
   | { ok: false; error: ShowTrackingError };
 
-/** What `untrackShow` returns: the Undo it carries. */
+/**
+ * What `untrackShow` returns: the Undo it carries, or null when the show was
+ * already untracked (stopped in another tab), which has nothing to undo.
+ */
 export type UntrackShowResult =
-  | { ok: true; undo: ShowTrackingUndo }
+  | { ok: true; undo: ShowTrackingUndo | null }
   | { ok: false; error: ShowTrackingError };
