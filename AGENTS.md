@@ -121,7 +121,7 @@ This section is the only place the stack is defined. Installed versions live in 
 - Watchlists, history, tracking, ratings, and the library pages require authentication and are private to their owner.
 - Authentication supports Google and email/password, including the necessary verification, sign-out, and password recovery flows.
 - TMDB is the source of catalog metadata. Supabase is the source of user state.
-- Movies can be marked watched and rated directly from 1 to 10.
+- Movies can be marked watched and rated directly from 1 to 10 from their TMDB release date (UTC day); before it, or with no date, they can only be planned. Marks and scores stored earlier stay and can still be removed ([prompts/movie-release-gate.md](prompts/movie-release-gate.md)).
 - TV episodes can be marked watched and rated directly from 1 to 10.
 - Seasons and TV shows cannot be rated directly. Their ratings are calculated from the user's episode ratings.
 - Watched state and rating are separate: marking something watched does not require a rating, and removing a watched mark does not silently delete its rating.
@@ -261,6 +261,7 @@ At minimum, verify these behaviors before considering the MVP complete:
 13. Loading, failure, empty, and missing-metadata states remain usable on desktop and mobile.
 14. The interface stays consistent with the existing UI and `/showcase`.
 15. Secrets are absent from browser bundles, and private data is not served through shared caches.
+16. An unreleased or undated movie can be planned but not marked watched or rated; existing marks and scores stay removable.
 
 If credentials or provider configuration prevent a check, report it as blocked or unverified. Do not substitute a mock-only check for a claimed live integration result.
 

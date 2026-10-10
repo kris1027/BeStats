@@ -27,13 +27,13 @@ import type {
   EpisodeTrackingError,
   EpisodeTrackingResult,
   MarkEpisodeWatchedResult,
-  MovieTrackingError,
   SeasonUndo,
   SeasonWatchedResult,
   ShowTrackingError,
   ShowTrackingFlags,
   ShowTrackingResult,
   ShowTrackingUndo,
+  TrackingError,
   UntrackShowResult,
 } from "@/lib/tracking/types";
 import { airStatus, todayUtc } from "@/lib/tv/air-status";
@@ -75,7 +75,7 @@ type Step<T, E extends TrackingOutcome = EpisodeTrackingError> =
 
 type Outcome<T, E extends TrackingOutcome = EpisodeTrackingError> =
   | { ok: true; value: T }
-  | { ok: false; error: E | MovieTrackingError };
+  | { ok: false; error: E | TrackingError };
 
 /**
  * The shared shape of every tracking write after its input is parsed, an

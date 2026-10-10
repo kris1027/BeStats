@@ -44,16 +44,25 @@ const EMPTY: MovieTrackingState = {
   rating: null,
 };
 
-function renderControls(state: MovieTrackingState = EMPTY) {
+function renderControls(
+  state: MovieTrackingState = EMPTY,
+  release: { released: boolean; releaseNote: string } = {
+    released: true,
+    releaseNote: "Releases Oct 15, 1999",
+  },
+) {
   return render(
     <MovieTrackingControls
       movieId={550}
       title="Fight Club"
       state={state}
       returnPath="/movies/550"
+      {...release}
     />,
   );
 }
+
+const UNRELEASED = { released: false, releaseNote: "Releases Oct 24, 2026" };
 
 const plan = () => screen.getByRole("button", { name: "Plan Fight Club" });
 const watched = () =>
@@ -98,6 +107,8 @@ describe("MovieTrackingControls", () => {
         title="Fight Club"
         state={EMPTY}
         returnPath="/movies/550"
+        released
+        releaseNote="Releases Oct 15, 1999"
       />,
     );
     expect(score()).toHaveTextContent("Not rated");
@@ -236,5 +247,68 @@ describe("the score picker (AC-7)", () => {
       "Your score for Fight Club: Not rated",
     );
     expect(watched()).toHaveAttribute("aria-pressed", "true");
+  });
+});
+
+describe("before release (prompts/movie-release-gate.md)", () => {
+  it("offers only Plan and the release line when nothing is stored (AC-1)", () => {
+    renderControls(EMPTY, UNRELEASED);
+    expect(plan()).toBeInTheDocument();
+    expect(screen.getByText("Releases Oct 24, 2026")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Mark Fight Club watched" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /^Your score for Fight Club/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps Plan working (AC-4)", async () => {
+    const user = userEvent.setup();
+    renderControls(EMPTY, UNRELEASED);
+    await user.click(plan());
+    expect(deferredAction).toHaveBeenCalledWith("watchlist", 550, true);
+  });
+
+  it("lets a stored mark be removed, then shows the line (AC-2)", async () => {
+    const user = userEvent.setup();
+    renderControls({ ...EMPTY, watched: true }, UNRELEASED);
+    expect(watched()).not.toHaveAttribute("aria-disabled");
+    await user.click(watched());
+    expect(deferredAction).toHaveBeenCalledWith("watched", 550, false);
+    expect(screen.getByText("Releases Oct 24, 2026")).toBeInTheDocument();
+  });
+
+  it("disables Mark watched when only a score is stored (AC-2)", async () => {
+    const user = userEvent.setup();
+    renderControls({ ...EMPTY, rating: 7 }, UNRELEASED);
+    expect(watched()).toHaveAttribute("aria-disabled", "true");
+    await user.click(watched());
+    expect(deferredAction).not.toHaveBeenCalled();
+  });
+
+  it("lets a stored score be cleared but not changed (AC-2)", async () => {
+    const user = userEvent.setup();
+    renderControls({ ...EMPTY, rating: 7 }, UNRELEASED);
+    await user.click(score());
+    expect(screen.getByText("Releases Oct 24, 2026")).toBeInTheDocument();
+    await user.click(screen.getByRole("radio", { name: "8" }));
+    expect(deferredAction).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Clear rating" }));
+    expect(deferredAction).toHaveBeenCalledWith("rating", 550, null);
+  });
+
+  it("toasts the release copy when the action refuses (AC-3)", async () => {
+    const user = userEvent.setup();
+    renderControls();
+    await user.click(watched());
+    await settle(0, { ok: false, error: "not_released" });
+    await waitFor(() =>
+      expect(watched()).toHaveAttribute("aria-pressed", "false"),
+    );
+    expect(toast).toHaveBeenCalledWith(
+      "This movie hasn't been released yet.",
+      expect.objectContaining({ id: "movie-tracking-550-watched" }),
+    );
   });
 });

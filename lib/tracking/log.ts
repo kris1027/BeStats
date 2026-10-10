@@ -1,6 +1,10 @@
 import "server-only";
 
-import type { EpisodeTrackingError, ShowTrackingError } from "./types";
+import type {
+  EpisodeTrackingError,
+  MovieTrackingError,
+  ShowTrackingError,
+} from "./types";
 
 /**
  * The only way a tracking path writes to the log (spec 0007, AC-21).
@@ -42,6 +46,7 @@ export type TrackingEvent =
  * grant is not mistaken for a flaky network.
  */
 export type TrackingOutcome =
+  | MovieTrackingError
   | EpisodeTrackingError
   | ShowTrackingError
   | "forbidden"

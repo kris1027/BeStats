@@ -24,7 +24,12 @@ export const TRACKING_MESSAGES: Record<MovieTrackingError, string> = {
   // Only an Undo can be refused this way. The list pages show the copy for the
   // list the movie came from, in `UNDO_EXPIRED_MESSAGES`; this is the fallback.
   undo_expired: "Couldn't undo. Change it again from the movie page.",
+  not_released: "This movie hasn't been released yet.",
 };
+
+/** The movie copy without the release gate, which episodes and shows lack. */
+const { not_released: _movieOnly, ...SHARED_TRACKING_MESSAGES } =
+  TRACKING_MESSAGES;
 
 /**
  * The toasts the two private list pages show after a removal (spec 0008,
@@ -62,7 +67,7 @@ export const TRACKING_READ_FAILED = "Couldn't load your tracking.";
  * refused Undo that points back at the page the person is already on.
  */
 export const EPISODE_TRACKING_MESSAGES: Record<EpisodeTrackingError, string> = {
-  ...TRACKING_MESSAGES,
+  ...SHARED_TRACKING_MESSAGES,
   not_found: "This episode isn't available to track.",
   not_aired: "This episode hasn't aired yet.",
   undo_expired: "Couldn't undo. Change the episodes again on this page.",
@@ -103,7 +108,7 @@ export const SHOW_TRACKING_COPY = {
 
 /** The show tracking failure copy: the movie copy, naming a show. */
 export const SHOW_TRACKING_MESSAGES: Record<ShowTrackingError, string> = {
-  ...TRACKING_MESSAGES,
+  ...SHARED_TRACKING_MESSAGES,
   not_found: "This show isn't available to track.",
   undo_expired: SHOW_TRACKING_COPY.undoExpired,
 };

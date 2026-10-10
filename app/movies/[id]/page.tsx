@@ -123,7 +123,11 @@ async function MovieDetail({
         tmdbVoteCount={movie.tmdbVoteCount}
         tracking={
           <Suspense fallback={null}>
-            <MovieTrackingSlot movieId={id} title={movie.title} />
+            <MovieTrackingSlot
+              movieId={id}
+              title={movie.title}
+              releaseDate={movie.releaseDate}
+            />
           </Suspense>
         }
       />

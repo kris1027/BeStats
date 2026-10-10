@@ -29,7 +29,7 @@ export type TrackingControl = "watchlist" | "watched" | "rating";
  * @returns The error class, or null when the write landed.
  */
 export async function settleTrackingCall<
-  E extends EpisodeTrackingError | ShowTrackingError,
+  E extends MovieTrackingError | EpisodeTrackingError | ShowTrackingError,
 >(
   call: () => Promise<{ ok: true } | { ok: false; error: E }>,
 ): Promise<E | "write_failed" | null> {
@@ -144,7 +144,7 @@ export function showShowTrackingError(
 
 /** The Sign in action a session expired toast carries, and no other. */
 function signInAction(
-  error: EpisodeTrackingError | ShowTrackingError,
+  error: MovieTrackingError | EpisodeTrackingError | ShowTrackingError,
   returnPath: string,
   navigate: (href: string) => void,
 ) {

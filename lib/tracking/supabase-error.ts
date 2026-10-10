@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { TrackingOutcome } from "./log";
-import type { MovieTrackingError } from "./types";
+import type { TrackingError } from "./types";
 
 /**
  * Reduces a PostgREST error to the class the client sees and the outcome the
@@ -28,7 +28,7 @@ import type { MovieTrackingError } from "./types";
  * @param error Anything with an optional string `code`, as PostgREST returns.
  */
 export function classifyTrackingError(error: { code?: string | null }): {
-  error: MovieTrackingError;
+  error: TrackingError;
   outcome: TrackingOutcome;
 } {
   switch (error.code) {

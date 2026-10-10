@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { classifyMovie, upcomingReleaseDate } from "./movie-page";
+import {
+  classifyMovie,
+  isMovieReleased,
+  movieReleaseNote,
+  upcomingReleaseDate,
+} from "./movie-page";
 
 /** covers: spec 0020, AC-13, AC-14 */
 const today = "2026-10-07";
@@ -81,5 +86,36 @@ describe("upcomingReleaseDate (AC-13)", () => {
     expect(upcomingReleaseDate("2026-01-01", today)).toBeNull();
     expect(upcomingReleaseDate(null, today)).toBeNull();
     expect(upcomingReleaseDate("2026-13-40", today)).toBeNull();
+  });
+});
+
+describe("isMovieReleased (release gate)", () => {
+  it("is true from the release day on", () => {
+    expect(isMovieReleased(today, today)).toBe(true);
+    expect(isMovieReleased("1999-10-15", today)).toBe(true);
+  });
+
+  it("is false for a future, missing or malformed date", () => {
+    expect(isMovieReleased("2026-10-08", today)).toBe(false);
+    expect(isMovieReleased(null, today)).toBe(false);
+    expect(isMovieReleased("2026-13-40", today)).toBe(false);
+  });
+
+  it("agrees with classifyMovie: markable exactly when on Watchlist (AC-6)", () => {
+    for (const releaseDate of [today, "2026-10-08", null, "2026-13-40"]) {
+      const page = classifyMovie(
+        { releaseDate, inWatchlist: true, watchedAt: null },
+        today,
+      );
+      expect(page === "watchlist").toBe(isMovieReleased(releaseDate, today));
+    }
+  });
+});
+
+describe("movieReleaseNote (release gate)", () => {
+  it("prints a real date and never invents one", () => {
+    expect(movieReleaseNote("2026-10-24")).toBe("Releases Oct 24, 2026");
+    expect(movieReleaseNote(null)).toBe("Release date TBA");
+    expect(movieReleaseNote("2026-13-40")).toBe("Release date TBA");
   });
 });

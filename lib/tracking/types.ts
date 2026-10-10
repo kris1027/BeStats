@@ -21,11 +21,11 @@ export const EMPTY_MOVIE_TRACKING: MovieTrackingState = {
 };
 
 /**
- * Every reason a tracking action can refuse. A closed union rather than a
+ * Every reason any tracking action can refuse. A closed union rather than a
  * message, so the client picks copy from `messages.ts` and a raw Supabase or
  * TMDB error can never reach the browser (spec 0007, AC-11).
  */
-export type MovieTrackingError =
+export type TrackingError =
   | "invalid_input"
   | "session_expired"
   | "not_found"
@@ -36,6 +36,13 @@ export type MovieTrackingError =
    * restored, changed too long ago, or never had the value to put back.
    */
   | "undo_expired";
+
+/**
+ * The shared refusals, plus the movie's own: a new watched mark or score for a
+ * movie whose TMDB release date is still in the future, or missing
+ * (prompts/movie-release-gate.md).
+ */
+export type MovieTrackingError = TrackingError | "not_released";
 
 /**
  * What every action returns. No state comes back: the controls converge on the
@@ -69,10 +76,10 @@ export const EMPTY_EPISODE_TRACKING: EpisodeTrackingState = {
 };
 
 /**
- * The movie refusals, plus one of the episode's own: a creating write for an
+ * The shared refusals, plus one of the episode's own: a creating write for an
  * episode whose air date is still in the future (spec 0011, AC-7).
  */
-export type EpisodeTrackingError = MovieTrackingError | "not_aired";
+export type EpisodeTrackingError = TrackingError | "not_aired";
 
 /**
  * What an episode write did to tracking on its own (spec 0020, AC-5):
@@ -128,10 +135,10 @@ export type SeasonWatchedResult =
 export type ShowTrackingUndo = { trackedAt: string };
 
 /**
- * A tracking write's failure: exactly the movie classes. Stop tracking is
+ * A tracking write's failure: exactly the shared classes. Stop tracking is
  * idempotent (AC-4), so no stale state class exists.
  */
-export type ShowTrackingError = MovieTrackingError;
+export type ShowTrackingError = TrackingError;
 
 /** What `trackShow` and `restoreShowTracking` return. */
 export type ShowTrackingResult =

@@ -59,7 +59,10 @@ let warn: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
   getOptionalUser.mockResolvedValue(USER);
-  loadMovie.mockResolvedValue({ kind: "found", movie: { id: 550 } });
+  loadMovie.mockResolvedValue({
+    kind: "found",
+    movie: { id: 550, releaseDate: "1999-10-15" },
+  });
   result = { data: null, error: null };
   calls.length = 0;
   warn = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -132,6 +135,52 @@ describe("setMovieRating", () => {
       args: [{ rating: null }],
     });
     expect(loadMovie).not.toHaveBeenCalled();
+  });
+});
+
+describe("the release gate (prompts/movie-release-gate.md)", () => {
+  function unreleased(releaseDate: string | null) {
+    loadMovie.mockResolvedValue({
+      kind: "found",
+      movie: { id: 550, releaseDate },
+    });
+  }
+
+  it.each([
+    ["a future date", "2999-01-01"],
+    ["no date", null],
+    ["a malformed date", "2026-13-40"],
+  ])(
+    "refuses a new mark or any score for %s, writing nothing (R1, R2)",
+    async (_label, date) => {
+      unreleased(date);
+      expect(await setMovieWatched(550, true)).toEqual({
+        ok: false,
+        error: "not_released",
+      });
+      expect(await setMovieRating(550, 8)).toEqual({
+        ok: false,
+        error: "not_released",
+      });
+      expect(writes()).toEqual([]);
+      expect(refresh).not.toHaveBeenCalled();
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining("not_released"),
+      );
+    },
+  );
+
+  it("still plans, unplans, unmarks and clears an unreleased movie (R3)", async () => {
+    unreleased("2999-01-01");
+    expect(await setMovieWatchlist(550, true)).toEqual({ ok: true });
+    expect(await setMovieWatchlist(550, false)).toEqual({ ok: true });
+    expect(await setMovieWatched(550, false)).toEqual({ ok: true });
+    expect(await setMovieRating(550, null)).toEqual({ ok: true });
+  });
+
+  it("lets a movie released today be marked (R4)", async () => {
+    unreleased(new Date().toISOString().slice(0, 10));
+    expect(await setMovieWatched(550, true)).toEqual({ ok: true });
   });
 });
 

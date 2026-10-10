@@ -15,6 +15,9 @@ vi.mock("@/lib/tracking/movie-state", () => ({
     getWatchlistedMovieIds(...args),
   movieIdsKey: (ids: number[]) => [...ids].sort((a, b) => a - b).join(","),
 }));
+vi.mock("@/lib/tracking/episode-state", () => ({
+  requestTodayUtc: () => "2026-10-10",
+}));
 vi.mock("@/app/movies/actions", () => ({}));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock("sonner", () => ({ toast: vi.fn() }));
@@ -26,18 +29,22 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
+const FIGHT_CLUB = {
+  movieId: 550,
+  title: "Fight Club",
+  releaseDate: "1999-10-15",
+};
+
 describe("MovieTrackingSlot", () => {
   it("renders nothing for a visitor (AC-2)", async () => {
     getMovieTracking.mockResolvedValue({ kind: "signed_out" });
-    const { container } = render(
-      await MovieTrackingSlot({ movieId: 550, title: "Fight Club" }),
-    );
+    const { container } = render(await MovieTrackingSlot(FIGHT_CLUB));
     expect(container).toBeEmptyDOMElement();
   });
 
   it("shows the failure line with a full page retry (AC-17)", async () => {
     getMovieTracking.mockResolvedValue({ kind: "failed" });
-    render(await MovieTrackingSlot({ movieId: 550, title: "Fight Club" }));
+    render(await MovieTrackingSlot(FIGHT_CLUB));
     expect(
       screen.getByText("Couldn't load your tracking."),
     ).toBeInTheDocument();
@@ -52,10 +59,45 @@ describe("MovieTrackingSlot", () => {
       kind: "ok",
       state: { inWatchlist: true, watched: false, rating: null },
     });
-    render(await MovieTrackingSlot({ movieId: 550, title: "Fight Club" }));
+    render(await MovieTrackingSlot(FIGHT_CLUB));
     expect(
       screen.getByRole("button", { name: "Plan Fight Club" }),
     ).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("gates an unreleased movie on the request's UTC day (release gate)", async () => {
+    getMovieTracking.mockResolvedValue({
+      kind: "ok",
+      state: { inWatchlist: false, watched: false, rating: null },
+    });
+    render(
+      await MovieTrackingSlot({
+        movieId: 1,
+        title: "Sequel",
+        releaseDate: "2026-10-11",
+      }),
+    );
+    expect(screen.getByText("Releases Oct 11, 2026")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Mark Sequel watched" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("treats the release day itself as released (release gate)", async () => {
+    getMovieTracking.mockResolvedValue({
+      kind: "ok",
+      state: { inWatchlist: false, watched: false, rating: null },
+    });
+    render(
+      await MovieTrackingSlot({
+        movieId: 1,
+        title: "Sequel",
+        releaseDate: "2026-10-10",
+      }),
+    );
+    expect(
+      screen.getByRole("button", { name: "Mark Sequel watched" }),
+    ).toBeInTheDocument();
   });
 });
 

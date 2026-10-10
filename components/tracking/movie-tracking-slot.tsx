@@ -1,4 +1,6 @@
 import { RetryLink } from "@/components/retry-link";
+import { isMovieReleased, movieReleaseNote } from "@/lib/catalog/movie-page";
+import { requestTodayUtc } from "@/lib/tracking/episode-state";
 import { TRACKING_READ_FAILED } from "@/lib/tracking/messages";
 import { getMovieTracking } from "@/lib/tracking/movie-state";
 
@@ -14,15 +16,21 @@ import { MovieTrackingControls } from "./movie-tracking-controls";
  * for controls they will not get, and a signed in user never sees a default
  * state that then corrects itself: the row appears once, already right.
  *
+ * The release gate is decided here, from the request's UTC day, so the controls
+ * only receive the answer (prompts/movie-release-gate.md).
+ *
  * @param movieId The movie, already confirmed by `loadMovie`.
  * @param title The TMDB title, for every accessible name.
+ * @param releaseDate `Movie.releaseDate`, TMDB's primary release date.
  */
 async function MovieTrackingSlot({
   movieId,
   title,
+  releaseDate,
 }: {
   movieId: number;
   title: string;
+  releaseDate: string | null;
 }) {
   const result = await getMovieTracking(movieId);
   const returnPath = `/movies/${movieId}`;
@@ -47,6 +55,8 @@ async function MovieTrackingSlot({
       title={title}
       state={result.state}
       returnPath={returnPath}
+      released={isMovieReleased(releaseDate, requestTodayUtc())}
+      releaseNote={movieReleaseNote(releaseDate)}
     />
   );
 }
