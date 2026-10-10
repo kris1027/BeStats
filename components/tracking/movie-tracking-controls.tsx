@@ -29,19 +29,12 @@ import type {
 
 import { ScorePicker } from "./score-picker";
 import { PlanIcon, PlannedIcon, WatchedIcon } from "./tracking-icons";
+import { TRACKING_PILL, TRACKING_PILL_UNAVAILABLE } from "./tracking-pill";
 import {
   settleTrackingCall,
   showTrackingError,
   type TrackingControl,
 } from "./tracking-toast";
-
-/** The pill recipe at the touch sizes: 44px on mobile, 36px from `md`. */
-const PILL =
-  "h-11 cursor-pointer px-4 transition-[filter] hover:brightness-125 md:h-9 md:px-3.5";
-
-/** A pill that can do nothing right now: the same size, dimmed. */
-const PILL_UNAVAILABLE =
-  "h-11 cursor-not-allowed px-4 opacity-50 md:h-9 md:px-3.5";
 
 /**
  * The movie page's three tracking pills: Plan, Mark watched and Your score
@@ -73,7 +66,6 @@ function MovieTrackingControls({
   title,
   state,
   returnPath,
-  released,
   releaseNote,
 }: {
   movieId: number;
@@ -81,10 +73,12 @@ function MovieTrackingControls({
   state: MovieTrackingState;
   /** Where the session expired toast's Sign in action comes back to. */
   returnPath: string;
-  /** Whether TMDB's release date is today or earlier (UTC). */
-  released: boolean;
-  /** "Releases Oct 24, 2026" or "Release date TBA", shown before release. */
-  releaseNote: string;
+  /**
+   * Before release, the line it shows: "Releases Oct 24, 2026" or "Release
+   * date to be announced". Null once TMDB's release date is today or earlier
+   * (UTC).
+   */
+  releaseNote: string | null;
 }) {
   const router = useRouter();
   const [optimistic, addIntent] = useOptimistic(state, applyTrackingIntent);
@@ -117,7 +111,7 @@ function MovieTrackingControls({
     );
   }
 
-  const canMark = released || optimistic.watched;
+  const canMark = releaseNote === null || optimistic.watched;
   function toggleWatched() {
     if (!canMark) return;
     const value = !optimistic.watched;
@@ -135,7 +129,7 @@ function MovieTrackingControls({
 
   const scoreText = formatPersonalScore(optimistic.rating);
   const planOnly =
-    !released && !optimistic.watched && optimistic.rating === null;
+    releaseNote !== null && !optimistic.watched && optimistic.rating === null;
 
   const planPill = (
     <button
@@ -143,7 +137,7 @@ function MovieTrackingControls({
       aria-label={`Plan ${title}`}
       aria-pressed={optimistic.inWatchlist}
       onClick={toggleWatchlist}
-      className={cn(glassPillClassName(), PILL)}
+      className={cn(glassPillClassName(), TRACKING_PILL)}
     >
       {optimistic.inWatchlist ? <PlannedIcon /> : <PlanIcon />}
       <span aria-hidden="true">
@@ -179,7 +173,10 @@ function MovieTrackingControls({
         aria-pressed={optimistic.watched}
         aria-disabled={canMark ? undefined : true}
         onClick={toggleWatched}
-        className={cn(glassPillClassName(), canMark ? PILL : PILL_UNAVAILABLE)}
+        className={cn(
+          glassPillClassName(),
+          canMark ? TRACKING_PILL : TRACKING_PILL_UNAVAILABLE,
+        )}
       >
         <WatchedIcon filled={optimistic.watched} />
         <span aria-hidden="true">
@@ -191,7 +188,7 @@ function MovieTrackingControls({
         <PopoverTrigger
           aria-label={`Your score for ${title}: ${scoreText}`}
           aria-haspopup="dialog"
-          className={cn(glassPillClassName("score"), PILL)}
+          className={cn(glassPillClassName("score"), TRACKING_PILL)}
         >
           <StarIcon
             aria-hidden="true"
@@ -213,7 +210,7 @@ function MovieTrackingControls({
             onPick={rate}
             onClear={() => rate(null)}
             initialFocusRef={initialFocusRef}
-            unavailableNote={released ? undefined : releaseNote}
+            unavailableNote={releaseNote ?? undefined}
           />
         </PopoverContent>
       </Popover>

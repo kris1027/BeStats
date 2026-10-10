@@ -4,18 +4,14 @@ import type {
   EpisodeTrackingError,
   MovieTrackingError,
   ShowTrackingError,
+  TrackingError,
 } from "./types";
 
 /**
- * Every toast a tracking control can show, written once (spec 0007, toast
- * copy).
- *
- * Toasts appear only on failure; a success is shown by the control itself. An
- * invalid input shares the generic copy because it can only come from a bug or
- * a tampered call, and telling the person which field was wrong would not help
- * them.
+ * The failure copy every tracking control shares, naming a movie; the episode
+ * and show maps below override the lines that name what failed.
  */
-export const TRACKING_MESSAGES: Record<MovieTrackingError, string> = {
+const SHARED_TRACKING_MESSAGES: Record<TrackingError, string> = {
   session_expired: "Your session expired. Sign in to save this.",
   not_found: "This movie isn't available to track.",
   tmdb_unavailable: "Couldn't reach TMDB. Try again in a moment.",
@@ -24,12 +20,22 @@ export const TRACKING_MESSAGES: Record<MovieTrackingError, string> = {
   // Only an Undo can be refused this way. The list pages show the copy for the
   // list the movie came from, in `UNDO_EXPIRED_MESSAGES`; this is the fallback.
   undo_expired: "Couldn't undo. Change it again from the movie page.",
-  not_released: "This movie hasn't been released yet.",
 };
 
-/** The movie copy without the release gate, which episodes and shows lack. */
-const { not_released: _movieOnly, ...SHARED_TRACKING_MESSAGES } =
-  TRACKING_MESSAGES;
+/**
+ * Every toast a movie tracking control can show, written once (spec 0007,
+ * toast copy): the shared copy plus the release gate, which episodes and
+ * shows lack (prompts/movie-release-gate.md).
+ *
+ * Toasts appear only on failure; a success is shown by the control itself. An
+ * invalid input shares the generic copy because it can only come from a bug or
+ * a tampered call, and telling the person which field was wrong would not help
+ * them.
+ */
+export const TRACKING_MESSAGES: Record<MovieTrackingError, string> = {
+  ...SHARED_TRACKING_MESSAGES,
+  not_released: "This movie hasn't been released yet.",
+};
 
 /**
  * The toasts the two private list pages show after a removal (spec 0008,

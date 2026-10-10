@@ -55,8 +55,11 @@ async function MovieTrackingSlot({
       title={title}
       state={result.state}
       returnPath={returnPath}
-      released={isMovieReleased(releaseDate, requestTodayUtc())}
-      releaseNote={movieReleaseNote(releaseDate)}
+      releaseNote={
+        isMovieReleased(releaseDate, requestTodayUtc())
+          ? null
+          : movieReleaseNote(releaseDate)
+      }
     />
   );
 }

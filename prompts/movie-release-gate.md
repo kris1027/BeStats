@@ -29,24 +29,25 @@ A movie that is not out yet can only be planned. Marking it watched and giving i
    - No date, or a malformed one, also blocks. This differs from episodes on purpose: a dateless movie is almost always announced or in production, and the Upcoming page already treats it as not out.
    - TMDB's production `status` is ignored.
 2. **Blocked before release:** `setMovieWatched(id, true)` and `setMovieRating(id, n)` for any `n`, including changing an existing score.
-3. **Always allowed:** planning and unplanning, unmarking, clearing a score, `restoreMovieWatchlist` and `restoreMovieWatched`. A restore only puts back what was already stored.
+3. **Always allowed:** planning and unplanning, unmarking, clearing a score, and `restoreMovieWatchlist`. **`restoreMovieWatched` is gated like a new mark** (amended 2026-10-10, after review). `restore_movie_watched` cannot tell an Undo from a fresh mark: any write to the row, planning included, opens its 10 minute window, so planning an unreleased movie and then calling the restore would mark it watched. The cost is that undoing the removal of a pre-release mark is refused with `not_released`, and a watched Undo now needs TMDB, so it fails with `tmdb_unavailable` during an outage.
 4. **Existing state is kept:** a movie marked or rated before release (older data, or a date TMDB later pushed back) keeps both.
 5. **Enforced in the Server Action and the UI**, not in the database: Postgres does not know TMDB dates, and the catalog is never cached there.
 6. **New error `not_released`**, with the toast "This movie hasn't been released yet." It is a movie only error, so the episode and show unions exclude it.
-7. **Movie page with no watched mark and no score, before release:** the Plan pill stays. The Mark watched and Your score pills are replaced by a line: "Releases Oct 24, 2026", or "Release date TBA" when there is no real date.
+7. **Movie page with no watched mark and no score, before release:** the Plan pill stays. The Mark watched and Your score pills are replaced by a line: "Releases Oct 24, 2026", or "Release date to be announced" when there is no real date. The copy is `UPCOMING_MESSAGES.releases` and `releaseTba`, the Upcoming card's, so the movie reads the same on both pages (amended 2026-10-10; it first said "Release date TBA").
 8. **Movie page with a watched mark or a score, before release:** the controls mirror the episode ones. Watched works only to unmark. The score picker shows the stored score and Clear rating, with the ten choices disabled under the same release line. Once the last of that state is removed, the controls switch to the line from decision 7 at once (they read the optimistic state), which is what the server renders after `refresh()` anyway.
 
 ## Expected files
 
-- `lib/catalog/movie-page.ts`: add `isMovieReleased(releaseDate, today)` and `movieReleaseNote(releaseDate)` ("Releases Oct 24, 2026" or "Release date TBA"), pure, beside `classifyMovie`, which switches to `isMovieReleased` so the two can never disagree.
+- `lib/catalog/movie-page.ts`: add `isMovieReleased(releaseDate, today)` and `movieReleaseNote(releaseDate)` (the Upcoming copy from `messages.ts`), pure, beside `classifyMovie`, which switches to `isMovieReleased` so the two can never disagree.
 - `lib/tracking/types.ts`: the shared classes move to a new base `TrackingError`. `MovieTrackingError = TrackingError | "not_released"`, `EpisodeTrackingError = TrackingError | "not_aired"` and `ShowTrackingError = TrackingError`, so neither episodes nor shows carry a movie refusal. (As built: `classifyTrackingError` and the show actions' `Outcome` now name `TrackingError`; an `Exclude<…>` form was tried first but left the show actions mistyped.)
-- `lib/tracking/messages.ts`: `not_released: "This movie hasn't been released yet."` in `TRACKING_MESSAGES`. `EPISODE_TRACKING_MESSAGES` spreads it and leaves the extra key out.
-- `app/movies/actions.ts`: `runTrackingWrite`'s `creates: boolean` becomes `check: "none" | "exists" | "released"`. `"released"` runs the `loadMovie` check and then refuses with `not_released` when `!isMovieReleased(movie.releaseDate, todayUtc(new Date()))`, logging the event. `setMovieWatchlist(true)` uses `"exists"`; `setMovieWatched(true)` and a non-null `setMovieRating` use `"released"`; removals and restores use `"none"`.
+- `lib/tracking/messages.ts`: a private `SHARED_TRACKING_MESSAGES: Record<TrackingError, string>`, which `TRACKING_MESSAGES` (plus `not_released: "This movie hasn't been released yet."`), `EPISODE_TRACKING_MESSAGES` and `SHOW_TRACKING_MESSAGES` all spread.
+- `app/movies/actions.ts`: `runTrackingWrite`'s `creates: boolean` becomes `check: "none" | "exists" | "released"`. `"released"` runs the `loadMovie` check and then refuses with `not_released` when `!isMovieReleased(movie.releaseDate, todayUtc(new Date()))`, logging the event. `setMovieWatchlist(true)` uses `"exists"`; `setMovieWatched(true)`, a non-null `setMovieRating` and `restoreMovieWatched` use `"released"`; removals and `restoreMovieWatchlist` use `"none"`.
 - `lib/tracking/log.ts`, only if its outcome union is closed, to accept `not_released`.
-- `components/tracking/movie-tracking-slot.tsx`: takes `releaseDate` and works out `released` with `requestTodayUtc()`. It passes `released` and the release note down.
-- `components/tracking/movie-tracking-controls.tsx`: new props `released: boolean` and `releaseNote: string`. When unreleased:
+- `components/tracking/movie-tracking-slot.tsx`: takes `releaseDate` and works out the gate with `requestTodayUtc()`. It passes `releaseNote`: the line before release, null after.
+- `components/tracking/movie-tracking-controls.tsx`: a new prop `releaseNote: string | null` (one prop, so "released but with a note" cannot be passed). When it is a string:
   - with no watched mark and no score, it renders Plan and the release line;
-  - otherwise the Watched pill is `aria-disabled` unless watched (`PILL_UNAVAILABLE`, and the click is a no-op), and `ScorePicker` gets `unavailableNote={releaseNote}`.
+  - otherwise the Watched pill is `aria-disabled` unless watched (`TRACKING_PILL_UNAVAILABLE`, and the click is a no-op), and `ScorePicker` gets `unavailableNote={releaseNote}`.
+- `components/tracking/tracking-pill.ts` (added after review): `TRACKING_PILL` and `TRACKING_PILL_UNAVAILABLE`, the pill classes the movie, episode and show controls had each copied.
 - `app/movies/[id]/page.tsx`: passes `movie.releaseDate` to the slot.
 - `AGENTS.md`: section 7 says "Movies can be marked watched and rated directly from 1 to 10 from their TMDB release date; before it, or with no date, they can only be planned." Section 13 gains item 16: "An unreleased or undated movie can be planned but not marked watched or rated; existing marks and scores stay removable."
 - Tests: `lib/catalog/movie-page.test.ts`, `app/movies/actions.test.ts`, `components/tracking/movie-tracking-controls.test.tsx`.
@@ -55,7 +56,7 @@ A movie that is not out yet can only be planned. Marking it watched and giving i
 
 - R1. `setMovieWatched(id, true)` returns `{ ok: false, error: "not_released" }` and writes nothing when the release date is after today (UTC), missing or malformed.
 - R2. `setMovieRating(id, n)` does the same for every `n` from 1 to 10, whether or not a score is stored.
-- R3. `setMovieWatched(id, false)`, `setMovieRating(id, null)`, `setMovieWatchlist(id, true or false)` and both restores behave exactly as before for an unreleased movie.
+- R3. `setMovieWatched(id, false)`, `setMovieRating(id, null)`, `setMovieWatchlist(id, true or false)` and `restoreMovieWatchlist` behave exactly as before for an unreleased movie; `restoreMovieWatched` refuses it with `not_released` (decision 3).
 - R4. On the release day (UTC) and later, nothing changes from today's behaviour.
 - R5. The movie page shows the states from decisions 7 and 8. A visitor still sees no controls.
 - R6. Only the server decides: the UI gate is a convenience, and a crafted call to the action is still refused.
@@ -72,10 +73,10 @@ UTC calendar day, as for episodes (spec 0011). A movie becomes markable at 00:00
 
 ## Acceptance criteria
 
-- AC-1. An unreleased movie with no stored state shows Plan plus "Releases {date}" or "Release date TBA", and no Mark watched or Your score pill.
+- AC-1. An unreleased movie with no stored state shows Plan plus "Releases {date}" or "Release date to be announced", and no Mark watched or Your score pill.
 - AC-2. An unreleased movie that is watched or scored shows the pills. Unmark and Clear rating work; Mark watched and the ten scores are disabled under the release line.
 - AC-3. The actions refuse a new mark or score before release with `not_released` and the toast copy, and the optimistic state rolls back.
-- AC-4. Removals, planning and both Undo restores still work for an unreleased movie.
+- AC-4. Removals, planning and the watchlist Undo still work for an unreleased movie; the watched Undo is refused with the release toast.
 - AC-5. Released movies behave exactly as before.
 - AC-6. `classifyMovie` and the gate agree: a planned movie is markable exactly when it is on Watchlist.
 
@@ -88,9 +89,9 @@ UTC calendar day, as for episodes (spec 0011). A movie becomes markable at 00:00
 Run `pnpm dev:docker` and sign in.
 
 1. Open an unreleased movie: on `/movies`, set the year filter to next year, or open a known future title. You see Plan and "Releases {date}", with no Mark watched or score pill. Click Plan: the movie appears on `/upcoming?type=movie`.
-2. Open a movie TMDB lists with no release date. The line says "Release date TBA".
+2. Open a movie TMDB lists with no release date. The line says "Release date to be announced".
 3. Open a released movie (`/movies/550`). All three pills work as before.
 4. Pre-release state: in local Studio, set `watched_at = now(), rating = 7` on your `user_movie_state` row for the unreleased movie from step 1, then reload the page. Watched shows pressed and the score shows 7. The score popover shows the release line, the ten choices are disabled, and Clear rating works. After Clear, unmarking Watched leaves Plan and the release line.
 5. Crafted call: with the movie unmarked, run the Server Action from step 4 again with stale page state (keep a second tab open from before step 4's Clear and click Mark watched there). The toast says "This movie hasn't been released yet." and the pill rolls back.
-6. On `/watched?type=movie`, remove the movie from step 4 (re-seed it first) and press Undo. It comes back.
+6. On `/watched?type=movie`, remove the movie from step 4 (re-seed it first) and press Undo. The toast says "This movie hasn't been released yet." and the movie stays off Watched. Repeat with a released movie: Undo brings it back.
 7. Mobile width (390px): the release line wraps cleanly beside the Plan pill.

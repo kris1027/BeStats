@@ -1,5 +1,6 @@
 import type { LibraryList } from "@/lib/catalog/library-list";
 import { formatAirDate } from "@/lib/format";
+import { UPCOMING_MESSAGES } from "@/lib/tracking/messages";
 import { airStatus } from "@/lib/tv/air-status";
 
 /** The library pages a movie can sit on (spec 0020, AC-13). */
@@ -45,7 +46,8 @@ export function classifyMovie(
  * out.
  *
  * @param releaseDate `Movie.releaseDate`, TMDB's primary release date.
- * @param today The UTC day, read once per request or action.
+ * @param today The UTC day, read once: `requestTodayUtc()` in a render,
+ * `todayUtc(new Date())` in a Server Action, as the episode actions do.
  */
 export function isMovieReleased(
   releaseDate: string | null,
@@ -56,14 +58,17 @@ export function isMovieReleased(
 
 /**
  * The line an unreleased movie shows in place of its watched and score
- * controls: "Releases Oct 24, 2026", or "Release date TBA" when TMDB gives no
- * real date, so a missing date is never printed as one.
+ * controls: "Releases Oct 24, 2026", or "Release date to be announced" when
+ * TMDB gives no real date, so a missing date is never printed as one. The
+ * copy is the Upcoming card's, so a movie reads the same on both pages.
  *
  * @param releaseDate `Movie.releaseDate`.
  */
 export function movieReleaseNote(releaseDate: string | null): string {
   const formatted = formatAirDate(releaseDate);
-  return formatted === null ? "Release date TBA" : `Releases ${formatted}`;
+  return formatted === null
+    ? UPCOMING_MESSAGES.releaseTba
+    : UPCOMING_MESSAGES.releases(formatted);
 }
 
 /**

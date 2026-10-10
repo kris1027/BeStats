@@ -115,7 +115,7 @@ describe("isMovieReleased (release gate)", () => {
 describe("movieReleaseNote (release gate)", () => {
   it("prints a real date and never invents one", () => {
     expect(movieReleaseNote("2026-10-24")).toBe("Releases Oct 24, 2026");
-    expect(movieReleaseNote(null)).toBe("Release date TBA");
-    expect(movieReleaseNote("2026-13-40")).toBe("Release date TBA");
+    expect(movieReleaseNote(null)).toBe("Release date to be announced");
+    expect(movieReleaseNote("2026-13-40")).toBe("Release date to be announced");
   });
 });

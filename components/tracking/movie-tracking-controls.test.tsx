@@ -46,10 +46,7 @@ const EMPTY: MovieTrackingState = {
 
 function renderControls(
   state: MovieTrackingState = EMPTY,
-  release: { released: boolean; releaseNote: string } = {
-    released: true,
-    releaseNote: "Releases Oct 15, 1999",
-  },
+  releaseNote: string | null = null,
 ) {
   return render(
     <MovieTrackingControls
@@ -57,12 +54,12 @@ function renderControls(
       title="Fight Club"
       state={state}
       returnPath="/movies/550"
-      {...release}
+      releaseNote={releaseNote}
     />,
   );
 }
 
-const UNRELEASED = { released: false, releaseNote: "Releases Oct 24, 2026" };
+const UNRELEASED = "Releases Oct 24, 2026";
 
 const plan = () => screen.getByRole("button", { name: "Plan Fight Club" });
 const watched = () =>
@@ -107,8 +104,7 @@ describe("MovieTrackingControls", () => {
         title="Fight Club"
         state={EMPTY}
         returnPath="/movies/550"
-        released
-        releaseNote="Releases Oct 15, 1999"
+        releaseNote={null}
       />,
     );
     expect(score()).toHaveTextContent("Not rated");

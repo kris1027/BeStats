@@ -31,7 +31,7 @@ import { loadMovie } from "./[id]/load-movie";
  * Each takes a target value, never a toggle, so the same call twice gives the
  * same row and queued rapid clicks settle on the last one (AC-15). Each runs
  * the same order: Zod parse, then the verified session, then (for a write that
- * can create a row) the TMDB check, and for a new watched mark or score the
+ * can create a row) the TMDB check, and for a watched mark or score the
  * release gate, then the write through Row Level Security, then `refresh()` on
  * success only.
  *
@@ -51,11 +51,11 @@ type WriteStep = (
 ) => PromiseLike<{ error: { code?: string | null } | null }>;
 
 /**
- * What a write checks with TMDB first. `none` for a removal or a restore, which
- * must keep working for a movie TMDB later drops, or during an outage (AC-14).
- * `exists` for a write that can insert a row. `released` for a new watched
- * mark or score, which also waits for the release date
- * (prompts/movie-release-gate.md).
+ * What a write checks with TMDB first. `none` for a removal or the watchlist
+ * restore, which must keep working for a movie TMDB later drops, or during an
+ * outage (AC-14). `exists` for a write that can insert a row. `released` for a
+ * watched mark or score, new or restored, which also waits for the release
+ * date (prompts/movie-release-gate.md).
  */
 type TmdbCheck = "none" | "exists" | "released";
 
@@ -268,6 +268,11 @@ export async function restoreMovieWatchlist(
  * user's own private date, and `restore_movie_watched` accepts it only in the
  * past, only for the caller's own unwatched row, and only within 10 minutes of
  * the removal. The rating and the bookmark are never touched.
+ *
+ * It waits for the release date like a new mark does. The database cannot tell
+ * an Undo from a fresh mark, since any write to the row (planning, say) opens
+ * its 10 minute window, so without the gate a crafted call could mark an
+ * unreleased movie watched (prompts/movie-release-gate.md, R6).
  */
 export async function restoreMovieWatched(
   movieId: number,
@@ -277,7 +282,7 @@ export async function restoreMovieWatched(
   const input = parse(restoreWatchedInputSchema, { movieId, watchedAt }, event);
   if (!input) return { ok: false, error: "invalid_input" };
 
-  return runTrackingWrite(event, input.movieId, "none", (supabase) =>
+  return runTrackingWrite(event, input.movieId, "released", (supabase) =>
     supabase.rpc("restore_movie_watched", {
       p_movie_id: input.movieId,
       p_watched_at: input.watchedAt,
