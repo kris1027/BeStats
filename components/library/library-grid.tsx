@@ -12,15 +12,20 @@ import {
 } from "@/app/movies/actions";
 import { PosterGrid } from "@/components/poster-grid";
 import {
-  settleTrackingCall,
+  runUndoInToast,
+  settleResultCall,
   showTrackingError,
+  UNDO_TOAST_MS,
 } from "@/components/tracking/tracking-toast";
 import {
   LIBRARY_MESSAGES,
   UNDO_ACTION_LABEL,
   UNDO_EXPIRED_MESSAGES,
 } from "@/lib/tracking/messages";
-import type { MovieTrackingError } from "@/lib/tracking/types";
+import type {
+  MovieClearedState,
+  MovieTrackingError,
+} from "@/lib/tracking/types";
 
 import { LibraryCard } from "./library-card";
 import {
@@ -39,9 +44,6 @@ import {
  */
 const EAGER_POSTERS = 6;
 
-/** Long enough for a keyboard user to reach Undo; the server allows 10 min. */
-const UNDO_TOAST_MS = 10_000;
-
 /**
  * The movie grid on `/watchlist`, `/upcoming` and `/watched`, and everything
  * a removal does (spec 0008, AC-5 to AC-7, AC-16, AC-18; spec 0020, AC-13).
@@ -56,9 +58,12 @@ const UNDO_TOAST_MS = 10_000;
  * its own toast, so several in a row never interfere (AC-18).
  *
  * Undo is not optimistic: the restored card needs the server's order, and
- * `refresh()` brings it back in its old place. Unmarking a planned movie on
- * Watched puts it back on Watchlist or Upcoming, since watching no longer
- * clears the plan (spec 0020, AC-14).
+ * `refresh()` brings it back in its old place. A watched movie is never
+ * planned, so unmarking one on Watched leaves it on no page, and its score
+ * goes with the mark; the Undo puts back what the write says it cleared
+ * (prompts/movie-plan-watched-exclusive.md, decision 9). When it cleared
+ * nothing, because another tab unmarked the movie first, there is nothing
+ * to put back and the toast offers no Undo.
  *
  * @param page The page number. Emptying a page past page 1 redirects, which
  * remounts the page, so the heading has to take the focus again (AC-9).
@@ -140,37 +145,18 @@ function LibraryGrid({
   }
 
   /**
-   * Sonner deletes a toast once its action runs, after a short exit
-   * animation. An outcome that lands inside that animation merges into the
-   * dying toast and vanishes with it, which is how a quick "Couldn't undo"
-   * went unseen. So the click keeps the toast (`preventDefault`), takes the
-   * Undo off it while the restore runs (no second restore), and the outcome
-   * then closes it or rewrites it in place.
+   * Restores a removal. On Watched it hands back exactly what the unmark
+   * returned, never the page's copy, which another tab may have changed.
    */
-  function undo(event: { preventDefault: () => void }, item: LibraryMovieItem) {
-    event.preventDefault();
-    const id = toastId(list, item);
-    toast(LIBRARY_MESSAGES[list].removed, { id, action: undefined });
-
-    startTransition(async () => {
-      const error = await settleTrackingCall(() =>
-        list === "watched"
-          ? restoreMovieWatched(item.tmdbId, item.watchedAt ?? "")
-          : restoreMovieWatchlist(item.tmdbId),
+  function restore(item: LibraryMovieItem, cleared: MovieClearedState | null) {
+    if (cleared) {
+      return restoreMovieWatched(
+        item.tmdbId,
+        cleared.watchedAt,
+        cleared.rating,
       );
-      if (error === "undo_expired") {
-        // Sonner merges an update into the toast with the same id, so the
-        // removal's score line survives unless cleared explicitly.
-        toast(UNDO_EXPIRED_MESSAGES[list], {
-          id,
-          description: undefined,
-          action: undefined,
-        });
-        return;
-      }
-      toast.dismiss(id);
-      if (error) onError(error, item);
-    });
+    }
+    return restoreMovieWatchlist(item.tmdbId);
   }
 
   function remove(item: LibraryMovieItem) {
@@ -179,12 +165,13 @@ function LibraryGrid({
 
     startTransition(async () => {
       hide(key);
-      const error = await settleTrackingCall(() =>
+      const result = await settleResultCall(() =>
         list === "watched"
           ? setMovieWatched(item.tmdbId, false)
           : setMovieWatchlist(item.tmdbId, false),
       );
-      if (error) {
+      if (!result.ok) {
+        const { error } = result;
         if (headingFocusFor.current === key) {
           headingFocusFor.current = null;
         }
@@ -193,17 +180,33 @@ function LibraryGrid({
         return;
       }
 
-      toast(LIBRARY_MESSAGES[list].removed, {
-        id: toastId(list, item),
+      // Unmarking removes the score too, and the write says what it removed
+      // (prompts/movie-plan-watched-exclusive.md). An unmark that removed
+      // nothing has nothing to undo.
+      const cleared = list === "watched" ? (result.cleared ?? null) : null;
+      const undoable = list !== "watched" || cleared !== null;
+      const id = toastId(list, item);
+      const message = LIBRARY_MESSAGES[list].removed;
+      toast(message, {
+        id,
         description:
-          list === "watched" && item.rating !== null
-            ? LIBRARY_MESSAGES.watched.scoreKept
+          cleared && cleared.rating !== null
+            ? LIBRARY_MESSAGES.watched.scoreRemoved
             : undefined,
         duration: UNDO_TOAST_MS,
-        action: {
-          label: UNDO_ACTION_LABEL,
-          onClick: (event) => undo(event, item),
-        },
+        action: undoable
+          ? {
+              label: UNDO_ACTION_LABEL,
+              onClick: (event) =>
+                runUndoInToast(event, {
+                  id,
+                  message,
+                  expiredMessage: UNDO_EXPIRED_MESSAGES[list],
+                  restore: () => restore(item, cleared),
+                  onError: (error) => onError(error, item),
+                }),
+            }
+          : undefined,
       });
     });
   }

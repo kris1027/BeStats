@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { TrackingOutcome } from "./log";
-import type { TrackingError } from "./types";
+import type { MovieTrackingError, TrackingError } from "./types";
 
 /**
  * Reduces a PostgREST error to the class the client sees and the outcome the
@@ -44,4 +44,24 @@ export function classifyTrackingError(error: { code?: string | null }): {
     default:
       return { error: "write_failed", outcome: "db_error" };
   }
+}
+
+/**
+ * `classifyTrackingError` plus the one SQLSTATE only a movie write raises:
+ * `BS001`, which `rate_movie` raises for a score on a movie that is not
+ * watched, since a movie score needs a watch mark (`AGENTS.md` section 7,
+ * prompts/movie-plan-watched-exclusive.md). Kept beside the shared mapping so
+ * every code the app reads is listed in one file, and separate from it so the
+ * episode and show writes can never return a movie refusal.
+ *
+ * @param error Anything with an optional string `code`, as PostgREST returns.
+ */
+export function classifyMovieTrackingError(error: { code?: string | null }): {
+  error: MovieTrackingError;
+  outcome: TrackingOutcome;
+} {
+  if (error.code === "BS001") {
+    return { error: "not_watched", outcome: "not_watched" };
+  }
+  return classifyTrackingError(error);
 }

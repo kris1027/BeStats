@@ -40,17 +40,32 @@ export type TrackingError =
 /**
  * The shared refusals, plus the movie's own: a new watched mark or score for a
  * movie whose TMDB release date is still in the future, or missing
- * (prompts/movie-release-gate.md).
+ * (prompts/movie-release-gate.md), and a score for a movie that is not watched
+ * (prompts/movie-plan-watched-exclusive.md).
  */
-export type MovieTrackingError = TrackingError | "not_released";
+export type MovieTrackingError = TrackingError | "not_released" | "not_watched";
+
+/**
+ * The watch mark and score a write removed: planning a watched movie, or
+ * unmarking it, clears both (prompts/movie-plan-watched-exclusive.md). It is
+ * what an Undo hands back to `restoreMovieWatched`.
+ */
+export type MovieClearedState = {
+  /** The removed watch mark, as PostgREST returned it. */
+  watchedAt: string;
+  /** The removed score, or null when there was none. */
+  rating: number | null;
+};
 
 /**
  * What every action returns. No state comes back: the controls converge on the
  * server prop that `refresh()` delivers in the same response, so the confirmed
- * state is only ever the server's (spec 0007, key invariants).
+ * state is only ever the server's (spec 0007, key invariants). The one
+ * exception is `cleared`, what a plan or an unmark removed, which only the
+ * write itself knows and which the Undo needs.
  */
 export type MovieTrackingResult =
-  | { ok: true }
+  | { ok: true; cleared?: MovieClearedState }
   | { ok: false; error: MovieTrackingError };
 
 /** A read that treats signed out and a failed read as ordinary outcomes. */

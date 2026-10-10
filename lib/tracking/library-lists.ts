@@ -529,7 +529,7 @@ export type WatchedMovieRow = {
  *
  * One ordered query on `user_movie_state` with an exact count, served by its
  * watched index: `watched_at` descending, then the movie id. A watched movie
- * is here whatever its plan says (AC-13).
+ * cannot also be planned (prompts/movie-plan-watched-exclusive.md).
  *
  * @param userId The verified session's user, never a client value.
  * @param page A page already parsed by `parsePageParam`.

@@ -20,9 +20,7 @@ import {
 import { SeasonRating } from "./season-rating";
 import { useEpisodeStates, useSeasonTracking } from "./season-tracking-store";
 import { WatchedIcon } from "./tracking-icons";
-
-/** How long a season toast offers its Undo, as on the list pages. */
-const UNDO_TOAST_MS = 10_000;
+import { UNDO_TOAST_MS } from "./tracking-toast";
 
 /** The pill recipe at the touch sizes: 44px on mobile, 36px from `md`. */
 const PILL = "h-11 px-4 md:h-9 md:px-3.5";

@@ -169,6 +169,13 @@ export type Database = {
           show_tracked: boolean
         }[]
       }
+      plan_movie: {
+        Args: { p_movie_id: number }
+        Returns: {
+          cleared_rating: number
+          cleared_watched_at: string
+        }[]
+      }
       rate_episode: {
         Args: {
           p_episode_id: number
@@ -214,7 +221,7 @@ export type Database = {
         Returns: number
       }
       restore_movie_watched: {
-        Args: { p_movie_id: number; p_watched_at: string }
+        Args: { p_movie_id: number; p_rating?: number; p_watched_at: string }
         Returns: undefined
       }
       restore_movie_watchlist: {
@@ -251,6 +258,13 @@ export type Database = {
         Returns: {
           episode_id: number
           watched_at: string
+        }[]
+      }
+      unmark_movie_watched: {
+        Args: { p_movie_id: number }
+        Returns: {
+          cleared_rating: number
+          cleared_watched_at: string
         }[]
       }
       untrack_show: {

@@ -82,6 +82,7 @@ const PRIVATE_ACTIONS: Record<
         movieActions.restoreMovieWatched(
           MOVIE,
           "2026-09-23T12:16:58.070024+00:00",
+          7,
         ),
     },
   },

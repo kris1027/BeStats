@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
  * covers: spec 0007, AC-3 to AC-6, AC-8, AC-9, AC-12 to AC-14, AC-18, AC-21;
- * spec 0008, AC-4, AC-6, AC-7, AC-19
+ * spec 0008, AC-4, AC-6, AC-7, AC-19; prompts/movie-plan-watched-exclusive.md
  *
  * The session, TMDB and the database are the boundaries, so those are the
  * three things replaced. The fake Supabase client records every call, so each
@@ -23,7 +23,7 @@ let result: { data: unknown; error: unknown } = { data: null, error: null };
 
 function builder() {
   const chain: Record<string, unknown> = {};
-  for (const method of ["from", "upsert", "update", "eq", "rpc"]) {
+  for (const method of ["from", "upsert", "update", "eq", "rpc", "single"]) {
     chain[method] = (...args: unknown[]) => {
       calls.push({ method, args });
       return chain;
@@ -53,7 +53,8 @@ const {
 } = await import("./actions");
 
 const USER = { id: "user-a", email: "a@example.test" };
-const writes = () => calls.filter((call) => call.method !== "eq");
+const writes = () =>
+  calls.filter((call) => call.method !== "eq" && call.method !== "single");
 
 let warn: ReturnType<typeof vi.spyOn>;
 
@@ -74,20 +75,30 @@ afterEach(() => {
 });
 
 describe("setMovieWatchlist", () => {
-  it("plans with an upsert naming only in_watchlist, as the session user (AC-3, AC-6, AC-18)", async () => {
+  const CLEARED_ROW = {
+    cleared_watched_at: "2026-09-23T12:16:58.070024+00:00",
+    cleared_rating: 8,
+  };
+
+  it("plans through plan_movie, after the TMDB check", async () => {
+    result = {
+      data: { cleared_watched_at: null, cleared_rating: null },
+      error: null,
+    };
     expect(await setMovieWatchlist(550, true)).toEqual({ ok: true });
     expect(writes()).toEqual([
-      { method: "from", args: ["user_movie_state"] },
-      {
-        method: "upsert",
-        args: [
-          { user_id: "user-a", movie_id: 550, in_watchlist: true },
-          { onConflict: "user_id,movie_id" },
-        ],
-      },
+      { method: "rpc", args: ["plan_movie", { p_movie_id: 550 }] },
     ]);
     expect(loadMovie).toHaveBeenCalledWith(550);
     expect(refresh).toHaveBeenCalledOnce();
+  });
+
+  it("returns the watch mark and score planning removed, for the Undo", async () => {
+    result = { data: CLEARED_ROW, error: null };
+    expect(await setMovieWatchlist(550, true)).toEqual({
+      ok: true,
+      cleared: { watchedAt: CLEARED_ROW.cleared_watched_at, rating: 8 },
+    });
   });
 
   it("unplans with an update only, and skips TMDB (AC-14)", async () => {
@@ -110,13 +121,29 @@ describe("setMovieWatched", () => {
     ]);
   });
 
-  it("unmarks by clearing only watched_at, with no TMDB check (AC-5, AC-14)", async () => {
-    await setMovieWatched(550, false);
-    expect(writes()).toContainEqual({
-      method: "update",
-      args: [{ watched_at: null }],
-    });
+  it("unmarks through unmark_movie_watched, with no TMDB check (AC-14)", async () => {
+    expect(await setMovieWatched(550, false)).toEqual({ ok: true });
+    expect(writes()).toEqual([
+      { method: "rpc", args: ["unmark_movie_watched", { p_movie_id: 550 }] },
+    ]);
     expect(loadMovie).not.toHaveBeenCalled();
+  });
+
+  it("returns the watch mark and the score unmarking removed", async () => {
+    result = {
+      data: {
+        cleared_watched_at: "2026-09-23T12:16:58.070024+00:00",
+        cleared_rating: null,
+      },
+      error: null,
+    };
+    expect(await setMovieWatched(550, false)).toEqual({
+      ok: true,
+      cleared: {
+        watchedAt: "2026-09-23T12:16:58.070024+00:00",
+        rating: null,
+      },
+    });
   });
 });
 
@@ -126,6 +153,18 @@ describe("setMovieRating", () => {
     expect(writes()).toEqual([
       { method: "rpc", args: ["rate_movie", { p_movie_id: 550, p_rating: 8 }] },
     ]);
+  });
+
+  it("reports a score on an unwatched movie as not_watched, with no refresh", async () => {
+    result = { data: null, error: { code: "BS001" } };
+    expect(await setMovieRating(550, 8)).toEqual({
+      ok: false,
+      error: "not_watched",
+    });
+    expect(refresh).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledWith(
+      "movie_tracking.rate refused not_watched",
+    );
   });
 
   it("clears by nulling only rating, with no TMDB check (AC-9, AC-14)", async () => {
@@ -159,7 +198,7 @@ describe("the release gate (prompts/movie-release-gate.md)", () => {
         error: "not_released",
       });
       expect(
-        await restoreMovieWatched(550, "2026-09-23T12:16:58.070024+00:00"),
+        await restoreMovieWatched(550, "2026-09-23T12:16:58.070024+00:00", 7),
       ).toEqual({ ok: false, error: "not_released" });
       for (let score = 1; score <= 10; score++) {
         expect(await setMovieRating(550, score)).toEqual({
@@ -270,7 +309,7 @@ describe("removals during a TMDB outage (AC-14)", () => {
     ["rating", () => setMovieRating(550, 7)],
     [
       "restoring a watched mark",
-      () => restoreMovieWatched(550, "2026-09-23T12:16:58.070024+00:00"),
+      () => restoreMovieWatched(550, "2026-09-23T12:16:58.070024+00:00", 7),
     ],
   ])("refuses %s with nothing written", async (_, call) => {
     expect(await call()).toEqual({ ok: false, error: "tmdb_unavailable" });
@@ -333,14 +372,17 @@ describe("database errors", () => {
 
   it("scopes every removal to the session user (AC-18)", async () => {
     await setMovieWatchlist(550, false);
-    await setMovieWatched(550, false);
     await setMovieRating(550, null);
     const userScopes = calls.filter(
       (call) => call.method === "eq" && call.args[0] === "user_id",
     );
     expect(userScopes).toEqual(
-      Array(3).fill({ method: "eq", args: ["user_id", "user-a"] }),
+      Array(2).fill({ method: "eq", args: ["user_id", "user-a"] }),
     );
+    // Unmarking runs in `unmark_movie_watched`, scoped by auth.uid() there
+    // and pinned by pgTAP 050; no user id ever travels as an argument.
+    await setMovieWatched(550, false);
+    expect(JSON.stringify(calls.at(-2))).not.toContain("user-a");
   });
 
   it("never logs an id, an email or a rating (AC-21)", async () => {
@@ -429,13 +471,13 @@ describe("restoreMovieWatched (spec 0008)", () => {
   const WATCHED_AT = "2026-09-23T12:16:58.070024+00:00";
 
   it("restores the exact watched time through restore_movie_watched, after the release check (AC-7)", async () => {
-    expect(await restoreMovieWatched(550, WATCHED_AT)).toEqual({ ok: true });
+    expect(await restoreMovieWatched(550, WATCHED_AT, 7)).toEqual({ ok: true });
     expect(writes()).toEqual([
       {
         method: "rpc",
         args: [
           "restore_movie_watched",
-          { p_movie_id: 550, p_watched_at: WATCHED_AT },
+          { p_movie_id: 550, p_watched_at: WATCHED_AT, p_rating: 7 },
         ],
       },
     ]);
@@ -449,7 +491,7 @@ describe("restoreMovieWatched (spec 0008)", () => {
     ["a time with no offset", "2026-09-23T12:16:58"],
     ["free text", "yesterday"],
   ])("refuses %s before any call (AC-7)", async (_, watchedAt) => {
-    expect(await restoreMovieWatched(550, watchedAt)).toEqual({
+    expect(await restoreMovieWatched(550, watchedAt, 7)).toEqual({
       ok: false,
       error: "invalid_input",
     });
@@ -459,9 +501,35 @@ describe("restoreMovieWatched (spec 0008)", () => {
     );
   });
 
+  it("restores with no score as null, which the function's default keeps", async () => {
+    expect(await restoreMovieWatched(550, WATCHED_AT, null)).toEqual({
+      ok: true,
+    });
+    expect(writes()).toEqual([
+      {
+        method: "rpc",
+        args: [
+          "restore_movie_watched",
+          { p_movie_id: 550, p_watched_at: WATCHED_AT, p_rating: undefined },
+        ],
+      },
+    ]);
+  });
+
+  it.each([0, 11, 7.5])(
+    "refuses the score %s before any call",
+    async (rating) => {
+      expect(await restoreMovieWatched(550, WATCHED_AT, rating)).toEqual({
+        ok: false,
+        error: "invalid_input",
+      });
+      expect(calls).toEqual([]);
+    },
+  );
+
   it("reports a refused restore as undo_expired (AC-7)", async () => {
     result = { data: null, error: { code: "P0002" } };
-    expect(await restoreMovieWatched(550, WATCHED_AT)).toEqual({
+    expect(await restoreMovieWatched(550, WATCHED_AT, 7)).toEqual({
       ok: false,
       error: "undo_expired",
     });
@@ -470,7 +538,7 @@ describe("restoreMovieWatched (spec 0008)", () => {
   it.each([0, -1, 1.5])(
     "refuses the id %s before any call, even with a valid time (AC-4)",
     async (id) => {
-      expect(await restoreMovieWatched(id, WATCHED_AT)).toEqual({
+      expect(await restoreMovieWatched(id, WATCHED_AT, 7)).toEqual({
         ok: false,
         error: "invalid_input",
       });
@@ -481,7 +549,7 @@ describe("restoreMovieWatched (spec 0008)", () => {
 
   it("asks for sign in with no session, and writes nothing (AC-4, AC-7)", async () => {
     getOptionalUser.mockResolvedValue(null);
-    expect(await restoreMovieWatched(550, WATCHED_AT)).toEqual({
+    expect(await restoreMovieWatched(550, WATCHED_AT, 7)).toEqual({
       ok: false,
       error: "session_expired",
     });
@@ -493,7 +561,7 @@ describe("restoreMovieWatched (spec 0008)", () => {
       data: null,
       error: { code: "42501", message: `user-a 550 ${WATCHED_AT}` },
     };
-    expect(await restoreMovieWatched(550, WATCHED_AT)).toEqual({
+    expect(await restoreMovieWatched(550, WATCHED_AT, 7)).toEqual({
       ok: false,
       error: "write_failed",
     });
@@ -505,7 +573,7 @@ describe("restoreMovieWatched (spec 0008)", () => {
 
   it("reports a thrown client as write_failed, with no refresh", async () => {
     createClient.mockRejectedValueOnce(new Error("offline"));
-    expect(await restoreMovieWatched(550, WATCHED_AT)).toEqual({
+    expect(await restoreMovieWatched(550, WATCHED_AT, 7)).toEqual({
       ok: false,
       error: "write_failed",
     });

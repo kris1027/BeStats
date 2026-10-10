@@ -297,7 +297,7 @@ describe("LibraryGrid on the watched page", () => {
     ).toBeInTheDocument();
   });
 
-  it("says the score is kept, and undoes with the rendered watched time (AC-7)", async () => {
+  it("says the score went too, and undoes with the cleared time and score (AC-7)", async () => {
     const user = userEvent.setup();
     const watchedAt = "2026-09-23T12:16:58.070024+00:00";
     const { rerender } = render(
@@ -309,15 +309,15 @@ describe("LibraryGrid on the watched page", () => {
     );
     expect(setMovieWatched).toHaveBeenCalledWith(1, false);
     rerender(grid("watched", []));
-    await settleNext({ ok: true });
+    await settleNext({ ok: true, cleared: { watchedAt, rating: 9 } });
 
     expect(toast).toHaveBeenCalledWith(
       "Removed from Watched",
-      expect.objectContaining({ description: "Your score is kept." }),
+      expect.objectContaining({ description: "Your score was removed too." }),
     );
 
     act(() => lastUndo()());
-    expect(restoreMovieWatched).toHaveBeenCalledWith(1, watchedAt);
+    expect(restoreMovieWatched).toHaveBeenCalledWith(1, watchedAt, 9);
     await settleNext({ ok: false, error: "undo_expired" });
     expect(toast).toHaveBeenLastCalledWith(
       "Couldn't undo. Mark it watched again from the movie page.",
@@ -325,18 +325,57 @@ describe("LibraryGrid on the watched page", () => {
     );
   });
 
+  it("trusts what the write cleared over a stale rendered score", async () => {
+    const user = userEvent.setup();
+    const watchedAt = "2026-09-23T12:00:00Z";
+    render(grid("watched", [item(1, { watchedAt })]));
+
+    await user.click(
+      screen.getByRole("button", { name: "Unmark Movie 1 as watched" }),
+    );
+    await settleNext({ ok: true, cleared: { watchedAt, rating: 4 } });
+    expect(toast).toHaveBeenCalledWith(
+      "Removed from Watched",
+      expect.objectContaining({ description: "Your score was removed too." }),
+    );
+    act(() => lastUndo()());
+    expect(restoreMovieWatched).toHaveBeenCalledWith(1, watchedAt, 4);
+  });
+
   it("adds no score line for an unrated movie (AC-7)", async () => {
     const user = userEvent.setup();
-    render(grid("watched", [item(1, { watchedAt: "2026-09-23T12:00:00Z" })]));
+    const watchedAt = "2026-09-23T12:00:00Z";
+    render(grid("watched", [item(1, { watchedAt })]));
+
+    await user.click(
+      screen.getByRole("button", { name: "Unmark Movie 1 as watched" }),
+    );
+    await settleNext({ ok: true, cleared: { watchedAt, rating: null } });
+    expect(toast).toHaveBeenCalledWith(
+      "Removed from Watched",
+      expect.objectContaining({ description: undefined }),
+    );
+    act(() => lastUndo()());
+    expect(restoreMovieWatched).toHaveBeenCalledWith(1, watchedAt, null);
+  });
+
+  it("offers no Undo and no score line when another tab already unmarked it", async () => {
+    const user = userEvent.setup();
+    render(
+      grid("watched", [
+        item(1, { rating: 8, watchedAt: "2026-09-23T12:00:00Z" }),
+      ]),
+    );
 
     await user.click(
       screen.getByRole("button", { name: "Unmark Movie 1 as watched" }),
     );
     await settleNext({ ok: true });
-    expect(toast).toHaveBeenCalledWith(
+    expect(toast).toHaveBeenLastCalledWith(
       "Removed from Watched",
-      expect.objectContaining({ description: undefined }),
+      expect.objectContaining({ description: undefined, action: undefined }),
     );
+    expect(restoreMovieWatched).not.toHaveBeenCalled();
   });
 });
 

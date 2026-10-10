@@ -16,11 +16,11 @@ export type TrackingIntent =
  *
  * It mirrors the SQL in `supabase/schemas/05-functions.sql` exactly, because a
  * control whose optimistic guess disagrees with the database would flip twice:
- * once on the click and again when `refresh()` delivers the truth. The one
- * coupling is a rating on an unwatched movie also marking it watched. Since
- * spec 0020 (AC-14) marking never touches the bookmark, so the Add to
- * watchlist pill stays planned on a watched movie. Unwatching and clearing a
- * rating touch only their own field (`AGENTS.md` section 7).
+ * once on the click and again when `refresh()` delivers the truth. A movie is
+ * planned or watched, never both, and a score needs a watch mark
+ * (prompts/movie-plan-watched-exclusive.md): planning clears the mark and the
+ * score, marking clears the plan, unmarking clears the score, and a score on
+ * an unwatched movie changes nothing, as `rate_movie` refuses it.
  *
  * @param state The state to build on: the server prop, or an earlier guess.
  * @param intent The click.
@@ -32,18 +32,15 @@ export function applyTrackingIntent(
 ): MovieTrackingState {
   switch (intent.kind) {
     case "watchlist":
-      return { ...state, inWatchlist: intent.value };
+      return intent.value
+        ? { inWatchlist: true, watched: false, rating: null }
+        : { ...state, inWatchlist: false };
     case "watched":
-      if (!intent.value) return { ...state, watched: false };
-      return state.watched ? state : markWatched(state);
+      return intent.value
+        ? { ...state, watched: true, inWatchlist: false }
+        : { ...state, watched: false, rating: null };
     case "rating":
       if (intent.value === null) return { ...state, rating: null };
-      return state.watched
-        ? { ...state, rating: intent.value }
-        : { ...markWatched(state), rating: intent.value };
+      return state.watched ? { ...state, rating: intent.value } : state;
   }
-}
-
-function markWatched(state: MovieTrackingState): MovieTrackingState {
-  return { ...state, watched: true };
 }

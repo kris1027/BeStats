@@ -12,10 +12,11 @@ import {
 import { SHOW_TRACKING_COPY, UNDO_ACTION_LABEL } from "@/lib/tracking/messages";
 import type { ShowTrackingError, ShowTrackingUndo } from "@/lib/tracking/types";
 
-import { settleResultCall, showShowTrackingError } from "./tracking-toast";
-
-/** Long enough for a keyboard user to reach Undo; the server allows it. */
-const UNDO_TOAST_MS = 10_000;
+import {
+  settleResultCall,
+  showShowTrackingError,
+  UNDO_TOAST_MS,
+} from "./tracking-toast";
 
 /**
  * The show tracking writes every surface shares (spec 0020, AC-2 to AC-6):
