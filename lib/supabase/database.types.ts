@@ -238,6 +238,14 @@ export type Database = {
         }
       }
       track_show: { Args: { p_show_id: number }; Returns: boolean }
+      track_show_after_watch: {
+        Args: {
+          p_newly_watched: boolean
+          p_season_number: number
+          p_show_id: number
+        }
+        Returns: boolean
+      }
       unmark_episodes_watched: {
         Args: { p_episode_ids: number[]; p_show_id: number }
         Returns: {

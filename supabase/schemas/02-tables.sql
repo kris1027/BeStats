@@ -70,6 +70,12 @@ create table public.user_show_state (
   constraint user_show_state_show_id_check check (show_id > 0)
 );
 
+-- No index beyond the primary key, on purpose. The one list read,
+-- `user_tracked_shows` (spec 0020, AC-16), orders by an aggregate over the
+-- episode rows, which no index can serve. It reaches one person's rows through
+-- this table's primary key and `user_episode_state_show_order_idx`, then sorts
+-- at most 500 groups in memory.
+
 -- One row per person per TMDB episode. Deliberately not tied to
 -- `user_show_state` by a foreign key: AGENTS.md section 7 requires episode
 -- history and ratings to survive Stop tracking, which deletes the show row,

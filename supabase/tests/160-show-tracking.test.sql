@@ -14,7 +14,7 @@
 -- the triggers.
 
 begin;
-select plan(42);
+select plan(49);
 
 -- Shape (AC-1, AC-20)
 
@@ -24,17 +24,19 @@ select is(
      'public.track_show(integer)'::regprocedure,
      'public.untrack_show(integer)'::regprocedure,
      'public.restore_show_tracking(integer, timestamptz)'::regprocedure,
+     'public.track_show_after_watch(integer, smallint, boolean)'::regprocedure,
      'public.set_tracked_at()'::regprocedure
    )
      and not prosecdef
      and proconfig = array['search_path=""']),
-  4,
-  'all four functions are security invoker with an empty search_path'
+  5,
+  'all five functions are security invoker with an empty search_path'
 );
 select ok(
   not has_function_privilege('anon', 'public.track_show(integer)', 'execute')
   and not has_function_privilege('anon', 'public.untrack_show(integer)', 'execute')
-  and not has_function_privilege('anon', 'public.restore_show_tracking(integer, timestamptz)', 'execute'),
+  and not has_function_privilege('anon', 'public.restore_show_tracking(integer, timestamptz)', 'execute')
+  and not has_function_privilege('anon', 'public.track_show_after_watch(integer, smallint, boolean)', 'execute'),
   'anon cannot execute any tracking function'
 );
 select ok(
@@ -45,6 +47,7 @@ select ok(
       'public.track_show(integer)'::regprocedure,
       'public.untrack_show(integer)'::regprocedure,
       'public.restore_show_tracking(integer, timestamptz)'::regprocedure,
+      'public.track_show_after_watch(integer, smallint, boolean)'::regprocedure,
       'public.set_tracked_at()'::regprocedure
     )
       and a.grantee = 0
@@ -54,8 +57,9 @@ select ok(
 select ok(
   has_function_privilege('authenticated', 'public.track_show(integer)', 'execute')
   and has_function_privilege('authenticated', 'public.untrack_show(integer)', 'execute')
-  and has_function_privilege('authenticated', 'public.restore_show_tracking(integer, timestamptz)', 'execute'),
-  'authenticated can execute the three callable ones'
+  and has_function_privilege('authenticated', 'public.restore_show_tracking(integer, timestamptz)', 'execute')
+  and has_function_privilege('authenticated', 'public.track_show_after_watch(integer, smallint, boolean)', 'execute'),
+  'authenticated can execute the four callable ones'
 );
 select ok(
   not has_function_privilege('authenticated', 'public.set_tracked_at()', 'execute'),
@@ -125,6 +129,9 @@ values
   ('11111111-1111-1111-1111-111111111111', 970002, 960010, 1, 1, '2021-05-01T00:00:00Z', null),
   ('11111111-1111-1111-1111-111111111111', 970003, 960010, 0, 1, '2021-06-01T00:00:00Z', null),
   ('11111111-1111-1111-1111-111111111111', 970004, 960010, 1, 2, null, 9),
+  -- A: an untracked show with an episode already watched, for the marks
+  -- that change nothing (AC-5).
+  ('11111111-1111-1111-1111-111111111111', 970005, 960013, 1, 1, '2021-01-01T00:00:00Z', null),
   -- B: a watched episode on B's show.
   ('22222222-2222-2222-2222-222222222222', 970050, 960050, 1, 1, '2021-01-01T00:00:00Z', 7);
 set local session_replication_role = origin;
@@ -200,6 +207,46 @@ select is(
   'marking an episode of a tracked show reports nothing'
 );
 
+-- Only a mark that newly watches a regular episode tracks (AC-5).
+select is(
+  (select show_tracked from public.mark_episode_watched(960013, 1::smallint, 1::smallint, 970005)),
+  false,
+  'marking an episode already watched leaves an untracked show untracked'
+);
+select is(
+  (select show_tracked from public.mark_season_watched(
+     960013, 1::smallint, array[970005], array[1]::smallint[])),
+  false,
+  'a season with nothing left to mark leaves an untracked show untracked'
+);
+select is(
+  (select show_tracked from public.rate_episode(960013, 1::smallint, 1::smallint, 970005, 6::smallint)),
+  false,
+  'rating an episode already watched leaves an untracked show untracked'
+);
+select is(
+  (select show_tracked from public.mark_episode_watched(960014, 0::smallint, 1::smallint, 970060)),
+  false,
+  'marking a special leaves an untracked show untracked'
+);
+select is(
+  (select show_tracked from public.rate_episode(960014, 0::smallint, 2::smallint, 970061, 7::smallint)),
+  false,
+  'rating an unwatched special leaves an untracked show untracked'
+);
+select is(
+  (select show_tracked from public.mark_season_watched(
+     960014, 0::smallint, array[970062, 970063], array[3, 4]::smallint[])),
+  false,
+  'marking the specials season leaves an untracked show untracked'
+);
+select is(
+  (select count(*) from public.user_show_state
+   where user_id = '11111111-1111-1111-1111-111111111111' and show_id in (960013, 960014)),
+  0::bigint,
+  'neither show gained a row'
+);
+
 -- untrack_show (AC-3, AC-4)
 
 select results_eq(
@@ -273,12 +320,16 @@ select is(
   'a show with nothing watched sorts by tracked_at'
 );
 
--- No tracking write touched an episode row, apart from the marks above.
+-- No tracking write touched an episode row, apart from the marks and the
+-- rating above.
 select set_eq(
-  $$ select * from tracking_episodes_before $$,
+  $$ select * from tracking_episodes_before where episode_id <> 970005 $$,
   $$ select * from public.user_episode_state
      where user_id = '11111111-1111-1111-1111-111111111111'
-       and episode_id not in (970010, 970020, 970021, 970030, 970040) $$,
+       and episode_id not in (
+         970005, 970010, 970020, 970021, 970030, 970040,
+         970060, 970061, 970062, 970063
+       ) $$,
   'no tracking function wrote an episode row'
 );
 

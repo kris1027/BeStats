@@ -50,6 +50,8 @@ drop function public.mark_episode_watched(integer, smallint, smallint, integer);
 drop function public.rate_episode(integer, smallint, smallint, integer, smallint);
 drop function public.mark_season_watched(integer, smallint, integer[], smallint[]);
 
+-- Neither gets a successor: the Watchlist order is now an aggregate in
+-- `user_tracked_shows`, which no index serves (see `02-tables.sql`).
 drop index public.user_show_state_watchlist_idx;
 drop index public.user_show_state_held_idx;
 
@@ -110,6 +112,25 @@ as $$
   select exists (select 1 from inserted);
 $$;
 
+-- AC-5's rule in one place, for the three episode functions below.
+create or replace function public.track_show_after_watch(
+  p_show_id integer,
+  p_season_number smallint,
+  p_newly_watched boolean
+)
+returns boolean
+language sql
+volatile
+security invoker
+set search_path = ''
+as $$
+  select case
+    when p_season_number >= 1 and p_newly_watched
+    then public.track_show(p_show_id)
+    else false
+  end;
+$$;
+
 create or replace function public.untrack_show(p_show_id integer)
 returns table (tracked_at timestamptz)
 language sql
@@ -155,8 +176,10 @@ begin
 end;
 $$;
 
+revoke all on function public.track_show_after_watch(integer, smallint, boolean) from public, anon, authenticated;
 revoke all on function public.untrack_show(integer) from public, anon, authenticated;
 revoke all on function public.restore_show_tracking(integer, timestamptz) from public, anon, authenticated;
+grant execute on function public.track_show_after_watch(integer, smallint, boolean) to authenticated;
 grant execute on function public.untrack_show(integer) to authenticated;
 grant execute on function public.restore_show_tracking(integer, timestamptz) to authenticated;
 
@@ -201,12 +224,11 @@ as $$
   select
     u.user_id, u.episode_id, u.show_id, u.season_number, u.episode_number,
     u.watched_at, u.rating, u.created_at, u.updated_at,
-    case
-      when p_season_number >= 1
-        and not exists (select 1 from prior where prior.watched_at is not null)
-      then public.track_show(p_show_id)
-      else false
-    end,
+    public.track_show_after_watch(
+      p_show_id,
+      p_season_number,
+      not exists (select 1 from prior where prior.watched_at is not null)
+    ),
     u.watched_at = now()
   from upserted as u;
 $$;
@@ -256,12 +278,11 @@ as $$
   select
     u.user_id, u.episode_id, u.show_id, u.season_number, u.episode_number,
     u.watched_at, u.rating, u.created_at, u.updated_at,
-    case
-      when p_season_number >= 1
-        and not exists (select 1 from prior where prior.watched_at is not null)
-      then public.track_show(p_show_id)
-      else false
-    end
+    public.track_show_after_watch(
+      p_show_id,
+      p_season_number,
+      not exists (select 1 from prior where prior.watched_at is not null)
+    )
   from upserted as u;
 $$;
 
@@ -311,11 +332,9 @@ begin
 
   return query select
     v_marked,
-    case
-      when p_season_number >= 1 and cardinality(v_marked) > 0
-      then public.track_show(p_show_id)
-      else false
-    end;
+    public.track_show_after_watch(
+      p_show_id, p_season_number, cardinality(v_marked) > 0
+    );
 end;
 $$;
 
