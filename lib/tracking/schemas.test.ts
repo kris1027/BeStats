@@ -81,8 +81,23 @@ describe("restoreWatchedInputSchema (spec 0008, AC-7)", () => {
     "2026-09-23T14:16:58.1+02:00",
   ])("accepts the PostgREST style timestamp %s", (watchedAt) => {
     expect(
-      restoreWatchedInputSchema.safeParse({ movieId: 550, watchedAt }).success,
+      restoreWatchedInputSchema.safeParse({
+        movieId: 550,
+        watchedAt,
+        rating: 7,
+      }).success,
     ).toBe(true);
+  });
+
+  it("accepts no score, and refuses one out of range or missing", () => {
+    const watchedAt = "2026-09-23T12:16:58Z";
+    const parse = (input: object) =>
+      restoreWatchedInputSchema.safeParse({ movieId: 550, watchedAt, ...input })
+        .success;
+    expect(parse({ rating: null })).toBe(true);
+    expect(parse({ rating: 0 })).toBe(false);
+    expect(parse({ rating: 11 })).toBe(false);
+    expect(parse({})).toBe(false);
   });
 });
 

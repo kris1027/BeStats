@@ -35,7 +35,25 @@ const SHARED_TRACKING_MESSAGES: Record<TrackingError, string> = {
 export const TRACKING_MESSAGES: Record<MovieTrackingError, string> = {
   ...SHARED_TRACKING_MESSAGES,
   not_released: "This movie hasn't been released yet.",
+  // Only a stale tab or a crafted call reaches it: the score pill shows only
+  // on a watched movie (prompts/movie-plan-watched-exclusive.md).
+  not_watched: "Mark it watched before scoring.",
 };
+
+/**
+ * The toasts a movie write shows when it removed a watch mark, each with an
+ * Undo that puts the mark and the score back
+ * (prompts/movie-plan-watched-exclusive.md). Unmarking a movie with no score
+ * removes nothing else, so it shows no toast.
+ */
+export const MOVIE_CLEARED_MESSAGES = {
+  planned: (hadScore: boolean) =>
+    hadScore
+      ? "Moved to your plan. Watched mark and score removed."
+      : "Moved to your plan. Watched mark removed.",
+  unwatched: "Score removed too.",
+  undoExpired: "Couldn't undo. Mark it watched again.",
+} as const;
 
 /**
  * The toasts the two private list pages show after a removal (spec 0008,
@@ -47,7 +65,7 @@ export const LIBRARY_MESSAGES = {
   upcoming: { removed: "Removed from Upcoming" },
   watched: {
     removed: "Removed from Watched",
-    scoreKept: "Your score is kept.",
+    scoreRemoved: "Your score was removed too.",
   },
 } as const;
 

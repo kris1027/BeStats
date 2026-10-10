@@ -38,14 +38,16 @@ export const restoreWatchlistInputSchema = z.object({
 });
 
 /**
- * Undo on the watched page also carries the watched time the page rendered.
- * It must be a full ISO timestamp with an offset, as PostgREST returned it, so
- * nothing is guessed about the time zone. `restore_movie_watched` still bounds
- * it to the past (spec 0008, AC-7).
+ * A watched Undo carries the watched time and the score the write removed. The
+ * time must be a full ISO timestamp with an offset, as PostgREST returned it,
+ * so nothing is guessed about the time zone. `restore_movie_watched` still
+ * bounds it to the past (spec 0008, AC-7), and the table bounds the score
+ * (prompts/movie-plan-watched-exclusive.md).
  */
 export const restoreWatchedInputSchema = z.object({
   movieId: movieIdSchema,
   watchedAt: z.iso.datetime({ offset: true }),
+  rating: ratingSchema.nullable(),
 });
 
 /** A TMDB show or episode id: the same bounds as a movie id. */
