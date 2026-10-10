@@ -85,8 +85,8 @@ select throws_ok(
   'user A cannot insert a movie row owned by user B'
 );
 select throws_ok(
-  $$insert into public.user_show_state (user_id, show_id, status, status_source)
-    values ('22222222-2222-2222-2222-222222222222', 999, 'watching', 'user')$$,
+  $$insert into public.user_show_state (user_id, show_id)
+    values ('22222222-2222-2222-2222-222222222222', 999)$$,
   '42501',
   null,
   'user A cannot insert a show row owned by user B'
@@ -110,7 +110,7 @@ select throws_ok(
 update public.user_movie_state set rating = 1
   where user_id = '22222222-2222-2222-2222-222222222222';
 
-update public.user_show_state set status = 'dropped'
+update public.user_show_state set created_at = '2000-01-01T00:00:00Z'
   where user_id = '22222222-2222-2222-2222-222222222222';
 delete from public.user_show_state
   where user_id = '22222222-2222-2222-2222-222222222222';
@@ -121,18 +121,18 @@ delete from public.user_episode_state
 delete from public.user_movie_state
   where user_id = '22222222-2222-2222-2222-222222222222';
 
--- Spec 0015 AC-17: the automatic completion functions act on the caller's
--- own row only. B's 1396 is an automatic Completed; A's 1396 is Watching, so
--- a reopen that leaked across users would have something to change.
+-- Spec 0020 AC-20: the tracking view and functions reach the caller's own
+-- rows only. Both users track 1396, so a leak would have something to show.
 select is(
-  public.reopen_show_automatically(1396),
-  false,
-  'user A cannot reopen user B''s automatic Completed (checked below)'
+  (select count(*)::int from public.user_tracked_shows
+   where user_id = '22222222-2222-2222-2222-222222222222'),
+  0,
+  'user A reads none of user B''s tracked shows through the view'
 );
-select is(
-  public.complete_show_automatically(1399, array[63056], true),
-  false,
-  'user A cannot complete a show with user B''s watched episode ids'
+select throws_ok(
+  $$ select public.restore_show_tracking(1396, '2020-01-01T00:00:00Z') $$,
+  'P0002', 'already_tracked',
+  'a restore on a show id user B tracks only reaches user A''s own row'
 );
 
 -- Back to the privileged role to confirm user B's rows are all still there.
@@ -158,10 +158,10 @@ select is(
   'user B show row survived user A delete and update attempts'
 );
 select is(
-  (select status from public.user_show_state
+  (select created_at = updated_at from public.user_show_state
    where user_id = '22222222-2222-2222-2222-222222222222' and show_id = 1396),
-  'completed'::public.tv_status,
-  'user B show status was not changed by user A'
+  true,
+  'user B show row was not changed by user A'
 );
 select is(
   (select count(*) from public.user_episode_state

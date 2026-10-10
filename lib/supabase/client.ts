@@ -1,7 +1,7 @@
 import { createBrowserClient } from "@supabase/ssr";
 
 import { getPublicEnv } from "@/lib/env";
-import type { Database } from "@/lib/supabase/database";
+import type { Database } from "@/lib/supabase/database.types";
 
 /**
  * Supabase client for Client Components.

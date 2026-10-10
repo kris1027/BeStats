@@ -53,69 +53,27 @@ create index user_movie_state_watched_idx
   where watched_at is not null;
 
 -- One row per person per TMDB show: the show is tracked while the row exists
--- (spec 0020, AC-1), with an optional hold. Which library page it sits on is
--- never stored; it is worked out per request from its episodes and TMDB.
---
--- The four legacy columns (`status`, `status_source`, `status_changed_at`,
--- `listed_at`) stay until the spec 0020 contract migration, so the app
--- deployed before it keeps working during the rollout. `status` is nullable
--- with a default for the same reason, and `track_show` and `set_show_hold`
--- mirror into it. Nothing in the new app reads them.
+-- (spec 0020, AC-1), and untracked otherwise. There is no hold and no status:
+-- which library page it sits on is never stored; it is worked out per request
+-- from its episodes and TMDB.
 create table public.user_show_state (
   user_id uuid not null references auth.users (id) on delete cascade,
   show_id integer not null,
-  status public.tv_status default 'watching',
-  -- The default fires on insert only. Every caller passes this explicitly on
-  -- every write, because on the update branch of an upsert an omitted column
-  -- keeps its old value instead of falling back to the default. See spec 0001,
-  -- "The `status_source` default is insert only".
-  status_source public.status_source not null default 'user',
-  status_changed_at timestamptz not null default now(),
-  -- When the show last joined the watchlist, by entering Want to Watch or
-  -- Watching from anywhere else; the watchlist page's order (spec 0013,
-  -- AC-14). Owned by `user_show_state_set_listed_at` in `03-triggers.sql`, so
-  -- no client can choose it. Moving between those two keeps it, so starting a
-  -- planned show does not move its card; leaving them keeps it too, so Undo
-  -- of Stop watching puts the card back in its old place.
-  listed_at timestamptz,
   -- When the show was tracked, the Watchlist order's fallback for a show with
   -- nothing watched (spec 0020, AC-9). Owned by
-  -- `user_show_state_set_tracking_times` in `03-triggers.sql`, so no client
+  -- `user_show_state_set_tracked_at` in `03-triggers.sql`, so no client
   -- chooses it; only `restore_show_tracking` puts back an earlier one.
   tracked_at timestamptz not null default now(),
-  -- Null is no hold. Set only by `set_show_hold`, never by an episode write.
-  hold_state public.show_hold,
-  -- When the hold last changed, the Paused & dropped order (AC-10). Owned by
-  -- the same trigger as `tracked_at`.
-  hold_changed_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint user_show_state_pkey primary key (user_id, show_id),
-  constraint user_show_state_show_id_check check (show_id > 0),
-  -- A show on the watchlist always has a time to sort by.
-  constraint user_show_state_listed_at_check
-    check (status not in ('want_to_watch', 'watching') or listed_at is not null),
-  -- A hold always has a time, and no hold never has one.
-  constraint user_show_state_hold_changed_at_check
-    check ((hold_state is null) = (hold_changed_at is null))
+  constraint user_show_state_show_id_check check (show_id > 0)
 );
-
--- The show half of the watchlist page (spec 0013, AC-13): only the rows the
--- page can show, ending in `show_id`, the tiebreak, as the movie index does.
-create index user_show_state_watchlist_idx
-  on public.user_show_state (user_id, listed_at desc, show_id)
-  where status in ('want_to_watch', 'watching');
-
--- The Paused & dropped section (spec 0020, AC-10): held rows only, in the
--- section's order, ending in `show_id`, the tiebreak.
-create index user_show_state_held_idx
-  on public.user_show_state (user_id, hold_changed_at desc, show_id)
-  where hold_state is not null;
 
 -- One row per person per TMDB episode. Deliberately not tied to
 -- `user_show_state` by a foreign key: AGENTS.md section 7 requires episode
--- history and ratings to survive any status change, including having no status
--- row at all, so an episode row can exist on its own.
+-- history and ratings to survive Stop tracking, which deletes the show row,
+-- so an episode row can exist on its own.
 create table public.user_episode_state (
   user_id uuid not null references auth.users (id) on delete cascade,
   episode_id integer not null,

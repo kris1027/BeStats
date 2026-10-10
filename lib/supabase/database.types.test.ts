@@ -1,21 +1,19 @@
 import { describe, expect, it } from "vitest";
 import type { Database } from "@/lib/supabase/database.types";
-import { Constants } from "@/lib/supabase/database.types";
 
 /**
- * Spec 0001 AC-14: the committed types match the live schema, with `tv_status`
- * and `status_source` as string union types rather than plain `string`.
+ * Spec 0001 AC-14: the committed types match the live schema. Since the spec
+ * 0020 contract (amended 2026-10-10) a show is tracked or not, so the schema
+ * carries no enum and `user_show_state` no status or hold column.
  *
  * `pnpm db:types:check` proves the file is current against a running database.
  * This proves the shape the application depends on, with no database needed,
  * so it still runs in CI and in an offline build.
  *
- * The assertions come in two halves. `Assert<Equal<...>>` is the real guard:
- * exact type equality, so a regenerated file that widened an enum to `string`
- * or `any`, dropped a member or gained one fails `pnpm typecheck`. Plain
- * assignability would not catch any of those, because every literal here stays
- * assignable to a wider type. The `Constants` checks are the runtime half,
- * proving the values the application switches on are really there.
+ * `Assert<Equal<...>>` is the real guard: exact type equality, so a
+ * regenerated file that widened a column to `any`, or brought a status or a
+ * hold back, fails `pnpm typecheck`. Plain assignability would not catch
+ * those, because every literal here stays assignable to a wider type.
  */
 
 /** Invariant type equality: assignable-both-ways is not the same as equal. */
@@ -31,34 +29,19 @@ type EpisodeRating =
   Database["public"]["Tables"]["user_episode_state"]["Row"]["rating"];
 
 describe("the generated database types", () => {
-  it("exposes tv_status as exactly the five statuses, not a plain string", () => {
-    const exact: Assert<
+  it("has no enum and no status or hold on a tracked show (spec 0020, AC-1)", () => {
+    const noEnums: Assert<
+      Equal<Database["public"]["Enums"], { [_ in never]: never }>
+    > = true;
+    const showColumns: Assert<
       Equal<
-        Database["public"]["Enums"]["tv_status"],
-        "want_to_watch" | "watching" | "on_hold" | "dropped" | "completed"
+        keyof Database["public"]["Tables"]["user_show_state"]["Row"],
+        "user_id" | "show_id" | "tracked_at" | "created_at" | "updated_at"
       >
     > = true;
 
-    expect(exact).toBe(true);
-    expect([...Constants.public.Enums.tv_status]).toEqual([
-      "want_to_watch",
-      "watching",
-      "on_hold",
-      "dropped",
-      "completed",
-    ]);
-  });
-
-  it("exposes status_source as exactly user and system", () => {
-    const exact: Assert<
-      Equal<Database["public"]["Enums"]["status_source"], "user" | "system">
-    > = true;
-
-    expect(exact).toBe(true);
-    expect([...Constants.public.Enums.status_source]).toEqual([
-      "user",
-      "system",
-    ]);
+    expect(noEnums).toBe(true);
+    expect(showColumns).toBe(true);
   });
 
   it("types rating as exactly number | null on every table that carries one", () => {
