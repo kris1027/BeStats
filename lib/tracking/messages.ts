@@ -4,18 +4,14 @@ import type {
   EpisodeTrackingError,
   MovieTrackingError,
   ShowTrackingError,
+  TrackingError,
 } from "./types";
 
 /**
- * Every toast a tracking control can show, written once (spec 0007, toast
- * copy).
- *
- * Toasts appear only on failure; a success is shown by the control itself. An
- * invalid input shares the generic copy because it can only come from a bug or
- * a tampered call, and telling the person which field was wrong would not help
- * them.
+ * The failure copy every tracking control shares, naming a movie; the episode
+ * and show maps below override the lines that name what failed.
  */
-export const TRACKING_MESSAGES: Record<MovieTrackingError, string> = {
+const SHARED_TRACKING_MESSAGES: Record<TrackingError, string> = {
   session_expired: "Your session expired. Sign in to save this.",
   not_found: "This movie isn't available to track.",
   tmdb_unavailable: "Couldn't reach TMDB. Try again in a moment.",
@@ -24,6 +20,21 @@ export const TRACKING_MESSAGES: Record<MovieTrackingError, string> = {
   // Only an Undo can be refused this way. The list pages show the copy for the
   // list the movie came from, in `UNDO_EXPIRED_MESSAGES`; this is the fallback.
   undo_expired: "Couldn't undo. Change it again from the movie page.",
+};
+
+/**
+ * Every toast a movie tracking control can show, written once (spec 0007,
+ * toast copy): the shared copy plus the release gate, which episodes and
+ * shows lack (prompts/movie-release-gate.md).
+ *
+ * Toasts appear only on failure; a success is shown by the control itself. An
+ * invalid input shares the generic copy because it can only come from a bug or
+ * a tampered call, and telling the person which field was wrong would not help
+ * them.
+ */
+export const TRACKING_MESSAGES: Record<MovieTrackingError, string> = {
+  ...SHARED_TRACKING_MESSAGES,
+  not_released: "This movie hasn't been released yet.",
 };
 
 /**
@@ -62,7 +73,7 @@ export const TRACKING_READ_FAILED = "Couldn't load your tracking.";
  * refused Undo that points back at the page the person is already on.
  */
 export const EPISODE_TRACKING_MESSAGES: Record<EpisodeTrackingError, string> = {
-  ...TRACKING_MESSAGES,
+  ...SHARED_TRACKING_MESSAGES,
   not_found: "This episode isn't available to track.",
   not_aired: "This episode hasn't aired yet.",
   undo_expired: "Couldn't undo. Change the episodes again on this page.",
@@ -103,7 +114,7 @@ export const SHOW_TRACKING_COPY = {
 
 /** The show tracking failure copy: the movie copy, naming a show. */
 export const SHOW_TRACKING_MESSAGES: Record<ShowTrackingError, string> = {
-  ...TRACKING_MESSAGES,
+  ...SHARED_TRACKING_MESSAGES,
   not_found: "This show isn't available to track.",
   undo_expired: SHOW_TRACKING_COPY.undoExpired,
 };

@@ -1,4 +1,6 @@
 import type { LibraryList } from "@/lib/catalog/library-list";
+import { formatAirDate } from "@/lib/format";
+import { UPCOMING_MESSAGES } from "@/lib/tracking/messages";
 import { airStatus } from "@/lib/tv/air-status";
 
 /** The library pages a movie can sit on (spec 0020, AC-13). */
@@ -30,9 +32,43 @@ export function classifyMovie(
 ): MoviePage | null {
   if (movie.watchedAt !== null) return "watched";
   if (!movie.inWatchlist) return null;
-  return airStatus(movie.releaseDate, today) === "aired"
-    ? "watchlist"
-    : "upcoming";
+  return isMovieReleased(movie.releaseDate, today) ? "watchlist" : "upcoming";
+}
+
+/**
+ * Whether a movie can be marked watched or scored yet
+ * (prompts/movie-release-gate.md, `AGENTS.md` section 7).
+ *
+ * The same test `classifyMovie` places a planned movie on Watchlist by, so a
+ * movie is markable exactly when it sits there. Unlike an episode, a missing
+ * or malformed date counts as not released: a dateless movie is almost always
+ * announced or in production, and the source gives no reason to believe it is
+ * out.
+ *
+ * @param releaseDate `Movie.releaseDate`, TMDB's primary release date.
+ * @param today The UTC day, read once: `requestTodayUtc()` in a render,
+ * `todayUtc(new Date())` in a Server Action, as the episode actions do.
+ */
+export function isMovieReleased(
+  releaseDate: string | null,
+  today: string,
+): boolean {
+  return airStatus(releaseDate, today) === "aired";
+}
+
+/**
+ * The line an unreleased movie shows in place of its watched and score
+ * controls: "Releases Oct 24, 2026", or "Release date to be announced" when
+ * TMDB gives no real date, so a missing date is never printed as one. The
+ * copy is the Upcoming card's, so a movie reads the same on both pages.
+ *
+ * @param releaseDate `Movie.releaseDate`.
+ */
+export function movieReleaseNote(releaseDate: string | null): string {
+  const formatted = formatAirDate(releaseDate);
+  return formatted === null
+    ? UPCOMING_MESSAGES.releaseTba
+    : UPCOMING_MESSAGES.releases(formatted);
 }
 
 /**

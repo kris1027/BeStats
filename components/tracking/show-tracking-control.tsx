@@ -6,11 +6,8 @@ import { glassPillClassName } from "@/components/glass-pill";
 import { SHOW_TRACKING_COPY } from "@/lib/tracking/messages";
 
 import { PlanIcon, PlannedIcon } from "./tracking-icons";
+import { TRACKING_PILL } from "./tracking-pill";
 import { useShowTrackingToggle } from "./use-show-tracking";
-
-/** The pill recipe at the touch sizes: 44px on mobile, 36px from `md`. */
-const PILL =
-  "h-11 cursor-pointer px-4 transition-[filter] hover:brightness-125 md:h-9 md:px-3.5";
 
 /**
  * The show hero's tracking toggle (spec 0020, AC-2 to AC-4, amended
@@ -56,7 +53,7 @@ function ShowTrackingControl({
             ? SHOW_TRACKING_COPY.stopLabel(showName)
             : `${SHOW_TRACKING_COPY.plan}: ${showName}`
         }
-        className={cn(glassPillClassName(), PILL)}
+        className={cn(glassPillClassName(), TRACKING_PILL)}
         onClick={toggle}
       >
         {shown ? <PlannedIcon /> : <PlanIcon />}

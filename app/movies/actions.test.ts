@@ -59,7 +59,10 @@ let warn: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
   getOptionalUser.mockResolvedValue(USER);
-  loadMovie.mockResolvedValue({ kind: "found", movie: { id: 550 } });
+  loadMovie.mockResolvedValue({
+    kind: "found",
+    movie: { id: 550, releaseDate: "1999-10-15" },
+  });
   result = { data: null, error: null };
   calls.length = 0;
   warn = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -132,6 +135,58 @@ describe("setMovieRating", () => {
       args: [{ rating: null }],
     });
     expect(loadMovie).not.toHaveBeenCalled();
+  });
+});
+
+describe("the release gate (prompts/movie-release-gate.md)", () => {
+  function unreleased(releaseDate: string | null) {
+    loadMovie.mockResolvedValue({
+      kind: "found",
+      movie: { id: 550, releaseDate },
+    });
+  }
+
+  it.each([
+    ["a future date", "2999-01-01"],
+    ["no date", null],
+    ["a malformed date", "2026-13-40"],
+  ])(
+    "refuses a new mark, a restored mark or any score for %s, writing nothing (R1, R2, R6)",
+    async (_label, date) => {
+      unreleased(date);
+      expect(await setMovieWatched(550, true)).toEqual({
+        ok: false,
+        error: "not_released",
+      });
+      expect(
+        await restoreMovieWatched(550, "2026-09-23T12:16:58.070024+00:00"),
+      ).toEqual({ ok: false, error: "not_released" });
+      for (let score = 1; score <= 10; score++) {
+        expect(await setMovieRating(550, score)).toEqual({
+          ok: false,
+          error: "not_released",
+        });
+      }
+      expect(writes()).toEqual([]);
+      expect(refresh).not.toHaveBeenCalled();
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining("not_released"),
+      );
+    },
+  );
+
+  it("still plans, unplans, unmarks, clears and restores the plan of an unreleased movie (R3)", async () => {
+    unreleased("2999-01-01");
+    expect(await setMovieWatchlist(550, true)).toEqual({ ok: true });
+    expect(await setMovieWatchlist(550, false)).toEqual({ ok: true });
+    expect(await setMovieWatched(550, false)).toEqual({ ok: true });
+    expect(await setMovieRating(550, null)).toEqual({ ok: true });
+    expect(await restoreMovieWatchlist(550)).toEqual({ ok: true });
+  });
+
+  it("lets a movie released today be marked (R4)", async () => {
+    unreleased(new Date().toISOString().slice(0, 10));
+    expect(await setMovieWatched(550, true)).toEqual({ ok: true });
   });
 });
 
@@ -213,6 +268,10 @@ describe("removals during a TMDB outage (AC-14)", () => {
     ["planning", () => setMovieWatchlist(550, true)],
     ["marking watched", () => setMovieWatched(550, true)],
     ["rating", () => setMovieRating(550, 7)],
+    [
+      "restoring a watched mark",
+      () => restoreMovieWatched(550, "2026-09-23T12:16:58.070024+00:00"),
+    ],
   ])("refuses %s with nothing written", async (_, call) => {
     expect(await call()).toEqual({ ok: false, error: "tmdb_unavailable" });
     expect(calls).toEqual([]);
@@ -369,7 +428,7 @@ describe("restoreMovieWatchlist (spec 0008)", () => {
 describe("restoreMovieWatched (spec 0008)", () => {
   const WATCHED_AT = "2026-09-23T12:16:58.070024+00:00";
 
-  it("restores the exact watched time through restore_movie_watched (AC-7)", async () => {
+  it("restores the exact watched time through restore_movie_watched, after the release check (AC-7)", async () => {
     expect(await restoreMovieWatched(550, WATCHED_AT)).toEqual({ ok: true });
     expect(writes()).toEqual([
       {
@@ -380,7 +439,7 @@ describe("restoreMovieWatched (spec 0008)", () => {
         ],
       },
     ]);
-    expect(loadMovie).not.toHaveBeenCalled();
+    expect(loadMovie).toHaveBeenCalledWith(550);
     expect(refresh).toHaveBeenCalledOnce();
   });
 

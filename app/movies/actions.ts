@@ -4,6 +4,7 @@ import { refresh } from "next/cache";
 import type { z } from "zod";
 
 import { getOptionalUser } from "@/lib/auth/user";
+import { isMovieReleased } from "@/lib/catalog/movie-page";
 import { createClient } from "@/lib/supabase/server";
 import {
   logTrackingEvent,
@@ -19,6 +20,7 @@ import {
 } from "@/lib/tracking/schemas";
 import { classifyTrackingError } from "@/lib/tracking/supabase-error";
 import type { MovieTrackingResult } from "@/lib/tracking/types";
+import { todayUtc } from "@/lib/tv/air-status";
 
 import { loadMovie } from "./[id]/load-movie";
 
@@ -29,8 +31,9 @@ import { loadMovie } from "./[id]/load-movie";
  * Each takes a target value, never a toggle, so the same call twice gives the
  * same row and queued rapid clicks settle on the last one (AC-15). Each runs
  * the same order: Zod parse, then the verified session, then (for a write that
- * can create a row) the TMDB check, then the write through Row Level Security,
- * then `refresh()` on success only.
+ * can create a row) the TMDB check, and for a watched mark or score the
+ * release gate, then the write through Row Level Security, then `refresh()` on
+ * success only.
  *
  * None of them throws or redirects. A thrown error reaches the browser as an
  * opaque digest and would land in an error boundary instead of a toast, so
@@ -48,19 +51,26 @@ type WriteStep = (
 ) => PromiseLike<{ error: { code?: string | null } | null }>;
 
 /**
+ * What a write checks with TMDB first. `none` for a removal or the watchlist
+ * restore, which must keep working for a movie TMDB later drops, or during an
+ * outage (AC-14). `exists` for a write that can insert a row. `released` for a
+ * watched mark or score, new or restored, which also waits for the release
+ * date (prompts/movie-release-gate.md).
+ */
+type TmdbCheck = "none" | "exists" | "released";
+
+/**
  * The shared shape of every tracking action.
  *
  * @param event The log event for a refusal.
  * @param movieId The already parsed movie id.
- * @param creates Whether this write can insert a row. Only those confirm the
- * movie with TMDB first; a removal must keep working for a movie TMDB later
- * drops, or during an outage (AC-14).
+ * @param check What to confirm with TMDB before writing.
  * @param write The Supabase call, given the request client and the user id.
  */
 async function runTrackingWrite(
   event: TrackingEvent,
   movieId: number,
-  creates: boolean,
+  check: TmdbCheck,
   write: WriteStep,
 ): Promise<MovieTrackingResult> {
   try {
@@ -70,13 +80,20 @@ async function runTrackingWrite(
       return { ok: false, error: "session_expired" };
     }
 
-    if (creates) {
+    if (check !== "none") {
       const movie = await loadMovie(movieId);
       if (movie.kind !== "found") {
         const error =
           movie.kind === "failed" ? "tmdb_unavailable" : "not_found";
         logTrackingEvent(event, error);
         return { ok: false, error };
+      }
+      if (
+        check === "released" &&
+        !isMovieReleased(movie.movie.releaseDate, todayUtc(new Date()))
+      ) {
+        logTrackingEvent(event, "not_released");
+        return { ok: false, error: "not_released" };
       }
     }
 
@@ -129,17 +146,21 @@ export async function setMovieWatchlist(
   if (!input) return { ok: false, error: "invalid_input" };
 
   if (input.inWatchlist) {
-    return runTrackingWrite(event, input.movieId, true, (supabase, userId) =>
-      supabase
-        .from("user_movie_state")
-        .upsert(
-          { user_id: userId, movie_id: input.movieId, in_watchlist: true },
-          { onConflict: "user_id,movie_id" },
-        ),
+    return runTrackingWrite(
+      event,
+      input.movieId,
+      "exists",
+      (supabase, userId) =>
+        supabase
+          .from("user_movie_state")
+          .upsert(
+            { user_id: userId, movie_id: input.movieId, in_watchlist: true },
+            { onConflict: "user_id,movie_id" },
+          ),
     );
   }
 
-  return runTrackingWrite(event, input.movieId, false, (supabase, userId) =>
+  return runTrackingWrite(event, input.movieId, "none", (supabase, userId) =>
     supabase
       .from("user_movie_state")
       .update({ in_watchlist: false })
@@ -149,7 +170,9 @@ export async function setMovieWatchlist(
 }
 
 /**
- * Marks a movie watched, or clears the mark.
+ * Marks a movie watched, or clears the mark. A new mark waits for the TMDB
+ * release date (`not_released`); clearing never does, so a mark stored before
+ * release can always be removed (`AGENTS.md` section 7).
  *
  * Marking goes through `mark_movie_watched`, because whether it also clears
  * the bookmark depends on the current row and must be decided in the same
@@ -165,12 +188,12 @@ export async function setMovieWatched(
   if (!input) return { ok: false, error: "invalid_input" };
 
   if (input.watched) {
-    return runTrackingWrite(event, input.movieId, true, (supabase) =>
+    return runTrackingWrite(event, input.movieId, "released", (supabase) =>
       supabase.rpc("mark_movie_watched", { p_movie_id: input.movieId }),
     );
   }
 
-  return runTrackingWrite(event, input.movieId, false, (supabase, userId) =>
+  return runTrackingWrite(event, input.movieId, "none", (supabase, userId) =>
     supabase
       .from("user_movie_state")
       .update({ watched_at: null })
@@ -180,7 +203,9 @@ export async function setMovieWatched(
 }
 
 /**
- * Stores a personal score from 1 to 10, or clears it.
+ * Stores a personal score from 1 to 10, or clears it. Any score, a first one
+ * or a change, waits for the TMDB release date, as an episode's does for its
+ * air date; clearing never does (`AGENTS.md` section 7).
  *
  * A score goes through `rate_movie`, which also marks an unwatched movie
  * watched in the same statement (AC-8). Clearing touches only `rating`, so the
@@ -196,7 +221,7 @@ export async function setMovieRating(
 
   const score = input.rating;
   if (score !== null) {
-    return runTrackingWrite(event, input.movieId, true, (supabase) =>
+    return runTrackingWrite(event, input.movieId, "released", (supabase) =>
       supabase.rpc("rate_movie", {
         p_movie_id: input.movieId,
         p_rating: score,
@@ -204,7 +229,7 @@ export async function setMovieRating(
     );
   }
 
-  return runTrackingWrite(event, input.movieId, false, (supabase, userId) =>
+  return runTrackingWrite(event, input.movieId, "none", (supabase, userId) =>
     supabase
       .from("user_movie_state")
       .update({ rating: null })
@@ -230,7 +255,7 @@ export async function restoreMovieWatchlist(
   const input = parse(restoreWatchlistInputSchema, { movieId }, event);
   if (!input) return { ok: false, error: "invalid_input" };
 
-  return runTrackingWrite(event, input.movieId, false, (supabase) =>
+  return runTrackingWrite(event, input.movieId, "none", (supabase) =>
     supabase.rpc("restore_movie_watchlist", { p_movie_id: input.movieId }),
   );
 }
@@ -243,6 +268,11 @@ export async function restoreMovieWatchlist(
  * user's own private date, and `restore_movie_watched` accepts it only in the
  * past, only for the caller's own unwatched row, and only within 10 minutes of
  * the removal. The rating and the bookmark are never touched.
+ *
+ * It waits for the release date like a new mark does. The database cannot tell
+ * an Undo from a fresh mark, since any write to the row (planning, say) opens
+ * its 10 minute window, so without the gate a crafted call could mark an
+ * unreleased movie watched (prompts/movie-release-gate.md, R6).
  */
 export async function restoreMovieWatched(
   movieId: number,
@@ -252,7 +282,7 @@ export async function restoreMovieWatched(
   const input = parse(restoreWatchedInputSchema, { movieId, watchedAt }, event);
   if (!input) return { ok: false, error: "invalid_input" };
 
-  return runTrackingWrite(event, input.movieId, false, (supabase) =>
+  return runTrackingWrite(event, input.movieId, "released", (supabase) =>
     supabase.rpc("restore_movie_watched", {
       p_movie_id: input.movieId,
       p_watched_at: input.watchedAt,

@@ -23,14 +23,7 @@ import {
 import { ScorePicker } from "./score-picker";
 import { useEpisodeStates, useSeasonTracking } from "./season-tracking-store";
 import { WatchedIcon } from "./tracking-icons";
-
-/** The movie page's pill sizes: 44px on mobile, 36px from `md` (AC-23). */
-const PILL =
-  "h-11 cursor-pointer px-4 transition-[filter] hover:brightness-125 md:h-9 md:px-3.5";
-
-/** A pill that cannot act right now: focusable, muted, and inert. */
-const PILL_UNAVAILABLE =
-  "h-11 cursor-not-allowed px-4 opacity-50 md:h-9 md:px-3.5";
+import { TRACKING_PILL, TRACKING_PILL_UNAVAILABLE } from "./tracking-pill";
 
 /**
  * One episode's Watched and score pills on a season page (spec 0011, AC-1,
@@ -106,7 +99,10 @@ function EpisodeTrackingControls({
         aria-pressed={shown.watched}
         aria-disabled={canMark ? undefined : true}
         onClick={toggleWatched}
-        className={cn(glassPillClassName(), canMark ? PILL : PILL_UNAVAILABLE)}
+        className={cn(
+          glassPillClassName(),
+          canMark ? TRACKING_PILL : TRACKING_PILL_UNAVAILABLE,
+        )}
       >
         <WatchedIcon filled={shown.watched} />
         <span aria-hidden="true">
@@ -118,7 +114,7 @@ function EpisodeTrackingControls({
         <PopoverTrigger
           aria-label={`Your score for ${label}: ${scoreText}`}
           aria-haspopup="dialog"
-          className={cn(glassPillClassName("score"), PILL)}
+          className={cn(glassPillClassName("score"), TRACKING_PILL)}
         >
           <StarIcon
             aria-hidden="true"
