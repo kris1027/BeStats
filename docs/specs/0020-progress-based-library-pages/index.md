@@ -62,7 +62,7 @@ Today the status you pick (Want to Watch, Watching, On Hold, Dropped, Completed)
   - **Watched** when `watched_at` is set, whatever `in_watchlist` says.
   - Otherwise, when `in_watchlist` is true, it is on **Watchlist** if its TMDB release date is on or before today, and on **Upcoming** if the date is after today, missing or unparseable by `parseTmdbDate` ("Date TBA").
   - Watchlist movies keep `watchlisted_at` newest first. Upcoming movies go soonest release first, with Date TBA last, then `watchlisted_at` newest first. Watched movies are unchanged (`watched_at` newest first). Every final tie goes by `movie_id` ascending.
-- **AC-14**: Marking a movie watched no longer clears `in_watchlist`. Unmarking it puts a planned movie straight back on Watchlist or Upcoming, and leaves an unplanned movie on no page. The movie page button still reads "Add to watchlist" and stays in its planned state while the movie is also watched.
+- **AC-14** (superseded 2026-10-10 by [prompts/movie-plan-watched-exclusive.md](../../../prompts/movie-plan-watched-exclusive.md): planned and watched are now exclusive, so marking watched clears the plan): Marking a movie watched no longer clears `in_watchlist`. Unmarking it puts a planned movie straight back on Watchlist or Upcoming, and leaves an unplanned movie on no page. The movie page button still reads "Add to watchlist" and stays in its planned state while the movie is also watched.
 
 *Pages*
 - **AC-15**: `/upcoming` has no Up Next section. Its shows tab lists the Upcoming shows of AC-11, and its movies tab lists the Upcoming movies of AC-13. Neither has a Mark watched button.

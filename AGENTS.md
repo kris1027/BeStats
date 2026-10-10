@@ -124,7 +124,8 @@ This section is the only place the stack is defined. Installed versions live in 
 - Movies can be marked watched and rated directly from 1 to 10 from their TMDB release date (UTC day); before it, or with no date, they can only be planned. Marks and scores stored earlier stay and can still be removed ([prompts/movie-release-gate.md](prompts/movie-release-gate.md)).
 - TV episodes can be marked watched and rated directly from 1 to 10.
 - Seasons and TV shows cannot be rated directly. Their ratings are calculated from the user's episode ratings.
-- Watched state and rating are separate: marking something watched does not require a rating, and removing a watched mark does not silently delete its rating.
+- A movie is planned or watched, never both: marking it watched removes the plan, and planning a watched movie removes its watch mark and score, with Undo. A movie score needs a watch mark: removing the mark removes the score, with Undo, and an unwatched movie cannot be scored. A movie can be watched without a score ([prompts/movie-plan-watched-exclusive.md](prompts/movie-plan-watched-exclusive.md)).
+- Episodes keep watched state and rating separate: marking one watched does not require a rating, and removing its watched mark does not delete its rating.
 - TV tracking and episode history are separate: stopping tracking must preserve watched episodes and ratings.
 - Marking a season watched marks only eligible episodes that have already aired, never future or unknown-date episodes.
 - Specials, represented by TMDB season 0, can be marked watched and rated but are excluded from overall TV progress, library page placement, and the TV show's calculated rating.
@@ -149,7 +150,7 @@ Supabase Auth owns identity. Add a separate profile table only if actual UI requ
 
 ### Movie state
 
-One record per user and movie contains watchlist membership, watched state, an optional watched timestamp, and an optional integer rating from 1 to 10. Keeping these fields in related tables is also acceptable if existing project conventions favor that structure.
+One record per user and movie contains watchlist membership, watched state, an optional watched timestamp, and an optional integer rating from 1 to 10. Two checks hold the movie rules from section 7: a row is never both planned and watched, and a rating needs a watched timestamp.
 
 ### TV tracking state
 
@@ -187,7 +188,7 @@ Calculate overall progress using aired regular episodes. Exclude specials, unair
 
 Use the available TMDB air date consistently; do not imply a precise local release time that the source does not provide. Document the date boundary chosen in the implementation plan.
 
-Every tracked show is on exactly one page (spec 0020, AC-7). Watchlist: an aired regular episode comes after the furthest one you watched, and the card offers the first of them with Mark watched; unwatched gaps before it are never offered (amended 2026-10-10). Upcoming: caught up with a next regular episode dated after today, or nothing watched and nothing dated (Date TBA). Watched: caught up with nothing dated, labelled Finished when TMDB says Ended or Canceled and Caught up otherwise. Aired episodes come from the show details read (`last_episode_to_air`, plus a `next_episode_to_air` dated on or before today). A planned movie is on Watchlist from its release day and on Upcoming before it or with no date; a watched movie is on Watched whatever its plan says.
+Every tracked show is on exactly one page (spec 0020, AC-7). Watchlist: an aired regular episode comes after the furthest one you watched, and the card offers the first of them with Mark watched; unwatched gaps before it are never offered (amended 2026-10-10). Upcoming: caught up with a next regular episode dated after today, or nothing watched and nothing dated (Date TBA). Watched: caught up with nothing dated, labelled Finished when TMDB says Ended or Canceled and Caught up otherwise. Aired episodes come from the show details read (`last_episode_to_air`, plus a `next_episode_to_air` dated on or before today). A planned movie is on Watchlist from its release day and on Upcoming before it or with no date; a watched movie is on Watched, and cannot also be planned.
 
 Marking a whole season watched must be idempotent and preserve existing ratings. New episodes remain unwatched when they become available later.
 
@@ -262,6 +263,7 @@ At minimum, verify these behaviors before considering the MVP complete:
 14. The interface stays consistent with the existing UI and `/showcase`.
 15. Secrets are absent from browser bundles, and private data is not served through shared caches.
 16. An unreleased or undated movie can be planned but not marked watched or rated; existing marks and scores stay removable.
+17. A movie is never both planned and watched, and a movie score exists only on a watched movie; planning or unmarking a watched movie offers an Undo that restores its mark and score.
 
 If credentials or provider configuration prevent a check, report it as blocked or unverified. Do not substitute a mock-only check for a claimed live integration result.
 
