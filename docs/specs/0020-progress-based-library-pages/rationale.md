@@ -80,3 +80,13 @@ The rollout uses expand then contract, because production reads `status` today. 
 - **Upcoming tie break by `tracked_at`**: newest plans first among equal dates. Runner up: alphabetical.
 - **The episode write toast "{Show} added to your shows"**: replaces "moved to Watching", which names a status that no longer exists.
 - **Separate PR for the contract migration**: makes the rollback window explicit. Runner up: one PR with both migrations, which loses the safe revert.
+
+## Amendment 2026-10-10: Pause and Drop removed
+
+Settled in a grilling session on 2026-10-10. The owner wants one way off the pages, Stop tracking, and no parked state.
+
+- **Existing holds are cleared, not untracked.** Every paused or dropped show becomes an ordinary tracked show and lands on the page its progress gives it. Runner up: untrack dropped shows, which would have read Drop as Stop tracking; rejected so no user loses a tracked show without choosing it.
+- **The hold removal rides in the contract migration.** Both delete the same legacy mirror (`legacy_status_for_hold`, the rollback path), so a separate hold expand and contract would write a rollback safe `set_show_hold` only to drop it. The cost is a few minutes between `db push` and the Vercel deploy where the live app calls functions that no longer exist, accepted at the current user count; rollback after that is a forward fix.
+- **The show page control becomes a toggle.** A menu with only Stop tracking is an extra click for nothing; the Undo toast covers a mistaken click, and the card bookmark already behaves this way. The tracked state carries `aria-pressed` and the name "Stop tracking {title}".
+- **Stop tracking loses its stale guard.** With only tracked and untracked, deleting a row that is already gone is harmless, so `untrack_show` drops `p_expected` and becomes idempotent. A stop and retrack in another tab followed by a stop from a stale tab is rare, and Undo repairs it.
+- **Specs are amended in place, not superseded.** 0020 is still in progress, so its ACs, data model, build plan and migration plan carry the change with a dated note; earlier specs and reviews stay as history.

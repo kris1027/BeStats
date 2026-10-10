@@ -2,6 +2,7 @@
 
 **Date**: 2026-10-07
 **Status**: In Progress
+**Amended**: 2026-10-10. Pause and Drop are removed: a show is tracked or not, Stop tracking is the only way out, every existing hold is cleared, and the hold removal ships inside the contract migration. Settled in a grilling session on 2026-10-10; see [rationale.md](rationale.md#amendment-2026-10-10-pause-and-drop-removed).
 
 Scope feature: [23. Progress based library pages](../../scope/scope.md) · GA tier
 
@@ -9,32 +10,30 @@ Supersedes in part: [0013](../0013-tv-status-and-progress/index.md) (the five st
 
 ## Summary
 
-Today the status you pick (Want to Watch, Watching, On Hold, Dropped, Completed) decides which page a show sits on. This change drops those statuses. A show is simply tracked or not, and the page it appears on is worked out every time you open the page, from the episodes you watched and the air dates TMDB gives. Unwatched aired episodes put it on Watchlist. Being caught up with a dated next episode, or not started with nothing dated, puts it on Upcoming. Being caught up with nothing dated puts it on Watched. Movies follow the same one page rule. The only choices you still make by hand are Pause and Drop, which park a show in a "Paused & dropped" section at the bottom of Watchlist.
+Today the status you pick (Want to Watch, Watching, On Hold, Dropped, Completed) decides which page a show sits on. This change drops those statuses. A show is simply tracked or not, and the page it appears on is worked out every time you open the page, from the episodes you watched and the air dates TMDB gives. Unwatched aired episodes put it on Watchlist. Being caught up with a dated next episode, or not started with nothing dated, puts it on Upcoming. Being caught up with nothing dated puts it on Watched. Movies follow the same one page rule. The only choice you make by hand is whether a show is tracked; Stop tracking (with Undo) takes it off every page.
 
 ## Requirements
 
 **User stories**:
 - As a signed in user, I want every show to sit on the one page that matches where I am with it, so I never have to keep a status up to date by hand.
 - As a signed in user, I want shows I'm caught up on to move to Upcoming when a new episode gets a date, and back to Watchlist when it airs, without touching anything.
-- As a signed in user, I want to pause or drop a show so it leaves my active pages without losing my episode history and ratings.
+- As a signed in user, I want to stop tracking a show so it leaves my pages without losing my episode history and ratings.
 - As a signed in user, I want planned movies that aren't out yet on Upcoming, and to move them to Watchlist on release day.
 
 **Acceptance criteria**:
 
 *Tracking model*
-- **AC-1**: A show is **tracked** when the user has a `user_show_state` row for it, and **untracked** otherwise. A tracked show has a hold of none, **Paused** or **Dropped**. Want to Watch, Watching, On Hold, Completed and the `tv_status` and `status_source` types appear nowhere in the UI, the database or the TypeScript types.
-- **AC-2**: On `/shows/{id}`, a signed in user sees **Plan to watch** when the show is untracked. When it is tracked, they see a pill that reads **Tracking**, **Paused** or **Dropped**, with a menu:
-  - With no hold, the menu offers Pause, Drop and Stop tracking.
-  - When held, it offers Resume, the other hold (Drop or Pause), and Stop tracking.
+- **AC-1**: A show is **tracked** when the user has a `user_show_state` row for it, and **untracked** otherwise. There is no hold: Pause and Drop were removed (amended 2026-10-10). Want to Watch, Watching, On Hold, Completed, Paused, Dropped and the `tv_status`, `status_source` and `show_hold` types appear nowhere in the UI, the database or the TypeScript types.
+- **AC-2**: On `/shows/{id}`, a signed in user sees a toggle. It reads **Plan to watch** when the show is untracked, and a click tracks it. It reads **Tracking** when the show is tracked, with `aria-pressed="true"` and the accessible name "Stop tracking {title}", and a click stops tracking (AC-3). There is no menu.
 
   The progress line under the control is unchanged. A signed out visitor sees the control's existing signed out state.
-- **AC-3**: **Stop tracking** deletes the row and leaves every episode mark and rating untouched. A toast offers Undo, which restores `tracked_at`, `hold_state` and `hold_changed_at` exactly, so the show returns to its old place. An Undo that can no longer apply shows "Couldn't undo. Track the show again from its page."
-- **AC-4**: A hold change or Stop tracking sends the hold the client last saw. If the stored hold differs, nothing is written, the toast reads "This show changed elsewhere. Showing the current one.", and the page refreshes.
-- **AC-5**: Marking an episode or a season watched on an untracked show tracks it with no hold, and the toast says "{Show} added to your shows". On a tracked show it changes nothing about tracking and never clears a Pause or Drop. Only a mark that newly watches a regular episode tracks the show: marking a special, or a mark that changes nothing (an episode already watched, or a season with nothing left to mark), leaves an untracked show untracked.
-- **AC-6**: The bookmark on catalog and search show cards is filled when the show is tracked (held or not) and empty otherwise. On an untracked show, a click tracks it. On a tracked show, a click stops tracking, with the Undo of AC-3.
+- **AC-3**: **Stop tracking** deletes the row and leaves every episode mark and rating untouched. A toast offers Undo, which restores `tracked_at` exactly, so the show returns to its old place. An Undo that can no longer apply shows "Couldn't undo. Track the show again from its page."
+- **AC-4**: Stop tracking is idempotent. A show that is already untracked (stopped in another tab) writes nothing, the toast confirms it is no longer tracked without an Undo, and the page refreshes. There is no expected value check.
+- **AC-5**: Marking an episode or a season watched on an untracked show tracks it with no hold, and the toast says "{Show} added to your shows". On a tracked show it changes nothing about tracking. Only a mark that newly watches a regular episode tracks the show: marking a special, or a mark that changes nothing (an episode already watched, or a season with nothing left to mark), leaves an untracked show untracked.
+- **AC-6**: The bookmark on catalog and search show cards is filled when the show is tracked and empty otherwise. On an untracked show, a click tracks it. On a tracked show, a click stops tracking, with the Undo of AC-3.
 
 *Show classification*
-- **AC-7**: For each tracked show with no hold, the page is worked out from that show's TMDB details read and the user's watched regular episodes. Specials (season 0) never count. "Today" is the request's UTC date (`requestTodayUtc()`).
+- **AC-7**: For each tracked show, the page is worked out from that show's TMDB details read and the user's watched regular episodes. Specials (season 0) never count. "Today" is the request's UTC date (`requestTodayUtc()`).
   - **Aired episodes** are every regular episode `(s, e)`, with `e` from 1 to the season's episode count, that sorts at or before `last_episode_to_air`. A `next_episode_to_air` whose air date is on or before today also counts as aired, along with everything before it. With no `last_episode_to_air`, nothing has aired. Edge cases:
     - Seasons with no episode count are skipped.
     - When `last_episode_to_air` is in a season missing from the seasons list, or listed with an episode count below its number (cache skew), episodes 1 to its number in that season count as aired, because TMDB itself says that episode aired.
@@ -44,7 +43,7 @@ Today the status you pick (Want to Watch, Watching, On Hold, Dropped, Completed)
   - **Upcoming (dated)**: no aired episode is unwatched, and `next_episode_to_air` is a regular episode with an air date strictly after today.
   - **Upcoming (Date TBA)**: no aired episode is unwatched, nothing is dated, and the user has watched no regular episode.
   - **Watched**: no aired episode is unwatched, nothing is dated, and the user has watched at least one regular episode. An announced season with no episodes or no date counts as nothing dated.
-- **AC-8**: Every tracked show with no hold whose TMDB read succeeded is on exactly one of `/watchlist?type=tv`, `/upcoming?type=tv` and `/watched?type=tv`. A held show is on none of the three; it appears only in the Paused & dropped section (AC-10). There are two exceptions: a title whose TMDB read failed is on no page (AC-17), and a title TMDB no longer has shows only as a "No longer on TMDB" card on Watchlist (AC-17), which is not a classification.
+- **AC-8**: Every tracked show whose TMDB read succeeded is on exactly one of `/watchlist?type=tv`, `/upcoming?type=tv` and `/watched?type=tv`. There are two exceptions: a title whose TMDB read failed is on no page (AC-17), and a title TMDB no longer has shows only as a "No longer on TMDB" card on Watchlist (AC-17), which is not a classification.
 - **AC-9**: A Watchlist show card shows:
   - the poster
   - the show name, linking to `/shows/{id}`
@@ -52,14 +51,7 @@ Today the status you pick (Want to Watch, Watching, On Hold, Dropped, Completed)
   - a **Mark watched** button
 
   The button needs the episode's TMDB id, which comes from the per card `getSeason` read. It stays pending until that read lands. If the read fails, the card shows today's Up Next "unavailable" state, carried over unchanged. Mark watched keeps the Up Next behaviour of spec 0014: a pending state, a toast with Undo, the stale second tab message, and a refresh that moves the card if the show changes page. Cards are ordered by last activity, newest first: the later of the newest watched regular episode and `tracked_at`, with ties broken by `show_id` ascending.
-- **AC-10**: On `/watchlist?type=tv`, a collapsed disclosure titled **"Paused & dropped (N)"** sits below the grid on page 1 only, and is hidden when N is 0.
-  - Each card shows the poster, the name, a "Paused" or "Dropped" label and a **Resume** button.
-  - Resume clears the hold with the expected value check of AC-4, and the show moves to the page AC-7 gives it.
-  - Cards are ordered by `hold_changed_at`, newest first, with ties broken by `show_id`.
-  - Membership needs no TMDB read. The poster and name come from `getTvShow`.
-    - A failed read shows the existing unavailable card, and a missing show shows "No longer on TMDB". Each keeps Resume and Stop tracking.
-  - N is the exact count of held shows. Up to the 500 most recently changed are listed, with a note when there are more.
-  - When the only tracked shows are held, the Watchlist empty panel (AC-18) shows above the section.
+- **AC-10**: Removed 2026-10-10. There is no Paused & dropped section; Watchlist shows only the grid of AC-9.
 - **AC-11**: An Upcoming show card shows the poster, the name, and either "S2E1 · Oct 20" (formatted by `formatShortDate`, which adds the year outside the current UTC year) or "Date TBA". It has no Mark watched. Dated cards come first, soonest first, and Date TBA cards come last. Ties go by `tracked_at` newest first, then `show_id`.
 - **AC-12**: A Watched show card is the spec 0019 card: the calculated show rating badge, no button, no TMDB rating. It adds a label: **Finished** when TMDB's status is `Ended` or `Canceled`, **Caught up** otherwise. Cards are ordered by last watched time, newest first: the newest watched episode in any season, specials included, falling back to `tracked_at`. Ties go by `show_id`.
 
@@ -73,7 +65,7 @@ Today the status you pick (Want to Watch, Watching, On Hold, Dropped, Completed)
 *Pages*
 - **AC-15**: `/upcoming` has no Up Next section. Its shows tab lists the Upcoming shows of AC-11, and its movies tab lists the Upcoming movies of AC-13. Neither has a Mark watched button.
 - **AC-16**: Every classified tab pages 20 cards at a time, and its total is the exact count of the titles classified onto it. A page past the end redirects to the last page. A malformed page number shows "That page doesn't exist", as today.
-  - **Ceiling:** each request classifies at most 500 shows with no hold, or 500 planned unwatched movies. The ceiling is applied in SQL before any TMDB read, with one ordering that all of that media type's tabs inherit: shows by AC-9's activity time (`order by greatest(last_regular_watched_at, tracked_at) desc, show_id limit 501`), and movies by `watchlisted_at desc, movie_id limit 501`. When a 501st row exists, every tab of that media type shows "Checked your 500 most recent shows" (or "movies"), and its count covers only what was checked.
+  - **Ceiling:** each request classifies at most 500 tracked shows, or 500 planned unwatched movies. The ceiling is applied in SQL before any TMDB read, with one ordering that all of that media type's tabs inherit: shows by AC-9's activity time (`order by greatest(last_regular_watched_at, tracked_at) desc, show_id limit 501`), and movies by `watchlisted_at desc, movie_id limit 501`. When a 501st row exists, every tab of that media type shows "Checked your 500 most recent shows" (or "movies"), and its count covers only what was checked.
   - Each tab classifies on its own request. No count is shown outside the tab's own heading. After Mark watched, `router.refresh()` updates the grid and the count together.
   - `/watched?type=movie` needs no classification and has no ceiling.
 - **AC-17**: When a single show's or movie's TMDB read fails, that title is placed on no page. Every tab of that media type shows "N shows couldn't be loaded · Retry" (or "movies"), and Retry refreshes the route. A systemic TMDB failure (a rejected credential or an exhausted rate limit) shows the existing failed panel with Retry.
@@ -96,18 +88,20 @@ Today the status you pick (Want to Watch, Watching, On Hold, Dropped, Completed)
   - `dropped` → `dropped`
   - `tracked_at` = `coalesce(listed_at, status_changed_at)`, and a held row's `hold_changed_at` = `status_changed_at`
 
+  This is what the expand migration did. The contract migration (amended 2026-10-10) then clears every hold, so a paused or dropped show becomes an ordinary tracked show and lands on the page AC-7 gives it, and drops `hold_state`, `hold_changed_at` and `show_hold`.
+
   No episode mark, rating or movie row is changed, apart from AC-14's new rule going forward. Movies watched before this change keep `in_watchlist = false`, as stored.
-- **AC-20**: Row level security on `user_show_state` keeps restricting reads, inserts, updates and deletes to the owner. The new view is `security_invoker`, and every new function is `security invoker` with `anon` revoked. The cross user pgTAP suite proves user B cannot read, track, hold, untrack or restore user A's shows, including through direct calls to the functions.
+- **AC-20**: Row level security on `user_show_state` keeps restricting reads, inserts, updates and deletes to the owner. The new view is `security_invoker`, and every new function is `security invoker` with `anon` revoked. The cross user pgTAP suite proves user B cannot read, track, untrack or restore user A's shows, including through direct calls to the functions.
 - **AC-21**: No page writes to the database when it loads. Automatic completion, its functions, `status_source`, and its writes on `/shows/{id}` and `/upcoming` are gone.
 - **AC-22**: TMDB reads stay in the public cache (`getTvShow`, `cacheLife("hours")`; `getMovie`, `cacheLife("days")`). Classification and every user value is computed per request outside any cache, with "today" read once per request.
-- **AC-23**: `AGENTS.md` sections 1, 7, 8, 9 and 13 and its repo facts describe the tracked plus hold model and progress based pages instead of the five statuses. `docs/scope/scope.md` carries feature 23. Specs 0013, 0014 and 0019 carry a "Superseded in part by 0020" note, and spec 0015's status reads "Superseded by 0020".
+- **AC-23**: `AGENTS.md` sections 1, 7, 8, 9 and 13 and its repo facts describe the tracked or untracked model (no holds) and progress based pages instead of the five statuses. `docs/scope/scope.md` carries feature 23. Specs 0013, 0014 and 0019 carry a "Superseded in part by 0020" note, and spec 0015's status reads "Superseded by 0020".
 - **AC-24**: With 100 tracked shows and 100 planned movies on a warm cache, each tab renders its last card in under 1.5 s on `pnpm start` locally. The cold time is recorded in `verify.md`.
 
 ## Decision
 
 **Chosen option**: Option 2: Classify per request from the TMDB show details read
 
-Replace stored statuses with a tracked row and an optional hold. Every library tab works out its titles on each request, in a pure function, from one cached TMDB details read per title and the user's own state.
+Replace stored statuses with a tracked row (the optional hold was removed on 2026-10-10). Every library tab works out its titles on each request, in a pure function, from one cached TMDB details read per title and the user's own state.
 
 **Implementation skills**: `supabase` (`supabase/agent-skills`, `.agents/skills/supabase/`) · `supabase-postgres-best-practices` (`supabase/agent-skills`, `.agents/skills/supabase-postgres-best-practices/`) · `next-dev-loop` (`vercel/next.js`, `.agents/skills/next-dev-loop/`)
 
@@ -121,11 +115,11 @@ Reasoning and options: see [rationale.md](rationale.md).
 
 | Table | Key | Fields | Notes |
 |---|---|---|---|
-| `user_show_state` | PK (`user_id`, `show_id`); FK `user_id` → `auth.users` on delete cascade (1:N) | `tracked_at timestamptz not null default now()` (a new column, backfilled from `listed_at`; never a rename) · `hold_state public.show_hold null` · `hold_changed_at timestamptz null` · `created_at` · `updated_at` | `status`, `status_source`, `status_changed_at` and `listed_at` are removed in the contract migration only. Until then they stay with every old trigger, check, index and view. Check `(hold_state is null) = (hold_changed_at is null)`. Index `(user_id, hold_changed_at desc, show_id) where hold_state is not null` for the Paused & dropped section. A trigger owns `tracked_at` on insert and `hold_changed_at` on hold change, so no client chooses them (same pattern as `listed_at` today); the restore function is the only path that writes them explicitly. |
+| `user_show_state` | PK (`user_id`, `show_id`); FK `user_id` → `auth.users` on delete cascade (1:N) | `tracked_at timestamptz not null default now()` (a new column, backfilled from `listed_at`; never a rename) · `created_at` · `updated_at` | `status`, `status_source`, `status_changed_at` and `listed_at` are removed in the contract migration only. Until then they stay with every old trigger, check, index and view. The expand migration also added `hold_state`, `hold_changed_at`, their check, the held index and the hold trigger branch; the contract migration drops them all (amended 2026-10-10). A trigger owns `tracked_at` on insert, so no client chooses it (same pattern as `listed_at` today); the restore function is the only path that writes it explicitly. |
 | `user_movie_state` | unchanged | unchanged | `mark_movie_watched` stops setting `in_watchlist = false` (AC-14). The partial index on `in_watchlist` gains `and watched_at is null` so it holds only classifiable rows. |
 | `user_episode_state` | unchanged | unchanged | Its `show_order_idx` serves the last activity reads. |
-| Enum `show_hold` | | `paused`, `dropped` | New. `tv_status` and `status_source` are dropped. |
-| View `user_tracked_shows` | | `user_id`, `show_id`, `tracked_at`, `hold_state`, `hold_changed_at`, `last_regular_watched_at` (newest watched regular episode), `last_watched_at` (newest watched episode, any season) | `security_invoker = true`. Read only for `authenticated`. Replaces `user_watchlist_entries`, `user_up_next_shows` and `user_watched_entries`. |
+| Enum `show_hold` | | `paused`, `dropped` | Added by expand, dropped by contract (amended 2026-10-10), along with `tv_status` and `status_source`. |
+| View `user_tracked_shows` | | `user_id`, `show_id`, `tracked_at`, `last_regular_watched_at` (newest watched regular episode), `last_watched_at` (newest watched episode, any season) | `security_invoker = true`. Read only for `authenticated`. Replaces `user_watchlist_entries`, `user_up_next_shows` and `user_watched_entries`. Its `hold_state` and `hold_changed_at` columns are removed by contract. |
 
 **Classification** (pure TypeScript in `lib/tv/library-page.ts` and `lib/catalog/movie-page.ts`, no I/O):
 
@@ -145,10 +139,8 @@ classifyMovie({ releaseDate, inWatchlist, watchedAt }, today)
 **State transitions** (show):
 
 ```
-untracked ──Plan to watch / episode mark / bookmark──▶ tracked(hold none)
-tracked(none) ──Pause──▶ tracked(paused)      tracked(none) ──Drop──▶ tracked(dropped)
-tracked(paused) ◀──Pause/Drop──▶ tracked(dropped)   tracked(held) ──Resume──▶ tracked(none)
-tracked(any) ──Stop tracking──▶ untracked ──Undo──▶ tracked(as before)
+untracked ──Plan to watch / episode mark / bookmark──▶ tracked
+tracked ──Stop tracking (toggle or bookmark)──▶ untracked ──Undo──▶ tracked(tracked_at as before)
 ```
 
 The page (Watchlist, Upcoming or Watched) is not a state. It is recomputed on every request from AC-7.
@@ -158,11 +150,12 @@ The page (Watchlist, Upcoming or Watched) is not a state. It is recomputed on ev
 | Action | Postgres function | Key inputs | Key outputs | Auth | Key errors |
 |---|---|---|---|---|---|
 | `trackShow` | `track_show(p_show_id)` | `showId: int > 0` | `{ tracked: true, newlyTracked: boolean }`. `newlyTracked` is true exactly when the `insert … on conflict do nothing returning` CTE returned a row. | `requireUser` | session expired, write failed |
-| `setShowHold` | `set_show_hold(p_show_id, p_hold, p_expected)` | `showId`, `hold: 'paused' \| 'dropped' \| null`, `expected: same` | new hold | `requireUser` | `hold_changed` (AC-4), `not_tracked` |
-| `untrackShow` | `untrack_show(p_show_id, p_expected)` | `showId`, `expected` | `{ trackedAt, hold, holdChangedAt }` for Undo | `requireUser` | `hold_changed`, `not_tracked` |
-| `restoreShowTracking` | `restore_show_tracking(p_show_id, p_tracked_at, p_hold, p_hold_changed_at)` | values from `untrackShow` | restored row | `requireUser` | `already_tracked`; bounds: no timestamp in the future, `hold_changed_at ≥ tracked_at`, hold and `hold_changed_at` both null or both set. A client supplied `tracked_at` only moves the caller's own sort order, which is accepted. |
+| `untrackShow` | `untrack_show(p_show_id)` | `showId` | `{ trackedAt }` for Undo, or nothing when the show was already untracked (AC-4) | `requireUser` | session expired, write failed |
+| `restoreShowTracking` | `restore_show_tracking(p_show_id, p_tracked_at)` | the value from `untrackShow` | restored row | `requireUser` | `already_tracked`; bound: `tracked_at` not in the future. A client supplied `tracked_at` only moves the caller's own sort order, which is accepted. |
 | `setEpisodeWatched`, `setSeasonWatched`, `setEpisodeRating` (changed) | `mark_episode_watched`, `mark_season_watched` and `rate_episode` call `track_show` in place of `start_watching_show` | unchanged | The SQL return shape is unchanged, so the old app keeps working: `show_started` now means "newly tracked". TypeScript maps it to `showTracked`, and `showCompleted` is removed from `ShowStatusFlags`. | `requireUser` | unchanged |
 | `setMovieWatched`, `restoreMovieWatched`, `restoreMovieWatchlist` (changed) | `mark_movie_watched`, `restore_movie_watched`, `restore_movie_watchlist` | unchanged | They no longer assume watched clears the plan (AC-14). pgTAP 050 and 070 are updated. | `requireUser` | unchanged |
+
+Removed 2026-10-10: `setShowHold`, `set_show_hold`, the `p_expected` argument of `untrack_show`, the hold arguments of `restore_show_tracking`, and the `hold_changed` and `not_tracked` errors.
 
 Removed: `setShowStatus`, `restoreShowStatus`, `set_show_status`, `remove_show_status`, `restore_show_status`, `start_watching_show`, `complete_show_automatically`, `reopen_show_automatically`, `reopen_completed_show`, `lib/tracking/auto-completion.ts`, `lib/tv/auto-completion.ts`.
 
@@ -172,7 +165,7 @@ Files:
 - **Rewritten:** `lib/tracking/library-lists.ts` and its tests.
 - **Rewritten or deleted:** `lib/tracking/show-state.ts`, `intent.ts` and `up-next.ts` lose every status path. A module left empty is deleted.
 
-Reads (server only, in `lib/tracking/library-lists.ts`): `getShowLibraryTab(page, tab)` reads `user_tracked_shows` (unheld rows, the 500 most active), the user's watched regular episodes for those shows, and `getTvShow` for each through `mapWithConcurrency`. It then classifies, sorts and slices. `getMovieLibraryTab(page, tab)` does the same over planned unwatched movies with `getMovie`. `getHeldShows()` reads held rows only. `/watched?type=movie` keeps its existing direct query.
+Reads (server only, in `lib/tracking/library-lists.ts`): `getShowLibraryTab(page, tab)` reads `user_tracked_shows` (unheld rows, the 500 most active), the user's watched regular episodes for those shows, and `getTvShow` for each through `mapWithConcurrency`. It then classifies, sorts and slices. `getMovieLibraryTab(page, tab)` does the same over planned unwatched movies with `getMovie`. `/watched?type=movie` keeps its existing direct query.
 
 **Value sourcing**:
 
@@ -188,8 +181,7 @@ Reads (server only, in `lib/tracking/library-lists.ts`): `getShowLibraryTab(page
 | Watched show card | Finished / Caught up | `TvShow.status` ∈ {`Ended`, `Canceled`} |
 | Watched show card | rating badge | `getShowRatings` (spec 0012/0019, unchanged) |
 | Watched order | last watched | `user_tracked_shows.last_watched_at`, else `tracked_at` |
-| Paused & dropped card | label, order | `hold_state`, `hold_changed_at` |
-| Show page pill | Tracking / Paused / Dropped | `user_show_state` row and `hold_state`, read in the private slot that holds the status today (`show-status-slot.tsx`, renamed `show-tracking-slot.tsx`), behind its existing Suspense boundary |
+| Show page toggle | Plan to watch / Tracking | whether a `user_show_state` row exists, read in the private slot that holds the status today (`show-status-slot.tsx`, renamed `show-tracking-slot.tsx`), behind its existing Suspense boundary |
 | Undo of Stop tracking | old placement | the `untrack_show` return values, held by the toast |
 | Movie classification | release date | `Movie.releaseDate` from `getMovie` |
 | Ceiling note | "Checked your 500 most recent …" | derived: row count read with `limit 501` |
@@ -197,10 +189,9 @@ Reads (server only, in `lib/tracking/library-lists.ts`): `getShowLibraryTab(page
 
 **Key invariants**:
 - At most one `user_show_state` row per user and show (primary key). Tracking twice is a no op (`on conflict do nothing`).
-- `hold_state` and `hold_changed_at` are both null or both set (check constraint).
-- No episode function ever writes `hold_state`, and no tracking function writes `user_episode_state`.
+- No tracking function writes `user_episode_state`.
 - Classification is a pure function of (TMDB details, user state, today). Nothing derived is stored.
-- A title appears on at most one page per request, and an unheld tracked show whose TMDB read succeeded appears on exactly one.
+- A title appears on at most one page per request, and a tracked show whose TMDB read succeeded appears on exactly one.
 
 **Security model**: Private to the owner, as today. RLS stays forced on `user_show_state` with the existing owner policies for select, insert, update and delete. Every new function is `security invoker` with `set search_path = ''`, writes `auth.uid()` and never takes a user id; `anon` and `public` are revoked and `authenticated` is granted execute. The view is `security_invoker` and grants only select to `authenticated`. Server Actions call `requireUser()` before any write. TMDB responses stay in the shared cache, and user rows never do. No compliance scope beyond what spec 0017 already covers, and no new processor.
 
@@ -223,8 +214,8 @@ Reads (server only, in `lib/tracking/library-lists.ts`): `getShowLibraryTab(page
   - `last_episode_to_air` in a season missing from the list → counted
   - malformed next or last → read as null
 - Movie classifier table, verifies **AC-13**, **AC-14**: released planned, future planned, undated planned, watched and planned, watched and unplanned.
-- pgTAP, verifies **AC-1**, **AC-3** to **AC-5**, **AC-19**, **AC-20**: the migration mapping on seeded old rows; the hold expected value check; untrack then restore round trip; an episode mark tracks an untracked show and leaves a paused one paused; user B blocked on every function and the view.
-- Browser, verifies **AC-9**, **AC-10**, **AC-15**, **AC-17**: mark the last aired episode of an ongoing show with a dated next episode and see it move from Watchlist to Upcoming; pause it and see it in Paused & dropped; Resume; Stop tracking and Undo; a forced TMDB failure for one show shows the note.
+- pgTAP, verifies **AC-1**, **AC-3** to **AC-5**, **AC-19**, **AC-20**: the contract clears every hold and drops the hold columns; untrack is idempotent; untrack then restore round trip; an episode mark tracks an untracked show and leaves a tracked one unchanged; user B blocked on every function and the view.
+- Browser, verifies **AC-9**, **AC-10**, **AC-15**, **AC-17**: mark the last aired episode of an ongoing show with a dated next episode and see it move from Watchlist to Upcoming; Stop tracking with the toggle and Undo; a forced TMDB failure for one show shows the note.
 - Timing, verifies **AC-24**: a seeded user with 100 shows and 100 movies, warm and cold, on `pnpm start`.
 
 ## Build plan
@@ -244,23 +235,24 @@ Tracer Bullet: the first slice runs the whole pipe for one tab (shows on Watchli
 2. **Thin thread**: add `lastEpisodeToAir` and `nextEpisodeToAir` to `TvShow` (schema, normalize, fixtures), and build `classifyShow` with its unit table. Then build `getShowLibraryTab` and wire `/watchlist?type=tv` to it, reusing the Up Next card with Mark watched, plus the count, pages and ceiling. Satisfies **AC-7**, **AC-8**, **AC-9**, **AC-16**, **AC-22**.
 3. **The Upcoming and Watched show tabs**: point `/upcoming?type=tv` at the Upcoming tab with dated and TBA cards, and remove the Up Next section and the auto completion call there. Point `/watched?type=tv` at the Watched tab, with Finished/Caught up labels and the 0019 rating badge. Satisfies **AC-11**, **AC-12**, **AC-15**, **AC-21**.
 4. **The tracking control**:
-   - replace `ShowStatusControl` and its slots with Plan to watch and the Tracking pill (Pause, Drop, Resume, Stop tracking, Undo)
-   - add the `trackShow`, `setShowHold`, `untrackShow` and `restoreShowTracking` actions and their schemas and messages
+   - replace `ShowStatusControl` and its slots with the Plan to watch / Tracking toggle (Stop tracking, Undo). Shipped first as a pill with Pause, Drop and Resume; reduced to the toggle on 2026-10-10
+   - add the `trackShow`, `untrackShow` and `restoreShowTracking` actions and their schemas and messages
    - turn the card bookmark into track and untrack
    - change the episode and season toasts to "added to your shows"
    - remove the auto completion call from `/shows/{id}`
 
    Satisfies **AC-2** to **AC-6**, **AC-21**.
-5. **Paused & dropped**: the `getHeldShows` read and the collapsed section with Resume on Watchlist page 1. Satisfies **AC-10**.
+5. **Paused & dropped**: shipped, then removed on 2026-10-10 with `getHeldShows`, `held-shows.tsx`, `held-show-card.tsx` and their tests. AC-10 is withdrawn.
 6. **Movies**: build `classifyMovie` and `getMovieLibraryTab`, then re-point `/watchlist?type=movie` and `/upcoming?type=movie` at them, with soonest release first and TBA last, keeping the ceiling. Check the movie page button and the unmark flow for AC-14. Satisfies **AC-13**, **AC-14**, **AC-16**.
 7. **Failure and empty states**: add the per title failure note with Retry, the "No longer on TMDB" cards with Stop tracking or Remove, the systemic failed panel, and the new empty copy in `lib/tracking/messages.ts`. Satisfies **AC-17**, **AC-18**.
 8. **Contract migration** (second migration, pushed only after the new app is live):
    - drop `status`, `status_source`, `status_changed_at` and `listed_at`, with their checks, indexes and triggers (including the completion and reopen triggers in `03-triggers.sql`) and the legacy mirror writes
    - drop the `tv_status` and `status_source` enums, the old views, and the old functions, including the legacy mapping helpers `legacy_hold_for_status` and `legacy_status_for_hold` with pgTAP 165
+   - **hold removal** (amended 2026-10-10): clear every hold first, then drop `hold_state`, `hold_changed_at`, their check, the held index, the hold branch of the `tracked_at` trigger, the view's hold columns, `set_show_hold` and the `show_hold` enum; recreate `untrack_show(p_show_id)` and `restore_show_tracking(p_show_id, p_tracked_at)` without their hold arguments
    - rename the episode functions' `show_started` result to `show_tracked`, which no deployed app will read by then
    - delete the auto completion modules, their tests and pgTAP files 100, 130 and 131, and rewrite 010, 020, 030, 040, 090, 110, 120, 140 and 150 against the new model, so the full `pnpm test:db` passes on a fresh `db reset`
 
-   Satisfies **AC-1**, **AC-21**.
+   Satisfies **AC-1**, **AC-21**. The app change that stops reading holds ships in the same PR (amended 2026-10-10).
 9. **Docs**:
    - rewrite `AGENTS.md` sections 1, 7, 8 and 9, items 9 to 11 of section 13, and the repo facts (remove "Two server renders write")
    - update `components/AGENTS.md` and `lib/auth/AGENTS.md` where they name statuses
@@ -273,14 +265,14 @@ Tracer Bullet: the first slice runs the whole pipe for one tab (shows on Watchli
 
 ## Migration plan
 
-**Strategy**: Expand, then contract, across two migrations and one deploy, because the running app reads `status`.
+**Strategy**: Expand, then contract, across two migrations, because the running app reads `status`. Amended 2026-10-10: the contract also removes holds, so it ships with the app change that stops reading them.
 
 **Phases**:
 1. Push the expand migration (`supabase db push`). The old app keeps working: every column, trigger, view and function it reads is unchanged, the episode functions keep their return shapes, and inserts without `status` get `'watching'`. New columns are backfilled, and the `tracked_at` default covers rows the old app inserts. A movie that is both planned and watched now shows on the old app's Watchlist too; that's accepted for the window.
 2. Merge the PR and let Vercel deploy the new app, which reads only the new columns. Verify production: open each tab, track, pause, resume, stop and undo on a test account.
-3. Push the contract migration, which drops the old columns, enums, views and functions, as a follow up PR once production is verified.
+3. Contract (amended 2026-10-10): one PR carries the contract migration, the hold removal and the app that no longer reads holds. Push the migration, then merge at once. The live app breaks between the push and the Vercel deploy (minutes), which is accepted at the current user count. Production is verified once, after the deploy.
 
-**Rollback**: Before phase 3, revert the Vercel deployment to the previous one. The expand migration is additive, so the old app runs against it unchanged. The legacy mirror writes holds set by the new app as `on_hold` or `dropped`, so the old app shows them correctly. A Completed choice the old app made in the window maps to tracked with no hold, as AC-19 does. After phase 3, rollback means a forward fix; the old columns are gone.
+**Rollback**: Before phase 3, revert the Vercel deployment to the previous one. The expand migration is additive, so the old app runs against it unchanged. The legacy mirror writes holds set by the new app as `on_hold` or `dropped`, so the old app shows them correctly. A Completed choice the old app made in the window maps to tracked with no hold, as AC-19 does. After phase 3, rollback means a forward fix; the old columns and the holds are gone.
 
 **Risks**:
 - A user who changes a status in the old app between phase 1 and phase 2 (minutes) keeps the backfilled hold value. That's acceptable at the current user count, and phase 2 should follow phase 1 promptly.
@@ -307,4 +299,4 @@ Tracer Bullet: the first slice runs the whole pipe for one tab (shows on Watchli
 ## Follow-up
 
 - [ ] If AC-24's cold time proves painful in real use, reopen the "no catalog cache in Postgres" decision (spec 0008) or a stored classification, in its own spec.
-- [ ] Contract migration (Build plan step 8) as its own PR after production is verified.
+- [ ] Contract migration and hold removal (Build plan step 8) as its own PR, verified in production once after deploy.
