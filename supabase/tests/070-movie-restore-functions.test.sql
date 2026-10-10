@@ -4,15 +4,16 @@
 -- that put back an earlier value, so this file pins what they may and may not
 -- do: their shape (invoker rights, empty search_path, who may execute), the
 -- restore itself, every refusal (already restored, no old time, a future time,
--- the 10 minute window, a missing row, another user's row), and that the
--- rating and the bookmark are never touched.
+-- the 10 minute window, a missing row, another user's row, a watched movie's
+-- plan), and that the watched restore brings the score back and clears the
+-- plan (prompts/movie-plan-watched-exclusive.md).
 --
 -- Rows are pinned as `postgres` with `session_replication_role = replica`, so
 -- `updated_at` can be set in the past. Movies 900201 to 900299 are free in this
 -- file; 900250 and 900251 belong to user B.
 
 begin;
-select plan(29);
+select plan(32);
 
 -- Shape (AC-4)
 
@@ -22,7 +23,7 @@ select is(
   'restore_movie_watchlist is security invoker'
 );
 select is(
-  (select prosecdef from pg_proc where oid = 'public.restore_movie_watched(integer, timestamptz)'::regprocedure),
+  (select prosecdef from pg_proc where oid = 'public.restore_movie_watched(integer, timestamptz, smallint)'::regprocedure),
   false,
   'restore_movie_watched is security invoker'
 );
@@ -32,13 +33,13 @@ select is(
   'restore_movie_watchlist pins an empty search_path'
 );
 select is(
-  (select proconfig from pg_proc where oid = 'public.restore_movie_watched(integer, timestamptz)'::regprocedure),
+  (select proconfig from pg_proc where oid = 'public.restore_movie_watched(integer, timestamptz, smallint)'::regprocedure),
   array['search_path=""'],
   'restore_movie_watched pins an empty search_path'
 );
 select ok(
   not has_function_privilege('anon', 'public.restore_movie_watchlist(integer)', 'execute')
-  and not has_function_privilege('anon', 'public.restore_movie_watched(integer, timestamptz)', 'execute'),
+  and not has_function_privilege('anon', 'public.restore_movie_watched(integer, timestamptz, smallint)', 'execute'),
   'anon cannot execute either function'
 );
 select ok(
@@ -47,7 +48,7 @@ select ok(
     from pg_proc p, aclexplode(p.proacl) a
     where p.oid in (
       'public.restore_movie_watchlist(integer)'::regprocedure,
-      'public.restore_movie_watched(integer, timestamptz)'::regprocedure
+      'public.restore_movie_watched(integer, timestamptz, smallint)'::regprocedure
     )
       and a.grantee = 0
   ),
@@ -55,7 +56,7 @@ select ok(
 );
 select ok(
   has_function_privilege('authenticated', 'public.restore_movie_watchlist(integer)', 'execute')
-  and has_function_privilege('authenticated', 'public.restore_movie_watched(integer, timestamptz)', 'execute'),
+  and has_function_privilege('authenticated', 'public.restore_movie_watched(integer, timestamptz, smallint)', 'execute'),
   'authenticated can execute both functions'
 );
 
@@ -65,18 +66,18 @@ insert into public.user_movie_state
   (user_id, movie_id, in_watchlist, watchlisted_at, watched_at, rating, updated_at)
 values
   -- just unplanned, restorable
-  ('11111111-1111-1111-1111-111111111111', 900201, false, '2020-01-01T00:00:00Z', null, 6, now()),
+  ('11111111-1111-1111-1111-111111111111', 900201, false, '2020-01-01T00:00:00Z', null, null, now()),
   -- unplanned, but never had a plan time
   ('11111111-1111-1111-1111-111111111111', 900202, false, null, null, null, now()),
   -- unplanned 11 minutes ago
   ('11111111-1111-1111-1111-111111111111', 900203, false, '2020-01-01T00:00:00Z', null, null, now() - interval '11 minutes'),
-  -- just unmarked, planned for a rewatch and rated
-  ('11111111-1111-1111-1111-111111111111', 900204, true, '2020-01-01T00:00:00Z', null, 7, now()),
+  -- just planned, which cleared its watch mark and its score of 7
+  ('11111111-1111-1111-1111-111111111111', 900204, true, '2020-01-01T00:00:00Z', null, null, now()),
   -- just unmarked, for the future time case
   ('11111111-1111-1111-1111-111111111111', 900205, false, null, null, null, now()),
   -- unmarked 11 minutes ago
   ('11111111-1111-1111-1111-111111111111', 900206, false, null, null, null, now() - interval '11 minutes'),
-  -- watched and rated, just unplanned (spec 0020, AC-14: both can hold)
+  -- watched and rated, with an old plan time from before it was watched
   ('11111111-1111-1111-1111-111111111111', 900207, false, '2020-01-01T00:00:00Z', '2021-05-05T12:00:00Z', 8, now()),
   -- user B, both restorable by B
   ('22222222-2222-2222-2222-222222222222', 900250, false, '2020-01-01T00:00:00Z', null, null, now()),
@@ -99,10 +100,10 @@ select ok(
   'the restored movie is planned again with its original watchlisted_at'
 );
 select is(
-  (select rating from public.user_movie_state
+  (select watched_at from public.user_movie_state
    where user_id = '11111111-1111-1111-1111-111111111111' and movie_id = 900201),
-  6::smallint,
-  'the watchlist restore leaves the rating alone'
+  null,
+  'the watchlist restore leaves the movie unwatched'
 );
 select is(
   current_setting('bestats.restore_watchlist', true),
@@ -134,35 +135,37 @@ select throws_ok(
   'restoring a row changed more than 10 minutes ago is refused'
 );
 
--- Spec 0020, AC-14: a plan and a watched mark live side by side, so the
--- watchlist restore on a watched movie keeps its watched date and rating.
-select lives_ok(
+-- A watched movie cannot be planned, so the watchlist restore refuses it and
+-- leaves the row alone.
+select throws_ok(
   $$ select public.restore_movie_watchlist(900207) $$,
-  'restoring the plan of a watched movie succeeds'
+  'P0002',
+  'undo_expired',
+  'restoring the plan of a watched movie is refused'
 );
 select ok(
-  (select in_watchlist
-      and watchlisted_at = '2020-01-01T00:00:00Z'::timestamptz
+  (select not in_watchlist
       and watched_at = '2021-05-05T12:00:00Z'::timestamptz
       and rating = 8
    from public.user_movie_state
    where user_id = '11111111-1111-1111-1111-111111111111' and movie_id = 900207),
-  'the restored plan leaves the watched date and the rating alone'
+  'the refused plan restore leaves the watched date and the rating alone'
 );
 
--- AC-7: the watched restore puts back the original date, and only that.
+-- AC-7: the watched restore puts back the original date and score, and turns
+-- the plan off, keeping its time.
 select lives_ok(
-  $$ select public.restore_movie_watched(900204, '2021-05-05T12:00:00Z') $$,
-  'restoring a just unmarked movie succeeds'
+  $$ select public.restore_movie_watched(900204, '2021-05-05T12:00:00Z', 7::smallint) $$,
+  'restoring a just planned movie succeeds'
 );
 select ok(
   (select watched_at = '2021-05-05T12:00:00Z'::timestamptz
       and rating = 7
-      and in_watchlist
+      and not in_watchlist
       and watchlisted_at = '2020-01-01T00:00:00Z'::timestamptz
    from public.user_movie_state
    where user_id = '11111111-1111-1111-1111-111111111111' and movie_id = 900204),
-  'the watched restore sets the original date and leaves the rating and bookmark alone'
+  'the watched restore sets the original date and score and clears the plan'
 );
 select throws_ok(
   $$ select public.restore_movie_watched(900204, '2021-05-05T12:00:00Z') $$,
@@ -170,6 +173,24 @@ select throws_ok(
   'undo_expired',
   'restoring a movie that is currently watched is refused'
 );
+select throws_ok(
+  $$ select public.restore_movie_watched(900205, '2021-05-05T12:00:00Z', 11::smallint) $$,
+  '23514',
+  null,
+  'restoring with a score out of range is refused'
+);
+select lives_ok(
+  $$ select public.restore_movie_watched(900205, '2021-05-05T12:00:00Z') $$,
+  'restoring without a score leaves it unscored'
+);
+select is(
+  (select rating from public.user_movie_state
+   where user_id = '11111111-1111-1111-1111-111111111111' and movie_id = 900205),
+  null,
+  'the score stays null when none is passed'
+);
+update public.user_movie_state set watched_at = null
+where user_id = '11111111-1111-1111-1111-111111111111' and movie_id = 900205;
 select throws_ok(
   $$ select public.restore_movie_watched(900205, now() + interval '1 day') $$,
   'P0002',

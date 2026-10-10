@@ -1,20 +1,23 @@
 -- Movie tracking writes whose outcome depends on the current row.
 --
--- Spec 0007 keeps two rules in Postgres rather than TypeScript, because both
--- read the row they change and would race between two tabs if the app read
--- first and wrote second:
+-- A movie is planned or watched, never both, and a score lives only on a
+-- watched movie (prompts/movie-plan-watched-exclusive.md). The two checks on
+-- `user_movie_state` enforce that; these functions are how the app moves
+-- between the states, clearing the other fields in the same statement so two
+-- tabs cannot race:
 --
---   1. Marking an already watched movie watched again changes nothing, so a
---      stale tab cannot move the original date. Marking never touches the
---      plan: since spec 0020 (AC-14) a watched movie keeps `in_watchlist`, so
---      unmarking it puts a planned movie straight back on Watchlist or
---      Upcoming.
---   2. Rating an unwatched movie marks it watched, in the same statement.
+--   1. Marking watched clears the plan. Marking an already watched movie again
+--      keeps its date, so a stale tab cannot move it.
+--   2. A score is written only on a watched movie; otherwise `rate_movie`
+--      raises `BS001`, which the Server Action reports as `not_watched`.
+--   3. Planning a watched movie, or unmarking it, clears the watch mark and the
+--      score, and returns what it cleared, so the app can offer an Undo
+--      (`restore_movie_watched` below puts both back).
 --
 -- `lib/tracking/intent.ts` mirrors these rules for the optimistic UI, and
 -- `supabase/tests/050-movie-tracking-functions.test.sql` pins them here.
 --
--- Both functions are SECURITY INVOKER with an empty `search_path`: they run as
+-- Every function is SECURITY INVOKER with an empty `search_path`: it runs as
 -- the caller, so the four row level security policies in `04-policies.sql`
 -- apply to the insert, the conflict update and the `returning` exactly as they
 -- would to a plain upsert. `user_id` comes from `auth.uid()`, never from an
@@ -31,23 +34,101 @@ as $$
   insert into public.user_movie_state as s (user_id, movie_id, watched_at)
   values (auth.uid(), p_movie_id, now())
   on conflict (user_id, movie_id) do update
-    set watched_at = coalesce(s.watched_at, now())
+    set watched_at = coalesce(s.watched_at, now()),
+        in_watchlist = false
   returning *;
 $$;
 
+-- Update only: a score never creates a row, because a row with a score must
+-- already be watched.
 create or replace function public.rate_movie(p_movie_id integer, p_rating smallint)
 returns public.user_movie_state
-language sql
+language plpgsql
 volatile
 security invoker
 set search_path = ''
 as $$
-  insert into public.user_movie_state as s (user_id, movie_id, rating, watched_at)
-  values (auth.uid(), p_movie_id, p_rating, now())
+declare
+  result public.user_movie_state;
+begin
+  update public.user_movie_state
+  set rating = p_rating
+  where user_id = auth.uid()
+    and movie_id = p_movie_id
+    and watched_at is not null
+  returning * into result;
+
+  if not found then
+    raise exception 'not_watched' using errcode = 'BS001';
+  end if;
+
+  return result;
+end;
+$$;
+
+-- Plans a movie. A watched movie loses its watch mark and score; the old values
+-- come back so the caller can offer an Undo, and are null when nothing was
+-- cleared. The row lock makes the read and the write one step.
+create or replace function public.plan_movie(p_movie_id integer)
+returns table (cleared_watched_at timestamptz, cleared_rating smallint)
+language plpgsql
+volatile
+security invoker
+set search_path = ''
+as $$
+declare
+  old_watched_at timestamptz;
+  old_rating smallint;
+begin
+  select s.watched_at, s.rating
+  into old_watched_at, old_rating
+  from public.user_movie_state s
+  where s.user_id = auth.uid()
+    and s.movie_id = p_movie_id
+  for update;
+
+  insert into public.user_movie_state as s (user_id, movie_id, in_watchlist)
+  values (auth.uid(), p_movie_id, true)
   on conflict (user_id, movie_id) do update
-    set rating = excluded.rating,
-        watched_at = coalesce(s.watched_at, now())
-  returning *;
+    set in_watchlist = true,
+        watched_at = null,
+        rating = null;
+
+  return query select old_watched_at, old_rating;
+end;
+$$;
+
+-- Unmarks a movie, which also removes its score. Update only, so it never
+-- creates a row; the old values come back for the Undo, both null when the
+-- movie was not watched.
+create or replace function public.unmark_movie_watched(p_movie_id integer)
+returns table (cleared_watched_at timestamptz, cleared_rating smallint)
+language plpgsql
+volatile
+security invoker
+set search_path = ''
+as $$
+declare
+  old_watched_at timestamptz;
+  old_rating smallint;
+begin
+  select s.watched_at, s.rating
+  into old_watched_at, old_rating
+  from public.user_movie_state s
+  where s.user_id = auth.uid()
+    and s.movie_id = p_movie_id
+  for update;
+
+  if old_watched_at is not null then
+    update public.user_movie_state
+    set watched_at = null,
+        rating = null
+    where user_id = auth.uid()
+      and movie_id = p_movie_id;
+  end if;
+
+  return query select old_watched_at, old_rating;
+end;
 $$;
 
 -- Postgres grants EXECUTE to PUBLIC on every new function, and Supabase's
@@ -58,8 +139,12 @@ $$;
 -- live grant is the one written here.
 revoke all on function public.mark_movie_watched(integer) from public, anon, authenticated;
 revoke all on function public.rate_movie(integer, smallint) from public, anon, authenticated;
+revoke all on function public.plan_movie(integer) from public, anon, authenticated;
+revoke all on function public.unmark_movie_watched(integer) from public, anon, authenticated;
 grant execute on function public.mark_movie_watched(integer) to authenticated;
 grant execute on function public.rate_movie(integer, smallint) to authenticated;
+grant execute on function public.plan_movie(integer) to authenticated;
+grant execute on function public.unmark_movie_watched(integer) to authenticated;
 
 -- Undo for the two private list pages (spec 0008, AC-6, AC-7).
 --
@@ -98,6 +183,7 @@ begin
   where user_id = auth.uid()
     and movie_id = p_movie_id
     and not in_watchlist
+    and watched_at is null
     and watchlisted_at is not null
     and updated_at > now() - interval '10 minutes';
 
@@ -110,14 +196,17 @@ begin
 end;
 $$;
 
--- Marks a movie watched again at its original date, which the page rendered
--- and the client passes back. It is the one client supplied time the schema
--- stores, so it is bounded: never in the future, only for the caller's own
--- row that is currently unwatched and was changed in the last 10 minutes. It
--- never touches `in_watchlist` or `rating`.
+-- Marks a movie watched again at its original date, with the score it had,
+-- which the page rendered or the clearing write returned and the client passes
+-- back. The date is the one client supplied time the schema stores, so it is
+-- bounded: never in the future, only for the caller's own row that is
+-- currently unwatched and was changed in the last 10 minutes. The score is
+-- bounded by the table's rating check. A watched movie cannot be planned, so
+-- the plan goes off; `watchlisted_at` is kept by its trigger.
 create or replace function public.restore_movie_watched(
   p_movie_id integer,
-  p_watched_at timestamptz
+  p_watched_at timestamptz,
+  p_rating smallint default null
 )
 returns void
 language plpgsql
@@ -127,7 +216,9 @@ set search_path = ''
 as $$
 begin
   update public.user_movie_state
-  set watched_at = p_watched_at
+  set watched_at = p_watched_at,
+      rating = p_rating,
+      in_watchlist = false
   where user_id = auth.uid()
     and movie_id = p_movie_id
     and watched_at is null
@@ -141,9 +232,9 @@ end;
 $$;
 
 revoke all on function public.restore_movie_watchlist(integer) from public, anon, authenticated;
-revoke all on function public.restore_movie_watched(integer, timestamptz) from public, anon, authenticated;
+revoke all on function public.restore_movie_watched(integer, timestamptz, smallint) from public, anon, authenticated;
 grant execute on function public.restore_movie_watchlist(integer) to authenticated;
-grant execute on function public.restore_movie_watched(integer, timestamptz) to authenticated;
+grant execute on function public.restore_movie_watched(integer, timestamptz, smallint) to authenticated;
 
 -- Episode tracking writes whose outcome depends on the current row (spec 0011).
 --

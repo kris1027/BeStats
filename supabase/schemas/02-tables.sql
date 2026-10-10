@@ -11,9 +11,11 @@
 -- also means every row level security predicate on `user_id` is served by an
 -- index that already had to exist.
 
--- One row per person per TMDB movie. Watchlist membership, watched state and
--- rating are independent columns: AGENTS.md section 7 requires unmarking
--- watched to leave the rating alone.
+-- One row per person per TMDB movie. A movie is planned or watched, never both,
+-- and a score lives only on a watched movie (AGENTS.md section 7,
+-- prompts/movie-plan-watched-exclusive.md). The two checks below hold that
+-- whatever a client sends; the functions in `05-functions.sql` clear the other
+-- fields in the same statement.
 create table public.user_movie_state (
   user_id uuid not null references auth.users (id) on delete cascade,
   movie_id integer not null,
@@ -35,15 +37,19 @@ create table public.user_movie_state (
   constraint user_movie_state_rating_check check (rating between 1 and 10),
   -- A planned row always has a time to sort by.
   constraint user_movie_state_watchlisted_at_check
-    check (not in_watchlist or watchlisted_at is not null)
+    check (not in_watchlist or watchlisted_at is not null),
+  constraint user_movie_state_plan_or_watched_check
+    check (not (in_watchlist and watched_at is not null)),
+  constraint user_movie_state_rating_needs_watched_check
+    check (rating is null or watched_at is not null)
 );
 
 -- The two private list reads (spec 0008), one per kind of row. Each is
 -- partial, so it holds only the rows its read can use, and each ends in
 -- `movie_id`, the tiebreak, so the order comes straight off the index. The
 -- first holds only planned movies not yet watched, the ones Watchlist and
--- Upcoming classify (spec 0020, AC-13): a watched movie is on Watched whatever
--- its plan says.
+-- Upcoming classify (spec 0020, AC-13). Since a watched movie can no longer be
+-- planned, its `watched_at is null` is redundant but harmless.
 create index user_movie_state_watchlist_idx
   on public.user_movie_state (user_id, watchlisted_at desc, movie_id)
   where in_watchlist and watched_at is null;

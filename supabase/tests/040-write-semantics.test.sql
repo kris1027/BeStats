@@ -13,14 +13,14 @@ set local role authenticated;
 -- AC-6: repeated writes never duplicate. The primary key is the idempotency
 -- mechanism, so writing the same state twice is a no-op plus an update.
 insert into public.user_movie_state (user_id, movie_id, in_watchlist, watched_at, rating)
-values ('11111111-1111-1111-1111-111111111111', 550, true, now(), 7)
+values ('11111111-1111-1111-1111-111111111111', 550, false, now(), 7)
 on conflict (user_id, movie_id) do update
   set in_watchlist = excluded.in_watchlist,
       watched_at = excluded.watched_at,
       rating = excluded.rating;
 
 insert into public.user_movie_state (user_id, movie_id, in_watchlist, watched_at, rating)
-values ('11111111-1111-1111-1111-111111111111', 550, true, now(), 8)
+values ('11111111-1111-1111-1111-111111111111', 550, false, now(), 8)
 on conflict (user_id, movie_id) do update
   set in_watchlist = excluded.in_watchlist,
       watched_at = excluded.watched_at,
@@ -90,14 +90,14 @@ select is(
   'tracking the same show again through track_show is a no op'
 );
 
--- AC-10: watched state and rating are independent in both directions.
-update public.user_movie_state set watched_at = null
-  where user_id = '11111111-1111-1111-1111-111111111111' and movie_id = 550;
-select is(
-  (select rating from public.user_movie_state
-   where user_id = '11111111-1111-1111-1111-111111111111' and movie_id = 550),
-  8::smallint,
-  'clearing a watched mark leaves the rating untouched'
+-- AC-10, as prompts/movie-plan-watched-exclusive.md amends it for movies: a
+-- movie score needs a watch mark, so clearing the mark alone is refused (the
+-- app clears both through `unmark_movie_watched`). Clearing a score still
+-- leaves the rest of the row alone.
+select throws_ok(
+  $$update public.user_movie_state set watched_at = null
+    where user_id = '11111111-1111-1111-1111-111111111111' and movie_id = 550$$,
+  '23514', null, 'clearing a scored movie''s watch mark alone is refused'
 );
 update public.user_movie_state set rating = null
   where user_id = '11111111-1111-1111-1111-111111111111' and movie_id = 27205;
@@ -110,13 +110,13 @@ select is(
 
 -- AC-7: rating bounds are enforced by the database, not only by Zod.
 select throws_ok(
-  $$insert into public.user_movie_state (user_id, movie_id, rating)
-    values ('11111111-1111-1111-1111-111111111111', 700, 0)$$,
+  $$insert into public.user_movie_state (user_id, movie_id, watched_at, rating)
+    values ('11111111-1111-1111-1111-111111111111', 700, now(), 0)$$,
   '23514', null, 'a rating of 0 is rejected'
 );
 select throws_ok(
-  $$insert into public.user_movie_state (user_id, movie_id, rating)
-    values ('11111111-1111-1111-1111-111111111111', 700, 11)$$,
+  $$insert into public.user_movie_state (user_id, movie_id, watched_at, rating)
+    values ('11111111-1111-1111-1111-111111111111', 700, now(), 11)$$,
   '23514', null, 'a rating of 11 is rejected'
 );
 select throws_ok(
@@ -134,13 +134,13 @@ select lives_ok(
 -- above are not enough: a check written as `between 2 and 10` would pass every
 -- one of them while quietly making 1 unreachable.
 select lives_ok(
-  $$insert into public.user_movie_state (user_id, movie_id, rating)
-    values ('11111111-1111-1111-1111-111111111111', 706, 1)$$,
+  $$insert into public.user_movie_state (user_id, movie_id, watched_at, rating)
+    values ('11111111-1111-1111-1111-111111111111', 706, now(), 1)$$,
   'a rating of 1 is accepted, so the lower bound is inclusive'
 );
 select lives_ok(
-  $$insert into public.user_movie_state (user_id, movie_id, rating)
-    values ('11111111-1111-1111-1111-111111111111', 707, 10)$$,
+  $$insert into public.user_movie_state (user_id, movie_id, watched_at, rating)
+    values ('11111111-1111-1111-1111-111111111111', 707, now(), 10)$$,
   'a rating of 10 is accepted, so the upper bound is inclusive'
 );
 

@@ -133,7 +133,7 @@ select is(
   'a direct write to watchlisted_at on a planned row is ignored'
 );
 
-update public.user_movie_state set rating = 5, watchlisted_at = null
+update public.user_movie_state set updated_at = now(), watchlisted_at = null
 where user_id = '11111111-1111-1111-1111-111111111111' and movie_id = 900103;
 select is(
   (select watchlisted_at from public.user_movie_state
@@ -142,13 +142,14 @@ select is(
   'an unrelated update that also sends null keeps the stored time'
 );
 
--- The first watch keeps the plan and its time (spec 0020, AC-14).
+-- The first watch clears the plan but keeps its time, as an unplan does
+-- (prompts/movie-plan-watched-exclusive.md).
 select public.mark_movie_watched(900104);
 select ok(
-  (select in_watchlist and watchlisted_at = '2020-01-01T00:00:00Z'::timestamptz
+  (select not in_watchlist and watchlisted_at = '2020-01-01T00:00:00Z'::timestamptz
    from public.user_movie_state
    where user_id = '11111111-1111-1111-1111-111111111111' and movie_id = 900104),
-  'the first watch keeps the bookmark and its old time'
+  'the first watch clears the plan and keeps its old time'
 );
 
 -- An upsert that plans an unplanned row takes the update branch: now().
