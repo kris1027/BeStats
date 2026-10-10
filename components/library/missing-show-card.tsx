@@ -9,28 +9,24 @@ import { useShowTracking } from "@/components/tracking/use-show-tracking";
 import { typedHref } from "@/lib/catalog/media-type";
 import { MISSING_SHOW_COPY } from "@/lib/tracking/messages";
 
+import { neighbourCardTarget } from "./card-focus";
+import { SHOW_CARD_LINK_SELECTOR } from "./ids";
 import { MISSING_TITLE } from "./library-card";
 
 /** The Watchlist shows tab, where every missing show card lives (AC-17). */
 const RETURN_PATH = typedHref("/watchlist", "tv");
 
 /**
- * Moves the focus off a card that is about to leave its grid: to the next
- * card's first control, else the previous card's, else `fallbackId`.
+ * Moves the focus off a card that is about to leave its grid: to a neighbour's
+ * title link, or its button when it is another missing card with no link, else
+ * `fallbackId`.
  */
 function focusNeighbour(cardId: string, fallbackId: string) {
-  const item = document.getElementById(cardId);
-  for (const neighbour of [
-    item?.nextElementSibling,
-    item?.previousElementSibling,
-  ]) {
-    const target = neighbour?.querySelector<HTMLElement>("h3 a, button");
-    if (target) {
-      target.focus();
-      return;
-    }
-  }
-  document.getElementById(fallbackId)?.focus();
+  const target = neighbourCardTarget(
+    document.getElementById(cardId),
+    `${SHOW_CARD_LINK_SELECTOR}, button`,
+  );
+  (target ?? document.getElementById(fallbackId))?.focus();
 }
 
 /**
@@ -54,7 +50,7 @@ function MissingShowCard({
   const [hidden, setHidden] = useOptimistic(false);
   const tracking = useShowTracking({
     showId,
-    showName: MISSING_SHOW_COPY.name,
+    showName: MISSING_SHOW_COPY.toastName,
     returnPath: RETURN_PATH,
     toastId: `missing-show-${showId}`,
   });

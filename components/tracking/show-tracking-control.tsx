@@ -1,13 +1,12 @@
 "use client";
 
 import { cn } from "cn";
-import { useOptimistic } from "react";
 
 import { glassPillClassName } from "@/components/glass-pill";
 import { SHOW_TRACKING_COPY } from "@/lib/tracking/messages";
 
 import { PlanIcon, PlannedIcon } from "./tracking-icons";
-import { useShowTracking } from "./use-show-tracking";
+import { useShowTrackingToggle } from "./use-show-tracking";
 
 /** The pill recipe at the touch sizes: 44px on mobile, 36px from `md`. */
 const PILL =
@@ -24,9 +23,8 @@ const PILL =
  * accessible name says what the click will do, as the card bookmark's does,
  * since the two states act differently.
  *
- * The state is optimistic, as the movie pills are: it changes at once and
- * lasts while the action runs, then gives way to the prop `refresh()`
- * delivers, or, on failure, to the unchanged prop, which is the rollback.
+ * The state is optimistic, as the movie pills are, through
+ * `useShowTrackingToggle`, the hook the card bookmark shares.
  *
  * @param showName The TMDB name, for the accessible name and the toasts.
  * @param returnPath Where the session expired toast's Sign in comes back to.
@@ -42,24 +40,12 @@ function ShowTrackingControl({
   tracked: boolean;
   returnPath: string;
 }) {
-  const [shown, setShown] = useOptimistic(tracked);
-  const tracking = useShowTracking({
+  const { shown, toggle } = useShowTrackingToggle(tracked, {
     showId,
     showName,
     returnPath,
     toastId: `show-tracking-${showId}`,
   });
-
-  function toggle() {
-    if (!shown) {
-      tracking.track({ before: () => setShown(true) });
-      return;
-    }
-    tracking.untrack({
-      before: () => setShown(false),
-      restoring: () => setShown(true),
-    });
-  }
 
   return (
     <div data-slot="show-tracking" className="flex flex-wrap gap-2">

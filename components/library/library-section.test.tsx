@@ -300,7 +300,6 @@ describe("show cards (AC-9 to AC-12)", () => {
     await renderSection("watchlist", { type: "tv" });
     expect(screen.getByTestId("watchlist-show-1")).toHaveTextContent("S1E3");
     expect(screen.getByTestId("missing-show-2")).toBeInTheDocument();
-    expect(screen.queryByText(/Paused/)).not.toBeInTheDocument();
   });
 
   it("renders Upcoming cards dated or Date TBA, with no button (AC-11)", async () => {

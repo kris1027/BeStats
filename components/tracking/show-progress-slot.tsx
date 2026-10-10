@@ -10,7 +10,7 @@ import {
 import { type ShowProgress, showProgress } from "@/lib/tv/progress";
 
 /**
- * The progress line under the show hero's tracking pill (spec 0013, AC-10 to
+ * The progress line under the show hero's tracking toggle (spec 0013, AC-10 to
  * AC-12; unchanged by spec 0020, AC-2).
  *
  * It appears once the show matters to the user: a tracked show, or at least one
@@ -30,24 +30,24 @@ import { type ShowProgress, showProgress } from "@/lib/tv/progress";
  * @param showId The show, already confirmed by `loadShow`.
  */
 async function ShowProgressSlot({ showId }: { showId: number }) {
-  const [status, watched] = await Promise.all([
+  const [tracking, watched] = await Promise.all([
     getShowTracking(showId),
     getWatchedEpisodeIds(showIdsKey([showId])),
   ]);
-  if (status.kind === "signed_out" || watched.kind === "signed_out") {
+  if (tracking.kind === "signed_out" || watched.kind === "signed_out") {
     return null;
   }
   const retry = `/shows/${showId}`;
   // A failed tracking read cannot tell whether the show is tracked, so it gets
   // the same Try again as a failed watched read rather than no line at all.
-  if (watched.kind === "failed" || status.kind === "failed") {
+  if (watched.kind === "failed" || tracking.kind === "failed") {
     return <Unavailable retryHref={retry} />;
   }
 
   const watchedIds = watched.state.get(showId) ?? new Set<number>();
-  const hasRow = status.state;
+  const tracked = tracking.state;
   // Nothing tracked and nothing watched: no line, and no TMDB read for it.
-  if (!hasRow && watchedIds.size === 0) return null;
+  if (!tracked && watchedIds.size === 0) return null;
 
   let read: ShowEpisodes;
   try {
@@ -60,7 +60,7 @@ async function ShowProgressSlot({ showId }: { showId: number }) {
   const listed = new Set(read.episodes.map((episode) => episode.id));
   const watchedRegular = [...watchedIds].some((id) => listed.has(id));
   if (read.complete) {
-    if (!hasRow && !watchedRegular) return null;
+    if (!tracked && !watchedRegular) return null;
     return (
       <ProgressLine
         progress={showProgress(read.episodes, watchedIds, requestTodayUtc())}

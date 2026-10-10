@@ -109,7 +109,7 @@ export const SHOW_TRACKING_MESSAGES: Record<ShowTrackingError, string> = {
 };
 
 /**
- * The progress line under the show hero's status pill (spec 0013, AC-10,
+ * The progress line under the show hero's tracking toggle (spec 0013, AC-10,
  * AC-11). Counts only aired regular episodes, so it never says "0%" for a
  * show with nothing aired, and never shows a number from a partial read.
  */
@@ -259,8 +259,11 @@ export const WATCHED_SHOW_LABELS = {
 
 /** A Watchlist show TMDB no longer has (spec 0020, AC-17). */
 export const MISSING_SHOW_COPY = {
-  /** The toast's name for the show. */
-  name: "this show",
+  /**
+   * Stands in for the show's name in the shared toasts, which TMDB no longer
+   * gives: "Stopped tracking this show".
+   */
+  toastName: "this show",
   /** The Stop tracking button's accessible name. */
   stopLabel: "Stop tracking missing title",
 } as const;

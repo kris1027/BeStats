@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { startTransition } from "react";
+import { startTransition, useOptimistic } from "react";
 import { toast } from "sonner";
 
 import {
@@ -126,4 +126,35 @@ export function useShowTracking({
       });
     },
   };
+}
+
+/**
+ * The tracked or untracked toggle the show page and the card bookmark share
+ * (spec 0020, AC-2, AC-3, AC-6): one click tracks an untracked show and stops
+ * tracking a tracked one. The state is optimistic: it flips at once, flips
+ * back while an Undo runs, and gives way to the server's prop once the action
+ * has refreshed, or, on failure, to the unchanged prop, which is the rollback.
+ *
+ * @param tracked Whether the server says the show is tracked.
+ * @returns `shown`, the state to draw, and `toggle`, the click handler.
+ */
+export function useShowTrackingToggle(
+  tracked: boolean,
+  options: Parameters<typeof useShowTracking>[0],
+) {
+  const [shown, setShown] = useOptimistic(tracked);
+  const tracking = useShowTracking(options);
+
+  function toggle() {
+    if (!shown) {
+      tracking.track({ before: () => setShown(true) });
+      return;
+    }
+    tracking.untrack({
+      before: () => setShown(false),
+      restoring: () => setShown(true),
+    });
+  }
+
+  return { shown, toggle };
 }

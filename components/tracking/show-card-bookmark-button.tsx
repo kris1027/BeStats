@@ -1,10 +1,8 @@
 "use client";
 
-import { useOptimistic } from "react";
-
 import { CardRoundButton } from "./card-round-button";
 import { PlanIcon, PlannedIcon } from "./tracking-icons";
-import { useShowTracking } from "./use-show-tracking";
+import { useShowTrackingToggle } from "./use-show-tracking";
 
 /**
  * The round glass TV bookmark on a poster card (spec 0020, AC-6), the show
@@ -28,24 +26,12 @@ function ShowCardBookmarkButton({
   tracked: boolean;
   returnPath: string;
 }) {
-  const [shown, setShown] = useOptimistic(tracked);
-  const tracking = useShowTracking({
+  const { shown, toggle } = useShowTrackingToggle(tracked, {
     showId,
     showName: name,
     returnPath,
     toastId: `show-bookmark-${showId}`,
   });
-
-  function toggle() {
-    if (!shown) {
-      tracking.track({ before: () => setShown(true) });
-      return;
-    }
-    tracking.untrack({
-      before: () => setShown(false),
-      restoring: () => setShown(true),
-    });
-  }
 
   return (
     <CardRoundButton

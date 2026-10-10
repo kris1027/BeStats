@@ -82,8 +82,8 @@ export type EpisodeTrackingError = MovieTrackingError | "not_aired";
 export type ShowTrackingFlags = { showTracked: boolean };
 
 /**
- * What the single episode actions and the season Undo return, with the
- * status flags the season page and Up Next confirm with a toast.
+ * What the single episode actions and the season Undo return, with
+ * `showTracked`, which the season page and Up Next confirm with a toast.
  */
 export type EpisodeTrackingResult =
   | ({ ok: true } & ShowTrackingFlags)
