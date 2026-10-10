@@ -165,7 +165,7 @@ Files:
 - **Rewritten:** `lib/tracking/library-lists.ts` and its tests.
 - **Rewritten or deleted:** `lib/tracking/show-state.ts`, `intent.ts` and `up-next.ts` lose every status path. A module left empty is deleted.
 
-Reads (server only, in `lib/tracking/library-lists.ts`): `getShowLibraryTab(page, tab)` reads `user_tracked_shows` (unheld rows, the 500 most active), the user's watched regular episodes for those shows, and `getTvShow` for each through `mapWithConcurrency`. It then classifies, sorts and slices. `getMovieLibraryTab(page, tab)` does the same over planned unwatched movies with `getMovie`. `/watched?type=movie` keeps its existing direct query.
+Reads (server only, in `lib/tracking/library-lists.ts`): `getShowLibraryTab(page, tab)` reads `user_tracked_shows` (every tracked show, the 500 most active), the user's watched regular episodes for those shows, and `getTvShow` for each through `mapWithConcurrency`. It then classifies, sorts and slices. `getMovieLibraryTab(page, tab)` does the same over planned unwatched movies with `getMovie`. `/watched?type=movie` keeps its existing direct query.
 
 **Value sourcing**:
 
@@ -249,8 +249,8 @@ Tracer Bullet: the first slice runs the whole pipe for one tab (shows on Watchli
    - drop `status`, `status_source`, `status_changed_at` and `listed_at`, with their checks, indexes and triggers (including the completion and reopen triggers in `03-triggers.sql`) and the legacy mirror writes
    - drop the `tv_status` and `status_source` enums, the old views, and the old functions, including the legacy mapping helpers `legacy_hold_for_status` and `legacy_status_for_hold` with pgTAP 165
    - **hold removal** (amended 2026-10-10): clear every hold first, then drop `hold_state`, `hold_changed_at`, their check, the held index, the hold branch of the `tracked_at` trigger, the view's hold columns, `set_show_hold` and the `show_hold` enum; recreate `untrack_show(p_show_id)` and `restore_show_tracking(p_show_id, p_tracked_at)` without their hold arguments
-   - rename the episode functions' `show_started` result to `show_tracked`, which no deployed app will read by then
-   - delete the auto completion modules, their tests and pgTAP files 100, 130 and 131, and rewrite 010, 020, 030, 040, 090, 110, 120, 140 and 150 against the new model, so the full `pnpm test:db` passes on a fresh `db reset`
+   - rename the episode functions' `show_started` result to `show_tracked`, which no deployed app will read by then. `rate_episode` also loses its `newly_marked` column, which nothing reads (as built, 2026-10-10), and the rule "only a mark that newly watches a regular episode tracks the show" (AC-5) lives in one helper, `track_show_after_watch`, that all three episode functions call
+   - delete the auto completion modules, their tests and pgTAP files 100, 130 and 131, so the full `pnpm test:db` passes on a fresh `db reset`. As built (2026-10-10): 090, 110, 150 and 120's up next cases tested only objects this step drops, so they were deleted rather than rewritten, and `120-newly-marked` keeps the one rule of 120 that survives; 010, 030, 040 and 140 were rewritten, and 020 needed no change
 
    Satisfies **AC-1**, **AC-21**. The app change that stops reading holds ships in the same PR (amended 2026-10-10).
 9. **Docs**:

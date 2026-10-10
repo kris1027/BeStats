@@ -31,14 +31,14 @@ A show is tracked or not. Pause, Drop, Resume and the Paused & dropped section d
 ## Expected files
 
 **Database**
-- `supabase/migrations/2026101012xxxx_show_tracking_contract.sql` (new), generated from the declarative schema diff and then hand checked, in this order:
+- `supabase/migrations/2026101012xxxx_show_tracking_contract.sql` (new). As built it was written by hand from `supabase/schemas/`, because the diff cannot carry the function grants or the drop order; it has no separate update, since dropping `hold_state` is what clears every hold (checked on held rows, 0020 `verify.md`). Planned order:
   1. `update public.user_show_state set hold_state = null where hold_state is not null` (the check constraint needs `hold_changed_at` cleared in the same statement)
   2. drop the hold check, the held index, the hold branch of the trigger, `set_show_hold`, the old `untrack_show` and `restore_show_tracking` signatures, the view's hold columns (recreate `user_tracked_shows`), the columns, then `show_hold`
   3. everything in 0020 build plan step 8: the legacy columns with their checks, indexes and triggers, `tv_status`, `status_source`, the old views and functions, both legacy helpers, the mirror writes in `track_show`, and the `show_started` → `show_tracked` rename in the episode functions
   4. create `untrack_show(integer)` and `restore_show_tracking(integer, timestamptz)` as `security invoker`, `set search_path = ''`, `anon` and `public` revoked, `authenticated` granted
 - `supabase/schemas/01-enums.sql`, `02-tables.sql`, `03-triggers.sql`, `05-functions.sql`, `06-views.sql` to match
 - `lib/supabase/database.types.ts` regenerated (`pnpm db:types`); `lib/supabase/database.ts` loses `HoldFunctions`
-- pgTAP: delete 165, 100, 130, 131; rewrite 160 (no hold, idempotent untrack, restore round trip, episode mark tracks an untracked show); rewrite 010, 020, 030, 040, 090, 110, 120, 140, 150 against the new model per step 8; touch 050, 060, 070, 080 where they name a dropped column
+- pgTAP: delete 165, 100, 130, 131; rewrite 160 (no hold, idempotent untrack, restore round trip, episode mark tracks an untracked show); rewrite 010, 020, 030, 040, 090, 110, 120, 140, 150 against the new model per step 8 (as built: 090, 110, 150 and 120 deleted, `120-newly-marked` added, 020 unchanged); touch 050, 060, 070, 080 where they name a dropped column
 
 **App**
 - `app/shows/actions.ts` and test: remove `setShowHold`; `untrackShow(showId)`; `restoreShowTracking({ showId, trackedAt })`; map `show_tracked`
