@@ -1,8 +1,9 @@
 # 0020. Progress based library pages: one page per title, worked out from what you watched and what has aired
 
 **Date**: 2026-10-07
-**Status**: In Progress
+**Status**: Accepted
 **Amended**: 2026-10-10. Pause and Drop are removed: a show is tracked or not, Stop tracking is the only way out, every existing hold is cleared, and the hold removal ships inside the contract migration. Settled in a grilling session on 2026-10-10; see [rationale.md](rationale.md#amendment-2026-10-10-pause-and-drop-removed).
+**Amended**: 2026-10-10. The Watchlist card's next episode is the first aired episode after the user's furthest watched episode, not the first unwatched one, and a show with nothing aired after that episode is caught up even with earlier gaps (AC-7). Settled in a grilling session on 2026-10-10; see [rationale.md](rationale.md#amendment-2026-10-10-next-episode-after-the-furthest-watched).
 
 Scope feature: [23. Progress based library pages](../../scope/scope.md) · GA tier
 
@@ -34,15 +35,16 @@ Today the status you pick (Want to Watch, Watching, On Hold, Dropped, Completed)
 
 *Show classification*
 - **AC-7**: For each tracked show, the page is worked out from that show's TMDB details read and the user's watched regular episodes. Specials (season 0) never count. "Today" is the request's UTC date (`requestTodayUtc()`).
+  - **Furthest watched** is the user's watched regular episode that sorts last in season and episode order, or none when no regular episode is watched. Unwatched episodes before it are gaps: they stay unwatched, are never offered as the next episode and do not keep the show on Watchlist. Progress still counts only watched episodes.
   - **Aired episodes** are every regular episode `(s, e)`, with `e` from 1 to the season's episode count, that sorts at or before `last_episode_to_air`. A `next_episode_to_air` whose air date is on or before today also counts as aired, along with everything before it. With no `last_episode_to_air`, nothing has aired. Edge cases:
     - Seasons with no episode count are skipped.
     - When `last_episode_to_air` is in a season missing from the seasons list, or listed with an episode count below its number (cache skew), episodes 1 to its number in that season count as aired, because TMDB itself says that episode aired.
-    - When `last_episode_to_air` is a special (season 0), every regular episode of each regular season whose own air date is on or before today counts as aired. If even that leaves no aired episode while a regular season has no date, the show never goes on Watched: it goes on Watchlist at its first unwatched episode when that sorts before a dated `next_episode_to_air` (or there is none), on Upcoming (dated) at that next episode otherwise, and on Upcoming (Date TBA) when every listed episode is already watched.
+    - When `last_episode_to_air` is a special (season 0), every regular episode of each regular season whose own air date is on or before today counts as aired. If even that leaves no aired episode while a regular season has no date, the show never goes on Watched: it goes on Watchlist at the first listed episode after the furthest watched one when that sorts before a dated `next_episode_to_air` (or there is none), on Upcoming (dated) at that next episode otherwise, and on Upcoming (Date TBA) when no listed episode comes after the furthest watched one.
     - A malformed `last_episode_to_air` or `next_episode_to_air` (missing numbers, a number of 0 where a regular episode is expected, an unparseable date) is read as `null`. It never fails the whole show.
-  - **Watchlist**: at least one aired episode is unwatched. The card's next episode is the first unwatched aired episode in season and episode order.
-  - **Upcoming (dated)**: no aired episode is unwatched, and `next_episode_to_air` is a regular episode with an air date strictly after today.
-  - **Upcoming (Date TBA)**: no aired episode is unwatched, nothing is dated, and the user has watched no regular episode.
-  - **Watched**: no aired episode is unwatched, nothing is dated, and the user has watched at least one regular episode. An announced season with no episodes or no date counts as nothing dated.
+  - **Watchlist**: at least one aired episode sorts after the furthest watched episode (any aired episode, when nothing is watched). The card's next episode is the first of them in season and episode order.
+  - **Upcoming (dated)**: no aired episode sorts after the furthest watched episode, and `next_episode_to_air` is a regular episode with an air date strictly after today that sorts after the furthest watched episode. A dated next episode at or before it counts as nothing dated.
+  - **Upcoming (Date TBA)**: no aired episode sorts after the furthest watched episode, nothing is dated, and the user has watched no regular episode. The one exception is the special `last_episode_to_air` branch above, which goes on Upcoming (Date TBA) even with episodes watched, because the source cannot show the user is caught up.
+  - **Watched**: no aired episode sorts after the furthest watched episode, nothing is dated, and the user has watched at least one regular episode. An announced season with no episodes or no date counts as nothing dated.
 - **AC-8**: Every tracked show whose TMDB read succeeded is on exactly one of `/watchlist?type=tv`, `/upcoming?type=tv` and `/watched?type=tv`. There are two exceptions: a title whose TMDB read failed is on no page (AC-17), and a title TMDB no longer has shows only as a "No longer on TMDB" card on Watchlist (AC-17), which is not a classification.
 - **AC-9**: A Watchlist show card shows:
   - the poster
@@ -174,7 +176,7 @@ Reads (server only, in `lib/tracking/library-lists.ts`): `getShowLibraryTab(page
 | Classify show | aired episode set | `TvShow.seasons[].episodeCount` + `lastEpisodeToAir` (+ `nextEpisodeToAir` when its date ≤ today), from `getTvShow` |
 | Classify show | watched set | `user_episode_state` rows with `season_number ≥ 1` and `watched_at` set |
 | Classify show / movie | today | `requestTodayUtc()`, read once per request outside the cache |
-| Watchlist show card | next episode number | derived: first unwatched aired episode (AC-7) |
+| Watchlist show card | next episode number | derived: first aired episode after the furthest watched one (AC-7) |
 | Watchlist show card | next episode name | `getSeason(showId, season)` per card, streamed (unchanged spec 0014 pattern) |
 | Watchlist order | last activity | `user_tracked_shows.last_regular_watched_at`, else `tracked_at` |
 | Upcoming show card | date or TBA | `TvShow.nextEpisodeToAir.airDate`, formatted by the existing date helper |
@@ -209,7 +211,12 @@ Reads (server only, in `lib/tracking/library-lists.ts`): `getShowLibraryTab(page
   - nothing watched, nothing dated → Upcoming TBA
   - specials watched only → treated as nothing watched
   - next is a special → ignored
-  - out of order watching (S2 watched, S1E4 not) → Watchlist S1E4
+  - a gap before the furthest watched (S1E2 watched, S1E1 not) → Watchlist S1E3
+  - out of order watching (all of S2 watched, S1E3 and S1E4 not) → caught up, never back to S1E3
+  - caught up with gaps, next dated → Upcoming; nothing dated → Watched
+  - furthest watched is an undated episode past the last aired one → caught up
+  - a dated next episode at or before the furthest watched → treated as nothing dated
+  - unmarking the furthest moves the next episode back; unmarking a gap changes nothing
   - `last_episode_to_air` is a special → falls back to season air dates
   - `last_episode_to_air` in a season missing from the list → counted
   - malformed next or last → read as null

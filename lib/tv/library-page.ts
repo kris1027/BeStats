@@ -58,9 +58,29 @@ export function episodeKey(season: number, episode: number): EpisodeKey {
 }
 
 /**
+ * Reads an `episodeKey` back. Kept beside it so the key format has one
+ * owner; only regular places ever become keys.
+ */
+function placeOfKey(key: EpisodeKey): EpisodePlace | null {
+  const [season, episode] = key.split(":").map(Number);
+  if (!Number.isInteger(season) || !Number.isInteger(episode)) return null;
+  if (season < 1 || episode < 1) return null;
+  return { season, episode };
+}
+
+/**
  * Which library page a tracked show belongs on (spec 0020,
  * AC-7, AC-8). Pure: the same TMDB details, watched set and day always give
  * the same page, and nothing it decides is stored (key invariants).
+ *
+ * Everything is measured from the furthest watched episode, the watched
+ * regular episode that sorts last, so marking S1E2 offers S1E3 and never
+ * S1E1 (amended 2026-10-10). Unwatched episodes before it are gaps: never
+ * offered and never keeping the show on Watchlist, so a show with nothing
+ * aired after it is caught up. It is the furthest rather than the latest
+ * mark so the page reads no timestamps and going back to mark S1E1 changes
+ * nothing. The same anchor gates Upcoming: a dated next episode at or
+ * before the furthest watched one counts as nothing dated.
  *
  * The aired episodes are worked out from the show details alone, with no
  * season reads: every regular episode up to `last_episode_to_air`, in season
@@ -76,10 +96,12 @@ export function episodeKey(season: number, episode: number): EpisodeKey {
  * or before today. If that leaves a regular season whose airing is unknown
  * (no date) and no aired episode at all, the source cannot show the user is
  * caught up, so the show never goes on Watched (AC-7). It goes on Watchlist
- * at its first unwatched episode when that sorts before a dated
- * `next_episode_to_air`, so Mark watched is never offered for an episode
- * still to come; on Upcoming at that dated episode otherwise; and on
- * Upcoming as Date TBA when every listed episode is already watched.
+ * at the first listed episode after the furthest watched one when that
+ * sorts before a dated `next_episode_to_air`, so Mark watched is never
+ * offered for an episode still to come; on Upcoming at that dated episode
+ * otherwise; and on Upcoming as Date TBA when no listed episode comes after
+ * the furthest watched one, even when episodes are watched, because Watched
+ * would claim a caught up the source cannot show.
  *
  * Specials never count: the watched set holds regular episodes only, and a
  * special `next_episode_to_air` is ignored. Want to Watch and Completed are
@@ -98,6 +120,7 @@ export function classifyShow(
   const last = details.lastEpisodeToAir;
   const next = regularOrNull(details.nextEpisodeToAir);
   const nextAired = next !== null && airStatus(next.airDate, today) === "aired";
+  const furthest = furthestWatched(watched);
 
   // The boundary every aired episode sorts at or before.
   let boundary: EpisodePlace | null = null;
@@ -117,13 +140,18 @@ export function classifyShow(
   let anyAired = false;
   for (const place of airedPlaces(seasons, boundary, airedSeasons)) {
     anyAired = true;
-    if (!watched.has(episodeKey(place.season, place.episode))) {
+    if (furthest === null || before(furthest, place)) {
       return { page: "watchlist", next: place };
     }
   }
 
+  // A dated next episode at or before the furthest watched one is already
+  // behind the user (an undated episode marked by hand, dated later), so it
+  // counts as nothing dated.
   const dated =
-    next !== null && airStatus(next.airDate, today) === "upcoming"
+    next !== null &&
+    airStatus(next.airDate, today) === "upcoming" &&
+    (furthest === null || before(furthest, placeOf(next)))
       ? next
       : null;
 
@@ -131,7 +159,7 @@ export function classifyShow(
     (season) => airStatus(season.airDate, today) === "unknown",
   );
   if (fallback && !anyAired && unknown) {
-    const first = firstUnwatched(seasons, watched);
+    const first = firstListedAfter(seasons, furthest);
     if (first !== null && (dated === null || before(first, placeOf(dated)))) {
       return { page: "watchlist", next: first };
     }
@@ -142,7 +170,7 @@ export function classifyShow(
     return { page: "upcoming", airDate: dated.airDate, next: placeOf(dated) };
   }
 
-  if (watched.size === 0) {
+  if (furthest === null) {
     return { page: "upcoming", airDate: null, next: next && placeOf(next) };
   }
 
@@ -203,15 +231,27 @@ function* airedPlaces(
   }
 }
 
-function firstUnwatched(
-  seasons: readonly RegularSeason[],
+/** The watched regular episode that sorts last, or null with none watched. */
+function furthestWatched(
   watched: ReadonlySet<EpisodeKey>,
+): EpisodePlace | null {
+  let furthest: EpisodePlace | null = null;
+  for (const key of watched) {
+    const place = placeOfKey(key);
+    if (place !== null) furthest = later(furthest, place);
+  }
+  return furthest;
+}
+
+/** The first listed episode that sorts after `furthest` (any, when null). */
+function firstListedAfter(
+  seasons: readonly RegularSeason[],
+  furthest: EpisodePlace | null,
 ): EpisodePlace | null {
   for (const season of seasons) {
     for (let episode = 1; episode <= season.episodeCount; episode++) {
-      if (!watched.has(episodeKey(season.seasonNumber, episode))) {
-        return { season: season.seasonNumber, episode };
-      }
+      const place = { season: season.seasonNumber, episode };
+      if (furthest === null || before(furthest, place)) return place;
     }
   }
   return null;
@@ -230,7 +270,5 @@ function before(a: EpisodePlace, b: EpisodePlace): boolean {
 }
 
 function later(a: EpisodePlace | null, b: EpisodePlace): EpisodePlace {
-  if (a === null) return b;
-  if (b.season !== a.season) return b.season > a.season ? b : a;
-  return b.episode > a.episode ? b : a;
+  return a === null || before(a, b) ? b : a;
 }

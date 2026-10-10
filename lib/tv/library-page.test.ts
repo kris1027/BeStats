@@ -158,7 +158,21 @@ describe("classifyShow (AC-7)", () => {
     });
   });
 
-  it("finds an episode left behind when watching out of order", () => {
+  it("offers the episode after the furthest watched, not a gap before it", () => {
+    expect(classifyShow(show(), watched([1, 2]), today)).toEqual({
+      page: "watchlist",
+      next: { season: 1, episode: 3 },
+    });
+  });
+
+  it("keeps the next episode when a gap behind the furthest is marked later", () => {
+    expect(classifyShow(show(), watched([1, 2], [1, 1]), today)).toEqual({
+      page: "watchlist",
+      next: { season: 1, episode: 3 },
+    });
+  });
+
+  it("never goes back to a gap when watching out of order", () => {
     const outOfOrder = watched([1, 1], [1, 2], [2, 1], [2, 2], [2, 3]);
     const details = show({
       seasons: [
@@ -167,8 +181,73 @@ describe("classifyShow (AC-7)", () => {
       ],
     });
     expect(classifyShow(details, outOfOrder, today)).toEqual({
+      page: "watched",
+      label: "caught_up",
+    });
+    expect(
+      classifyShow({ ...details, status: "Ended" }, outOfOrder, today),
+    ).toEqual({ page: "watched", label: "finished" });
+  });
+
+  it("puts a caught up show with gaps and a dated next episode on Upcoming", () => {
+    const details = show({
+      nextEpisodeToAir: {
+        seasonNumber: 3,
+        episodeNumber: 1,
+        airDate: "2026-10-08",
+      },
+    });
+    expect(classifyShow(details, watched([1, 1], [2, 3]), today)).toEqual({
+      page: "upcoming",
+      airDate: "2026-10-08",
+      next: { season: 3, episode: 1 },
+    });
+  });
+
+  it("treats a furthest watched episode past the last aired one as caught up", () => {
+    const details = show({
+      seasons: [
+        ...seasons,
+        { seasonNumber: 3, episodeCount: 2, airDate: null },
+      ],
+    });
+    expect(classifyShow(details, watched([1, 1], [3, 1]), today)).toEqual({
+      page: "watched",
+      label: "caught_up",
+    });
+  });
+
+  it("ignores a dated next episode at or before the furthest watched one", () => {
+    const details = show({
+      seasons: [
+        ...seasons,
+        { seasonNumber: 3, episodeCount: 2, airDate: "2026-10-08" },
+      ],
+      nextEpisodeToAir: {
+        seasonNumber: 3,
+        episodeNumber: 1,
+        airDate: "2026-10-08",
+      },
+    });
+    expect(classifyShow(details, watched([2, 3], [3, 1]), today)).toEqual({
+      page: "watched",
+      label: "caught_up",
+    });
+    expect(classifyShow(details, watched([2, 3]), today)).toEqual({
+      page: "upcoming",
+      airDate: "2026-10-08",
+      next: { season: 3, episode: 1 },
+    });
+  });
+
+  it("moves the next episode back when the furthest is unmarked, not a gap", () => {
+    expect(classifyShow(show(), watched([1, 1], [1, 2]), today)).toEqual({
       page: "watchlist",
       next: { season: 1, episode: 3 },
+    });
+    expect(classifyShow(show(), watched([1, 1], [1, 3]), today)).toEqual({
+      page: "watchlist",
+      next: { season: 2, episode: 1 },
     });
   });
 
@@ -251,6 +330,37 @@ describe("classifyShow (AC-7)", () => {
     expect(classifyShow(details, watched([1, 1]), today)).toEqual({
       page: "watchlist",
       next: { season: 1, episode: 2 },
+    });
+  });
+
+  it("offers an undecidable show's episode after the furthest watched, not a gap", () => {
+    const details = show({
+      lastEpisodeToAir: {
+        seasonNumber: 0,
+        episodeNumber: 2,
+        airDate: "2026-09-01",
+      },
+      seasons: [{ seasonNumber: 1, episodeCount: 3, airDate: null }],
+    });
+    expect(classifyShow(details, watched([1, 2]), today)).toEqual({
+      page: "watchlist",
+      next: { season: 1, episode: 3 },
+    });
+  });
+
+  it("puts an undecidable show with its last listed episode watched on Upcoming, gaps or not", () => {
+    const details = show({
+      lastEpisodeToAir: {
+        seasonNumber: 0,
+        episodeNumber: 2,
+        airDate: "2026-09-01",
+      },
+      seasons: [{ seasonNumber: 1, episodeCount: 3, airDate: null }],
+    });
+    expect(classifyShow(details, watched([1, 3]), today)).toEqual({
+      page: "upcoming",
+      airDate: null,
+      next: null,
     });
   });
 
