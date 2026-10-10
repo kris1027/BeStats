@@ -1,5 +1,6 @@
 "use client";
 
+import { startTransition } from "react";
 import { toast } from "sonner";
 
 import {
@@ -13,6 +14,12 @@ import type {
   MovieTrackingError,
   ShowTrackingError,
 } from "@/lib/tracking/types";
+
+/**
+ * How long a toast carrying Undo stays up: long enough for a keyboard user to
+ * reach the action. The server allows 10 minutes, so the toast is the limit.
+ */
+export const UNDO_TOAST_MS = 10_000;
 
 /** Which control failed, so each keeps one toast of its own. */
 export type TrackingControl = "watchlist" | "watched" | "rating";
@@ -114,6 +121,62 @@ export async function settleResultCall<R extends { ok: boolean }>(
   } catch {
     return { ok: false, error: "write_failed" };
   }
+}
+
+/**
+ * Runs an Undo from the toast that offered it (spec 0008).
+ *
+ * Sonner deletes a toast once its action runs, after a short exit animation,
+ * and an outcome that lands inside that animation merges into the dying toast
+ * and vanishes with it, which is how a quick "Couldn't undo" went unseen. So
+ * the click keeps the toast (`preventDefault`), takes the Undo off it so it
+ * cannot run twice, and the outcome then closes it or rewrites it in place.
+ *
+ * @param event The action's click event.
+ * @param options.id The toast id.
+ * @param options.message The toast's text while the restore runs.
+ * @param options.expiredMessage The text when the database refuses the Undo.
+ * @param options.restore The restoring Server Action call.
+ * @param options.restoring Runs inside the transition first, for a control
+ * that shows the restored state at once.
+ * @param options.onError Shows any other failure, once the toast is closed.
+ */
+export function runUndoInToast<E extends string>(
+  event: { preventDefault: () => void },
+  {
+    id,
+    message,
+    expiredMessage,
+    restore,
+    restoring,
+    onError,
+  }: {
+    id: string;
+    message: string;
+    expiredMessage: string;
+    restore: () => Promise<{ ok: true } | { ok: false; error: E }>;
+    restoring?: () => void;
+    onError: (error: E | "write_failed") => void;
+  },
+): void {
+  event.preventDefault();
+  toast(message, { id, action: undefined });
+  startTransition(async () => {
+    restoring?.();
+    const result = await settleResultCall(restore);
+    if (result.ok) {
+      toast.dismiss(id);
+      return;
+    }
+    if (result.error === "undo_expired") {
+      // Sonner merges an update into the toast with the same id, so a
+      // description from the first toast survives unless cleared here.
+      toast(expiredMessage, { id, description: undefined, action: undefined });
+      return;
+    }
+    toast.dismiss(id);
+    onError(result.error);
+  });
 }
 
 /**

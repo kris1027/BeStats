@@ -10,6 +10,7 @@ import { WatchedIcon } from "@/components/tracking/tracking-icons";
 import {
   settleResultCall,
   showEpisodeTrackingError,
+  UNDO_TOAST_MS,
 } from "@/components/tracking/tracking-toast";
 import { typedHref } from "@/lib/catalog/media-type";
 import { MARK_NEXT_MESSAGES, UNDO_ACTION_LABEL } from "@/lib/tracking/messages";
@@ -20,9 +21,6 @@ import {
   SHOW_CARD_LINK_SELECTOR,
   showCardLinkId,
 } from "./ids";
-
-/** Long enough for a keyboard user to reach Undo, as on the list pages. */
-const UNDO_TOAST_MS = 10_000;
 
 /**
  * Where the focus goes once the refresh after a mark or an Undo has rendered

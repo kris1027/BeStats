@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { classifyTrackingError } from "./supabase-error";
+import {
+  classifyMovieTrackingError,
+  classifyTrackingError,
+} from "./supabase-error";
 
 /**
  * covers: spec 0007, AC-11, AC-12, AC-21
@@ -58,4 +61,30 @@ describe("classifyTrackingError", () => {
     } as { code: string });
     expect(JSON.stringify(classified)).not.toMatch(/user-a|550|11/);
   });
+});
+
+/** covers: prompts/movie-plan-watched-exclusive.md, R5 */
+describe("classifyMovieTrackingError", () => {
+  it("reports rate_movie's BS001 as not_watched", () => {
+    expect(classifyMovieTrackingError({ code: "BS001" })).toEqual({
+      error: "not_watched",
+      outcome: "not_watched",
+    });
+  });
+
+  it("leaves BS001 out of the shared classifier", () => {
+    expect(classifyTrackingError({ code: "BS001" })).toEqual({
+      error: "write_failed",
+      outcome: "db_error",
+    });
+  });
+
+  it.each(["P0002", "PGRST301", "42501", "23514"])(
+    "maps %s exactly as the shared classifier does",
+    (code) => {
+      expect(classifyMovieTrackingError({ code })).toEqual(
+        classifyTrackingError({ code }),
+      );
+    },
+  );
 });

@@ -50,10 +50,12 @@ import {
  * never both, and a score needs a watch mark, so the score pill shows only on
  * a watched movie and Mark watched opens its picker at once
  * (prompts/movie-plan-watched-exclusive.md). A write that removed a watch
- * mark shows a toast whose Undo puts it back with its score. The optimistic value lasts only while the action is in flight:
- * on success it gives way to the prop `refresh()` delivers, on failure to the
- * unchanged prop, which is the rollback (AC-11). The confirmed state is only
- * ever the server's.
+ * mark shows a toast whose Undo puts it back with its score, and shows both
+ * back at once while the restore runs, as every click here does. The
+ * optimistic value lasts only while the action is in flight: on success it
+ * gives way to the prop `refresh()` delivers, on failure to the unchanged
+ * prop, which is the rollback (AC-11). The confirmed state is only ever the
+ * server's.
  *
  * Every toggle reads its target from the optimistic value, never the prop, so
  * a double click sends `true` then `false` rather than `true` twice (AC-15).

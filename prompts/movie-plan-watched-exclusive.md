@@ -100,7 +100,7 @@ Episodes are unchanged.
 - `setMovieRating(n)` keeps the `"released"` check and calls `rate_movie`. A row that isn't watched returns the new error `not_watched`.
 - `restoreMovieWatched(id, watchedAt, rating)`: Zod adds `rating: int 1..10 | null` to `restoreWatchedInputSchema`.
 - `runTrackingWrite` gains a way to return the RPC's data. The write step can return `{ data, error }`, and the action maps the data to `cleared`.
-- `lib/tracking/types.ts`: `MovieTrackingError` gains `not_watched`, with the copy "Mark it watched before scoring." It only appears on a stale tab or a crafted call. `classifyTrackingError` maps the new SQLSTATE: `rate_movie` raises a custom code such as `P0001` with message `not_watched`, or a dedicated code. The exact choice is made while reading `supabase-error.ts`.
+- `lib/tracking/types.ts`: `MovieTrackingError` gains `not_watched`, with the copy "Mark it watched before scoring." It only appears on a stale tab or a crafted call. `classifyTrackingError` maps the new SQLSTATE: `rate_movie` raises a custom code such as `P0001` with message `not_watched`, or a dedicated code. The exact choice is made while reading `supabase-error.ts`. As built: `rate_movie` raises `BS001`, which `classifyMovieTrackingError` in `supabase-error.ts` maps to `not_watched` before delegating to `classifyTrackingError`, so the episode and show writes can never return it.
 
 ### Optimistic state (`lib/tracking/intent.ts`)
 
@@ -118,14 +118,14 @@ Episodes are unchanged.
 - `movie-tracking-controls.tsx`:
   - The score popover renders only when `optimistic.watched`.
   - `toggleWatched` to true also calls `setPickerOpen(true)` in the same click, and a failed result closes it.
-  - Planning or unmarking with a `cleared` result shows the Undo toast (decisions 4 and 5). Undo calls `restoreMovieWatched`, and an `undo_expired` result shows "Couldn't undo. Mark it watched again." The release gate branches (`planOnly`, disabled mark) stay.
+  - Planning or unmarking with a `cleared` result shows the Undo toast (decisions 4 and 5). Undo calls `restoreMovieWatched` and shows the mark and score back optimistically while it runs, like every other click on these controls (the Watched page's Undo stays non-optimistic, since its card needs the server's order). An `undo_expired` result shows "Couldn't undo. Mark it watched again." The release gate branches (`planOnly`, disabled mark) stay.
 - `card-bookmark-button.tsx`: a plan result with `cleared` shows the same Undo toast. The card has no other watched UI.
 - `library-grid.tsx`: the Watched page Remove uses `cleared.rating` (or the item's rating) for the new second line, and its Undo passes the rating.
 - `lib/tracking/messages.ts`:
   - `scoreKept` is replaced by `scoreRemoved: "Your score was removed too."`.
   - New `MOVIE_CLEARED_MESSAGES`: `planned` "Moved to your plan. Watched mark and score removed." / "Moved to your plan. Watched mark removed.", and `unwatched` "Score removed too."
   - New copy for `not_watched`.
-- The toasts use the existing sonner setup and `UNDO_ACTION_LABEL`. A shared helper in `tracking-toast.ts` keeps the page and the card identical.
+- The toasts use the existing sonner setup and `UNDO_ACTION_LABEL`. `use-movie-cleared-undo.ts` holds the page's and the card's shared copy, and `runUndoInToast` with `UNDO_TOAST_MS` in `tracking-toast.ts` is the one Undo runner the page, the card and the Watched page share. On Watched, an unmark that cleared nothing (another tab got there first) shows no score line and no Undo, per decision 9.
 
 ### Documentation
 
@@ -146,7 +146,7 @@ Episodes are unchanged.
 - `lib/supabase/database.types.ts` (`pnpm db:types`)
 - `app/movies/actions.ts`, `app/movies/actions.test.ts`
 - `lib/tracking/intent.ts` (+ test), `types.ts`, `messages.ts` (+ test), `schemas.ts` (+ test), `supabase-error.ts` (+ test)
-- `components/tracking/movie-tracking-controls.tsx` (+ test), `card-bookmark-button.tsx` (+ test), `tracking-toast.ts`
+- `components/tracking/movie-tracking-controls.tsx` (+ test), `card-bookmark-button.tsx` (+ test), `use-movie-cleared-undo.ts` (new), `tracking-toast.ts`
 - `components/library/library-grid.tsx` (+ test)
 - `AGENTS.md`, `docs/specs/0020-progress-based-library-pages/index.md`
 

@@ -344,16 +344,38 @@ describe("LibraryGrid on the watched page", () => {
 
   it("adds no score line for an unrated movie (AC-7)", async () => {
     const user = userEvent.setup();
-    render(grid("watched", [item(1, { watchedAt: "2026-09-23T12:00:00Z" })]));
+    const watchedAt = "2026-09-23T12:00:00Z";
+    render(grid("watched", [item(1, { watchedAt })]));
+
+    await user.click(
+      screen.getByRole("button", { name: "Unmark Movie 1 as watched" }),
+    );
+    await settleNext({ ok: true, cleared: { watchedAt, rating: null } });
+    expect(toast).toHaveBeenCalledWith(
+      "Removed from Watched",
+      expect.objectContaining({ description: undefined }),
+    );
+    act(() => lastUndo()());
+    expect(restoreMovieWatched).toHaveBeenCalledWith(1, watchedAt, null);
+  });
+
+  it("offers no Undo and no score line when another tab already unmarked it", async () => {
+    const user = userEvent.setup();
+    render(
+      grid("watched", [
+        item(1, { rating: 8, watchedAt: "2026-09-23T12:00:00Z" }),
+      ]),
+    );
 
     await user.click(
       screen.getByRole("button", { name: "Unmark Movie 1 as watched" }),
     );
     await settleNext({ ok: true });
-    expect(toast).toHaveBeenCalledWith(
+    expect(toast).toHaveBeenLastCalledWith(
       "Removed from Watched",
-      expect.objectContaining({ description: undefined }),
+      expect.objectContaining({ description: undefined, action: undefined }),
     );
+    expect(restoreMovieWatched).not.toHaveBeenCalled();
   });
 });
 

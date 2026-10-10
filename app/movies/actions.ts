@@ -18,7 +18,7 @@ import {
   watchedInputSchema,
   watchlistInputSchema,
 } from "@/lib/tracking/schemas";
-import { classifyTrackingError } from "@/lib/tracking/supabase-error";
+import { classifyMovieTrackingError } from "@/lib/tracking/supabase-error";
 import type {
   MovieClearedState,
   MovieTrackingResult,
@@ -48,31 +48,30 @@ import { loadMovie } from "./[id]/load-movie";
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
 /**
- * What a write step returns: PostgREST's error, or null on success, and for
- * the two clearing functions the row they return.
+ * What a write step returns: PostgREST's typed row, and its error or null on
+ * success. `D` is the generated return type of the call, so the reader that
+ * consumes it is checked against `database.types.ts`.
  */
-type WriteStep = (
+type WriteStep<D> = (
   supabase: SupabaseClient,
   userId: string,
-) => PromiseLike<{ data?: unknown; error: { code?: string | null } | null }>;
-
-/**
- * The SQLSTATE `rate_movie` raises for a score on a movie that is not watched
- * (`supabase/schemas/05-functions.sql`). Movie only, so it is mapped here
- * rather than in the shared `classifyTrackingError`.
- */
-const NOT_WATCHED_SQLSTATE = "BS001";
+) => PromiseLike<{ data: D | null; error: { code?: string | null } | null }>;
 
 /**
  * Reads what `plan_movie` or `unmark_movie_watched` cleared. Both return the
  * old watch mark and score, null when nothing was watched; only a removed
  * watch mark is worth an Undo (prompts/movie-plan-watched-exclusive.md).
+ *
+ * The parameter is wider than the generated row on purpose: the generator
+ * marks a `returns table` column not null, but both columns are null when
+ * the row had no watch mark to clear.
  */
-function readCleared(data: unknown): MovieClearedState | undefined {
-  const row = data as {
+function readCleared(
+  row: {
     cleared_watched_at: string | null;
     cleared_rating: number | null;
-  } | null;
+  } | null,
+): MovieClearedState | undefined {
   if (!row?.cleared_watched_at) return undefined;
   return { watchedAt: row.cleared_watched_at, rating: row.cleared_rating };
 }
@@ -93,14 +92,14 @@ type TmdbCheck = "none" | "exists" | "released";
  * @param movieId The already parsed movie id.
  * @param check What to confirm with TMDB before writing.
  * @param write The Supabase call, given the request client and the user id.
- * @param clears True for a write whose row says what it cleared.
+ * @param readResult For a write whose row says what it cleared, reads it.
  */
-async function runTrackingWrite(
+async function runTrackingWrite<D>(
   event: TrackingEvent,
   movieId: number,
   check: TmdbCheck,
-  write: WriteStep,
-  clears = false,
+  write: WriteStep<D>,
+  readResult?: (data: D | null) => MovieClearedState | undefined,
 ): Promise<MovieTrackingResult> {
   let cleared: MovieClearedState | undefined;
   try {
@@ -129,16 +128,12 @@ async function runTrackingWrite(
 
     const supabase = await createClient();
     const { data, error } = await write(supabase, user.id);
-    if (error?.code === NOT_WATCHED_SQLSTATE) {
-      logTrackingEvent(event, "not_watched");
-      return { ok: false, error: "not_watched" };
-    }
     if (error) {
-      const classified = classifyTrackingError(error);
+      const classified = classifyMovieTrackingError(error);
       logTrackingEvent(event, classified.outcome);
       return { ok: false, error: classified.error };
     }
-    if (clears) cleared = readCleared(data);
+    cleared = readResult?.(data);
   } catch {
     // A network failure inside supabase-js or a bug surfaced by `loadMovie`.
     // The error object is dropped on purpose: its message can carry request
@@ -168,7 +163,8 @@ function parse<T>(
  * planning a watched movie also removes its watch mark and score, and returns
  * them as `cleared` for the Undo (prompts/movie-plan-watched-exclusive.md).
  *
- * Planning goes through `plan_movie`, which reads and clears in one statement.
+ * Planning goes through `plan_movie`, which locks the row, reads what it is
+ * about to clear and writes, all in one function call and one transaction.
  * Unplanning is an update only, so it never creates a row; matching no row is
  * a success, because the state was already empty.
  */
@@ -187,7 +183,7 @@ export async function setMovieWatchlist(
       "exists",
       (supabase) =>
         supabase.rpc("plan_movie", { p_movie_id: input.movieId }).single(),
-      true,
+      readCleared,
     );
   }
 
@@ -233,7 +229,7 @@ export async function setMovieWatched(
       supabase
         .rpc("unmark_movie_watched", { p_movie_id: input.movieId })
         .single(),
-    true,
+    readCleared,
   );
 }
 
