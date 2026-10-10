@@ -45,7 +45,7 @@ async function ShowProgressSlot({ showId }: { showId: number }) {
   }
 
   const watchedIds = watched.state.get(showId) ?? new Set<number>();
-  const hasRow = status.state !== null;
+  const hasRow = status.state;
   // Nothing tracked and nothing watched: no line, and no TMDB read for it.
   if (!hasRow && watchedIds.size === 0) return null;
 

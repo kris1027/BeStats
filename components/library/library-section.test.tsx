@@ -11,8 +11,8 @@ import type { LibraryMovieItem } from "./types";
  * renders what it returns. The session, the library reads and the rating
  * read are the boundaries and are replaced; `libraryLastPage` stays real, so
  * the redirect follows the same arithmetic the app uses. The client grid,
- * the streamed Watchlist show card, the held section and the missing show
- * card have their own suites, so here they are stubs that show what they
+ * the streamed Watchlist show card and the missing show card have their own
+ * suites, so here they are stubs that show what they
  * were handed. `redirect()` throws, as it does in Next.
  */
 const requireUser = vi.fn();
@@ -77,10 +77,7 @@ vi.mock("./watchlist-show-card", () => ({
     </span>
   ),
 }));
-vi.mock("./held-shows", () => ({
-  HeldShowsSection: () => <p data-testid="held-shows">held</p>,
-}));
-vi.mock("./held-show-card", () => ({
+vi.mock("./missing-show-card", () => ({
   MissingShowCard: (props: { showId: number }) => (
     <span data-testid={`missing-show-${props.showId}`}>missing</span>
   ),
@@ -285,19 +282,10 @@ describe("empty states (AC-18)", () => {
       );
     },
   );
-
-  it("shows the Watchlist empty panel above the Paused & dropped section (AC-10)", async () => {
-    await renderSection("watchlist", { type: "tv" });
-    const empty = screen.getByText("Nothing to watch right now");
-    const held = screen.getByTestId("held-shows");
-    expect(
-      empty.compareDocumentPosition(held) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-  });
 });
 
 describe("show cards (AC-9 to AC-12)", () => {
-  it("renders Watchlist cards with their next episode, a missing show last, and the held section on page 1", async () => {
+  it("renders Watchlist cards with their next episode and a missing show last", async () => {
     getShowLibraryTab.mockResolvedValue(
       tab([
         {
@@ -312,25 +300,7 @@ describe("show cards (AC-9 to AC-12)", () => {
     await renderSection("watchlist", { type: "tv" });
     expect(screen.getByTestId("watchlist-show-1")).toHaveTextContent("S1E3");
     expect(screen.getByTestId("missing-show-2")).toBeInTheDocument();
-    expect(screen.getByTestId("held-shows")).toBeInTheDocument();
-  });
-
-  it("leaves the held section off a later page (AC-10)", async () => {
-    getShowLibraryTab.mockResolvedValue(
-      tab(
-        [
-          {
-            page: "watchlist",
-            showId: 1,
-            title: TITLE,
-            next: { season: 1, episode: 1 },
-          },
-        ],
-        { total: 21 },
-      ),
-    );
-    await renderSection("watchlist", { type: "tv", page: "2" });
-    expect(screen.queryByTestId("held-shows")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Paused/)).not.toBeInTheDocument();
   });
 
   it("renders Upcoming cards dated or Date TBA, with no button (AC-11)", async () => {

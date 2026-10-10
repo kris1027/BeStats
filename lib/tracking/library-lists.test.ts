@@ -74,7 +74,6 @@ vi.mock("@/lib/tmdb", () => ({
 }));
 
 const {
-  getHeldShows,
   getLibraryMovieTitles,
   getMovieLibraryTab,
   getShowLibraryTab,
@@ -164,7 +163,7 @@ describe("libraryLastPage", () => {
 });
 
 describe("getShowLibraryTab (AC-7 to AC-12, AC-16)", () => {
-  it("reads the owner's unheld shows by activity, with the ceiling in SQL, then their regular episodes", async () => {
+  it("reads the owner's tracked shows by activity, with the ceiling in SQL, then their regular episodes", async () => {
     responses = [
       { data: [tracked(1), tracked(2)], error: null },
       {
@@ -181,11 +180,10 @@ describe("getShowLibraryTab (AC-7 to AC-12, AC-16)", () => {
       page: 1,
       today: TODAY,
     });
-    expect(calls.slice(0, 8)).toEqual([
+    expect(calls.slice(0, 7)).toEqual([
       { method: "from", args: ["user_tracked_shows"] },
       { method: "select", args: ["show_id, tracked_at, last_watched_at"] },
       { method: "eq", args: ["user_id", "user-a"] },
-      { method: "is", args: ["hold_state", null] },
       { method: "order", args: ["last_activity_at", { ascending: false }] },
       { method: "order", args: ["show_id", { ascending: true }] },
       { method: "limit", args: [501] },
@@ -815,54 +813,5 @@ describe("getLibraryMovieTitles (spec 0008, AC-11)", () => {
     expect(await getLibraryMovieTitles([1])).toEqual({ kind: "failed" });
     getMovieSummaries.mockRejectedValueOnce(new Error("bug"));
     await expect(getLibraryMovieTitles([1])).rejects.toThrow("bug");
-  });
-});
-
-describe("getHeldShows (AC-10)", () => {
-  it("reads the owner's held shows, most recently changed first, with an exact count", async () => {
-    responses = [
-      {
-        data: [
-          {
-            show_id: 1,
-            hold_state: "paused",
-            hold_changed_at: "2026-09-02T00:00:00+00:00",
-          },
-        ],
-        error: null,
-        count: 1,
-      },
-    ];
-    expect(await getHeldShows("user-a")).toEqual({
-      kind: "ok",
-      rows: [
-        {
-          showId: 1,
-          hold: "paused",
-          holdChangedAt: "2026-09-02T00:00:00+00:00",
-        },
-      ],
-      total: 1,
-    });
-    expect(calls).toEqual([
-      { method: "from", args: ["user_show_state"] },
-      {
-        method: "select",
-        args: ["show_id, hold_state, hold_changed_at", { count: "exact" }],
-      },
-      { method: "eq", args: ["user_id", "user-a"] },
-      { method: "not", args: ["hold_state", "is", null] },
-      { method: "order", args: ["hold_changed_at", { ascending: false }] },
-      { method: "order", args: ["show_id", { ascending: true }] },
-      { method: "limit", args: [500] },
-    ]);
-  });
-
-  it("reports a failed read as failed, logging no identifiers", async () => {
-    responses = [{ data: null, error: { code: "PGRST000" }, count: null }];
-    expect(await getHeldShows("user-a")).toEqual({ kind: "failed" });
-    expect(warn).toHaveBeenCalledWith(
-      "show_tracking.held_read refused db_error",
-    );
   });
 });

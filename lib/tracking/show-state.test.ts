@@ -111,17 +111,14 @@ describe("getShowTracking (spec 0020, AC-1, AC-2)", () => {
     expect(createClient).not.toHaveBeenCalled();
   });
 
-  it("returns null, untracked, when there is no row", async () => {
+  it("returns false, untracked, when there is no row", async () => {
     responses = [{ data: null, error: null }];
-    expect(await getShowTracking(1396)).toEqual({ kind: "ok", state: null });
+    expect(await getShowTracking(1396)).toEqual({ kind: "ok", state: false });
   });
 
-  it("maps the row and scopes the query to the session user (AC-20)", async () => {
-    responses = [{ data: { hold_state: "paused" }, error: null }];
-    expect(await getShowTracking(1396)).toEqual({
-      kind: "ok",
-      state: { hold: "paused" },
-    });
+  it("returns true for a row, scoping the query to the session user (AC-20)", async () => {
+    responses = [{ data: { show_id: 1396 }, error: null }];
+    expect(await getShowTracking(1396)).toEqual({ kind: "ok", state: true });
     expect(called("from")).toEqual([["user_show_state"]]);
     expect(called("eq")).toEqual([
       ["user_id", "user-a"],
@@ -149,29 +146,23 @@ describe("getTrackedShows (spec 0020, AC-6)", () => {
     expect(createClient).not.toHaveBeenCalled();
   });
 
-  it("answers an empty grid with an empty map and no query", async () => {
+  it("answers an empty grid with an empty set and no query", async () => {
     const result = await getTrackedShows("");
-    expect(result).toEqual({ kind: "ok", state: new Map() });
+    expect(result).toEqual({ kind: "ok", state: new Set() });
     expect(createClient).not.toHaveBeenCalled();
   });
 
   it("reads the whole grid in one query, owner scoped, leaving untracked shows out", async () => {
     responses = [
       {
-        data: [
-          { show_id: 1396, hold_state: null },
-          { show_id: 1399, hold_state: "dropped" },
-        ],
+        data: [{ show_id: 1396 }, { show_id: 1399 }],
         error: null,
       },
     ];
     const result = await getTrackedShows("1396,1399,60059");
     expect(result).toEqual({
       kind: "ok",
-      state: new Map([
-        [1396, null],
-        [1399, "dropped"],
-      ]),
+      state: new Set([1396, 1399]),
     });
     expect(called("from")).toHaveLength(1);
     expect(called("eq")).toEqual([["user_id", "user-a"]]);

@@ -58,7 +58,7 @@ async function ShowTrackingSlot({
     <ShowTrackingControl
       showId={showId}
       showName={showName}
-      state={result.state}
+      tracked={result.state}
       returnPath={returnPath}
     />
   );

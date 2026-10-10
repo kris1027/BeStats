@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-import { SHOW_HOLDS } from "./types";
-
 /**
  * The input rules every movie tracking action applies before any Supabase or
  * TMDB call (spec 0007, AC-13).
@@ -129,28 +127,11 @@ export const seasonUndoInputSchema = z.object({
   ]),
 });
 
-/** One of the two holds, exactly as `show_hold` spells them, or none. */
-export const showHoldSchema = z.enum(SHOW_HOLDS).nullable();
-
 /** Tracking a show (spec 0020, AC-2, AC-6): the show alone. */
 export const trackShowInputSchema = z.object({ showId: tmdbIdSchema });
 
-/**
- * A hold change (spec 0020, AC-2, AC-4, AC-10): the hold to set (null to
- * resume) and the hold the caller last saw, which the database compares
- * before writing.
- */
-export const showHoldInputSchema = z.object({
-  showId: tmdbIdSchema,
-  hold: showHoldSchema,
-  expected: showHoldSchema,
-});
-
-/** Stop tracking (spec 0020, AC-3, AC-4), over the hold the caller saw. */
-export const untrackShowInputSchema = z.object({
-  showId: tmdbIdSchema,
-  expected: showHoldSchema,
-});
+/** Stop tracking (spec 0020, AC-3, AC-4): the show alone, idempotent. */
+export const untrackShowInputSchema = z.object({ showId: tmdbIdSchema });
 
 /** A time the client carries back for an Undo: full ISO, never in the future. */
 const pastInstantSchema = z.iso
@@ -158,23 +139,10 @@ const pastInstantSchema = z.iso
   .refine((value) => Date.parse(value) <= Date.now());
 
 /**
- * The Undo of Stop tracking (spec 0020, AC-3): the values `untrack_show`
- * reported. A hold and its time come together or not at all, and the hold
- * never changed before the show was tracked; `restore_show_tracking` applies
- * every bound again.
+ * The Undo of Stop tracking (spec 0020, AC-3): the `tracked_at` that
+ * `untrack_show` reported. `restore_show_tracking` applies the bound again.
  */
-export const restoreShowTrackingInputSchema = z
-  .object({
-    showId: tmdbIdSchema,
-    undo: z.object({
-      trackedAt: pastInstantSchema,
-      hold: showHoldSchema,
-      holdChangedAt: pastInstantSchema.nullable(),
-    }),
-  })
-  .refine(
-    ({ undo }) =>
-      (undo.hold === null) === (undo.holdChangedAt === null) &&
-      (undo.holdChangedAt === null ||
-        Date.parse(undo.holdChangedAt) >= Date.parse(undo.trackedAt)),
-  );
+export const restoreShowTrackingInputSchema = z.object({
+  showId: tmdbIdSchema,
+  undo: z.object({ trackedAt: pastInstantSchema }),
+});

@@ -1,5 +1,3 @@
-import { Suspense } from "react";
-
 import { PaginationLinks } from "@/components/pagination-links";
 import { PosterGrid } from "@/components/poster-grid";
 import {
@@ -11,8 +9,6 @@ import { LIBRARY_COPY } from "@/lib/tracking/messages";
 import { getShowRatings } from "@/lib/tracking/show-ratings";
 
 import { BadgeLegend } from "./badge-legend";
-import { MissingShowCard } from "./held-show-card";
-import { HeldShowsSection } from "./held-shows";
 import { LIBRARY_HEADING_ID } from "./ids";
 import {
   EmptyPanel,
@@ -21,6 +17,7 @@ import {
   settleTab,
   TabNotes,
 } from "./library-panels";
+import { MissingShowCard } from "./missing-show-card";
 import { UpcomingShowCard, WatchedShowCard } from "./show-cards";
 import type { LibraryList } from "./types";
 import { WatchlistShowCard } from "./watchlist-show-card";
@@ -29,9 +26,9 @@ import { WatchlistShowCard } from "./watchlist-show-card";
 const EAGER_POSTERS = 6;
 
 /**
- * A show tab (AC-9 to AC-12, AC-15 to AC-18): Watchlist with Mark watched
- * cards and, on page 1, the Paused & dropped section; Upcoming with dated and
- * Date TBA cards; Watched with the calculated rating and its label.
+ * A show tab (AC-9, AC-11, AC-12, AC-15 to AC-18): Watchlist with Mark
+ * watched cards; Upcoming with dated and Date TBA cards; Watched with the
+ * calculated rating and its label.
  */
 export async function showLibraryTab(query: LibraryTabQuery<LibraryList>) {
   const { tab: list, userId, page, today } = query;
@@ -40,21 +37,11 @@ export async function showLibraryTab(query: LibraryTabQuery<LibraryList>) {
   if (settled.kind !== "ok") return settled.panel;
   const { cards, total, lastPage } = settled;
 
-  // Below the grid on page 1 only, and its own boundary, so the grid never
-  // waits on the held shows' titles (AC-10).
-  const held =
-    list === "watchlist" && page === 1 ? (
-      <Suspense fallback={null}>
-        <HeldShowsSection userId={userId} />
-      </Suspense>
-    ) : null;
-
   if (total === 0) {
     return (
       <div className="flex flex-col gap-10">
         <TabNotes tab={settled} type="tv" list={list} page={page} />
         <EmptyPanel list={list} type="tv" />
-        {held}
       </div>
     );
   }
@@ -101,8 +88,6 @@ export async function showLibraryTab(query: LibraryTabQuery<LibraryList>) {
           href={(target) => pageHref(list, "tv", target)}
         />
       ) : null}
-
-      {held}
 
       <BadgeLegend list={list} type="tv" />
     </div>

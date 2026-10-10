@@ -31,6 +31,3 @@ export const SHOW_CARD_LINK_SELECTOR = `a[id^="${SHOW_CARD_LINK_PREFIX}"]`;
 
 /** Each library page's `h1`, which takes the focus when a list empties. */
 export const LIBRARY_HEADING_ID = "library-heading";
-
-/** The Paused & dropped disclosure's summary, which takes the focus last. */
-export const HELD_SHOWS_SUMMARY_ID = "held-shows-summary";

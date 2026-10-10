@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import {
   EPISODE_TRACKING_MESSAGES,
-  HELD_SHOWS_COPY,
   LIBRARY_COPY,
   LIBRARY_NOTES,
   MARK_NEXT_MESSAGES,
@@ -10,7 +9,6 @@ import {
   SEASON_MESSAGES,
   SHOW_PROGRESS_MESSAGES,
   SHOW_TRACKING_COPY,
-  SHOW_TRACKING_LABELS,
   SHOW_TRACKING_MESSAGES,
   TRACKING_MESSAGES,
   UPCOMING_MESSAGES,
@@ -70,13 +68,12 @@ describe("EPISODE_TRACKING_MESSAGES", () => {
 });
 
 /** covers: spec 0013, AC-1, AC-4, AC-8, AC-10, AC-11, AC-15 */
-describe("SHOW_TRACKING_LABELS and SHOW_TRACKING_COPY (spec 0020, AC-2 to AC-5)", () => {
-  it("labels the pill Tracking, Paused or Dropped", () => {
-    expect(SHOW_TRACKING_LABELS).toEqual({
-      none: "Tracking",
-      paused: "Paused",
-      dropped: "Dropped",
-    });
+describe("SHOW_TRACKING_COPY (spec 0020, AC-2 to AC-5)", () => {
+  it("labels the toggle Plan to watch or Tracking, named for Stop tracking", () => {
+    expect(SHOW_TRACKING_COPY.tracking).toBe("Tracking");
+    expect(SHOW_TRACKING_COPY.stopLabel("Severance")).toBe(
+      "Stop tracking Severance",
+    );
   });
 
   it("offers Plan to watch and names the show in each toast", () => {
@@ -89,15 +86,6 @@ describe("SHOW_TRACKING_LABELS and SHOW_TRACKING_COPY (spec 0020, AC-2 to AC-5)"
     );
     expect(SHOW_TRACKING_COPY.undoExpired).toBe(
       "Couldn't undo. Track the show again from its page.",
-    );
-  });
-
-  it("says the show changed elsewhere for a stale write (AC-4)", () => {
-    expect(SHOW_TRACKING_MESSAGES.hold_changed).toBe(
-      "This show changed elsewhere. Showing the current one.",
-    );
-    expect(SHOW_TRACKING_MESSAGES.not_tracked).toBe(
-      SHOW_TRACKING_MESSAGES.hold_changed,
     );
   });
 
@@ -232,9 +220,5 @@ describe("LIBRARY_NOTES, labels and the held section (spec 0020, AC-10, AC-12, A
       finished: "Finished",
       caught_up: "Caught up",
     });
-  });
-
-  it("titles the held section with its exact count", () => {
-    expect(HELD_SHOWS_COPY.summary(4)).toBe("Paused & dropped (4)");
   });
 });

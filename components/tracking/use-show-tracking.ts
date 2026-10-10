@@ -6,16 +6,11 @@ import { toast } from "sonner";
 
 import {
   restoreShowTracking,
-  setShowHold,
   trackShow,
   untrackShow,
 } from "@/app/shows/actions";
 import { SHOW_TRACKING_COPY, UNDO_ACTION_LABEL } from "@/lib/tracking/messages";
-import type {
-  ShowHold,
-  ShowTrackingError,
-  ShowTrackingUndo,
-} from "@/lib/tracking/types";
+import type { ShowTrackingError, ShowTrackingUndo } from "@/lib/tracking/types";
 
 import { settleResultCall, showShowTrackingError } from "./tracking-toast";
 
@@ -23,16 +18,13 @@ import { settleResultCall, showShowTrackingError } from "./tracking-toast";
 const UNDO_TOAST_MS = 10_000;
 
 /**
- * The show tracking writes every surface shares (spec 0020, AC-2 to AC-6,
- * AC-10): the show page pill, the card bookmark, and the Paused & dropped and
- * missing title cards. One place for the toasts, the Undo of Stop tracking
- * and the error copy, so each surface only says what it shows meanwhile.
+ * The show tracking writes every surface shares (spec 0020, AC-2 to AC-6):
+ * the show page toggle, the card bookmark and the missing title card. One
+ * place for the toasts, the Undo of Stop tracking and the error copy, so each
+ * surface only says what it shows meanwhile.
  *
- * Each write names the hold the surface showed (`expected`), so a surface
- * rendered before the show changed elsewhere refreshes instead of
- * overwriting or deleting the newer state (AC-4). Every call runs in its own
- * transition; `before` runs first inside it, for an optimistic update, and
- * `after` gets the outcome.
+ * Every call runs in its own transition; `before` runs first inside it, for
+ * an optimistic update.
  *
  * @param showId The show.
  * @param showName The name the toasts use.
@@ -96,7 +88,7 @@ export function useShowTracking({
   }
 
   return {
-    /** Tracks the show with no hold (AC-2, AC-6). */
+    /** Tracks the show (AC-2, AC-6). */
     track(options: { before?: () => void } = {}) {
       startTransition(async () => {
         options.before?.();
@@ -105,41 +97,16 @@ export function useShowTracking({
       });
     },
 
-    /** Pauses, drops or resumes the show, over the hold it showed (AC-4). */
-    setHold(
-      hold: ShowHold | null,
-      expected: ShowHold | null,
-      options: { before?: () => void; after?: (ok: boolean) => void } = {},
-    ) {
-      startTransition(async () => {
-        options.before?.();
-        const result = await settleResultCall(() =>
-          setShowHold(showId, hold, expected),
-        );
-        if (!result.ok) fail(result.error);
-        options.after?.(result.ok);
-      });
-    },
-
     /**
-     * Stops tracking, with a toast that carries the Undo (AC-3). `restoring`
-     * runs inside the Undo's transition, for a surface that shows the show
-     * tracked again at once.
+     * Stops tracking, with a toast that carries the Undo (AC-3). A show
+     * another tab already stopped has nothing to undo, so its toast confirms
+     * without one (AC-4). `restoring` runs inside the Undo's transition, for
+     * a surface that shows the show tracked again at once.
      */
-    untrack(
-      expected: ShowHold | null,
-      options: {
-        before?: () => void;
-        after?: (ok: boolean) => void;
-        restoring?: () => void;
-      } = {},
-    ) {
+    untrack(options: { before?: () => void; restoring?: () => void } = {}) {
       startTransition(async () => {
         options.before?.();
-        const result = await settleResultCall(() =>
-          untrackShow(showId, expected),
-        );
-        options.after?.(result.ok);
+        const result = await settleResultCall(() => untrackShow(showId));
         if (!result.ok) {
           fail(result.error);
           return;
@@ -149,10 +116,12 @@ export function useShowTracking({
           id: toastId,
           description: undefined,
           duration: UNDO_TOAST_MS,
-          action: {
-            label: UNDO_ACTION_LABEL,
-            onClick: (event) => restore(event, undo, options.restoring),
-          },
+          action: undo
+            ? {
+                label: UNDO_ACTION_LABEL,
+                onClick: (event) => restore(event, undo, options.restoring),
+              }
+            : undefined,
         });
       });
     },

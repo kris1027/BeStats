@@ -105,13 +105,10 @@ const PRIVATE_ACTIONS: Record<
           episodeIds: [62085],
         }),
       trackShow: () => showActions.trackShow(SHOW),
-      setShowHold: () => showActions.setShowHold(SHOW, "paused", null),
-      untrackShow: () => showActions.untrackShow(SHOW, "dropped"),
+      untrackShow: () => showActions.untrackShow(SHOW),
       restoreShowTracking: () =>
         showActions.restoreShowTracking(SHOW, {
           trackedAt: "2026-09-01T10:00:00+00:00",
-          hold: "dropped",
-          holdChangedAt: "2026-09-25T23:29:00+00:00",
         }),
     },
   },

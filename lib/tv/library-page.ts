@@ -18,7 +18,7 @@ export type ShowDetails = {
 };
 
 /**
- * The one library page a tracked show with no hold sits on (spec 0020,
+ * The one library page a tracked show sits on (spec 0020,
  * AC-7), with what its card shows there.
  */
 export type ShowPage =
@@ -58,7 +58,7 @@ export function episodeKey(season: number, episode: number): EpisodeKey {
 }
 
 /**
- * Which library page a tracked show with no hold belongs on (spec 0020,
+ * Which library page a tracked show belongs on (spec 0020,
  * AC-7, AC-8). Pure: the same TMDB details, watched set and day always give
  * the same page, and nothing it decides is stored (key invariants).
  *
