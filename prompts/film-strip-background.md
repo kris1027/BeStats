@@ -163,3 +163,4 @@ It must cost the catalog pages nothing measurable in load time, interactivity or
 - Found in the running app: `gl.clear` respects `depthMask`, and the bokeh pass leaves it off. So every frame after the first kept the previous frame's depth. A redrawn still frame then lost its strips, and moving strips flickered. The mask is now turned back on before the clear, and `scene.test.ts` guards it.
 - Measured on `/privacy` at 1440 × 900 with the content hidden (three frames over 13 s): the brightest pixel's luminance is 0.0206, so muted text keeps 6.64:1 (AC-11).
 - Chunks: the worker is about 7.5 KB gzipped, including `zod/mini`, and the main thread scene about 5.7 KB. Neither is referenced by any prerendered page.
+- The intro now plays once per tab: later full loads and breakpoint rebuilds carry on from the stored clock without the fade (prompts/film-scene-continuity.md).
