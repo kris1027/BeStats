@@ -76,13 +76,10 @@ function OverviewSkeleton() {
     <div className="flex max-w-[65ch] flex-col gap-3">
       <SectionHeadingSkeleton className="w-32" />
       <div className="flex flex-col text-base leading-relaxed">
-        {OVERVIEW_LINES.map((className, index) => (
+        {OVERVIEW_LINES.map(({ visibility, width }, index) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders with no identity.
-          <div key={index} className={cn("h-[1lh] items-center", className)}>
-            <Skeleton
-              shape="line"
-              className={cn(index === 3 && "md:w-2/3", index === 7 && "w-2/3")}
-            />
+          <div key={index} className={cn("h-[1lh] items-center", visibility)}>
+            <Skeleton shape="line" className={width} />
           </div>
         ))}
       </div>
@@ -90,15 +87,19 @@ function OverviewSkeleton() {
   );
 }
 
+/**
+ * The overview's lines: when each shows, and the shorter width that ends the
+ * paragraph at that breakpoint (the fourth line from `md`, the eighth below).
+ */
 const OVERVIEW_LINES = [
-  "flex",
-  "flex",
-  "flex",
-  "flex",
-  "flex md:hidden",
-  "flex md:hidden",
-  "flex md:hidden",
-  "flex md:hidden",
+  { visibility: "flex" },
+  { visibility: "flex" },
+  { visibility: "flex" },
+  { visibility: "flex", width: "md:w-2/3" },
+  { visibility: "flex md:hidden" },
+  { visibility: "flex md:hidden" },
+  { visibility: "flex md:hidden" },
+  { visibility: "flex md:hidden", width: "w-2/3" },
 ];
 
 /**

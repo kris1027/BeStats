@@ -241,7 +241,7 @@ function LoadFailed({
 export function LibrarySkeleton() {
   return (
     <PosterGrid aria-hidden="true">
-      {ONE_ROW.map((visibility, index) => (
+      {ROW_CARD_VISIBILITY.map((visibility, index) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders with no identity.
         <li key={index} className={visibility}>
           <PosterCardSkeleton />
@@ -251,4 +251,5 @@ export function LibrarySkeleton() {
   );
 }
 
-const ONE_ROW = ["", "", "hidden md:block", "hidden md:block"];
+/** Each card's visibility in that row: the last two show only from `md`. */
+const ROW_CARD_VISIBILITY = ["", "", "hidden md:block", "hidden md:block"];
