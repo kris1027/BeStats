@@ -125,7 +125,7 @@ async function readShows(ids: readonly number[]) {
     return await getTvShowsSettled(ids);
   } catch (error) {
     if (!(error instanceof TmdbError)) throw error;
-    logTrackingEvent(TRACKING_EVENT.showTrackingRead, "tmdb_unavailable");
+    logTrackingEvent(TRACKING_EVENT.showGridRead, "tmdb_unavailable");
     return null;
   }
 }

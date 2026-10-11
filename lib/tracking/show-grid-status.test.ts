@@ -122,6 +122,9 @@ describe("getShowGridStatus", () => {
         [2, null],
       ]),
     });
+    expect(warn).toHaveBeenCalledWith(
+      "show_tracking.grid_read refused tmdb_unavailable",
+    );
   });
 
   it("leaves a show plain when its own TMDB read failed", async () => {

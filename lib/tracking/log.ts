@@ -34,6 +34,7 @@ export const TRACKING_EVENT = {
   restoreShowTracking: "show_tracking.restore",
   showTrackingRead: "show_tracking.read",
   watchedEpisodesRead: "show_tracking.watched_read",
+  showGridRead: "show_tracking.grid_read",
 } as const;
 
 export type TrackingEvent =
