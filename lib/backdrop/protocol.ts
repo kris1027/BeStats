@@ -1,5 +1,8 @@
 import * as z from "zod/mini";
 
+import type { BackdropColors } from "./colors";
+import type { BackdropBudget } from "./params";
+
 /**
  * The messages between the page and the background worker
  * (prompts/ambient-background.md, decision 3).
@@ -15,13 +18,26 @@ const rgb = z.tuple([unit, unit, unit]);
 const count = z.number().check(z.int(), z.gte(0), z.lte(20_000));
 const size = z.number().check(z.gte(0), z.lte(100_000));
 
-export const budgetSchema = z.object({
+const pixelRatio = z.number().check(z.gt(0), z.lte(4));
+
+// Each schema is typed as the shape it validates, so a field added to
+// `BackdropBudget` or `BackdropColors` and missed here fails the type check.
+
+/** A `BackdropBudget` as it crosses to the worker in `init`. */
+const budgetSchema: z.ZodMiniType<BackdropBudget> = z.object({
   gridWidth: count,
   gridDepth: count,
   spacing: z.number().check(z.gt(0), z.lte(10)),
   panels: count,
   dust: count,
-  pixelRatio: z.number().check(z.gt(0), z.lte(4)),
+  pixelRatio,
+});
+
+const colorsSchema: z.ZodMiniType<BackdropColors> = z.object({
+  accent: rgb,
+  background: rgb,
+  wave: rgb,
+  dust: rgb,
 });
 
 const offscreenCanvas = z.custom<OffscreenCanvas>(
@@ -36,12 +52,7 @@ export const toWorkerSchema = z.discriminatedUnion("type", [
     width: size,
     height: size,
     budget: budgetSchema,
-    colors: z.object({
-      accent: rgb,
-      background: rgb,
-      wave: rgb,
-      dust: rgb,
-    }),
+    colors: colorsSchema,
     reducedMotion: z.boolean(),
     visible: z.boolean(),
   }),
@@ -49,7 +60,7 @@ export const toWorkerSchema = z.discriminatedUnion("type", [
     type: z.literal("resize"),
     width: size,
     height: size,
-    pixelRatio: z.number().check(z.gt(0), z.lte(4)),
+    pixelRatio,
   }),
   z.object({
     type: z.literal("pointer"),
