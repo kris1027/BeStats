@@ -47,7 +47,7 @@ describe("Navbar", () => {
     expect(screen.getByRole("banner")).toBeInTheDocument();
   });
 
-  it("sends the brand to /shows, the default landing route", () => {
+  it("sends the brand to the catalog of the page, /shows here", () => {
     render(
       <Navbar
         mobileAccountSlot={<ACCOUNT_SLOT />}
