@@ -1,15 +1,3 @@
-import { UpcomingShowPill } from "@/components/library/show-cards";
-import {
-  CalculatedRatingBadge,
-  TmdbRatingBadge,
-} from "@/components/rating-badges";
-import { requestTodayUtc } from "@/lib/tracking/episode-state";
-import { WATCHED_SHOW_LABELS } from "@/lib/tracking/messages";
-import { getShowGridStatus } from "@/lib/tracking/show-grid-status";
-import { showIdsKey } from "@/lib/tracking/show-state";
-
-import { ShowCardBookmarkButton } from "./show-card-bookmark-button";
-
 /**
  * The three personal slots of a TV poster card on `/shows` and `/search`
  * (spec 0020, AC-6; prompts/catalog-card-status.md): a tracked show carries
@@ -20,14 +8,27 @@ import { ShowCardBookmarkButton } from "./show-card-bookmark-button";
  * boundary, so the posters never wait on the session. A visitor and a failed
  * read get the catalog card.
  */
+import { UpcomingShowPill } from "@/components/library/show-cards";
+import { CalculatedRatingBadge } from "@/components/rating-badges";
+import { requestTodayUtc } from "@/lib/tracking/episode-state";
+import { WATCHED_SHOW_LABELS } from "@/lib/tracking/messages";
+import { getShowGridStatus } from "@/lib/tracking/show-grid-status";
+import { showIdsKey } from "@/lib/tracking/show-state";
+
+import { CardRatingBadge } from "./card-rating-badge";
+import { ShowCardBookmarkButton } from "./show-card-bookmark-button";
+
 type ShowCardProps = {
   showId: number;
   /** Every show id on the grid, the same array for each card. */
   gridShowIds: readonly number[];
 };
 
-/** The grid's read, or undefined for a visitor or a failed read. */
-async function readGrid(gridShowIds: readonly number[]) {
+/**
+ * The grid's tracked shows mapped to their status, or undefined for a
+ * visitor or a failed read.
+ */
+async function readTrackedStatuses(gridShowIds: readonly number[]) {
   const result = await getShowGridStatus(showIdsKey(gridShowIds));
   return result.kind === "ok" ? result.state : undefined;
 }
@@ -44,14 +45,21 @@ async function ShowCardBadge({
   gridShowIds,
   tmdbRating,
 }: ShowCardProps & { tmdbRating: number | null }) {
-  const status = (await readGrid(gridShowIds))?.get(showId);
-  if (status?.page === "watched" && status.rating !== null) {
-    return (
-      <CalculatedRatingBadge value={status.rating} label="Your show rating" />
-    );
-  }
-  if (status?.page === "upcoming") return null;
-  return <TmdbRatingBadge value={tmdbRating} />;
+  const status = (await readTrackedStatuses(gridShowIds))?.get(showId);
+  return (
+    <CardRatingBadge
+      page={status?.page}
+      personal={
+        status?.page === "watched" && status.rating !== null ? (
+          <CalculatedRatingBadge
+            value={status.rating}
+            label="Your show rating"
+          />
+        ) : null
+      }
+      tmdbRating={tmdbRating}
+    />
+  );
 }
 
 /**
@@ -65,7 +73,7 @@ async function ShowCardMeta({
   gridShowIds,
   base,
 }: ShowCardProps & { base: string | null }) {
-  const status = (await readGrid(gridShowIds))?.get(showId);
+  const status = (await readTrackedStatuses(gridShowIds))?.get(showId);
   if (status?.page !== "watched") return base;
   const label = WATCHED_SHOW_LABELS[status.label];
   return base === null ? label : `${base} · ${label}`;
@@ -85,27 +93,25 @@ async function ShowCardControls({
   name,
   returnPath,
 }: ShowCardProps & { name: string; returnPath: string }) {
-  const grid = await readGrid(gridShowIds);
+  const grid = await readTrackedStatuses(gridShowIds);
   if (grid === undefined) return null;
   const status = grid.get(showId);
 
-  const bookmark = (
-    <ShowCardBookmarkButton
-      showId={showId}
-      name={name}
-      tracked={grid.has(showId)}
-      returnPath={returnPath}
-    />
-  );
-  if (status?.page !== "upcoming") return bookmark;
   return (
     <>
-      <UpcomingShowPill
-        airDate={status.airDate}
-        next={status.next}
-        today={requestTodayUtc()}
+      {status?.page === "upcoming" && (
+        <UpcomingShowPill
+          airDate={status.airDate}
+          next={status.next}
+          today={requestTodayUtc()}
+        />
+      )}
+      <ShowCardBookmarkButton
+        showId={showId}
+        name={name}
+        tracked={grid.has(showId)}
+        returnPath={returnPath}
       />
-      {bookmark}
     </>
   );
 }

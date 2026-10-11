@@ -1,16 +1,3 @@
-import { ReleasePill } from "@/components/library/dated-pill";
-import {
-  PersonalScoreBadge,
-  TmdbRatingBadge,
-} from "@/components/rating-badges";
-import { movieCardStatus } from "@/lib/catalog/movie-page";
-import { formatReleaseDate } from "@/lib/format";
-import { requestTodayUtc } from "@/lib/tracking/episode-state";
-import { getMovieGridStates, movieIdsKey } from "@/lib/tracking/movie-state";
-
-import { CardBookmarkButton } from "./card-bookmark-button";
-import { CardWatchedButton } from "./card-watched-button";
-
 /**
  * The two personal slots of a movie poster card on `/movies` and `/search`
  * (spec 0007, AC-16; prompts/catalog-card-status.md): each card shows the
@@ -23,6 +10,17 @@ import { CardWatchedButton } from "./card-watched-button";
  * is quieter than an error on twenty cards (AC-2, AC-17). The failure is
  * logged inside the read.
  */
+import { ReleasePill } from "@/components/library/dated-pill";
+import { PersonalScoreBadge } from "@/components/rating-badges";
+import { movieCardStatus } from "@/lib/catalog/movie-page";
+import { formatReleaseDate } from "@/lib/format";
+import { requestTodayUtc } from "@/lib/tracking/episode-state";
+import { getMovieGridStates, movieIdsKey } from "@/lib/tracking/movie-state";
+
+import { CardBookmarkButton } from "./card-bookmark-button";
+import { CardRatingBadge } from "./card-rating-badge";
+import { CardWatchedButton } from "./card-watched-button";
+
 type MovieCardProps = {
   movieId: number;
   /** The TMDB release date already on the card. */
@@ -57,13 +55,18 @@ async function MovieCardBadge({
   tmdbRating,
   ...props
 }: MovieCardProps & { tmdbRating: number | null }) {
-  const read = await readStatus(props);
-  const status = read?.status;
-  if (status?.page === "watched" && status.rating !== null) {
-    return <PersonalScoreBadge value={status.rating} />;
-  }
-  if (status?.page === "upcoming") return null;
-  return <TmdbRatingBadge value={tmdbRating} />;
+  const status = (await readStatus(props))?.status;
+  return (
+    <CardRatingBadge
+      page={status?.page}
+      personal={
+        status?.page === "watched" && status.rating !== null ? (
+          <PersonalScoreBadge value={status.rating} />
+        ) : null
+      }
+      tmdbRating={tmdbRating}
+    />
+  );
 }
 
 /**
@@ -93,21 +96,19 @@ async function MovieCardControls({
     );
   }
 
-  const bookmark = (
-    <CardBookmarkButton
-      movieId={props.movieId}
-      title={title}
-      inWatchlist={state?.inWatchlist ?? false}
-      returnPath={returnPath}
-    />
-  );
-  if (status?.page !== "upcoming") return bookmark;
   return (
     <>
-      <ReleasePill
-        release={formatReleaseDate(status.releaseDate, requestTodayUtc())}
+      {status?.page === "upcoming" && (
+        <ReleasePill
+          release={formatReleaseDate(status.releaseDate, requestTodayUtc())}
+        />
+      )}
+      <CardBookmarkButton
+        movieId={props.movieId}
+        title={title}
+        inWatchlist={state?.inWatchlist ?? false}
+        returnPath={returnPath}
       />
-      {bookmark}
     </>
   );
 }
