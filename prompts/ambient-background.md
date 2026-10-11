@@ -1,5 +1,7 @@
 # Ambient background on every page
 
+> Superseded on 2026-10-11 by [film-strip-background.md](film-strip-background.md). The code this plan describes has been removed.
+
 ## Goal
 
 Add the animated background from the Claude Design file `BeStats Background.dc.html` behind every page. It has four layers: an undulating wave of points, outlined "screens" drifting toward the viewer, slow dust and a vignette, with a slight camera parallax that follows the pointer. The background is lit in the personal score cyan (`--color-score-personal`, the colour of the selected tab and the user's rating), not the design's `#5ee6ff`. It must cost the catalog pages nothing measurable in load time, interactivity or battery.
