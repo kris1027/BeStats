@@ -82,6 +82,44 @@ describe("the SQL rules match", () => {
     expect(sql).toContain(`{${USERNAME_MIN_LENGTH},${USERNAME_MAX_LENGTH}}$'`);
   });
 
+  // The two format checks are compiled and run over the same names as Zod, so
+  // a change to the character class or the edge rule on either side fails
+  // here. These patterns use no syntax where POSIX and JavaScript differ.
+  it("has the same character and edge rules", () => {
+    const check = sql.match(
+      /profiles_username_format_check\s*check \(username ~ '([^']+)' and username !~ '([^']+)'\)/,
+    );
+    expect(check).not.toBeNull();
+    const [, allowed = "", refused = ""] = check ?? [];
+    const sqlAccepts = (value: string) =>
+      new RegExp(allowed).test(value) && !new RegExp(refused).test(value);
+
+    for (const value of [
+      "ab",
+      "kris_01",
+      "Kris.B-1",
+      "a.b",
+      "a-b",
+      "_a_",
+      "a".repeat(30),
+      "a",
+      "a".repeat(31),
+      "has space",
+      "émile",
+      "kris@home",
+      "a/b",
+      ".dot",
+      "dot.",
+      "-dash",
+      "dash-",
+      "..",
+    ]) {
+      expect(usernameSchema.safeParse(value).success, value).toBe(
+        sqlAccepts(value),
+      );
+    }
+  });
+
   it("has the same reserved names", () => {
     const block = sql.match(
       /profiles_username_reserved_check[\s\S]*?array\[([\s\S]*?)\]/,

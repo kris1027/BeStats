@@ -8,7 +8,7 @@ import { AUTH_OUTCOME, authMessage } from "./messages";
  * The database enforces the same rules on `profiles` for every writer, so the
  * values below exist to give the forms a precise message before a round trip.
  * The two copies must stay equal: `lib/auth/username.test.ts` reads the schema file
- * and fails if the pattern bounds or the reserved list drift apart, the same
+ * and fails if the format rules or the reserved list drift apart, the same
  * way the password minimum is checked against `supabase/config.toml`.
  *
  * Deliberately pure and not `server-only`, so the sign up form, the account
