@@ -118,6 +118,16 @@
    * settled rather than read (AC-16).
    */
   --blur-glass: 16px;
+
+  /*
+   * The frosted plates' blur, by surface size (prompts/frosted-glass.md,
+   * decision 6): a small control needs less to soften what moves behind it
+   * than a panel or an overlay floating over content. No saturation
+   * adjustment, so the contrast test's composite stays the real one.
+   */
+  --blur-control: 12px;
+  --blur-panel: 20px;
+  --blur-overlay: 24px;
 }
 
 :root {
@@ -146,7 +156,9 @@
    * The first pick, `#F87171`, measured 3.90:1 against the brightest point of
    * the glass gradient over the control plate, which fails AA for body text.
    * Raised to the nearest lighter red that clears it at 4.67:1 (AC-7, and
-   * recorded in the spec's `rationale.md`).
+   * recorded in the spec's `rationale.md`). The frosted control plate over the
+   * background's brightest pixel, under the softer sheen, keeps it above
+   * 4.5:1 too (`app/glass-contrast.test.ts`).
    */
   --destructive: #fb8a8a;
   --border: rgb(255 255 255 / 12%);
@@ -161,6 +173,61 @@
   --ring: #f6f7f8;
 
   --radius: 0.75rem;
+
+  /*
+   * How opaque each frosted plate is (prompts/frosted-glass.md). Every text
+   * colour on that surface must keep 4.5:1 over the worst pixel that can sit
+   * behind it: the background's luminance cap for controls and panels, white
+   * under the dimming backdrop for the sheet, and bare white for a float,
+   * which can land on a poster. Controls and floats sit on that limit; the
+   * others were set at the plan's values, a step or more above it.
+   * `app/glass-contrast.test.ts` recomputes all of it from this file, so
+   * lowering one of these fails the suite rather than the reader.
+   */
+  --frost-control: 65%;
+  --frost-panel: 60%;
+  --frost-sheet: 75%;
+  --frost-float: 90%;
+  --frost-score: 65%;
+  --frost-blur-control: blur(var(--blur-control));
+  --frost-blur-panel: blur(var(--blur-panel));
+  --frost-blur-overlay: blur(var(--blur-overlay));
+}
+
+/*
+ * Glass made solid again (prompts/frosted-glass.md, decision 5): for anyone
+ * who asks the system for less transparency or more contrast, and for a
+ * browser that cannot blur, where a see-through plate would show the moving
+ * background sharp behind the text. Every plate returns to its opaque token
+ * and nothing blurs.
+ */
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  :root {
+    --frost-control: 100%;
+    --frost-panel: 100%;
+    --frost-sheet: 100%;
+    --frost-float: 100%;
+    --frost-score: 100%;
+    --frost-blur-control: none;
+    --frost-blur-panel: none;
+    --frost-blur-overlay: none;
+  }
+}
+
+@supports not (
+    (backdrop-filter: blur(1px)) or
+    (-webkit-backdrop-filter: blur(1px))
+  ) {
+  :root {
+    --frost-control: 100%;
+    --frost-panel: 100%;
+    --frost-sheet: 100%;
+    --frost-float: 100%;
+    --frost-score: 100%;
+    --frost-blur-control: none;
+    --frost-blur-panel: none;
+    --frost-blur-overlay: none;
+  }
 }
 
 /*
@@ -178,6 +245,11 @@
  * regardless of the order the classes are written in. The plate is deliberately
  * NOT applied by `glass` itself, so the showcase can render the unreadable
  * plate-less case beside the correct one (AC-5).
+ *
+ * The sheen's top stop is 12% white, two thirds of the original 18%
+ * (prompts/frosted-glass.md, decision 9): over a see-through plate the sheen
+ * costs more contrast than the plate does, so a softer sheen is what lets the
+ * plates go frosted at all.
  */
 
 @utility glass {
@@ -185,9 +257,9 @@
   background:
     linear-gradient(
       169deg,
-      rgb(255 255 255 / 0.18) 0%,
-      rgb(213 217 241 / 0.055) 45%,
-      rgb(179 188 216 / 0.1) 100%
+      rgb(255 255 255 / 0.12) 0%,
+      rgb(213 217 241 / 0.037) 45%,
+      rgb(179 188 216 / 0.067) 100%
     )
     padding-box,
     linear-gradient(
@@ -209,8 +281,8 @@
     )
     padding-box,
     linear-gradient(
-      var(--glass-plate, transparent) 0%,
-      var(--glass-plate, transparent) 100%
+      var(--glass-plate-solid, var(--glass-plate, transparent)) 0%,
+      var(--glass-plate-solid, var(--glass-plate, transparent)) 100%
     )
     padding-box,
     var(--glass-rim, none) border-box;
@@ -245,8 +317,8 @@
     )
     padding-box,
     linear-gradient(
-      var(--glass-plate, transparent) 0%,
-      var(--glass-plate, transparent) 100%
+      var(--glass-plate-solid, var(--glass-plate, transparent)) 0%,
+      var(--glass-plate-solid, var(--glass-plate, transparent)) 100%
     )
     padding-box,
     var(--glass-rim, none) border-box;
@@ -260,7 +332,8 @@
  * Same two layer technique as `glass`, minus the fill. It depends on the plate
  * being opaque: `background-clip: border-box` paints across the whole element,
  * not just the border, so it is the plate on `padding-box` above it that
- * reduces the rim to a ring. Without a plate this floods.
+ * reduces the rim to a ring. Without a plate this floods, and through a
+ * frosted one it shows, so every `plate-rim` also carries `plate-solid`.
  */
 @utility plate-rim {
   border: 1.5px solid transparent;
@@ -311,20 +384,91 @@
   );
 }
 
+/*
+ * The plates (prompts/frosted-glass.md). Each sets its colour at the role's
+ * frost opacity and the blur that comes with it, so a see-through plate can
+ * never ship without the blur that keeps the moving background soft behind
+ * its text. `--glass-plate-solid` carries the opaque colour for the selected
+ * utilities, which stay solid so near white text keeps 4.5:1 under their
+ * brighter gradient. `plate-solid` makes a plate opaque again.
+ */
 @utility glass-plate {
-  --glass-plate: var(--color-glass-plate);
+  --glass-plate-solid: var(--color-glass-plate);
+  --glass-plate: color-mix(
+    in srgb,
+    var(--color-glass-plate) var(--frost-control),
+    transparent
+  );
+  -webkit-backdrop-filter: var(--frost-blur-control);
+  backdrop-filter: var(--frost-blur-control);
 }
 
 @utility glass-plate-panel {
-  --glass-plate: var(--color-glass-plate-panel);
+  --glass-plate-solid: var(--color-glass-plate-panel);
+  --glass-plate: color-mix(
+    in srgb,
+    var(--color-glass-plate-panel) var(--frost-panel),
+    transparent
+  );
+  -webkit-backdrop-filter: var(--frost-blur-panel);
+  backdrop-filter: var(--frost-blur-panel);
 }
 
+/* The dialog and the menu sheet, both over the dimming backdrop. */
 @utility glass-plate-sheet {
-  --glass-plate: var(--color-glass-plate-sheet);
+  --glass-plate-solid: var(--color-glass-plate-sheet);
+  --glass-plate: color-mix(
+    in srgb,
+    var(--color-glass-plate-sheet) var(--frost-sheet),
+    transparent
+  );
+  -webkit-backdrop-filter: var(--frost-blur-overlay);
+  backdrop-filter: var(--frost-blur-overlay);
+}
+
+/*
+ * What floats over the page with no dimming backdrop: the popover, the quick
+ * search panel and the toasts. Any of them can land on a white poster, so
+ * this is the most opaque plate.
+ */
+@utility glass-plate-float {
+  --glass-plate-solid: var(--color-glass-plate-sheet);
+  --glass-plate: color-mix(
+    in srgb,
+    var(--color-glass-plate-sheet) var(--frost-float),
+    transparent
+  );
+  -webkit-backdrop-filter: var(--frost-blur-overlay);
+  backdrop-filter: var(--frost-blur-overlay);
 }
 
 @utility glass-plate-score {
-  --glass-plate: var(--color-glass-plate-score);
+  --glass-plate-solid: var(--color-glass-plate-score);
+  --glass-plate: color-mix(
+    in srgb,
+    var(--color-glass-plate-score) var(--frost-score),
+    transparent
+  );
+  -webkit-backdrop-filter: var(--frost-blur-control);
+  backdrop-filter: var(--frost-blur-control);
+}
+
+/*
+ * Opaque plates, no blur, for this element and everything inside it: the
+ * poster card's badge and control slots, where artwork of any colour sits
+ * behind (the plate rule), and the skeletons and placeholder tiles, which
+ * stand in for a poster and should read as an absence. It works through
+ * inheritance, so the slot decides and the pills inside need no switch.
+ */
+@utility plate-solid {
+  --frost-control: 100%;
+  --frost-panel: 100%;
+  --frost-sheet: 100%;
+  --frost-float: 100%;
+  --frost-score: 100%;
+  --frost-blur-control: none;
+  --frost-blur-panel: none;
+  --frost-blur-overlay: none;
 }
 
 /*
