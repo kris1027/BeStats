@@ -191,6 +191,27 @@ describe("frosted plates keep AA text (prompts/frosted-glass.md)", () => {
     ).toBeGreaterThanOrEqual(TEXT_CONTRAST);
   });
 
+  it("holds white artwork under the navbar no brighter than the background's peak", () => {
+    // The title backdrop reaches up behind the bar under `backdrop-scrim`, so
+    // the bar's controls must see nothing brighter than the PEAK they are
+    // checked against above.
+    const start = CSS.indexOf("@utility backdrop-scrim {");
+    expect(start).toBeGreaterThan(-1);
+    // Every stop up to the bar's bottom edge, the faintest of which counts.
+    const acrossBar = CSS.slice(
+      start,
+      CSS.indexOf("var(--navbar-height)", start),
+    );
+    const shades = [...acrossBar.matchAll(/var\(--background\) (\d+)%/g)].map(
+      ([, percent]) => Number(percent) / 100,
+    );
+    expect(shades.length).toBeGreaterThan(0);
+    const behindBar = over(hex("--background"), Math.min(...shades), WHITE);
+    expect(relativeLuminance(behindBar)).toBeLessThanOrEqual(
+      relativeLuminance(PEAK),
+    );
+  });
+
   it("turns every plate solid and stops the blur in each fallback", () => {
     const fallbacks = [
       "@media (prefers-reduced-transparency: reduce), (prefers-contrast: more)",
