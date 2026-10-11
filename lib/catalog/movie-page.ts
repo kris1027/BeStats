@@ -1,6 +1,7 @@
 import type { LibraryList } from "@/lib/catalog/library-list";
 import { formatAirDate } from "@/lib/format";
 import { UPCOMING_MESSAGES } from "@/lib/tracking/messages";
+import type { MovieTrackingState } from "@/lib/tracking/types";
 import { airStatus } from "@/lib/tv/air-status";
 
 /** The library pages a movie can sit on (spec 0020, AC-13). */
@@ -99,9 +100,7 @@ export function upcomingReleaseDate(
  * @param today `requestTodayUtc()`, read once per request (AC-22).
  */
 export function movieCardStatus(
-  state:
-    | { inWatchlist: boolean; watched: boolean; rating: number | null }
-    | undefined,
+  state: MovieTrackingState | undefined,
   releaseDate: string | null,
   today: string,
 ): MovieCardStatus | null {
