@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { AUTH_OUTCOME, authMessage } from "./messages";
 import {
   isUsernameLocked,
   RESERVED_USERNAMES,
@@ -35,6 +36,12 @@ describe("usernameSchema", () => {
     "bestats",
   ])("refuses %s", (value) => {
     expect(usernameSchema.safeParse(value).success).toBe(false);
+  });
+
+  it("refuses a reserved name with the taken message", () => {
+    expect(usernameSchema.safeParse("Admin").error?.issues[0]?.message).toBe(
+      authMessage(AUTH_OUTCOME.usernameTaken),
+    );
   });
 
   it("trims the edges before judging", () => {

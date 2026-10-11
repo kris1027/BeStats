@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { AUTH_OUTCOME, authMessage } from "./messages";
+
 /**
  * The username rules, defined once on the app side (prompts/account-username.md).
  *
@@ -71,7 +73,7 @@ export const usernameSchema = z
   .regex(/^[^.-](.*[^.-])?$/, "Your username can't start or end with . or -.")
   .refine(
     (value) => !RESERVED_USERNAMES.includes(value.toLowerCase()),
-    "That username is taken.",
+    authMessage(AUTH_OUTCOME.usernameTaken),
   );
 
 /**

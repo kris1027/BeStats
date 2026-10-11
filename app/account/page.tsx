@@ -4,7 +4,12 @@ import type { Metadata } from "next";
 import { signOutAction } from "@/app/(auth)/actions";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { hasPasswordIdentity } from "@/lib/auth/identity";
-import { ACCOUNT_NOTICE, ACCOUNT_NOTICES } from "@/lib/auth/messages";
+import {
+  ACCOUNT_NOTICE,
+  ACCOUNT_NOTICES,
+  AUTH_OUTCOME,
+  authMessage,
+} from "@/lib/auth/messages";
 import { getOwnProfile } from "@/lib/auth/profile";
 import { requireUser } from "@/lib/auth/user";
 import { isUsernameLocked, usernameUnlocksAt } from "@/lib/auth/username";
@@ -133,7 +138,7 @@ export default async function AccountPage({
           </h2>
           <p className="text-sm text-muted-foreground">
             {profile
-              ? "You can change your username once a week."
+              ? authMessage(AUTH_OUTCOME.usernameLocked)
               : "Choose a username. You can change it once a week."}
           </p>
         </header>
