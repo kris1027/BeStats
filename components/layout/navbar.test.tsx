@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -186,5 +187,23 @@ describe("Navbar", () => {
     expect(banner.className).not.toMatch(
       /\b(sticky|fixed|bg-|border|backdrop-blur)/,
     );
+  });
+
+  it("keeps the padding and gap that --navbar-height is written from", () => {
+    render(
+      <Navbar
+        mobileAccountSlot={<ACCOUNT_SLOT />}
+        desktopAccountSlot={<ACCOUNT_SLOT />}
+      />,
+    );
+
+    // Two 40px rows, an 8px gap and 8px padding on a phone; one row from md.
+    const row = screen.getByRole("banner").firstElementChild;
+    expect(row).toHaveClass("flex-col", "gap-2", "py-2", "md:flex-row");
+    const css = readFileSync("app/globals.css", "utf8");
+    expect(css).toContain(
+      "--navbar-height: calc(2 * 2.5rem + 0.5rem + 2 * 0.5rem);",
+    );
+    expect(css).toContain("--navbar-height: calc(2.5rem + 2 * 0.5rem);");
   });
 });

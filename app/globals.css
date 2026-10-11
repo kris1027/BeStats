@@ -196,15 +196,18 @@
 
   /*
    * The navbar's height: two 40px rows, an 8px gap and 8px of padding above
-   * and below on a phone, one row from `md`. A title page's backdrop pulls up
-   * by it to sit behind the bar (`components/catalog/detail-hero.tsx`).
+   * and below on a phone, one row from `md`, written out in those parts. A
+   * title page's backdrop pulls up by it to sit behind the bar
+   * (`components/catalog/detail-hero.tsx`). The bar keeps its natural height,
+   * because pages with no tabs have one row on a phone too, so
+   * `navbar.test.tsx` fails if its padding or gap stops matching these parts.
    */
-  --navbar-height: 6.5rem;
+  --navbar-height: calc(2 * 2.5rem + 0.5rem + 2 * 0.5rem);
 }
 
 @media (width >= 48rem) {
   :root {
-    --navbar-height: 3.5rem;
+    --navbar-height: calc(2.5rem + 2 * 0.5rem);
   }
 }
 
