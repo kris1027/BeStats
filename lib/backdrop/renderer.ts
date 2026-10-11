@@ -3,6 +3,7 @@ import type { BackdropColors } from "./colors";
 import {
   type BackdropBudget,
   dustPoints,
+  PANEL_ATTRIBUTES,
   PANEL_STRIDE,
   panelInstances,
   waveGrid,
@@ -30,6 +31,23 @@ export interface BackdropRenderer {
 }
 
 type Canvas = HTMLCanvasElement | OffscreenCanvas;
+
+const FLOAT_BYTES = Float32Array.BYTES_PER_ELEMENT;
+
+// The design file's camera: a 55 degree lens at (0, 2.2, 9) looking at
+// (0, 0.4, -4), swung up to 1.6 units sideways and 0.8 up or down by the
+// pointer.
+const FOV_Y = (55 * Math.PI) / 180;
+const NEAR = 0.1;
+const FAR = 100;
+const EYE: readonly [number, number, number] = [0, 2.2, 9];
+const LOOK_AT: [number, number, number] = [0, 0.4, -4];
+const PARALLAX_X = 1.6;
+const PARALLAX_Y = 0.8;
+
+// The design's panel material opacities: a faint fill under a brighter edge.
+const PANEL_FILL_OPACITY = 0.04;
+const PANEL_OUTLINE_OPACITY = 0.4;
 
 /**
  * Cheapest context that still draws the scene: no alpha (the page behind is
@@ -177,10 +195,12 @@ export function createRenderer(
     ])));
     attribute(gl, panel, "aCorner", 2, 0, 0);
     buffers.push(buffer(gl, panelInstances(panelCount)));
-    const stride = PANEL_STRIDE * 4;
-    attribute(gl, panel, "aI0", 4, stride, 0, 1);
-    attribute(gl, panel, "aI1", 3, stride, 16, 1);
-    attribute(gl, panel, "aI2", 3, stride, 28, 1);
+    const stride = PANEL_STRIDE * FLOAT_BYTES;
+    let offset = 0;
+    for (const { name, size } of PANEL_ATTRIBUTES) {
+      attribute(gl, panel, name, size, stride, offset, 1);
+      offset += size * FLOAT_BYTES;
+    }
   });
 
   const dustCount = budget.dust;
@@ -202,7 +222,7 @@ export function createRenderer(
   gl.clearColor(...colors.background, 1);
   gl.enable(gl.BLEND);
 
-  let projection = perspective((55 * Math.PI) / 180, 1, 0.1, 100);
+  let projection = perspective(FOV_Y, 1, NEAR, FAR);
   let pixelRatio = 1;
 
   return {
@@ -211,18 +231,17 @@ export function createRenderer(
       canvas.width = Math.max(1, Math.round(width * ratio));
       canvas.height = Math.max(1, Math.round(height * ratio));
       gl.viewport(0, 0, canvas.width, canvas.height);
-      projection = perspective(
-        (55 * Math.PI) / 180,
-        width / Math.max(1, height),
-        0.1,
-        100,
-      );
+      projection = perspective(FOV_Y, width / Math.max(1, height), NEAR, FAR);
     },
 
     draw({ time, pointerX, pointerY }) {
       const view = lookAt(
-        [pointerX * 1.6, 2.2 - pointerY * 0.8, 9],
-        [0, 0.4, -4],
+        [
+          EYE[0] + pointerX * PARALLAX_X,
+          EYE[1] - pointerY * PARALLAX_Y,
+          EYE[2],
+        ],
+        LOOK_AT,
       );
       gl.clear(gl.COLOR_BUFFER_BIT);
 
@@ -250,9 +269,9 @@ export function createRenderer(
       gl.uniformMatrix4fv(panelU.uProj, false, projection);
       gl.uniform1f(panelU.uTime, time);
       gl.bindVertexArray(panelVao);
-      gl.uniform1f(panelU.uOpacity, 0.04);
+      gl.uniform1f(panelU.uOpacity, PANEL_FILL_OPACITY);
       gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, panelCount);
-      gl.uniform1f(panelU.uOpacity, 0.4);
+      gl.uniform1f(panelU.uOpacity, PANEL_OUTLINE_OPACITY);
       gl.drawArraysInstanced(gl.LINE_LOOP, 4, 4, panelCount);
       gl.bindVertexArray(null);
     },

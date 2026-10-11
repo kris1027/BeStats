@@ -6,12 +6,14 @@ import {
   dustPoints,
   FULL_BUDGET,
   MAX_PIXEL_RATIO,
+  PANEL_ATTRIBUTES,
   PANEL_STRIDE,
   panelInstances,
   sameGeometry,
   seededRandom,
   waveGrid,
 } from "./params";
+import { PANEL_VERTEX } from "./shaders";
 
 /** covers: prompts/ambient-background.md, AC-8 */
 describe("chooseBudget", () => {
@@ -104,6 +106,13 @@ describe("scene layout", () => {
       budget.panels * PANEL_STRIDE,
     );
     expect(dustPoints(budget.dust)).toHaveLength(budget.dust * 3);
+  });
+
+  it("lays out panel instances exactly as the panel shader declares them", () => {
+    for (const { name, size } of PANEL_ATTRIBUTES) {
+      expect(PANEL_VERTEX).toContain(`in vec${size} ${name};`);
+    }
+    expect(PANEL_STRIDE).toBe(10);
   });
 
   it("keeps panels inside the design's ranges", () => {

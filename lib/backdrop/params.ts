@@ -92,8 +92,23 @@ export function seededRandom(seed: number): () => number {
   };
 }
 
-/** Floats per panel instance, in the order the panel shader reads them. */
-export const PANEL_STRIDE = 10;
+/**
+ * The panel instance layout: the attributes the panel shader declares, in
+ * buffer order, with their float counts. The renderer derives every byte
+ * offset from this list and the stride is its sum, so the buffer written by
+ * `panelInstances` and the attributes read from it cannot drift apart.
+ */
+export const PANEL_ATTRIBUTES = [
+  { name: "aI0", size: 4 }, // y0, z0, seed, speed
+  { name: "aI1", size: 3 }, // spin, phase, scale
+  { name: "aI2", size: 3 }, // rotation x, y, z
+] as const;
+
+/** Floats per panel instance, the sum of `PANEL_ATTRIBUTES`. */
+export const PANEL_STRIDE = PANEL_ATTRIBUTES.reduce(
+  (floats, { size }) => floats + size,
+  0,
+);
 
 /**
  * The wave as a flat list of (x, z) pairs. Height is computed on the GPU
