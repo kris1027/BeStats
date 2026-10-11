@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { Suspense } from "react";
 
 import { AccountSlot } from "@/components/layout/account-slot";
+import { AmbientBackground } from "@/components/layout/ambient-background";
 import { Navbar } from "@/components/layout/navbar";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { Skeleton } from "@/components/skeleton";
@@ -69,6 +70,11 @@ export const metadata: Metadata = {
  * through (spec 0007). It is a client boundary that reads no request state, so
  * it costs no route its static shell.
  *
+ * `AmbientBackground` paints behind everything on every route
+ * (prompts/ambient-background.md). Its only client piece mounts after the
+ * browser is idle and reads no request state, so it costs no route its static
+ * shell either.
+ *
  * `AccountSlot` is the one exception, and a Suspense boundary around each of
  * its two instances, one per navbar layout, is what contains it (spec 0005,
  * AC-14; spec 0008). It reads the session, which is request scoped; without
@@ -81,6 +87,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${inter.variable} h-full`}>
       <body className="flex min-h-full flex-col antialiased">
+        <AmbientBackground />
         {/*
          * Each fallback is the signed out button's footprint, so the bar does
          * not resize when the real control arrives. A skeleton rather than a

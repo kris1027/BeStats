@@ -77,6 +77,15 @@
   --color-glass-plate-sheet: #090a0d;
   --color-glass-plate-score: #0c1419;
 
+  /*
+   * The ambient background's two neutrals (prompts/ambient-background.md):
+   * the wave's trough colour, which its crests blend into the personal cyan,
+   * and the dust. Read by the renderer through `getComputedStyle`, never
+   * written in a shader, so this file stays the one home of every colour.
+   */
+  --color-backdrop-wave: #8c99bf;
+  --color-backdrop-dust: #cfd3e0;
+
   /* Text greys, beyond the shadcn semantic set. */
   --color-text-label: #e2e5ef;
   --color-text-link: #d7d9e0;
@@ -343,6 +352,21 @@
     position: absolute;
     inset: -9.5px -2px;
   }
+}
+
+/*
+ * The ambient background's vignette (prompts/ambient-background.md): clear in
+ * the upper middle, where headings sit, and closing to the page black at the
+ * edges. It is in the prerendered HTML, so it is also the whole background
+ * until the animated layer fades in, and all of it where WebGL2 is missing.
+ */
+@utility backdrop-vignette {
+  background: radial-gradient(
+    ellipse at 50% 40%,
+    color-mix(in srgb, var(--background) 0%, transparent) 0%,
+    color-mix(in srgb, var(--background) 55%, transparent) 70%,
+    color-mix(in srgb, var(--background) 90%, transparent) 100%
+  );
 }
 
 /*
