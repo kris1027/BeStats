@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useActionState } from "react";
 import {
   AuthFeedback,
@@ -9,9 +8,9 @@ import {
 import { AuthField } from "@/components/auth/auth-field";
 import { LocalDateTime } from "@/components/local-date-time";
 import { type AuthActionState, IDLE_STATE } from "@/lib/auth/action-state";
-import { AUTH_OUTCOME } from "@/lib/auth/messages";
 import { USERNAME_HINT, USERNAME_MAX_LENGTH } from "@/lib/auth/username";
 import { changeUsernameAction } from "./actions";
+import { SignInAgainLink } from "./sign-in-again-link";
 
 /**
  * The username form on `/account` (prompts/account-username.md, Q13).
@@ -44,14 +43,7 @@ function ChangeUsernameForm({
     <form action={formAction} className="flex flex-1 flex-col gap-5">
       <AuthFeedback state={state} />
 
-      {state.outcome === AUTH_OUTCOME.sessionExpired ? (
-        <Link
-          href="/sign-in?next=%2Faccount"
-          className="rounded-sm text-sm text-text-link hover:text-foreground hover:underline"
-        >
-          Sign in again
-        </Link>
-      ) : null}
+      <SignInAgainLink state={state} />
 
       <AuthField
         label="Username"
