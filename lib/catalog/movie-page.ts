@@ -86,3 +86,41 @@ export function upcomingReleaseDate(
   return airStatus(releaseDate, today) === "upcoming" ? releaseDate : null;
 }
 
+/**
+ * What a catalog poster card shows of the user's own state for one movie
+ * (prompts/catalog-card-status.md): the library page the movie sits on, with
+ * what that page's card carries, or null when it sits on none.
+ *
+ * Placed by `classifyMovie` on the same request day, so a card on `/movies`
+ * or `/search` can never disagree with the library page it mirrors.
+ *
+ * @param state The stored state, or undefined when the user has no row.
+ * @param releaseDate The TMDB release date already on the card.
+ * @param today `requestTodayUtc()`, read once per request (AC-22).
+ */
+export function movieCardStatus(
+  state:
+    | { inWatchlist: boolean; watched: boolean; rating: number | null }
+    | undefined,
+  releaseDate: string | null,
+  today: string,
+): MovieCardStatus | null {
+  if (state === undefined) return null;
+  const page = classifyMovie({ releaseDate, ...state }, today);
+  switch (page) {
+    case null:
+      return null;
+    case "watched":
+      return { page, rating: state.rating };
+    case "watchlist":
+      return { page };
+    case "upcoming":
+      return { page, releaseDate: upcomingReleaseDate(releaseDate, today) };
+  }
+}
+
+/** A movie card's library state, from `movieCardStatus`. */
+export type MovieCardStatus =
+  | { page: "watched"; rating: number | null }
+  | { page: "watchlist" }
+  | { page: "upcoming"; releaseDate: string | null };

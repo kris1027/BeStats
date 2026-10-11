@@ -151,10 +151,12 @@ describe("search reads no request scoped value (spec 0010, AC-22)", () => {
     );
   });
 
-  it("keeps the movie bookmark behind its own Suspense boundary (AC-16)", () => {
-    expect(
-      readFileSync("components/search/search-results.tsx", "utf8"),
-    ).toMatch(/<Suspense fallback=\{null\}>\s*<CardBookmark/);
+  it("keeps the movie card slots behind their own Suspense boundaries (AC-16)", () => {
+    const source = readFileSync("components/search/search-results.tsx", "utf8");
+    expect(source).toMatch(/<Suspense fallback=\{null\}>\s*<MovieCardControls/);
+    expect(source).toMatch(
+      /<Suspense\s+fallback=\{<TmdbRatingBadge[^}]*\} \/>\}\s*>\s*\{params\.type === "movie" \? \(\s*<MovieCardBadge/,
+    );
   });
 
   it("reads nothing from the request but its query in the Route Handler (AC-20)", () => {
@@ -291,8 +293,10 @@ describe("private tracking state never enters a cache scope (spec 0007, AC-19; s
     expect(readFileSync("app/movies/[id]/page.tsx", "utf8")).toMatch(
       /<Suspense fallback=\{null\}>\s*<MovieTrackingSlot/,
     );
-    expect(readFileSync("app/movies/page.tsx", "utf8")).toMatch(
-      /<Suspense fallback=\{null\}>\s*<CardBookmark/,
+    const movies = readFileSync("app/movies/page.tsx", "utf8");
+    expect(movies).toMatch(/<Suspense fallback=\{null\}>\s*<MovieCardControls/);
+    expect(movies).toMatch(
+      /<Suspense\s+fallback=\{<TmdbRatingBadge[^}]*\} \/>\}\s*>\s*<MovieCardBadge/,
     );
   });
 

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   classifyMovie,
   isMovieReleased,
+  movieCardStatus,
   movieReleaseNote,
   upcomingReleaseDate,
 } from "./movie-page";
@@ -119,3 +120,45 @@ describe("movieReleaseNote (release gate)", () => {
   });
 });
 
+describe("movieCardStatus (prompts/catalog-card-status.md)", () => {
+  const none = { inWatchlist: false, watched: false, rating: null };
+
+  it("is null with no row, or a row that is neither planned nor watched", () => {
+    expect(movieCardStatus(undefined, "2026-01-01", today)).toBeNull();
+    expect(movieCardStatus(none, "2026-01-01", today)).toBeNull();
+  });
+
+  it("carries the score on Watched, and null when unscored", () => {
+    expect(
+      movieCardStatus(
+        { ...none, watched: true, rating: 8 },
+        "2026-01-01",
+        today,
+      ),
+    ).toEqual({ page: "watched", rating: 8 });
+    expect(
+      movieCardStatus({ ...none, watched: true }, "2026-01-01", today),
+    ).toEqual({ page: "watched", rating: null });
+  });
+
+  it("puts a watched movie on Watched even before its release", () => {
+    expect(
+      movieCardStatus({ ...none, watched: true }, "2027-01-01", today),
+    ).toEqual({ page: "watched", rating: null });
+  });
+
+  it("places a planned movie by its release date, as the library does", () => {
+    const planned = { ...none, inWatchlist: true };
+    expect(movieCardStatus(planned, today, today)).toEqual({
+      page: "watchlist",
+    });
+    expect(movieCardStatus(planned, "2026-10-08", today)).toEqual({
+      page: "upcoming",
+      releaseDate: "2026-10-08",
+    });
+    expect(movieCardStatus(planned, null, today)).toEqual({
+      page: "upcoming",
+      releaseDate: null,
+    });
+  });
+});

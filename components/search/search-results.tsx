@@ -11,7 +11,10 @@ import {
   Skeleton,
 } from "@/components/skeleton";
 import { StatePanel } from "@/components/state-panel";
-import { CardBookmark } from "@/components/tracking/card-bookmark";
+import {
+  MovieCardBadge,
+  MovieCardControls,
+} from "@/components/tracking/movie-card-slots";
 import { ShowCardBookmark } from "@/components/tracking/show-card-bookmark";
 import { ButtonLink } from "@/components/ui/button";
 import { parseMediaTypeParam, typedHref } from "@/lib/catalog/media-type";
@@ -211,39 +214,57 @@ function ResultGrid({
 
   return (
     <PosterGrid aria-label="Search results">
-      {results.map((result, index) => (
-        <li key={result.id}>
-          <PosterCard
-            title={result.title}
-            posterUrl={result.posterUrl}
-            href={titleHref(params.type, result.id)}
-            meta={result.year ?? undefined}
-            badge={<TmdbRatingBadge value={result.tmdbRating} />}
-            controls={
-              params.type === "movie" ? (
-                <Suspense fallback={null}>
-                  <CardBookmark
-                    movieId={result.id}
-                    title={result.title}
-                    gridMovieIds={gridIds}
-                    returnPath={returnPath}
-                  />
+      {results.map((result, index) => {
+        return (
+          <li key={result.id}>
+            <PosterCard
+              title={result.title}
+              posterUrl={result.posterUrl}
+              href={titleHref(params.type, result.id)}
+              meta={result.year ?? undefined}
+              badge={
+                <Suspense
+                  fallback={<TmdbRatingBadge value={result.tmdbRating} />}
+                >
+                  {params.type === "movie" ? (
+                    <MovieCardBadge
+                      movieId={result.id}
+                      releaseDate={result.releaseDate}
+                      tmdbRating={result.tmdbRating}
+                      gridMovieIds={gridIds}
+                    />
+                  ) : (
+                    <TmdbRatingBadge value={result.tmdbRating} />
+                  )}
                 </Suspense>
-              ) : (
-                <Suspense fallback={null}>
-                  <ShowCardBookmark
-                    showId={result.id}
-                    name={result.title}
-                    gridShowIds={gridIds}
-                    returnPath={returnPath}
-                  />
-                </Suspense>
-              )
-            }
-            priority={index < EAGER_POSTERS}
-          />
-        </li>
-      ))}
+              }
+              controls={
+                params.type === "movie" ? (
+                  <Suspense fallback={null}>
+                    <MovieCardControls
+                      movieId={result.id}
+                      title={result.title}
+                      releaseDate={result.releaseDate}
+                      gridMovieIds={gridIds}
+                      returnPath={returnPath}
+                    />
+                  </Suspense>
+                ) : (
+                  <Suspense fallback={null}>
+                    <ShowCardBookmark
+                      showId={result.id}
+                      name={result.title}
+                      gridShowIds={gridIds}
+                      returnPath={returnPath}
+                    />
+                  </Suspense>
+                )
+              }
+              priority={index < EAGER_POSTERS}
+            />
+          </li>
+        );
+      })}
     </PosterGrid>
   );
 }

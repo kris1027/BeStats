@@ -8,7 +8,10 @@ import { TmdbRatingBadge } from "@/components/rating-badges";
 import { RetryLink } from "@/components/retry-link";
 import { PaginationSkeleton, PosterCardSkeleton } from "@/components/skeleton";
 import { StatePanel } from "@/components/state-panel";
-import { CardBookmark } from "@/components/tracking/card-bookmark";
+import {
+  MovieCardBadge,
+  MovieCardControls,
+} from "@/components/tracking/movie-card-slots";
 import { ButtonLink } from "@/components/ui/button";
 import { lastReachablePage, parsePageParam } from "@/lib/catalog/pages";
 import { landingPageMetadata } from "@/lib/landing-metadata";
@@ -57,8 +60,10 @@ export async function generateMetadata({
  * The heading is static and prerendered; the grid needs the `page` search
  * parameter, so it streams inside the Suspense boundary behind a grid of
  * skeleton cards at the same footprint (AC-11). No session is read here
- * (AC-13); each card's bookmark from spec 0007 reads it inside its own
- * Suspense boundary in `components/tracking/`, one query for the whole grid.
+ * (AC-13); each card's badge and controls read it inside their own Suspense
+ * boundaries in `components/tracking/movie-card-slots.tsx`, one query for the
+ * whole grid, so a card shows the movie as its library page does
+ * (prompts/catalog-card-status.md).
  */
 export default function MoviesPage({ searchParams }: PageProps<"/movies">) {
   return (
@@ -118,12 +123,24 @@ async function PopularMovies({
               title={movie.title}
               posterUrl={movie.posterUrl}
               href={`/movies/${movie.id}`}
-              badge={<TmdbRatingBadge value={movie.tmdbRating} />}
+              badge={
+                <Suspense
+                  fallback={<TmdbRatingBadge value={movie.tmdbRating} />}
+                >
+                  <MovieCardBadge
+                    movieId={movie.id}
+                    releaseDate={movie.releaseDate}
+                    tmdbRating={movie.tmdbRating}
+                    gridMovieIds={gridMovieIds}
+                  />
+                </Suspense>
+              }
               controls={
                 <Suspense fallback={null}>
-                  <CardBookmark
+                  <MovieCardControls
                     movieId={movie.id}
                     title={movie.title}
+                    releaseDate={movie.releaseDate}
                     gridMovieIds={gridMovieIds}
                     returnPath={pageHref(page)}
                   />
