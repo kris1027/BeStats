@@ -1,6 +1,7 @@
+import type { BackdropColors } from "./colors";
 import { type BackdropLoop, createLoop, type FrameScheduler } from "./loop";
 import type { BackdropBudget } from "./params";
-import { type BackdropColors, createRenderer } from "./renderer";
+import { createRenderer } from "./renderer";
 
 export interface BackdropOptions {
   width: number;

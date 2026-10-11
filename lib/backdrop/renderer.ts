@@ -1,4 +1,5 @@
 import { lookAt, perspective } from "./camera";
+import type { BackdropColors } from "./colors";
 import {
   type BackdropBudget,
   dustPoints,
@@ -14,20 +15,6 @@ import {
   WAVE_FRAGMENT,
   WAVE_VERTEX,
 } from "./shaders";
-
-/** An sRGB colour as three channels from 0 to 1. */
-export type Rgb = [number, number, number];
-
-/**
- * The colours the scene is lit with, read from `globals.css` tokens by the
- * page (prompts/ambient-background.md, decision 8), never written here.
- */
-export interface BackdropColors {
-  accent: Rgb;
-  background: Rgb;
-  wave: Rgb;
-  dust: Rgb;
-}
 
 /** What changes from frame to frame: the clock and the smoothed pointer. */
 export interface FrameState {

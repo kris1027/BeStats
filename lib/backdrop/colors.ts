@@ -1,4 +1,16 @@
-import type { BackdropColors, Rgb } from "./renderer";
+/** An sRGB colour as three channels from 0 to 1. */
+export type Rgb = [number, number, number];
+
+/**
+ * The colours the scene is lit with, read from `globals.css` tokens by the
+ * page (prompts/ambient-background.md, decision 8), never written in a shader.
+ */
+export interface BackdropColors {
+  accent: Rgb;
+  background: Rgb;
+  wave: Rgb;
+  dust: Rgb;
+}
 
 /**
  * The tokens the background is lit with, all from `app/globals.css`
