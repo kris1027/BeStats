@@ -81,7 +81,7 @@ create unique index profiles_username_lower_key on public.profiles (lower(userna
 
 - **insert**: `new.username_changed_at := now()`, whatever the client sent.
 - **update, same username** (exact compare): `new.username_changed_at := old.username_changed_at`, so the timestamp can't be rewound by writing it directly.
-- **update, different username**: if `old.username_changed_at > now() - interval '7 days'`, raise `username_locked` (`errcode 'P0001'`); otherwise `new.username_changed_at := now()`.
+- **update, different username**: if `old.username_changed_at > now() - interval '7 days'`, raise `username_locked` (as built: `errcode 'BS002'`, the app's own code like `BS001`, so the action reads the code alone); otherwise `new.username_changed_at := now()`.
 - **`user_id`**: cannot change (`new.user_id := old.user_id`); the update policy's `with check` also pins it to `auth.uid()`.
 
 `supabase/schemas/04-policies.sql`:
@@ -118,7 +118,7 @@ Migration `supabase/migrations/20261011120000_account_username.sql`, written by 
 - `lib/auth/messages.ts`:
   - `usernameTaken`: "That username is taken." Also used for reserved names, so the list isn't revealed one name at a time.
   - `usernameLocked`: "You can change your username once a week."
-  - `usernameUnchanged`: no message, a quiet success.
+  - `usernameUnchanged`: as built, a success that says "That's already your username.", so pressing Save is never silent.
   - `usernameTakenAfterSignUp`: "Your account is ready, but that username was just taken. Choose another."
 - `lib/auth/profile.ts` (`server-only`): `getOwnProfile = cache(...)` returns `{ username, usernameChangedAt } | null`. A read error returns `null` and is logged without user data, so the navbar never breaks over it.
 - `lib/auth/identity.ts`: `displayName(email, username?)` and `avatarLetter(email, username?)` prefer the username. The "no `profiles` table" comment is rewritten.
@@ -131,7 +131,7 @@ Migration `supabase/migrations/20261011120000_account_username.sql`, written by 
 2. `rpc('username_available')`. If false, `failure(usernameTaken, ["username"])` with email and username kept. An RPC error is reported as `signUpUnavailable`, never treated as available.
 3. `signUp`, unchanged.
 4. If there is a session: `insert into profiles (user_id, username)`.
-   - A unique violation (`23505`), from two people choosing the same name at once, redirects to `/account?username=taken`, which shows the `usernameTakenAfterSignUp` notice above an empty, enabled Username field.
+   - A unique violation (`23505`), from two people choosing the same name at once, redirects to `/account?notice=username-taken` (as built: a key looked up in `ACCOUNT_NOTICES`, like `SIGN_IN_NOTICES`), which shows the `usernameTakenAfterSignUp` notice above an empty, enabled Username field.
    - Any other error redirects to `/account` with the field empty; the account exists and the name can be set there.
 5. Redirect as today.
 
@@ -139,7 +139,7 @@ With no session (confirmation on in some other environment), the username is not
 
 The form gets a Username input before the email:
 
-- `autocomplete="username"`, `autocapitalize="none"`, `spellcheck=false`;
+- `autocomplete="nickname"` (as built: people sign in with their email, so `username` would make a password manager save the username as the login), `autocapitalize="none"`, `spellcheck=false`;
 - hint text "2 to 30 characters: letters, numbers, _ . -";
 - `aria-describedby` on the error.
 
@@ -151,12 +151,12 @@ The page reads `getOwnProfile()`.
 - A new "Username" glass section, the same shell as Change password, holds `ChangeUsernameForm`, a client form on `useActionState(changeUsernameAction)`:
   - **No username yet**: an empty, enabled field, "Choose a username" and Save.
   - **Unlocked**: the current name prefilled, enabled, with Save.
-  - **Locked**: the field disabled with the current name, Save disabled, and "You can change it again on {date and time}". The time is formatted in the browser's own time zone by a small client `<LocalDateTime>` that renders the ISO value on the server and formats it after mount, because the server does not know the viewer's zone and a date alone can be hours off.
+  - **Locked**: the field disabled with the current name, Save disabled, and "You can change it again on {date and time}". The time is formatted in the browser's own time zone by a small client `<LocalDateTime>` that renders the moment in UTC, labelled "UTC", on the server and formats it in local time after mount, because the server does not know the viewer's zone and a date alone can be hours off.
   - **Success**: "Username updated." The form then shows the locked state; the action calls `refresh()` (or `revalidatePath`, whichever the installed Next.js docs say a Server Action uses under `cacheComponents`) so the navbar updates.
 - `changeUsernameAction`:
   - Zod first, then `getOptionalUser()`; a missing session returns `sessionExpired`, as change password does.
   - An upsert on `user_id`. The trigger decides the lock and the no-op.
-  - `23505` maps to `usernameTaken`, `P0001 username_locked` to `usernameLocked`, a `23514` check violation (a reserved name or a format the Zod check missed) to `usernameTaken` or `invalidInput`, and anything else to the generic unavailable message.
+  - `23505` maps to `usernameTaken`, `BS002` to `usernameLocked`, a `23514` check violation (a reserved name or a format the Zod check missed) to `usernameTaken`, and anything else to the generic unavailable message. As built, `classifyProfileWriteError` in `lib/auth/supabase-error.ts` does this for both actions.
   - Never a redirect.
 
 ### Navbar
@@ -255,3 +255,12 @@ Chosen in the question panel: in the two column layout the password card is as t
 - **Confirm new password:** a required third field (`confirmPassword`, `autocomplete="new-password"`). `changePasswordSchema` refuses a mismatch on that field with "The passwords don't match." before any Supabase call. The value is never sent back to the page, like every password.
 - **Pinned button:** the form fills the card (`flex-1`) and the submit button sits at its bottom (`mt-auto`), and Save username is pinned the same way in its card, so the two buttons line up exactly from `lg` up. Below `lg` both cards fit their content, as today.
 - Files: `lib/auth/schemas.ts`, `lib/auth/action-state.ts`, `app/account/actions.ts`, `app/account/change-password-form.tsx`, `app/account/page.tsx`, and their tests.
+
+## Amendment (2026-10-11): after code review
+
+A two axis review of the branch led to these changes and records:
+
+- **Error handling:** the lock raises `BS002` instead of `P0001` with a message, and `classifyProfileWriteError` beside `classifyAuthError` reads only the code, for `/account` and sign up alike. The migration had not reached the cloud project, so it was edited in place.
+- **Copy:** the reserved name refusal and the locked card line read `messages.ts`, so a reserved name always reads exactly like a taken one.
+- **R8:** `username.test.ts` compiles both SQL format checks and runs them over the same names as Zod, so the character class and the start and end rule are compared, not just the bounds.
+- **Recorded as built:** `autocomplete="nickname"`, the "That's already your username." message, the `?notice=username-taken` URL, and the UTC fallback in `LocalDateTime` (see the lines above). `AuthField` turns off autocapitalize and spell check on every non-password field, the email included, since neither is ever a sentence. `/privacy` adds "Your username is shown only to you."
