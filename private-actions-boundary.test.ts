@@ -52,6 +52,7 @@ function passwordForm(): FormData {
   const form = new FormData();
   form.set("currentPassword", "the-current-Passw0rd");
   form.set("password", "a-fresh-Passw0rd-for-tests");
+  form.set("confirmPassword", "a-fresh-Passw0rd-for-tests");
   return form;
 }
 

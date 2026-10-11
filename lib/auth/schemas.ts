@@ -76,10 +76,22 @@ export const resetPasswordSchema = z.object({
   password: newPasswordSchema,
 });
 
-export const changePasswordSchema = z.object({
-  currentPassword: existingPasswordSchema,
-  password: newPasswordSchema,
-});
+/**
+ * A password change on `/account`. The new password is typed twice, and a
+ * mismatch is refused on the second field before Supabase is asked, so a typo
+ * can never become the password nobody knows (prompts/account-username.md,
+ * amendment).
+ */
+export const changePasswordSchema = z
+  .object({
+    currentPassword: existingPasswordSchema,
+    password: newPasswordSchema,
+    confirmPassword: z.string().min(1, "Enter your new password again."),
+  })
+  .refine((value) => value.password === value.confirmPassword, {
+    message: "The passwords don't match.",
+    path: ["confirmPassword"],
+  });
 
 export const changeUsernameSchema = z.object({
   username: usernameSchema,

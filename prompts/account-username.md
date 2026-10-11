@@ -247,3 +247,11 @@ Asked after implementation: settings in a two column grid.
 - **Unchanged:** every card's content, spacing and glass classes; only the wrapper and the right card's grid placement change.
 
 Files: `app/account/page.tsx`. Checks: `pnpm typecheck`, `pnpm lint`, `pnpm test`, then the page at 1280 px and 375 px in the running app.
+
+## Amendment (2026-10-11): fuller Change password card
+
+Chosen in the question panel: in the two column layout the password card is as tall as both left cards, so its form gains a third field and its button is pinned to the bottom.
+
+- **Confirm new password:** a required third field (`confirmPassword`, `autocomplete="new-password"`). `changePasswordSchema` refuses a mismatch on that field with "The passwords don't match." before any Supabase call. The value is never sent back to the page, like every password.
+- **Pinned button:** the form fills the card (`flex-1`) and the submit button sits at its bottom (`mt-auto`), and Save username is pinned the same way in its card, so the two buttons line up exactly from `lg` up. Below `lg` both cards fit their content, as today.
+- Files: `lib/auth/schemas.ts`, `lib/auth/action-state.ts`, `app/account/actions.ts`, `app/account/change-password-form.tsx`, `app/account/page.tsx`, and their tests.

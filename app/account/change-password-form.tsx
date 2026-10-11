@@ -29,7 +29,7 @@ function ChangePasswordForm() {
   );
 
   return (
-    <form action={formAction} className="flex flex-col gap-5">
+    <form action={formAction} className="flex flex-1 flex-col gap-5">
       <AuthFeedback state={state} />
 
       {/*
@@ -64,9 +64,24 @@ function ChangePasswordForm() {
         error={state.fieldErrors?.password}
       />
 
-      <AuthSubmitButton pendingLabel="Saving…">
-        Change password
-      </AuthSubmitButton>
+      <AuthField
+        label="Confirm new password"
+        name="confirmPassword"
+        type="password"
+        autoComplete="new-password"
+        placeholder="Type it again"
+        error={state.fieldErrors?.confirmPassword}
+      />
+
+      {/*
+       * Pinned to the bottom, so in the two column layout it lines up with
+       * Save username; with no spare height `mt-auto` is zero.
+       */}
+      <div className="mt-auto">
+        <AuthSubmitButton pendingLabel="Saving…">
+          Change password
+        </AuthSubmitButton>
+      </div>
     </form>
   );
 }

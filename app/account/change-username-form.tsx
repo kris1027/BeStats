@@ -41,7 +41,7 @@ function ChangeUsernameForm({
   const locked = unlocksAt !== null;
 
   return (
-    <form action={formAction} className="flex flex-col gap-5">
+    <form action={formAction} className="flex flex-1 flex-col gap-5">
       <AuthFeedback state={state} />
 
       {state.outcome === AUTH_OUTCOME.sessionExpired ? (
@@ -70,9 +70,12 @@ function ChangeUsernameForm({
         </p>
       ) : null}
 
-      <AuthSubmitButton pendingLabel="Saving…" disabled={locked}>
-        Save username
-      </AuthSubmitButton>
+      {/* Bottom of the card, level with Change password beside it. */}
+      <div className="mt-auto">
+        <AuthSubmitButton pendingLabel="Saving…" disabled={locked}>
+          Save username
+        </AuthSubmitButton>
+      </div>
     </form>
   );
 }

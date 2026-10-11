@@ -15,7 +15,12 @@ import { AUTH_OUTCOME, type AuthOutcome, authMessage } from "./messages";
  * the field it belongs to, which is how AC-21 is satisfied without each form
  * inventing its own error plumbing.
  */
-export type AuthField = "email" | "password" | "currentPassword" | "username";
+export type AuthField =
+  | "email"
+  | "password"
+  | "currentPassword"
+  | "confirmPassword"
+  | "username";
 
 export type AuthActionState = {
   status: "idle" | "success" | "error";
@@ -150,6 +155,7 @@ export function fromZodError(error: z.ZodError): AuthActionState {
       (field === "email" ||
         field === "password" ||
         field === "currentPassword" ||
+        field === "confirmPassword" ||
         field === "username") &&
       !fieldErrors[field]
     ) {
