@@ -3,9 +3,13 @@ import type { Metadata } from "next";
 import { signOutAction } from "@/app/(auth)/actions";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { hasPasswordIdentity } from "@/lib/auth/identity";
+import { ACCOUNT_NOTICE, ACCOUNT_NOTICES } from "@/lib/auth/messages";
+import { getOwnProfile } from "@/lib/auth/profile";
 import { requireUser } from "@/lib/auth/user";
+import { isUsernameLocked, usernameUnlocksAt } from "@/lib/auth/username";
 import { createClient } from "@/lib/supabase/server";
 import { ChangePasswordForm } from "./change-password-form";
+import { ChangeUsernameForm } from "./change-username-form";
 
 /**
  * This route opts out of prerendering (root `AGENTS.md`, `cacheComponents`).
@@ -40,8 +44,26 @@ export const metadata: Metadata = {
  * and spacing unchanged rather than inventing a second look, which is the
  * approach `AGENTS.md` section 3 asks for and spec 0005 records.
  */
-export default async function AccountPage() {
+export default async function AccountPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ notice?: string | string[] }>;
+}) {
   const user = await requireUser();
+  const profile = await getOwnProfile();
+  const { notice } = await searchParams;
+
+  // Only a known key shows anything, so the URL cannot put its own text here.
+  const noticeText =
+    notice === ACCOUNT_NOTICE.usernameTaken
+      ? ACCOUNT_NOTICES[ACCOUNT_NOTICE.usernameTaken]
+      : null;
+
+  // Read once per request; the page is dynamic (`instant = false`).
+  const unlocksAt =
+    profile && isUsernameLocked(profile.usernameChangedAt, new Date())
+      ? usernameUnlocksAt(profile.usernameChangedAt).toISOString()
+      : null;
 
   // The one network call on this page. `getClaims()` has already established
   // who this is, but the identities list is not in the JWT and AC-16 needs it.
@@ -69,7 +91,19 @@ export default async function AccountPage() {
           </h1>
           <p className="text-sm text-muted-foreground md:text-base">
             You are signed in as{" "}
-            <span className="font-semibold text-foreground">{user.email}</span>.
+            {profile ? (
+              <>
+                <span className="font-semibold text-foreground">
+                  {profile.username}
+                </span>{" "}
+                ({user.email})
+              </>
+            ) : (
+              <span className="font-semibold text-foreground">
+                {user.email}
+              </span>
+            )}
+            .
           </p>
         </header>
 
@@ -78,6 +112,30 @@ export default async function AccountPage() {
             Sign out
           </Button>
         </form>
+      </section>
+
+      <section className="glass glass-rim glass-plate-panel glass-shadow flex flex-col gap-6 rounded-panel px-5 py-8 md:px-10 md:py-10">
+        <header className="flex flex-col gap-2">
+          <h2 className="text-xl leading-tight font-bold text-foreground">
+            Username
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {profile
+              ? "You can change your username once a week."
+              : "Choose a username. You can change it once a week."}
+          </p>
+        </header>
+
+        {noticeText && !profile ? (
+          <p role="status" className="text-sm text-foreground">
+            {noticeText}
+          </p>
+        ) : null}
+
+        <ChangeUsernameForm
+          username={profile?.username ?? null}
+          unlocksAt={unlocksAt}
+        />
       </section>
 
       {canChangePassword ? (

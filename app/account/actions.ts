@@ -1,15 +1,23 @@
 "use server";
 
+import { refresh } from "next/cache";
+
 import {
   type AuthActionState,
   failure,
   fromZodError,
+  keepUsername,
   passwordFieldFor,
   success,
 } from "@/lib/auth/action-state";
 import { AUTH_EVENT, logAuthEvent } from "@/lib/auth/log";
-import { AUTH_OUTCOME } from "@/lib/auth/messages";
-import { changePasswordSchema } from "@/lib/auth/schemas";
+import {
+  AUTH_OUTCOME,
+  USERNAME_UNCHANGED_MESSAGE,
+  USERNAME_UPDATED_MESSAGE,
+} from "@/lib/auth/messages";
+import { getOwnProfile } from "@/lib/auth/profile";
+import { changePasswordSchema, changeUsernameSchema } from "@/lib/auth/schemas";
 import { classifyAuthError } from "@/lib/auth/supabase-error";
 import { getOptionalUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
@@ -97,4 +105,95 @@ export async function changePasswordAction(
   }
 
   return success("Your password has been changed.");
+}
+
+/**
+ * Sets or changes the signed in account's username
+ * (prompts/account-username.md, Q6, Q13).
+ *
+ * One upsert, and the database decides the rest: the trigger on `profiles`
+ * refuses a change inside the week, treats the identical name as no change,
+ * and stamps the time itself; the checks and the unique index refuse a bad,
+ * reserved or taken name. Deciding the lock here as well would only add a
+ * second clock to disagree with the first.
+ *
+ * The session is resolved here, not trusted from the page, as in
+ * `changePasswordAction`, and the user id comes only from it. On success
+ * `refresh()` re-renders the page and the navbar with the new name.
+ */
+export async function changeUsernameAction(
+  _previous: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState> {
+  const parsed = changeUsernameSchema.safeParse({
+    username: formData.get("username"),
+  });
+
+  if (!parsed.success) {
+    logAuthEvent(
+      AUTH_EVENT.changeUsername,
+      "refused",
+      AUTH_OUTCOME.invalidInput,
+    );
+    // A reserved name fails here with the taken message, so it is reported
+    // as taken, not as a highlighted field to fix.
+    return keepUsername(fromZodError(parsed.error), formData);
+  }
+
+  const user = await getOptionalUser();
+
+  if (!user) {
+    logAuthEvent(
+      AUTH_EVENT.changeUsername,
+      "refused",
+      AUTH_OUTCOME.sessionExpired,
+    );
+    return failure(AUTH_OUTCOME.sessionExpired);
+  }
+
+  // The identical name is no change, and the trigger would keep the clock
+  // where it was. Saying "updated" for it would be a small lie.
+  const current = await getOwnProfile();
+  if (current?.username === parsed.data.username) {
+    return keepUsername(success(USERNAME_UNCHANGED_MESSAGE), formData);
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("profiles")
+    .upsert(
+      { user_id: user.id, username: parsed.data.username },
+      { onConflict: "user_id" },
+    );
+
+  if (error) {
+    const outcome = usernameWriteOutcome(error);
+    logAuthEvent(AUTH_EVENT.changeUsername, "refused", outcome);
+    return keepUsername(
+      failure(
+        outcome,
+        outcome === AUTH_OUTCOME.usernameTaken ? ["username"] : [],
+      ),
+      formData,
+    );
+  }
+
+  refresh();
+  return success(USERNAME_UPDATED_MESSAGE);
+}
+
+/**
+ * Maps a refused `profiles` write to what the person is told. Matches on the
+ * SQLSTATE and the trigger's own message, never on free text Postgres writes.
+ */
+function usernameWriteOutcome(error: { code?: string; message?: string }) {
+  // 23505: the unique index. 23514: the reserved list (the format is caught
+  // by Zod first, so a check failure here is a reserved name in practice).
+  if (error.code === "23505" || error.code === "23514") {
+    return AUTH_OUTCOME.usernameTaken;
+  }
+  if (error.code === "P0001" && error.message === "username_locked") {
+    return AUTH_OUTCOME.usernameLocked;
+  }
+  return AUTH_OUTCOME.unexpected;
 }

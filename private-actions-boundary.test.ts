@@ -55,6 +55,12 @@ function passwordForm(): FormData {
   return form;
 }
 
+function usernameForm(): FormData {
+  const form = new FormData();
+  form.set("username", "tester_one");
+  return form;
+}
+
 const TRACKING_REFUSAL = { ok: false, error: "session_expired" };
 
 /**
@@ -119,6 +125,8 @@ const PRIVATE_ACTIONS: Record<
     calls: {
       changePasswordAction: () =>
         accountActions.changePasswordAction(IDLE_STATE, passwordForm()),
+      changeUsernameAction: () =>
+        accountActions.changeUsernameAction(IDLE_STATE, usernameForm()),
     },
   },
 };
