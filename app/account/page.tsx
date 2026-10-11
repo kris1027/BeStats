@@ -38,6 +38,13 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+/** The glass card every `/account` section sits on, `AuthPanel`'s look. */
+const PANEL =
+  "glass glass-rim glass-plate-panel glass-shadow flex flex-col rounded-panel px-5 py-8 md:px-10 md:py-10";
+
+/** From lg, the password card takes the right column beside the other two. */
+const RIGHT_COLUMN = "lg:col-start-2 lg:row-span-2 lg:row-start-1";
+
 /**
  * `/account`, the first private route in the app (spec 0005, AC-12, AC-16).
  *
@@ -101,7 +108,7 @@ export default async function AccountPage({
         twoColumns && "lg:max-w-[984px] lg:grid-cols-2",
       )}
     >
-      <section className="glass glass-rim glass-plate-panel glass-shadow flex flex-col gap-6 rounded-panel px-5 py-8 md:px-10 md:py-10">
+      <section className={cn(PANEL, "gap-6")}>
         <header className="flex flex-col gap-2">
           <h1 className="text-3xl leading-tight font-bold tracking-[-0.03em] text-foreground md:text-4xl">
             Account
@@ -131,7 +138,7 @@ export default async function AccountPage({
         </form>
       </section>
 
-      <section className="glass glass-rim glass-plate-panel glass-shadow flex flex-col gap-6 rounded-panel px-5 py-8 md:px-10 md:py-10">
+      <section className={cn(PANEL, "gap-6")}>
         <header className="flex flex-col gap-2">
           <h2 className="text-xl leading-tight font-bold text-foreground">
             Username
@@ -156,7 +163,7 @@ export default async function AccountPage({
       </section>
 
       {canChangePassword ? (
-        <section className="glass glass-rim glass-plate-panel glass-shadow flex flex-col gap-6 rounded-panel px-5 py-8 md:px-10 md:py-10 lg:col-start-2 lg:row-span-2 lg:row-start-1">
+        <section className={cn(PANEL, "gap-6", RIGHT_COLUMN)}>
           <header className="flex flex-col gap-2">
             <h2 className="text-xl leading-tight font-bold text-foreground">
               Change password
@@ -171,7 +178,7 @@ export default async function AccountPage({
       ) : null}
 
       {identitiesUnavailable ? (
-        <section className="glass glass-rim glass-plate-panel glass-shadow flex flex-col gap-4 rounded-panel px-5 py-8 md:px-10 md:py-10 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start">
+        <section className={cn(PANEL, "gap-4", RIGHT_COLUMN, "lg:self-start")}>
           <p
             role="alert"
             className="text-sm text-muted-foreground md:text-base"
