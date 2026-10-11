@@ -155,7 +155,7 @@ describe("search reads no request scoped value (spec 0010, AC-22)", () => {
     const source = readFileSync("components/search/search-results.tsx", "utf8");
     expect(source).toMatch(/<Suspense fallback=\{null\}>\s*<MovieCardControls/);
     expect(source).toMatch(
-      /<Suspense\s+fallback=\{<TmdbRatingBadge[^}]*\} \/>\}\s*>\s*\{params\.type === "movie" \? \(\s*<MovieCardBadge/,
+      /<Suspense\s+fallback=\{<TmdbRatingBadge[^}]*\} \/>\}\s*>\s*<MovieCardBadge/,
     );
   });
 

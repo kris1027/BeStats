@@ -215,78 +215,113 @@ function ResultGrid({
   const returnPath = searchHref(params);
   // One type per results page, so these are the grid's movie or show ids.
   const gridIds = results.map((result) => result.id);
+  const ResultCard = params.type === "movie" ? MovieResultCard : ShowResultCard;
 
   return (
     <PosterGrid aria-label="Search results">
-      {results.map((result, index) => {
-        const year = result.year === null ? null : String(result.year);
-        return (
-          <li key={result.id}>
-            <PosterCard
-              title={result.title}
-              posterUrl={result.posterUrl}
-              href={titleHref(params.type, result.id)}
-              meta={
-                params.type === "movie" ? (
-                  (result.year ?? undefined)
-                ) : (
-                  <Suspense fallback={year}>
-                    <ShowCardMeta
-                      showId={result.id}
-                      base={year}
-                      gridShowIds={gridIds}
-                    />
-                  </Suspense>
-                )
-              }
-              badge={
-                <Suspense
-                  fallback={<TmdbRatingBadge value={result.tmdbRating} />}
-                >
-                  {params.type === "movie" ? (
-                    <MovieCardBadge
-                      movieId={result.id}
-                      releaseDate={result.releaseDate}
-                      tmdbRating={result.tmdbRating}
-                      gridMovieIds={gridIds}
-                    />
-                  ) : (
-                    <ShowCardBadge
-                      showId={result.id}
-                      tmdbRating={result.tmdbRating}
-                      gridShowIds={gridIds}
-                    />
-                  )}
-                </Suspense>
-              }
-              controls={
-                params.type === "movie" ? (
-                  <Suspense fallback={null}>
-                    <MovieCardControls
-                      movieId={result.id}
-                      title={result.title}
-                      releaseDate={result.releaseDate}
-                      gridMovieIds={gridIds}
-                      returnPath={returnPath}
-                    />
-                  </Suspense>
-                ) : (
-                  <Suspense fallback={null}>
-                    <ShowCardControls
-                      showId={result.id}
-                      name={result.title}
-                      gridShowIds={gridIds}
-                      returnPath={returnPath}
-                    />
-                  </Suspense>
-                )
-              }
-              priority={index < EAGER_POSTERS}
-            />
-          </li>
-        );
-      })}
+      {results.map((result, index) => (
+        <li key={result.id}>
+          <ResultCard
+            result={result}
+            gridIds={gridIds}
+            returnPath={returnPath}
+            priority={index < EAGER_POSTERS}
+          />
+        </li>
+      ))}
     </PosterGrid>
+  );
+}
+
+type ResultCardProps = {
+  result: SearchResult;
+  /** Every id on the results page, the same array for each card. */
+  gridIds: readonly number[];
+  returnPath: string;
+  priority: boolean;
+};
+
+/** A movie result, carrying the slots `/movies` gives the same card. */
+function MovieResultCard({
+  result,
+  gridIds,
+  returnPath,
+  priority,
+}: ResultCardProps) {
+  return (
+    <PosterCard
+      title={result.title}
+      posterUrl={result.posterUrl}
+      href={titleHref("movie", result.id)}
+      meta={result.year ?? undefined}
+      badge={
+        <Suspense fallback={<TmdbRatingBadge value={result.tmdbRating} />}>
+          <MovieCardBadge
+            movieId={result.id}
+            releaseDate={result.releaseDate}
+            tmdbRating={result.tmdbRating}
+            gridMovieIds={gridIds}
+          />
+        </Suspense>
+      }
+      controls={
+        <Suspense fallback={null}>
+          <MovieCardControls
+            movieId={result.id}
+            title={result.title}
+            releaseDate={result.releaseDate}
+            gridMovieIds={gridIds}
+            returnPath={returnPath}
+          />
+        </Suspense>
+      }
+      priority={priority}
+    />
+  );
+}
+
+/**
+ * A TV result, carrying the slots `/shows` gives the same card, with the
+ * first air year ahead of a Watched show's label on the meta line.
+ */
+function ShowResultCard({
+  result,
+  gridIds,
+  returnPath,
+  priority,
+}: ResultCardProps) {
+  const year = result.year === null ? null : String(result.year);
+  return (
+    <PosterCard
+      title={result.title}
+      posterUrl={result.posterUrl}
+      href={titleHref("tv", result.id)}
+      meta={
+        <Suspense fallback={year}>
+          <ShowCardMeta showId={result.id} base={year} gridShowIds={gridIds} />
+        </Suspense>
+      }
+      badge={
+        <Suspense fallback={<TmdbRatingBadge value={result.tmdbRating} />}>
+          <ShowCardBadge
+            showId={result.id}
+            tmdbRating={result.tmdbRating}
+            gridShowIds={gridIds}
+          />
+        </Suspense>
+      }
+      controls={
+        <Suspense fallback={null}>
+          <ShowCardControls
+            showId={result.id}
+            name={result.title}
+            gridShowIds={gridIds}
+            returnPath={returnPath}
+          />
+        </Suspense>
+      }
+      priority={priority}
+    />
   );
 }
 
