@@ -36,7 +36,7 @@ Branch `feat/grid-tabs-footer-legend`. No spec: this plan records the decisions.
 6. **Selected tab: cyan glass.** A new `glass-selected-personal` utility in `app/globals.css`, the same layer stack as `glass-selected` (fill, plate, rim on the 1.5px border) with the gradient tinted from `--color-score-personal`, translucent so the glass reads. Text on it is near black (a token, e.g. `text-on-personal`) so it meets WCAG AA 4.5:1; the exact tint is checked with a contrast measurement, not assumed. Used by the selected tab in `MediaTypeTabsView` and in both `LibraryNav` variants. Unselected tabs do not change.
 7. **Footer icon key.**
    - `BadgeLegend` and its per tab entries are deleted, with their test cases; the two library tabs no longer render it.
-   - A new `IconKey` Server Component (`components/layout/icon-key.tsx`) renders one fixed list, always all entries, in this order: TMDB rating, Your score, Plan, Planned, Next episode, Mark watched, Release date. Same icons and colours as the cards (`StarIcon` in `rating-tmdb` / `score-personal`, `PlanIcon`, `PlannedIcon`, `NextEpisodeIcon`, `WatchedIcon` outline, `CalendarIcon`), `size-4`, `text-text-legend`.
+   - A new `IconKey` Server Component (`components/layout/icon-key.tsx`) renders one fixed list, always all entries, in this order: TMDB rating, Your score, Plan, Planned, Mark watched, Watched, Next episode, Release date. Same icons and colours as the cards (`StarIcon` in `rating-tmdb` / `score-personal`, `PlanIcon`, `PlannedIcon`, `NextEpisodeIcon`, `WatchedIcon` outline and filled, `CalendarIcon`), `size-4`, `text-text-legend`.
    - It is the footer's first row, on every route, inside the footer's 1600px container: a hairline (`border-t border-border`) above, centred `flex-wrap` with the current legend gaps, wrapping centred on mobile. The existing attribution and legal row sits below it unchanged.
    - `<ul aria-label="Icon key">`, each `<li>` the icon (`aria-hidden`) and its text.
    - It reads no request state, so the footer stays in every prerendered shell.
@@ -72,7 +72,7 @@ UI only: no new data, input, route or credential. The footer key is static, so i
 3. Loading each route shows a skeleton whose height matches the loaded page; a library page with 3 titles no longer collapses from 5 rows to 1.
 4. The selected SHOWS | MOVIES tab and the selected Watchlist / Upcoming / Watched link are cyan glass with near black text at 4.5:1 or better; unselected tabs look as before.
 5. No library page renders a legend under its grid.
-6. Every route, including `/sign-in`, `/account`, `/privacy` and a 404, shows the icon key centred at the top of the footer, with all seven entries.
+6. Every route, including `/sign-in`, `/account`, `/privacy` and a 404, shows the icon key centred at the top of the footer, with all eight entries.
 7. The showcase and `components/AGENTS.md` describe the new key.
 
 ## Automated checks
@@ -86,5 +86,5 @@ UI only: no new data, input, route or credential. The footer key is static, so i
 3. Sign in with an account tracking 3 shows, open `/watchlist`: the skeleton is one row, and the page does not shrink when the cards load.
 4. Open `/shows/1399` and a season page with throttling: no visible resize when content arrives; seasons are 4 per row.
 5. Check the navbar on `/shows`, `/movies?page=2`, `/watchlist?type=movie`: the lit tab is cyan glass with dark text; keyboard Tab shows the focus ring on it.
-6. Scroll to the footer on `/shows`, `/sign-in`, `/privacy` and `/nope`: the icon key is the footer's centred first row with all seven entries; at 390px it wraps centred.
+6. Scroll to the footer on `/shows`, `/sign-in`, `/privacy` and `/nope`: the icon key is the footer's centred first row with all eight entries; at 390px it wraps centred.
 7. Open `/showcase`: the tab and key examples match the shipped UI.

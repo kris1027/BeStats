@@ -12,7 +12,8 @@ import {
 /**
  * Every mark a card can carry, in one fixed order. The icons and meaning
  * colours are the badges' own, so the key can never drift from what the
- * cards show.
+ * cards show. Each two state mark is listed as a pair, action then done:
+ * Plan and Planned, Mark watched and Watched.
  */
 const ENTRIES: ReadonlyArray<{ label: string; icon: React.ReactNode }> = [
   {
@@ -27,11 +28,12 @@ const ENTRIES: ReadonlyArray<{ label: string; icon: React.ReactNode }> = [
   },
   { label: "Plan", icon: <PlanIcon className="size-4" /> },
   { label: "Planned", icon: <PlannedIcon className="size-4" /> },
-  { label: "Next episode", icon: <NextEpisodeIcon className="size-4" /> },
   {
     label: "Mark watched",
     icon: <WatchedIcon filled={false} className="size-4" />,
   },
+  { label: "Watched", icon: <WatchedIcon filled className="size-4" /> },
+  { label: "Next episode", icon: <NextEpisodeIcon className="size-4" /> },
   { label: "Release date", icon: <CalendarIcon className="size-4" /> },
 ];
 

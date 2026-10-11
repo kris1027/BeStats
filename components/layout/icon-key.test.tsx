@@ -23,8 +23,9 @@ describe("IconKey", () => {
       "Your score",
       "Plan",
       "Planned",
-      "Next episode",
       "Mark watched",
+      "Watched",
+      "Next episode",
       "Release date",
     ]);
   });
