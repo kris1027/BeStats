@@ -2,6 +2,7 @@ import { act, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { SceneClock } from "@/lib/film-scene/clock";
+import { CONTINUITY_KEY } from "@/lib/film-scene/continuity";
 import type { RunOptions } from "@/lib/film-scene/run";
 
 const rgb: [number, number, number] = [0.1, 0.2, 0.3];
@@ -99,6 +100,7 @@ describe("PageBackgroundCanvas", () => {
     resize = null;
   });
   afterEach(() => {
+    sessionStorage.clear();
     vi.useRealTimers();
     vi.unstubAllGlobals();
     // @ts-expect-error jsdom never defines it; the worker tests add it.
@@ -244,5 +246,83 @@ describe("PageBackgroundCanvas", () => {
     unmount();
     expect(FakeWorker.instances[0].terminate).toHaveBeenCalled();
     expect(canvas?.isConnected).toBe(false);
+  });
+});
+
+/** covers: prompts/film-scene-continuity.md, AC-1, AC-2, AC-3, AC-6 */
+describe("PageBackgroundCanvas across loads in one tab", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    runScene.mockReset();
+    media.reducedMotion = false;
+    media.coarse = false;
+    resize = null;
+    browser({ worker: true });
+  });
+  afterEach(() => {
+    sessionStorage.clear();
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+    // @ts-expect-error jsdom never defines it; the worker tests add it.
+    delete HTMLCanvasElement.prototype.transferControlToOffscreen;
+  });
+
+  const stored = () => sessionStorage.getItem(CONTINUITY_KEY);
+  const canvasOf = (container: HTMLElement) =>
+    container.querySelector("canvas") as HTMLCanvasElement;
+
+  it("plays the intro from time 0 on the tab's first load", async () => {
+    const { container } = await start();
+    const [worker] = FakeWorker.instances;
+    expect(worker.postMessage.mock.calls[0][0]).toMatchObject({ time: 0 });
+    worker.reply({ type: "ready" });
+    expect(canvasOf(container).style.transition).toBe("opacity 1.6s ease");
+    expect(canvasOf(container).style.opacity).toBe("1");
+  });
+
+  it("keeps each time the scene reports for the next load", async () => {
+    await start();
+    FakeWorker.instances[0].reply({ type: "time", time: 12.5 });
+    expect(JSON.parse(stored() ?? "null")).toEqual({ time: 12.5 });
+  });
+
+  it("carries on from the stored time with no fade on a later load", async () => {
+    sessionStorage.setItem(CONTINUITY_KEY, JSON.stringify({ time: 30 }));
+    const { container } = await start();
+    const [worker] = FakeWorker.instances;
+    expect(worker.postMessage.mock.calls[0][0]).toMatchObject({ time: 30 });
+    worker.reply({ type: "ready" });
+    expect(canvasOf(container).style.transition).toBe("none");
+  });
+
+  it("plays the intro when the stored value is junk", async () => {
+    sessionStorage.setItem(CONTINUITY_KEY, "junk");
+    const { container } = await start();
+    const [worker] = FakeWorker.instances;
+    expect(worker.postMessage.mock.calls[0][0]).toMatchObject({ time: 0 });
+    worker.reply({ type: "ready" });
+    expect(canvasOf(container).style.transition).toBe("opacity 1.6s ease");
+  });
+
+  it("reveals a rebuild across the breakpoint with no fade", async () => {
+    vi.stubGlobal("innerWidth", 1440);
+    const { container } = await start();
+    const [worker] = FakeWorker.instances;
+    worker.reply({ type: "ready" });
+    vi.stubGlobal("innerWidth", 600);
+    act(() => resize?.());
+    worker.reply({ type: "ready" });
+    expect(canvasOf(container).style.transition).toBe("none");
+    expect(canvasOf(container).style.opacity).toBe("1");
+  });
+
+  it("never reads or writes the stored time for the /showcase still frame", async () => {
+    sessionStorage.setItem(CONTINUITY_KEY, JSON.stringify({ time: 30 }));
+    render(<PageBackgroundCanvas still />);
+    await settle();
+    const [worker] = FakeWorker.instances;
+    expect(worker.postMessage.mock.calls[0][0]).toMatchObject({ time: 0 });
+    worker.reply({ type: "time", time: 99 });
+    expect(JSON.parse(stored() ?? "null")).toEqual({ time: 30 });
   });
 });
