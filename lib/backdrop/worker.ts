@@ -8,13 +8,13 @@ import { type FromWorker, toWorkerSchema } from "./protocol";
  * The canvas arrives as an `OffscreenCanvas` in the `init` message and every
  * frame is drawn here, so React hydration, scrolling and input on the main
  * thread never wait on the animation, nor it on them. A message that fails
- * validation is dropped.
+ * validation is dropped. There is no dispose message: the page terminates
+ * the worker, which releases the context and everything else at once.
  */
 
 /** The slice of `DedicatedWorkerGlobalScope` this file uses. */
 interface WorkerScope {
   postMessage(message: FromWorker): void;
-  close(): void;
   onmessage: ((event: MessageEvent<unknown>) => void) | null;
 }
 
@@ -51,11 +51,6 @@ scope.onmessage = (event) => {
       return;
     case "motion":
       loop?.setReducedMotion(message.reduced);
-      return;
-    case "dispose":
-      loop?.dispose();
-      loop = null;
-      scope.close();
       return;
   }
 };

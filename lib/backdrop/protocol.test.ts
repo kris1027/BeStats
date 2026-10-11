@@ -8,7 +8,6 @@ describe("worker messages", () => {
     { type: "pointer", x: -0.5, y: 0.25 },
     { type: "visible", visible: false },
     { type: "motion", reduced: true },
-    { type: "dispose" },
   ])("accepts %o", (message) => {
     expect(toWorkerSchema.safeParse(message).success).toBe(true);
   });
@@ -19,6 +18,7 @@ describe("worker messages", () => {
     { type: "resize", width: 1, height: 900, pixelRatio: 99 },
     { type: "visible", visible: "yes" },
     { type: "unknown" },
+    { type: "dispose" },
     null,
     "dispose",
   ])("rejects %o", (message) => {

@@ -58,7 +58,6 @@ export const toWorkerSchema = z.discriminatedUnion("type", [
   }),
   z.object({ type: z.literal("visible"), visible: z.boolean() }),
   z.object({ type: z.literal("motion"), reduced: z.boolean() }),
-  z.object({ type: z.literal("dispose") }),
 ]);
 
 export type ToWorker = z.infer<typeof toWorkerSchema>;
