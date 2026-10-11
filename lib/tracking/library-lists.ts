@@ -484,7 +484,7 @@ export async function getMovieLibraryTab(
     read: getMoviesSettled,
     place: (row, movie): MovieTabCard | null => {
       const result = classifyMovie(
-        { releaseDate: movie.releaseDate, inWatchlist: true, watchedAt: null },
+        { releaseDate: movie.releaseDate, inWatchlist: true, watched: false },
         today,
       );
       if (result !== tab) return null;

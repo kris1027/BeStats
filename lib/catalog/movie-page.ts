@@ -10,7 +10,7 @@ export type MoviePage = LibraryList;
 export type MoviePlacement = {
   releaseDate: string | null;
   inWatchlist: boolean;
-  watchedAt: string | null;
+  watched: boolean;
 };
 
 /**
@@ -30,7 +30,7 @@ export function classifyMovie(
   movie: MoviePlacement,
   today: string,
 ): MoviePage | null {
-  if (movie.watchedAt !== null) return "watched";
+  if (movie.watched) return "watched";
   if (!movie.inWatchlist) return null;
   return isMovieReleased(movie.releaseDate, today) ? "watchlist" : "upcoming";
 }
@@ -85,3 +85,4 @@ export function upcomingReleaseDate(
 ): string | null {
   return airStatus(releaseDate, today) === "upcoming" ? releaseDate : null;
 }
+
