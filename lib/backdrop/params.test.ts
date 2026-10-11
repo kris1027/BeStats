@@ -8,6 +8,7 @@ import {
   MAX_PIXEL_RATIO,
   PANEL_STRIDE,
   panelInstances,
+  sameGeometry,
   seededRandom,
   waveGrid,
 } from "./params";
@@ -44,6 +45,22 @@ describe("chooseBudget", () => {
         }).pixelRatio,
       ).toBe(MAX_PIXEL_RATIO);
     }
+  });
+
+  it("rebuilds only across the breakpoint, not for a pixel ratio change", () => {
+    const wide = (devicePixelRatio: number) =>
+      chooseBudget({
+        viewportWidth: 1440,
+        coarsePointer: false,
+        devicePixelRatio,
+      });
+    const narrow = chooseBudget({
+      viewportWidth: 600,
+      coarsePointer: false,
+      devicePixelRatio: 1,
+    });
+    expect(sameGeometry(wide(1), wide(2))).toBe(true);
+    expect(sameGeometry(wide(1), narrow)).toBe(false);
   });
 
   it("treats a missing or nonsense pixel ratio as 1", () => {

@@ -64,17 +64,23 @@ export function createBackdrop(
     onFirstFrame: options.onReady,
   });
 
-  // `addEventListener` exists on both canvas types; the cast only papers over
-  // their differing event maps.
-  (canvas as HTMLCanvasElement).addEventListener(
-    "webglcontextlost",
-    () => {
-      loop.dispose();
-      options.onLost();
-    },
-    { once: true },
-  );
+  // Both canvas types dispatch the event; the cast only papers over their
+  // differing event maps.
+  const target = canvas as HTMLCanvasElement;
+  const onContextLost = () => {
+    loop.dispose();
+    options.onLost();
+  };
+  target.addEventListener("webglcontextlost", onContextLost, { once: true });
 
   loop.resize(options.width, options.height, options.budget.pixelRatio);
-  return loop;
+  return {
+    ...loop,
+    // Disposing releases the context on purpose, which fires the same event;
+    // the listener goes first so that is never reported as a loss.
+    dispose() {
+      target.removeEventListener("webglcontextlost", onContextLost);
+      loop.dispose();
+    },
+  };
 }

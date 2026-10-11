@@ -1,5 +1,5 @@
 import { readBackdropColors } from "./colors";
-import { chooseBudget } from "./params";
+import { chooseBudget, sameGeometry } from "./params";
 import type { FromWorker, ToWorker } from "./protocol";
 
 /** The page side of a running background, whichever thread draws it. */
@@ -28,7 +28,7 @@ const clampUnit = (value: number) => Math.max(-1, Math.min(1, value));
  *
  * The canvas is created here rather than rendered by React: once its control
  * is transferred to a worker it can never be transferred again, so a canvas
- * React kept across a Strict Mode remount would throw. Each mount gets a
+ * React kept across a Strict Mode remount would throw. Each start gets a
  * fresh one and the cleanup removes it.
  *
  * Draws in a worker where the browser can hand a canvas to one, and on the
@@ -36,6 +36,11 @@ const clampUnit = (value: number) => Math.max(-1, Math.min(1, value));
  * `OffscreenCanvas` but no WebGL on it). The renderer chunk is loaded only on
  * the path that needs it. If neither can draw, the canvas is removed and the
  * page keeps its static vignette.
+ *
+ * The budget follows the viewport (decision 5): a resize across the compact
+ * breakpoint rebuilds the scene at the other density, because its geometry is
+ * uploaded once and cannot change in place. A resize within one budget only
+ * resizes the canvas, picking up a changed pixel ratio on the way.
  *
  * The canvas stays transparent until the first frame is drawn, then fades in,
  * except under reduced motion, where it appears without a transition.
@@ -45,16 +50,23 @@ export function mountBackdrop(host: HTMLElement): () => void {
   if (!colors) return () => {};
 
   const motionQuery = matchMedia("(prefers-reduced-motion: reduce)");
-  const budget = chooseBudget({
-    viewportWidth: innerWidth,
-    coarsePointer: matchMedia("(pointer: coarse)").matches,
-    devicePixelRatio,
-  });
+  const coarseQuery = matchMedia("(pointer: coarse)");
+  const currentBudget = () =>
+    chooseBudget({
+      viewportWidth: innerWidth,
+      coarsePointer: coarseQuery.matches,
+      devicePixelRatio,
+    });
 
+  let budget = currentBudget();
   let controller: Controller | null = null;
   let canvas: HTMLCanvasElement | null = null;
   let disposed = false;
-  let triedMainThread = false;
+  let stopped = false;
+  let workerUsable = supportsWorkerCanvas();
+  // Bumped by every start, so a slow main thread start or a late callback
+  // from a scene already replaced cannot touch the current one.
+  let run = 0;
 
   const size = () => {
     const rect = host.getBoundingClientRect();
@@ -93,30 +105,36 @@ export function mountBackdrop(host: HTMLElement): () => void {
   // The worker could not draw at all: the main thread may still manage.
   const fallBack = () => {
     teardown();
-    if (!disposed && !triedMainThread) void startMainThread();
+    workerUsable = false;
+    if (!disposed) start();
   };
 
   // A context lost after drawing is not retried anywhere (decision 7): a GPU
   // reset or memory pressure would only take the next one away too.
   const giveUp = () => {
     teardown();
+    stopped = true;
   };
 
-  async function startMainThread() {
-    triedMainThread = true;
+  /** Wraps a callback so it is ignored once its scene has been replaced. */
+  const current = (own: number, callback: () => void) => () => {
+    if (own === run) callback();
+  };
+
+  async function startMainThread(own: number) {
     const target = freshCanvas();
     let createBackdrop: typeof import("./backdrop").createBackdrop;
     try {
       ({ createBackdrop } = await import("./backdrop"));
     } catch {
-      return giveUp();
+      return current(own, giveUp)();
     }
-    if (disposed) return;
+    if (disposed || own !== run) return;
     const loop = createBackdrop(target, {
       ...size(),
       ...state(),
-      onReady: reveal,
-      onLost: giveUp,
+      onReady: current(own, reveal),
+      onLost: current(own, giveUp),
     });
     if (!loop) return giveUp();
     controller = {
@@ -128,7 +146,7 @@ export function mountBackdrop(host: HTMLElement): () => void {
     };
   }
 
-  function startWorker() {
+  function startWorker(own: number) {
     const offscreen = freshCanvas().transferControlToOffscreen();
     const worker = new Worker(new URL("./worker.ts", import.meta.url), {
       type: "module",
@@ -137,11 +155,12 @@ export function mountBackdrop(host: HTMLElement): () => void {
     const post = (message: ToWorker, transfer: Transferable[] = []) =>
       worker.postMessage(message, transfer);
     worker.onmessage = (event: MessageEvent<FromWorker>) => {
+      if (own !== run) return;
       if (event.data.type === "ready") reveal();
       else if (event.data.type === "lost") giveUp();
       else fallBack();
     };
-    worker.onerror = () => fallBack();
+    worker.onerror = current(own, fallBack);
     post({ type: "init", canvas: offscreen, ...size(), ...state() }, [
       offscreen,
     ]);
@@ -160,9 +179,31 @@ export function mountBackdrop(host: HTMLElement): () => void {
     };
   }
 
+  function start() {
+    run += 1;
+    if (!workerUsable) {
+      void startMainThread(run);
+      return;
+    }
+    try {
+      startWorker(run);
+    } catch {
+      fallBack();
+    }
+  }
+
   // The host is sized to the large viewport (`h-lvh`), so a phone's toolbar
   // collapsing on scroll does not resize, and so reallocate, the canvas.
   const resizeObserver = new ResizeObserver(() => {
+    if (stopped) return;
+    const next = currentBudget();
+    const rebuild = !sameGeometry(budget, next);
+    budget = next;
+    if (rebuild) {
+      teardown();
+      start();
+      return;
+    }
     const { width, height } = size();
     controller?.resize(width, height);
   });
@@ -183,15 +224,7 @@ export function mountBackdrop(host: HTMLElement): () => void {
   const onVisibility = () => controller?.visible(!document.hidden);
   const onMotion = () => controller?.motion(motionQuery.matches);
 
-  if (supportsWorkerCanvas()) {
-    try {
-      startWorker();
-    } catch {
-      fallBack();
-    }
-  } else {
-    void startMainThread();
-  }
+  start();
 
   resizeObserver.observe(host);
   addEventListener("pointermove", onPointerMove, { passive: true });
@@ -200,6 +233,7 @@ export function mountBackdrop(host: HTMLElement): () => void {
 
   return () => {
     disposed = true;
+    run += 1;
     resizeObserver.disconnect();
     removeEventListener("pointermove", onPointerMove);
     document.removeEventListener("visibilitychange", onVisibility);

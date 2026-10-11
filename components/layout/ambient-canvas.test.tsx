@@ -46,6 +46,7 @@ function fakeLoop(): BackdropLoop {
 }
 
 const media = { reducedMotion: false, coarse: false };
+let resize: (() => void) | null = null;
 
 /**
  * jsdom has no WebGL, no workers, no `matchMedia` and no `ResizeObserver`;
@@ -67,6 +68,9 @@ function browser({ worker }: { worker: boolean }) {
   vi.stubGlobal(
     "ResizeObserver",
     class {
+      constructor(callback: () => void) {
+        resize = callback;
+      }
       observe() {}
       disconnect() {}
     },
@@ -98,6 +102,7 @@ describe("AmbientCanvas", () => {
     createBackdrop.mockReset();
     media.reducedMotion = false;
     media.coarse = false;
+    resize = null;
   });
   afterEach(() => {
     vi.useRealTimers();
@@ -155,6 +160,40 @@ describe("AmbientCanvas", () => {
     act(() => createBackdrop.mock.calls[0][1].onLost());
     expect(loop.dispose).toHaveBeenCalled();
     expect(createBackdrop).toHaveBeenCalledTimes(1);
+    expect(container.querySelector("canvas")).toBeNull();
+  });
+
+  it("rebuilds at the compact density when the window crosses 768px", async () => {
+    browser({ worker: true });
+    vi.stubGlobal("innerWidth", 1440);
+    const { container } = await start();
+    const first = FakeWorker.instances[0];
+    expect(first.postMessage.mock.calls[0][0].budget.gridWidth).toBe(140);
+
+    vi.stubGlobal("innerWidth", 600);
+    act(() => resize?.());
+    const second = FakeWorker.instances[1];
+    expect(first.terminate).toHaveBeenCalled();
+    expect(second.postMessage.mock.calls[0][0].budget.gridWidth).toBe(70);
+    expect(container.querySelectorAll("canvas")).toHaveLength(1);
+
+    vi.stubGlobal("innerWidth", 700);
+    act(() => resize?.());
+    expect(FakeWorker.instances).toHaveLength(2);
+    expect(second.postMessage).toHaveBeenLastCalledWith(
+      expect.objectContaining({ type: "resize" }),
+      [],
+    );
+  });
+
+  it("does not rebuild a scene that lost its context", async () => {
+    browser({ worker: true });
+    vi.stubGlobal("innerWidth", 1440);
+    const { container } = await start();
+    FakeWorker.instances[0].reply({ type: "lost" });
+    vi.stubGlobal("innerWidth", 600);
+    act(() => resize?.());
+    expect(FakeWorker.instances).toHaveLength(1);
     expect(container.querySelector("canvas")).toBeNull();
   });
 

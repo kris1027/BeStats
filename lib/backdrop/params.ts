@@ -62,6 +62,21 @@ export function chooseBudget({
 }
 
 /**
+ * Whether two budgets draw the same scene, ignoring the pixel ratio. The
+ * geometry is uploaded to the GPU once, so a change here means rebuilding the
+ * scene, while a pixel ratio change is only a canvas resize.
+ */
+export function sameGeometry(a: BackdropBudget, b: BackdropBudget): boolean {
+  return (
+    a.gridWidth === b.gridWidth &&
+    a.gridDepth === b.gridDepth &&
+    a.spacing === b.spacing &&
+    a.panels === b.panels &&
+    a.dust === b.dust
+  );
+}
+
+/**
  * A small seeded generator (mulberry32). The scene's random placement is
  * seeded so tests can assert on it and every visit starts from the same
  * composition, rather than a different one per reload.
