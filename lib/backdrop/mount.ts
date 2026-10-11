@@ -83,12 +83,23 @@ export function mountBackdrop(host: HTMLElement): () => void {
     canvas.style.opacity = "1";
   };
 
-  const fail = () => {
+  const teardown = () => {
     controller?.dispose();
     controller = null;
     canvas?.remove();
     canvas = null;
+  };
+
+  // The worker could not draw at all: the main thread may still manage.
+  const fallBack = () => {
+    teardown();
     if (!disposed && !triedMainThread) void startMainThread();
+  };
+
+  // A context lost after drawing is not retried anywhere (decision 7): a GPU
+  // reset or memory pressure would only take the next one away too.
+  const giveUp = () => {
+    teardown();
   };
 
   async function startMainThread() {
@@ -98,16 +109,16 @@ export function mountBackdrop(host: HTMLElement): () => void {
     try {
       ({ createBackdrop } = await import("./backdrop"));
     } catch {
-      return fail();
+      return giveUp();
     }
     if (disposed) return;
     const loop = createBackdrop(target, {
       ...size(),
       ...state(),
       onReady: reveal,
-      onFailed: fail,
+      onLost: giveUp,
     });
-    if (!loop) return fail();
+    if (!loop) return giveUp();
     controller = {
       resize: (width, height) => loop.resize(width, height, budget.pixelRatio),
       pointer: loop.setPointer,
@@ -127,9 +138,10 @@ export function mountBackdrop(host: HTMLElement): () => void {
       worker.postMessage(message, transfer);
     worker.onmessage = (event: MessageEvent<FromWorker>) => {
       if (event.data.type === "ready") reveal();
-      else fail();
+      else if (event.data.type === "lost") giveUp();
+      else fallBack();
     };
-    worker.onerror = () => fail();
+    worker.onerror = () => fallBack();
     post({ type: "init", canvas: offscreen, ...size(), ...state() }, [
       offscreen,
     ]);
@@ -175,7 +187,7 @@ export function mountBackdrop(host: HTMLElement): () => void {
     try {
       startWorker();
     } catch {
-      fail();
+      fallBack();
     }
   } else {
     void startMainThread();
@@ -193,9 +205,6 @@ export function mountBackdrop(host: HTMLElement): () => void {
     document.removeEventListener("visibilitychange", onVisibility);
     motionQuery.removeEventListener("change", onMotion);
     if (pointerFrame !== null) cancelAnimationFrame(pointerFrame);
-    controller?.dispose();
-    controller = null;
-    canvas?.remove();
-    canvas = null;
+    teardown();
   };
 }

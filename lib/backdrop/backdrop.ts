@@ -10,7 +10,7 @@ export interface BackdropOptions {
   reducedMotion: boolean;
   visible: boolean;
   onReady: () => void;
-  onFailed: () => void;
+  onLost: () => void;
 }
 
 /**
@@ -40,8 +40,9 @@ function frameScheduler(): FrameScheduler {
  *
  * Returns null when nothing can be drawn: no WebGL2, or a shader that does not
  * link. A context lost later (a GPU reset, or the browser reclaiming memory
- * from a background tab) stops the loop and reports failure too; the page then
- * keeps its static vignette rather than trying to rebuild the scene.
+ * from a background tab) stops the loop and calls `onLost`, a separate signal
+ * because the page then keeps its static vignette rather than rebuilding the
+ * scene elsewhere (decision 7).
  */
 export function createBackdrop(
   canvas: HTMLCanvasElement | OffscreenCanvas,
@@ -69,7 +70,7 @@ export function createBackdrop(
     "webglcontextlost",
     () => {
       loop.dispose();
-      options.onFailed();
+      options.onLost();
     },
     { once: true },
   );

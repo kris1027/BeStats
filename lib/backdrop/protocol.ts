@@ -63,5 +63,14 @@ export const toWorkerSchema = z.discriminatedUnion("type", [
 
 export type ToWorker = z.infer<typeof toWorkerSchema>;
 
-/** The worker's replies: drawn its first frame, or cannot draw at all. */
-export type FromWorker = { type: "ready" } | { type: "failed" };
+/**
+ * The worker's replies. `failed` means it could never draw (Safari 16 has
+ * `OffscreenCanvas` without WebGL on it), so the page tries the main thread.
+ * `lost` means it drew and then lost its context, and the page gives up on
+ * the scene, as decision 7 asks: whatever took the GPU away would take it from
+ * the main thread too.
+ */
+export type FromWorker =
+  | { type: "ready" }
+  | { type: "failed" }
+  | { type: "lost" };

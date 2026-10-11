@@ -32,9 +32,9 @@ scope.onmessage = (event) => {
       loop = createBackdrop(message.canvas, {
         ...message,
         onReady: () => scope.postMessage({ type: "ready" }),
-        onFailed: () => {
+        onLost: () => {
           loop = null;
-          scope.postMessage({ type: "failed" });
+          scope.postMessage({ type: "lost" });
         },
       });
       if (!loop) scope.postMessage({ type: "failed" });
