@@ -58,7 +58,7 @@ describe("createScene", () => {
     const { canvas, calls } = fakeGl();
     const scene = createScene(canvas, budget, palette);
     scene?.resize(1440, 900, 1.5);
-    scene?.draw({ time: 1, pointerX: 0.2, pointerY: -0.1 });
+    scene?.draw({ time: 1 });
     expect(calls.drawElements).toBe(FULL_BUDGET.strips);
     expect(calls.drawArraysInstanced).toBe(1);
     expect(canvas.width).toBe(2160);
@@ -69,9 +69,9 @@ describe("createScene", () => {
     const { canvas, log } = fakeGl();
     const scene = createScene(canvas, budget, palette);
     scene?.resize(100, 100, 1);
-    scene?.draw({ time: 0, pointerX: 0, pointerY: 0 });
+    scene?.draw({ time: 0 });
     log.length = 0;
-    scene?.draw({ time: 0, pointerX: 0, pointerY: 0 });
+    scene?.draw({ time: 0 });
     expect(log.slice(0, 2)).toEqual(["depthMask:true", "clear"]);
   });
 

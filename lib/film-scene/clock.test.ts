@@ -84,11 +84,10 @@ describe("the scene clock", () => {
     expect(times.at(-1)).toBeCloseTo(0.032 * SCENE_SPEED);
   });
 
-  it("draws one still frame under reduced motion, centred", () => {
+  it("draws one still frame under reduced motion", () => {
     const h = harness({ reducedMotion: true });
-    h.clock.setPointer(0.5, 0.5);
     h.clock.resize(100, 100, 1);
-    expect(h.frames).toEqual([{ time: 0, pointerX: 0, pointerY: 0 }]);
+    expect(h.frames).toEqual([{ time: 0 }]);
     expect(h.pending()).toBeNull();
 
     // A resize clears the canvas, so the still frame is drawn again.
@@ -105,30 +104,6 @@ describe("the scene clock", () => {
     expect(h.pending()).toBeNull();
     h.clock.setReducedMotion(false);
     expect(h.pending()).not.toBeNull();
-  });
-
-  it("eases the camera toward the pointer", () => {
-    const h = harness();
-    h.clock.resize(100, 100, 1);
-    h.clock.setPointer(0.5, -0.5);
-    h.step(0);
-    for (let now = 16; now < 5000; now += 16) h.step(now);
-    const last = h.frames.at(-1);
-    expect(last?.pointerX).toBeCloseTo(0.5, 2);
-    expect(last?.pointerY).toBeCloseTo(-0.5, 2);
-  });
-
-  it("eases the same in real time at 60 and at 120 frames per second", () => {
-    const run = (fps: number) => {
-      const h = harness();
-      h.clock.resize(100, 100, 1);
-      h.clock.setPointer(0.5, 0);
-      // Half a second, with frames short enough to stay under the step cap.
-      for (let frame = 0; frame <= fps / 2; frame++)
-        h.step((frame * 1000) / fps);
-      return h.frames.at(-1)?.pointerX ?? 0;
-    };
-    expect(run(120)).toBeCloseTo(run(60), 3);
   });
 
   it("disposes the renderer once and never draws again", () => {

@@ -5,7 +5,6 @@ import { toWorkerSchema } from "./messages";
 describe("worker messages", () => {
   it.each([
     { type: "resize", width: 1440, height: 900, pixelRatio: 1.5 },
-    { type: "pointer", x: -0.5, y: 0.25 },
     { type: "visible", visible: false },
     { type: "motion", reduced: true },
   ])("accepts %o", (message) => {
@@ -13,7 +12,7 @@ describe("worker messages", () => {
   });
 
   it.each([
-    { type: "pointer", x: 0.8, y: 0 },
+    { type: "pointer", x: 0, y: 0 },
     { type: "resize", width: -1, height: 900, pixelRatio: 1 },
     { type: "resize", width: 1, height: 900, pixelRatio: 99 },
     { type: "visible", visible: "yes" },

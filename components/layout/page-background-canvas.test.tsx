@@ -33,7 +33,6 @@ class FakeWorker {
 function fakeClock(): SceneClock {
   return {
     resize: vi.fn(),
-    setPointer: vi.fn(),
     setVisible: vi.fn(),
     setReducedMotion: vi.fn(),
     dispose: vi.fn(),
@@ -192,28 +191,18 @@ describe("PageBackgroundCanvas", () => {
     expect(container.querySelector("canvas")).toBeNull();
   });
 
-  it.each([
-    { reducedMotion: false, sent: 1 },
-    { reducedMotion: true, sent: 0 },
-  ])(
-    "sends pointer moves only when motion is allowed (%o)",
-    async ({ reducedMotion, sent }) => {
-      media.reducedMotion = reducedMotion;
-      browser({ worker: true });
-      await start();
-      act(() => {
-        dispatchEvent(
-          new MouseEvent("pointermove", { clientX: 10, clientY: 10 }),
-        );
-      });
-      await settle();
-      const pointerMessages =
-        FakeWorker.instances[0].postMessage.mock.calls.filter(
-          ([message]) => message.type === "pointer",
-        );
-      expect(pointerMessages).toHaveLength(sent);
-    },
-  );
+  it("sends nothing to the scene when the pointer moves", async () => {
+    browser({ worker: true });
+    await start();
+    const before = FakeWorker.instances[0].postMessage.mock.calls.length;
+    act(() => {
+      dispatchEvent(
+        new MouseEvent("pointermove", { clientX: 10, clientY: 10 }),
+      );
+    });
+    await settle();
+    expect(FakeWorker.instances[0].postMessage.mock.calls).toHaveLength(before);
+  });
 
   it("draws the still frame for everyone when asked, as /showcase does", async () => {
     browser({ worker: true });

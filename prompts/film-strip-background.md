@@ -8,7 +8,7 @@ Replace the ambient background (prompts/ambient-background.md: point wave, drift
 - Three lit film strips coiled into helices, each with a sprocket rail, dark frame windows and punched holes, scrolling along their length while they spin and bob.
 - About 70 soft bokeh discs rising slowly.
 - A vignette.
-- A slight camera parallax that follows the pointer.
+- No cursor following: the design's pointer parallax was dropped at the owner's request (decision 13).
 
 It must cost the catalog pages nothing measurable in load time, interactivity or battery.
 
@@ -70,13 +70,13 @@ It must cost the catalog pages nothing measurable in load time, interactivity or
    - Below 768px, or with a coarse pointer: 2 strips at 240 ribbon segments and 35 bokeh. Otherwise: 3 strips at 400 segments and 70 bokeh.
    - The speed is fixed at the design's 0.25.
    - The loop pauses on `visibilitychange` and resumes without a time jump.
-   - Pointer moves are forwarded at most once per animation frame. The parallax lerp is made time based (`1 − 0.98^(60·dt)`), so it feels the same at 120 Hz.
    - A `ResizeObserver` re-places the strips, whose screen position depends on the aspect ratio. Crossing the compact breakpoint rebuilds the scene at the other budget.
    - Bokeh and strip layouts come from a seeded PRNG, so they are deterministic in tests and across remounts.
-9. **Reduced motion.** Under `prefers-reduced-motion: reduce`, one still frame is drawn and nothing moves, including the parallax. The setting is watched live.
+9. **Reduced motion.** Under `prefers-reduced-motion: reduce`, one still frame is drawn and nothing moves. The setting is watched live.
 10. **Failure is silent.** No WebGL2, a failed compile or link, or a lost context leaves the CSS gradient and vignette, with nothing thrown and nothing logged.
 11. **Kept from the app, not the design.** The font stays Inter, not Space Grotesk. The design's preview markup is not built.
 12. **Scope.** Every route through the root layout. The OG image route is untouched, and the title page hero still paints over the background where it draws.
+13. **No cursor following** (owner, 2026-10-11, after the first build). The design's pointer parallax is removed: the camera is fixed at (0, 0, 10), its view matrix is computed once, there is no `pointer` worker message, and no `pointermove` listener is added on any device.
 
 ## Expected files
 
@@ -94,7 +94,7 @@ It must cost the catalog pages nothing measurable in load time, interactivity or
 - `lib/film-scene/clock.ts`: the frame loop, covering reduced motion, the hidden tab pause and the time based lerp.
 - `lib/film-scene/run.ts` (added while building): scene plus clock on one canvas, with context loss reporting. It is the piece the worker and the main thread share.
 - `lib/film-scene/messages.ts` and `worker.ts`: the Zod protocol and the worker entry.
-- `lib/film-scene/start.ts`: creates the canvas, reads the tokens, chooses the budget, starts the worker or the main thread path, and wires visibility, pointer, resize and motion.
+- `lib/film-scene/start.ts`: creates the canvas, reads the tokens, chooses the budget, starts the worker or the main thread path, and wires visibility, resize and motion.
 
 **Changed:**
 - `app/globals.css`: remove the old tokens and utility; add the new tokens plus `@utility backdrop-gradient` and the new `@utility backdrop-vignette`.
@@ -112,7 +112,7 @@ It must cost the catalog pages nothing measurable in load time, interactivity or
 - `clock.test.ts`: reduced motion draws once, a hidden tab requests no frames and resumes without a jump, and the lerp does not depend on frame rate.
 - `scene.test.ts`: no WebGL2 or a failed link draws nothing, one draw call per strip plus one for the bokeh, depth writes back on before each clear, and dispose deletes its resources.
 - `run.test.ts`: a lost context is reported, but the scene's own dispose is not.
-- `page-background-canvas.test.tsx`: the worker and main thread paths, both kinds of failure and of loss, the breakpoint rebuild, pointer moves ignored under reduced motion, `still`, and unmount.
+- `page-background-canvas.test.tsx`: the worker and main thread paths, both kinds of failure and of loss, the breakpoint rebuild, pointer moves sending nothing, `still`, and unmount.
 - `page-background.test.tsx`: `aria-hidden`, `pointer-events-none`, and the gradient and vignette present before anything loads.
 
 ## Requirements and acceptance criteria
@@ -122,7 +122,8 @@ It must cost the catalog pages nothing measurable in load time, interactivity or
 - **AC-3:** Every colour comes from `globals.css` tokens, and `design-tokens-boundary.test.ts` passes.
 - **AC-4:** No new runtime dependency. The scene chunk and the worker are absent from every route's initial JavaScript, and load only after hydration.
 - **AC-5:** `/shows`, `/movies` and `/movies/[id]` keep the same prerender markers in the `pnpm build` route table as on `main`.
-- **AC-6:** With `prefers-reduced-motion: reduce`, exactly one frame is drawn and the pointer moves nothing.
+- **AC-6:** With `prefers-reduced-motion: reduce`, exactly one frame is drawn.
+- **AC-14:** Nothing in the scene follows the cursor or a touch. No pointer listener is added and the camera is fixed.
 - **AC-7:** A hidden tab requests no animation frames, and returning resumes without a jump.
 - **AC-8:** Without WebGL2, or after a context loss, the page shows the CSS gradient and vignette with no thrown error.
 - **AC-9:** The pixel ratio is at most 1.5, and the compact budget applies below 768px or with a coarse pointer.
@@ -146,7 +147,7 @@ It must cost the catalog pages nothing measurable in load time, interactivity or
 
 ## Manual test steps
 
-1. `git switch -c feat/film-strip-background`, then `pnpm dev`, and open `/shows`. The page paints in the teal gradient with the vignette, and within about two seconds the film strips and bokeh fade in. Moving the mouse tilts the view slightly.
+1. `git switch -c feat/film-strip-background`, then `pnpm dev`, and open `/shows`. The page paints in the teal gradient with the vignette, and within about two seconds the film strips and bokeh fade in. Moving the mouse changes nothing.
 2. Open a movie, `/watchlist`, `/sign-in`, `/privacy` and a bad URL (the 404). The background is behind each one.
 3. DevTools → Rendering → emulate `prefers-reduced-motion: reduce`. The scene freezes.
 4. Switch to another tab for 10 seconds and come back. The Performance panel shows no frames while hidden, and the animation resumes smoothly.

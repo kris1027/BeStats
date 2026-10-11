@@ -75,16 +75,17 @@ export const STRIPS: readonly StripLayout[] = [
 export const FILM_WIDTH = 1.1;
 export const FRAME_LENGTH = FILM_WIDTH * 1.4;
 
-/** The design's camera: a 50 degree lens at z = 10 looking at (0, 0, -3). */
+/**
+ * The design's camera: a 50 degree lens at z = 10 looking at (0, 0, -3). It
+ * stays still: the design's pointer parallax was dropped at the owner's
+ * request on 2026-10-11, so nothing in the scene follows the cursor.
+ */
 export const CAMERA = {
   fovY: (50 * Math.PI) / 180,
   near: 0.1,
   far: 100,
-  z: 10,
+  eye: [0, 0, 10] as const,
   target: [0, 0, -3] as const,
-  /** How far the pointer swings the eye, for a pointer at an edge. */
-  parallaxX: 0.6,
-  parallaxY: 0.4,
 } as const;
 
 type Vec3 = [number, number, number];
@@ -205,7 +206,7 @@ export function placeStrip(
   strip: StripLayout,
   aspect: number,
 ): { x: number; y: number } {
-  const distance = CAMERA.z - strip.z;
+  const distance = CAMERA.eye[2] - strip.z;
   const halfHeight = Math.tan(CAMERA.fovY / 2) * distance;
   return {
     x: strip.fx * halfHeight * aspect,

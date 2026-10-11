@@ -44,9 +44,6 @@ scope.onmessage = (event) => {
     case "resize":
       clock?.resize(message.width, message.height, message.pixelRatio);
       return;
-    case "pointer":
-      clock?.setPointer(message.x, message.y);
-      return;
     case "visible":
       clock?.setVisible(message.visible);
       return;

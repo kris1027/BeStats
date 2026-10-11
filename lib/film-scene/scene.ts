@@ -17,13 +17,10 @@ import {
   STRIP_VERTEX,
 } from "./shaders";
 
-/** What changes from frame to frame: the clock and the smoothed pointer. */
+/** What changes from frame to frame: only the clock. */
 export interface FrameState {
   /** Scene seconds: real seconds times the design's speed. */
   time: number;
-  /** The pointer from -0.5 to 0.5 across and down the window. */
-  pointerX: number;
-  pointerY: number;
 }
 
 /**
@@ -253,6 +250,8 @@ export function createScene(
   gl.blendEquation(gl.MAX);
 
   let projection = perspective(CAMERA.fovY, 1, CAMERA.near, CAMERA.far);
+  // The camera never moves, so its view is worked out once.
+  const view = lookAt(CAMERA.eye, CAMERA.target);
 
   return {
     resize(width, height, ratio) {
@@ -266,13 +265,7 @@ export function createScene(
       }
     },
 
-    draw({ time, pointerX, pointerY }) {
-      const eye = [
-        pointerX * CAMERA.parallaxX,
-        -pointerY * CAMERA.parallaxY,
-        CAMERA.z,
-      ] as const;
-      const view = lookAt(eye, CAMERA.target);
+    draw({ time }) {
       // The depth mask goes back on before the clear: the bokeh pass turned
       // it off, and a clear with it off leaves last frame's depth behind,
       // which would hide this frame's strips wherever they did not move.
@@ -284,7 +277,7 @@ export function createScene(
       activate(gl, film);
       gl.uniformMatrix4fv(filmU.uView, false, view);
       gl.uniformMatrix4fv(filmU.uProj, false, projection);
-      gl.uniform3fv(filmU.uEye, eye);
+      gl.uniform3fv(filmU.uEye, CAMERA.eye);
       strips.forEach((strip, i) => {
         const { layout } = strip;
         const model = stripModel({

@@ -12,7 +12,6 @@ export interface FrameScheduler {
  */
 export interface SceneClock {
   resize(width: number, height: number, pixelRatio: number): void;
-  setPointer(x: number, y: number): void;
   setVisible(visible: boolean): void;
   setReducedMotion(reduced: boolean): void;
   dispose(): void;
@@ -24,21 +23,14 @@ export const MAX_STEP_SECONDS = 0.05;
 /** The design's `speed` prop: scene seconds per real second. */
 export const SCENE_SPEED = 0.25;
 
-/** The design's pointer easing, 2% per frame at 60 frames per second. */
-export const POINTER_EASE = 0.02;
-
 /**
  * The animation clock (prompts/film-strip-background.md, decisions 8 and 9).
  *
  * It runs only while the page is visible and motion is allowed. A hidden tab
  * requests no frames at all, and coming back resumes from where the clock
  * stopped rather than jumping by the time spent away. Under reduced motion it
- * draws a single still frame with the camera centred, and redraws only when
- * the size changes, because a permanently moving page is what that setting
- * exists to prevent (the `skeleton-pulse` precedent in `globals.css`).
- *
- * The pointer eases in real time rather than per frame, so the parallax
- * feels the same on a 120 Hz screen as on a 60 Hz one.
+ * draws a single still frame, and redraws only when the size changes,
+ * because a permanently moving page is what that setting exists to prevent (the `skeleton-pulse` precedent in `globals.css`).
  *
  * `onFirstFrame` fires once, after the first draw, so the canvas can fade in
  * over a real picture rather than an empty one.
@@ -62,10 +54,9 @@ export function createClock({
   let sized = false;
   let disposed = false;
   let firstDrawn = false;
-  const pointer = { x: 0, y: 0, targetX: 0, targetY: 0 };
 
   const draw = () => {
-    renderer.draw({ time, pointerX: pointer.x, pointerY: pointer.y });
+    renderer.draw({ time });
     if (!firstDrawn) {
       firstDrawn = true;
       onFirstFrame?.();
@@ -78,9 +69,6 @@ export function createClock({
       last === null ? 0 : Math.min((now - last) / 1000, MAX_STEP_SECONDS);
     last = now;
     time += step * SCENE_SPEED;
-    const ease = 1 - (1 - POINTER_EASE) ** (step * 60);
-    pointer.x += (pointer.targetX - pointer.x) * ease;
-    pointer.y += (pointer.targetY - pointer.y) * ease;
     draw();
     handle = scheduler.request(tick);
   };
@@ -99,10 +87,7 @@ export function createClock({
       return;
     }
     stop();
-    if (sized && visible && reducedMotion && !disposed) {
-      pointer.x = pointer.y = pointer.targetX = pointer.targetY = 0;
-      draw();
-    }
+    if (sized && visible && reducedMotion && !disposed) draw();
   };
 
   return {
@@ -113,10 +98,6 @@ export function createClock({
       // A resize clears the drawing buffer, so a still frame is redrawn now;
       // a running clock repaints on its next tick anyway.
       update();
-    },
-    setPointer(x, y) {
-      pointer.targetX = x;
-      pointer.targetY = y;
     },
     setVisible(next) {
       visible = next;

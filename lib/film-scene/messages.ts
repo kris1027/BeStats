@@ -76,11 +76,6 @@ export const toWorkerSchema = z.discriminatedUnion("type", [
     height: size,
     pixelRatio,
   }),
-  z.object({
-    type: z.literal("pointer"),
-    x: z.number().check(z.gte(-0.5), z.lte(0.5)),
-    y: z.number().check(z.gte(-0.5), z.lte(0.5)),
-  }),
   z.object({ type: z.literal("visible"), visible: z.boolean() }),
   z.object({ type: z.literal("motion"), reduced: z.boolean() }),
 ]);

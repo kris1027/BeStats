@@ -5,7 +5,6 @@ import { readScenePalette } from "./palette";
 /** The page side of a running scene, whichever thread draws it. */
 interface Controller {
   resize(width: number, height: number): void;
-  pointer(x: number, y: number): void;
   visible(visible: boolean): void;
   motion(reduced: boolean): void;
   dispose(): void;
@@ -20,8 +19,6 @@ function supportsWorkerCanvas(): boolean {
     typeof HTMLCanvasElement.prototype.transferControlToOffscreen === "function"
   );
 }
-
-const clampHalf = (value: number) => Math.max(-0.5, Math.min(0.5, value));
 
 /**
  * Starts the film strip scene inside `host` and returns its cleanup
@@ -42,6 +39,9 @@ const clampHalf = (value: number) => Math.max(-0.5, Math.min(0.5, value));
  * breakpoint rebuilds the scene at the other density, because its geometry is
  * uploaded once. A resize within one budget only resizes the canvas, which
  * also places the strips again for the new shape.
+ *
+ * Nothing follows the pointer: the design's cursor parallax was dropped at
+ * the owner's request, so no pointer listener is added at all.
  *
  * The canvas stays transparent until the first frame is drawn, then fades in,
  * except under reduced motion, where it appears without a transition.
@@ -147,7 +147,6 @@ export function startFilmScene(
     if (!clock) return giveUp();
     controller = {
       resize: (width, height) => clock.resize(width, height, budget.pixelRatio),
-      pointer: clock.setPointer,
       visible: clock.setVisible,
       motion: clock.setReducedMotion,
       dispose: clock.dispose,
@@ -180,7 +179,6 @@ export function startFilmScene(
           height,
           pixelRatio: budget.pixelRatio,
         }),
-      pointer: (x, y) => post({ type: "pointer", x, y }),
       visible: (visible) => post({ type: "visible", visible }),
       motion: (reduced) => post({ type: "motion", reduced }),
       dispose: () => worker.terminate(),
@@ -216,29 +214,12 @@ export function startFilmScene(
     controller?.resize(width, height);
   });
 
-  // One message per frame at most: a pointer fires far more often than the
-  // scene redraws, and each message would wake the worker for nothing.
-  let pointerFrame: number | null = null;
-  let pointerX = 0;
-  let pointerY = 0;
-  const onPointerMove = (event: PointerEvent) => {
-    // The still frame ignores the pointer (AC-6), so nothing is sent.
-    if (reducedMotion()) return;
-    pointerX = clampHalf(event.clientX / innerWidth - 0.5);
-    pointerY = clampHalf(event.clientY / innerHeight - 0.5);
-    if (pointerFrame !== null) return;
-    pointerFrame = requestAnimationFrame(() => {
-      pointerFrame = null;
-      controller?.pointer(pointerX, pointerY);
-    });
-  };
   const onVisibility = () => controller?.visible(!document.hidden);
   const onMotion = () => controller?.motion(reducedMotion());
 
   start();
 
   resizeObserver.observe(host);
-  addEventListener("pointermove", onPointerMove, { passive: true });
   document.addEventListener("visibilitychange", onVisibility);
   motionQuery.addEventListener("change", onMotion);
 
@@ -246,10 +227,8 @@ export function startFilmScene(
     disposed = true;
     run += 1;
     resizeObserver.disconnect();
-    removeEventListener("pointermove", onPointerMove);
     document.removeEventListener("visibilitychange", onVisibility);
     motionQuery.removeEventListener("change", onMotion);
-    if (pointerFrame !== null) cancelAnimationFrame(pointerFrame);
     teardown();
   };
 }

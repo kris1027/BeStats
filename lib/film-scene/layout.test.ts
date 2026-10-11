@@ -67,7 +67,7 @@ describe("ribbon", () => {
 
 describe("placeStrip", () => {
   it("keeps the same fraction of the frustum on any screen shape", () => {
-    const halfHeight = Math.tan(CAMERA.fovY / 2) * (CAMERA.z - first.z);
+    const halfHeight = Math.tan(CAMERA.fovY / 2) * (CAMERA.eye[2] - first.z);
     for (const aspect of [16 / 9, 9 / 16]) {
       const { x, y } = placeStrip(first, aspect);
       expect(x / (halfHeight * aspect)).toBeCloseTo(first.fx);
