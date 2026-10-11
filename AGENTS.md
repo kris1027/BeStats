@@ -146,7 +146,7 @@ Fetch or cache catalog metadata as needed. Do not import the entire TMDB catalog
 
 ### User account
 
-Supabase Auth owns identity. Add a separate profile table only if actual UI requirements need fields beyond the authentication account. Do not create public profile routes.
+Supabase Auth owns identity. Add a separate profile table only if actual UI requirements need fields beyond the authentication account. Do not create public profile routes. The one such field is the username ([prompts/account-username.md](prompts/account-username.md)): `profiles` holds it, unique ignoring case and changeable once per rolling week, both enforced in the database. Only its owner can see it. `public.username_available(text)` is the one `security definer` function and the one `anon` can call, a named exception in `140-security-sweep`.
 
 ### Movie state
 
