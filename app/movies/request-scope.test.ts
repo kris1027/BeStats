@@ -304,12 +304,15 @@ describe("private tracking state never enters a cache scope (spec 0007, AC-19; s
     const show = readFileSync("app/shows/[id]/page.tsx", "utf8");
     expect(show).toMatch(/<Suspense fallback=\{null\}>\s*<ShowTrackingSlot/);
     expect(show).toMatch(/<Suspense fallback=\{null\}>\s*<ShowProgressSlot/);
-    expect(readFileSync("app/shows/page.tsx", "utf8")).toMatch(
-      /<Suspense fallback=\{null\}>\s*<ShowCardBookmark/,
+    const shows = readFileSync("app/shows/page.tsx", "utf8");
+    expect(shows).toMatch(/<Suspense fallback=\{null\}>\s*<ShowCardControls/);
+    expect(shows).toMatch(/<Suspense fallback=\{null\}>\s*<ShowCardMeta/);
+    expect(shows).toMatch(
+      /<Suspense\s+fallback=\{<TmdbRatingBadge[^}]*\} \/>\}\s*>\s*<ShowCardBadge/,
     );
-    expect(
-      readFileSync("components/search/search-results.tsx", "utf8"),
-    ).toMatch(/<Suspense fallback=\{null\}>\s*<ShowCardBookmark/);
+    const search = readFileSync("components/search/search-results.tsx", "utf8");
+    expect(search).toMatch(/<Suspense fallback=\{null\}>\s*<ShowCardControls/);
+    expect(search).toMatch(/<Suspense fallback=\{year\}>\s*<ShowCardMeta/);
     expect(
       readFileSync("components/library/watchlist-show-card.tsx", "utf8"),
     ).toMatch(/<Suspense fallback=\{null\}>\s*<NextEpisodeName/);

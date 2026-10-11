@@ -8,7 +8,11 @@ import { TmdbRatingBadge } from "@/components/rating-badges";
 import { RetryLink } from "@/components/retry-link";
 import { PaginationSkeleton, PosterCardSkeleton } from "@/components/skeleton";
 import { StatePanel } from "@/components/state-panel";
-import { ShowCardBookmark } from "@/components/tracking/show-card-bookmark";
+import {
+  ShowCardBadge,
+  ShowCardControls,
+  ShowCardMeta,
+} from "@/components/tracking/show-card-slots";
 import { ButtonLink } from "@/components/ui/button";
 import { lastReachablePage, parsePageParam } from "@/lib/catalog/pages";
 import { landingPageMetadata } from "@/lib/landing-metadata";
@@ -119,10 +123,29 @@ async function PopularShows({
               title={show.name}
               posterUrl={show.posterUrl}
               href={`/shows/${show.id}`}
-              badge={<TmdbRatingBadge value={show.tmdbRating} />}
+              badge={
+                <Suspense
+                  fallback={<TmdbRatingBadge value={show.tmdbRating} />}
+                >
+                  <ShowCardBadge
+                    showId={show.id}
+                    tmdbRating={show.tmdbRating}
+                    gridShowIds={gridShowIds}
+                  />
+                </Suspense>
+              }
+              meta={
+                <Suspense fallback={null}>
+                  <ShowCardMeta
+                    showId={show.id}
+                    base={null}
+                    gridShowIds={gridShowIds}
+                  />
+                </Suspense>
+              }
               controls={
                 <Suspense fallback={null}>
-                  <ShowCardBookmark
+                  <ShowCardControls
                     showId={show.id}
                     name={show.name}
                     gridShowIds={gridShowIds}

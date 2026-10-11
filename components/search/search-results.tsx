@@ -15,7 +15,11 @@ import {
   MovieCardBadge,
   MovieCardControls,
 } from "@/components/tracking/movie-card-slots";
-import { ShowCardBookmark } from "@/components/tracking/show-card-bookmark";
+import {
+  ShowCardBadge,
+  ShowCardControls,
+  ShowCardMeta,
+} from "@/components/tracking/show-card-slots";
 import { ButtonLink } from "@/components/ui/button";
 import { parseMediaTypeParam, typedHref } from "@/lib/catalog/media-type";
 import { lastReachablePage } from "@/lib/catalog/pages";
@@ -215,13 +219,26 @@ function ResultGrid({
   return (
     <PosterGrid aria-label="Search results">
       {results.map((result, index) => {
+        const year = result.year === null ? null : String(result.year);
         return (
           <li key={result.id}>
             <PosterCard
               title={result.title}
               posterUrl={result.posterUrl}
               href={titleHref(params.type, result.id)}
-              meta={result.year ?? undefined}
+              meta={
+                params.type === "movie" ? (
+                  (result.year ?? undefined)
+                ) : (
+                  <Suspense fallback={year}>
+                    <ShowCardMeta
+                      showId={result.id}
+                      base={year}
+                      gridShowIds={gridIds}
+                    />
+                  </Suspense>
+                )
+              }
               badge={
                 <Suspense
                   fallback={<TmdbRatingBadge value={result.tmdbRating} />}
@@ -234,7 +251,11 @@ function ResultGrid({
                       gridMovieIds={gridIds}
                     />
                   ) : (
-                    <TmdbRatingBadge value={result.tmdbRating} />
+                    <ShowCardBadge
+                      showId={result.id}
+                      tmdbRating={result.tmdbRating}
+                      gridShowIds={gridIds}
+                    />
                   )}
                 </Suspense>
               }
@@ -251,7 +272,7 @@ function ResultGrid({
                   </Suspense>
                 ) : (
                   <Suspense fallback={null}>
-                    <ShowCardBookmark
+                    <ShowCardControls
                       showId={result.id}
                       name={result.title}
                       gridShowIds={gridIds}
