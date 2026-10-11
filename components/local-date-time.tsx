@@ -2,6 +2,14 @@
 
 import { useEffect, useState } from "react";
 
+/** Month, day and time: enough to say when a lock ends, no year or seconds. */
+const FORMAT: Intl.DateTimeFormatOptions = {
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+};
+
 /**
  * A moment shown in the viewer's own time zone (prompts/account-username.md,
  * Q13).
@@ -11,13 +19,6 @@ import { useEffect, useState } from "react";
  * labelled as such, and the browser replaces it with local time after mount.
  * The `<time>` element carries the exact instant either way.
  */
-const FORMAT: Intl.DateTimeFormatOptions = {
-  month: "short",
-  day: "numeric",
-  hour: "numeric",
-  minute: "2-digit",
-};
-
 function LocalDateTime({ iso }: { iso: string }) {
   const [local, setLocal] = useState<string | null>(null);
 
