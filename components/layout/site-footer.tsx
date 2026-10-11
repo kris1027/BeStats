@@ -10,8 +10,9 @@ import { IconKey } from "./icon-key";
 /**
  * The quiet footer under every route: the icon key to the card marks
  * (`IconKey`), then TMDB's logo and the notice its API terms require, then
- * the two legal pages and the credit line (spec 0017, AC-1 to AC-5). The credit names the operator by handle, linked to their GitHub
- * profile, the same way the legal pages do.
+ * the two legal pages and the credit line (spec 0017, AC-1 to AC-5). The
+ * credit names the operator by handle, linked to their GitHub profile, the
+ * same way the legal pages do.
  *
  * A Server Component that reads no cookie, header or session, so it sits in
  * every route's prerendered shell (`app/layout-purity.test.ts` holds it to
