@@ -23,7 +23,7 @@ import type { LibraryList } from "./types";
 import { WatchlistShowCard } from "./watchlist-show-card";
 
 /** Posters that load eagerly: one full row at the widest grid. */
-const EAGER_POSTERS = 6;
+const EAGER_POSTERS = 4;
 
 /**
  * A show tab (AC-9, AC-11, AC-12, AC-15 to AC-18): Watchlist with Mark

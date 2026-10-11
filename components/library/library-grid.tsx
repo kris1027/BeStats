@@ -42,7 +42,7 @@ import {
  * Cards whose posters load eagerly: one full row at the widest grid, as on
  * `/movies`.
  */
-const EAGER_POSTERS = 6;
+const EAGER_POSTERS = 4;
 
 /**
  * The movie grid on `/watchlist`, `/upcoming` and `/watched`, and everything

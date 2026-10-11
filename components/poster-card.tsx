@@ -10,11 +10,10 @@ import type * as React from "react";
  * Kept next to the card rather than in the grid because `next/image` needs it
  * on the image, and kept as one constant because a grid change that misses it
  * silently ships the wrong image width to every screen (spec 0004, AC-8).
- * Mirrors the AC-9 column counts: 2 at base, 3 at sm, 4 at md, 5 at lg, 6 at
- * xl.
+ * Mirrors the column counts: 2 at base, 4 from md, and a fixed width once the
+ * grid reaches its 1200px cap.
  */
-const POSTER_SIZES =
-  "(min-width: 1280px) 16vw, (min-width: 1024px) 20vw, (min-width: 768px) 25vw, (min-width: 640px) 33vw, 50vw";
+const POSTER_SIZES = "(min-width: 1232px) 288px, (min-width: 768px) 25vw, 50vw";
 
 /**
  * The single most repeated element in the UI: a 2:3 poster inside a rounded

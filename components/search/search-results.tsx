@@ -40,7 +40,7 @@ type RawParams = Record<string, string | string[] | undefined>;
 const PAGE_SIZE = 20;
 
 /** One full row at the widest grid loads its posters eagerly. */
-const EAGER_POSTERS = 6;
+const EAGER_POSTERS = 4;
 
 /**
  * The results half of `/search`, for one URL (spec 0010, AC-11 to AC-19).

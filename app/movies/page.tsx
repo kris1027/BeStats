@@ -18,10 +18,10 @@ import { discoverMovies, TmdbError } from "@/lib/tmdb";
 const PAGE_SIZE = 20;
 
 /**
- * Cards whose posters load eagerly: one full row at the widest grid (6
- * columns at `xl`), so the first row is never lazy at any width (AC-1).
+ * Cards whose posters load eagerly: one full row at the widest grid (4
+ * columns from `md`), so the first row is never lazy at any width (AC-1).
  */
-const EAGER_POSTERS = 6;
+const EAGER_POSTERS = 4;
 
 /** One URL per page: page 1 is the bare path. */
 function pageHref(page: number): string {
