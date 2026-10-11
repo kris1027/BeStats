@@ -67,8 +67,10 @@ begin
     return new;
   end if;
 
+  -- `BS002` is the app's own code, like `BS001` in `rate_movie`, so the
+  -- action can recognise the lock without reading the message.
   if old.username_changed_at > now() - interval '7 days' then
-    raise exception 'username_locked' using errcode = 'P0001';
+    raise exception 'username_locked' using errcode = 'BS002';
   end if;
 
   new.username_changed_at := now();

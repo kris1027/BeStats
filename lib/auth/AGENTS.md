@@ -9,7 +9,7 @@ Authentication rules shared by every auth surface: the forms in `app/(auth)/`, `
 - `next-path.ts`: `isSafeNextPath()` / `safeNextPath()`. Call it at every read of a `next` value (query string, hidden field, header, email link), not once per journey.
 - `action-state.ts`: `AuthActionState`, the shape every auth Server Action returns.
 - `messages.ts`: every message an auth surface shows, keyed by `AUTH_OUTCOME`.
-- `supabase-error.ts`: `classifyAuthError()`, the only code that touches a raw Supabase error. It matches on `error.code` (and `reasons` for weak passwords), never message text.
+- `supabase-error.ts`: `classifyAuthError()` and `classifyProfileWriteError()`, the only code that touches a raw Supabase error. They match on `error.code` (and `reasons` for weak passwords), never message text; the weekly username lock raises its own SQLSTATE, `BS002`, for that reason.
 - `log.ts`: `logAuthEvent()`, the only way an auth path writes to the log.
 - `schemas.ts`: the email and password Zod rules. `MINIMUM_PASSWORD_LENGTH` must equal `minimum_password_length` in `supabase/config.toml`.
 - `identity.ts`: pure display derivations (name, avatar letter). The username, when there is one, is passed in; otherwise the email name is used.

@@ -7,7 +7,7 @@ import {
 import { describe, expect, it } from "vitest";
 
 import { AUTH_OUTCOME } from "./messages";
-import { classifyAuthError } from "./supabase-error";
+import { classifyAuthError, classifyProfileWriteError } from "./supabase-error";
 
 describe("classifyAuthError", () => {
   it("treats a revoked session as expired, in the form the SDK actually returns", () => {
@@ -107,5 +107,27 @@ describe("classifyAuthError", () => {
         ),
       ),
     ).toBe(AUTH_OUTCOME.passwordTooShort);
+  });
+});
+
+describe("classifyProfileWriteError", () => {
+  it.each([
+    ["the unique index", "23505", AUTH_OUTCOME.usernameTaken],
+    ["a reserved name check", "23514", AUTH_OUTCOME.usernameTaken],
+    ["the weekly lock", "BS002", AUTH_OUTCOME.usernameLocked],
+    ["anything else", "08006", AUTH_OUTCOME.unexpected],
+  ])("maps a refusal from %s", (_, code, outcome) => {
+    expect(classifyProfileWriteError({ code })).toBe(outcome);
+  });
+
+  it("ignores the message, so only the code decides", () => {
+    expect(
+      classifyProfileWriteError({
+        code: "P0001",
+        message: "username_locked",
+      } as {
+        code: string;
+      }),
+    ).toBe(AUTH_OUTCOME.unexpected);
   });
 });

@@ -108,11 +108,11 @@ select is(
 -- The weekly lock (R2)
 select throws_ok(
   $$update public.profiles set username = 'Ay_Two' where user_id = '11111111-1111-1111-1111-111111111111'$$,
-  'P0001', 'username_locked', 'a change straight after the first set is locked'
+  'BS002', 'username_locked', 'a change straight after the first set is locked'
 );
 select throws_ok(
   $$update public.profiles set username = 'ay_one' where user_id = '11111111-1111-1111-1111-111111111111'$$,
-  'P0001', 'username_locked', 'a change of case counts as a change'
+  'BS002', 'username_locked', 'a change of case counts as a change'
 );
 select lives_ok(
   $$update public.profiles set username = 'Ay_One', username_changed_at = now() - interval '1 year'
@@ -145,7 +145,7 @@ select is(
 );
 select throws_ok(
   $$update public.profiles set username = 'Ay_Three' where user_id = '11111111-1111-1111-1111-111111111111'$$,
-  'P0001', 'username_locked', 'so a second change is locked again'
+  'BS002', 'username_locked', 'so a second change is locked again'
 );
 select is(public.username_available('ay_one'), true, 'the old name is free again');
 

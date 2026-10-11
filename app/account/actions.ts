@@ -18,7 +18,10 @@ import {
 } from "@/lib/auth/messages";
 import { getOwnProfile } from "@/lib/auth/profile";
 import { changePasswordSchema, changeUsernameSchema } from "@/lib/auth/schemas";
-import { classifyAuthError } from "@/lib/auth/supabase-error";
+import {
+  classifyAuthError,
+  classifyProfileWriteError,
+} from "@/lib/auth/supabase-error";
 import { getOptionalUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
 
@@ -168,7 +171,7 @@ export async function changeUsernameAction(
     );
 
   if (error) {
-    const outcome = usernameWriteOutcome(error);
+    const outcome = classifyProfileWriteError(error);
     logAuthEvent(AUTH_EVENT.changeUsername, "refused", outcome);
     return keepUsername(
       failure(
@@ -181,20 +184,4 @@ export async function changeUsernameAction(
 
   refresh();
   return success(USERNAME_UPDATED_MESSAGE);
-}
-
-/**
- * Maps a refused `profiles` write to what the person is told. Matches on the
- * SQLSTATE and the trigger's own message, never on free text Postgres writes.
- */
-function usernameWriteOutcome(error: { code?: string; message?: string }) {
-  // 23505: the unique index. 23514: the reserved list (the format is caught
-  // by Zod first, so a check failure here is a reserved name in practice).
-  if (error.code === "23505" || error.code === "23514") {
-    return AUTH_OUTCOME.usernameTaken;
-  }
-  if (error.code === "P0001" && error.message === "username_locked") {
-    return AUTH_OUTCOME.usernameLocked;
-  }
-  return AUTH_OUTCOME.unexpected;
 }

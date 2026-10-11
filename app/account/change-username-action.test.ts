@@ -106,11 +106,7 @@ describe("changeUsernameAction", () => {
   it.each([
     ["the unique index", { code: "23505" }, AUTH_OUTCOME.usernameTaken],
     ["a check", { code: "23514" }, AUTH_OUTCOME.usernameTaken],
-    [
-      "the weekly lock",
-      { code: "P0001", message: "username_locked" },
-      AUTH_OUTCOME.usernameLocked,
-    ],
+    ["the weekly lock", { code: "BS002" }, AUTH_OUTCOME.usernameLocked],
     ["anything else", { code: "08006" }, AUTH_OUTCOME.unexpected],
   ])("reports a refusal from %s", async (_, error, outcome) => {
     upsert.mockResolvedValue({ error });

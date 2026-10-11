@@ -27,7 +27,10 @@ import {
   signInSchema,
   signUpSchema,
 } from "@/lib/auth/schemas";
-import { classifyAuthError } from "@/lib/auth/supabase-error";
+import {
+  classifyAuthError,
+  classifyProfileWriteError,
+} from "@/lib/auth/supabase-error";
 import { getAuthEmailDelivery, getPublicEnv } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 
@@ -126,7 +129,7 @@ async function claimUsername(
 
   if (!error) return nextPath;
 
-  if (error.code === "23505") {
+  if (classifyProfileWriteError(error) === AUTH_OUTCOME.usernameTaken) {
     logAuthEvent(AUTH_EVENT.signUp, "refused", AUTH_OUTCOME.usernameTaken);
     return `/account?notice=${ACCOUNT_NOTICE.usernameTaken}`;
   }
