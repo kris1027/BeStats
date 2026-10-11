@@ -35,8 +35,8 @@ export interface ScenePalette {
 
 /** The token each colour is read from, all in `app/globals.css`. */
 export const SCENE_TOKENS = {
-  glow: "--color-backdrop-glow",
-  fog: "--color-backdrop-deep",
+  glow: "--color-page-glow",
+  fog: "--color-page-deep",
   filmBase: "--color-film-base",
   filmWindow: "--color-film-window",
   filmShadow: "--color-film-shadow",

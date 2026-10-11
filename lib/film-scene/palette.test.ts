@@ -44,7 +44,7 @@ describe("peakLuminance", () => {
   });
 
   it("leaves room above the gradient's brightest colour for the bokeh", () => {
-    expect(relativeLuminance(declared("--color-backdrop-glow"))).toBeLessThan(
+    expect(relativeLuminance(declared("--color-page-glow"))).toBeLessThan(
       peakLuminance(muted),
     );
   });

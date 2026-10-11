@@ -19,10 +19,10 @@ export function PageBackground() {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-lvh select-none backdrop-gradient"
+      className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-lvh select-none page-gradient"
     >
       <PageBackgroundCanvas />
-      <div className="absolute inset-0 backdrop-vignette" />
+      <div className="absolute inset-0 page-vignette" />
     </div>
   );
 }

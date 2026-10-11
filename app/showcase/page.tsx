@@ -431,10 +431,10 @@ export default function ShowcasePage() {
         note="Behind every page, this one included: three coiled film strips and rising bokeh over a teal gradient, under the vignette. The gradient and vignette are the first paint; the scene fades in once the browser is idle, draws in a worker where it can, pauses in a hidden tab, and freezes into one still frame under reduced motion. Without WebGL2 only the gradient and vignette show. Every pixel stays dark enough for muted text to keep 4.5:1 (prompts/film-strip-background.md)."
       >
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <Swatch name="--color-backdrop-glow" className="bg-backdrop-glow" />
-          <Swatch name="--color-backdrop-mid" className="bg-backdrop-mid" />
-          <Swatch name="--color-backdrop-deep" className="bg-backdrop-deep" />
-          <Swatch name="--color-backdrop-abyss" className="bg-backdrop-abyss" />
+          <Swatch name="--color-page-glow" className="bg-page-glow" />
+          <Swatch name="--color-page-mid" className="bg-page-mid" />
+          <Swatch name="--color-page-deep" className="bg-page-deep" />
+          <Swatch name="--color-page-abyss" className="bg-page-abyss" />
           <Swatch name="--color-film-base" className="bg-film-base" />
           <Swatch name="--color-film-window" className="bg-film-window" />
           <Swatch name="--color-film-shadow" className="bg-film-shadow" />
@@ -451,17 +451,17 @@ export default function ShowcasePage() {
         </div>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-2">
-            <div className="relative h-64 overflow-hidden rounded-panel border border-border backdrop-gradient">
-              <div className="absolute inset-0 backdrop-vignette" />
+            <div className="relative h-64 overflow-hidden rounded-panel border border-border page-gradient">
+              <div className="absolute inset-0 page-vignette" />
             </div>
             <code className="text-xs text-muted-foreground">
-              backdrop-gradient and backdrop-vignette, the first paint
+              page-gradient and page-vignette, the first paint
             </code>
           </div>
           <div className="flex flex-col gap-2">
-            <div className="relative h-64 overflow-hidden rounded-panel border border-border backdrop-gradient">
+            <div className="relative h-64 overflow-hidden rounded-panel border border-border page-gradient">
               <PageBackgroundCanvas still />
-              <div className="absolute inset-0 backdrop-vignette" />
+              <div className="absolute inset-0 page-vignette" />
             </div>
             <code className="text-xs text-muted-foreground">
               the reduced motion still frame

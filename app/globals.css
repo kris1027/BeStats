@@ -80,15 +80,16 @@
   /*
    * The page background (prompts/film-strip-background.md): the teal
    * gradient's four stops, the film strip's frame, the three lights it is lit
-   * by and the four bokeh tints, all the design file's own values. Backdrop
-   * only: no surface or text may use them. The scene reads them through
-   * `getComputedStyle`, never writing one in a shader, so this file stays the
-   * one home of every colour.
+   * by and the four bokeh tints, all the design file's own values. Page
+   * background only: no surface or text may use them. "Backdrop" is kept for
+   * a title's TMDB artwork (`backdrop-scrim`), so the two never share a
+   * name. The scene reads them through `getComputedStyle`, never writing one
+   * in a shader, so this file stays the one home of every colour.
    */
-  --color-backdrop-glow: #04303a;
-  --color-backdrop-mid: #021820;
-  --color-backdrop-deep: #010a10;
-  --color-backdrop-abyss: #000306;
+  --color-page-glow: #04303a;
+  --color-page-mid: #021820;
+  --color-page-deep: #010a10;
+  --color-page-abyss: #000306;
   --color-film-base: #0e6a80;
   --color-film-window: #05303a;
   --color-film-shadow: #01090c;
@@ -534,13 +535,13 @@
  * so it is the first paint, and with the vignette the whole background where
  * WebGL2 is missing.
  */
-@utility backdrop-gradient {
+@utility page-gradient {
   background: radial-gradient(
     ellipse at 30% 5%,
-    var(--color-backdrop-glow) 0%,
-    var(--color-backdrop-mid) 45%,
-    var(--color-backdrop-deep) 80%,
-    var(--color-backdrop-abyss) 100%
+    var(--color-page-glow) 0%,
+    var(--color-page-mid) 45%,
+    var(--color-page-deep) 80%,
+    var(--color-page-abyss) 100%
   );
 }
 
@@ -550,19 +551,19 @@
  * the lower half. It only ever darkens, so the scene's contrast cap, which
  * counts the gradient without it, still holds.
  */
-@utility backdrop-vignette {
+@utility page-vignette {
   background:
     linear-gradient(
       to bottom,
       transparent 35%,
-      color-mix(in srgb, var(--color-backdrop-abyss) 20%, transparent) 75%,
-      color-mix(in srgb, var(--color-backdrop-abyss) 40%, transparent) 100%
+      color-mix(in srgb, var(--color-page-abyss) 20%, transparent) 75%,
+      color-mix(in srgb, var(--color-page-abyss) 40%, transparent) 100%
     ),
     radial-gradient(
       ellipse at 50% 20%,
-      color-mix(in srgb, var(--color-backdrop-abyss) 5%, transparent) 0%,
-      color-mix(in srgb, var(--color-backdrop-abyss) 45%, transparent) 60%,
-      color-mix(in srgb, var(--color-backdrop-abyss) 90%, transparent) 100%
+      color-mix(in srgb, var(--color-page-abyss) 5%, transparent) 0%,
+      color-mix(in srgb, var(--color-page-abyss) 45%, transparent) 60%,
+      color-mix(in srgb, var(--color-page-abyss) 90%, transparent) 100%
     );
 }
 

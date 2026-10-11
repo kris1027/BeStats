@@ -26,8 +26,8 @@ describe("PageBackground", () => {
 
   it("renders the gradient and vignette before anything loads", () => {
     const { container } = render(<PageBackground />);
-    expect(container.firstElementChild).toHaveClass("backdrop-gradient");
-    expect(container.querySelector(".backdrop-vignette")).not.toBeNull();
+    expect(container.firstElementChild).toHaveClass("page-gradient");
+    expect(container.querySelector(".page-vignette")).not.toBeNull();
     expect(container.querySelector("canvas")).toBeNull();
     expect(startFilmScene).not.toHaveBeenCalled();
   });
