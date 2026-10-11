@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import type * as React from "react";
 import { GlassPill } from "@/components/glass-pill";
+import { IconKey } from "@/components/layout/icon-key";
 import { LibraryNavView } from "@/components/layout/library-nav";
 import { MobileMenuSheet } from "@/components/layout/mobile-menu-sheet";
 import {
@@ -235,6 +236,13 @@ export default function ShowcasePage() {
           dated and Date TBA pills sit on Upcoming cards (spec 0020); below{" "}
           <code>sm</code> a date that carries its year drops the calendar glyph.
         </p>
+      </Section>
+
+      <Section
+        title="Icon key"
+        note="The footer's key to the card marks, on every route. A new mark adds its entry there rather than a per page legend (prompts/grid-tabs-footer-legend.md)."
+      >
+        <IconKey />
       </Section>
 
       <Section title="Buttons and controls">
