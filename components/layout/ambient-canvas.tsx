@@ -6,6 +6,12 @@ import { useEffect, useRef } from "react";
 const IDLE_TIMEOUT_MS = 2000;
 
 /**
+ * Where `requestIdleCallback` is missing (Safari), a short delay stands in
+ * for it, long enough to let hydration's first tasks run before the import.
+ */
+const NO_IDLE_DELAY_MS = 200;
+
+/**
  * Runs `callback` once the browser is idle after hydration, or after a short
  * timer where `requestIdleCallback` is missing (Safari). Returns a canceller.
  */
@@ -14,7 +20,7 @@ function whenIdle(callback: () => void): () => void {
     const handle = requestIdleCallback(callback, { timeout: IDLE_TIMEOUT_MS });
     return () => cancelIdleCallback(handle);
   }
-  const handle = setTimeout(callback, 200);
+  const handle = setTimeout(callback, NO_IDLE_DELAY_MS);
   return () => clearTimeout(handle);
 }
 
