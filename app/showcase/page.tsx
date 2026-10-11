@@ -399,6 +399,25 @@ export default function ShowcasePage() {
       </Section>
 
       <Section
+        title="Ambient background"
+        note="Behind every page, this one included: a point wave, drifting outlined screens and dust in the personal score cyan, under the vignette. It fades in once the browser is idle, draws in a worker where it can, pauses in a hidden tab, and freezes into one still frame under reduced motion. Without WebGL2 only the vignette shows (prompts/ambient-background.md)."
+      >
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <Swatch name="--color-score-personal" className="bg-score-personal" />
+          <Swatch name="--color-backdrop-wave" className="bg-backdrop-wave" />
+          <Swatch name="--color-backdrop-dust" className="bg-backdrop-dust" />
+          <div className="flex flex-col gap-2">
+            <div className="relative h-14 overflow-hidden rounded-lg border border-border bg-score-personal">
+              <div className="absolute inset-0 backdrop-vignette" />
+            </div>
+            <code className="text-xs text-muted-foreground">
+              backdrop-vignette over cyan
+            </code>
+          </div>
+        </div>
+      </Section>
+
+      <Section
         title="Legal text and the footer"
         note="The pieces /privacy and /terms are built from (spec 0017). There is no typography plugin, so lists and links are styled by hand. The site footer itself renders below every page, including this one: flat, no glass, links at the 44px and 36px touch heights."
       >
