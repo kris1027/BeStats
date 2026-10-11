@@ -60,6 +60,12 @@
   --color-score-personal: #50c6e5;
   --color-status-planned: #29cea3;
   --color-status-planned-mark: #06251d;
+  /*
+   * Text on the cyan selected tab (`glass-selected-personal`). Near white on
+   * the cyan measures under 3:1, so the label goes dark, as the Planned check
+   * does on its green: 6.3:1 at the gradient's darkest stop.
+   */
+  --color-text-on-personal: #04161c;
 
   /*
    * The opaque plates painted under every glass surface. Glass alone over a
@@ -174,6 +180,42 @@
       rgb(255 255 255 / 0.38) 0%,
       rgb(239 242 255 / 0.18) 52%,
       rgb(255 255 255 / 0.26) 100%
+    )
+    padding-box,
+    linear-gradient(
+      var(--glass-plate, transparent) 0%,
+      var(--glass-plate, transparent) 100%
+    )
+    padding-box,
+    var(--glass-rim, none) border-box;
+}
+
+/*
+ * The selected navbar tab (prompts/grid-tabs-footer-legend.md): the same
+ * layer stack as `glass-selected`, its gradient tinted from the personal
+ * score cyan so the lit tab reads in the colour of the user's own star. The
+ * stops stay translucent, so the plate and rim still show through as glass;
+ * at 80% the darkest stop over the control plate keeps
+ * `text-on-personal` at 6.3:1.
+ */
+@utility glass-selected-personal {
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(
+      172deg,
+      color-mix(
+          in srgb,
+          color-mix(in srgb, var(--color-score-personal) 70%, white) 95%,
+          transparent
+        )
+        0%,
+      color-mix(in srgb, var(--color-score-personal) 80%, transparent) 52%,
+      color-mix(
+          in srgb,
+          color-mix(in srgb, var(--color-score-personal) 85%, white) 90%,
+          transparent
+        )
+        100%
     )
     padding-box,
     linear-gradient(

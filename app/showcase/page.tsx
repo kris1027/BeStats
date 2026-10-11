@@ -161,6 +161,14 @@ export default function ShowcasePage() {
           <div className="glass-selected glass-rim glass-plate glass-shadow flex h-10 items-center rounded-full px-5 text-sm">
             Selected
           </div>
+          <div className="glass glass-rim glass-plate glass-shadow flex items-center gap-1 rounded-full p-[4.5px]">
+            <span className="glass-selected-personal glass-rim flex h-7 items-center rounded-full px-4 text-xs font-semibold tracking-[0.07em] text-text-on-personal">
+              SELECTED TAB
+            </span>
+            <span className="flex h-7 items-center px-4 text-xs font-semibold tracking-[0.07em] text-text-secondary">
+              TAB
+            </span>
+          </div>
         </div>
       </Section>
 
