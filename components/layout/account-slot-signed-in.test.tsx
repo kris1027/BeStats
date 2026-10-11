@@ -15,6 +15,8 @@ vi.mock("@/lib/auth/user", () => ({
     email: "kris1027@example.test",
   })),
 }));
+const getOwnProfile = vi.fn();
+vi.mock("@/lib/auth/profile", () => ({ getOwnProfile }));
 vi.mock("next/navigation", () => ({
   usePathname: () => "/watched",
   useSearchParams: () => new URLSearchParams("type=movie"),
@@ -23,6 +25,7 @@ vi.mock("next/navigation", () => ({
 const { AccountSlot } = await import("./account-slot");
 
 beforeEach(() => {
+  getOwnProfile.mockResolvedValue(null);
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "http://127.0.0.1:54321");
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test");
   vi.stubEnv("NEXT_PUBLIC_SITE_URL", "http://localhost:3000");
@@ -93,5 +96,24 @@ describe("AccountSlot, signed in on mobile (AC-15)", () => {
     await vi.waitFor(() =>
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
     );
+  });
+});
+
+/** covers: prompts/account-username.md, R7 */
+describe("AccountSlot with a username", () => {
+  it("names the account by its username, and its avatar by the first letter", async () => {
+    getOwnProfile.mockResolvedValue({
+      username: "tester_one",
+      usernameChangedAt: new Date("2026-10-11T10:00:00Z"),
+    });
+    render(await AccountSlot({ variant: "desktop" }));
+    const link = screen.getByRole("link", { name: "tester_one" });
+    expect(link).toHaveAttribute("href", "/account");
+    expect(link).toHaveTextContent("T");
+  });
+
+  it("falls back to the email name when there is no profile", async () => {
+    render(await AccountSlot({ variant: "mobile" }));
+    expect(screen.getByRole("link", { name: "kris1027" })).toBeInTheDocument();
   });
 });
