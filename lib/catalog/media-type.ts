@@ -37,6 +37,14 @@ export function isTypedPath(pathname: string | null): pathname is TypedPath {
 }
 
 /**
+ * True for exactly `tv` or `movie`. Unlike `parseMediaTypeParam`, an absent
+ * value is not `tv`: for a stored value, absence must stay absence.
+ */
+export function isMediaType(value: unknown): value is MediaType {
+  return typeSchema.safeParse(value).success;
+}
+
+/**
  * The media type a `type` parameter asks for: `tv` when it is absent, so a
  * bare URL shows shows like `/` does, and null when it names neither
  * catalog. A null is shown as the page's "doesn't exist" panel, never
@@ -60,7 +68,9 @@ export function parseMediaTypeParam(
  * Library links and navbar search carry on (feature 22). The catalog and
  * title pages are typed by their path, the typed pages by their parameter
  * (an invalid one falls back to `tv` here: the page itself shows the error).
- * Any other page has no type, so nothing is lit and links use the default.
+ * Any other page has no type, so the navbar shows no tabs, search or Library
+ * links there, and the logo falls back to the catalog last viewed
+ * (prompts/hide-tabs-without-type.md).
  *
  * @returns The type, or null on a page that has none.
  */

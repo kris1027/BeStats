@@ -90,7 +90,12 @@ function Navbar({
           <MediaTypeTabs className="self-center md:self-auto" />
         </Suspense>
 
-        <div className="hidden md:block">
+        {/*
+         * `not-empty` keeps the wrapper out of the row when the search renders
+         * nothing (a page with no type), so it leaves no extra flex gap
+         * (prompts/hide-tabs-without-type.md, decision 3).
+         */}
+        <div className="hidden md:not-empty:block">
           <Suspense fallback={<NavbarSearchFallback layout="desktop" />}>
             <NavbarSearch layout="desktop" />
           </Suspense>

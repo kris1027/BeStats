@@ -20,7 +20,7 @@ None needed. This is a client navigation change that uses the existing patterns.
 
 1. **Typed page:** the logo goes to `CATALOG_PATHS[type]`. That covers `/movies`, `/movies/{id}`, `?type=movie` and the TV equivalents.
 2. **Page with no type** (`/account`, `/privacy`, `/terms`, `/sign-in`, …): the logo goes to the last type viewed. That type is kept in `localStorage` under the key `bestats:last-media-type`. It falls back to `/shows` when nothing is stored, when storage throws, or when the stored value is invalid. A cookie was rejected because the server would have to read it, and that would take every route out of its prerendered shell.
-3. **Tabs:** no change. They already follow the URL, and on pages with no type they still light nothing.
+3. **Tabs:** no change. They already follow the URL. (Superseded on 2026-10-11 by [hide-tabs-without-type.md](hide-tabs-without-type.md): on pages with no type the tabs are no longer rendered.)
 4. **The bare `/`** still redirects to `/shows` (`next.config.ts`).
 5. **Mobile:** one logo serves both layouts, so mobile needs no extra work.
 
@@ -43,7 +43,7 @@ None needed. This is a client navigation change that uses the existing patterns.
 - AC-3: Visiting a movie page and then `/account` gives the logo an href of `/movies`. Visiting a TV page and then `/account` gives `/shows`.
 - AC-4: With empty, invalid or throwing storage, a page with no type links the logo to `/shows`.
 - AC-5: `/shows`, `/movies` and `/movies/{id}` still prerender, with the same build output route markers as before.
-- AC-6: The tabs behave exactly as before.
+- AC-6: The tabs behave exactly as before. (Superseded by [hide-tabs-without-type.md](hide-tabs-without-type.md): the tabs are hidden on pages with no type.)
 
 ## Security considerations
 

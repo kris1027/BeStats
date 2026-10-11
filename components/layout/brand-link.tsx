@@ -5,14 +5,17 @@ import { useEffect, useSyncExternalStore } from "react";
 
 import {
   CATALOG_PATHS,
+  isMediaType,
   type MediaType,
-  parseMediaTypeParam,
 } from "@/lib/catalog/media-type";
 
 import { WithPageMediaType } from "./page-media-type";
 
-/** The browser's memory of the last catalog viewed, for the logo only. */
-const STORAGE_KEY = "bestats:last-media-type";
+/**
+ * The browser's memory of the last catalog viewed, for the logo only.
+ * Exported so its test writes the same key.
+ */
+const LAST_MEDIA_TYPE_KEY = "bestats:last-media-type";
 
 const BRAND_CLASS =
   "rounded-sm text-xl leading-none font-extrabold tracking-[-0.03em] text-foreground";
@@ -44,7 +47,7 @@ function BrandLink() {
 function TypedBrandLink({ type }: { type: MediaType }) {
   useEffect(() => {
     try {
-      window.localStorage.setItem(STORAGE_KEY, type);
+      window.localStorage.setItem(LAST_MEDIA_TYPE_KEY, type);
     } catch {
       // Blocked storage only costs the memory; the link still works.
     }
@@ -69,9 +72,8 @@ function subscribe(onChange: () => void) {
 
 function readRemembered(): MediaType | null {
   try {
-    const value = window.localStorage.getItem(STORAGE_KEY);
-    // A missing value would parse as `tv`; absence must stay absence.
-    return value === null ? null : parseMediaTypeParam(value);
+    const value = window.localStorage.getItem(LAST_MEDIA_TYPE_KEY);
+    return isMediaType(value) ? value : null;
   } catch {
     return null;
   }
@@ -89,4 +91,4 @@ function BrandLinkView({ type }: { type: MediaType }) {
   );
 }
 
-export { BrandLink, BrandLinkView };
+export { BrandLink, BrandLinkView, LAST_MEDIA_TYPE_KEY };

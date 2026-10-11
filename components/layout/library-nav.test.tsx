@@ -101,7 +101,7 @@ describe("LibraryNav", () => {
       expect(link).toHaveClass("h-11");
     }
   });
-  it.each(["/account", "/privacy"])(
+  it.each(["/account", "/privacy", "/sign-in"])(
     "renders nothing on %s, a page about neither catalog",
     (current) => {
       pathname = current;

@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { BrandLink } from "@/components/layout/brand-link";
+import { BrandLink, LAST_MEDIA_TYPE_KEY } from "@/components/layout/brand-link";
 
 const pathname = vi.hoisted(() => ({ value: "/shows" }));
 const search = vi.hoisted(() => ({ value: "" }));
@@ -71,7 +71,7 @@ describe("BrandLink", () => {
   });
 
   it("ignores an invalid remembered value", () => {
-    window.localStorage.setItem("bestats:last-media-type", "anime");
+    window.localStorage.setItem(LAST_MEDIA_TYPE_KEY, "anime");
     pathname.value = "/privacy";
     render(<BrandLink />);
     expect(brandHref()).toBe("/shows");

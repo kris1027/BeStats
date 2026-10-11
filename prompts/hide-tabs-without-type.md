@@ -27,6 +27,12 @@ None. This is a small change to an existing client component.
 
 5. **Search and Library links too** (added by the user mid implementation, 2026-10-11). On the same pages, the navbar search is hidden: the desktop field and the mobile icon. The Library links (Watchlist, Upcoming, Watched) are hidden as well, both the desktop pill and the list in the mobile menu sheet. Signed in on `/account`, you reach the library through the logo. `/showcase` has no type either, so it renders `LibraryNavView` directly.
 
+6. **Review follow ups** (2026-10-11).
+   - The three controls share one guard, `WithTypedPage` in `components/layout/page-media-type.tsx`, which renders nothing on a page with no type.
+   - The navbar's desktop search wrapper is `hidden md:not-empty:block`, so an empty search leaves no extra `md:gap-6` (decision 3 holds at desktop width too).
+   - `AccountSlot` puts `ml-auto` on the account controls, so they stay at the right edge when the Library links render nothing.
+   - `/showcase` renders `LibraryNavView` with Watchlist lit, so the selected state is on show.
+
 ## Expected files
 
 - `components/layout/media-type-tabs.tsx`: return `null` when `page.type === null`, and update the JSDoc.
@@ -52,7 +58,7 @@ None. This only changes rendering.
 
 ## Manual test steps
 
-1. Open `/privacy` at desktop width: no tabs, and the logo and search sit in the bar.
+1. Open `/privacy` at desktop width: no tabs and no search; the logo and the account controls sit in the bar with a single gap between them.
 2. Open `/privacy` at mobile width: there is no tab row under the logo.
 3. Open `/sign-in` and `/account` (signed in): no tabs.
 4. Open `/movies`, `/movies/550` and `/watchlist?type=movie`: the tabs are shown, with MOVIES lit.

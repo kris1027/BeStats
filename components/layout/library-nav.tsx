@@ -5,7 +5,7 @@ import Link from "next/link";
 
 import { type MediaType, typedHref } from "@/lib/catalog/media-type";
 
-import { WithPageMediaType } from "./page-media-type";
+import { WithTypedPage } from "./page-media-type";
 
 /**
  * The signed in library links: the pill in the desktop navbar and the list in
@@ -21,7 +21,7 @@ import { WithPageMediaType } from "./page-media-type";
  *
  * Each link carries the media type of the page being viewed, so the navbar
  * tab chosen on `/movies` is still lit on `/watchlist` (feature 22), read
- * through `WithPageMediaType`; the fallback links to the default type. On a
+ * through `WithTypedPage`; the fallback links to the default type. On a
  * page about neither catalog it renders nothing, like the media tabs and the
  * search (prompts/hide-tabs-without-type.md).
  *
@@ -41,17 +41,15 @@ type Variant = "bar" | "sheet";
 
 function LibraryNav({ variant }: { variant: Variant }) {
   return (
-    <WithPageMediaType
+    <WithTypedPage
       fallback={(pathname) => (
         <LibraryNavView variant={variant} pathname={pathname} type="tv" />
       )}
     >
-      {({ pathname, type }) =>
-        type === null ? null : (
-          <LibraryNavView variant={variant} pathname={pathname} type={type} />
-        )
-      }
-    </WithPageMediaType>
+      {({ pathname, type }) => (
+        <LibraryNavView variant={variant} pathname={pathname} type={type} />
+      )}
+    </WithTypedPage>
   );
 }
 

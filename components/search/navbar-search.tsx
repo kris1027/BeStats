@@ -3,7 +3,7 @@
 import { cn } from "cn";
 import { SearchIcon } from "lucide-react";
 
-import { WithPageMediaType } from "@/components/layout/page-media-type";
+import { WithTypedPage } from "@/components/layout/page-media-type";
 import type { MediaType } from "@/lib/catalog/media-type";
 import { mediaNoun } from "@/lib/search/count";
 
@@ -18,29 +18,28 @@ type Layout = "desktop" | "mobile";
  *
  * The type follows the page (feature 22): movies under `/movies`, shows
  * under `/shows`, the `type` parameter on `/watchlist`, `/upcoming`,
- * `/watched` and `/search`, read through `WithPageMediaType`. A page about
- * neither catalog renders no search at all (prompts/hide-tabs-without-type.md). `usePathname` suspends on a route with a dynamic param
- * at prerender time, so `Navbar` wraps this in Suspense with
- * `NavbarSearchFallback`.
+ * `/watched` and `/search`, read through `WithTypedPage`. A page about
+ * neither catalog renders no search at all
+ * (prompts/hide-tabs-without-type.md). `usePathname` suspends on a route
+ * with a dynamic param at prerender time, so `Navbar` wraps this in Suspense
+ * with `NavbarSearchFallback`.
  *
  * The field is keyed on the pathname and type, so it starts empty on every
  * page (AC-17).
  */
 function NavbarSearch({ layout }: { layout: Layout }) {
   return (
-    <WithPageMediaType
+    <WithTypedPage
       fallback={() => <NavbarSearchFallback layout={layout} type="tv" />}
     >
-      {({ pathname, type }) =>
-        type === null ? null : (
-          <NavbarSearchFor
-            key={`${pathname}:${type}`}
-            layout={layout}
-            type={type}
-          />
-        )
-      }
-    </WithPageMediaType>
+      {({ pathname, type }) => (
+        <NavbarSearchFor
+          key={`${pathname}:${type}`}
+          layout={layout}
+          type={type}
+        />
+      )}
+    </WithTypedPage>
   );
 }
 
