@@ -9,6 +9,12 @@ interface Controller {
   resize(width: number, height: number, pixelRatio: number): void;
   visible(visible: boolean): void;
   motion(reduced: boolean): void;
+  /**
+   * Swaps in a scene at a new budget on a fresh canvas, where the thread can
+   * do that without losing the clock's exact time (the worker). Without it,
+   * the page tears the scene down and starts again from its own copy.
+   */
+  rebuild?(canvas: HTMLCanvasElement, start: SceneStart): void;
   dispose(): void;
 }
 
@@ -66,6 +72,10 @@ function startInWorker(
   worker.onerror = () => events.failed();
   post({ type: "init", canvas: offscreen, ...start }, [offscreen]);
   return {
+    rebuild: (next, { time: _time, ...rest }) => {
+      const fresh = next.transferControlToOffscreen();
+      post({ type: "rebuild", canvas: fresh, ...rest }, [fresh]);
+    },
     resize: (width, height, pixelRatio) =>
       post({ type: "resize", width, height, pixelRatio }),
     visible: (visible) => post({ type: "visible", visible }),
@@ -129,7 +139,9 @@ async function startOnMainThread(
  *
  * The budget follows the viewport (decision 8): a resize across the compact
  * breakpoint rebuilds the scene at the other density, because its geometry is
- * uploaded once. A resize within one budget only resizes the canvas, which
+ * uploaded once. The worker rebuilds in place, from its own clock's time;
+ * the main thread disposes its clock, which reports the time, and starts
+ * again from it. A resize within one budget only resizes the canvas, which
  * also places the strips again for the new shape.
  *
  * Nothing follows the pointer: the design's cursor parallax was dropped at
@@ -279,8 +291,12 @@ export function startFilmScene(
     const rebuild = !sameGeometry(budget, next);
     budget = next;
     if (rebuild) {
-      teardown();
       resuming = true;
+      if (controller?.rebuild) {
+        controller.rebuild(freshCanvas(), state());
+        return;
+      }
+      teardown();
       void start();
       return;
     }

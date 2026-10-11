@@ -11,6 +11,11 @@ import { runScene } from "./run";
  * thread never wait on the animation, nor it on them. A message that fails
  * validation is dropped. There is no dispose message: the page terminates
  * the worker, which releases the context and everything else at once.
+ *
+ * `rebuild` swaps the scene for one at the new budget on the fresh canvas it
+ * brings, starting from the time the old clock reported as it stopped, so
+ * the strips carry on from their exact pose (prompts/film-scene-continuity.md,
+ * AC-3).
  */
 
 /** The slice of `DedicatedWorkerGlobalScope` this file uses. */
@@ -21,6 +26,20 @@ interface WorkerScope {
 
 const scope = self as unknown as WorkerScope;
 let clock: SceneClock | null = null;
+// The clock's latest report, where a rebuilt scene starts.
+let latest = 0;
+
+const callbacks = {
+  onReady: () => scope.postMessage({ type: "ready" }),
+  onTime: (time: number) => {
+    latest = time;
+    scope.postMessage({ type: "time", time });
+  },
+  onLost: () => {
+    clock = null;
+    scope.postMessage({ type: "lost" });
+  },
+};
 
 scope.onmessage = (event) => {
   const parsed = toWorkerSchema.safeParse(event.data);
@@ -30,14 +49,19 @@ scope.onmessage = (event) => {
   switch (message.type) {
     case "init": {
       if (clock) return;
+      latest = message.time;
+      clock = runScene(message.canvas, { ...message, ...callbacks });
+      if (!clock) scope.postMessage({ type: "failed" });
+      return;
+    }
+    case "rebuild": {
+      if (!clock) return;
+      // Disposing stops the clock, which reports its time into `latest`.
+      clock.dispose();
       clock = runScene(message.canvas, {
         ...message,
-        onReady: () => scope.postMessage({ type: "ready" }),
-        onTime: (time) => scope.postMessage({ type: "time", time }),
-        onLost: () => {
-          clock = null;
-          scope.postMessage({ type: "lost" });
-        },
+        time: latest,
+        ...callbacks,
       });
       if (!clock) scope.postMessage({ type: "failed" });
       return;

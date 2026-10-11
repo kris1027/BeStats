@@ -157,27 +157,50 @@ describe("PageBackgroundCanvas", () => {
     expect(container.querySelector("canvas")).toBeNull();
   });
 
-  it("rebuilds the compact scene when the window crosses 768px", async () => {
+  it("rebuilds the compact scene in the same worker when the window crosses 768px", async () => {
     browser({ worker: true });
     vi.stubGlobal("innerWidth", 1440);
     const { container } = await start();
-    const first = FakeWorker.instances[0];
-    expect(first.postMessage.mock.calls[0][0].budget.bokeh).toBe(70);
+    const [worker] = FakeWorker.instances;
+    expect(worker.postMessage.mock.calls[0][0].budget.bokeh).toBe(70);
 
     vi.stubGlobal("innerWidth", 600);
     act(() => resize?.());
-    const second = FakeWorker.instances[1];
-    expect(first.terminate).toHaveBeenCalled();
-    expect(second.postMessage.mock.calls[0][0].budget.bokeh).toBe(35);
+    const rebuild = worker.postMessage.mock.lastCall?.[0];
+    expect(rebuild).toMatchObject({ type: "rebuild", budget: { bokeh: 35 } });
+    // The worker's clock knows the exact pose; the page's copy is a second old.
+    expect(rebuild).not.toHaveProperty("time");
+    expect(worker.terminate).not.toHaveBeenCalled();
+    expect(FakeWorker.instances).toHaveLength(1);
     expect(container.querySelectorAll("canvas")).toHaveLength(1);
 
     vi.stubGlobal("innerWidth", 700);
     act(() => resize?.());
-    expect(FakeWorker.instances).toHaveLength(2);
-    expect(second.postMessage).toHaveBeenLastCalledWith(
+    expect(worker.postMessage).toHaveBeenLastCalledWith(
       expect.objectContaining({ type: "resize" }),
       [],
     );
+  });
+
+  it("rebuilds on the main thread from the time its clock reported as it stopped", async () => {
+    browser({ worker: false });
+    vi.stubGlobal("innerWidth", 1440);
+    const first = fakeClock();
+    vi.mocked(first.dispose).mockImplementation(() =>
+      runScene.mock.calls[0][1].onTime(42),
+    );
+    runScene.mockReturnValueOnce(first).mockReturnValueOnce(fakeClock());
+    await start();
+
+    vi.stubGlobal("innerWidth", 600);
+    act(() => resize?.());
+    await settle();
+    expect(first.dispose).toHaveBeenCalled();
+    expect(runScene).toHaveBeenCalledTimes(2);
+    expect(runScene.mock.calls[1][1]).toMatchObject({
+      time: 42,
+      budget: { bokeh: 35 },
+    });
   });
 
   it("does not rebuild a scene that lost its context", async () => {

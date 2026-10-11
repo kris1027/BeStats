@@ -56,22 +56,30 @@ const offscreenCanvas = z.custom<OffscreenCanvas>(
     typeof OffscreenCanvas !== "undefined" && value instanceof OffscreenCanvas,
 );
 
+/** A fresh canvas and the scene to build on it, for `init` and `rebuild`. */
+const sceneFields = {
+  canvas: offscreenCanvas,
+  width: size,
+  height: size,
+  budget: budgetSchema,
+  palette: paletteSchema,
+  reducedMotion: z.boolean(),
+  visible: z.boolean(),
+};
+
 /**
  * Every message the page may post to the worker. The worker parses each one
  * against this and drops anything else.
+ *
+ * `rebuild` replaces the scene after a resize across the compact breakpoint
+ * (prompts/film-scene-continuity.md, AC-3). It carries no time, because the
+ * worker's own clock is the only one that knows the current pose: the page
+ * only hears it once a second, so a scene rebuilt from the page's copy would
+ * jump back by up to that much.
  */
 export const toWorkerSchema = z.discriminatedUnion("type", [
-  z.object({
-    type: z.literal("init"),
-    canvas: offscreenCanvas,
-    width: size,
-    height: size,
-    budget: budgetSchema,
-    palette: paletteSchema,
-    reducedMotion: z.boolean(),
-    visible: z.boolean(),
-    time: sceneTimeSchema,
-  }),
+  z.object({ type: z.literal("init"), ...sceneFields, time: sceneTimeSchema }),
+  z.object({ type: z.literal("rebuild"), ...sceneFields }),
   z.object({
     type: z.literal("resize"),
     width: size,
@@ -90,9 +98,9 @@ export type ToWorker = z.infer<typeof toWorkerSchema>;
  * `OffscreenCanvas` without WebGL on it), so the page tries the main thread.
  * `lost` means it drew and then lost its context, and the page gives up on
  * the scene (decision 7): whatever took the GPU away would take it from the
- * main thread too. `time` is the clock's periodic report, which the page
- * keeps so the next full load can carry on from it
- * (prompts/film-scene-continuity.md).
+ * main thread too. `time` is the clock's periodic report, and its final one
+ * whenever a scene stops, which the page keeps so the next full load can
+ * carry on from it (prompts/film-scene-continuity.md).
  */
 export type FromWorker =
   | { type: "ready" }
