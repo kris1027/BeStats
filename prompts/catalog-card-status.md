@@ -140,3 +140,16 @@ One request-scoped read per grid and media type, shared by every card through Re
 6. Stop tracking the Watched show from its card. The card returns to the TMDB rating with an empty bookmark.
 7. Sign out. All grids look as they did before this change.
 8. Narrow the window to phone width. The pills and badges don't overlap, and the tap targets stay 44px.
+
+## Amendments (2026-10-11, after code review)
+
+The shipped code differs from the design above in these places. Behaviour and requirements R1 to R8 are unchanged.
+
+- `movieCardStatus` lives in `lib/catalog/movie-page.ts` beside `classifyMovie`, not in `lib/tracking/movie-state.ts`, because it is pure and that file is server-only. It takes a `MovieTrackingState`.
+- `classifyMovie` takes a `watched` flag instead of `watchedAt` (commit 0a27029), so `getMovieGridStates` does not need the timestamp.
+- `ReleasePill` moved to `components/library/dated-pill.tsx` beside `DatedPill` and takes the formatted `release` instead of the whole card. The formatting is `formatReleaseDate` in `lib/format.ts`, shared by the library Upcoming card and the catalog cards.
+- The badge rule (your rating on Watched, nothing on Upcoming, the TMDB rating otherwise) is one component, `components/tracking/card-rating-badge.tsx`, used by both the movie and the show slots.
+- `/search` renders a `MovieResultCard` or a `ShowResultCard` per result instead of branching on the media type inside each slot, and its skeleton cards take `PosterCardSkeleton meta`, so the year line under each name is reserved and the cards do not grow when the results arrive.
+- The movie card slot tests are in `components/tracking/movie-card-slots.test.tsx`, as listed.
+- Decision 9 is kept as written: when the ratings read fails, a show on Watched stays a plain tracked card and loses its Finished or Caught up label too. A label with the TMDB rating would look like an unrated show, which is the wrong state the decision rules out.
+- A systemic TMDB failure while placing a grid's shows logs `show_tracking.grid_read`, not the tracked set's `show_tracking.read`.
