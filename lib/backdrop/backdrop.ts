@@ -3,6 +3,10 @@ import { type BackdropLoop, createLoop, type FrameScheduler } from "./loop";
 import type { BackdropBudget } from "./params";
 import { createRenderer } from "./renderer";
 
+/**
+ * Everything one scene needs to start, the same fields whichever thread draws
+ * it, so the worker's `init` message spreads straight into it.
+ */
 export interface BackdropOptions {
   width: number;
   height: number;

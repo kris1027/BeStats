@@ -45,6 +45,10 @@ const offscreenCanvas = z.custom<OffscreenCanvas>(
     typeof OffscreenCanvas !== "undefined" && value instanceof OffscreenCanvas,
 );
 
+/**
+ * Every message the page may post to the worker. The worker parses each one
+ * against this and drops anything else.
+ */
 export const toWorkerSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("init"),
@@ -71,6 +75,7 @@ export const toWorkerSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("motion"), reduced: z.boolean() }),
 ]);
 
+/** A message the page posts to the worker, checked by `toWorkerSchema`. */
 export type ToWorker = z.infer<typeof toWorkerSchema>;
 
 /**

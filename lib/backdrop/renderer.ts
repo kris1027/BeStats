@@ -24,6 +24,10 @@ export interface FrameState {
   pointerY: number;
 }
 
+/**
+ * The scene without a clock: it draws whatever frame it is handed, so the
+ * loop decides when, and tests can drive it with no GPU.
+ */
 export interface BackdropRenderer {
   draw(frame: FrameState): void;
   resize(width: number, height: number, pixelRatio: number): void;

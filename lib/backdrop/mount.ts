@@ -215,7 +215,8 @@ export function mountBackdrop(
     controller?.resize(width, height);
   });
 
-  // Pointer moves are coalesced to one message per frame.
+  // One message per frame at most: a pointer fires far more often than the
+  // scene redraws, and each message would wake the worker for nothing.
   let pointerFrame: number | null = null;
   let pointerX = 0;
   let pointerY = 0;

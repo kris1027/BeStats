@@ -15,6 +15,10 @@ float fogFactor(float depth) {
 }
 `;
 
+/**
+ * The point wave: a flat grid lifted by three sine terms of time, so its
+ * buffer never changes after upload. Points shrink and fade with distance.
+ */
 export const WAVE_VERTEX = /* glsl */ `#version 300 es
 in vec2 aXZ;
 uniform mat4 uView;
@@ -110,6 +114,10 @@ void main() {
 }
 `;
 
+/**
+ * The dust: fixed points turned slowly about the vertical axis by one angle
+ * of time, sized by distance as the design's attenuated points were.
+ */
 export const DUST_VERTEX = /* glsl */ `#version 300 es
 in vec3 aPos;
 uniform mat4 uView;

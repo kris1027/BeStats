@@ -21,6 +21,7 @@ export const COMPACT_BREAKPOINT = 768;
 /** The design used 2; 1.5 is visually identical for soft points and lines. */
 export const MAX_PIXEL_RATIO = 1.5;
 
+/** The design file's own scene, for a wide screen with a fine pointer. */
 export const FULL_BUDGET = {
   gridWidth: 140,
   gridDepth: 90,
@@ -29,6 +30,10 @@ export const FULL_BUDGET = {
   dust: 600,
 } as const;
 
+/**
+ * Half the wave grid at twice the spacing, so it still spans the same width,
+ * and about half the panels and dust.
+ */
 export const COMPACT_BUDGET = {
   gridWidth: 70,
   gridDepth: 45,

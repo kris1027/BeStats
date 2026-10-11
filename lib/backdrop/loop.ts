@@ -6,6 +6,10 @@ export interface FrameScheduler {
   cancel(handle: number): void;
 }
 
+/**
+ * The running clock as its owner sees it: the page's events in, nothing out.
+ * The worker and the main thread fallback drive it through the same methods.
+ */
 export interface BackdropLoop {
   resize(width: number, height: number, pixelRatio: number): void;
   setPointer(x: number, y: number): void;
