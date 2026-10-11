@@ -220,6 +220,16 @@ describe("AmbientCanvas", () => {
     },
   );
 
+  it("draws the still frame for everyone when asked, as /showcase does", async () => {
+    browser({ worker: true });
+    render(<AmbientCanvas still />);
+    await settle();
+    expect(FakeWorker.instances[0].postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "init", reducedMotion: true }),
+      expect.any(Array),
+    );
+  });
+
   it("stops the worker and removes the canvas on unmount", async () => {
     browser({ worker: true });
     const { container, unmount } = await start();

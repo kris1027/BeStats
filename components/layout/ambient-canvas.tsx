@@ -28,8 +28,11 @@ function whenIdle(callback: () => void): () => void {
  * and it in turn loads either the worker or the renderer, whichever this
  * browser can use. Any failure on that path leaves the static vignette, which
  * is the page as it looked before this feature.
+ *
+ * `still` freezes it on the reduced motion frame for every visitor; only
+ * `/showcase` passes it, to show that frame on demand.
  */
-export function AmbientCanvas() {
+export function AmbientCanvas({ still = false }: { still?: boolean }) {
   const hostRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -41,7 +44,7 @@ export function AmbientCanvas() {
     const cancelIdle = whenIdle(() => {
       import("@/lib/backdrop/mount")
         .then(({ mountBackdrop }) => {
-          if (!cancelled) cleanup = mountBackdrop(host);
+          if (!cancelled) cleanup = mountBackdrop(host, { still });
         })
         .catch(() => {
           // The background is decoration; a failed chunk load is not an error
@@ -54,7 +57,7 @@ export function AmbientCanvas() {
       cancelIdle();
       cleanup?.();
     };
-  }, []);
+  }, [still]);
 
   return <div ref={hostRef} className="absolute inset-0" />;
 }

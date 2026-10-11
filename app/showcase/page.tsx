@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import type * as React from "react";
 import { GlassPill } from "@/components/glass-pill";
+import { AmbientCanvas } from "@/components/layout/ambient-canvas";
 import { IconKey } from "@/components/layout/icon-key";
 import { LibraryNavView } from "@/components/layout/library-nav";
 import { MobileMenuSheet } from "@/components/layout/mobile-menu-sheet";
@@ -414,6 +415,15 @@ export default function ShowcasePage() {
               backdrop-vignette over cyan
             </code>
           </div>
+        </div>
+        <div className="mt-4 flex flex-col gap-2">
+          <div className="relative h-64 overflow-hidden rounded-panel border border-border">
+            <AmbientCanvas still />
+            <div className="absolute inset-0 backdrop-vignette" />
+          </div>
+          <code className="text-xs text-muted-foreground">
+            the reduced motion still frame
+          </code>
         </div>
       </Section>
 

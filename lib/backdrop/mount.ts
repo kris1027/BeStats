@@ -44,12 +44,19 @@ const clampUnit = (value: number) => Math.max(-1, Math.min(1, value));
  *
  * The canvas stays transparent until the first frame is drawn, then fades in,
  * except under reduced motion, where it appears without a transition.
+ *
+ * `still` draws the reduced motion frame whatever the visitor's setting, so
+ * `/showcase` can show it beside the live background.
  */
-export function mountBackdrop(host: HTMLElement): () => void {
+export function mountBackdrop(
+  host: HTMLElement,
+  { still = false }: { still?: boolean } = {},
+): () => void {
   const colors = readBackdropColors(host);
   if (!colors) return () => {};
 
   const motionQuery = matchMedia("(prefers-reduced-motion: reduce)");
+  const reducedMotion = () => still || motionQuery.matches;
   const coarseQuery = matchMedia("(pointer: coarse)");
   const currentBudget = () =>
     chooseBudget({
@@ -75,7 +82,7 @@ export function mountBackdrop(host: HTMLElement): () => void {
   const state = () => ({
     budget,
     colors,
-    reducedMotion: motionQuery.matches,
+    reducedMotion: reducedMotion(),
     visible: !document.hidden,
   });
 
@@ -91,7 +98,7 @@ export function mountBackdrop(host: HTMLElement): () => void {
 
   const reveal = () => {
     if (!canvas) return;
-    canvas.style.transition = motionQuery.matches ? "none" : FADE;
+    canvas.style.transition = reducedMotion() ? "none" : FADE;
     canvas.style.opacity = "1";
   };
 
@@ -214,7 +221,7 @@ export function mountBackdrop(host: HTMLElement): () => void {
   let pointerY = 0;
   const onPointerMove = (event: PointerEvent) => {
     // The still frame ignores the pointer (AC-5), so nothing is sent.
-    if (motionQuery.matches) return;
+    if (reducedMotion()) return;
     pointerX = clampUnit(event.clientX / innerWidth - 0.5);
     pointerY = clampUnit(event.clientY / innerHeight - 0.5);
     if (pointerFrame !== null) return;
@@ -224,7 +231,7 @@ export function mountBackdrop(host: HTMLElement): () => void {
     });
   };
   const onVisibility = () => controller?.visible(!document.hidden);
-  const onMotion = () => controller?.motion(motionQuery.matches);
+  const onMotion = () => controller?.motion(reducedMotion());
 
   start();
 
