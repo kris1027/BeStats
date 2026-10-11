@@ -373,13 +373,13 @@
 
 /*
  * The page background's gradient (prompts/film-strip-background.md): the
- * design's teal, brightest at the upper left. It is in the prerendered HTML,
+ * design's teal, brightest along the top left. It is in the prerendered HTML,
  * so it is the first paint, and with the vignette the whole background where
  * WebGL2 is missing.
  */
 @utility backdrop-gradient {
   background: radial-gradient(
-    ellipse at 25% 15%,
+    ellipse at 30% 5%,
     var(--color-backdrop-glow) 0%,
     var(--color-backdrop-mid) 45%,
     var(--color-backdrop-deep) 80%,
@@ -388,16 +388,25 @@
 }
 
 /*
- * The vignette over the scene: lightly shaded in the middle, where content
- * sits, and closing to near black at the edges, the design's own falloff.
+ * The vignette over the scene: lit from above, so it is lightest along the
+ * top and closes to near black at the edges, with a second layer deepening
+ * the lower half. It only ever darkens, so the scene's contrast cap, which
+ * counts the gradient without it, still holds.
  */
 @utility backdrop-vignette {
-  background: radial-gradient(
-    ellipse at 50% 45%,
-    color-mix(in srgb, var(--color-backdrop-abyss) 15%, transparent) 0%,
-    color-mix(in srgb, var(--color-backdrop-abyss) 55%, transparent) 60%,
-    color-mix(in srgb, var(--color-backdrop-abyss) 95%, transparent) 100%
-  );
+  background:
+    linear-gradient(
+      to bottom,
+      transparent 35%,
+      color-mix(in srgb, var(--color-backdrop-abyss) 20%, transparent) 75%,
+      color-mix(in srgb, var(--color-backdrop-abyss) 40%, transparent) 100%
+    ),
+    radial-gradient(
+      ellipse at 50% 20%,
+      color-mix(in srgb, var(--color-backdrop-abyss) 5%, transparent) 0%,
+      color-mix(in srgb, var(--color-backdrop-abyss) 45%, transparent) 60%,
+      color-mix(in srgb, var(--color-backdrop-abyss) 90%, transparent) 100%
+    );
 }
 
 /*
