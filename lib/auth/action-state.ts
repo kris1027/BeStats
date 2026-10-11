@@ -2,6 +2,19 @@ import type { z } from "zod";
 
 import { AUTH_OUTCOME, type AuthOutcome, authMessage } from "./messages";
 
+/** Every field a form can mark, listed once so `fromZodError` can narrow. */
+const AUTH_FIELDS = [
+  "email",
+  "password",
+  "currentPassword",
+  "confirmPassword",
+  "username",
+] as const;
+
+function isAuthField(value: unknown): value is AuthField {
+  return AUTH_FIELDS.includes(value as AuthField);
+}
+
 /**
  * The one shape every auth Server Action returns (spec 0005, API surface).
  *
@@ -15,12 +28,7 @@ import { AUTH_OUTCOME, type AuthOutcome, authMessage } from "./messages";
  * the field it belongs to, which is how AC-21 is satisfied without each form
  * inventing its own error plumbing.
  */
-export type AuthField =
-  | "email"
-  | "password"
-  | "currentPassword"
-  | "confirmPassword"
-  | "username";
+export type AuthField = (typeof AUTH_FIELDS)[number];
 
 export type AuthActionState = {
   status: "idle" | "success" | "error";
@@ -151,14 +159,7 @@ export function fromZodError(error: z.ZodError): AuthActionState {
 
   for (const issue of error.issues) {
     const field = issue.path[0];
-    if (
-      (field === "email" ||
-        field === "password" ||
-        field === "currentPassword" ||
-        field === "confirmPassword" ||
-        field === "username") &&
-      !fieldErrors[field]
-    ) {
+    if (isAuthField(field) && !fieldErrors[field]) {
       fieldErrors[field] = issue.message;
     }
   }
