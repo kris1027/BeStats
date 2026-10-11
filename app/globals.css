@@ -405,39 +405,41 @@
  * its text. `--glass-plate-solid` carries the opaque colour for the selected
  * utilities, which stay solid so near white text keeps 4.5:1 under their
  * brighter gradient. `plate-solid` makes a plate opaque again.
+ *
+ * Each role sets only its colour, frost and blur; `glass-plate-frost` turns
+ * those into the plate, written once, and only the roles apply it.
  */
-@utility glass-plate {
-  --glass-plate-solid: var(--color-glass-plate);
+@utility glass-plate-frost {
+  --glass-plate-solid: var(--plate-color);
   --glass-plate: color-mix(
     in srgb,
-    var(--color-glass-plate) var(--frost-control),
+    var(--plate-color) var(--plate-frost),
     transparent
   );
-  -webkit-backdrop-filter: var(--frost-blur-control);
-  backdrop-filter: var(--frost-blur-control);
+  -webkit-backdrop-filter: var(--plate-blur);
+  backdrop-filter: var(--plate-blur);
+}
+
+@utility glass-plate {
+  --plate-color: var(--color-glass-plate);
+  --plate-frost: var(--frost-control);
+  --plate-blur: var(--frost-blur-control);
+  @apply glass-plate-frost;
 }
 
 @utility glass-plate-panel {
-  --glass-plate-solid: var(--color-glass-plate-panel);
-  --glass-plate: color-mix(
-    in srgb,
-    var(--color-glass-plate-panel) var(--frost-panel),
-    transparent
-  );
-  -webkit-backdrop-filter: var(--frost-blur-panel);
-  backdrop-filter: var(--frost-blur-panel);
+  --plate-color: var(--color-glass-plate-panel);
+  --plate-frost: var(--frost-panel);
+  --plate-blur: var(--frost-blur-panel);
+  @apply glass-plate-frost;
 }
 
 /* The dialog and the menu sheet, both over the dimming backdrop. */
 @utility glass-plate-sheet {
-  --glass-plate-solid: var(--color-glass-plate-sheet);
-  --glass-plate: color-mix(
-    in srgb,
-    var(--color-glass-plate-sheet) var(--frost-sheet),
-    transparent
-  );
-  -webkit-backdrop-filter: var(--frost-blur-overlay);
-  backdrop-filter: var(--frost-blur-overlay);
+  --plate-color: var(--color-glass-plate-sheet);
+  --plate-frost: var(--frost-sheet);
+  --plate-blur: var(--frost-blur-overlay);
+  @apply glass-plate-frost;
 }
 
 /*
@@ -446,25 +448,17 @@
  * this is the most opaque plate.
  */
 @utility glass-plate-float {
-  --glass-plate-solid: var(--color-glass-plate-sheet);
-  --glass-plate: color-mix(
-    in srgb,
-    var(--color-glass-plate-sheet) var(--frost-float),
-    transparent
-  );
-  -webkit-backdrop-filter: var(--frost-blur-overlay);
-  backdrop-filter: var(--frost-blur-overlay);
+  --plate-color: var(--color-glass-plate-sheet);
+  --plate-frost: var(--frost-float);
+  --plate-blur: var(--frost-blur-overlay);
+  @apply glass-plate-frost;
 }
 
 @utility glass-plate-score {
-  --glass-plate-solid: var(--color-glass-plate-score);
-  --glass-plate: color-mix(
-    in srgb,
-    var(--color-glass-plate-score) var(--frost-score),
-    transparent
-  );
-  -webkit-backdrop-filter: var(--frost-blur-control);
-  backdrop-filter: var(--frost-blur-control);
+  --plate-color: var(--color-glass-plate-score);
+  --plate-frost: var(--frost-score);
+  --plate-blur: var(--frost-blur-control);
+  @apply glass-plate-frost;
 }
 
 /*
