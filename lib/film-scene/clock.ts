@@ -23,6 +23,9 @@ export const MAX_STEP_SECONDS = 0.05;
 /** The design's `speed` prop: scene seconds per real second. */
 export const SCENE_SPEED = 0.25;
 
+/** How often a running clock reports its time, in real milliseconds. */
+export const TIME_REPORT_MS = 1000;
+
 /**
  * The animation clock (prompts/film-strip-background.md, decisions 8 and 9).
  *
@@ -34,6 +37,12 @@ export const SCENE_SPEED = 0.25;
  *
  * `onFirstFrame` fires once, after the first draw, so the canvas can fade in
  * over a real picture rather than an empty one.
+ *
+ * `startTime` and `onTime` let the scene carry on across a full page load
+ * (prompts/film-scene-continuity.md, decision 2): the clock starts where the
+ * last document left it, and reports its time at most once a second while
+ * running, plus once whenever it stops, so the page always holds a value at
+ * most a second old.
  */
 export function createClock({
   renderer,
@@ -41,14 +50,20 @@ export function createClock({
   reducedMotion,
   visible,
   onFirstFrame,
+  startTime = 0,
+  onTime,
 }: {
   renderer: SceneRenderer;
   scheduler: FrameScheduler;
   reducedMotion: boolean;
   visible: boolean;
   onFirstFrame?: () => void;
+  startTime?: number;
+  onTime?: (time: number) => void;
 }): SceneClock {
-  let time = 0;
+  let time = startTime;
+  let reported = startTime;
+  let lastReport: number | null = null;
   let last: number | null = null;
   let handle: number | null = null;
   let sized = false;
@@ -63,6 +78,12 @@ export function createClock({
     }
   };
 
+  const report = () => {
+    if (time === reported) return;
+    reported = time;
+    onTime?.(time);
+  };
+
   const tick = (now: number) => {
     handle = null;
     const step =
@@ -70,6 +91,11 @@ export function createClock({
     last = now;
     time += step * SCENE_SPEED;
     draw();
+    if (lastReport === null) lastReport = now;
+    else if (now - lastReport >= TIME_REPORT_MS) {
+      lastReport = now;
+      report();
+    }
     handle = scheduler.request(tick);
   };
 
@@ -79,6 +105,8 @@ export function createClock({
     if (handle !== null) scheduler.cancel(handle);
     handle = null;
     last = null;
+    lastReport = null;
+    report();
   };
 
   const update = () => {

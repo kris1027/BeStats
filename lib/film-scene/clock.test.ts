@@ -1,10 +1,19 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { createClock, MAX_STEP_SECONDS, SCENE_SPEED } from "./clock";
+import {
+  createClock,
+  MAX_STEP_SECONDS,
+  SCENE_SPEED,
+  TIME_REPORT_MS,
+} from "./clock";
 import type { FrameState, SceneRenderer } from "./scene";
 
 /** A renderer that records frames, and a scheduler the test steps by hand. */
-function harness({ reducedMotion = false, visible = true } = {}) {
+function harness({
+  reducedMotion = false,
+  visible = true,
+  startTime = undefined as number | undefined,
+} = {}) {
   const frames: FrameState[] = [];
   const renderer: SceneRenderer = {
     draw: (frame) => frames.push({ ...frame }),
@@ -22,12 +31,15 @@ function harness({ reducedMotion = false, visible = true } = {}) {
     }),
   };
   const onFirstFrame = vi.fn();
+  const onTime = vi.fn();
   const clock = createClock({
     renderer,
     scheduler,
     reducedMotion,
     visible,
     onFirstFrame,
+    startTime,
+    onTime,
   });
   const step = (now: number) => {
     const callback = pending;
@@ -40,6 +52,7 @@ function harness({ reducedMotion = false, visible = true } = {}) {
     renderer,
     scheduler,
     onFirstFrame,
+    onTime,
     step,
     pending: () => pending,
   };
@@ -116,5 +129,48 @@ describe("the scene clock", () => {
     expect(h.renderer.dispose).toHaveBeenCalledTimes(1);
     expect(h.pending()).toBeNull();
     expect(h.frames).toHaveLength(0);
+  });
+});
+
+/** covers: prompts/film-scene-continuity.md, AC-2 */
+describe("the scene clock across page loads", () => {
+  it("starts from the time a previous load left", () => {
+    const h = harness({ startTime: 40 });
+    h.clock.resize(100, 100, 1);
+    h.step(0);
+    h.step(16);
+    expect(h.frames[0]?.time).toBe(40);
+    expect(h.frames[1]?.time).toBeCloseTo(40 + 0.016 * SCENE_SPEED);
+  });
+
+  it("reports its time at most once a second while running", () => {
+    const h = harness();
+    h.clock.resize(100, 100, 1);
+    for (let now = 0; now <= 2 * TIME_REPORT_MS + 32; now += 16) h.step(now);
+    expect(h.onTime).toHaveBeenCalledTimes(2);
+    const last = h.onTime.mock.calls.at(-1)?.[0];
+    expect(last).toBeGreaterThan(0);
+  });
+
+  it("reports its time when it stops", () => {
+    const h = harness();
+    h.clock.resize(100, 100, 1);
+    h.step(0);
+    h.step(16);
+    h.clock.setVisible(false);
+    expect(h.onTime).toHaveBeenCalledTimes(1);
+    expect(h.onTime).toHaveBeenLastCalledWith(h.frames.at(-1)?.time);
+
+    // Nothing moved while hidden, so there is nothing new to report.
+    h.clock.dispose();
+    expect(h.onTime).toHaveBeenCalledTimes(1);
+  });
+
+  it("reports nothing for a still frame", () => {
+    const h = harness({ reducedMotion: true, startTime: 5 });
+    h.clock.resize(100, 100, 1);
+    h.clock.dispose();
+    expect(h.frames).toEqual([{ time: 5 }]);
+    expect(h.onTime).not.toHaveBeenCalled();
   });
 });
