@@ -17,6 +17,7 @@ function result(
     id,
     title: `Title ${id}`,
     year: 2020,
+    releaseDate: "2020-05-01",
     posterUrl: null,
     tmdbRating: 8,
     tmdbVoteCount: 500,

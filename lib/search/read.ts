@@ -24,6 +24,12 @@ export type SearchResult = {
   id: number;
   title: string;
   year: number | null;
+  /**
+   * A movie's TMDB release date, which places a planned movie on Watchlist
+   * or Upcoming on its card (prompts/catalog-card-status.md). Null for a
+   * show: its card reads its own air dates.
+   */
+  releaseDate: string | null;
   posterUrl: string | null;
   tmdbRating: number | null;
   tmdbVoteCount: number;
@@ -35,6 +41,7 @@ export function fromMovie(movie: MovieSummary): SearchResult {
     id: movie.id,
     title: movie.title,
     year: movie.releaseYear,
+    releaseDate: movie.releaseDate,
     posterUrl: movie.posterUrl,
     tmdbRating: movie.tmdbRating,
     tmdbVoteCount: movie.tmdbVoteCount,
@@ -47,6 +54,7 @@ export function fromShow(show: TvShowSummary): SearchResult {
     id: show.id,
     title: show.name,
     year: show.firstAirYear,
+    releaseDate: null,
     posterUrl: show.posterUrl,
     tmdbRating: show.tmdbRating,
     tmdbVoteCount: show.tmdbVoteCount,
