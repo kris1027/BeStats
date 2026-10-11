@@ -70,3 +70,32 @@ export function classifyAuthError(error: AuthError): AuthOutcome {
       return AUTH_OUTCOME.unexpected;
   }
 }
+
+/**
+ * Classifies a refused `profiles` write into one of our outcomes
+ * (prompts/account-username.md).
+ *
+ * Lives beside `classifyAuthError` so this file stays the only code that reads
+ * a raw Supabase error (`lib/auth/AGENTS.md`). Only the SQLSTATE is read:
+ *
+ * - `23505`, the unique index: the name is taken.
+ * - `23514`, a check: Zod catches the format first, so in practice this is a
+ *   reserved name, which is reported as taken so the list cannot be probed.
+ * - `BS002`, raised by `guard_username_change`: the weekly lock.
+ *
+ * @param error Anything with an optional string `code`, as PostgREST returns.
+ * @returns The outcome to show and log.
+ */
+export function classifyProfileWriteError(error: {
+  code?: string | null;
+}): AuthOutcome {
+  switch (error.code) {
+    case "23505":
+    case "23514":
+      return AUTH_OUTCOME.usernameTaken;
+    case "BS002":
+      return AUTH_OUTCOME.usernameLocked;
+    default:
+      return AUTH_OUTCOME.unexpected;
+  }
+}

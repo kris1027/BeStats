@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useActionState } from "react";
 import {
   AuthFeedback,
@@ -8,8 +7,8 @@ import {
 } from "@/components/auth/auth-feedback";
 import { AuthField } from "@/components/auth/auth-field";
 import { type AuthActionState, IDLE_STATE } from "@/lib/auth/action-state";
-import { AUTH_OUTCOME } from "@/lib/auth/messages";
 import { changePasswordAction } from "./actions";
+import { SignInAgainLink } from "./sign-in-again-link";
 
 /**
  * The change password form on `/account` (spec 0005, AC-16, AC-17).
@@ -29,22 +28,10 @@ function ChangePasswordForm() {
   );
 
   return (
-    <form action={formAction} className="flex flex-col gap-5">
+    <form action={formAction} className="flex flex-1 flex-col gap-5">
       <AuthFeedback state={state} />
 
-      {/*
-       * AC-17: a write that did not happen must never look like one that did,
-       * and the message must come with a way forward. `next` carries this page,
-       * so signing in again lands back here rather than on the catalog.
-       */}
-      {state.outcome === AUTH_OUTCOME.sessionExpired ? (
-        <Link
-          href="/sign-in?next=%2Faccount"
-          className="rounded-sm text-sm text-text-link hover:text-foreground hover:underline"
-        >
-          Sign in again
-        </Link>
-      ) : null}
+      <SignInAgainLink state={state} />
 
       <AuthField
         label="Current password"
@@ -64,9 +51,24 @@ function ChangePasswordForm() {
         error={state.fieldErrors?.password}
       />
 
-      <AuthSubmitButton pendingLabel="Saving…">
-        Change password
-      </AuthSubmitButton>
+      <AuthField
+        label="Confirm new password"
+        name="confirmPassword"
+        type="password"
+        autoComplete="new-password"
+        placeholder="Type it again"
+        error={state.fieldErrors?.confirmPassword}
+      />
+
+      {/*
+       * Pinned to the bottom, so in the two column layout it lines up with
+       * Save username; with no spare height `mt-auto` is zero.
+       */}
+      <div className="mt-auto">
+        <AuthSubmitButton pendingLabel="Saving…">
+          Change password
+        </AuthSubmitButton>
+      </div>
     </form>
   );
 }

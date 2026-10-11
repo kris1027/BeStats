@@ -107,7 +107,21 @@ describe("form schemas", () => {
       changePasswordSchema.safeParse({
         currentPassword: "old",
         password: "longenough",
+        confirmPassword: "longenough",
       }).success,
     ).toBe(true);
+  });
+
+  it("refuses a confirmation that does not match, on that field", () => {
+    const result = changePasswordSchema.safeParse({
+      currentPassword: "old",
+      password: "longenough",
+      confirmPassword: "longenougj",
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]).toMatchObject({
+      path: ["confirmPassword"],
+      message: "The passwords don't match.",
+    });
   });
 });

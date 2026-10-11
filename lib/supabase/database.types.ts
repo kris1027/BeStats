@@ -9,6 +9,30 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      profiles: {
+        Row: {
+          created_at: string
+          updated_at: string
+          user_id: string
+          username: string
+          username_changed_at: string
+        }
+        Insert: {
+          created_at?: string
+          updated_at?: string
+          user_id: string
+          username: string
+          username_changed_at?: string
+        }
+        Update: {
+          created_at?: string
+          updated_at?: string
+          user_id?: string
+          username?: string
+          username_changed_at?: string
+        }
+        Relationships: []
+      }
       user_episode_state: {
         Row: {
           created_at: string
@@ -273,6 +297,7 @@ export type Database = {
           tracked_at: string
         }[]
       }
+      username_available: { Args: { p_username: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

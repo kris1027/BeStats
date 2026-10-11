@@ -48,3 +48,40 @@ describe("SignUpForm's already registered refusal", () => {
     ).not.toBeInTheDocument();
   });
 });
+
+/** covers: prompts/account-username.md, R5 */
+describe("SignUpForm's username field", () => {
+  it("asks for a required username and states the rules up front", () => {
+    render(<SignUpForm />);
+    const field = screen.getByLabelText("Username");
+    expect(field).toBeRequired();
+    expect(field).toHaveAttribute("maxlength", "30");
+    expect(field).toHaveAccessibleDescription(
+      "2 to 30 characters: letters, numbers, _ . -",
+    );
+  });
+
+  it("marks a taken name on the field and keeps what was typed", async () => {
+    vi.mocked(signUpAction).mockResolvedValue({
+      status: "error",
+      message: AUTH_MESSAGES[AUTH_OUTCOME.usernameTaken],
+      outcome: AUTH_OUTCOME.usernameTaken,
+      fieldErrors: { username: "That username is taken." },
+      values: { email: "someone@example.com", username: "tester_one" },
+    });
+
+    render(<SignUpForm />);
+    const form = screen
+      .getByRole("button", { name: "Create account" })
+      .closest("form");
+    if (!form) throw new Error("the submit button is outside a form");
+    fireEvent.submit(form);
+
+    const field = await screen.findByDisplayValue("tester_one");
+    expect(field).toHaveAttribute("aria-invalid", "true");
+    expect(field).toHaveAccessibleDescription(
+      expect.stringContaining("That username is taken."),
+    );
+    expect(screen.getByLabelText("Email")).toHaveValue("someone@example.com");
+  });
+});

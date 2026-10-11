@@ -48,9 +48,12 @@ function AuthFeedback({ state }: { state: AuthActionState }) {
 function AuthSubmitButton({
   children,
   pendingLabel,
+  disabled = false,
 }: {
   children: React.ReactNode;
   pendingLabel: string;
+  /** Off for a reason other than a pending submit, such as a locked field. */
+  disabled?: boolean;
 }) {
   const { pending } = useFormStatus();
 
@@ -59,7 +62,7 @@ function AuthSubmitButton({
       type="submit"
       variant="selected"
       size="lg"
-      disabled={pending}
+      disabled={pending || disabled}
       className="w-full"
     >
       {pending ? pendingLabel : children}

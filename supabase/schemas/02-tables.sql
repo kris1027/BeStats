@@ -110,3 +110,34 @@ create table public.user_episode_state (
 -- show, already in display order.
 create index user_episode_state_show_order_idx
   on public.user_episode_state (user_id, show_id, season_number, episode_number);
+
+-- One row per person who has chosen a username (prompts/account-username.md).
+-- It is the only account field the auth account does not already hold, which
+-- is what AGENTS.md section 8 asks before a profile table exists. Never public:
+-- only its owner reads it, and no route shows one person's name to another.
+--
+-- The rules live on the table, not in the app, so a direct API write obeys
+-- them too: the two checks hold the format and the reserved names (both kept
+-- equal to `lib/auth/username.ts` by `lib/auth/username.test.ts`), the index below
+-- holds uniqueness ignoring case, and `guard_username_change` in
+-- `03-triggers.sql` owns `username_changed_at` and the weekly lock.
+create table public.profiles (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  username text not null,
+  username_changed_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint profiles_username_format_check
+    check (username ~ '^[A-Za-z0-9_.-]{2,30}$' and username !~ '^[.-]|[.-]$'),
+  constraint profiles_username_reserved_check
+    check (lower(username) <> all (array[
+      'admin', 'administrator', 'root', 'support', 'help', 'bestats',
+      'system', 'moderator', 'staff', 'official', 'tmdb', 'api', 'account',
+      'null', 'undefined'
+    ]))
+);
+
+-- Stored as typed, unique as lowercased: `Kris` and `kris` are one name. Also
+-- the index `username_available` reads.
+create unique index profiles_username_lower_key
+  on public.profiles (lower(username));

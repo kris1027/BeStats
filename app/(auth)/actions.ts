@@ -7,12 +7,14 @@ import {
   failure,
   fromZodError,
   keepEmail,
+  keepUsername,
   passwordFieldFor,
   success,
 } from "@/lib/auth/action-state";
 import { isRecoverySession } from "@/lib/auth/identity";
 import { AUTH_EVENT, logAuthEvent } from "@/lib/auth/log";
 import {
+  ACCOUNT_NOTICE,
   AUTH_OUTCOME,
   RESEND_REQUESTED_MESSAGE,
   RESET_REQUESTED_MESSAGE,
@@ -25,7 +27,10 @@ import {
   signInSchema,
   signUpSchema,
 } from "@/lib/auth/schemas";
-import { classifyAuthError } from "@/lib/auth/supabase-error";
+import {
+  classifyAuthError,
+  classifyProfileWriteError,
+} from "@/lib/auth/supabase-error";
 import { getAuthEmailDelivery, getPublicEnv } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 
@@ -83,6 +88,57 @@ async function padTo(startedAt: number, floorMs: number): Promise<void> {
 }
 
 /**
+ * Keeps both typed values on a refused sign up, so neither field empties.
+ */
+function keepTyped(
+  state: AuthActionState,
+  formData: FormData,
+): AuthActionState {
+  return keepUsername(keepEmail(state, formData), formData);
+}
+
+/**
+ * Stores the new account's username and says where to go next
+ * (prompts/account-username.md, Q9, Q16).
+ *
+ * Runs as the new user, under the session `signUp` just created, so row level
+ * security applies like any other write. The availability check before
+ * `signUp` makes a refusal here rare: it means someone claimed the same name
+ * in between. The account exists by then and cannot be undone from here, so
+ * the person is sent to `/account` to choose another, with a notice when the
+ * name was taken and without one for any other failure, where the empty field
+ * says enough.
+ *
+ * @returns The path to redirect to. Never throws, so the caller's `redirect()`
+ * stays outside any `try`.
+ */
+async function claimUsername(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string | undefined,
+  username: string,
+  nextPath: string,
+): Promise<string> {
+  if (!userId) {
+    logAuthEvent(AUTH_EVENT.signUp, "error", AUTH_OUTCOME.unexpected);
+    return "/account";
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .insert({ user_id: userId, username });
+
+  if (!error) return nextPath;
+
+  if (classifyProfileWriteError(error) === AUTH_OUTCOME.usernameTaken) {
+    logAuthEvent(AUTH_EVENT.signUp, "refused", AUTH_OUTCOME.usernameTaken);
+    return `/account?notice=${ACCOUNT_NOTICE.usernameTaken}`;
+  }
+
+  logAuthEvent(AUTH_EVENT.signUp, "error", AUTH_OUTCOME.unexpected);
+  return "/account";
+}
+
+/**
  * Creates an account, then signs in or asks for confirmation (spec 0005 AC-1,
  * AC-2; spec 0018 AC-11, AC-12).
  *
@@ -99,6 +155,7 @@ export async function signUpAction(
   const startedAt = Date.now();
 
   const parsed = signUpSchema.safeParse({
+    username: formData.get("username"),
     email: formData.get("email"),
     password: formData.get("password"),
     next: formData.get("next") ?? undefined,
@@ -106,14 +163,36 @@ export async function signUpAction(
 
   if (!parsed.success) {
     logAuthEvent(AUTH_EVENT.signUp, "refused", AUTH_OUTCOME.invalidInput);
-    return keepEmail(fromZodError(parsed.error), formData);
+    return keepTyped(fromZodError(parsed.error), formData);
   }
 
-  const { email, password, next } = parsed.data;
+  const { username, email, password, next } = parsed.data;
   const nextPath = safeNextPath(next);
   const emailDelivery = getAuthEmailDelivery();
 
   const supabase = await createClient();
+
+  // Asked before the account exists, so a taken name never leaves behind an
+  // account without one. Unpadded: that a name is in use is not a secret the
+  // plan keeps (prompts/account-username.md, Q10, Q17). An error is never
+  // read as "available".
+  const { data: available, error: availabilityError } = await supabase.rpc(
+    "username_available",
+    { p_username: username },
+  );
+
+  if (availabilityError) {
+    logAuthEvent(AUTH_EVENT.signUp, "error", AUTH_OUTCOME.signUpUnavailable);
+    return keepTyped(failure(AUTH_OUTCOME.signUpUnavailable), formData);
+  }
+
+  if (!available) {
+    logAuthEvent(AUTH_EVENT.signUp, "refused", AUTH_OUTCOME.usernameTaken);
+    return keepTyped(
+      failure(AUTH_OUTCOME.usernameTaken, ["username"]),
+      formData,
+    );
+  }
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -137,7 +216,7 @@ export async function signUpAction(
   if (error && !addressAlreadyRegistered) {
     const outcome = classifyAuthError(error);
     logAuthEvent(AUTH_EVENT.signUp, "refused", outcome);
-    return keepEmail(failure(outcome, passwordFieldFor(outcome)), formData);
+    return keepTyped(failure(outcome, passwordFieldFor(outcome)), formData);
   }
 
   if (emailDelivery === "off") {
@@ -150,7 +229,7 @@ export async function signUpAction(
         "refused",
         AUTH_OUTCOME.alreadyRegistered,
       );
-      return keepEmail(
+      return keepTyped(
         {
           ...failure(AUTH_OUTCOME.alreadyRegistered),
           link: {
@@ -167,17 +246,23 @@ export async function signUpAction(
     // sends, so refuse plainly and leave the mismatch in the log.
     if (!data.session) {
       logAuthEvent(AUTH_EVENT.signUp, "error", AUTH_OUTCOME.signUpUnavailable);
-      return keepEmail(failure(AUTH_OUTCOME.signUpUnavailable), formData);
+      return keepTyped(failure(AUTH_OUTCOME.signUpUnavailable), formData);
     }
 
-    redirect(nextPath);
+    redirect(await claimUsername(supabase, data.user?.id, username, nextPath));
   }
 
   // Both branches, never one. See SIGN_UP_PAD_MS: padding only the refusal
   // makes the refusal the slow one and leaks the answer just as loudly.
   await padTo(startedAt, SIGN_UP_PAD_MS);
 
-  if (data.session) redirect(nextPath);
+  if (data.session) {
+    redirect(await claimUsername(supabase, data.user?.id, username, nextPath));
+  }
+
+  // No session means confirmation is on, and nobody can write the profile
+  // until there is one. The name is then chosen on `/account`; unreachable
+  // with today's config (`enable_confirmations = false`).
 
   redirect(
     `/check-email?email=${encodeURIComponent(email)}&next=${encodeURIComponent(nextPath)}`,

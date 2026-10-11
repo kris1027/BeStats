@@ -1,11 +1,21 @@
+import { cn } from "cn";
 import type { Metadata } from "next";
 
 import { signOutAction } from "@/app/(auth)/actions";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { hasPasswordIdentity } from "@/lib/auth/identity";
+import {
+  ACCOUNT_NOTICE,
+  ACCOUNT_NOTICES,
+  AUTH_OUTCOME,
+  authMessage,
+} from "@/lib/auth/messages";
+import { getOwnProfile } from "@/lib/auth/profile";
 import { requireUser } from "@/lib/auth/user";
+import { isUsernameLocked, usernameUnlocksAt } from "@/lib/auth/username";
 import { createClient } from "@/lib/supabase/server";
 import { ChangePasswordForm } from "./change-password-form";
+import { ChangeUsernameForm } from "./change-username-form";
 
 /**
  * This route opts out of prerendering (root `AGENTS.md`, `cacheComponents`).
@@ -28,6 +38,13 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+/** The glass card every `/account` section sits on, `AuthPanel`'s look. */
+const PANEL =
+  "glass glass-rim glass-plate-panel glass-shadow flex flex-col rounded-panel px-5 py-8 md:px-10 md:py-10";
+
+/** From lg, the password card takes the right column beside the other two. */
+const RIGHT_COLUMN = "lg:col-start-2 lg:row-span-2 lg:row-start-1";
+
 /**
  * `/account`, the first private route in the app (spec 0005, AC-12, AC-16).
  *
@@ -40,8 +57,26 @@ export const metadata: Metadata = {
  * and spacing unchanged rather than inventing a second look, which is the
  * approach `AGENTS.md` section 3 asks for and spec 0005 records.
  */
-export default async function AccountPage() {
+export default async function AccountPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ notice?: string | string[] }>;
+}) {
   const user = await requireUser();
+  const profile = await getOwnProfile();
+  const { notice } = await searchParams;
+
+  // Only a known key shows anything, so the URL cannot put its own text here.
+  const noticeText =
+    notice === ACCOUNT_NOTICE.usernameTaken
+      ? ACCOUNT_NOTICES[ACCOUNT_NOTICE.usernameTaken]
+      : null;
+
+  // Read once per request; the page is dynamic (`instant = false`).
+  const unlocksAt =
+    profile && isUsernameLocked(profile.usernameChangedAt, new Date())
+      ? usernameUnlocksAt(profile.usernameChangedAt).toISOString()
+      : null;
 
   // The one network call on this page. `getClaims()` has already established
   // who this is, but the identities list is not in the JWT and AC-16 needs it.
@@ -60,16 +95,39 @@ export default async function AccountPage() {
   const canChangePassword =
     !identitiesUnavailable && hasPasswordIdentity(data.user?.identities);
 
+  const twoColumns = canChangePassword || identitiesUnavailable;
+
   return (
-    <div className="mx-auto flex w-full max-w-[480px] flex-col gap-6 py-4 md:py-8">
-      <section className="glass glass-rim glass-plate-panel glass-shadow flex flex-col gap-6 rounded-panel px-5 py-8 md:px-10 md:py-10">
+    <div
+      className={cn(
+        "mx-auto grid w-full max-w-[480px] grid-cols-1 gap-6 py-4 md:py-8",
+        // Two columns only when there is something for the right one: a
+        // provider only account has no password card, and an empty column
+        // would read as a missing setting (prompts/account-username.md,
+        // amendment).
+        twoColumns && "lg:max-w-[984px] lg:grid-cols-2",
+      )}
+    >
+      <section className={cn(PANEL, "gap-6")}>
         <header className="flex flex-col gap-2">
           <h1 className="text-3xl leading-tight font-bold tracking-[-0.03em] text-foreground md:text-4xl">
             Account
           </h1>
           <p className="text-sm text-muted-foreground md:text-base">
             You are signed in as{" "}
-            <span className="font-semibold text-foreground">{user.email}</span>.
+            {profile ? (
+              <>
+                <span className="font-semibold text-foreground">
+                  {profile.username}
+                </span>{" "}
+                ({user.email})
+              </>
+            ) : (
+              <span className="font-semibold text-foreground">
+                {user.email}
+              </span>
+            )}
+            .
           </p>
         </header>
 
@@ -80,8 +138,32 @@ export default async function AccountPage() {
         </form>
       </section>
 
+      <section className={cn(PANEL, "gap-6")}>
+        <header className="flex flex-col gap-2">
+          <h2 className="text-xl leading-tight font-bold text-foreground">
+            Username
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {profile
+              ? authMessage(AUTH_OUTCOME.usernameLocked)
+              : "Choose a username. You can change it once a week."}
+          </p>
+        </header>
+
+        {noticeText && !profile ? (
+          <p role="status" className="text-sm text-foreground">
+            {noticeText}
+          </p>
+        ) : null}
+
+        <ChangeUsernameForm
+          username={profile?.username ?? null}
+          unlocksAt={unlocksAt}
+        />
+      </section>
+
       {canChangePassword ? (
-        <section className="glass glass-rim glass-plate-panel glass-shadow flex flex-col gap-6 rounded-panel px-5 py-8 md:px-10 md:py-10">
+        <section className={cn(PANEL, "gap-6", RIGHT_COLUMN)}>
           <header className="flex flex-col gap-2">
             <h2 className="text-xl leading-tight font-bold text-foreground">
               Change password
@@ -96,7 +178,7 @@ export default async function AccountPage() {
       ) : null}
 
       {identitiesUnavailable ? (
-        <section className="glass glass-rim glass-plate-panel glass-shadow flex flex-col gap-4 rounded-panel px-5 py-8 md:px-10 md:py-10">
+        <section className={cn(PANEL, "gap-4", RIGHT_COLUMN, "lg:self-start")}>
           <p
             role="alert"
             className="text-sm text-muted-foreground md:text-base"

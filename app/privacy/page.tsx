@@ -55,8 +55,9 @@ export default function PrivacyPage() {
         <LegalList>
           <li>
             <strong className="text-foreground">Account data:</strong> your
-            email address, and your password, which Supabase Auth stores only as
-            a hash.
+            email address, the username you choose, and your password, which
+            Supabase Auth stores only as a hash. Your username is shown only to
+            you.
           </li>
           <li>
             <strong className="text-foreground">Tracking data:</strong> your

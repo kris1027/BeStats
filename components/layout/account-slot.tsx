@@ -5,6 +5,7 @@ import { LibraryNav } from "@/components/layout/library-nav";
 import { MobileMenuSheet } from "@/components/layout/mobile-menu-sheet";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { avatarLetter, displayName } from "@/lib/auth/identity";
+import { getOwnProfile } from "@/lib/auth/profile";
 import { getOptionalUser } from "@/lib/auth/user";
 import { publicEnvProblems } from "@/lib/env";
 
@@ -51,8 +52,11 @@ async function AccountSlot({ variant }: { variant: "desktop" | "mobile" }) {
     );
   }
 
-  const name = displayName(user.email);
-  const letter = avatarLetter(user.email);
+  // The username, when the account has chosen one. A failed read falls back
+  // to the email name rather than failing the slot on every page.
+  const profile = await getOwnProfile();
+  const name = displayName(user.email, profile?.username);
+  const letter = avatarLetter(user.email, profile?.username);
 
   if (variant === "mobile") {
     return (

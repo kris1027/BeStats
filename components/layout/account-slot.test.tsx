@@ -5,6 +5,9 @@ import { getOptionalUser } from "@/lib/auth/user";
 import { AccountSlot } from "./account-slot";
 
 vi.mock("@/app/(auth)/actions", () => ({ signOutAction: vi.fn() }));
+vi.mock("@/lib/auth/profile", () => ({
+  getOwnProfile: vi.fn(async () => null),
+}));
 
 // Reading the session with no configuration throws, exactly as the real
 // server client does, so a test that reaches it fails the way the page did.

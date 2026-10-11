@@ -648,3 +648,30 @@ revoke all on function public.restore_episodes_watched(integer, jsonb) from publ
 grant execute on function public.mark_season_watched(integer, smallint, integer[], smallint[]) to authenticated;
 grant execute on function public.unmark_episodes_watched(integer, integer[]) to authenticated;
 grant execute on function public.restore_episodes_watched(integer, jsonb) to authenticated;
+
+-- Whether a username is free, asked by the sign up form before the account
+-- exists (prompts/account-username.md, Q16).
+--
+-- The one SECURITY DEFINER function, and the one `anon` can call, in `public`:
+-- a signed out visitor cannot read `profiles`, and asking after the account is
+-- created would leave it with no name when the name is taken.
+-- `140-security-sweep` names this exact signature as its only exception. It
+-- returns a boolean and nothing else, so all it can tell anyone is that a name
+-- is in use, which the plan accepts. The unique index, not this answer, is
+-- what guarantees uniqueness: two sign ups racing for one name both hear
+-- true, and the second insert fails.
+create or replace function public.username_available(p_username text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select not exists (
+    select 1 from public.profiles
+    where lower(username) = lower(p_username)
+  );
+$$;
+
+revoke all on function public.username_available(text) from public, anon, authenticated;
+grant execute on function public.username_available(text) to anon, authenticated;

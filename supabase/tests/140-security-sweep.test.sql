@@ -12,7 +12,7 @@
 -- through `pg_depend`.
 
 begin;
-select plan(13);
+select plan(14);
 
 -- The sweep must see something, or every empty result below is vacuous.
 select ok(
@@ -122,15 +122,29 @@ select is_empty(
 );
 
 -- Functions: security definer runs as the owner and would step around the
--- caller's policies. Every function here is security invoker by design.
+-- caller's policies. Every function here is security invoker by design, with
+-- one named exception: `username_available(text)`, which the signed out sign
+-- up form asks before an account exists (prompts/account-username.md). It is
+-- excluded by its exact signature, here and in the anon check below, so any
+-- other definer or anon callable function still fails.
 select is_empty(
   $$select p.oid::regprocedure::text from pg_proc p
     where p.pronamespace = 'public'::regnamespace
       and p.prosecdef
+      and p.oid <> 'public.username_available(text)'::regprocedure
       and not exists (
         select 1 from pg_depend d where d.objid = p.oid and d.deptype = 'e'
       )$$,
   'no function in public is security definer'
+);
+
+-- The exception can only ever answer yes or no. Widening its return type
+-- would turn it into a way for anyone to read the table.
+select is(
+  (select p.prorettype::regtype::text from pg_proc p
+   where p.oid = 'public.username_available(text)'::regprocedure),
+  'boolean',
+  'the one exception returns a boolean and nothing else'
 );
 
 -- An unpinned search_path lets a caller shadow a table or operator the
@@ -155,6 +169,7 @@ select is_empty(
     where p.pronamespace = 'public'::regnamespace
       and p.prorettype <> 'trigger'::regtype
       and has_function_privilege('anon', p.oid, 'execute')
+      and p.oid <> 'public.username_available(text)'::regprocedure
       and not exists (
         select 1 from pg_depend d where d.objid = p.oid and d.deptype = 'e'
       )$$,

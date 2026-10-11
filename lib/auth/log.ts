@@ -24,6 +24,8 @@ export const AUTH_EVENT = {
   requestPasswordReset: "auth.request_password_reset",
   resetPassword: "auth.reset_password",
   changePassword: "auth.change_password",
+  changeUsername: "auth.change_username",
+  readProfile: "auth.read_profile",
   callback: "auth.callback",
   guard: "auth.guard",
 } as const;

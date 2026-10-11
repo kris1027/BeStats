@@ -2,6 +2,19 @@ import type { z } from "zod";
 
 import { AUTH_OUTCOME, type AuthOutcome, authMessage } from "./messages";
 
+/** Every field a form can mark, listed once so `fromZodError` can narrow. */
+const AUTH_FIELDS = [
+  "email",
+  "password",
+  "currentPassword",
+  "confirmPassword",
+  "username",
+] as const;
+
+function isAuthField(value: unknown): value is AuthField {
+  return AUTH_FIELDS.includes(value as AuthField);
+}
+
 /**
  * The one shape every auth Server Action returns (spec 0005, API surface).
  *
@@ -15,7 +28,7 @@ import { AUTH_OUTCOME, type AuthOutcome, authMessage } from "./messages";
  * the field it belongs to, which is how AC-21 is satisfied without each form
  * inventing its own error plumbing.
  */
-export type AuthField = "email" | "password" | "currentPassword";
+export type AuthField = (typeof AUTH_FIELDS)[number];
 
 export type AuthActionState = {
   status: "idle" | "success" | "error";
@@ -31,9 +44,10 @@ export type AuthActionState = {
    * What was typed into the email field, handed back so the form can use it as
    * `defaultValue`. React 19 resets a form's uncontrolled inputs once its
    * action finishes, so without this every refusal empties the field. Only the
-   * email is ever carried; a password must never travel back to the page.
+   * email and the username are ever carried; a password must never travel
+   * back to the page.
    */
-  values?: { email?: string };
+  values?: { email?: string; username?: string };
   /**
    * A next step the action points to, rendered by the form under its message.
    * Today only sign up's "already exists" refusal carries one, the way back to
@@ -112,7 +126,23 @@ export function keepEmail(
   formData: FormData,
 ): AuthActionState {
   const email = formData.get("email");
-  return typeof email === "string" ? { ...state, values: { email } } : state;
+  return typeof email === "string"
+    ? { ...state, values: { ...state.values, email } }
+    : state;
+}
+
+/**
+ * Carries the submitted username back, for the same reason as `keepEmail`.
+ * The two compose, so sign up keeps both.
+ */
+export function keepUsername(
+  state: AuthActionState,
+  formData: FormData,
+): AuthActionState {
+  const username = formData.get("username");
+  return typeof username === "string"
+    ? { ...state, values: { ...state.values, username } }
+    : state;
 }
 
 /**
@@ -129,12 +159,7 @@ export function fromZodError(error: z.ZodError): AuthActionState {
 
   for (const issue of error.issues) {
     const field = issue.path[0];
-    if (
-      (field === "email" ||
-        field === "password" ||
-        field === "currentPassword") &&
-      !fieldErrors[field]
-    ) {
+    if (isAuthField(field) && !fieldErrors[field]) {
       fieldErrors[field] = issue.message;
     }
   }

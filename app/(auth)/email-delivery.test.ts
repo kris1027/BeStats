@@ -19,6 +19,11 @@ const auth = {
   signInWithPassword: vi.fn(),
 };
 
+/** The username check and the profile insert that sign up adds. */
+const rpc = vi.fn();
+const insert = vi.fn();
+const from = vi.fn();
+
 const createClient = vi.fn();
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -49,6 +54,8 @@ const PASSWORD = "a-long-enough-password";
 
 function form(fields: Record<string, string>): FormData {
   const data = new FormData();
+  // Sign up needs a username; the other actions ignore the extra field.
+  data.set("username", "tester_one");
   for (const [name, value] of Object.entries(fields)) data.set(name, value);
   return data;
 }
@@ -68,7 +75,10 @@ const NEW_USER = { id: "user-a", identities: [{ id: "identity" }] };
 let warn: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
-  createClient.mockResolvedValue({ auth });
+  createClient.mockResolvedValue({ auth, rpc, from });
+  rpc.mockResolvedValue({ data: true, error: null });
+  insert.mockResolvedValue({ error: null });
+  from.mockReturnValue({ insert });
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "http://127.0.0.1:54321");
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test");
   vi.stubEnv("NEXT_PUBLIC_SITE_URL", "http://localhost:3000");
@@ -379,5 +389,88 @@ describe("the email actions with email delivery on", () => {
     );
 
     expect(state.message).toBe(AUTH_MESSAGES[AUTH_OUTCOME.emailNotConfirmed]);
+  });
+});
+
+/** covers: prompts/account-username.md, R5 (Q9, Q16) */
+describe("signUpAction and the username", () => {
+  beforeEach(() => {
+    vi.stubEnv("NEXT_PUBLIC_AUTH_EMAIL_DELIVERY", "off");
+    auth.signUp.mockResolvedValue({
+      data: { user: NEW_USER, session: SESSION },
+      error: null,
+    });
+  });
+
+  it("stores the username as the new user, then goes on", async () => {
+    const url = await redirectOf(
+      signUpAction(IDLE_STATE, form({ email: ADDRESS, password: PASSWORD })),
+    );
+
+    expect(url).toBe("/shows");
+    expect(rpc).toHaveBeenCalledWith("username_available", {
+      p_username: "tester_one",
+    });
+    expect(from).toHaveBeenCalledWith("profiles");
+    expect(insert).toHaveBeenCalledWith({
+      user_id: "user-a",
+      username: "tester_one",
+    });
+  });
+
+  it("refuses a taken name on its field before any account exists", async () => {
+    rpc.mockResolvedValue({ data: false, error: null });
+
+    const state = await signUpAction(
+      IDLE_STATE,
+      form({ email: ADDRESS, password: PASSWORD }),
+    );
+
+    expect(state.outcome).toBe(AUTH_OUTCOME.usernameTaken);
+    expect(state.fieldErrors?.username).toBe("That username is taken.");
+    expect(state.values).toEqual({ email: ADDRESS, username: "tester_one" });
+    expect(auth.signUp).not.toHaveBeenCalled();
+  });
+
+  it("never reads a failed check as available", async () => {
+    rpc.mockResolvedValue({ data: null, error: { code: "08006" } });
+
+    const state = await signUpAction(
+      IDLE_STATE,
+      form({ email: ADDRESS, password: PASSWORD }),
+    );
+
+    expect(state.outcome).toBe(AUTH_OUTCOME.signUpUnavailable);
+    expect(auth.signUp).not.toHaveBeenCalled();
+  });
+
+  it("sends a name lost to a race to /account with the notice", async () => {
+    insert.mockResolvedValue({ error: { code: "23505" } });
+
+    const url = await redirectOf(
+      signUpAction(IDLE_STATE, form({ email: ADDRESS, password: PASSWORD })),
+    );
+
+    expect(url).toBe("/account?notice=username-taken");
+  });
+
+  it("sends any other failed insert to /account without one", async () => {
+    insert.mockResolvedValue({ error: { code: "08006" } });
+
+    const url = await redirectOf(
+      signUpAction(IDLE_STATE, form({ email: ADDRESS, password: PASSWORD })),
+    );
+
+    expect(url).toBe("/account");
+  });
+
+  it("requires a username", async () => {
+    const data = form({ email: ADDRESS, password: PASSWORD });
+    data.delete("username");
+
+    const state = await signUpAction(IDLE_STATE, data);
+
+    expect(state.fieldErrors?.username).toBeDefined();
+    expect(rpc).not.toHaveBeenCalled();
   });
 });

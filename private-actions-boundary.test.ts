@@ -52,6 +52,13 @@ function passwordForm(): FormData {
   const form = new FormData();
   form.set("currentPassword", "the-current-Passw0rd");
   form.set("password", "a-fresh-Passw0rd-for-tests");
+  form.set("confirmPassword", "a-fresh-Passw0rd-for-tests");
+  return form;
+}
+
+function usernameForm(): FormData {
+  const form = new FormData();
+  form.set("username", "tester_one");
   return form;
 }
 
@@ -119,6 +126,8 @@ const PRIVATE_ACTIONS: Record<
     calls: {
       changePasswordAction: () =>
         accountActions.changePasswordAction(IDLE_STATE, passwordForm()),
+      changeUsernameAction: () =>
+        accountActions.changeUsernameAction(IDLE_STATE, usernameForm()),
     },
   },
 };
