@@ -1,3 +1,4 @@
+import { cn } from "cn";
 import type { Metadata } from "next";
 
 import { signOutAction } from "@/app/(auth)/actions";
@@ -82,8 +83,19 @@ export default async function AccountPage({
   const canChangePassword =
     !identitiesUnavailable && hasPasswordIdentity(data.user?.identities);
 
+  const twoColumns = canChangePassword || identitiesUnavailable;
+
   return (
-    <div className="mx-auto flex w-full max-w-[480px] flex-col gap-6 py-4 md:py-8">
+    <div
+      className={cn(
+        "mx-auto grid w-full max-w-[480px] grid-cols-1 gap-6 py-4 md:py-8",
+        // Two columns only when there is something for the right one: a
+        // provider only account has no password card, and an empty column
+        // would read as a missing setting (prompts/account-username.md,
+        // amendment).
+        twoColumns && "lg:max-w-[984px] lg:grid-cols-2",
+      )}
+    >
       <section className="glass glass-rim glass-plate-panel glass-shadow flex flex-col gap-6 rounded-panel px-5 py-8 md:px-10 md:py-10">
         <header className="flex flex-col gap-2">
           <h1 className="text-3xl leading-tight font-bold tracking-[-0.03em] text-foreground md:text-4xl">
@@ -139,7 +151,7 @@ export default async function AccountPage({
       </section>
 
       {canChangePassword ? (
-        <section className="glass glass-rim glass-plate-panel glass-shadow flex flex-col gap-6 rounded-panel px-5 py-8 md:px-10 md:py-10">
+        <section className="glass glass-rim glass-plate-panel glass-shadow flex flex-col gap-6 rounded-panel px-5 py-8 md:px-10 md:py-10 lg:col-start-2 lg:row-span-2 lg:row-start-1">
           <header className="flex flex-col gap-2">
             <h2 className="text-xl leading-tight font-bold text-foreground">
               Change password
@@ -154,7 +166,7 @@ export default async function AccountPage({
       ) : null}
 
       {identitiesUnavailable ? (
-        <section className="glass glass-rim glass-plate-panel glass-shadow flex flex-col gap-4 rounded-panel px-5 py-8 md:px-10 md:py-10">
+        <section className="glass glass-rim glass-plate-panel glass-shadow flex flex-col gap-4 rounded-panel px-5 py-8 md:px-10 md:py-10 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start">
           <p
             role="alert"
             className="text-sm text-muted-foreground md:text-base"

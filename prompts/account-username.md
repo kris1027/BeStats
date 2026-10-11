@@ -236,3 +236,14 @@ Run against the local stack with `pnpm dev:docker`.
 7. Delete one account's profile row in Studio and reload `/account` as that user. The field is empty and enabled, and the navbar falls back to the email name. Set a name and it saves and locks.
 8. Narrow the window to 375 px and repeat step 3. The section fits, the field and button have 44 px targets, and focus is visible when you tab through.
 9. Open `/privacy` and check that the username line and the 2026-10-11 date are there.
+
+## Amendment (2026-10-11): two column `/account`
+
+Asked after implementation: settings in a two column grid.
+
+- **Layout:** from `lg` (1024 px) up, the page is a grid with two columns. On the left, two rows: the Account card, then the Username card. On the right, the Change password card spans both rows and stretches to their full height. Below `lg` it stays one column in today's order: Account, Username, Change password.
+- **Width:** the container grows from `max-w-[480px]` to `lg:max-w-[984px]`, two 480 px columns and the existing 24 px gap (`gap-6`), so each card keeps today's width and no form gets wider than it is now. At `md` two columns would leave about 360 px per card with `md:px-10`, which is too tight, hence `lg`.
+- **No password card:** a Google only account has none. The grid then keeps one column at 480 px as today, rather than an empty right column. The "could not load your password settings" card takes the password card's place in the right column when it shows.
+- **Unchanged:** every card's content, spacing and glass classes; only the wrapper and the right card's grid placement change.
+
+Files: `app/account/page.tsx`. Checks: `pnpm typecheck`, `pnpm lint`, `pnpm test`, then the page at 1280 px and 375 px in the running app.
