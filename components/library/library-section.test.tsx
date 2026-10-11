@@ -357,42 +357,22 @@ describe("show cards (AC-9 to AC-12)", () => {
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
-  it.each([
-    ["watchlist", ["Next episode", "Mark watched"]],
-    ["upcoming", ["Air date"]],
-    ["watched", ["Your score"]],
-  ] as const)(
-    "keeps the %s shows legend to its own badges",
-    async (list, entries) => {
-      getShowLibraryTab.mockResolvedValue(
-        tab([
-          list === "watchlist"
-            ? {
-                page: "watchlist",
-                showId: 1,
-                title: TITLE,
-                next: { season: 1, episode: 1 },
-              }
-            : list === "upcoming"
-              ? {
-                  page: "upcoming",
-                  showId: 1,
-                  title: TITLE,
-                  airDate: null,
-                  next: null,
-                }
-              : { page: "watched", showId: 1, title: TITLE, label: "finished" },
-        ]),
-      );
-      await renderSection(list, { type: "tv" });
-      const legend = screen.getByRole("list", { name: "Badge legend" });
-      expect(
-        within(legend)
-          .getAllByRole("listitem")
-          .map((item) => item.textContent),
-      ).toEqual(entries);
-    },
-  );
+  it("leaves the icon key to the footer, with no legend under the grid", async () => {
+    getShowLibraryTab.mockResolvedValue(
+      tab([
+        {
+          page: "watchlist",
+          showId: 1,
+          title: TITLE,
+          next: { season: 1, episode: 1 },
+        },
+      ]),
+    );
+    await renderSection("watchlist", { type: "tv" });
+    expect(
+      screen.queryByRole("list", { name: /legend|icon key/i }),
+    ).not.toBeInTheDocument();
+  });
 });
 
 describe("movie cards (AC-13)", () => {

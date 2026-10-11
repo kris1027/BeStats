@@ -87,7 +87,7 @@ function LibraryNavView({
                 ? "hit-area-tab h-7 px-4 text-sm"
                 : "h-11 px-4 text-base",
               selected
-                ? "glass-selected glass-rim text-foreground"
+                ? "glass-selected-personal glass-rim text-text-on-personal"
                 : "text-text-link hover:text-foreground",
             )}
           >

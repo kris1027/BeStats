@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import type * as React from "react";
 import { GlassPill } from "@/components/glass-pill";
+import { IconKey } from "@/components/layout/icon-key";
 import { LibraryNavView } from "@/components/layout/library-nav";
 import { MobileMenuSheet } from "@/components/layout/mobile-menu-sheet";
 import {
@@ -161,6 +162,14 @@ export default function ShowcasePage() {
           <div className="glass-selected glass-rim glass-plate glass-shadow flex h-10 items-center rounded-full px-5 text-sm">
             Selected
           </div>
+          <div className="glass glass-rim glass-plate glass-shadow flex items-center gap-1 rounded-full p-[4.5px]">
+            <span className="glass-selected-personal glass-rim flex h-7 items-center rounded-full px-4 text-xs font-semibold tracking-[0.07em] text-text-on-personal">
+              SELECTED TAB
+            </span>
+            <span className="flex h-7 items-center px-4 text-xs font-semibold tracking-[0.07em] text-text-secondary">
+              TAB
+            </span>
+          </div>
         </div>
       </Section>
 
@@ -222,11 +231,18 @@ export default function ShowcasePage() {
           A TMDB badge with no value renders nothing; a personal score with no
           value renders &ldquo;Not rated&rdquo;. Plan, Planned and the watched
           marks are the movie tracking marks from spec 0007, drawn from the
-          legend&rsquo;s own paths. Next episode is the Watchlist show
-          card&rsquo;s pill, and the dated and Date TBA pills sit on Upcoming
-          cards (spec 0020); below <code>sm</code> a date that carries its year
-          drops the calendar glyph.
+          original legend&rsquo;s paths and listed in the footer&rsquo;s icon
+          key. Next episode is the Watchlist show card&rsquo;s pill, and the
+          dated and Date TBA pills sit on Upcoming cards (spec 0020); below{" "}
+          <code>sm</code> a date that carries its year drops the calendar glyph.
         </p>
+      </Section>
+
+      <Section
+        title="Icon key"
+        note="The footer's key to the card marks, on every route. A new mark adds its entry there rather than a per page legend (prompts/grid-tabs-footer-legend.md)."
+      >
+        <IconKey />
       </Section>
 
       <Section title="Buttons and controls">

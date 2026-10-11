@@ -2,18 +2,14 @@ import { render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 /**
- * covers: spec 0007, AC-2, AC-16, AC-17
+ * covers: spec 0007, AC-2, AC-17
  *
- * The two server slots decide between nothing, a failure line and the
+ * The server slot decides between nothing, a failure line and the
  * controls. The reads are the boundary, so they are what is replaced.
  */
 const getMovieTracking = vi.fn();
-const getWatchlistedMovieIds = vi.fn();
 vi.mock("@/lib/tracking/movie-state", () => ({
   getMovieTracking: (...args: unknown[]) => getMovieTracking(...args),
-  getWatchlistedMovieIds: (...args: unknown[]) =>
-    getWatchlistedMovieIds(...args),
-  movieIdsKey: (ids: number[]) => [...ids].sort((a, b) => a - b).join(","),
 }));
 vi.mock("@/lib/tracking/episode-state", () => ({
   requestTodayUtc: () => "2026-10-10",
@@ -23,7 +19,6 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock("sonner", () => ({ toast: vi.fn() }));
 
 const { MovieTrackingSlot } = await import("./movie-tracking-slot");
-const { CardBookmark } = await import("./card-bookmark");
 
 afterEach(() => {
   vi.clearAllMocks();
@@ -98,35 +93,5 @@ describe("MovieTrackingSlot", () => {
     expect(
       screen.getByRole("button", { name: "Mark Sequel watched" }),
     ).toBeInTheDocument();
-  });
-});
-
-describe("CardBookmark", () => {
-  const props = {
-    movieId: 550,
-    title: "Fight Club",
-    gridMovieIds: [603, 550],
-    returnPath: "/movies",
-  };
-
-  it("asks for the whole grid under one shared key (AC-16)", async () => {
-    getWatchlistedMovieIds.mockResolvedValue({
-      kind: "ok",
-      state: new Set([550]),
-    });
-    render(await CardBookmark(props));
-    expect(getWatchlistedMovieIds).toHaveBeenCalledWith("550,603");
-    expect(
-      screen.getByRole("button", { name: "Plan Fight Club" }),
-    ).toHaveAttribute("aria-pressed", "true");
-  });
-
-  it.each([
-    ["a visitor", { kind: "signed_out" }],
-    ["a failed read", { kind: "failed" }],
-  ])("renders nothing for %s (AC-2, AC-17)", async (_, read) => {
-    getWatchlistedMovieIds.mockResolvedValue(read);
-    const { container } = render(await CardBookmark(props));
-    expect(container).toBeEmptyDOMElement();
   });
 });

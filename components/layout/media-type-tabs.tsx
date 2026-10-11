@@ -111,7 +111,7 @@ function MediaTypeTabsView({
             className={cn(
               "hit-area-tab flex h-7 items-center rounded-full px-4 text-xs font-semibold tracking-[0.07em] transition-[filter,color]",
               isSelected
-                ? "glass-selected glass-rim text-foreground"
+                ? "glass-selected-personal glass-rim text-text-on-personal"
                 : "text-text-secondary hover:text-foreground",
             )}
           >

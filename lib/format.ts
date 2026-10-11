@@ -211,6 +211,33 @@ export function formatShortDate(
 }
 
 /**
+ * A movie's release date on an Upcoming card, formatted on the server beside
+ * the `today` that decided it (spec 0020, AC-13), or null for Date TBA.
+ */
+export type ReleaseDate = { shortDate: string; fullDate: string } | null;
+
+/**
+ * A movie's Upcoming release date in both pill forms (spec 0020, AC-13). The
+ * library Upcoming card and the catalog cards both format through it
+ * (prompts/catalog-card-status.md), so the two pills never disagree.
+ *
+ * @param releaseDate A date `upcomingReleaseDate` returned, or null.
+ * @param today `requestTodayUtc()`, for `formatShortDate`'s year rule.
+ * @returns Both forms, or null for Date TBA.
+ */
+export function formatReleaseDate(
+  releaseDate: string | null,
+  today: string,
+): ReleaseDate {
+  if (releaseDate === null) return null;
+  const fullDate = formatAirDate(releaseDate) ?? releaseDate;
+  return {
+    fullDate,
+    shortDate: formatShortDate(releaseDate, today) ?? fullDate,
+  };
+}
+
+/**
  * A TMDB calendar date as a UTC midnight `Date`, or null when it is missing,
  * not `YYYY-MM-DD`, or not a real day.
  *

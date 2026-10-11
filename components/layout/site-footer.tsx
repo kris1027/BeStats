@@ -5,23 +5,30 @@ import type * as React from "react";
 import { OPERATOR_GITHUB_URL, OPERATOR_HANDLE } from "@/lib/legal/operator";
 import { TMDB_ATTRIBUTION } from "@/lib/tmdb";
 
+import { IconKey } from "./icon-key";
+
 /**
- * The quiet footer under every route: TMDB's logo and the notice its API terms
- * require, then the two legal pages and the credit line (spec 0017, AC-1 to
- * AC-5). The credit names the operator by handle, linked to their GitHub
- * profile, the same way the legal pages do.
+ * The quiet footer under every route: the icon key to the card marks
+ * (`IconKey`), then TMDB's logo and the notice its API terms require, then
+ * the two legal pages and the credit line (spec 0017, AC-1 to AC-5). The
+ * credit names the operator by handle, linked to their GitHub profile, the
+ * same way the legal pages do.
  *
  * A Server Component that reads no cookie, header or session, so it sits in
  * every route's prerendered shell (`app/layout-purity.test.ts` holds it to
  * that). It carries no email address on purpose: the contact address lives
  * only on `/privacy` and `/terms`, off the pages scrapers crawl most.
  *
- * Flat, with no glass, blur or border, because it sits on the plain black
+ * Flat, with no glass, blur or border of its own (the key's hairline only
+ * separates it from the page above), because it sits on the plain black
  * page rather than over artwork (`components/AGENTS.md`, backdrop blur).
  */
 export function SiteFooter() {
   return (
     <footer className="w-full">
+      <div className="mx-auto w-full max-w-[1600px] px-4">
+        <IconKey />
+      </div>
       <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-3 px-4 py-4 md:flex-row md:items-center md:justify-between md:gap-6">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-4">
           <a

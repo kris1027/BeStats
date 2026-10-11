@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   classifyMovie,
   isMovieReleased,
+  movieCardStatus,
   movieReleaseNote,
   upcomingReleaseDate,
 } from "./movie-page";
@@ -14,13 +15,13 @@ describe("classifyMovie (AC-13)", () => {
   it("puts a released planned movie on Watchlist, release day included", () => {
     expect(
       classifyMovie(
-        { releaseDate: "2026-01-01", inWatchlist: true, watchedAt: null },
+        { releaseDate: "2026-01-01", inWatchlist: true, watched: false },
         today,
       ),
     ).toBe("watchlist");
     expect(
       classifyMovie(
-        { releaseDate: today, inWatchlist: true, watchedAt: null },
+        { releaseDate: today, inWatchlist: true, watched: false },
         today,
       ),
     ).toBe("watchlist");
@@ -29,7 +30,7 @@ describe("classifyMovie (AC-13)", () => {
   it("puts a planned movie released after today on Upcoming", () => {
     expect(
       classifyMovie(
-        { releaseDate: "2026-10-08", inWatchlist: true, watchedAt: null },
+        { releaseDate: "2026-10-08", inWatchlist: true, watched: false },
         today,
       ),
     ).toBe("upcoming");
@@ -38,29 +39,28 @@ describe("classifyMovie (AC-13)", () => {
   it("puts a planned movie with no date or a malformed one on Upcoming", () => {
     expect(
       classifyMovie(
-        { releaseDate: null, inWatchlist: true, watchedAt: null },
+        { releaseDate: null, inWatchlist: true, watched: false },
         today,
       ),
     ).toBe("upcoming");
     expect(
       classifyMovie(
-        { releaseDate: "2026-02-30", inWatchlist: true, watchedAt: null },
+        { releaseDate: "2026-02-30", inWatchlist: true, watched: false },
         today,
       ),
     ).toBe("upcoming");
   });
 
   it("puts a watched movie on Watched, planned or not (AC-14)", () => {
-    const watchedAt = "2026-09-01T10:00:00Z";
     expect(
       classifyMovie(
-        { releaseDate: "2026-01-01", inWatchlist: true, watchedAt },
+        { releaseDate: "2026-01-01", inWatchlist: true, watched: true },
         today,
       ),
     ).toBe("watched");
     expect(
       classifyMovie(
-        { releaseDate: "2026-01-01", inWatchlist: false, watchedAt },
+        { releaseDate: "2026-01-01", inWatchlist: false, watched: true },
         today,
       ),
     ).toBe("watched");
@@ -69,7 +69,7 @@ describe("classifyMovie (AC-13)", () => {
   it("puts an unplanned, unwatched movie on no page", () => {
     expect(
       classifyMovie(
-        { releaseDate: "2026-01-01", inWatchlist: false, watchedAt: null },
+        { releaseDate: "2026-01-01", inWatchlist: false, watched: false },
         today,
       ),
     ).toBeNull();
@@ -104,7 +104,7 @@ describe("isMovieReleased (release gate)", () => {
   it("agrees with classifyMovie: markable exactly when on Watchlist (AC-6)", () => {
     for (const releaseDate of [today, "2026-10-08", null, "2026-13-40"]) {
       const page = classifyMovie(
-        { releaseDate, inWatchlist: true, watchedAt: null },
+        { releaseDate, inWatchlist: true, watched: false },
         today,
       );
       expect(page === "watchlist").toBe(isMovieReleased(releaseDate, today));
@@ -117,5 +117,48 @@ describe("movieReleaseNote (release gate)", () => {
     expect(movieReleaseNote("2026-10-24")).toBe("Releases Oct 24, 2026");
     expect(movieReleaseNote(null)).toBe("Release date to be announced");
     expect(movieReleaseNote("2026-13-40")).toBe("Release date to be announced");
+  });
+});
+
+describe("movieCardStatus (prompts/catalog-card-status.md)", () => {
+  const none = { inWatchlist: false, watched: false, rating: null };
+
+  it("is null with no row, or a row that is neither planned nor watched", () => {
+    expect(movieCardStatus(undefined, "2026-01-01", today)).toBeNull();
+    expect(movieCardStatus(none, "2026-01-01", today)).toBeNull();
+  });
+
+  it("carries the score on Watched, and null when unscored", () => {
+    expect(
+      movieCardStatus(
+        { ...none, watched: true, rating: 8 },
+        "2026-01-01",
+        today,
+      ),
+    ).toEqual({ page: "watched", rating: 8 });
+    expect(
+      movieCardStatus({ ...none, watched: true }, "2026-01-01", today),
+    ).toEqual({ page: "watched", rating: null });
+  });
+
+  it("puts a watched movie on Watched even before its release", () => {
+    expect(
+      movieCardStatus({ ...none, watched: true }, "2027-01-01", today),
+    ).toEqual({ page: "watched", rating: null });
+  });
+
+  it("places a planned movie by its release date, as the library does", () => {
+    const planned = { ...none, inWatchlist: true };
+    expect(movieCardStatus(planned, today, today)).toEqual({
+      page: "watchlist",
+    });
+    expect(movieCardStatus(planned, "2026-10-08", today)).toEqual({
+      page: "upcoming",
+      releaseDate: "2026-10-08",
+    });
+    expect(movieCardStatus(planned, null, today)).toEqual({
+      page: "upcoming",
+      releaseDate: null,
+    });
   });
 });

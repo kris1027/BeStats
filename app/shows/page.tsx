@@ -6,9 +6,13 @@ import { PosterCard } from "@/components/poster-card";
 import { PosterGrid } from "@/components/poster-grid";
 import { TmdbRatingBadge } from "@/components/rating-badges";
 import { RetryLink } from "@/components/retry-link";
-import { PosterCardSkeleton } from "@/components/skeleton";
+import { PaginationSkeleton, PosterCardSkeleton } from "@/components/skeleton";
 import { StatePanel } from "@/components/state-panel";
-import { ShowCardBookmark } from "@/components/tracking/show-card-bookmark";
+import {
+  ShowCardBadge,
+  ShowCardControls,
+  ShowCardMeta,
+} from "@/components/tracking/show-card-slots";
 import { ButtonLink } from "@/components/ui/button";
 import { lastReachablePage, parsePageParam } from "@/lib/catalog/pages";
 import { landingPageMetadata } from "@/lib/landing-metadata";
@@ -18,10 +22,10 @@ import { discoverTvShows, TmdbError } from "@/lib/tmdb";
 const PAGE_SIZE = 20;
 
 /**
- * Cards whose posters load eagerly: one full row at the widest grid (6
- * columns at `xl`), so the first row is never lazy at any width (spec 0006, AC-1; spec 0009, AC-1).
+ * Cards whose posters load eagerly: one full row at the widest grid (4
+ * columns from `md`), so the first row is never lazy at any width (spec 0006, AC-1; spec 0009, AC-1).
  */
-const EAGER_POSTERS = 6;
+const EAGER_POSTERS = 4;
 
 /** One URL per page: page 1 is the bare path. */
 function pageHref(page: number): string {
@@ -119,10 +123,29 @@ async function PopularShows({
               title={show.name}
               posterUrl={show.posterUrl}
               href={`/shows/${show.id}`}
-              badge={<TmdbRatingBadge value={show.tmdbRating} />}
+              badge={
+                <Suspense
+                  fallback={<TmdbRatingBadge value={show.tmdbRating} />}
+                >
+                  <ShowCardBadge
+                    showId={show.id}
+                    tmdbRating={show.tmdbRating}
+                    gridShowIds={gridShowIds}
+                  />
+                </Suspense>
+              }
+              meta={
+                <Suspense fallback={null}>
+                  <ShowCardMeta
+                    showId={show.id}
+                    base={null}
+                    gridShowIds={gridShowIds}
+                  />
+                </Suspense>
+              }
               controls={
                 <Suspense fallback={null}>
-                  <ShowCardBookmark
+                  <ShowCardControls
                     showId={show.id}
                     name={show.name}
                     gridShowIds={gridShowIds}
@@ -161,13 +184,16 @@ function NoSuchPage() {
 
 function PopularShowsSkeleton() {
   return (
-    <PosterGrid aria-hidden="true">
-      {Array.from({ length: PAGE_SIZE }, (_, index) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders with no identity.
-        <li key={index}>
-          <PosterCardSkeleton />
-        </li>
-      ))}
-    </PosterGrid>
+    <div className="flex flex-col gap-10">
+      <PosterGrid aria-hidden="true">
+        {Array.from({ length: PAGE_SIZE }, (_, index) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders with no identity.
+          <li key={index}>
+            <PosterCardSkeleton />
+          </li>
+        ))}
+      </PosterGrid>
+      <PaginationSkeleton />
+    </div>
   );
 }

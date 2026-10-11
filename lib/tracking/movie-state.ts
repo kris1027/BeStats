@@ -69,33 +69,35 @@ export async function getMovieTracking(
 }
 
 /**
- * Which of a grid's movies the signed in user has planned, in one query for
- * the whole grid (spec 0007, AC-16).
+ * The signed in user's state for every movie on a grid, in one query for the
+ * whole grid (spec 0007, AC-16; prompts/catalog-card-status.md). A movie with
+ * no row is simply absent from the map: the user has never touched it.
  *
- * Every card asks for the same set, so the argument is a primitive (a sorted,
- * comma joined id list) rather than an array: React `cache()` compares
- * arguments by identity, and only a string lets twenty cards share one read
- * per request.
+ * Every card's badge and controls ask for the same set, so the argument is a
+ * primitive (a sorted, comma joined id list) rather than an array: React
+ * `cache()` compares arguments by identity, and only a string lets every slot
+ * on the grid share one read per request.
  *
  * @param idsKey The grid's movie ids, sorted and joined with commas. Build it
  * with `movieIdsKey`.
  */
-export const getWatchlistedMovieIds = cache(
-  async (idsKey: string): Promise<TrackingRead<Set<number>>> => {
+export const getMovieGridStates = cache(
+  async (
+    idsKey: string,
+  ): Promise<TrackingRead<Map<number, MovieTrackingState>>> => {
     if (publicEnvProblems()) return { kind: "signed_out" };
 
     const user = await getOptionalUser();
     if (!user) return { kind: "signed_out" };
 
     const ids = idsKey === "" ? [] : idsKey.split(",").map(Number);
-    if (ids.length === 0) return { kind: "ok", state: new Set() };
+    if (ids.length === 0) return { kind: "ok", state: new Map() };
 
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("user_movie_state")
-      .select("movie_id")
+      .select("movie_id, in_watchlist, watched_at, rating")
       .eq("user_id", user.id)
-      .eq("in_watchlist", true)
       .in("movie_id", ids);
 
     if (error) {
@@ -103,12 +105,24 @@ export const getWatchlistedMovieIds = cache(
       return { kind: "failed" };
     }
 
-    return { kind: "ok", state: new Set(data.map((row) => row.movie_id)) };
+    return {
+      kind: "ok",
+      state: new Map(
+        data.map((row) => [
+          row.movie_id,
+          {
+            inWatchlist: row.in_watchlist,
+            watched: row.watched_at !== null,
+            rating: row.rating,
+          },
+        ]),
+      ),
+    };
   },
 );
 
 /**
- * The cache key `getWatchlistedMovieIds` expects: the same ids in any order
+ * The cache key `getMovieGridStates` expects: the same ids in any order
  * give the same key.
  *
  * @param ids The movie ids on the grid.

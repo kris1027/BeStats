@@ -52,13 +52,38 @@ function Skeleton({
  * The loading shape of one `PosterCard`, kept beside the card's real layout so
  * the two cannot drift apart.
  */
-function PosterCardSkeleton() {
+function PosterCardSkeleton({ meta = false }: { meta?: boolean }) {
   return (
     <div className="flex flex-col gap-2.5">
       <Skeleton shape="poster" />
-      <Skeleton shape="line" className="w-2/3" />
+      {/*
+       * One line of the caption's own type tall (`h-[1lh]`), not a bare 16px
+       * bar: a 20 card grid of 16px stand ins grows by a row's worth when the
+       * 19px captions arrive. `meta` adds the season card's second line.
+       */}
+      <div className="flex h-[1lh] items-center text-sm leading-snug">
+        <Skeleton shape="line" className="w-2/3" />
+      </div>
+      {meta ? (
+        <div className="-mt-1.5 flex h-[1lh] items-center text-xs">
+          <Skeleton shape="line" className="h-3 w-1/2" />
+        </div>
+      ) : null}
     </div>
   );
 }
 
-export { PosterCardSkeleton, Skeleton };
+/**
+ * The stand in for `PaginationLinks` under a paged grid while it streams: one
+ * pill at the links' height (the 44px `touch` size, 36px from `md`), so the
+ * page does not grow by a row when the links arrive.
+ */
+function PaginationSkeleton() {
+  return (
+    <div className="flex items-center justify-center">
+      <Skeleton shape="pill" className="h-11 w-56 md:h-9" />
+    </div>
+  );
+}
+
+export { PaginationSkeleton, PosterCardSkeleton, Skeleton };

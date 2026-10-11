@@ -151,10 +151,12 @@ describe("search reads no request scoped value (spec 0010, AC-22)", () => {
     );
   });
 
-  it("keeps the movie bookmark behind its own Suspense boundary (AC-16)", () => {
-    expect(
-      readFileSync("components/search/search-results.tsx", "utf8"),
-    ).toMatch(/<Suspense fallback=\{null\}>\s*<CardBookmark/);
+  it("keeps the movie card slots behind their own Suspense boundaries (AC-16)", () => {
+    const source = readFileSync("components/search/search-results.tsx", "utf8");
+    expect(source).toMatch(/<Suspense fallback=\{null\}>\s*<MovieCardControls/);
+    expect(source).toMatch(
+      /<Suspense\s+fallback=\{<TmdbRatingBadge[^}]*\} \/>\}\s*>\s*<MovieCardBadge/,
+    );
   });
 
   it("reads nothing from the request but its query in the Route Handler (AC-20)", () => {
@@ -291,8 +293,10 @@ describe("private tracking state never enters a cache scope (spec 0007, AC-19; s
     expect(readFileSync("app/movies/[id]/page.tsx", "utf8")).toMatch(
       /<Suspense fallback=\{null\}>\s*<MovieTrackingSlot/,
     );
-    expect(readFileSync("app/movies/page.tsx", "utf8")).toMatch(
-      /<Suspense fallback=\{null\}>\s*<CardBookmark/,
+    const movies = readFileSync("app/movies/page.tsx", "utf8");
+    expect(movies).toMatch(/<Suspense fallback=\{null\}>\s*<MovieCardControls/);
+    expect(movies).toMatch(
+      /<Suspense\s+fallback=\{<TmdbRatingBadge[^}]*\} \/>\}\s*>\s*<MovieCardBadge/,
     );
   });
 
@@ -300,12 +304,15 @@ describe("private tracking state never enters a cache scope (spec 0007, AC-19; s
     const show = readFileSync("app/shows/[id]/page.tsx", "utf8");
     expect(show).toMatch(/<Suspense fallback=\{null\}>\s*<ShowTrackingSlot/);
     expect(show).toMatch(/<Suspense fallback=\{null\}>\s*<ShowProgressSlot/);
-    expect(readFileSync("app/shows/page.tsx", "utf8")).toMatch(
-      /<Suspense fallback=\{null\}>\s*<ShowCardBookmark/,
+    const shows = readFileSync("app/shows/page.tsx", "utf8");
+    expect(shows).toMatch(/<Suspense fallback=\{null\}>\s*<ShowCardControls/);
+    expect(shows).toMatch(/<Suspense fallback=\{null\}>\s*<ShowCardMeta/);
+    expect(shows).toMatch(
+      /<Suspense\s+fallback=\{<TmdbRatingBadge[^}]*\} \/>\}\s*>\s*<ShowCardBadge/,
     );
-    expect(
-      readFileSync("components/search/search-results.tsx", "utf8"),
-    ).toMatch(/<Suspense fallback=\{null\}>\s*<ShowCardBookmark/);
+    const search = readFileSync("components/search/search-results.tsx", "utf8");
+    expect(search).toMatch(/<Suspense fallback=\{null\}>\s*<ShowCardControls/);
+    expect(search).toMatch(/<Suspense fallback=\{year\}>\s*<ShowCardMeta/);
     expect(
       readFileSync("components/library/watchlist-show-card.tsx", "utf8"),
     ).toMatch(/<Suspense fallback=\{null\}>\s*<NextEpisodeName/);

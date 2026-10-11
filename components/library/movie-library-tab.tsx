@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { PaginationLinks } from "@/components/pagination-links";
-import { formatAirDate, formatShortDate } from "@/lib/format";
+import { formatReleaseDate } from "@/lib/format";
 import {
   getLibraryMovieTitles,
   getMovieLibraryTab,
@@ -14,7 +14,6 @@ import {
 } from "@/lib/tracking/library-lists";
 import { LIBRARY_COPY } from "@/lib/tracking/messages";
 
-import { BadgeLegend } from "./badge-legend";
 import { LibraryGrid } from "./library-grid";
 import {
   EmptyPanel,
@@ -67,15 +66,8 @@ function movieItem(card: MovieTabCard, today: string): LibraryMovieItem {
     posterUrl: card.title.posterUrl,
     tmdbRating: card.title.tmdbRating,
   };
-  if (card.page === "watchlist" || card.releaseDate === null) return base;
-  const fullDate = formatAirDate(card.releaseDate) ?? card.releaseDate;
-  return {
-    ...base,
-    release: {
-      fullDate,
-      shortDate: formatShortDate(card.releaseDate, today) ?? fullDate,
-    },
-  };
+  if (card.page === "watchlist") return base;
+  return { ...base, release: formatReleaseDate(card.releaseDate, today) };
 }
 
 /**
@@ -169,8 +161,6 @@ function MovieGridSection({
           href={(target) => pageHref(list, "movie", target)}
         />
       ) : null}
-
-      <BadgeLegend list={list} type="movie" />
     </div>
   );
 }

@@ -84,6 +84,31 @@ describe("PosterCardSkeleton", () => {
     expect(container.querySelectorAll("[data-slot=skeleton]")).toHaveLength(2);
   });
 
+  it("reserves one line of the caption's own type, not a bare bar", () => {
+    const { container } = render(<PosterCardSkeleton />);
+    const { container: loaded } = render(
+      <PosterCard title="Lioness" posterUrl={null} href="/shows/1" />,
+    );
+
+    const line = container.querySelector(
+      "[data-slot=skeleton]:not(.aspect-2\\/3)",
+    );
+    expect(line?.parentElement).toHaveClass(
+      "h-[1lh]",
+      "text-sm",
+      "leading-snug",
+    );
+    expect(loaded.querySelector("h3")).toHaveClass("text-sm", "leading-snug");
+  });
+
+  it("adds the meta line only when asked, as on a season card", () => {
+    const { container: plain } = render(<PosterCardSkeleton />);
+    const { container: withMeta } = render(<PosterCardSkeleton meta />);
+
+    expect(plain.querySelectorAll("[data-slot=skeleton]")).toHaveLength(2);
+    expect(withMeta.querySelectorAll("[data-slot=skeleton]")).toHaveLength(3);
+  });
+
   it("announces nothing at all while it is standing in", () => {
     const { container } = render(<PosterCardSkeleton />);
 

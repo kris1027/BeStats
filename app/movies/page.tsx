@@ -6,9 +6,12 @@ import { PosterCard } from "@/components/poster-card";
 import { PosterGrid } from "@/components/poster-grid";
 import { TmdbRatingBadge } from "@/components/rating-badges";
 import { RetryLink } from "@/components/retry-link";
-import { PosterCardSkeleton } from "@/components/skeleton";
+import { PaginationSkeleton, PosterCardSkeleton } from "@/components/skeleton";
 import { StatePanel } from "@/components/state-panel";
-import { CardBookmark } from "@/components/tracking/card-bookmark";
+import {
+  MovieCardBadge,
+  MovieCardControls,
+} from "@/components/tracking/movie-card-slots";
 import { ButtonLink } from "@/components/ui/button";
 import { lastReachablePage, parsePageParam } from "@/lib/catalog/pages";
 import { landingPageMetadata } from "@/lib/landing-metadata";
@@ -18,10 +21,10 @@ import { discoverMovies, TmdbError } from "@/lib/tmdb";
 const PAGE_SIZE = 20;
 
 /**
- * Cards whose posters load eagerly: one full row at the widest grid (6
- * columns at `xl`), so the first row is never lazy at any width (AC-1).
+ * Cards whose posters load eagerly: one full row at the widest grid (4
+ * columns from `md`), so the first row is never lazy at any width (AC-1).
  */
-const EAGER_POSTERS = 6;
+const EAGER_POSTERS = 4;
 
 /** One URL per page: page 1 is the bare path. */
 function pageHref(page: number): string {
@@ -57,8 +60,10 @@ export async function generateMetadata({
  * The heading is static and prerendered; the grid needs the `page` search
  * parameter, so it streams inside the Suspense boundary behind a grid of
  * skeleton cards at the same footprint (AC-11). No session is read here
- * (AC-13); each card's bookmark from spec 0007 reads it inside its own
- * Suspense boundary in `components/tracking/`, one query for the whole grid.
+ * (AC-13); each card's badge and controls read it inside their own Suspense
+ * boundaries in `components/tracking/movie-card-slots.tsx`, one query for the
+ * whole grid, so a card shows the movie as its library page does
+ * (prompts/catalog-card-status.md).
  */
 export default function MoviesPage({ searchParams }: PageProps<"/movies">) {
   return (
@@ -118,12 +123,24 @@ async function PopularMovies({
               title={movie.title}
               posterUrl={movie.posterUrl}
               href={`/movies/${movie.id}`}
-              badge={<TmdbRatingBadge value={movie.tmdbRating} />}
+              badge={
+                <Suspense
+                  fallback={<TmdbRatingBadge value={movie.tmdbRating} />}
+                >
+                  <MovieCardBadge
+                    movieId={movie.id}
+                    releaseDate={movie.releaseDate}
+                    tmdbRating={movie.tmdbRating}
+                    gridMovieIds={gridMovieIds}
+                  />
+                </Suspense>
+              }
               controls={
                 <Suspense fallback={null}>
-                  <CardBookmark
+                  <MovieCardControls
                     movieId={movie.id}
                     title={movie.title}
+                    releaseDate={movie.releaseDate}
                     gridMovieIds={gridMovieIds}
                     returnPath={pageHref(page)}
                   />
@@ -160,13 +177,16 @@ function NoSuchPage() {
 
 function PopularMoviesSkeleton() {
   return (
-    <PosterGrid aria-hidden="true">
-      {Array.from({ length: PAGE_SIZE }, (_, index) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders with no identity.
-        <li key={index}>
-          <PosterCardSkeleton />
-        </li>
-      ))}
-    </PosterGrid>
+    <div className="flex flex-col gap-10">
+      <PosterGrid aria-hidden="true">
+        {Array.from({ length: PAGE_SIZE }, (_, index) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders with no identity.
+          <li key={index}>
+            <PosterCardSkeleton />
+          </li>
+        ))}
+      </PosterGrid>
+      <PaginationSkeleton />
+    </div>
   );
 }

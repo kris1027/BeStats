@@ -5,10 +5,21 @@ import { PosterCard } from "@/components/poster-card";
 import { PosterGrid } from "@/components/poster-grid";
 import { TmdbRatingBadge } from "@/components/rating-badges";
 import { RetryLink } from "@/components/retry-link";
-import { PosterCardSkeleton, Skeleton } from "@/components/skeleton";
+import {
+  PaginationSkeleton,
+  PosterCardSkeleton,
+  Skeleton,
+} from "@/components/skeleton";
 import { StatePanel } from "@/components/state-panel";
-import { CardBookmark } from "@/components/tracking/card-bookmark";
-import { ShowCardBookmark } from "@/components/tracking/show-card-bookmark";
+import {
+  MovieCardBadge,
+  MovieCardControls,
+} from "@/components/tracking/movie-card-slots";
+import {
+  ShowCardBadge,
+  ShowCardControls,
+  ShowCardMeta,
+} from "@/components/tracking/show-card-slots";
 import { ButtonLink } from "@/components/ui/button";
 import { parseMediaTypeParam, typedHref } from "@/lib/catalog/media-type";
 import { lastReachablePage } from "@/lib/catalog/pages";
@@ -40,7 +51,7 @@ type RawParams = Record<string, string | string[] | undefined>;
 const PAGE_SIZE = 20;
 
 /** One full row at the widest grid loads its posters eagerly. */
-const EAGER_POSTERS = 6;
+const EAGER_POSTERS = 4;
 
 /**
  * The results half of `/search`, for one URL (spec 0010, AC-11 to AC-19).
@@ -204,43 +215,113 @@ function ResultGrid({
   const returnPath = searchHref(params);
   // One type per results page, so these are the grid's movie or show ids.
   const gridIds = results.map((result) => result.id);
+  const ResultCard = params.type === "movie" ? MovieResultCard : ShowResultCard;
 
   return (
     <PosterGrid aria-label="Search results">
       {results.map((result, index) => (
         <li key={result.id}>
-          <PosterCard
-            title={result.title}
-            posterUrl={result.posterUrl}
-            href={titleHref(params.type, result.id)}
-            meta={result.year ?? undefined}
-            badge={<TmdbRatingBadge value={result.tmdbRating} />}
-            controls={
-              params.type === "movie" ? (
-                <Suspense fallback={null}>
-                  <CardBookmark
-                    movieId={result.id}
-                    title={result.title}
-                    gridMovieIds={gridIds}
-                    returnPath={returnPath}
-                  />
-                </Suspense>
-              ) : (
-                <Suspense fallback={null}>
-                  <ShowCardBookmark
-                    showId={result.id}
-                    name={result.title}
-                    gridShowIds={gridIds}
-                    returnPath={returnPath}
-                  />
-                </Suspense>
-              )
-            }
+          <ResultCard
+            result={result}
+            gridIds={gridIds}
+            returnPath={returnPath}
             priority={index < EAGER_POSTERS}
           />
         </li>
       ))}
     </PosterGrid>
+  );
+}
+
+type ResultCardProps = {
+  result: SearchResult;
+  /** Every id on the results page, the same array for each card. */
+  gridIds: readonly number[];
+  returnPath: string;
+  priority: boolean;
+};
+
+/** A movie result, carrying the slots `/movies` gives the same card. */
+function MovieResultCard({
+  result,
+  gridIds,
+  returnPath,
+  priority,
+}: ResultCardProps) {
+  return (
+    <PosterCard
+      title={result.title}
+      posterUrl={result.posterUrl}
+      href={titleHref("movie", result.id)}
+      meta={result.year ?? undefined}
+      badge={
+        <Suspense fallback={<TmdbRatingBadge value={result.tmdbRating} />}>
+          <MovieCardBadge
+            movieId={result.id}
+            releaseDate={result.releaseDate}
+            tmdbRating={result.tmdbRating}
+            gridMovieIds={gridIds}
+          />
+        </Suspense>
+      }
+      controls={
+        <Suspense fallback={null}>
+          <MovieCardControls
+            movieId={result.id}
+            title={result.title}
+            releaseDate={result.releaseDate}
+            gridMovieIds={gridIds}
+            returnPath={returnPath}
+          />
+        </Suspense>
+      }
+      priority={priority}
+    />
+  );
+}
+
+/**
+ * A TV result, carrying the slots `/shows` gives the same card, with the
+ * first air year ahead of a Watched show's label on the meta line.
+ */
+function ShowResultCard({
+  result,
+  gridIds,
+  returnPath,
+  priority,
+}: ResultCardProps) {
+  const year = result.year === null ? null : String(result.year);
+  return (
+    <PosterCard
+      title={result.title}
+      posterUrl={result.posterUrl}
+      href={titleHref("tv", result.id)}
+      meta={
+        <Suspense fallback={year}>
+          <ShowCardMeta showId={result.id} base={year} gridShowIds={gridIds} />
+        </Suspense>
+      }
+      badge={
+        <Suspense fallback={<TmdbRatingBadge value={result.tmdbRating} />}>
+          <ShowCardBadge
+            showId={result.id}
+            tmdbRating={result.tmdbRating}
+            gridShowIds={gridIds}
+          />
+        </Suspense>
+      }
+      controls={
+        <Suspense fallback={null}>
+          <ShowCardControls
+            showId={result.id}
+            name={result.title}
+            gridShowIds={gridIds}
+            returnPath={returnPath}
+          />
+        </Suspense>
+      }
+      priority={priority}
+    />
   );
 }
 
@@ -356,7 +437,10 @@ function resultsKey(raw: RawParams): string {
   );
 }
 
-/** The loading shape of the results: the count line and 20 cards (AC-21). */
+/**
+ * The loading shape of the results: the count line, 20 cards and the
+ * pagination row (AC-21).
+ */
 function SearchResultsSkeleton() {
   return (
     <div className="flex flex-col gap-6">
@@ -365,10 +449,11 @@ function SearchResultsSkeleton() {
         {Array.from({ length: PAGE_SIZE }, (_, index) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders with no identity.
           <li key={index}>
-            <PosterCardSkeleton />
+            <PosterCardSkeleton meta />
           </li>
         ))}
       </PosterGrid>
+      <PaginationSkeleton />
     </div>
   );
 }

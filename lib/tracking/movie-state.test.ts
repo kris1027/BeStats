@@ -35,7 +35,7 @@ const createClient = vi.fn(async () => ({
 }));
 vi.mock("@/lib/supabase/server", () => ({ createClient }));
 
-const { getMovieTracking, getWatchlistedMovieIds, movieIdsKey } = await import(
+const { getMovieTracking, getMovieGridStates, movieIdsKey } = await import(
   "./movie-state"
 );
 
@@ -104,57 +104,63 @@ describe("getMovieTracking", () => {
   });
 });
 
-describe("getWatchlistedMovieIds", () => {
-  it("reads the planned ids for the whole grid in one query (AC-16)", async () => {
-    response = { data: [{ movie_id: 550 }], error: null };
-    const result = await getWatchlistedMovieIds(movieIdsKey([603, 550, 550]));
-    expect(result).toEqual({ kind: "ok", state: new Set([550]) });
+describe("getMovieGridStates", () => {
+  it("reads every grid movie's state in one query (AC-16)", async () => {
+    response = {
+      data: [
+        {
+          movie_id: 550,
+          in_watchlist: false,
+          watched_at: "2026-09-01T10:00:00Z",
+          rating: 8,
+        },
+        { movie_id: 603, in_watchlist: true, watched_at: null, rating: null },
+      ],
+      error: null,
+    };
+    const result = await getMovieGridStates(movieIdsKey([603, 550, 550]));
+    expect(result).toEqual({
+      kind: "ok",
+      state: new Map([
+        [550, { inWatchlist: false, watched: true, rating: 8 }],
+        [603, { inWatchlist: true, watched: false, rating: null }],
+      ]),
+    });
     expect(calls).toContainEqual({
       method: "in",
       args: ["movie_id", [550, 603]],
-    });
-    expect(calls).toContainEqual({
-      method: "eq",
-      args: ["in_watchlist", true],
     });
   });
 
   it("is signed out for a visitor (AC-2)", async () => {
     getOptionalUser.mockResolvedValue(null);
-    expect(await getWatchlistedMovieIds("550")).toEqual({ kind: "signed_out" });
+    expect(await getMovieGridStates("550")).toEqual({ kind: "signed_out" });
   });
 
-  it("returns an empty set with no query for an empty grid", async () => {
-    expect(await getWatchlistedMovieIds("")).toEqual({
+  it("returns an empty map with no query for an empty grid", async () => {
+    expect(await getMovieGridStates("")).toEqual({
       kind: "ok",
-      state: new Set(),
+      state: new Map(),
     });
     expect(createClient).not.toHaveBeenCalled();
   });
 
   it("is signed out, with no session read, when the public env is missing (AC-2)", async () => {
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", undefined);
-    expect(await getWatchlistedMovieIds("550")).toEqual({
-      kind: "signed_out",
-    });
+    expect(await getMovieGridStates("550")).toEqual({ kind: "signed_out" });
     expect(getOptionalUser).not.toHaveBeenCalled();
   });
 
   it("scopes the grid query to the session user (AC-18)", async () => {
     response = { data: [], error: null };
-    await getWatchlistedMovieIds("550,603");
+    await getMovieGridStates("550,603");
     expect(calls).toContainEqual({ method: "eq", args: ["user_id", "user-a"] });
   });
 
-  it("logs a failed grid read with no identifiers (AC-17, AC-21)", async () => {
+  it("reports and logs a failed grid read with no identifiers (AC-17, AC-21)", async () => {
     response = { data: null, error: { code: "PGRST000", message: "550" } };
-    await getWatchlistedMovieIds("550,603");
+    expect(await getMovieGridStates("550,603")).toEqual({ kind: "failed" });
     expect(warn).toHaveBeenCalledWith("movie_tracking.read refused db_error");
-  });
-
-  it("reports a failed read (AC-17)", async () => {
-    response = { data: null, error: { code: "PGRST000" } };
-    expect(await getWatchlistedMovieIds("550,603")).toEqual({ kind: "failed" });
   });
 });
 

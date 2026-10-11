@@ -5,6 +5,7 @@ import {
   formatAirSpan,
   formatEpisodeCount,
   formatPersonalScore,
+  formatReleaseDate,
   formatRuntime,
   formatShortDate,
   formatVoteCount,
@@ -230,6 +231,23 @@ describe("formatShortDate · covers spec 0014 AC-5", () => {
     expect(formatShortDate(null, today)).toBeNull();
     expect(formatShortDate("2026-02-30", today)).toBeNull();
     expect(formatShortDate("2026", today)).toBeNull();
+  });
+});
+
+describe("formatReleaseDate · covers spec 0020 AC-13", () => {
+  it("gives the full date and the year aware short date", () => {
+    expect(formatReleaseDate("2027-02-03", "2026-09-28")).toEqual({
+      fullDate: "Feb 3, 2027",
+      shortDate: "Feb 3, 2027",
+    });
+    expect(formatReleaseDate("2026-12-25", "2026-09-28")).toEqual({
+      fullDate: "Dec 25, 2026",
+      shortDate: "Dec 25",
+    });
+  });
+
+  it("is null for Date TBA", () => {
+    expect(formatReleaseDate(null, "2026-09-28")).toBeNull();
   });
 });
 

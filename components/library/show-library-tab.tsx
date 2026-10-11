@@ -8,7 +8,6 @@ import {
 import { LIBRARY_COPY } from "@/lib/tracking/messages";
 import { getShowRatings } from "@/lib/tracking/show-ratings";
 
-import { BadgeLegend } from "./badge-legend";
 import { LIBRARY_HEADING_ID } from "./ids";
 import {
   EmptyPanel,
@@ -23,7 +22,7 @@ import type { LibraryList } from "./types";
 import { WatchlistShowCard } from "./watchlist-show-card";
 
 /** Posters that load eagerly: one full row at the widest grid. */
-const EAGER_POSTERS = 6;
+const EAGER_POSTERS = 4;
 
 /**
  * A show tab (AC-9, AC-11, AC-12, AC-15 to AC-18): Watchlist with Mark
@@ -88,8 +87,6 @@ export async function showLibraryTab(query: LibraryTabQuery<LibraryList>) {
           href={(target) => pageHref(list, "tv", target)}
         />
       ) : null}
-
-      <BadgeLegend list={list} type="tv" />
     </div>
   );
 }

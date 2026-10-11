@@ -47,6 +47,10 @@ function UpcomingShowCard({
   );
 }
 
+/**
+ * The next episode and its short date, or Date TBA, on an Upcoming show card
+ * and on a catalog card for a show on Upcoming (prompts/catalog-card-status.md).
+ */
 function UpcomingShowPill({
   airDate,
   next,
@@ -120,4 +124,4 @@ function WatchedShowCard({
   );
 }
 
-export { UpcomingShowCard, WatchedShowCard };
+export { UpcomingShowCard, UpcomingShowPill, WatchedShowCard };

@@ -2,6 +2,7 @@ import { cn } from "cn";
 
 import { GlassPill } from "@/components/glass-pill";
 import { CalendarIcon } from "@/components/tracking/tracking-icons";
+import type { ReleaseDate } from "@/lib/format";
 import { UPCOMING_MESSAGES } from "@/lib/tracking/messages";
 
 /** A short date that carries its year, such as `Feb 3, 2027`. */
@@ -69,4 +70,18 @@ function DateTbaPill({ label }: { label: string }) {
   );
 }
 
-export { DatedPill, DateTbaPill };
+/** The release date on an Upcoming movie card, or Date TBA (AC-13). */
+function ReleasePill({ release }: { release: ReleaseDate }) {
+  if (release === null) {
+    return <DateTbaPill label={UPCOMING_MESSAGES.releaseTba} />;
+  }
+  return (
+    <DatedPill
+      slot="release-date"
+      label={UPCOMING_MESSAGES.releases(release.fullDate)}
+      text={release.shortDate}
+    />
+  );
+}
+
+export { DatedPill, DateTbaPill, ReleasePill };

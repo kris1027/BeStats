@@ -1,6 +1,7 @@
 import type { LibraryList } from "@/lib/catalog/library-list";
 import { formatAirDate } from "@/lib/format";
 import { UPCOMING_MESSAGES } from "@/lib/tracking/messages";
+import type { MovieTrackingState } from "@/lib/tracking/types";
 import { airStatus } from "@/lib/tv/air-status";
 
 /** The library pages a movie can sit on (spec 0020, AC-13). */
@@ -10,7 +11,7 @@ export type MoviePage = LibraryList;
 export type MoviePlacement = {
   releaseDate: string | null;
   inWatchlist: boolean;
-  watchedAt: string | null;
+  watched: boolean;
 };
 
 /**
@@ -30,7 +31,7 @@ export function classifyMovie(
   movie: MoviePlacement,
   today: string,
 ): MoviePage | null {
-  if (movie.watchedAt !== null) return "watched";
+  if (movie.watched) return "watched";
   if (!movie.inWatchlist) return null;
   return isMovieReleased(movie.releaseDate, today) ? "watchlist" : "upcoming";
 }
@@ -85,3 +86,40 @@ export function upcomingReleaseDate(
 ): string | null {
   return airStatus(releaseDate, today) === "upcoming" ? releaseDate : null;
 }
+
+/**
+ * What a catalog poster card shows of the user's own state for one movie
+ * (prompts/catalog-card-status.md): the library page the movie sits on, with
+ * what that page's card carries, or null when it sits on none.
+ *
+ * Placed by `classifyMovie` on the same request day, so a card on `/movies`
+ * or `/search` can never disagree with the library page it mirrors.
+ *
+ * @param state The stored state, or undefined when the user has no row.
+ * @param releaseDate The TMDB release date already on the card.
+ * @param today `requestTodayUtc()`, read once per request (AC-22).
+ */
+export function movieCardStatus(
+  state: MovieTrackingState | undefined,
+  releaseDate: string | null,
+  today: string,
+): MovieCardStatus | null {
+  if (state === undefined) return null;
+  const page = classifyMovie({ releaseDate, ...state }, today);
+  switch (page) {
+    case null:
+      return null;
+    case "watched":
+      return { page, rating: state.rating };
+    case "watchlist":
+      return { page };
+    case "upcoming":
+      return { page, releaseDate: upcomingReleaseDate(releaseDate, today) };
+  }
+}
+
+/** A movie card's library state, from `movieCardStatus`. */
+export type MovieCardStatus =
+  | { page: "watched"; rating: number | null }
+  | { page: "watchlist" }
+  | { page: "upcoming"; releaseDate: string | null };

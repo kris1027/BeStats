@@ -396,9 +396,10 @@ function compareDesc(a: string, b: string): number {
  * `getWatchedEpisodeIds` does, so a long history never loses rows to the
  * response cap. The pages are read one at a time, also as that read does:
  * every library tab runs this on each request, so a long history must not
- * open a connection per thousand episodes at once.
+ * open a connection per thousand episodes at once. The catalog grids read it
+ * too, for their tracked shows (prompts/catalog-card-status.md).
  */
-async function readWatchedRegular(
+export async function readWatchedRegular(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
   showIds: readonly number[],
@@ -484,7 +485,7 @@ export async function getMovieLibraryTab(
     read: getMoviesSettled,
     place: (row, movie): MovieTabCard | null => {
       const result = classifyMovie(
-        { releaseDate: movie.releaseDate, inWatchlist: true, watchedAt: null },
+        { releaseDate: movie.releaseDate, inWatchlist: true, watched: false },
         today,
       );
       if (result !== tab) return null;

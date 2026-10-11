@@ -21,24 +21,33 @@ import { PosterGrid } from "@/components/poster-grid";
 /** Tailwind's default breakpoints; `globals.css` does not override them. */
 const COLUMNS_AT: ReadonlyArray<{ minWidth: number | null; columns: number }> =
   [
-    { minWidth: 1280, columns: 6 },
-    { minWidth: 1024, columns: 5 },
     { minWidth: 768, columns: 4 },
-    { minWidth: 640, columns: 3 },
     { minWidth: null, columns: 2 },
   ];
 
-/** `(min-width: 1280px) 16vw, ... , 50vw` parsed back into pairs. */
-function parseSizes(sizes: string) {
+/** The grid's `max-w-[1200px]` cap, reached once the viewport passes it plus the 16px gutters. */
+const GRID_CAP = { width: 1200, viewport: 1232, columns: 4, gap: 16 };
+
+type SizesEntry = {
+  minWidth: number | null;
+  vw: number | null;
+  px: number | null;
+};
+
+/** `(min-width: 1232px) 288px, ... , 50vw` parsed back into entries. */
+function parseSizes(sizes: string): SizesEntry[] {
   return sizes.split(",").map((entry) => {
     const trimmed = entry.trim();
-    const match = trimmed.match(/^\(min-width:\s*(\d+)px\)\s*(\d+)vw$/);
-    if (match) {
-      return { minWidth: Number(match[1]), vw: Number(match[2]) };
-    }
-    const fallback = trimmed.match(/^(\d+)vw$/);
-    if (!fallback) throw new Error(`unparsed sizes entry: ${trimmed}`);
-    return { minWidth: null, vw: Number(fallback[1]) };
+    const match = trimmed.match(
+      /^(?:\(min-width:\s*(\d+)px\)\s*)?(\d+)(vw|px)$/,
+    );
+    if (!match) throw new Error(`unparsed sizes entry: ${trimmed}`);
+    const value = Number(match[2]);
+    return {
+      minWidth: match[1] === undefined ? null : Number(match[1]),
+      vw: match[3] === "vw" ? value : null,
+      px: match[3] === "px" ? value : null,
+    };
   });
 }
 
@@ -67,16 +76,17 @@ describe("PosterGrid", () => {
     expect(items).toEqual(["First", "Second"]);
   });
 
-  it("steps 2, 3, 4, 5 then 6 columns across the breakpoints", () => {
+  it("steps from 2 to 4 columns at md and never goes wider", () => {
     render(<PosterGrid />);
 
-    expect(screen.getByRole("list")).toHaveClass(
+    const grid = screen.getByRole("list");
+    expect(grid).toHaveClass(
       "grid-cols-2",
-      "sm:grid-cols-3",
       "md:grid-cols-4",
-      "lg:grid-cols-5",
-      "xl:grid-cols-6",
+      "max-w-[1200px]",
+      "mx-auto",
     );
+    expect(grid.className).not.toMatch(/(?:sm|lg|xl|2xl):grid-cols-/);
   });
 
   it("keeps a caller class without dropping the column steps", () => {
@@ -86,17 +96,25 @@ describe("PosterGrid", () => {
   });
 
   it("matches POSTER_SIZES breakpoint for breakpoint to the column counts", () => {
-    const parsed = parseSizes(POSTER_SIZES);
+    const [capped, ...fluid] = parseSizes(POSTER_SIZES);
 
-    expect(parsed.map((entry) => entry.minWidth)).toEqual(
-      COLUMNS_AT.map((entry) => entry.minWidth),
+    // Past the cap a column has a fixed width: the grid's share less the gaps,
+    // rounded up so the browser never picks an image narrower than the slot.
+    expect(capped.minWidth).toBe(GRID_CAP.viewport);
+    expect(capped.px).toBe(
+      Math.ceil(
+        (GRID_CAP.width - GRID_CAP.gap * (GRID_CAP.columns - 1)) /
+          GRID_CAP.columns,
+      ),
     );
 
+    expect(fluid.map((entry) => entry.minWidth)).toEqual(
+      COLUMNS_AT.map((entry) => entry.minWidth),
+    );
     for (const [index, { columns }] of COLUMNS_AT.entries()) {
       // One column is 100/columns vw, floored: the gaps make a column slightly
-      // narrower than its share, so rounding down is the right direction. That
-      // is what turns 100/6 = 16.67 into the shipped 16vw.
-      expect(parsed[index].vw).toBe(Math.floor(100 / columns));
+      // narrower than its share, so rounding down is the right direction.
+      expect(fluid[index].vw).toBe(Math.floor(100 / columns));
     }
   });
 });

@@ -64,10 +64,10 @@ describe("LibraryNav", () => {
         const selected = link.getAttribute("href") === `${current}?type=movie`;
         if (selected) {
           expect(link).toHaveAttribute("aria-current", "page");
-          expect(link).toHaveClass("glass-selected");
+          expect(link).toHaveClass("glass-selected-personal");
         } else {
           expect(link).not.toHaveAttribute("aria-current");
-          expect(link).not.toHaveClass("glass-selected");
+          expect(link).not.toHaveClass("glass-selected-personal");
         }
       }
     },
