@@ -71,8 +71,14 @@ export const STRIPS: readonly StripLayout[] = [
   },
 ];
 
-/** The film's width, and the length of one frame along it. */
+/** The film's width across the ribbon, in scene units, as in the design. */
 export const FILM_WIDTH = 1.1;
+
+/**
+ * The length of one frame along the film. The design textured the ribbon
+ * with a 360 × 256 frame, so a frame is that 1.4 aspect ratio times the width
+ * and the sprocket holes stay evenly spaced however long a coil is.
+ */
 export const FRAME_LENGTH = FILM_WIDTH * 1.4;
 
 /**
