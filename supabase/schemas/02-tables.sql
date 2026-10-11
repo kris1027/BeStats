@@ -118,7 +118,7 @@ create index user_episode_state_show_order_idx
 --
 -- The rules live on the table, not in the app, so a direct API write obeys
 -- them too: the two checks hold the format and the reserved names (both kept
--- equal to `lib/auth/username.ts` by `username-sql.test.ts`), the index below
+-- equal to `lib/auth/username.ts` by `lib/auth/username.test.ts`), the index below
 -- holds uniqueness ignoring case, and `guard_username_change` in
 -- `03-triggers.sql` owns `username_changed_at` and the weekly lock.
 create table public.profiles (

@@ -49,6 +49,14 @@ export const AUTH_OUTCOME = {
   accountNotReady: "account_not_ready",
   /** A resend or recovery email was asked for while none can be sent. */
   emailUnavailable: "email_unavailable",
+  /**
+   * The username is in use, in any case, or reserved
+   * (prompts/account-username.md). One outcome for both, so the reserved list
+   * cannot be read off the form.
+   */
+  usernameTaken: "username_taken",
+  /** The username was changed less than a week ago. */
+  usernameLocked: "username_locked",
 } as const;
 
 export type AuthOutcome = (typeof AUTH_OUTCOME)[keyof typeof AUTH_OUTCOME];
@@ -102,6 +110,8 @@ export const AUTH_MESSAGES: Record<AuthOutcome, string> = {
     "Sign up is unavailable right now. Please try again later.",
   [AUTH_OUTCOME.accountNotReady]: `This account can't sign in yet. Write to ${CONTACT_EMAIL} for help.`,
   [AUTH_OUTCOME.emailUnavailable]: RECOVERY_UNAVAILABLE_MESSAGE,
+  [AUTH_OUTCOME.usernameTaken]: "That username is taken.",
+  [AUTH_OUTCOME.usernameLocked]: "You can change your username once a week.",
 };
 
 /**
@@ -142,3 +152,27 @@ export const SIGN_IN_NOTICES: Record<SignInNotice, string> = {
 export function authMessage(outcome: AuthOutcome): string {
   return AUTH_MESSAGES[outcome];
 }
+
+/**
+ * What `/account` shows when sign up created the account but lost its
+ * username to someone who claimed it a moment earlier
+ * (prompts/account-username.md, Q16). Looked up by key from the query string,
+ * like `SIGN_IN_NOTICES`, so the URL can never put its own text on the page.
+ */
+export const ACCOUNT_NOTICE = {
+  usernameTaken: "username-taken",
+} as const;
+
+export type AccountNotice =
+  (typeof ACCOUNT_NOTICE)[keyof typeof ACCOUNT_NOTICE];
+
+export const ACCOUNT_NOTICES: Record<AccountNotice, string> = {
+  [ACCOUNT_NOTICE.usernameTaken]:
+    "Your account is ready, but that username was just taken. Choose another.",
+};
+
+/** Shown after a username is saved. */
+export const USERNAME_UPDATED_MESSAGE = "Username updated.";
+
+/** Shown when the name saved is the one already set; nothing changes. */
+export const USERNAME_UNCHANGED_MESSAGE = "That's already your username.";

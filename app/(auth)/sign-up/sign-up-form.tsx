@@ -8,6 +8,7 @@ import {
 } from "@/components/auth/auth-feedback";
 import { AuthField } from "@/components/auth/auth-field";
 import { type AuthActionState, IDLE_STATE } from "@/lib/auth/action-state";
+import { USERNAME_HINT, USERNAME_MAX_LENGTH } from "@/lib/auth/username";
 import { signUpAction } from "../actions";
 
 /**
@@ -24,6 +25,10 @@ import { signUpAction } from "../actions";
  * as you type. With email delivery off, a submitted taken address is reported
  * with a link back to sign in (spec 0018, AC-12); with it on, the action masks
  * that case as AC-2 asks.
+ *
+ * The username comes first and is required (prompts/account-username.md). Its
+ * rules are shown up front for the same reason as the password's, and a taken
+ * one is reported on submit only, never as you type.
  */
 function SignUpForm({ next }: { next?: string }) {
   const [state, formAction] = useActionState<AuthActionState, FormData>(
@@ -45,6 +50,16 @@ function SignUpForm({ next }: { next?: string }) {
           {state.link.label}
         </Link>
       ) : null}
+
+      <AuthField
+        label="Username"
+        name="username"
+        autoComplete="nickname"
+        maxLength={USERNAME_MAX_LENGTH}
+        hint={USERNAME_HINT}
+        defaultValue={state.values?.username}
+        error={state.fieldErrors?.username}
+      />
 
       <AuthField
         label="Email"

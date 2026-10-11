@@ -12,7 +12,9 @@ Authentication rules shared by every auth surface: the forms in `app/(auth)/`, `
 - `supabase-error.ts`: `classifyAuthError()`, the only code that touches a raw Supabase error. It matches on `error.code` (and `reasons` for weak passwords), never message text.
 - `log.ts`: `logAuthEvent()`, the only way an auth path writes to the log.
 - `schemas.ts`: the email and password Zod rules. `MINIMUM_PASSWORD_LENGTH` must equal `minimum_password_length` in `supabase/config.toml`.
-- `identity.ts`: pure display derivations (name, avatar letter). Nothing is stored, and there is no `profiles` table.
+- `identity.ts`: pure display derivations (name, avatar letter). The username, when there is one, is passed in; otherwise the email name is used.
+- `username.ts`: the username Zod rule, reserved list and weekly lock helpers. Must match the `profiles` checks in `supabase/schemas/02-tables.sql` (`username.test.ts` checks). The database is the judge: the trigger `guard_username_change` owns the lock and the timestamp.
+- `profile.ts`: `getOwnProfile()`, the `cache()`d read of the signed in account's `profiles` row, used by the navbar slot, `/account` and `changeUsernameAction`. A failed read returns null so the navbar falls back, never breaks.
 
 ## Rules
 

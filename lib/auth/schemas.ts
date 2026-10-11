@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { usernameSchema } from "./username";
+
 /**
  * The password and address rules, defined once (spec 0005, AC-9).
  *
@@ -60,6 +62,7 @@ export const signInSchema = z.object({
 });
 
 export const signUpSchema = z.object({
+  username: usernameSchema,
   email: emailSchema,
   password: newPasswordSchema,
   next: nextField,
@@ -76,4 +79,8 @@ export const resetPasswordSchema = z.object({
 export const changePasswordSchema = z.object({
   currentPassword: existingPasswordSchema,
   password: newPasswordSchema,
+});
+
+export const changeUsernameSchema = z.object({
+  username: usernameSchema,
 });

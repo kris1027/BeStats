@@ -101,3 +101,16 @@ describe("the recovery session gate (AC-24)", () => {
     expect(isRecoverySession(amr)).toBe(false);
   });
 });
+
+/** covers: prompts/account-username.md, R7 */
+describe("with a username", () => {
+  it("prefers the username to the email name", () => {
+    expect(displayName("kris@example.com", "tester_one")).toBe("tester_one");
+    expect(avatarLetter("kris@example.com", "tester_one")).toBe("T");
+  });
+
+  it("falls back to the email name without one", () => {
+    expect(displayName("kris@example.com", null)).toBe("kris");
+    expect(avatarLetter("kris@example.com", undefined)).toBe("K");
+  });
+});

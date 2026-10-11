@@ -26,6 +26,9 @@ function AuthField({
   required = true,
   error,
   defaultValue,
+  hint,
+  disabled,
+  maxLength,
 }: {
   label: string;
   name: string;
@@ -35,9 +38,17 @@ function AuthField({
   required?: boolean;
   error?: string;
   defaultValue?: string;
+  /** A standing rule shown under the field, bound like the error. */
+  hint?: string;
+  disabled?: boolean;
+  maxLength?: number;
 }) {
   const id = useId();
   const errorId = `${id}-error`;
+  const hintId = `${id}-hint`;
+  const describedBy =
+    [hint ? hintId : null, error ? errorId : null].filter(Boolean).join(" ") ||
+    undefined;
   const [revealed, setRevealed] = useState(false);
 
   const isPassword = type === "password";
@@ -82,9 +93,15 @@ function AuthField({
           autoComplete={autoComplete}
           placeholder={placeholder}
           required={required}
+          disabled={disabled}
+          maxLength={maxLength}
+          // A username or address is never a sentence: no capital first
+          // letter and no spell check underline on a phone keyboard.
+          autoCapitalize={isPassword ? undefined : "none"}
+          spellCheck={isPassword ? undefined : false}
           {...valueProps}
           aria-invalid={error ? true : undefined}
-          aria-describedby={error ? errorId : undefined}
+          aria-describedby={describedBy}
           className={isPassword ? "pr-14" : undefined}
         />
 
@@ -109,6 +126,12 @@ function AuthField({
           </button>
         ) : null}
       </div>
+
+      {hint ? (
+        <p id={hintId} className="text-sm text-muted-foreground">
+          {hint}
+        </p>
+      ) : null}
 
       {error ? (
         <p id={errorId} className="text-sm text-destructive">

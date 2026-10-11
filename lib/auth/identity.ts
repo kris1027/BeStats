@@ -7,13 +7,18 @@
  * them, which is the difference between covering the rule and covering a
  * restatement of it.
  *
- * Nothing here is ever stored. That is the whole reason this feature adds no
- * `profiles` table: a value that is recomputed every render cannot drift out of
- * step with the account it came from.
+ * The username is the one chosen value (prompts/account-username.md), read
+ * from `profiles` by the caller and passed in. Everything else is derived from
+ * the account and recomputed every render, so it cannot drift out of step.
  */
 
-/** Shown beside the avatar: the part of the address before the `@`. */
-export function displayName(email: string): string {
+/**
+ * Shown beside the avatar: the username when there is one, otherwise the part
+ * of the address before the `@`, which is what every account without a
+ * username keeps (existing accounts and, later, Google ones).
+ */
+export function displayName(email: string, username?: string | null): string {
+  if (username) return username;
   const local = email.split("@")[0];
   return local && local.length > 0 ? local : "Account";
 }
@@ -24,8 +29,8 @@ export function displayName(email: string): string {
  * Falls back rather than returning an empty string, because an empty circle
  * reads as a broken control rather than as an unknown account.
  */
-export function avatarLetter(email: string): string {
-  return displayName(email).charAt(0).toUpperCase();
+export function avatarLetter(email: string, username?: string | null): string {
+  return displayName(email, username).charAt(0).toUpperCase();
 }
 
 /**
