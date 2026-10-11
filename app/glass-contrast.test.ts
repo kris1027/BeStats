@@ -2,10 +2,13 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import {
+  channelsFromComputed,
+  channelsFromHex,
+  contrastRatio as contrast,
   type Rgb,
   relativeLuminance,
   TEXT_CONTRAST,
-} from "@/lib/film-scene/palette";
+} from "@/lib/color/contrast";
 
 /**
  * covers: prompts/frosted-glass.md, AC-3
@@ -25,11 +28,10 @@ const CSS = readFileSync("app/globals.css", "utf8");
 
 /** The hex value a token is declared with in globals.css. */
 function hex(token: string): Rgb {
-  const match = CSS.match(new RegExp(`${token}:\\s*#([0-9a-f]{6})`, "i"));
-  if (!match) throw new Error(`${token} is not a hex token`);
-  return [0, 2, 4].map(
-    (i) => Number.parseInt(match[1].slice(i, i + 2), 16) / 255,
-  ) as Rgb;
+  const match = CSS.match(new RegExp(`${token}:\\s*(#[0-9a-f]{6})`, "i"));
+  const channels = match && channelsFromHex(match[1]);
+  if (!channels) throw new Error(`${token} is not a hex token`);
+  return channels;
 }
 
 /** The first declaration of a percentage token, the one `:root` sets. */
@@ -43,23 +45,17 @@ function percent(token: string): number {
 function stops(utility: string): { color: Rgb; alpha: number }[] {
   const start = CSS.indexOf(`@utility ${utility} {`);
   const block = CSS.slice(start, CSS.indexOf("padding-box", start));
-  return [...block.matchAll(/rgb\((\d+) (\d+) (\d+) \/ ([\d.]+)\)/g)].map(
-    ([, r, g, b, a]) => ({
-      color: [Number(r) / 255, Number(g) / 255, Number(b) / 255],
-      alpha: Number(a),
-    }),
+  return [...block.matchAll(/rgb\(([\d ]+) \/ ([\d.]+)\)/g)].map(
+    ([, channels, alpha]) => {
+      const color = channelsFromComputed(channels);
+      if (!color) throw new Error(`${utility} has an unreadable stop`);
+      return { color, alpha: Number(alpha) };
+    },
   );
 }
 
 function over(top: Rgb, alpha: number, bottom: Rgb): Rgb {
   return top.map((c, i) => c * alpha + bottom[i] * (1 - alpha)) as Rgb;
-}
-
-function contrast(a: Rgb, b: Rgb): number {
-  const [hi, lo] = [relativeLuminance(a), relativeLuminance(b)].sort(
-    (x, y) => y - x,
-  );
-  return (hi + 0.05) / (lo + 0.05);
 }
 
 /** The sRGB grey whose relative luminance is `target`. */
