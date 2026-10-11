@@ -32,10 +32,13 @@ Add the animated background from the Claude Design file `BeStats Background.dc.h
    - The wave is already computed in a shader.
    - The panels become instanced quads, and each instance's position is computed from `time` in the vertex shader: `z = mod(z0 + v·t, 38) − 30`, with the design's fades. That removes the design's per frame JavaScript loop over 26 meshes and 52 materials.
    - Dust turns on a single rotation uniform.
-   - Fog and the vignette move into the fragment shaders, one draw per layer, four draw calls in total.
+   - Fog moves into the fragment shaders. The vignette stays a CSS layer (decision 8), so it is also the whole background before and without WebGL2.
+   - Four draw calls in total: the wave, the panel fills, the panel outlines and the dust.
+   - Every fragment is capped under the luminance `--muted-foreground` allows (AC-10), and the layers blend with `MAX` rather than adding, so overlapping points cannot sum past the cap. Over the black page this matches the design's additive and alpha blending wherever layers do not overlap.
 3. **Off the main thread.** When the browser supports `OffscreenCanvas` in a worker, the canvas is transferred with `transferControlToOffscreen()` and rendered in a dedicated worker. React hydration and scroll then never compete with the animation. Without that support, the same renderer module runs on the main thread. The renderer has no DOM access, so one module serves both.
 4. **Painted late and outside the critical path.**
-   - The layout renders a server side `<div>` with the static vignette gradient and an empty `<canvas>` (both `aria-hidden`, `pointer-events: none`, `position: fixed`, behind the content). The first paint is the same black page as today, plus the vignette.
+   - The layout renders a server side `<div>` with the static vignette gradient and an empty host `<div>` (`aria-hidden`, `pointer-events: none`, `position: fixed`, behind the content). The first paint is the same black page as today, plus the vignette.
+   - The `<canvas>` is created in the browser when the scene mounts, not rendered by the server: once its control is transferred to a worker it can never be transferred again, and a canvas React kept across a Strict Mode remount would throw.
    - The client island loads its renderer with `import()` in `requestIdleCallback` (falling back to `setTimeout`) after hydration, then fades the canvas in over 600 ms.
    - Nothing shifts layout or touches LCP, and the island reads no request state, so every route keeps its prerendered shell.
 5. **Budgets** (stated as acceptance criteria below):
@@ -43,9 +46,11 @@ Add the animated background from the Claude Design file `BeStats Background.dc.h
    - Below 768px, or with a coarse pointer, half the wave grid (70 × 45) and 14 panels.
    - The loop pauses on `visibilitychange` (hidden tab) and resumes cleanly with no time jump.
    - Pointer moves are forwarded throttled to one per animation frame.
-   - Resizes go through a `ResizeObserver`.
+   - Resizes go through a `ResizeObserver`, which rechooses the budget. Crossing the compact breakpoint rebuilds the scene at the other density, because its geometry is uploaded once; any other resize only resizes the canvas, picking up a changed pixel ratio.
 6. **Reduced motion.** Under `prefers-reduced-motion: reduce`, one still frame is drawn and nothing animates, including the parallax. This follows the `skeleton-pulse` precedent of stopping motion rather than slowing it. The setting is watched live.
 7. **Failure is silent and safe.** No WebGL2, a failed shader compile or a lost context (`webglcontextlost`) leaves only the static vignette, which is today's black page. The background never errors in the console in normal use and never blocks the page.
+   - A worker that can never draw (Safari 16 has `OffscreenCanvas` without WebGL on it) replies `failed`, and the page tries the main thread once.
+   - A context lost after drawing replies `lost`, and the page gives up rather than rebuilding anywhere: whatever took the GPU away would take the next context too. A resize never revives a scene that was given up.
 8. **Colours come from `globals.css` only.**
    - At mount, the island reads `--color-score-personal` and `--background` with `getComputedStyle` and passes them to the renderer as uniforms, so changing the token recolours the background.
    - The design's two neutral greys (the wave's low colour and the dust) become new tokens, `--color-backdrop-wave` and `--color-backdrop-dust`, read the same way.
@@ -55,29 +60,32 @@ Add the animated background from the Claude Design file `BeStats Background.dc.h
 11. **Legibility.**
     - Body text on flat black (headings, the "Ordered by…" line, legal pages) now sits over faint points.
     - The vignette darkens the edges and the fog darkens the distance.
-    - I will check contrast at the brightest wave crest behind `text-muted-foreground`. If it falls under 4.5:1, I lower the wave alpha.
+    - Contrast is checked at the brightest pixel behind `text-muted-foreground`. Measured on 2026-10-11 (`/privacy`, 1440 × 900, content hidden, 20 frames): before the cap, wave points stacking at the horizon reached relative luminance 0.20 (1.8:1) and panel outlines about 3.8:1, while 99.998% of pixels already passed. The owner chose to cap the peaks rather than dim the whole scene (decision 2). After the cap the worst pixel measured 0.044, which is 5.0:1.
     - Glass surfaces keep their opaque plates, so nothing on artwork changes.
 12. **Scope.** Every route through the root layout: catalog, title, library, auth, legal, 404 and `/showcase`. The OG image route is untouched. The title page hero backdrop already covers the background where it paints.
 
 ## Expected files
 
 - `components/layout/ambient-background.tsx` (Server Component): the fixed vignette layer plus `<AmbientCanvas />`.
-- `components/layout/ambient-canvas.tsx` (new client boundary, `"use client"`):
-  - Mounts the canvas, reads the tokens, applies the motion and size budgets, then either transfers to the worker or lazy loads the renderer on the main thread.
-  - Handles visibility, pointer, resize and reduced motion, and cleans up on unmount.
-- `lib/backdrop/renderer.ts`: the pure WebGL2 scene. It takes a context, a parameter object and a colour set, and exposes `frame(t, pointer)`, `resize` and `dispose`. It has no DOM access and no `server-only`.
+- `components/layout/ambient-canvas.tsx` (new client boundary, `"use client"`): renders the host and, when the browser is idle, imports `lib/backdrop/mount.ts`. Its `still` flag, passed only by `/showcase`, draws the reduced motion frame for every visitor.
+- `lib/backdrop/mount.ts`: creates the canvas, reads the tokens, applies the motion and size budgets, then either transfers to the worker or lazy loads the renderer on the main thread. Handles visibility, pointer, resize and reduced motion, and cleans up on unmount.
+- `lib/backdrop/backdrop.ts` and `lib/backdrop/loop.ts`: the renderer plus its clock, shared by the worker and the main thread; `lib/backdrop/camera.ts`: the projection and view matrices.
+- `lib/backdrop/renderer.ts`: the pure WebGL2 scene. It takes a canvas, a budget and a colour set, and exposes `draw(frame)`, `resize` and `dispose`. It has no DOM access and no `server-only`.
 - `lib/backdrop/shaders.ts`: the GLSL ES 3.00 sources, with fog and the vignette inside.
 - `lib/backdrop/params.ts`: pure functions that choose the budget (grid size, panel count, DPR) from the viewport, pointer and motion preference, plus seeded panel and dust layouts so the server and tests stay deterministic.
-- `lib/backdrop/colors.ts`: parses the computed CSS colour strings into linear RGB triples.
-- `lib/backdrop/worker.ts`: the worker entry, a message protocol (`init`, `resize`, `pointer`, `visibility`, `motion`, `dispose`) validated with Zod.
+- `lib/backdrop/colors.ts`: parses the computed CSS colour strings into sRGB channels from 0 to 1, the values the design's shaders received; there is no linear conversion, because the design's Three.js r149 renderer wrote its output unconverted. It also derives the luminance cap from `--muted-foreground`.
+- `lib/backdrop/worker.ts` and `lib/backdrop/protocol.ts`: the worker entry and its messages (`init`, `resize`, `pointer`, `visible`, `motion`), validated with Zod; the worker replies `ready`, `failed` or `lost`. There is no `dispose` message: the page terminates the worker, which releases its context with it.
 - `app/globals.css`: `--color-backdrop-wave`, `--color-backdrop-dust` and `@utility backdrop-vignette`.
-- `app/layout.tsx`: render `<AmbientBackground />` first inside `<body>`, and give the shell content `relative isolate` so it stacks above the background.
+- `app/layout.tsx`: render `<AmbientBackground />` first inside `<body>`. The background is fixed at `-z-10`, which paints above the body's black (propagated to the viewport) and below everything else, so the shell content needs no `relative isolate`.
 - Tests:
-  - `lib/backdrop/params.test.ts`, `lib/backdrop/colors.test.ts`, `lib/backdrop/worker-protocol.test.ts`.
-  - `components/layout/ambient-canvas.test.tsx`: reduced motion draws once, a hidden tab pauses, no WebGL2 leaves only the vignette, and unmount disposes.
+  - `lib/backdrop/params.test.ts`, `lib/backdrop/colors.test.ts` (including the AC-10 cap), `lib/backdrop/protocol.test.ts`, `lib/backdrop/camera.test.ts`.
+  - `lib/backdrop/loop.test.ts`: reduced motion draws once and a hidden tab pauses.
+  - `lib/backdrop/backdrop.test.ts`: no WebGL2 or a failed link draws nothing, and a lost context is reported, but not the scene's own release of it.
+  - `components/layout/ambient-canvas.test.tsx`: the worker and main thread paths, both failures and both losses leaving only the vignette, the breakpoint rebuild, pointer moves under reduced motion, the `still` flag, and unmount.
+  - `components/layout/ambient-background.test.tsx`: hidden from assistive technology and the pointer, the vignette before anything loads.
   - `app/layout.test.ts`: renders exactly once and `aria-hidden`.
   - `app/layout-purity.test.ts`: the new shell files join the scanned tree.
-- `app/showcase/page.tsx`: an "Ambient background" entry showing the tokens and the reduced motion still frame.
+- `app/showcase/page.tsx`: an "Ambient background" entry showing the tokens and the reduced motion still frame (`<AmbientCanvas still />`).
 - `components/AGENTS.md`: the new client boundary, the second cyan exception, and the motion and performance rules.
 
 ## Requirements and acceptance criteria
