@@ -86,6 +86,43 @@ begin
 end;
 $$;
 
+-- Owns `profiles.username_changed_at` and the weekly lock
+-- (prompts/account-username.md). A username can change once per rolling 7
+-- days; the first one, set at sign up or on `/account`, starts the clock.
+-- Saving the identical name is not a change and keeps the clock where it was,
+-- while a change of case is one. The client can never choose the timestamp,
+-- and `user_id` never moves, whichever write path is used.
+--
+-- On an upsert that hits an existing row, the insert branch runs first on the
+-- proposed row and the update branch then decides, as in `set_watchlisted_at`.
+create or replace function public.guard_username_change()
+returns trigger
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+begin
+  if tg_op = 'INSERT' then
+    new.username_changed_at := now();
+    return new;
+  end if;
+
+  new.user_id := old.user_id;
+
+  if new.username = old.username then
+    new.username_changed_at := old.username_changed_at;
+    return new;
+  end if;
+
+  if old.username_changed_at > now() - interval '7 days' then
+    raise exception 'username_locked' using errcode = 'P0001';
+  end if;
+
+  new.username_changed_at := now();
+  return new;
+end;
+$$;
+
 -- Triggers on one table fire in name order. This one does not read
 -- `updated_at`, so its place beside `user_movie_state_set_updated_at` does not
 -- matter.
@@ -107,4 +144,12 @@ create trigger user_show_state_set_updated_at
 
 create trigger user_episode_state_set_updated_at
   before update on public.user_episode_state
+  for each row execute function public.set_updated_at();
+
+create trigger profiles_guard_username_change
+  before insert or update on public.profiles
+  for each row execute function public.guard_username_change();
+
+create trigger profiles_set_updated_at
+  before update on public.profiles
   for each row execute function public.set_updated_at();
