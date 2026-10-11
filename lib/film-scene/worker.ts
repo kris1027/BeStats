@@ -33,6 +33,7 @@ scope.onmessage = (event) => {
       clock = runScene(message.canvas, {
         ...message,
         onReady: () => scope.postMessage({ type: "ready" }),
+        onTime: (time) => scope.postMessage({ type: "time", time }),
         onLost: () => {
           clock = null;
           scope.postMessage({ type: "lost" });

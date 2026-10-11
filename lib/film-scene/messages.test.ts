@@ -56,6 +56,7 @@ describe("worker messages", () => {
         palette,
         reducedMotion: false,
         visible: true,
+        time: 0,
       }).success,
     ).toBe(false);
   });

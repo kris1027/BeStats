@@ -1,4 +1,5 @@
 import { chooseBudget, sameGeometry } from "./budget";
+import { readSceneTime, saveSceneTime } from "./continuity";
 import type { FromWorker, ToWorker } from "./messages";
 import { readScenePalette } from "./palette";
 
@@ -46,8 +47,14 @@ function supportsWorkerCanvas(): boolean {
  * The canvas stays transparent until the first frame is drawn, then fades in,
  * except under reduced motion, where it appears without a transition.
  *
+ * The intro plays once per tab (prompts/film-scene-continuity.md): the clock's
+ * reports are kept in sessionStorage, and a later full load, or a rebuild
+ * across the breakpoint, starts from the last one and appears without the
+ * fade.
+ *
  * `still` draws the reduced motion frame whatever the visitor's setting, so
- * `/showcase` can show it beside the live background.
+ * `/showcase` can show it beside the live background. It neither reads nor
+ * saves the stored time, so the preview never moves the live scene's clock.
  */
 export function startFilmScene(
   host: HTMLElement,
@@ -65,6 +72,16 @@ export function startFilmScene(
       coarsePointer: coarseQuery.matches,
       devicePixelRatio,
     });
+
+  const stored = still ? null : readSceneTime();
+  // The latest time the clock reported, the start of any rebuild.
+  let time = stored ?? 0;
+  // Whether this canvas carries on from an earlier one, so it skips the fade.
+  let resuming = stored !== null;
+  const onTime = (next: number) => {
+    time = next;
+    if (!still) saveSceneTime(next);
+  };
 
   let budget = currentBudget();
   let controller: Controller | null = null;
@@ -85,6 +102,7 @@ export function startFilmScene(
     palette,
     reducedMotion: reducedMotion(),
     visible: !document.hidden,
+    time,
   });
 
   const freshCanvas = () => {
@@ -99,7 +117,7 @@ export function startFilmScene(
 
   const reveal = () => {
     if (!canvas) return;
-    canvas.style.transition = reducedMotion() ? "none" : FADE;
+    canvas.style.transition = reducedMotion() || resuming ? "none" : FADE;
     canvas.style.opacity = "1";
   };
 
@@ -143,6 +161,9 @@ export function startFilmScene(
       ...state(),
       onReady: current(own, reveal),
       onLost: current(own, giveUp),
+      onTime: (next) => {
+        if (own === run) onTime(next);
+      },
     });
     if (!clock) return giveUp();
     controller = {
@@ -163,7 +184,8 @@ export function startFilmScene(
       worker.postMessage(message, transfer);
     worker.onmessage = (event: MessageEvent<FromWorker>) => {
       if (own !== run) return;
-      if (event.data.type === "ready") reveal();
+      if (event.data.type === "time") onTime(event.data.time);
+      else if (event.data.type === "ready") reveal();
       else if (event.data.type === "lost") giveUp();
       else fallBack();
     };
@@ -207,6 +229,7 @@ export function startFilmScene(
     budget = next;
     if (rebuild) {
       teardown();
+      resuming = true;
       start();
       return;
     }

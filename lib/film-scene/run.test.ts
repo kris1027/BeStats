@@ -24,6 +24,8 @@ function options(): RunOptions {
     visible: true,
     onReady: vi.fn(),
     onLost: vi.fn(),
+    time: 0,
+    onTime: vi.fn(),
   };
 }
 

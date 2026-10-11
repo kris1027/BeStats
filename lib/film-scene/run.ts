@@ -16,6 +16,9 @@ export interface RunOptions {
   visible: boolean;
   onReady: () => void;
   onLost: () => void;
+  /** Where the clock starts (prompts/film-scene-continuity.md). */
+  time: number;
+  onTime: (time: number) => void;
 }
 
 /**
@@ -67,6 +70,8 @@ export function runScene(
     reducedMotion: options.reducedMotion,
     visible: options.visible,
     onFirstFrame: options.onReady,
+    startTime: options.time,
+    onTime: options.onTime,
   });
 
   // Both canvas types dispatch the event; the cast only papers over their

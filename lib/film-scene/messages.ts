@@ -1,6 +1,7 @@
 import * as z from "zod/mini";
 
 import type { SceneBudget } from "./budget";
+import { sceneTimeSchema } from "./continuity";
 import type { ScenePalette } from "./palette";
 
 /**
@@ -69,6 +70,7 @@ export const toWorkerSchema = z.discriminatedUnion("type", [
     palette: paletteSchema,
     reducedMotion: z.boolean(),
     visible: z.boolean(),
+    time: sceneTimeSchema,
   }),
   z.object({
     type: z.literal("resize"),
@@ -88,9 +90,12 @@ export type ToWorker = z.infer<typeof toWorkerSchema>;
  * `OffscreenCanvas` without WebGL on it), so the page tries the main thread.
  * `lost` means it drew and then lost its context, and the page gives up on
  * the scene (decision 7): whatever took the GPU away would take it from the
- * main thread too.
+ * main thread too. `time` is the clock's periodic report, which the page
+ * keeps so the next full load can carry on from it
+ * (prompts/film-scene-continuity.md).
  */
 export type FromWorker =
   | { type: "ready" }
   | { type: "failed" }
-  | { type: "lost" };
+  | { type: "lost" }
+  | { type: "time"; time: number };
