@@ -32,8 +32,10 @@ export type SessionUser = {
 /**
  * Resolves the signed in user, or null.
  *
- * Use this where signed out is a normal, renderable state: the navbar account
- * slot is the only such place today.
+ * Use this where signed out is a state to handle rather than redirect: the
+ * navbar account slot, the signed in parts of public pages, `getOwnProfile()`,
+ * and every Server Action, which must report an ended session and write
+ * nothing instead of redirecting (spec 0005, AC-17).
  *
  * Memoized per request with React `cache()`, because the navbar renders two
  * account slots and each private page calls `requireUser` too; without it

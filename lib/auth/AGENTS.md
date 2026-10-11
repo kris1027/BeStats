@@ -4,7 +4,7 @@ Authentication rules shared by every auth surface: the forms in `app/(auth)/`, `
 
 ## Files
 
-- `user.ts`: `requireUser()` for every private Server Component and Server Action, `getOptionalUser()` where signed out is a normal state (today only the navbar slot). Both verify with `getClaims()`, never `getSession()`.
+- `user.ts`: `requireUser()` for every private page, which redirects a signed out visitor. `getOptionalUser()` everywhere signed out is a state to handle rather than redirect: the navbar slot, the signed in parts of public pages, `getOwnProfile()`, and every Server Action, which answers an ended session with a returned state and writes nothing (spec 0005 AC-17). Both verify with `getClaims()`, never `getSession()`.
 - `private-paths.ts`: `PRIVATE_PATH_PREFIXES`, the one list the proxy guards. A new private route registers here; never restate the prefixes elsewhere (`proxy.test.ts` checks).
 - `next-path.ts`: `isSafeNextPath()` / `safeNextPath()`. Call it at every read of a `next` value (query string, hidden field, header, email link), not once per journey.
 - `action-state.ts`: `AuthActionState`, the shape every auth Server Action returns.
@@ -18,7 +18,7 @@ Authentication rules shared by every auth surface: the forms in `app/(auth)/`, `
 
 ## Rules
 
-- The proxy redirect is a convenience. The boundary is `requireUser()` inside the page or action, plus Row Level Security (`AGENTS.md` section 11). The proxy redirects only `GET`; a Server Action POST is never redirected, it is refused inside the action.
+- The proxy redirect is a convenience. The boundary is the session check inside the page or action (`requireUser()` or `getOptionalUser()`), plus Row Level Security (`AGENTS.md` section 11). The proxy redirects only `GET`; a Server Action POST is never redirected, it is refused inside the action.
 - A new `"use server"` file, or a new export from a private one, registers in `private-actions-boundary.test.ts` at the repo root with a valid call; the suite fails until it does, and proves every private action refuses a missing session before it opens a database client.
 - Auth Server Actions return `AuthActionState` and never throw, except `redirect()`, which is always called outside any `try`.
 - Copy comes from `messages.ts` only. Sign in, sign up and reset must never reveal whether an address has an account; the unconfirmed address outcome is the one exception.
