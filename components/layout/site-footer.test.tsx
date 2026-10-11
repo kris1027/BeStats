@@ -23,6 +23,16 @@ const { SiteFooter } = await import("./site-footer");
  * the contract with `buttonVariants`' sizes, and the look stays a browser step.
  */
 describe("SiteFooter", () => {
+  it("opens with the icon key, before TMDB's notice", () => {
+    render(<SiteFooter />);
+
+    const key = screen.getByRole("list", { name: "Icon key" });
+    const notice = screen.getByText(TMDB_ATTRIBUTION);
+    expect(
+      key.compareDocumentPosition(notice) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
   it("renders TMDB's current notice from the one constant (AC-3)", () => {
     render(<SiteFooter />);
     expect(screen.getByText(TMDB_ATTRIBUTION)).toBeInTheDocument();

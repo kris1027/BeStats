@@ -8,7 +8,6 @@ import {
 import { LIBRARY_COPY } from "@/lib/tracking/messages";
 import { getShowRatings } from "@/lib/tracking/show-ratings";
 
-import { BadgeLegend } from "./badge-legend";
 import { LIBRARY_HEADING_ID } from "./ids";
 import {
   EmptyPanel,
@@ -88,8 +87,6 @@ export async function showLibraryTab(query: LibraryTabQuery<LibraryList>) {
           href={(target) => pageHref(list, "tv", target)}
         />
       ) : null}
-
-      <BadgeLegend list={list} type="tv" />
     </div>
   );
 }

@@ -14,7 +14,6 @@ import {
 } from "@/lib/tracking/library-lists";
 import { LIBRARY_COPY } from "@/lib/tracking/messages";
 
-import { BadgeLegend } from "./badge-legend";
 import { LibraryGrid } from "./library-grid";
 import {
   EmptyPanel,
@@ -169,8 +168,6 @@ function MovieGridSection({
           href={(target) => pageHref(list, "movie", target)}
         />
       ) : null}
-
-      <BadgeLegend list={list} type="movie" />
     </div>
   );
 }

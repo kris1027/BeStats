@@ -230,10 +230,10 @@ export default function ShowcasePage() {
           A TMDB badge with no value renders nothing; a personal score with no
           value renders &ldquo;Not rated&rdquo;. Plan, Planned and the watched
           marks are the movie tracking marks from spec 0007, drawn from the
-          legend&rsquo;s own paths. Next episode is the Watchlist show
-          card&rsquo;s pill, and the dated and Date TBA pills sit on Upcoming
-          cards (spec 0020); below <code>sm</code> a date that carries its year
-          drops the calendar glyph.
+          original legend&rsquo;s paths and listed in the footer&rsquo;s icon
+          key. Next episode is the Watchlist show card&rsquo;s pill, and the
+          dated and Date TBA pills sit on Upcoming cards (spec 0020); below{" "}
+          <code>sm</code> a date that carries its year drops the calendar glyph.
         </p>
       </Section>
 
