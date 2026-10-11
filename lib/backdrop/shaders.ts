@@ -6,7 +6,20 @@
  * CPU a handful of uniforms. The constants are the design file's, kept as
  * they were so the motion matches it. Fog is the design's exponential squared
  * fog (density 0.045), mixed toward the page background.
+ *
+ * Every fragment writes its colour already multiplied by its opacity and
+ * passed through `capped`, and the renderer blends with `MAX`, so no pixel can
+ * outshine `uPeak` (AC-10). Over the black page that matches the design's
+ * additive and alpha blending everywhere layers do not overlap.
  */
+
+const CAP = /* glsl */ `
+uniform float uPeak;
+vec3 capped(vec3 c) {
+  float l = dot(pow(c, vec3(2.2)), vec3(0.2126, 0.7152, 0.0722));
+  return l > uPeak ? c * pow(uPeak / l, 1.0 / 2.2) : c;
+}
+`;
 
 const FOG = /* glsl */ `
 uniform vec3 uFog;
@@ -43,6 +56,7 @@ export const WAVE_FRAGMENT = /* glsl */ `#version 300 es
 precision mediump float;
 uniform vec3 uAccent;
 uniform vec3 uLow;
+${CAP}
 in float vH;
 in float vD;
 out vec4 outColor;
@@ -53,7 +67,7 @@ void main() {
     * (0.25 + 0.35 * (vH + 1.5) / 3.0)
     * clamp(1.0 - vD / 32.0, 0.0, 1.0);
   vec3 tint = mix(uLow, uAccent, clamp((vH + 0.6) / 1.8, 0.0, 1.0));
-  outColor = vec4(tint, a);
+  outColor = vec4(capped(tint * a), 1.0);
 }
 `;
 
@@ -106,11 +120,12 @@ export const PANEL_FRAGMENT = /* glsl */ `#version 300 es
 precision mediump float;
 uniform vec3 uAccent;
 ${FOG}
+${CAP}
 in float vAlpha;
 in float vDepth;
 out vec4 outColor;
 void main() {
-  outColor = vec4(mix(uAccent, uFog, fogFactor(vDepth)), vAlpha);
+  outColor = vec4(capped(mix(uAccent, uFog, fogFactor(vDepth)) * vAlpha), 1.0);
 }
 `;
 
@@ -140,9 +155,10 @@ export const DUST_FRAGMENT = /* glsl */ `#version 300 es
 precision mediump float;
 uniform vec3 uDust;
 ${FOG}
+${CAP}
 in float vDepth;
 out vec4 outColor;
 void main() {
-  outColor = vec4(mix(uDust, uFog, fogFactor(vDepth)), 0.5);
+  outColor = vec4(capped(mix(uDust, uFog, fogFactor(vDepth)) * 0.5), 1.0);
 }
 `;

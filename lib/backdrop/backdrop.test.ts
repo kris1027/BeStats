@@ -23,7 +23,7 @@ function options(): BackdropOptions {
       dust: 1,
       pixelRatio: 1,
     },
-    colors: { accent: rgb, background: rgb, wave: rgb, dust: rgb },
+    colors: { accent: rgb, background: rgb, wave: rgb, dust: rgb, text: rgb },
     // A still frame keeps the loop from scheduling anything.
     reducedMotion: true,
     visible: true,

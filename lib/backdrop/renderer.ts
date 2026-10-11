@@ -1,5 +1,5 @@
 import { lookAt, perspective } from "./camera";
-import type { BackdropColors } from "./colors";
+import { type BackdropColors, peakLuminance } from "./colors";
 import {
   type BackdropBudget,
   dustPoints,
@@ -161,7 +161,7 @@ export function createRenderer(
   const wave = compile(gl, WAVE_VERTEX, WAVE_FRAGMENT);
   const panel = compile(gl, PANEL_VERTEX, PANEL_FRAGMENT);
   const dust = compile(gl, DUST_VERTEX, DUST_FRAGMENT);
-  const shared = ["uView", "uProj", "uTime"] as const;
+  const shared = ["uView", "uProj", "uTime", "uPeak"] as const;
   const waveU = uniforms(gl, wave, [...shared, "uPx", "uAccent", "uLow"]);
   const panelU = uniforms(gl, panel, [
     ...shared,
@@ -214,6 +214,15 @@ export function createRenderer(
   });
 
   // Colours never change while the page is open, so they are set once.
+  const peak = peakLuminance(colors.text);
+  for (const [program, locations] of [
+    [wave, waveU],
+    [panel, panelU],
+    [dust, dustU],
+  ] as const) {
+    activate(gl, program);
+    gl.uniform1f(locations.uPeak, peak);
+  }
   activate(gl, wave);
   gl.uniform3fv(waveU.uAccent, colors.accent);
   gl.uniform3fv(waveU.uLow, colors.wave);
@@ -224,7 +233,10 @@ export function createRenderer(
   gl.uniform3fv(dustU.uDust, colors.dust);
   gl.uniform3fv(dustU.uFog, colors.background);
   gl.clearColor(...colors.background, 1);
+  // MAX keeps the brightest fragment rather than summing them, so the cap
+  // each shader applies holds where points and panels overlap (AC-10).
   gl.enable(gl.BLEND);
+  gl.blendEquation(gl.MAX);
 
   let projection = perspective(FOV_Y, 1, NEAR, FAR);
   let pixelRatio = 1;
@@ -249,8 +261,6 @@ export function createRenderer(
       );
       gl.clear(gl.COLOR_BUFFER_BIT);
 
-      // Additive, as the design's wave material.
-      gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
       activate(gl, wave);
       gl.uniformMatrix4fv(waveU.uView, false, view);
       gl.uniformMatrix4fv(waveU.uProj, false, projection);
@@ -259,7 +269,6 @@ export function createRenderer(
       gl.bindVertexArray(waveVao);
       gl.drawArrays(gl.POINTS, 0, waveCount);
 
-      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
       activate(gl, dust);
       gl.uniformMatrix4fv(dustU.uView, false, view);
       gl.uniformMatrix4fv(dustU.uProj, false, projection);

@@ -11,6 +11,7 @@ vi.mock("@/lib/backdrop/colors", () => ({
     background: rgb,
     wave: rgb,
     dust: rgb,
+    text: rgb,
   }),
 }));
 

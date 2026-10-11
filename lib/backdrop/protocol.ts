@@ -38,6 +38,7 @@ const colorsSchema: z.ZodMiniType<BackdropColors> = z.object({
   background: rgb,
   wave: rgb,
   dust: rgb,
+  text: rgb,
 });
 
 const offscreenCanvas = z.custom<OffscreenCanvas>(

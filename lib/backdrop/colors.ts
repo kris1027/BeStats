@@ -10,6 +10,8 @@ export interface BackdropColors {
   background: Rgb;
   wave: Rgb;
   dust: Rgb;
+  /** The muted body text the scene must stay legible under (AC-10). */
+  text: Rgb;
 }
 
 /**
@@ -22,6 +24,7 @@ export const BACKDROP_TOKENS = {
   background: "--background",
   wave: "--color-backdrop-wave",
   dust: "--color-backdrop-dust",
+  text: "--muted-foreground",
 } as const satisfies Record<keyof BackdropColors, string>;
 
 /**
@@ -59,7 +62,36 @@ export function readBackdropColors(probe: HTMLElement): BackdropColors | null {
   const background = read(BACKDROP_TOKENS.background);
   const wave = read(BACKDROP_TOKENS.wave);
   const dust = read(BACKDROP_TOKENS.dust);
+  const text = read(BACKDROP_TOKENS.text);
   probe.style.color = previous;
-  if (!accent || !background || !wave || !dust) return null;
-  return { accent, background, wave, dust };
+  if (!accent || !background || !wave || !dust || !text) return null;
+  return { accent, background, wave, dust, text };
+}
+
+/** WCAG 2 relative luminance of an sRGB colour. */
+export function relativeLuminance([r, g, b]: Rgb): number {
+  const linear = (c: number) =>
+    c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  return 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b);
+}
+
+/** The minimum contrast AC-10 asks of muted text over the background. */
+export const TEXT_CONTRAST = 4.5;
+
+/**
+ * Keeps the shader's estimate under the true ceiling: it approximates the
+ * sRGB curve with a 2.2 power, and output is rounded to 8 bits.
+ */
+const PEAK_MARGIN = 0.85;
+
+/**
+ * The brightest relative luminance any background pixel may reach while
+ * `text` keeps 4.5:1 over it (prompts/ambient-background.md, AC-10). Every
+ * layer's fragments are capped to this in the shaders and combined with
+ * `MAX` blending, so overlapping points cannot add up past it either. Read
+ * from the token, so a lighter or darker muted text moves the cap with it.
+ */
+export function peakLuminance(text: Rgb): number {
+  const ceiling = (relativeLuminance(text) + 0.05) / TEXT_CONTRAST - 0.05;
+  return Math.max(0, ceiling * PEAK_MARGIN);
 }
