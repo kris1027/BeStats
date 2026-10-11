@@ -39,7 +39,7 @@ function Skeleton({
        * than something is missing.
        */
       className={cn(
-        "plate-rim glass-rim glass-plate skeleton-pulse",
+        "plate-solid plate-rim glass-rim glass-plate skeleton-pulse",
         SHAPES[shape],
         className,
       )}

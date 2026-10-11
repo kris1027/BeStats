@@ -19,9 +19,9 @@ import { IconKey } from "./icon-key";
  * that). It carries no email address on purpose: the contact address lives
  * only on `/privacy` and `/terms`, off the pages scrapers crawl most.
  *
- * Flat, with no glass, blur or border of its own (the key's hairline only
- * separates it from the page above), because it sits on the plain black
- * page rather than over artwork (`components/AGENTS.md`, backdrop blur).
+ * Flat, with no glass, blur, background or border, not even a hairline
+ * above the key: it sits straight on the page background, like the navbar
+ * (`components/AGENTS.md`, backdrop blur).
  */
 export function SiteFooter() {
   return (

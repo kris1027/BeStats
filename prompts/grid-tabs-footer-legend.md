@@ -93,3 +93,5 @@ UI only: no new data, input, route or credential. The footer key is static, so i
 
 - Decision 4: `POSTER_SIZES` shipped as `(min-width: 1232px) 288px, (min-width: 768px) 25vw, 50vw`. The 1200px cap is the grid's content width, so the cap is reached at a 1232px viewport (two 16px gutters), and each column is 288px, not 300px, once the three 16px gaps are taken out.
 - Decision 4, `LibrarySkeleton`: "one row" means one row at the current column count, so 2 cards below `md` and 4 from it. Four cards on a two-column phone grid would be two rows and would shrink when a one-row library arrives.
+- Decision 7 (2026-10-11, owner, with the film strip background): the hairline above the icon key is gone. The footer now sits straight on the page background with no border or background anywhere inside it, and `site-footer.test.tsx` fails if either comes back.
+

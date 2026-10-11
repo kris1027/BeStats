@@ -1,68 +1,65 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { BackdropRenderer } from "./renderer";
+import type { SceneRenderer } from "./scene";
 
-const { createRenderer } = vi.hoisted(() => ({
-  createRenderer: vi.fn<() => BackdropRenderer | null>(),
+const { createScene } = vi.hoisted(() => ({
+  createScene: vi.fn<() => SceneRenderer | null>(),
 }));
-vi.mock("./renderer", () => ({ createRenderer }));
+vi.mock("./scene", () => ({ createScene }));
 
-import { type BackdropOptions, createBackdrop } from "./backdrop";
+import { type RunOptions, runScene } from "./run";
 
 const rgb: [number, number, number] = [0, 0, 0];
 
-function options(): BackdropOptions {
+const palette = new Proxy({}, { get: () => rgb }) as RunOptions["palette"];
+
+function options(): RunOptions {
   return {
     width: 100,
     height: 100,
-    budget: {
-      gridWidth: 1,
-      gridDepth: 1,
-      spacing: 1,
-      panels: 1,
-      dust: 1,
-      pixelRatio: 1,
-    },
-    colors: { accent: rgb, background: rgb, wave: rgb, dust: rgb, text: rgb },
+    budget: { strips: 1, segments: 1, bokeh: 1, pixelRatio: 1 },
+    palette,
     // A still frame keeps the loop from scheduling anything.
     reducedMotion: true,
     visible: true,
     onReady: vi.fn(),
     onLost: vi.fn(),
+    time: 0,
+    onTime: vi.fn(),
   };
 }
 
-function renderer(): BackdropRenderer {
+function renderer(): SceneRenderer {
   return { draw: vi.fn(), resize: vi.fn(), dispose: vi.fn() };
 }
 
 /** Only the event target half of a canvas is used once the renderer exists. */
 const canvas = () => new EventTarget() as unknown as OffscreenCanvas;
 
-/** covers: prompts/ambient-background.md, AC-7 */
-describe("createBackdrop", () => {
+/** covers: prompts/film-strip-background.md, AC-8 */
+describe("runScene", () => {
   beforeEach(() => {
-    createRenderer.mockReset();
+    createScene.mockReset();
   });
 
   it("draws nothing without WebGL2", () => {
-    createRenderer.mockReturnValue(null);
-    expect(createBackdrop(canvas(), options())).toBeNull();
+    createScene.mockReturnValue(null);
+    expect(runScene(canvas(), options())).toBeNull();
   });
 
   it("draws nothing when a shader fails to link", () => {
-    createRenderer.mockImplementation(() => {
-      throw new Error("backdrop: shader program failed to link");
+    createScene.mockImplementation(() => {
+      throw new Error("film-scene: shader program failed to link");
     });
-    expect(createBackdrop(canvas(), options())).toBeNull();
+    expect(runScene(canvas(), options())).toBeNull();
   });
 
   it("reports a lost context and stops drawing", () => {
     const scene = renderer();
-    createRenderer.mockReturnValue(scene);
+    createScene.mockReturnValue(scene);
     const target = canvas();
     const opts = options();
-    createBackdrop(target, opts);
+    runScene(target, opts);
     (target as unknown as EventTarget).dispatchEvent(
       new Event("webglcontextlost"),
     );
@@ -71,10 +68,10 @@ describe("createBackdrop", () => {
   });
 
   it("does not report its own release of the context as a loss", () => {
-    createRenderer.mockReturnValue(renderer());
+    createScene.mockReturnValue(renderer());
     const target = canvas();
     const opts = options();
-    createBackdrop(target, opts)?.dispose();
+    runScene(target, opts)?.dispose();
     (target as unknown as EventTarget).dispatchEvent(
       new Event("webglcontextlost"),
     );

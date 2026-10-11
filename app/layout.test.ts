@@ -43,14 +43,14 @@ describe("the site footer in the root layout", () => {
 });
 
 /**
- * covers: prompts/ambient-background.md, AC-1
+ * covers: prompts/film-strip-background.md, AC-1
  *
  * The background renders once, from the root layout, before everything else
  * in the body, so every route has it and it stacks below the shell.
  */
-describe("the ambient background in the root layout", () => {
+describe("the page background in the root layout", () => {
   it("renders exactly once, first inside <body>", () => {
-    expect(LAYOUT.match(/<AmbientBackground\s*\/>/g)).toHaveLength(1);
-    expect(LAYOUT).toMatch(/<body[^>]*>\s*<AmbientBackground \/>/);
+    expect(LAYOUT.match(/<PageBackground\s*\/>/g)).toHaveLength(1);
+    expect(LAYOUT).toMatch(/<body[^>]*>\s*<PageBackground \/>/);
   });
 });

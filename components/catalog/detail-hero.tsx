@@ -59,14 +59,23 @@ function DetailHero({
     <header data-slot="detail-hero" className="flex flex-col">
       {backdropUrl ? (
         /*
-         * Bleeds to the edges of the main column and up to the navbar, so the
-         * artwork reads as the page's backdrop rather than a boxed image. The
-         * negative margins mirror `main`'s own padding in `app/layout.tsx`.
+         * Bleeds to the edges of the main column and up behind the navbar, so
+         * the artwork reads as the page's backdrop rather than a boxed image.
+         * The negative margins are `main`'s own padding in `app/layout.tsx`
+         * plus `--navbar-height`.
          */
         <div
           data-slot="detail-backdrop"
-          className="relative -mx-4 -mt-8 aspect-video max-h-[70vh] overflow-hidden md:-mt-12"
+          className="relative -mx-4 -mt-[calc(2rem+var(--navbar-height))] aspect-video max-h-[70vh] min-h-[calc(var(--navbar-height)+12rem)] overflow-hidden mask-b-from-67% mask-l-from-67% md:-mt-[calc(3rem+var(--navbar-height))] min-[1600px]:mask-r-from-83%"
         >
+          {/*
+           * The fade into the page is a mask, not a colour laid over the
+           * image, so the artwork dissolves into whatever is behind it: the
+           * film strip background, which a fade to `--background` would cut
+           * off with a black band. Bottom third and left side per the spec;
+           * the right edge only fades once the column stops at its 1600px cap
+           * and the image would otherwise end in a hard line.
+           */}
           <Image
             src={backdropUrl}
             alt=""
@@ -76,23 +85,10 @@ function DetailHero({
             className="object-cover object-top"
           />
           {/*
-           * The fade into the page, written with the `background` token so it
-           * always meets the real page colour. Bottom third and left side per
-           * the spec; the right edge only fades once the column stops at its
-           * 1600px cap and the image would otherwise end in a hard line.
+           * The image reaches up behind the navbar, so the bar sits on the
+           * artwork. The shade keeps its text and controls readable there.
            */}
-          <div
-            aria-hidden="true"
-            className="absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-t from-background to-transparent"
-          />
-          <div
-            aria-hidden="true"
-            className="absolute inset-y-0 left-0 w-1/3 bg-linear-to-r from-background to-transparent"
-          />
-          <div
-            aria-hidden="true"
-            className="absolute inset-y-0 right-0 hidden w-1/6 bg-linear-to-l from-background to-transparent min-[1600px]:block"
-          />
+          <div aria-hidden="true" className="backdrop-scrim absolute inset-0" />
         </div>
       ) : null}
 

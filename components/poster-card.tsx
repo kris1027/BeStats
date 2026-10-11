@@ -130,13 +130,13 @@ function PosterCard({
          * link.
          */}
         {badge ? (
-          <div className="absolute top-2.5 right-2.5 z-20 rounded-full backdrop-blur-glass">
+          <div className="plate-solid absolute top-2.5 right-2.5 z-20 rounded-full backdrop-blur-glass">
             {badge}
           </div>
         ) : null}
 
         {controls ? (
-          <div className="absolute inset-x-2.5 bottom-2.5 z-20 flex pointer-events-none items-center justify-between gap-2 *:pointer-events-auto">
+          <div className="plate-solid absolute inset-x-2.5 bottom-2.5 z-20 flex pointer-events-none items-center justify-between gap-2 *:pointer-events-auto">
             {controls}
           </div>
         ) : null}

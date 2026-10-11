@@ -102,9 +102,10 @@ describe("SiteFooter", () => {
     expect(credit).toHaveClass("text-text-link", "hover:underline");
   });
 
-  it("sits on flat black, with no glass, blur or border (AC-5)", () => {
+  it("sits on the page background, with no glass, blur, background or border (AC-5)", () => {
     const { container } = render(<SiteFooter />);
-    expect(container.innerHTML).not.toMatch(/glass|backdrop-blur/);
-    expect(screen.getByRole("contentinfo")).not.toHaveClass("border-t");
+    expect(container.innerHTML).not.toMatch(
+      /glass|backdrop-blur|\bbg-|\bborder(-[trblxy])?\b/,
+    );
   });
 });

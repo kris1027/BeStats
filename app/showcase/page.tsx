@@ -3,10 +3,10 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import type * as React from "react";
 import { GlassPill } from "@/components/glass-pill";
-import { AmbientCanvas } from "@/components/layout/ambient-canvas";
 import { IconKey } from "@/components/layout/icon-key";
 import { LibraryNavView } from "@/components/layout/library-nav";
 import { MobileMenuSheet } from "@/components/layout/mobile-menu-sheet";
+import { PageBackgroundCanvas } from "@/components/layout/page-background-canvas";
 import {
   ContactEmail,
   ExternalLink,
@@ -176,14 +176,21 @@ export default function ShowcasePage() {
 
       <Section
         title="The plate rule"
-        note="Glass alone over a light poster leaves near white text at 1.59:1, which is unreadable. The plate underneath is doing the legibility work, not the gradient. Both cases are here so the rule is not theoretical."
+        note="Glass alone over a light poster leaves near white text at 1.59:1, which is unreadable. The plate underneath is doing the legibility work, not the gradient. Off posters the plates are frosted, see-through enough to show the background and blurred so it stays soft; over artwork plate-solid makes them opaque again. Each case is here so the rule is not theoretical."
       >
         <div className="flex flex-wrap gap-6">
+          <div
+            className="plate-solid relative flex h-40 w-40 items-center justify-center rounded-lg bg-cover"
+            style={{ backgroundImage: `url("${LIGHT_POSTER}")` }}
+          >
+            <GlassPill>Solid on art</GlassPill>
+          </div>
           <div
             className="relative flex h-40 w-40 items-center justify-center rounded-lg bg-cover"
             style={{ backgroundImage: `url("${LIGHT_POSTER}")` }}
           >
-            <GlassPill>Correct</GlassPill>
+            {/* Deliberately frosted over artwork: legible only off posters. */}
+            <GlassPill>Frosted on art</GlassPill>
           </div>
           <div
             className="relative flex h-40 w-40 items-center justify-center rounded-lg bg-cover"
@@ -194,6 +201,26 @@ export default function ShowcasePage() {
               No plate
             </span>
           </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          {(
+            [
+              ["glass-plate", "Control 65%"],
+              ["glass-plate-panel", "Panel 60%"],
+              ["glass-plate-sheet", "Sheet 75%"],
+              ["glass-plate-float", "Float 90%"],
+            ] as const
+          ).map(([plate, label]) => (
+            <span
+              key={plate}
+              className={`glass glass-rim glass-shadow ${plate} inline-flex h-11 items-center rounded-full px-4 text-sm text-muted-foreground`}
+            >
+              {label}
+            </span>
+          ))}
+          <span className="plate-solid glass glass-rim glass-plate glass-shadow inline-flex h-11 items-center rounded-full px-4 text-sm text-muted-foreground">
+            Solid, the fallback look
+          </span>
         </div>
       </Section>
 
@@ -400,30 +427,46 @@ export default function ShowcasePage() {
       </Section>
 
       <Section
-        title="Ambient background"
-        note="Behind every page, this one included: a point wave, drifting outlined screens and dust in the personal score cyan, under the vignette. It fades in once the browser is idle, draws in a worker where it can, pauses in a hidden tab, and freezes into one still frame under reduced motion. Without WebGL2 only the vignette shows (prompts/ambient-background.md)."
+        title="Page background"
+        note="Behind every page, this one included: three coiled film strips and rising bokeh over a teal gradient, under the vignette. The gradient and vignette are the first paint; the scene fades in once the browser is idle, draws in a worker where it can, pauses in a hidden tab, and freezes into one still frame under reduced motion. Without WebGL2 only the gradient and vignette show. Every pixel stays dark enough for muted text to keep 4.5:1 (prompts/film-strip-background.md)."
       >
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <Swatch name="--color-score-personal" className="bg-score-personal" />
-          <Swatch name="--color-backdrop-wave" className="bg-backdrop-wave" />
-          <Swatch name="--color-backdrop-dust" className="bg-backdrop-dust" />
+          <Swatch name="--color-page-glow" className="bg-page-glow" />
+          <Swatch name="--color-page-mid" className="bg-page-mid" />
+          <Swatch name="--color-page-deep" className="bg-page-deep" />
+          <Swatch name="--color-page-abyss" className="bg-page-abyss" />
+          <Swatch name="--color-film-base" className="bg-film-base" />
+          <Swatch name="--color-film-window" className="bg-film-window" />
+          <Swatch name="--color-film-shadow" className="bg-film-shadow" />
+          <Swatch name="--color-film-edge" className="bg-film-edge" />
+          <Swatch name="--color-film-rail" className="bg-film-rail" />
+          <Swatch name="--color-film-glow" className="bg-film-glow" />
+          <Swatch name="--color-light-ambient" className="bg-light-ambient" />
+          <Swatch name="--color-light-key" className="bg-light-key" />
+          <Swatch name="--color-light-rim" className="bg-light-rim" />
+          <Swatch name="--color-bokeh-1" className="bg-bokeh-1" />
+          <Swatch name="--color-bokeh-2" className="bg-bokeh-2" />
+          <Swatch name="--color-bokeh-3" className="bg-bokeh-3" />
+          <Swatch name="--color-bokeh-4" className="bg-bokeh-4" />
+        </div>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-2">
-            <div className="relative h-14 overflow-hidden rounded-lg border border-border bg-score-personal">
-              <div className="absolute inset-0 backdrop-vignette" />
+            <div className="relative h-64 overflow-hidden rounded-panel border border-border page-gradient">
+              <div className="absolute inset-0 page-vignette" />
             </div>
             <code className="text-xs text-muted-foreground">
-              backdrop-vignette over cyan
+              page-gradient and page-vignette, the first paint
             </code>
           </div>
-        </div>
-        <div className="mt-4 flex flex-col gap-2">
-          <div className="relative h-64 overflow-hidden rounded-panel border border-border">
-            <AmbientCanvas still />
-            <div className="absolute inset-0 backdrop-vignette" />
+          <div className="flex flex-col gap-2">
+            <div className="relative h-64 overflow-hidden rounded-panel border border-border page-gradient">
+              <PageBackgroundCanvas still />
+              <div className="absolute inset-0 page-vignette" />
+            </div>
+            <code className="text-xs text-muted-foreground">
+              the reduced motion still frame
+            </code>
           </div>
-          <code className="text-xs text-muted-foreground">
-            the reduced motion still frame
-          </code>
         </div>
       </Section>
 

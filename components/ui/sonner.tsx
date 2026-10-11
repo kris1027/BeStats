@@ -27,7 +27,7 @@ function Toaster(props: ToasterProps) {
         unstyled: true,
         classNames: {
           toast:
-            "glass glass-rim glass-plate-sheet glass-shadow flex w-[calc(100vw-2rem)] items-center gap-3 rounded-panel px-4 py-3 text-sm text-foreground sm:w-(--width)",
+            "glass glass-rim glass-plate-float glass-shadow flex w-[calc(100vw-2rem)] items-center gap-3 rounded-panel px-4 py-3 text-sm text-foreground sm:w-(--width)",
           content: "flex flex-1 flex-col gap-0.5",
           title: "font-medium",
           description: "text-muted-foreground",

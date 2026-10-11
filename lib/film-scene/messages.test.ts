@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { toWorkerSchema } from "./protocol";
+import { toWorkerSchema } from "./messages";
 
 describe("worker messages", () => {
   it.each([
     { type: "resize", width: 1440, height: 900, pixelRatio: 1.5 },
-    { type: "pointer", x: -0.5, y: 0.25 },
     { type: "visible", visible: false },
     { type: "motion", reduced: true },
   ])("accepts %o", (message) => {
@@ -13,7 +12,7 @@ describe("worker messages", () => {
   });
 
   it.each([
-    { type: "pointer", x: 4, y: 0 },
+    { type: "pointer", x: 0, y: 0 },
     { type: "resize", width: -1, height: 900, pixelRatio: 1 },
     { type: "resize", width: 1, height: 900, pixelRatio: 99 },
     { type: "visible", visible: "yes" },
@@ -27,29 +26,37 @@ describe("worker messages", () => {
 
   it("rejects an init whose canvas is not an OffscreenCanvas", () => {
     const rgb = [0.1, 0.2, 0.3];
+    const palette = Object.fromEntries(
+      [
+        "glow",
+        "fog",
+        "filmBase",
+        "filmWindow",
+        "filmShadow",
+        "filmEdge",
+        "filmRail",
+        "filmGlow",
+        "lightAmbient",
+        "lightKey",
+        "lightRim",
+        "bokeh1",
+        "bokeh2",
+        "bokeh3",
+        "bokeh4",
+        "text",
+      ].map((key) => [key, rgb]),
+    );
     expect(
       toWorkerSchema.safeParse({
         type: "init",
         canvas: {},
         width: 10,
         height: 10,
-        budget: {
-          gridWidth: 1,
-          gridDepth: 1,
-          spacing: 1,
-          panels: 1,
-          dust: 1,
-          pixelRatio: 1,
-        },
-        colors: {
-          accent: rgb,
-          background: rgb,
-          wave: rgb,
-          dust: rgb,
-          text: rgb,
-        },
+        budget: { strips: 3, segments: 400, bokeh: 70, pixelRatio: 1 },
+        palette,
         reducedMotion: false,
         visible: true,
+        time: 0,
       }).success,
     ).toBe(false);
   });
