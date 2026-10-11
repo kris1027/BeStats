@@ -197,6 +197,29 @@ describe("AmbientCanvas", () => {
     expect(container.querySelector("canvas")).toBeNull();
   });
 
+  it.each([
+    { reducedMotion: false, sent: 1 },
+    { reducedMotion: true, sent: 0 },
+  ])(
+    "sends pointer moves only when motion is allowed (%o)",
+    async ({ reducedMotion, sent }) => {
+      media.reducedMotion = reducedMotion;
+      browser({ worker: true });
+      await start();
+      act(() => {
+        dispatchEvent(
+          new MouseEvent("pointermove", { clientX: 10, clientY: 10 }),
+        );
+      });
+      await settle();
+      const pointerMessages =
+        FakeWorker.instances[0].postMessage.mock.calls.filter(
+          ([message]) => message.type === "pointer",
+        );
+      expect(pointerMessages).toHaveLength(sent);
+    },
+  );
+
   it("stops the worker and removes the canvas on unmount", async () => {
     browser({ worker: true });
     const { container, unmount } = await start();

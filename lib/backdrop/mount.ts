@@ -213,6 +213,8 @@ export function mountBackdrop(host: HTMLElement): () => void {
   let pointerX = 0;
   let pointerY = 0;
   const onPointerMove = (event: PointerEvent) => {
+    // The still frame ignores the pointer (AC-5), so nothing is sent.
+    if (motionQuery.matches) return;
     pointerX = clampUnit(event.clientX / innerWidth - 0.5);
     pointerY = clampUnit(event.clientY / innerHeight - 0.5);
     if (pointerFrame !== null) return;
