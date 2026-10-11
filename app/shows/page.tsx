@@ -6,7 +6,7 @@ import { PosterCard } from "@/components/poster-card";
 import { PosterGrid } from "@/components/poster-grid";
 import { TmdbRatingBadge } from "@/components/rating-badges";
 import { RetryLink } from "@/components/retry-link";
-import { PosterCardSkeleton } from "@/components/skeleton";
+import { PaginationSkeleton, PosterCardSkeleton } from "@/components/skeleton";
 import { StatePanel } from "@/components/state-panel";
 import { ShowCardBookmark } from "@/components/tracking/show-card-bookmark";
 import { ButtonLink } from "@/components/ui/button";
@@ -161,13 +161,16 @@ function NoSuchPage() {
 
 function PopularShowsSkeleton() {
   return (
-    <PosterGrid aria-hidden="true">
-      {Array.from({ length: PAGE_SIZE }, (_, index) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders with no identity.
-        <li key={index}>
-          <PosterCardSkeleton />
-        </li>
-      ))}
-    </PosterGrid>
+    <div className="flex flex-col gap-10">
+      <PosterGrid aria-hidden="true">
+        {Array.from({ length: PAGE_SIZE }, (_, index) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders with no identity.
+          <li key={index}>
+            <PosterCardSkeleton />
+          </li>
+        ))}
+      </PosterGrid>
+      <PaginationSkeleton />
+    </div>
   );
 }

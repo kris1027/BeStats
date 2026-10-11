@@ -5,7 +5,11 @@ import { PosterCard } from "@/components/poster-card";
 import { PosterGrid } from "@/components/poster-grid";
 import { TmdbRatingBadge } from "@/components/rating-badges";
 import { RetryLink } from "@/components/retry-link";
-import { PosterCardSkeleton, Skeleton } from "@/components/skeleton";
+import {
+  PaginationSkeleton,
+  PosterCardSkeleton,
+  Skeleton,
+} from "@/components/skeleton";
 import { StatePanel } from "@/components/state-panel";
 import { CardBookmark } from "@/components/tracking/card-bookmark";
 import { ShowCardBookmark } from "@/components/tracking/show-card-bookmark";
@@ -356,7 +360,10 @@ function resultsKey(raw: RawParams): string {
   );
 }
 
-/** The loading shape of the results: the count line and 20 cards (AC-21). */
+/**
+ * The loading shape of the results: the count line, 20 cards and the
+ * pagination row (AC-21).
+ */
 function SearchResultsSkeleton() {
   return (
     <div className="flex flex-col gap-6">
@@ -365,10 +372,11 @@ function SearchResultsSkeleton() {
         {Array.from({ length: PAGE_SIZE }, (_, index) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders with no identity.
           <li key={index}>
-            <PosterCardSkeleton />
+            <PosterCardSkeleton meta />
           </li>
         ))}
       </PosterGrid>
+      <PaginationSkeleton />
     </div>
   );
 }

@@ -13,7 +13,6 @@ import {
 } from "@/lib/catalog/media-type";
 import {
   LIBRARY_CLASSIFY_LIMIT,
-  LIBRARY_PAGE_SIZE,
   type LibraryTab,
   libraryLastPage,
 } from "@/lib/tracking/library-lists";
@@ -232,16 +231,24 @@ function LoadFailed({
   );
 }
 
-/** The static shell's stand in for the list, at the same footprint. */
+/**
+ * The static shell's stand in for the list: one row of cards, two below `md`
+ * and four from it. The real count is unknown until the read, and a full page
+ * of placeholders made a short library collapse by several rows when it
+ * arrived (prompts/grid-tabs-footer-legend.md); one row is the smallest
+ * honest guess and never wraps.
+ */
 export function LibrarySkeleton() {
   return (
     <PosterGrid aria-hidden="true">
-      {Array.from({ length: LIBRARY_PAGE_SIZE }, (_, index) => (
+      {ONE_ROW.map((visibility, index) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders with no identity.
-        <li key={index}>
+        <li key={index} className={visibility}>
           <PosterCardSkeleton />
         </li>
       ))}
     </PosterGrid>
   );
 }
+
+const ONE_ROW = ["", "", "hidden md:block", "hidden md:block"];

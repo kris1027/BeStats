@@ -2,9 +2,10 @@ import {
   CastRowSkeleton,
   DetailHeroSkeleton,
   OverviewSkeleton,
+  SectionHeadingSkeleton,
 } from "@/components/catalog/detail-skeletons";
 import { PosterGrid } from "@/components/poster-grid";
-import { PosterCardSkeleton, Skeleton } from "@/components/skeleton";
+import { PosterCardSkeleton } from "@/components/skeleton";
 
 /**
  * The show page while TMDB answers (spec 0009, AC-17): the hero, the
@@ -18,10 +19,10 @@ function ShowDetailSkeleton() {
       <p role="status" className="sr-only">
         Loading show details
       </p>
-      <DetailHeroSkeleton />
+      <DetailHeroSkeleton metaRows={2} />
       <OverviewSkeleton />
       <div className="flex flex-col gap-4">
-        <Skeleton shape="line" className="h-6 w-24" />
+        <SectionHeadingSkeleton className="w-24" />
         <PosterGrid aria-hidden="true">
           {SEASON_CARD_VISIBILITY.map((visibility, index) => (
             <li
@@ -29,7 +30,7 @@ function ShowDetailSkeleton() {
               key={index}
               className={visibility}
             >
-              <PosterCardSkeleton />
+              <PosterCardSkeleton meta />
             </li>
           ))}
         </PosterGrid>
@@ -49,7 +50,7 @@ const SEASON_CARD_VISIBILITY = ["", "", "hidden md:block", "hidden md:block"];
 function CastSectionSkeleton() {
   return (
     <div className="flex flex-col gap-4">
-      <Skeleton shape="line" className="h-6 w-20" />
+      <SectionHeadingSkeleton className="w-20" />
       <CastRowSkeleton />
     </div>
   );

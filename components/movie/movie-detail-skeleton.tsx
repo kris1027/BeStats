@@ -2,8 +2,8 @@ import {
   CastRowSkeleton,
   DetailHeroSkeleton,
   OverviewSkeleton,
+  SectionHeadingSkeleton,
 } from "@/components/catalog/detail-skeletons";
-import { Skeleton } from "@/components/skeleton";
 
 /**
  * The movie page while TMDB answers, at the footprint of what replaces it
@@ -23,7 +23,7 @@ function MovieDetailSkeleton() {
       <DetailHeroSkeleton />
       <OverviewSkeleton />
       <div className="flex flex-col gap-4">
-        <Skeleton shape="line" className="h-6 w-20" />
+        <SectionHeadingSkeleton className="w-20" />
         <CastRowSkeleton />
       </div>
     </div>
