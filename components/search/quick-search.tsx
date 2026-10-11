@@ -267,7 +267,7 @@ function QuickSearch({
             collisionPadding={16}
             className="z-40"
           >
-            <Autocomplete.Popup className="glass glass-rim glass-plate-panel glass-shadow w-[min(40rem,calc(100vw-2rem))] rounded-panel p-3 backdrop-blur-glass">
+            <Autocomplete.Popup className="glass glass-rim glass-plate-float glass-shadow w-[min(40rem,calc(100vw-2rem))] rounded-panel p-3">
               {panel}
             </Autocomplete.Popup>
           </Autocomplete.Positioner>

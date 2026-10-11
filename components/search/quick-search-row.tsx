@@ -28,7 +28,7 @@ function QuickSearchRow({ result }: { result: QuickResult }) {
         ) : (
           <span
             data-slot="poster-fallback"
-            className="plate-rim glass-rim glass-plate absolute inset-0 flex items-center justify-center rounded-md"
+            className="plate-solid plate-rim glass-rim glass-plate absolute inset-0 flex items-center justify-center rounded-md"
           >
             <FilmIcon
               className="size-4 text-muted-foreground"
@@ -70,10 +70,10 @@ function QuickSearchRowSkeleton({ className }: { className?: string }) {
       aria-hidden="true"
       className={cn("flex items-center gap-4 px-3 py-2", className)}
     >
-      <div className="plate-rim glass-rim glass-plate skeleton-pulse aspect-2/3 w-[42px] shrink-0 rounded-md" />
+      <div className="plate-solid plate-rim glass-rim glass-plate skeleton-pulse aspect-2/3 w-[42px] shrink-0 rounded-md" />
       <div className="flex flex-1 flex-col gap-2">
-        <div className="plate-rim glass-rim glass-plate skeleton-pulse h-4 w-1/2 rounded-sm" />
-        <div className="plate-rim glass-rim glass-plate skeleton-pulse h-3 w-12 rounded-sm" />
+        <div className="plate-solid plate-rim glass-rim glass-plate skeleton-pulse h-4 w-1/2 rounded-sm" />
+        <div className="plate-solid plate-rim glass-rim glass-plate skeleton-pulse h-3 w-12 rounded-sm" />
       </div>
     </div>
   );
