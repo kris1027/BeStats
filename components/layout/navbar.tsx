@@ -1,7 +1,7 @@
-import Link from "next/link";
 import type * as React from "react";
 import { Suspense } from "react";
 
+import { BrandLink, BrandLinkView } from "@/components/layout/brand-link";
 import {
   MediaTypeTabs,
   MediaTypeTabsView,
@@ -56,12 +56,14 @@ function Navbar({
     <header className="w-full">
       <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-2 px-4 py-2 md:flex-row md:items-center md:gap-6">
         <div className="flex items-center justify-between gap-4">
-          <Link
-            href="/shows"
-            className="rounded-sm text-xl leading-none font-extrabold tracking-[-0.03em] text-foreground"
-          >
-            BeStats
-          </Link>
+          {/*
+           * The logo links to the page's catalog (prompts/
+           * logo-follows-media-type.md), so it reads the pathname and needs
+           * the same boundary as the tabs on a dynamic route.
+           */}
+          <Suspense fallback={<BrandLinkView type="tv" />}>
+            <BrandLink />
+          </Suspense>
 
           <div className="flex items-center gap-2 md:hidden">
             <Suspense fallback={<NavbarSearchFallback layout="mobile" />}>
@@ -88,7 +90,12 @@ function Navbar({
           <MediaTypeTabs className="self-center md:self-auto" />
         </Suspense>
 
-        <div className="hidden md:block">
+        {/*
+         * `not-empty` keeps the wrapper out of the row when the search renders
+         * nothing (a page with no type), so it leaves no extra flex gap
+         * (prompts/hide-tabs-without-type.md, decision 3).
+         */}
+        <div className="hidden md:not-empty:block">
           <Suspense fallback={<NavbarSearchFallback layout="desktop" />}>
             <NavbarSearch layout="desktop" />
           </Suspense>

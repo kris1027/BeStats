@@ -95,7 +95,12 @@ async function AccountSlot({ variant }: { variant: "desktop" | "mobile" }) {
     <div className="flex flex-1 items-center justify-between gap-4">
       <LibraryNav variant="bar" />
 
-      <div className="flex items-center gap-2">
+      {/*
+       * `ml-auto` keeps the account controls at the right edge on a page
+       * about neither catalog, where the library links render nothing and
+       * `justify-between` alone would leave them at the left.
+       */}
+      <div className="ml-auto flex items-center gap-2">
         {/*
          * Between `md` and `lg` the row has no room for the name beside the
          * library links and the tabs, so the button shrinks to its avatar and

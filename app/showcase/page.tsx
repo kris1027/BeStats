@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import type * as React from "react";
 import { GlassPill } from "@/components/glass-pill";
-import { LibraryNav } from "@/components/layout/library-nav";
+import { LibraryNavView } from "@/components/layout/library-nav";
 import { MobileMenuSheet } from "@/components/layout/mobile-menu-sheet";
 import {
   ContactEmail,
@@ -352,7 +352,7 @@ export default function ShowcasePage() {
       >
         <div className="flex flex-wrap items-center gap-3">
           <MobileMenuSheet>
-            <LibraryNav variant="sheet" />
+            <LibraryNavView variant="sheet" pathname="/watchlist" type="tv" />
           </MobileMenuSheet>
 
           <Dialog>

@@ -18,8 +18,9 @@ type PageMediaType =
   | { pathname: string; type: MediaType | null; params: null };
 
 /**
- * The media type of the page being viewed, for `MediaTypeTabs`, `LibraryNav`
- * and `NavbarSearch` (feature 22). It holds the one rule they share: only on
+ * The media type of the page being viewed, for `BrandLink` and, through
+ * `WithTypedPage`, `MediaTypeTabs`, `LibraryNav` and `NavbarSearch`
+ * (feature 22). It holds the one rule they share: only on
  * a typed page is `useSearchParams` read, and only inside its own Suspense
  * boundary, because reading it anywhere else would pull `/shows`, `/movies`
  * and the title pages out of their prerendered shells (`AGENTS.md`, Commands
@@ -56,6 +57,31 @@ function WithPageMediaType({
   });
 }
 
+/** A page that has a media type, as `WithTypedPage` hands it on. */
+type TypedPageMediaType = PageMediaType & { type: MediaType };
+
+/**
+ * `WithPageMediaType` for a control that exists only on a page with a type:
+ * the tabs, the search and the Library links render nothing on a page about
+ * neither catalog (prompts/hide-tabs-without-type.md). The logo keeps
+ * `WithPageMediaType`, because it still renders there.
+ */
+function WithTypedPage({
+  children,
+  fallback,
+}: {
+  children: (page: TypedPageMediaType) => ReactNode;
+  fallback: (pathname: TypedPath) => ReactNode;
+}) {
+  return (
+    <WithPageMediaType fallback={fallback}>
+      {(page) =>
+        page.type === null ? null : children({ ...page, type: page.type })
+      }
+    </WithPageMediaType>
+  );
+}
+
 /** On a typed page the type is the page's own `type` parameter. */
 function TypedPageMediaType({
   pathname,
@@ -72,4 +98,4 @@ function TypedPageMediaType({
   });
 }
 
-export { type PageMediaType, WithPageMediaType };
+export { type PageMediaType, WithPageMediaType, WithTypedPage };

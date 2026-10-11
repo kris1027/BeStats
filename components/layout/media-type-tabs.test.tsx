@@ -125,15 +125,14 @@ describe("MediaTypeTabs", () => {
     );
   });
 
-  it("lights nothing on a page about neither catalog", () => {
-    pathname.value = "/account";
-    render(<MediaTypeTabs />);
-    expect(
-      screen.queryByRole("link", { current: "page" }),
-    ).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "MOVIES" })).toHaveAttribute(
-      "href",
-      "/movies",
-    );
-  });
+  it.each(["/account", "/privacy", "/sign-in"])(
+    "renders nothing on %s, a page about neither catalog",
+    (path) => {
+      pathname.value = path;
+      render(<MediaTypeTabs />);
+      expect(
+        screen.queryByRole("navigation", { name: "Media type" }),
+      ).not.toBeInTheDocument();
+    },
+  );
 });

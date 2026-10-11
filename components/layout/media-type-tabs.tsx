@@ -9,7 +9,7 @@ import {
   typedHref,
 } from "@/lib/catalog/media-type";
 
-import { WithPageMediaType } from "./page-media-type";
+import { WithTypedPage } from "./page-media-type";
 
 /**
  * The SHOWS and MOVIES control in the navbar (spec 0004, AC-14; feature 22).
@@ -22,8 +22,12 @@ import { WithPageMediaType } from "./page-media-type";
  *
  * On `/watchlist`, `/upcoming`, `/watched` and `/search` the tabs switch the
  * page's own `type` parameter in place; everywhere else they lead to `/shows`
- * and `/movies`. `WithPageMediaType` reads the page's type, and on those four
+ * and `/movies`. `WithTypedPage` reads the page's type, and on those four
  * pages the current query, which `/search` keeps across a switch.
+ *
+ * On a page about neither catalog (`/account`, `/privacy`, the auth pages)
+ * there is nothing to switch, so it renders nothing
+ * (prompts/hide-tabs-without-type.md).
  *
  * On a route with a dynamic param (`/movies/[id]`, spec 0006) the pathname is
  * not known at prerender time, so `usePathname` suspends there. `Navbar` wraps
@@ -32,7 +36,7 @@ import { WithPageMediaType } from "./page-media-type";
  */
 function MediaTypeTabs({ className }: { className?: string }) {
   return (
-    <WithPageMediaType
+    <WithTypedPage
       fallback={(pathname) => (
         <MediaTypeTabsView
           selected={null}
@@ -52,7 +56,9 @@ function MediaTypeTabs({ className }: { className?: string }) {
             page.params === null
               ? undefined
               : {
-                  tv: typedHref(page.pathname, "tv", { current: page.params }),
+                  tv: typedHref(page.pathname, "tv", {
+                    current: page.params,
+                  }),
                   movie: typedHref(page.pathname, "movie", {
                     current: page.params,
                   }),
@@ -61,13 +67,14 @@ function MediaTypeTabs({ className }: { className?: string }) {
           className={className}
         />
       )}
-    </WithPageMediaType>
+    </WithTypedPage>
   );
 }
 
 /**
- * The tabs for a known selection, or with no tab lit when `selected` is null:
- * the prerendered fallback, and any page that is about neither catalog.
+ * The tabs for a known selection, or with no tab lit when `selected` is null,
+ * which only the prerendered fallback uses: a page about neither catalog
+ * renders no tabs at all.
  *
  * @param hrefs Where each tab leads, `/shows` and `/movies` by default.
  */

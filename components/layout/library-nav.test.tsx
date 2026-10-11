@@ -40,7 +40,6 @@ describe("LibraryNav", () => {
     ["/shows/1399", "", "tv"],
     ["/watched", "type=movie", "movie"],
     ["/search", "type=movie&q=dune", "movie"],
-    ["/account", "", "tv"],
   ])(
     "on %s?%s every link carries type=%s (feature 22)",
     (current, query, type) => {
@@ -102,4 +101,15 @@ describe("LibraryNav", () => {
       expect(link).toHaveClass("h-11");
     }
   });
+  it.each(["/account", "/privacy", "/sign-in"])(
+    "renders nothing on %s, a page about neither catalog",
+    (current) => {
+      pathname = current;
+      search = "";
+      render(<LibraryNav variant="bar" />);
+      expect(
+        screen.queryByRole("navigation", { name: "Library" }),
+      ).not.toBeInTheDocument();
+    },
+  );
 });

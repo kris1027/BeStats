@@ -47,7 +47,7 @@ describe("Navbar", () => {
     expect(screen.getByRole("banner")).toBeInTheDocument();
   });
 
-  it("sends the brand to /shows, the default landing route", () => {
+  it("sends the brand to the catalog of the page, /shows here", () => {
     render(
       <Navbar
         mobileAccountSlot={<ACCOUNT_SLOT />}
@@ -132,20 +132,32 @@ describe("Navbar", () => {
       "Search movies",
     );
     typed.unmount();
-
-    pathname.current = "/account";
-    render(
-      <Navbar
-        mobileAccountSlot={<ACCOUNT_SLOT />}
-        desktopAccountSlot={<ACCOUNT_SLOT />}
-      />,
-    );
-    expect(screen.getByRole("combobox")).toHaveAttribute(
-      "placeholder",
-      "Search shows",
-    );
     pathname.current = "/shows";
   });
+
+  // covers: prompts/hide-tabs-without-type.md, AC-1. A page about neither
+  // catalog has no search or tabs; the Library links are in the account
+  // slot, covered by `library-nav.test.tsx`.
+  it.each(["/account", "/privacy", "/sign-in"])(
+    "renders no search or tabs on %s",
+    (current) => {
+      pathname.current = current;
+      render(
+        <Navbar
+          mobileAccountSlot={<ACCOUNT_SLOT />}
+          desktopAccountSlot={<ACCOUNT_SLOT />}
+        />,
+      );
+      expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "Search" }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("navigation", { name: "Media type" }),
+      ).not.toBeInTheDocument();
+      pathname.current = "/shows";
+    },
+  );
 
   it("takes the type from the type parameter on /search", () => {
     pathname.current = "/search";
