@@ -3,10 +3,10 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import type * as React from "react";
 import { GlassPill } from "@/components/glass-pill";
-import { AmbientCanvas } from "@/components/layout/ambient-canvas";
 import { IconKey } from "@/components/layout/icon-key";
 import { LibraryNavView } from "@/components/layout/library-nav";
 import { MobileMenuSheet } from "@/components/layout/mobile-menu-sheet";
+import { PageBackgroundCanvas } from "@/components/layout/page-background-canvas";
 import {
   ContactEmail,
   ExternalLink,
@@ -400,30 +400,46 @@ export default function ShowcasePage() {
       </Section>
 
       <Section
-        title="Ambient background"
-        note="Behind every page, this one included: a point wave, drifting outlined screens and dust in the personal score cyan, under the vignette. It fades in once the browser is idle, draws in a worker where it can, pauses in a hidden tab, and freezes into one still frame under reduced motion. Without WebGL2 only the vignette shows (prompts/ambient-background.md)."
+        title="Page background"
+        note="Behind every page, this one included: three coiled film strips and rising bokeh over a teal gradient, under the vignette. The gradient and vignette are the first paint; the scene fades in once the browser is idle, draws in a worker where it can, pauses in a hidden tab, and freezes into one still frame under reduced motion. Without WebGL2 only the gradient and vignette show. Every pixel stays dark enough for muted text to keep 4.5:1 (prompts/film-strip-background.md)."
       >
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <Swatch name="--color-score-personal" className="bg-score-personal" />
-          <Swatch name="--color-backdrop-wave" className="bg-backdrop-wave" />
-          <Swatch name="--color-backdrop-dust" className="bg-backdrop-dust" />
+          <Swatch name="--color-backdrop-glow" className="bg-backdrop-glow" />
+          <Swatch name="--color-backdrop-mid" className="bg-backdrop-mid" />
+          <Swatch name="--color-backdrop-deep" className="bg-backdrop-deep" />
+          <Swatch name="--color-backdrop-abyss" className="bg-backdrop-abyss" />
+          <Swatch name="--color-film-base" className="bg-film-base" />
+          <Swatch name="--color-film-window" className="bg-film-window" />
+          <Swatch name="--color-film-shadow" className="bg-film-shadow" />
+          <Swatch name="--color-film-edge" className="bg-film-edge" />
+          <Swatch name="--color-film-rail" className="bg-film-rail" />
+          <Swatch name="--color-film-glow" className="bg-film-glow" />
+          <Swatch name="--color-light-ambient" className="bg-light-ambient" />
+          <Swatch name="--color-light-key" className="bg-light-key" />
+          <Swatch name="--color-light-rim" className="bg-light-rim" />
+          <Swatch name="--color-bokeh-1" className="bg-bokeh-1" />
+          <Swatch name="--color-bokeh-2" className="bg-bokeh-2" />
+          <Swatch name="--color-bokeh-3" className="bg-bokeh-3" />
+          <Swatch name="--color-bokeh-4" className="bg-bokeh-4" />
+        </div>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-2">
-            <div className="relative h-14 overflow-hidden rounded-lg border border-border bg-score-personal">
+            <div className="relative h-64 overflow-hidden rounded-panel border border-border backdrop-gradient">
               <div className="absolute inset-0 backdrop-vignette" />
             </div>
             <code className="text-xs text-muted-foreground">
-              backdrop-vignette over cyan
+              backdrop-gradient and backdrop-vignette, the first paint
             </code>
           </div>
-        </div>
-        <div className="mt-4 flex flex-col gap-2">
-          <div className="relative h-64 overflow-hidden rounded-panel border border-border">
-            <AmbientCanvas still />
-            <div className="absolute inset-0 backdrop-vignette" />
+          <div className="flex flex-col gap-2">
+            <div className="relative h-64 overflow-hidden rounded-panel border border-border backdrop-gradient">
+              <PageBackgroundCanvas still />
+              <div className="absolute inset-0 backdrop-vignette" />
+            </div>
+            <code className="text-xs text-muted-foreground">
+              the reduced motion still frame
+            </code>
           </div>
-          <code className="text-xs text-muted-foreground">
-            the reduced motion still frame
-          </code>
         </div>
       </Section>
 

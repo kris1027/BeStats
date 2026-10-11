@@ -78,13 +78,30 @@
   --color-glass-plate-score: #0c1419;
 
   /*
-   * The ambient background's two neutrals (prompts/ambient-background.md):
-   * the wave's trough colour, which its crests blend into the personal cyan,
-   * and the dust. Read by the renderer through `getComputedStyle`, never
-   * written in a shader, so this file stays the one home of every colour.
+   * The page background (prompts/film-strip-background.md): the teal
+   * gradient's four stops, the film strip's frame, the three lights it is lit
+   * by and the four bokeh tints, all the design file's own values. Backdrop
+   * only: no surface or text may use them. The scene reads them through
+   * `getComputedStyle`, never writing one in a shader, so this file stays the
+   * one home of every colour.
    */
-  --color-backdrop-wave: #8c99bf;
-  --color-backdrop-dust: #cfd3e0;
+  --color-backdrop-glow: #04303a;
+  --color-backdrop-mid: #021820;
+  --color-backdrop-deep: #010a10;
+  --color-backdrop-abyss: #000306;
+  --color-film-base: #0e6a80;
+  --color-film-window: #05303a;
+  --color-film-shadow: #01090c;
+  --color-film-edge: #4fe0ff;
+  --color-film-rail: #3fd8ff;
+  --color-film-glow: #1fb8d8;
+  --color-light-ambient: #145060;
+  --color-light-key: #a8f4ff;
+  --color-light-rim: #2fd8ff;
+  --color-bokeh-1: #8ff0ff;
+  --color-bokeh-2: #c9f8ff;
+  --color-bokeh-3: #ffffff;
+  --color-bokeh-4: #4fd8f0;
 
   /* Text greys, beyond the shadcn semantic set. */
   --color-text-label: #e2e5ef;
@@ -355,17 +372,31 @@
 }
 
 /*
- * The ambient background's vignette (prompts/ambient-background.md): clear in
- * the upper middle, where headings sit, and closing to the page black at the
- * edges. It is in the prerendered HTML, so it is also the whole background
- * until the animated layer fades in, and all of it where WebGL2 is missing.
+ * The page background's gradient (prompts/film-strip-background.md): the
+ * design's teal, brightest at the upper left. It is in the prerendered HTML,
+ * so it is the first paint, and with the vignette the whole background where
+ * WebGL2 is missing.
+ */
+@utility backdrop-gradient {
+  background: radial-gradient(
+    ellipse at 25% 15%,
+    var(--color-backdrop-glow) 0%,
+    var(--color-backdrop-mid) 45%,
+    var(--color-backdrop-deep) 80%,
+    var(--color-backdrop-abyss) 100%
+  );
+}
+
+/*
+ * The vignette over the scene: lightly shaded in the middle, where content
+ * sits, and closing to near black at the edges, the design's own falloff.
  */
 @utility backdrop-vignette {
   background: radial-gradient(
-    ellipse at 50% 40%,
-    color-mix(in srgb, var(--background) 0%, transparent) 0%,
-    color-mix(in srgb, var(--background) 55%, transparent) 70%,
-    color-mix(in srgb, var(--background) 90%, transparent) 100%
+    ellipse at 50% 45%,
+    color-mix(in srgb, var(--color-backdrop-abyss) 15%, transparent) 0%,
+    color-mix(in srgb, var(--color-backdrop-abyss) 55%, transparent) 60%,
+    color-mix(in srgb, var(--color-backdrop-abyss) 95%, transparent) 100%
   );
 }
 

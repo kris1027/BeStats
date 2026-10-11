@@ -1,25 +1,19 @@
 import { act, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { BackdropOptions } from "@/lib/backdrop/backdrop";
-import type { BackdropLoop } from "@/lib/backdrop/loop";
+import type { SceneClock } from "@/lib/film-scene/clock";
+import type { RunOptions } from "@/lib/film-scene/run";
 
 const rgb: [number, number, number] = [0.1, 0.2, 0.3];
-vi.mock("@/lib/backdrop/colors", () => ({
-  readBackdropColors: () => ({
-    accent: rgb,
-    background: rgb,
-    wave: rgb,
-    dust: rgb,
-    text: rgb,
-  }),
+vi.mock("@/lib/film-scene/palette", () => ({
+  readScenePalette: () => new Proxy({}, { get: () => rgb }),
 }));
 
-const createBackdrop =
-  vi.fn<(canvas: unknown, options: BackdropOptions) => BackdropLoop | null>();
-vi.mock("@/lib/backdrop/backdrop", () => ({ createBackdrop }));
+const runScene =
+  vi.fn<(canvas: unknown, options: RunOptions) => SceneClock | null>();
+vi.mock("@/lib/film-scene/run", () => ({ runScene }));
 
-import { AmbientCanvas } from "./ambient-canvas";
+import { PageBackgroundCanvas } from "./page-background-canvas";
 
 /** A worker that records what the page posts and lets the test reply. */
 class FakeWorker {
@@ -36,7 +30,7 @@ class FakeWorker {
   }
 }
 
-function fakeLoop(): BackdropLoop {
+function fakeClock(): SceneClock {
   return {
     resize: vi.fn(),
     setPointer: vi.fn(),
@@ -91,16 +85,16 @@ async function settle() {
 }
 
 async function start() {
-  const view = render(<AmbientCanvas />);
+  const view = render(<PageBackgroundCanvas />);
   await settle();
   return view;
 }
 
-/** covers: prompts/ambient-background.md, AC-5, AC-7, AC-8, AC-9 */
-describe("AmbientCanvas", () => {
+/** covers: prompts/film-strip-background.md, AC-6, AC-8, AC-9, AC-10 */
+describe("PageBackgroundCanvas", () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    createBackdrop.mockReset();
+    runScene.mockReset();
     media.reducedMotion = false;
     media.coarse = false;
     resize = null;
@@ -121,61 +115,61 @@ describe("AmbientCanvas", () => {
       expect.any(Array),
     );
     expect(container.querySelector("canvas")).not.toBeNull();
-    expect(createBackdrop).not.toHaveBeenCalled();
+    expect(runScene).not.toHaveBeenCalled();
   });
 
   it("moves to the main thread when the worker cannot draw", async () => {
     browser({ worker: true });
-    createBackdrop.mockReturnValue(fakeLoop());
+    runScene.mockReturnValue(fakeClock());
     const { container } = await start();
     FakeWorker.instances[0].reply({ type: "failed" });
     await settle();
     expect(FakeWorker.instances[0].terminate).toHaveBeenCalled();
-    expect(createBackdrop).toHaveBeenCalledTimes(1);
+    expect(runScene).toHaveBeenCalledTimes(1);
     expect(container.querySelectorAll("canvas")).toHaveLength(1);
   });
 
-  it("leaves only the vignette when the worker loses its context", async () => {
+  it("leaves only the gradient when the worker loses its context", async () => {
     browser({ worker: true });
     const { container } = await start();
     FakeWorker.instances[0].reply({ type: "lost" });
     await settle();
     expect(FakeWorker.instances[0].terminate).toHaveBeenCalled();
-    expect(createBackdrop).not.toHaveBeenCalled();
+    expect(runScene).not.toHaveBeenCalled();
     expect(container.querySelector("canvas")).toBeNull();
   });
 
-  it("leaves only the vignette without WebGL2", async () => {
+  it("leaves only the gradient without WebGL2", async () => {
     browser({ worker: false });
-    createBackdrop.mockReturnValue(null);
+    runScene.mockReturnValue(null);
     const { container } = await start();
-    expect(createBackdrop).toHaveBeenCalledTimes(1);
+    expect(runScene).toHaveBeenCalledTimes(1);
     expect(container.querySelector("canvas")).toBeNull();
   });
 
-  it("leaves only the vignette when the main thread loses its context", async () => {
+  it("leaves only the gradient when the main thread loses its context", async () => {
     browser({ worker: false });
-    const loop = fakeLoop();
-    createBackdrop.mockReturnValue(loop);
+    const clock = fakeClock();
+    runScene.mockReturnValue(clock);
     const { container } = await start();
-    act(() => createBackdrop.mock.calls[0][1].onLost());
-    expect(loop.dispose).toHaveBeenCalled();
-    expect(createBackdrop).toHaveBeenCalledTimes(1);
+    act(() => runScene.mock.calls[0][1].onLost());
+    expect(clock.dispose).toHaveBeenCalled();
+    expect(runScene).toHaveBeenCalledTimes(1);
     expect(container.querySelector("canvas")).toBeNull();
   });
 
-  it("rebuilds at the compact density when the window crosses 768px", async () => {
+  it("rebuilds the compact scene when the window crosses 768px", async () => {
     browser({ worker: true });
     vi.stubGlobal("innerWidth", 1440);
     const { container } = await start();
     const first = FakeWorker.instances[0];
-    expect(first.postMessage.mock.calls[0][0].budget.gridWidth).toBe(140);
+    expect(first.postMessage.mock.calls[0][0].budget.bokeh).toBe(70);
 
     vi.stubGlobal("innerWidth", 600);
     act(() => resize?.());
     const second = FakeWorker.instances[1];
     expect(first.terminate).toHaveBeenCalled();
-    expect(second.postMessage.mock.calls[0][0].budget.gridWidth).toBe(70);
+    expect(second.postMessage.mock.calls[0][0].budget.bokeh).toBe(35);
     expect(container.querySelectorAll("canvas")).toHaveLength(1);
 
     vi.stubGlobal("innerWidth", 700);
@@ -223,7 +217,7 @@ describe("AmbientCanvas", () => {
 
   it("draws the still frame for everyone when asked, as /showcase does", async () => {
     browser({ worker: true });
-    render(<AmbientCanvas still />);
+    render(<PageBackgroundCanvas still />);
     await settle();
     expect(FakeWorker.instances[0].postMessage).toHaveBeenCalledWith(
       expect.objectContaining({ type: "init", reducedMotion: true }),

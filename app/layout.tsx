@@ -3,8 +3,8 @@ import { Inter } from "next/font/google";
 import { Suspense } from "react";
 
 import { AccountSlot } from "@/components/layout/account-slot";
-import { AmbientBackground } from "@/components/layout/ambient-background";
 import { Navbar } from "@/components/layout/navbar";
+import { PageBackground } from "@/components/layout/page-background";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { Skeleton } from "@/components/skeleton";
 import { Toaster } from "@/components/ui/sonner";
@@ -70,8 +70,8 @@ export const metadata: Metadata = {
  * through (spec 0007). It is a client boundary that reads no request state, so
  * it costs no route its static shell.
  *
- * `AmbientBackground` paints behind everything on every route
- * (prompts/ambient-background.md). Its only client piece mounts after the
+ * `PageBackground` paints behind everything on every route
+ * (prompts/film-strip-background.md). Its only client piece mounts after the
  * browser is idle and reads no request state, so it costs no route its static
  * shell either.
  *
@@ -87,7 +87,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${inter.variable} h-full`}>
       <body className="flex min-h-full flex-col antialiased">
-        <AmbientBackground />
+        <PageBackground />
         {/*
          * Each fallback is the signed out button's footprint, so the bar does
          * not resize when the real control arrives. A skeleton rather than a
