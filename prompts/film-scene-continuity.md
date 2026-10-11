@@ -61,3 +61,9 @@ Only a number is stored, and only in this tab's sessionStorage. There is no user
 5. Open `/shows` in a second new tab: it fades in once (per tab).
 6. DevTools → Application → Session storage: `bestats:film-scene` holds `{"time": …}`. Set it to `"junk"` and reload: the intro plays, no console errors.
 7. `/showcase`: the still frame shows; the session storage value doesn't change because of it.
+
+## As built (2026-10-11, after code review)
+
+- AC-3 on the worker path: the first build terminated the worker on a breakpoint rebuild, which lost the clock's final report, so the new scene started from the page's copy, up to a second old. The page now posts a `rebuild` with a fresh canvas to the same worker, which starts the new scene from the time its old clock reported as it stopped (`lib/film-scene/worker.test.ts`). The main thread path already did this, because its clock reports synchronously on dispose.
+- AC-1, AC-2, AC-3 and AC-6 are now also checked through the mounted `PageBackgroundCanvas` (`page-background-canvas.test.tsx`), not only in `continuity.test.ts` and `clock.test.ts`.
+

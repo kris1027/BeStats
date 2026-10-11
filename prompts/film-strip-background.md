@@ -62,7 +62,7 @@ It must cost the catalog pages nothing measurable in load time, interactivity or
 6. **Painted late and outside the critical path.**
    - The server renders the fixed layer: the gradient, an empty host `div` and the vignette, all `aria-hidden` and `pointer-events: none`.
    - The client island renders only the host. When the browser is idle (`requestIdleCallback`, falling back to `setTimeout`), it imports `lib/film-scene/start.ts`, which creates the `<canvas>` in the browser. The canvas is never rendered by React, because once its control is transferred to a worker it can never be transferred again.
-   - The canvas fades in over 1.6 s, as in the design, after its second frame.
+   - The canvas fades in over 1.6 s, as in the design, once its first frame is drawn (amended 2026-10-11; see As built).
    - Nothing shifts layout or touches LCP, and every route keeps its prerendered shell.
 7. **Off the main thread.** Where `OffscreenCanvas` supports WebGL2 in a worker, the canvas is transferred and drawn in `lib/film-scene/worker.ts`. Otherwise the same scene module runs on the main thread: it has no DOM access. Worker messages are `init`, `resize`, `pointer`, `visible` and `motion`, validated with Zod; replies are `ready`, `failed` and `lost`. A worker that replies `failed` causes one main thread attempt. A context lost after drawing gives up for good.
 8. **Budgets.**
@@ -164,3 +164,9 @@ It must cost the catalog pages nothing measurable in load time, interactivity or
 - Measured on `/privacy` at 1440 × 900 with the content hidden (three frames over 13 s): the brightest pixel's luminance is 0.0206, so muted text keeps 6.64:1 (AC-11).
 - Chunks: the worker is about 7.5 KB gzipped, including `zod/mini`, and the main thread scene about 5.7 KB. Neither is referenced by any prerendered page.
 - The intro now plays once per tab: later full loads and breakpoint rebuilds carry on from the stored clock without the fade (prompts/film-scene-continuity.md).
+- Review fixes (2026-10-11, after code review):
+  - Decision 6: the fade starts once the first frame is drawn, not after the second. Under reduced motion only one frame is ever drawn, so waiting for a second would never reveal it. The first frame is a complete picture, which is what the wait was for.
+  - Decision 7: the worker messages are `init`, `rebuild`, `resize`, `visible` and `motion`, and the replies `ready`, `failed`, `lost` and `time`. `rebuild` brings a fresh canvas to the same worker after a resize across the compact breakpoint, and the worker starts the new scene from its old clock's final time. Terminating the worker instead lost that report, so the rebuilt scene jumped back by up to a second (prompts/film-scene-continuity.md, AC-3).
+  - The gradient and vignette were tuned by eye after the first build (`style(background): brighten the top and deepen the bottom`). The gradient's centre is `ellipse at 30% 5%`, not the design's `25% 15%`, and the vignette has a second, linear layer that deepens the lower half. Both only darken or move light the contrast cap already counts, and AC-11 still holds.
+  - The page background's tokens and utilities are `--color-page-*`, `page-gradient` and `page-vignette`, renamed from `backdrop-*`, which now names only a title's TMDB artwork.
+  - The colour channel parsers and WCAG contrast maths moved from `lib/film-scene/palette.ts` to `lib/color/contrast.ts`, shared with `app/glass-contrast.test.ts`.
