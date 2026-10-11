@@ -1,9 +1,10 @@
-import { ReleasePill, releaseDateFor } from "@/components/library/dated-pill";
+import { ReleasePill } from "@/components/library/dated-pill";
 import {
   PersonalScoreBadge,
   TmdbRatingBadge,
 } from "@/components/rating-badges";
 import { movieCardStatus } from "@/lib/catalog/movie-page";
+import { formatReleaseDate } from "@/lib/format";
 import { requestTodayUtc } from "@/lib/tracking/episode-state";
 import { getMovieGridStates, movieIdsKey } from "@/lib/tracking/movie-state";
 
@@ -104,7 +105,7 @@ async function MovieCardControls({
   return (
     <>
       <ReleasePill
-        release={releaseDateFor(status.releaseDate, requestTodayUtc())}
+        release={formatReleaseDate(status.releaseDate, requestTodayUtc())}
       />
       {bookmark}
     </>

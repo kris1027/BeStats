@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { PaginationLinks } from "@/components/pagination-links";
+import { formatReleaseDate } from "@/lib/format";
 import {
   getLibraryMovieTitles,
   getMovieLibraryTab,
@@ -13,7 +14,6 @@ import {
 } from "@/lib/tracking/library-lists";
 import { LIBRARY_COPY } from "@/lib/tracking/messages";
 
-import { releaseDateFor } from "./dated-pill";
 import { LibraryGrid } from "./library-grid";
 import {
   EmptyPanel,
@@ -67,7 +67,7 @@ function movieItem(card: MovieTabCard, today: string): LibraryMovieItem {
     tmdbRating: card.title.tmdbRating,
   };
   if (card.page === "watchlist") return base;
-  return { ...base, release: releaseDateFor(card.releaseDate, today) };
+  return { ...base, release: formatReleaseDate(card.releaseDate, today) };
 }
 
 /**

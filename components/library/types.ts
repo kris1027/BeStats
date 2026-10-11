@@ -6,11 +6,9 @@
 
 export type { LibraryList } from "@/lib/catalog/library-list";
 
-/**
- * A movie's release date on an Upcoming card, formatted on the server beside
- * the `today` that decided it (spec 0020, AC-13), or null for Date TBA.
- */
-export type ReleaseDate = { shortDate: string; fullDate: string } | null;
+import type { ReleaseDate } from "@/lib/format";
+
+export type { ReleaseDate };
 
 /**
  * One movie card: a Postgres row joined with its TMDB title, when TMDB has

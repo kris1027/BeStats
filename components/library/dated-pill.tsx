@@ -2,10 +2,8 @@ import { cn } from "cn";
 
 import { GlassPill } from "@/components/glass-pill";
 import { CalendarIcon } from "@/components/tracking/tracking-icons";
-import { formatAirDate, formatShortDate } from "@/lib/format";
+import type { ReleaseDate } from "@/lib/format";
 import { UPCOMING_MESSAGES } from "@/lib/tracking/messages";
-
-import type { ReleaseDate } from "./types";
 
 /** A short date that carries its year, such as `Feb 3, 2027`. */
 const ENDS_IN_YEAR = /\d{4}$/;
@@ -72,26 +70,6 @@ function DateTbaPill({ label }: { label: string }) {
   );
 }
 
-/**
- * A movie's Upcoming release date, formatted beside the `today` that decided
- * it (spec 0020, AC-13), or null for Date TBA. The library Upcoming card and
- * the catalog cards both format through it (prompts/catalog-card-status.md).
- *
- * @param releaseDate A date `upcomingReleaseDate` returned, or null.
- * @param today `requestTodayUtc()`, for `formatShortDate`'s year rule.
- */
-function releaseDateFor(
-  releaseDate: string | null,
-  today: string,
-): ReleaseDate {
-  if (releaseDate === null) return null;
-  const fullDate = formatAirDate(releaseDate) ?? releaseDate;
-  return {
-    fullDate,
-    shortDate: formatShortDate(releaseDate, today) ?? fullDate,
-  };
-}
-
 /** The release date on an Upcoming movie card, or Date TBA (AC-13). */
 function ReleasePill({ release }: { release: ReleaseDate }) {
   if (release === null) {
@@ -106,4 +84,4 @@ function ReleasePill({ release }: { release: ReleaseDate }) {
   );
 }
 
-export { DatedPill, DateTbaPill, ReleasePill, releaseDateFor };
+export { DatedPill, DateTbaPill, ReleasePill };
