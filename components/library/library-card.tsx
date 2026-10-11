@@ -7,9 +7,8 @@ import {
 } from "@/components/rating-badges";
 import { CardRoundButton } from "@/components/tracking/card-round-button";
 import { PlannedIcon, WatchedIcon } from "@/components/tracking/tracking-icons";
-import { UPCOMING_MESSAGES } from "@/lib/tracking/messages";
 
-import { DatedPill, DateTbaPill } from "./dated-pill";
+import { ReleasePill } from "./dated-pill";
 import type { LibraryList, LibraryMovieItem } from "./types";
 
 /**
@@ -53,25 +52,11 @@ function LibraryCard({
       badge={cardBadge(list, item)}
       controls={
         <>
-          {list === "upcoming" ? <ReleasePill item={item} /> : null}
+          {list === "upcoming" ? <ReleasePill release={item.release} /> : null}
           <RemoveButton list={list} title={item.title} onRemove={onRemove} />
         </>
       }
       priority={priority}
-    />
-  );
-}
-
-/** The release date on an Upcoming card, or Date TBA (AC-13). */
-function ReleasePill({ item }: { item: LibraryMovieItem }) {
-  if (item.release === null) {
-    return <DateTbaPill label={UPCOMING_MESSAGES.releaseTba} />;
-  }
-  return (
-    <DatedPill
-      slot="release-date"
-      label={UPCOMING_MESSAGES.releases(item.release.fullDate)}
-      text={item.release.shortDate}
     />
   );
 }
