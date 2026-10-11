@@ -176,14 +176,21 @@ export default function ShowcasePage() {
 
       <Section
         title="The plate rule"
-        note="Glass alone over a light poster leaves near white text at 1.59:1, which is unreadable. The plate underneath is doing the legibility work, not the gradient. Both cases are here so the rule is not theoretical."
+        note="Glass alone over a light poster leaves near white text at 1.59:1, which is unreadable. The plate underneath is doing the legibility work, not the gradient. Off posters the plates are frosted, see-through enough to show the background and blurred so it stays soft; over artwork plate-solid makes them opaque again. Each case is here so the rule is not theoretical."
       >
         <div className="flex flex-wrap gap-6">
+          <div
+            className="plate-solid relative flex h-40 w-40 items-center justify-center rounded-lg bg-cover"
+            style={{ backgroundImage: `url("${LIGHT_POSTER}")` }}
+          >
+            <GlassPill>Solid on art</GlassPill>
+          </div>
           <div
             className="relative flex h-40 w-40 items-center justify-center rounded-lg bg-cover"
             style={{ backgroundImage: `url("${LIGHT_POSTER}")` }}
           >
-            <GlassPill>Correct</GlassPill>
+            {/* Deliberately frosted over artwork: legible only off posters. */}
+            <GlassPill>Frosted on art</GlassPill>
           </div>
           <div
             className="relative flex h-40 w-40 items-center justify-center rounded-lg bg-cover"
@@ -194,6 +201,26 @@ export default function ShowcasePage() {
               No plate
             </span>
           </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          {(
+            [
+              ["glass-plate", "Control 65%"],
+              ["glass-plate-panel", "Panel 60%"],
+              ["glass-plate-sheet", "Sheet 75%"],
+              ["glass-plate-float", "Float 90%"],
+            ] as const
+          ).map(([plate, label]) => (
+            <span
+              key={plate}
+              className={`glass glass-rim glass-shadow ${plate} inline-flex h-11 items-center rounded-full px-4 text-sm text-muted-foreground`}
+            >
+              {label}
+            </span>
+          ))}
+          <span className="plate-solid glass glass-rim glass-plate glass-shadow inline-flex h-11 items-center rounded-full px-4 text-sm text-muted-foreground">
+            Solid, the fallback look
+          </span>
         </div>
       </Section>
 
