@@ -133,6 +133,8 @@ describe("Navbar", () => {
     );
     typed.unmount();
 
+    // A page about neither catalog has no search, tabs or library links
+    // (prompts/hide-tabs-without-type.md).
     pathname.current = "/account";
     render(
       <Navbar
@@ -140,10 +142,13 @@ describe("Navbar", () => {
         desktopAccountSlot={<ACCOUNT_SLOT />}
       />,
     );
-    expect(screen.getByRole("combobox")).toHaveAttribute(
-      "placeholder",
-      "Search shows",
-    );
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Search" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("navigation", { name: "Media type" }),
+    ).not.toBeInTheDocument();
     pathname.current = "/shows";
   });
 

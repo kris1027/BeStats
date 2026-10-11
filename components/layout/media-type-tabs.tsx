@@ -25,6 +25,10 @@ import { WithPageMediaType } from "./page-media-type";
  * and `/movies`. `WithPageMediaType` reads the page's type, and on those four
  * pages the current query, which `/search` keeps across a switch.
  *
+ * On a page about neither catalog (`/account`, `/privacy`, the auth pages)
+ * there is nothing to switch, so it renders nothing
+ * (prompts/hide-tabs-without-type.md).
+ *
  * On a route with a dynamic param (`/movies/[id]`, spec 0006) the pathname is
  * not known at prerender time, so `usePathname` suspends there. `Navbar` wraps
  * this in a Suspense boundary whose fallback is `MediaTypeTabsView` with
@@ -44,23 +48,27 @@ function MediaTypeTabs({ className }: { className?: string }) {
         />
       )}
     >
-      {(page) => (
-        // On a typed page the lit tab is its `type`, and each tab rewrites it.
-        <MediaTypeTabsView
-          selected={page.type}
-          hrefs={
-            page.params === null
-              ? undefined
-              : {
-                  tv: typedHref(page.pathname, "tv", { current: page.params }),
-                  movie: typedHref(page.pathname, "movie", {
-                    current: page.params,
-                  }),
-                }
-          }
-          className={className}
-        />
-      )}
+      {(page) =>
+        page.type === null ? null : (
+          // On a typed page the lit tab is its `type`, and each tab rewrites it.
+          <MediaTypeTabsView
+            selected={page.type}
+            hrefs={
+              page.params === null
+                ? undefined
+                : {
+                    tv: typedHref(page.pathname, "tv", {
+                      current: page.params,
+                    }),
+                    movie: typedHref(page.pathname, "movie", {
+                      current: page.params,
+                    }),
+                  }
+            }
+            className={className}
+          />
+        )
+      }
     </WithPageMediaType>
   );
 }

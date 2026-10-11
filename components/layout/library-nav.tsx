@@ -21,7 +21,9 @@ import { WithPageMediaType } from "./page-media-type";
  *
  * Each link carries the media type of the page being viewed, so the navbar
  * tab chosen on `/movies` is still lit on `/watchlist` (feature 22), read
- * through `WithPageMediaType`; the fallback links to the default type.
+ * through `WithPageMediaType`; the fallback links to the default type. On a
+ * page about neither catalog it renders nothing, like the media tabs and the
+ * search (prompts/hide-tabs-without-type.md).
  *
  * @param variant `bar` is the glass pill in the desktop navbar, 40px tall like
  * every navbar control, with `hit-area-tab` widening each link to a 44px tap
@@ -44,17 +46,16 @@ function LibraryNav({ variant }: { variant: Variant }) {
         <LibraryNavView variant={variant} pathname={pathname} type="tv" />
       )}
     >
-      {({ pathname, type }) => (
-        <LibraryNavView
-          variant={variant}
-          pathname={pathname}
-          type={type ?? "tv"}
-        />
-      )}
+      {({ pathname, type }) =>
+        type === null ? null : (
+          <LibraryNavView variant={variant} pathname={pathname} type={type} />
+        )
+      }
     </WithPageMediaType>
   );
 }
 
+/** The links for a known page and type, also rendered by `/showcase`. */
 function LibraryNavView({
   variant,
   pathname,
@@ -100,4 +101,4 @@ function LibraryNavView({
   );
 }
 
-export { LibraryNav };
+export { LibraryNav, LibraryNavView };

@@ -18,8 +18,8 @@ type Layout = "desktop" | "mobile";
  *
  * The type follows the page (feature 22): movies under `/movies`, shows
  * under `/shows`, the `type` parameter on `/watchlist`, `/upcoming`,
- * `/watched` and `/search`, and shows everywhere else, read through
- * `WithPageMediaType`. `usePathname` suspends on a route with a dynamic param
+ * `/watched` and `/search`, read through `WithPageMediaType`. A page about
+ * neither catalog renders no search at all (prompts/hide-tabs-without-type.md). `usePathname` suspends on a route with a dynamic param
  * at prerender time, so `Navbar` wraps this in Suspense with
  * `NavbarSearchFallback`.
  *
@@ -31,13 +31,15 @@ function NavbarSearch({ layout }: { layout: Layout }) {
     <WithPageMediaType
       fallback={() => <NavbarSearchFallback layout={layout} type="tv" />}
     >
-      {({ pathname, type }) => (
-        <NavbarSearchFor
-          key={`${pathname}:${type ?? "tv"}`}
-          layout={layout}
-          type={type ?? "tv"}
-        />
-      )}
+      {({ pathname, type }) =>
+        type === null ? null : (
+          <NavbarSearchFor
+            key={`${pathname}:${type}`}
+            layout={layout}
+            type={type}
+          />
+        )
+      }
     </WithPageMediaType>
   );
 }
