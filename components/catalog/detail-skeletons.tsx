@@ -16,7 +16,7 @@ function DetailHeroSkeleton({ metaRows = 1 }: { metaRows?: 1 | 2 }) {
     <div className="flex flex-col">
       <Skeleton
         shape="line"
-        className="-mx-4 -mt-8 aspect-video h-auto w-auto max-h-[70vh] rounded-none md:-mt-12"
+        className="-mx-4 -mt-[calc(2rem+var(--navbar-height))] aspect-video h-auto w-auto max-h-[70vh] min-h-[calc(var(--navbar-height)+12rem)] rounded-none md:-mt-[calc(3rem+var(--navbar-height))]"
       />
       {/*
        * The same grid as `DetailHero`, so the info block lands where the

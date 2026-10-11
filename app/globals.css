@@ -192,6 +192,19 @@
   --frost-blur-control: blur(var(--blur-control));
   --frost-blur-panel: blur(var(--blur-panel));
   --frost-blur-overlay: blur(var(--blur-overlay));
+
+  /*
+   * The navbar's height: two 40px rows, an 8px gap and 8px of padding above
+   * and below on a phone, one row from `md`. A title page's backdrop pulls up
+   * by it to sit behind the bar (`components/catalog/detail-hero.tsx`).
+   */
+  --navbar-height: 6.5rem;
+}
+
+@media (width >= 48rem) {
+  :root {
+    --navbar-height: 3.5rem;
+  }
 }
 
 /*
@@ -537,6 +550,22 @@
  * the lower half. It only ever darkens, so the scene's contrast cap, which
  * counts the gradient without it, still holds.
  */
+/*
+ * The shade at the top of a title page's backdrop, under the navbar. Held at
+ * 75% black across the bar, any artwork behind it stays darker than the page
+ * background's brightest pixel, so the bar's text and frosted controls keep
+ * the contrast `app/glass-contrast.test.ts` proves over that background. It
+ * then lifts over the next 8rem so the artwork comes through below the bar.
+ */
+@utility backdrop-scrim {
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--background) 75%, transparent) 0,
+    color-mix(in srgb, var(--background) 75%, transparent) var(--navbar-height),
+    transparent calc(var(--navbar-height) + 8rem)
+  );
+}
+
 @utility backdrop-vignette {
   background:
     linear-gradient(

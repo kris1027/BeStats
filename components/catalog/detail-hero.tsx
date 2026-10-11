@@ -59,13 +59,14 @@ function DetailHero({
     <header data-slot="detail-hero" className="flex flex-col">
       {backdropUrl ? (
         /*
-         * Bleeds to the edges of the main column and up to the navbar, so the
-         * artwork reads as the page's backdrop rather than a boxed image. The
-         * negative margins mirror `main`'s own padding in `app/layout.tsx`.
+         * Bleeds to the edges of the main column and up behind the navbar, so
+         * the artwork reads as the page's backdrop rather than a boxed image.
+         * The negative margins are `main`'s own padding in `app/layout.tsx`
+         * plus `--navbar-height`.
          */
         <div
           data-slot="detail-backdrop"
-          className="relative -mx-4 -mt-8 aspect-video max-h-[70vh] overflow-hidden mask-b-from-67% mask-l-from-67% md:-mt-12 min-[1600px]:mask-r-from-83%"
+          className="relative -mx-4 -mt-[calc(2rem+var(--navbar-height))] aspect-video max-h-[70vh] min-h-[calc(var(--navbar-height)+12rem)] overflow-hidden mask-b-from-67% mask-l-from-67% md:-mt-[calc(3rem+var(--navbar-height))] min-[1600px]:mask-r-from-83%"
         >
           {/*
            * The fade into the page is a mask, not a colour laid over the
@@ -83,6 +84,11 @@ function DetailHero({
             sizes="(min-width: 1600px) 1600px, 100vw"
             className="object-cover object-top"
           />
+          {/*
+           * The image reaches up behind the navbar, so the bar sits on the
+           * artwork. The shade keeps its text and controls readable there.
+           */}
+          <div aria-hidden="true" className="backdrop-scrim absolute inset-0" />
         </div>
       ) : null}
 
