@@ -49,7 +49,7 @@ const ENTRIES: ReadonlyArray<{ label: string; icon: React.ReactNode }> = [
  */
 export function IconKey() {
   return (
-    <div className="border-t border-border pt-6 pb-2">
+    <div className="pt-6 pb-2">
       <ul
         aria-label="Icon key"
         className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-text-legend"
