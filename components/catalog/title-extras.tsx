@@ -9,7 +9,7 @@ import {
 } from "@/components/catalog/carousel-row-states";
 import { CarouselScroller } from "@/components/catalog/carousel-scroller";
 import { CatalogListCards } from "@/components/catalog/catalog-list-cards";
-import { titleHref } from "@/lib/catalog/media-type";
+import { type MediaType, titleHref } from "@/lib/catalog/media-type";
 import { getVisitorRegion } from "@/lib/region";
 import {
   getMovieExtras,
@@ -41,7 +41,10 @@ import {
  */
 
 /** Which extras read a slot makes, and the page a Retry reloads. */
-type TitleRef = { mediaType: "movie" | "tv"; id: number };
+type TitleRef = { mediaType: MediaType; id: number };
+
+/** A `TitleRef` with the title's name, which the trailer dialog is labelled by. */
+type NamedTitleRef = TitleRef & { title: string };
 
 /**
  * The title's extras, or null when TMDB failed, a 404 included (AC-18). A
@@ -68,7 +71,7 @@ const readExtras = cache(
  * The hero's Trailer button (AC-11), or nothing: while the extras load,
  * when they failed, and when the title has no usable trailer.
  */
-function TrailerSlot(props: TitleRef & { title: string }) {
+function TrailerSlot(props: NamedTitleRef) {
   return (
     <Suspense fallback={null}>
       <TrailerSlotContent {...props} />
@@ -81,11 +84,7 @@ function TrailerSlot(props: TitleRef & { title: string }) {
  * tests can await it as the async Server Component it is; pages render
  * `TrailerSlot`.
  */
-async function TrailerSlotContent({
-  mediaType,
-  id,
-  title,
-}: TitleRef & { title: string }) {
+async function TrailerSlotContent({ mediaType, id, title }: NamedTitleRef) {
   const trailer = (await readExtras(mediaType, id))?.trailer ?? null;
   if (trailer === null) return null;
   return (
