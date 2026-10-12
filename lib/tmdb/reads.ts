@@ -7,6 +7,7 @@ import {
   type SettledBatch,
 } from "./batch";
 import { fetchMovieGenres, fetchTvGenres } from "./genres";
+import { fetchMovieList, fetchTvList } from "./lists";
 import { fetchMovie } from "./movies";
 import {
   failureProfile,
@@ -27,13 +28,16 @@ import type {
   BatchResult,
   DiscoverOptions,
   Genre,
+  ListOptions,
   Movie,
+  MovieListKind,
   MovieSummary,
   Paged,
   SearchOptions,
   SeasonDetail,
   ShowCastMember,
   ShowEpisodes,
+  TvListKind,
   TvShow,
   TvShowSummary,
 } from "./types";
@@ -278,6 +282,59 @@ export async function discoverTvShows(
   options: DiscoverOptions = {},
 ): Promise<Paged<TvShowSummary>> {
   return unwrap(await discoverTvShowsCached(options));
+}
+
+/**
+ * A landing row and page 1 of its list page make this same call, so they
+ * share one entry (spec 0021, AC-3). `hours`: trending and the date based
+ * lists move daily at most, and a row an hour stale is still truthful
+ * (AC-17).
+ */
+async function getTvListCached(
+  kind: TvListKind,
+  options: ListOptions,
+): Promise<TmdbResult<Paged<TvShowSummary>>> {
+  "use cache";
+  try {
+    const value = await fetchTvList(kind, options);
+    cacheLife("hours");
+    return { ok: true, value };
+  } catch (error) {
+    const failure = toFailure(error);
+    cacheFailure(failure);
+    return { ok: false, failure };
+  }
+}
+
+export async function getTvList(
+  kind: TvListKind,
+  options: ListOptions = {},
+): Promise<Paged<TvShowSummary>> {
+  return unwrap(await getTvListCached(kind, options));
+}
+
+/** The movie twin of `getTvListCached`, with the same lifetime. */
+async function getMovieListCached(
+  kind: MovieListKind,
+  options: ListOptions,
+): Promise<TmdbResult<Paged<MovieSummary>>> {
+  "use cache";
+  try {
+    const value = await fetchMovieList(kind, options);
+    cacheLife("hours");
+    return { ok: true, value };
+  } catch (error) {
+    const failure = toFailure(error);
+    cacheFailure(failure);
+    return { ok: false, failure };
+  }
+}
+
+export async function getMovieList(
+  kind: MovieListKind,
+  options: ListOptions = {},
+): Promise<Paged<MovieSummary>> {
+  return unwrap(await getMovieListCached(kind, options));
 }
 
 async function getMovieGenresCached(): Promise<TmdbResult<Genre[]>> {
