@@ -1,3 +1,5 @@
+import type { z } from "zod";
+
 import { parseTmdbDate } from "@/lib/format";
 
 import { SHOW_CAST_LIMIT } from "./constants";
@@ -122,25 +124,37 @@ function moneyOrNull(value: number | null | undefined): number | null {
 }
 
 /**
+ * The items of a TMDB list that parse and carry a name, each with that name
+ * trimmed, in TMDB's order. Companies, crew and creators all drop a bad entry
+ * this way rather than failing the read (spec 0022, AC-15, AC-16), as a cast
+ * credit is dropped.
+ */
+function namedItems<T extends { name: string }>(
+  items: unknown[] | null | undefined,
+  schema: z.ZodType<T>,
+): Array<{ data: T; name: string }> {
+  const named: Array<{ data: T; name: string }> = [];
+  for (const item of items ?? []) {
+    const parsed = schema.safeParse(item);
+    if (!parsed.success) continue;
+    const name = textOrNull(parsed.data.name);
+    if (name !== null) named.push({ data: parsed.data, name });
+  }
+  return named;
+}
+
+/**
  * Production companies or networks, dropping any entry that does not parse
  * (spec 0022, AC-16), in TMDB's order.
  */
 export function normalizeCompanies(
   items: unknown[] | null | undefined,
 ): Company[] {
-  const companies: Company[] = [];
-  for (const item of items ?? []) {
-    const parsed = companySchema.safeParse(item);
-    if (!parsed.success) continue;
-    const name = textOrNull(parsed.data.name);
-    if (name === null) continue;
-    companies.push({
-      id: parsed.data.id,
-      name,
-      logoUrl: imageUrl(parsed.data.logo_path, COMPANY_LOGO_SIZE),
-    });
-  }
-  return companies;
+  return namedItems(items, companySchema).map(({ data, name }) => ({
+    id: data.id,
+    name,
+    logoUrl: imageUrl(data.logo_path, COMPANY_LOGO_SIZE),
+  }));
 }
 
 /** Most writers a movie page names (spec 0022, AC-15). */
@@ -165,15 +179,9 @@ export function normalizeCrew(items: unknown[] | null | undefined): {
 } {
   const directors = new Set<string>();
   const writers = new Set<string>();
-  for (const item of items ?? []) {
-    const parsed = crewMemberSchema.safeParse(item);
-    if (!parsed.success) continue;
-    const name = textOrNull(parsed.data.name);
-    if (name === null) continue;
-    if (parsed.data.job === "Director") directors.add(name);
-    if (parsed.data.job != null && WRITER_JOBS.has(parsed.data.job)) {
-      writers.add(name);
-    }
+  for (const { data, name } of namedItems(items, crewMemberSchema)) {
+    if (data.job === "Director") directors.add(name);
+    if (data.job != null && WRITER_JOBS.has(data.job)) writers.add(name);
   }
   return {
     directors: [...directors],
@@ -185,13 +193,9 @@ export function normalizeCrew(items: unknown[] | null | undefined): {
 export function normalizeCreators(
   items: unknown[] | null | undefined,
 ): string[] {
-  const names = new Set<string>();
-  for (const item of items ?? []) {
-    const parsed = creatorSchema.safeParse(item);
-    if (!parsed.success) continue;
-    const name = textOrNull(parsed.data.name);
-    if (name !== null) names.add(name);
-  }
+  const names = new Set(
+    namedItems(items, creatorSchema).map(({ name }) => name),
+  );
   return [...names].slice(0, CREATOR_LIMIT);
 }
 
