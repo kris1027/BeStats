@@ -99,7 +99,7 @@ async function CarouselRowItems({
   }
 
   if (result.paged.results.length === 0) {
-    return <CarouselRowEmpty list={list} />;
+    return <CarouselRowEmpty />;
   }
 
   const returnPath = CATALOG_PATHS[list.mediaType];

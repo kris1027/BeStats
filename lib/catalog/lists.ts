@@ -25,7 +25,7 @@ export const MOVIE_LIST_SLUGS = [
 export type TvListSlug = (typeof TV_LIST_SLUGS)[number];
 export type MovieListSlug = (typeof MOVIE_LIST_SLUGS)[number];
 
-/** The words every list shows, wherever it is rendered (spec 0021, AC-1, AC-9, AC-12). */
+/** The words every list shows, wherever it is rendered (spec 0021, AC-1, AC-9). */
 type ListText = {
   /** The row's h2 on a landing. */
   rowTitle: string;
@@ -35,8 +35,6 @@ type ListText = {
   note: string;
   /** Completes "There are no {pageNoun} at this page number." */
   pageNoun: string;
-  /** What a row that loaded with no titles says. */
-  emptyRowText: string;
 };
 
 export type TvCatalogList = ListText & { mediaType: "tv"; slug: TvListSlug };
@@ -45,8 +43,6 @@ export type MovieCatalogList = ListText & {
   slug: MovieListSlug;
 };
 export type CatalogList = TvCatalogList | MovieCatalogList;
-
-const EMPTY_ROW_TEXT = "Nothing here right now.";
 
 /**
  * Every list, once (spec 0021, the registry). The routes, the proxy, the
@@ -62,7 +58,6 @@ export const CATALOG_LISTS: readonly CatalogList[] = [
     heading: "Trending shows this week",
     note: "TMDB's most watched shows over the past week.",
     pageNoun: "trending shows",
-    emptyRowText: EMPTY_ROW_TEXT,
   },
   {
     mediaType: "tv",
@@ -71,7 +66,6 @@ export const CATALOG_LISTS: readonly CatalogList[] = [
     heading: "Popular shows",
     note: "Ordered by current popularity on TMDB.",
     pageNoun: "popular shows",
-    emptyRowText: EMPTY_ROW_TEXT,
   },
   {
     mediaType: "tv",
@@ -80,7 +74,6 @@ export const CATALOG_LISTS: readonly CatalogList[] = [
     heading: "Shows airing today",
     note: "Shows with an episode airing today, Polish time, per TMDB.",
     pageNoun: "shows airing today",
-    emptyRowText: EMPTY_ROW_TEXT,
   },
   {
     mediaType: "tv",
@@ -89,7 +82,6 @@ export const CATALOG_LISTS: readonly CatalogList[] = [
     heading: "Shows on the air",
     note: "Shows with an episode airing in the next 7 days, per TMDB.",
     pageNoun: "shows on the air",
-    emptyRowText: EMPTY_ROW_TEXT,
   },
   {
     mediaType: "tv",
@@ -98,7 +90,6 @@ export const CATALOG_LISTS: readonly CatalogList[] = [
     heading: "Top rated shows",
     note: "Ordered by TMDB community rating.",
     pageNoun: "top rated shows",
-    emptyRowText: EMPTY_ROW_TEXT,
   },
   {
     mediaType: "movie",
@@ -107,7 +98,6 @@ export const CATALOG_LISTS: readonly CatalogList[] = [
     heading: "Trending movies this week",
     note: "TMDB's most watched movies over the past week.",
     pageNoun: "trending movies",
-    emptyRowText: EMPTY_ROW_TEXT,
   },
   {
     mediaType: "movie",
@@ -116,7 +106,6 @@ export const CATALOG_LISTS: readonly CatalogList[] = [
     heading: "Popular movies",
     note: "Ordered by current popularity on TMDB.",
     pageNoun: "popular movies",
-    emptyRowText: EMPTY_ROW_TEXT,
   },
   {
     mediaType: "movie",
@@ -125,7 +114,6 @@ export const CATALOG_LISTS: readonly CatalogList[] = [
     heading: "Movies now playing",
     note: "In Polish cinemas now, per TMDB.",
     pageNoun: "movies now playing",
-    emptyRowText: EMPTY_ROW_TEXT,
   },
   {
     mediaType: "movie",
@@ -134,7 +122,6 @@ export const CATALOG_LISTS: readonly CatalogList[] = [
     heading: "Upcoming movies",
     note: "Coming soon to Polish cinemas, per TMDB.",
     pageNoun: "upcoming movies",
-    emptyRowText: EMPTY_ROW_TEXT,
   },
   {
     mediaType: "movie",
@@ -143,7 +130,6 @@ export const CATALOG_LISTS: readonly CatalogList[] = [
     heading: "Top rated movies",
     note: "Ordered by TMDB community rating.",
     pageNoun: "top rated movies",
-    emptyRowText: EMPTY_ROW_TEXT,
   },
 ];
 

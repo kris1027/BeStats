@@ -419,7 +419,7 @@ export default function ShowcasePage() {
             <CarouselRowError list={catalogList("tv", "top-rated")} />
           </ShowcaseRow>
           <ShowcaseRow title="Empty">
-            <CarouselRowEmpty list={catalogList("tv", "airing-today")} />
+            <CarouselRowEmpty />
           </ShowcaseRow>
         </div>
       </Section>

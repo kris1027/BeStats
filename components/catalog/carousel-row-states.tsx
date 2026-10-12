@@ -27,11 +27,11 @@ function CarouselRowError({ list }: { list: CatalogList }) {
   );
 }
 
-/** A row whose list loaded with no titles (AC-12). */
-function CarouselRowEmpty({ list }: { list: CatalogList }) {
+/** A row whose list loaded with no titles: the same line on every row (AC-12). */
+function CarouselRowEmpty() {
   return (
     <RowMessage>
-      <p className="text-sm text-muted-foreground">{list.emptyRowText}</p>
+      <p className="text-sm text-muted-foreground">Nothing here right now.</p>
     </RowMessage>
   );
 }
