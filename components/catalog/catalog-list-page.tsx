@@ -2,7 +2,7 @@ import { ArrowLeftIcon } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 
-import { MovieListCard, ShowListCard } from "@/components/catalog/list-cards";
+import { CatalogListCards } from "@/components/catalog/catalog-list-cards";
 import { PaginationLinks } from "@/components/pagination-links";
 import { PosterGrid } from "@/components/poster-grid";
 import { RetryLink } from "@/components/retry-link";
@@ -121,49 +121,16 @@ async function ListGrid({
   return (
     <div className="flex flex-col gap-10">
       <PosterGrid aria-label={`${list.heading}, page ${page}`}>
-        <ListGridCards result={result} returnPath={pageHref(page)} />
+        <CatalogListCards
+          result={result}
+          returnPath={pageHref(page)}
+          eagerCount={EAGER_POSTERS}
+        />
       </PosterGrid>
 
       <PaginationLinks page={page} lastPage={lastPage} href={pageHref} />
     </div>
   );
-}
-
-/**
- * The grid's `<li>`s, one full card per title (AC-4). `ids` is the whole
- * page's, so every card's slots share one read.
- */
-function ListGridCards({
-  result,
-  returnPath,
-}: {
-  result: TaggedCatalogPage;
-  returnPath: string;
-}) {
-  if (result.mediaType === "tv") {
-    const ids = result.paged.results.map((show) => show.id);
-    return result.paged.results.map((show, index) => (
-      <li key={show.id}>
-        <ShowListCard
-          show={show}
-          gridShowIds={ids}
-          returnPath={returnPath}
-          priority={index < EAGER_POSTERS}
-        />
-      </li>
-    ));
-  }
-  const ids = result.paged.results.map((movie) => movie.id);
-  return result.paged.results.map((movie, index) => (
-    <li key={movie.id}>
-      <MovieListCard
-        movie={movie}
-        gridMovieIds={ids}
-        returnPath={returnPath}
-        priority={index < EAGER_POSTERS}
-      />
-    </li>
-  ));
 }
 
 /** Shown for a malformed page number, and for one past the last page. */

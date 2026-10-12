@@ -12,7 +12,7 @@ import {
   ROW_SIZE,
 } from "@/components/catalog/carousel-row-states";
 import { CarouselScroller } from "@/components/catalog/carousel-scroller";
-import { MovieListCard, ShowListCard } from "@/components/catalog/list-cards";
+import { CatalogListCards } from "@/components/catalog/catalog-list-cards";
 import { type CatalogList, listPath } from "@/lib/catalog/lists";
 import { CATALOG_PATHS } from "@/lib/catalog/media-type";
 import {
@@ -106,53 +106,16 @@ async function CarouselRowItems({
 
   return (
     <ul className="flex gap-3 md:gap-4">
-      <RowCards
+      <CatalogListCards
         result={result}
         returnPath={returnPath}
         eagerCount={eagerCount}
+        limit={ROW_SIZE}
+        sizes={ROW_POSTER_SIZES}
+        itemClassName={ROW_ITEM_CLASS}
       />
     </ul>
   );
-}
-
-/** The first `ROW_SIZE` titles as full cards, typed by media type (AC-4). */
-function RowCards({
-  result,
-  returnPath,
-  eagerCount,
-}: {
-  result: TaggedCatalogPage;
-  returnPath: string;
-  eagerCount: number;
-}) {
-  if (result.mediaType === "tv") {
-    const shows = result.paged.results.slice(0, ROW_SIZE);
-    const ids = shows.map((show) => show.id);
-    return shows.map((show, index) => (
-      <li key={show.id} className={ROW_ITEM_CLASS}>
-        <ShowListCard
-          show={show}
-          gridShowIds={ids}
-          returnPath={returnPath}
-          priority={index < eagerCount}
-          sizes={ROW_POSTER_SIZES}
-        />
-      </li>
-    ));
-  }
-  const movies = result.paged.results.slice(0, ROW_SIZE);
-  const ids = movies.map((movie) => movie.id);
-  return movies.map((movie, index) => (
-    <li key={movie.id} className={ROW_ITEM_CLASS}>
-      <MovieListCard
-        movie={movie}
-        gridMovieIds={ids}
-        returnPath={returnPath}
-        priority={index < eagerCount}
-        sizes={ROW_POSTER_SIZES}
-      />
-    </li>
-  ));
 }
 
 export { CarouselRow, CarouselRowItems };
