@@ -71,3 +71,24 @@ export function readCatalogList(
     ? discoverMovies({ page })
     : getMovieList(MOVIE_KINDS[list.slug], { page });
 }
+
+/** One page of a list, tagged with its media type so a renderer can narrow it. */
+export type TaggedCatalogPage =
+  | { mediaType: "tv"; paged: Paged<TvShowSummary> }
+  | { mediaType: "movie"; paged: Paged<MovieSummary> };
+
+/**
+ * `readCatalogList` with its result tagged, so a component rendering any list
+ * picks the show or movie card by narrowing on `mediaType` rather than by a
+ * cast. The very same call underneath, so it shares the cache entry.
+ *
+ * @throws {TmdbError} When TMDB fails.
+ */
+export async function readTaggedCatalogList(
+  list: CatalogList,
+  page: number,
+): Promise<TaggedCatalogPage> {
+  return list.mediaType === "tv"
+    ? { mediaType: "tv", paged: await readCatalogList(list, page) }
+    : { mediaType: "movie", paged: await readCatalogList(list, page) };
+}
