@@ -427,7 +427,7 @@ Two strands, one feature (merged on 2026-10-12). **Cards:** grid cards match the
   - [x] Movie page thickened: Trailer dialog, age chip, the legal change, More like this, crew and facts in order — AC-11, AC-13 to AC-17, AC-19
   - [ ] Show page parity and proof: the TV extras read, the new show fields, every section, tests, 375px and keyboard passes, checks and spec amendments — AC-7, AC-8, AC-10 to AC-17, AC-20 (all built and checked; open only for the spec 0004, 0006, 0009 and grid prompt amendment notes, left to `/sync`)
 - [ ] Verify it: `/check verify consistent card size and richer title pages`
-- [ ] Test it: `/test consistent card size and richer title pages`
+- [x] Test it: `/test consistent card size and richer title pages`
 spec [0022](../specs/0022-card-size-title-pages/index.md) · code in `components/poster-grid.tsx`, `lib/tmdb/extras.ts`, `lib/tmdb/normalize-extras.ts`, `lib/region.ts`, `lib/catalog/region.ts`, `components/catalog/title-extras.tsx`, `components/catalog/title-details.tsx`, `components/catalog/where-to-watch.tsx`, `components/catalog/trailer-button.tsx`, `app/movies/[id]/`, `app/shows/[id]/`
 
 ## Deferred
