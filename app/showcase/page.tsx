@@ -2,6 +2,14 @@ import { CircleStopIcon, SearchIcon, TvIcon } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import type * as React from "react";
+import {
+  CarouselRowEmpty,
+  CarouselRowError,
+  CarouselRowSkeleton,
+  ROW_ITEM_CLASS,
+  ROW_POSTER_SIZES,
+} from "@/components/catalog/carousel-row-states";
+import { CarouselScroller } from "@/components/catalog/carousel-scroller";
 import { GlassPill } from "@/components/glass-pill";
 import { IconKey } from "@/components/layout/icon-key";
 import { LibraryNavView } from "@/components/layout/library-nav";
@@ -41,6 +49,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { catalogList } from "@/lib/catalog/lists";
 
 import { CardRoundButtonDemo } from "./card-round-button-demo";
 
@@ -87,6 +96,38 @@ function Section({
       </div>
       {children}
     </section>
+  );
+}
+
+/** A carousel row as a landing renders it, around fixed demo content. */
+function ShowcaseRow({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-4">
+      <CarouselScroller
+        label={title}
+        heading={
+          <h3 className="text-xl font-semibold tracking-[-0.02em] text-foreground md:text-2xl">
+            {title}
+          </h3>
+        }
+        seeAll={
+          <a
+            href="/shows/top-rated"
+            className="hit-area rounded-sm text-sm text-muted-foreground hover:text-foreground"
+          >
+            See all
+          </a>
+        }
+      >
+        {children}
+      </CarouselScroller>
+    </div>
   );
 }
 
@@ -348,6 +389,39 @@ export default function ShowcasePage() {
             <PosterCardSkeleton />
           </li>
         </PosterGrid>
+      </Section>
+
+      <Section
+        title="Carousel row"
+        note="A landing row (spec 0021): the header and arrows are prerendered, the cards stream behind 12 skeletons, and a failed or empty list keeps a card's height so nothing shifts. The arrows show from md and are disabled at each end."
+      >
+        <div className="flex flex-col gap-10">
+          <ShowcaseRow title="With cards">
+            <ul className="flex gap-3 md:gap-4">
+              {Array.from({ length: 8 }, (_, index) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: static demo cards with no identity.
+                <li key={index} className={ROW_ITEM_CLASS}>
+                  <PosterCard
+                    title={`Row card ${index + 1}`}
+                    posterUrl={index % 3 === 2 ? null : LIGHT_POSTER}
+                    href="/shows"
+                    badge={<TmdbRatingBadge value={7.4} />}
+                    sizes={ROW_POSTER_SIZES}
+                  />
+                </li>
+              ))}
+            </ul>
+          </ShowcaseRow>
+          <ShowcaseRow title="Loading">
+            <CarouselRowSkeleton />
+          </ShowcaseRow>
+          <ShowcaseRow title="Top rated">
+            <CarouselRowError list={catalogList("tv", "top-rated")} />
+          </ShowcaseRow>
+          <ShowcaseRow title="Empty">
+            <CarouselRowEmpty list={catalogList("tv", "airing-today")} />
+          </ShowcaseRow>
+        </div>
       </Section>
 
       <Section
