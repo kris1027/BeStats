@@ -89,6 +89,20 @@ export type Movie = Omit<MovieSummary, "overview"> & {
   runtimeMinutes: number | null;
   genres: Genre[];
   cast: CastMember[];
+  /** TMDB's English status word as is, for example `Released` (spec 0022, AC-16). */
+  status: string | null;
+  /** US dollars; null when TMDB reports 0 or nothing. */
+  budget: number | null;
+  /** US dollars; null when TMDB reports 0 or nothing. */
+  revenue: number | null;
+  productionCompanies: Company[];
+  /** Crew job `Director`, in credit order, deduplicated (spec 0022, AC-15). */
+  directors: string[];
+  /**
+   * Crew jobs `Screenplay` and `Writer` (not `Story`), deduplicated in credit
+   * order, then capped at 3 (spec 0022, AC-15).
+   */
+  writers: string[];
 };
 
 export type TvShowSummary = {
@@ -164,7 +178,79 @@ export type TvShow = Omit<TvShowSummary, "overview"> & {
   lastEpisodeToAir: EpisodeToAir | null;
   /** The next episode TMDB has announced, dated or not. */
   nextEpisodeToAir: EpisodeToAir | null;
+  /** TMDB's English type word as is, for example `Miniseries` (spec 0022, AC-16). */
+  type: string | null;
+  /** `created_by` names, at most 3 (spec 0022, AC-15). */
+  createdBy: string[];
+  networks: Company[];
+  productionCompanies: Company[];
 };
+
+/** A production company or a network (spec 0022, AC-16). */
+export type Company = {
+  id: number;
+  name: string;
+  /** `w154`, or null when TMDB has no logo, so the name shows instead. */
+  logoUrl: string | null;
+};
+
+/** The one trailer a title page offers (spec 0022, AC-11). */
+export type Trailer = {
+  /** A YouTube video key, already checked against `[A-Za-z0-9_-]{6,20}`. */
+  key: string;
+  name: string;
+};
+
+/** One watch provider (spec 0022, AC-12). */
+export type Provider = {
+  id: number;
+  name: string;
+  /** `w92`, or null when TMDB has no logo, so the name shows instead. */
+  logoUrl: string | null;
+};
+
+/**
+ * One country's watch providers, already grouped, deduplicated and ordered
+ * (spec 0022, AC-12). A provider may sit in more than one group.
+ */
+export type RegionProviders = {
+  /** TMDB's watch page for the title in this country. */
+  link: string | null;
+  /** `flatrate`. */
+  stream: Provider[];
+  /** `free` then `ads`, merged by provider id. */
+  free: Provider[];
+  /** `rent` then `buy`, merged by provider id. */
+  rentOrBuy: Provider[];
+};
+
+/**
+ * The extras of one title, every country at once (spec 0022, AC-8, AC-9).
+ * Region maps are keyed by ISO 3166-1 code; the page reads its visitor's
+ * entry after the cached read returns, so no request state enters the cache.
+ */
+type TitleExtras<Recommendations> = {
+  trailer: Trailer | null;
+  recommendations: Recommendations;
+  watchProviders: Record<string, RegionProviders>;
+  /** The certification already picked per country by the AC-13 rule. */
+  ageRatings: Record<string, string>;
+};
+
+/**
+ * Page 1 of a movie's recommendations, in the tagged shape `CatalogListCards`
+ * renders (spec 0022, AC-14), adult titles already dropped.
+ */
+export type MovieExtras = TitleExtras<{
+  mediaType: "movie";
+  paged: Paged<MovieSummary>;
+}>;
+
+/** The show twin of `MovieExtras`. */
+export type TvExtras = TitleExtras<{
+  mediaType: "tv";
+  paged: Paged<TvShowSummary>;
+}>;
 
 export type Episode = {
   id: number;
