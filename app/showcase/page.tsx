@@ -49,7 +49,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { catalogList } from "@/lib/catalog/lists";
+import { catalogList, listPath } from "@/lib/catalog/lists";
 
 import { CardRoundButtonDemo } from "./card-round-button-demo";
 
@@ -118,7 +118,7 @@ function ShowcaseRow({
         }
         seeAll={
           <a
-            href="/shows/top-rated"
+            href={listPath(catalogList("tv", "top-rated"))}
             className="hit-area rounded-sm text-sm text-muted-foreground hover:text-foreground"
           >
             See all
