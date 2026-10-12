@@ -39,6 +39,7 @@ _2026-10-06: the `design/` artboards were removed. The UI built from them carrie
 | 22 | Media tabs on every page | Slice 9 | done |
 | 23 | Progress based library pages | Slice 10 | done |
 | 24 | Home carousels | Slice 11 | done |
+| 25 | Consistent card size and richer title pages | Slice 12 | in-progress |
 
 ## Foundations
 
@@ -414,10 +415,26 @@ spec [0020](../specs/0020-progress-based-library-pages/index.md) · code in `lib
 - [x] Test it: `/test home carousels`
 spec [0021](../specs/0021-home-carousels/index.md) · code in `lib/catalog/lists.ts`, `lib/catalog-list-read.ts`, `lib/tmdb/lists.ts`, `components/catalog/`, `app/shows/{slug}/`, `app/movies/{slug}/`, `proxy.ts`, `next.config.ts`
 
+## Slice 12: Title pages
+
+### 25. Consistent card size and richer title pages · in-progress
+Two strands, one feature (merged on 2026-10-12). **Cards:** grid cards match the home row card (about 180px) everywhere: `PosterGrid` steps 2 / 3 (`sm`) / 4 (`md`) / 5 (`lg`) / 6 (`xl`) columns and its `sizes` follows, on the list pages, `/search` and the three library pages; the season grid keeps its 2 and 4 columns. A 20 title page leaves a short last row, accepted. **Title pages:** movie and show pages gain a Trailer (hero button, modal with a click to load `youtube-nocookie` embed; YouTube joins `PROCESSORS` and the privacy text), Where to watch (TMDB watch providers grouped Stream, Free, Rent, Buy, region from `x-vercel-ip-country` with a `US` fallback, named in the heading, JustWatch attribution, an honest "Not streaming in {country}" line), More like this (TMDB recommendations in the home row card, hidden when empty), key crew (Director and Writers, or Created by), an age rating chip for the same region, and a Facts panel (status, original title and language, budget and revenue when known, companies, networks, type, air dates). Order: hero, overview, crew, the show's rating and seasons, where to watch, cast, more like this, facts. Settled in a grilling session on 2026-10-12.
+**Done when:** every changed grid renders cards close to the home row width with matching image `sizes` and the season grid unchanged; both title pages show each new section from cached TMDB data with missing values omitted, never invented; YouTube loads only after a click; the region is named wherever it applies; the shells stay prerendered; and `/privacy` lists YouTube with `LEGAL_LAST_UPDATED` bumped.
+- [x] Design it (spec): `/architect consistent card size and richer title pages`
+- [ ] Build it: `/develop consistent card size and richer title pages`
+  - [ ] Card strand: the `columns` preset with `catalog` and `wide`, the sizes and eager maps, the season grid on `wide`, the library skeleton and `/showcase`, checked at five widths — AC-1 to AC-7
+  - [ ] Tracer bullet: the movie extras read, `lib/region.ts` and Where to watch on the movie page end to end against live TMDB — AC-8 to AC-10, AC-12, AC-18
+  - [ ] Movie page thickened: Trailer dialog, age chip, the legal change, More like this, crew and facts in order — AC-11, AC-13 to AC-17, AC-19
+  - [ ] Show page parity and proof: the TV extras read, the new show fields, every section, tests, 375px and keyboard passes, checks and spec amendments — AC-7, AC-8, AC-10 to AC-17, AC-20
+- [ ] Verify it: `/check verify consistent card size and richer title pages`
+- [ ] Test it: `/test consistent card size and richer title pages`
+spec [0022](../specs/0022-card-size-title-pages/index.md)
+
 ## Deferred
 Out of scope for the current build pass, kept so the plan stays honest.
 - **Public profiles and social features**: ruled out of the MVP by `AGENTS.md`
 - **Per visitor region and timezone on the home rows** (from spec 0021): Now playing, Upcoming, Airing today and On the air use the fixed `PL` region and `Europe/Warsaw`. Following the visitor needs its own decision (a request header or an account setting).
+- **More title page sections** (from the 2026-10-12 grilling): external links (IMDb, homepage, socials) and the movie collection row are a later batch; keywords, image gallery, TMDB reviews and the aggregate show cast were skipped
 - **Error monitoring and product analytics**: not selected for this pass
 - **Self serve account deletion and data export** (from specs 0005 and 0017): GDPR requests are handled by email for now. Undesigned; a `/account` flow needs the Supabase admin API or a security definer function, an elevated call nothing else in the app uses, so it deserves its own decision, including what happens to the cascading tracking data
 - **Rate limit on sign in and sign up** (from spec 0018): Supabase counts Vercel's addresses, so its auth limit is shared by every visitor ([docs/deploy.md](../deploy.md) section 6). If it bites, add a second Vercel Firewall rule on sign in and sign up posts per IP. (The `/api/search` limit from spec 0010 shipped as a firewall rule in feature 20.)
