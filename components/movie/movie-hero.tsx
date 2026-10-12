@@ -66,7 +66,7 @@ function MovieHero({
       tagline={tagline}
       posterUrl={posterUrl}
       backdropUrl={backdropUrl}
-      meta={<MovieFacts meta={meta} genres={genres} ageRating={ageRating} />}
+      meta={<MovieMetaRow meta={meta} genres={genres} ageRating={ageRating} />}
       tmdbRating={tmdbRating}
       tmdbVoteCount={tmdbVoteCount}
       tracking={tracking}
@@ -79,7 +79,7 @@ function MovieHero({
  * The meta line, the age rating slot and the genre chips in one wrapping
  * row, or nothing when the movie has none of them.
  */
-function MovieFacts({
+function MovieMetaRow({
   meta,
   genres,
   ageRating,
