@@ -10,7 +10,7 @@ import {
   setMovieWatched,
   setMovieWatchlist,
 } from "@/app/movies/actions";
-import { PosterGrid } from "@/components/poster-grid";
+import { POSTER_GRID_EAGER, PosterGrid } from "@/components/poster-grid";
 import {
   runUndoInToast,
   settleResultCall,
@@ -37,12 +37,6 @@ import {
   type LibraryMovieItem,
   libraryItemKey,
 } from "./types";
-
-/**
- * Cards whose posters load eagerly: one full row at the widest grid, as on
- * `/movies`.
- */
-const EAGER_POSTERS = 4;
 
 /**
  * The movie grid on `/watchlist`, `/upcoming` and `/watched`, and everything
@@ -221,7 +215,7 @@ function LibraryGrid({
               list={list}
               item={item}
               onRemove={() => remove(item)}
-              priority={index < EAGER_POSTERS}
+              priority={index < POSTER_GRID_EAGER.catalog}
             />
           </li>
         );

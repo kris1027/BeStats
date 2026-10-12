@@ -388,6 +388,22 @@ export default function ShowcasePage() {
           <li>
             <PosterCardSkeleton />
           </li>
+          <li>
+            <PosterCard
+              title="A second poster"
+              posterUrl={LIGHT_POSTER}
+              href="/shows"
+              badge={<TmdbRatingBadge value={8.2} />}
+            />
+          </li>
+          <li>
+            <PosterCard
+              title="A sixth card, filling the row"
+              posterUrl={null}
+              href="/shows"
+              badge={<TmdbRatingBadge value={5.8} />}
+            />
+          </li>
         </PosterGrid>
       </Section>
 

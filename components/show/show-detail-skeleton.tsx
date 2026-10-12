@@ -23,7 +23,7 @@ function ShowDetailSkeleton() {
       <OverviewSkeleton />
       <div className="flex flex-col gap-4">
         <SectionHeadingSkeleton className="w-24" />
-        <PosterGrid aria-hidden="true">
+        <PosterGrid columns="wide" aria-hidden="true">
           {SEASON_CARD_VISIBILITY.map((visibility, index) => (
             <li
               // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders with no identity.
@@ -42,7 +42,8 @@ function ShowDetailSkeleton() {
 
 /**
  * Cards past the column count at each width are hidden, so the placeholder
- * row never wraps: 2 below `md`, 4 from it.
+ * row never wraps: 2 below `md`, 4 from it, the `wide` preset (spec 0022,
+ * AC-3).
  */
 const SEASON_CARD_VISIBILITY = ["", "", "hidden md:block", "hidden md:block"];
 
