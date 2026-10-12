@@ -76,6 +76,11 @@ export default function PrivacyPage() {
           Nothing else. We collect no payment data, no contacts, and no location
           beyond what an IP address implies.
         </p>
+        <p>
+          On a title page, the approximate country Vercel derives from your
+          connection picks the region for where to watch and the age rating. It
+          is not stored.
+        </p>
       </LegalSection>
 
       <LegalSection title="Why we use it">
@@ -109,6 +114,11 @@ export default function PrivacyPage() {
           There are no analytics, advertising or third party tracking cookies,
           so there is no consent banner. Fonts are served from BeStats itself,
           not loaded from another site.
+        </p>
+        <p>
+          A trailer plays in YouTube&rsquo;s privacy enhanced player, which
+          loads only after you press Trailer. From then on YouTube&rsquo;s own
+          privacy policy applies to that player.
         </p>
       </LegalSection>
 

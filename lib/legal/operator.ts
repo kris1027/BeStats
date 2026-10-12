@@ -42,7 +42,7 @@ export const MINIMUM_AGE = 16;
  * whenever the text changes materially. Pages format it in UTC and never read
  * the clock (spec 0017, AC-7).
  */
-export const LEGAL_LAST_UPDATED = "2026-10-11";
+export const LEGAL_LAST_UPDATED = "2026-10-12";
 
 /**
  * Where the production Supabase project stores your data, read from
@@ -55,6 +55,13 @@ export const SUPABASE_REGION = {
   code: "eu-central-1",
   name: "Frankfurt, Germany",
 } as const;
+
+/**
+ * The credit TMDB's watch provider data asks for, shown under every Where to
+ * watch section (spec 0022, AC-12). One home, like `TMDB_ATTRIBUTION`, so the
+ * wording cannot drift between the movie and show pages.
+ */
+export const JUSTWATCH_ATTRIBUTION = "Availability data from JustWatch";
 
 /** Days within which an account deletion request is completed. */
 export const DELETION_DAYS = 30;
@@ -72,6 +79,8 @@ export type Processor = { name: string; purpose: string; url: string };
  * Only the processors live today. Production sends no email (spec 0018), so
  * neither Google nor an email provider is listed; both join with the deferred
  * email delivery and Google sign in work, in the PR that turns them on.
+ * YouTube joined with the title page trailers (spec 0022, AC-19): its player
+ * loads only after you press Trailer.
  */
 export const PROCESSORS: readonly Processor[] = [
   {
@@ -84,5 +93,11 @@ export const PROCESSORS: readonly Processor[] = [
     purpose:
       "Hosts the website, delivers catalog images, and keeps request logs.",
     url: "https://vercel.com",
+  },
+  {
+    name: "YouTube",
+    purpose:
+      "Plays a title's trailer, only after you press Trailer on its page.",
+    url: "https://www.youtube.com",
   },
 ];
