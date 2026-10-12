@@ -2,13 +2,12 @@ import { ExternalLinkIcon } from "lucide-react";
 import Image from "next/image";
 import type * as React from "react";
 
-import { RetryLink } from "@/components/retry-link";
 import { Skeleton } from "@/components/skeleton";
 import type { Region } from "@/lib/catalog/region";
 import { JUSTWATCH_ATTRIBUTION } from "@/lib/legal/operator";
 import type { Provider, RegionProviders } from "@/lib/tmdb";
 
-import { SECTION_HEADING_CLASS } from "./title-section";
+import { SECTION_HEADING_CLASS, SectionErrorLine } from "./title-section";
 
 /** The three groups in their AC-12 order, each with its label. */
 const GROUPS = [
@@ -182,12 +181,7 @@ function WhereToWatchSkeleton() {
 function WhereToWatchError({ region, href }: { region: Region; href: string }) {
   return (
     <WhereToWatchFrame region={region}>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <p className="text-[15px] text-muted-foreground">
-          Couldn't load where to watch. TMDB didn't respond.
-        </p>
-        <RetryLink href={href} />
-      </div>
+      <SectionErrorLine what="where to watch" href={href} />
     </WhereToWatchFrame>
   );
 }

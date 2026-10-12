@@ -227,7 +227,9 @@ describe("WhereToWatchContent (AC-9, AC-12, AC-18)", () => {
 
     render(await WhereToWatchContent(MOVIE));
 
-    expect(screen.getByText(/Couldn't load where to watch/)).toBeVisible();
+    expect(
+      screen.getByText("Couldn't load where to watch from TMDB."),
+    ).toBeVisible();
     expect(screen.getByRole("link", { name: "Try again" })).toHaveAttribute(
       "href",
       "/movies/550",
@@ -273,7 +275,9 @@ describe("MoreLikeThisContent (AC-14, AC-18)", () => {
     expect(
       screen.getByRole("heading", { name: "More like this" }),
     ).toBeVisible();
-    expect(screen.getByText(/Couldn't load recommendations/)).toBeVisible();
+    expect(
+      screen.getByText("Couldn't load recommendations from TMDB."),
+    ).toBeVisible();
     expect(screen.getByRole("link", { name: "Try again" })).toHaveAttribute(
       "href",
       "/shows/1396",

@@ -9,7 +9,6 @@ import {
 } from "@/components/catalog/carousel-row-states";
 import { CarouselScroller } from "@/components/catalog/carousel-scroller";
 import { CatalogListCards } from "@/components/catalog/catalog-list-cards";
-import { RetryLink } from "@/components/retry-link";
 import { titleHref } from "@/lib/catalog/media-type";
 import { getVisitorRegion } from "@/lib/region";
 import {
@@ -21,7 +20,7 @@ import {
 } from "@/lib/tmdb";
 
 import { AgeRatingChip } from "./title-details";
-import { SECTION_HEADING_CLASS } from "./title-section";
+import { SECTION_HEADING_CLASS, SectionErrorLine } from "./title-section";
 import { TrailerButton } from "./trailer-button";
 import {
   WhereToWatch,
@@ -191,12 +190,10 @@ async function MoreLikeThisContent(props: TitleRef) {
   if (extras === null) {
     return (
       <MoreLikeThisFrame>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <p className="text-[15px] text-muted-foreground">
-            Couldn't load recommendations. TMDB didn't respond.
-          </p>
-          <RetryLink href={titleHref(props.mediaType, props.id)} />
-        </div>
+        <SectionErrorLine
+          what="recommendations"
+          href={titleHref(props.mediaType, props.id)}
+        />
       </MoreLikeThisFrame>
     );
   }
