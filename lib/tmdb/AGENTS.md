@@ -18,7 +18,8 @@ feature 4. Runtime steps live in that spec's `verify.md`.
 - `schemas.ts` (Zod), `normalize.ts` (TMDB shape to app shape), `types.ts` (the
   app's own types), `validation.ts` (input guards), `errors.ts`, `result.ts`,
   `images.ts`, `concurrency.ts`, then the reads themselves in `movies.ts`,
-  `tv.ts`, `search.ts`, `genres.ts`, `batch.ts` and `show-episodes.ts`.
+  `tv.ts`, `search.ts`, `genres.ts`, `batch.ts`, `show-episodes.ts` and
+  `lists.ts` (TMDB's trending, dated and top rated lists, spec 0021).
 
 ## Conventions this module holds to
 
@@ -31,8 +32,8 @@ feature 4. Runtime steps live in that spec's `verify.md`.
   bare `Error` with no `kind`. Cached functions return a `TmdbResult`
   (`result.ts`) and the wrapper rebuilds the error outside the scope. Never
   throw a `TmdbError` from inside a cached scope.
-- **Lifetimes are explicit**: `days` for detail, `hours` for a season, `minutes`
-  for query shaped reads, `max` for genre lists. A cached failure takes
+- **Lifetimes are explicit**: `days` for detail, `hours` for a season and for
+  the ready made lists (spec 0021, AC-17), `minutes` for query shaped reads, `max` for genre lists. A cached failure takes
   `failureProfile(kind)` from `result.ts`: `seconds` for `timeout`,
   `rate_limited` and `upstream` (so a retry really retries), `minutes` for the
   rest.

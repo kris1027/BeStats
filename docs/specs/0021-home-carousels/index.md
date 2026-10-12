@@ -58,7 +58,7 @@ Scope feature: [24. Home carousels](../../scope/scope.md) · Beta tier
   | Movie now playing | Movies now playing | In Polish cinemas now, per TMDB. | movies now playing |
   | Movie upcoming | Upcoming movies | Coming soon to Polish cinemas, per TMDB. | upcoming movies |
   | Movie top rated | Top rated movies | Ordered by TMDB community rating. | top rated movies |
-- **AC-10**: On a list page, a `page` that `parsePageParam` refuses, or one past the last reachable page, shows today's `That page doesn't exist` empty panel (`There are no {pageNoun} at this page number.`, `pageNoun` from the registry, AC-9 table) with `Back to page 1` linking the bare list path. A failed TMDB read shows today's `Couldn't reach TMDB` error panel with `Try again` (`RetryLink`) to the current page URL. A page with zero results on page 1 shows an empty panel `TMDB lists nothing here right now.` with the back link still above it. While loading, the grid shows 20 card skeletons and the pagination skeleton, as today.
+- **AC-10**: On a list page, a `page` that `parsePageParam` refuses, or one past the last reachable page, shows today's `That page doesn't exist` empty panel (`There are no {pageNoun} at this page number.`, `pageNoun` from the registry, AC-9 table) with `Back to page 1` linking the bare list path. A failed TMDB read shows today's `Couldn't reach TMDB` error panel with `Try again` (`RetryLink`) to the current page URL. A page with zero results on page 1 shows an empty panel titled `This list is empty` with `TMDB lists nothing here right now.` with the back link still above it. While loading, the grid shows 20 card skeletons and the pagination skeleton, as today.
 - **AC-11**: When one row's TMDB read fails with a `TmdbError`, only that row changes: in place of its cards it shows a compact error state, `Couldn't load {row title}` with `TMDB didn't respond.` and a `Try again` `RetryLink` to the landing path, reserving the row skeleton's height so nothing shifts. Its header, See all link and every other row render normally. Any error that is not a `TmdbError` is rethrown, as everywhere else.
 - **AC-12**: When a row's read succeeds with no titles, its header stays and a single muted line `Nothing here right now.` shows in place of the cards, reserving the row skeleton's height; See all stays.
 - **AC-13**: The proxy lets `/shows/{slug}` through for the five TV slugs and `/movies/{slug}` for the five movie slugs, before the numeric id check, and still answers a real 404 for every other non numeric segment: `/shows/upcoming`, `/shows/now-playing`, `/movies/airing-today`, `/movies/on-the-air`, `/shows/Popular`, `/shows/popular.jpg`, and `/shows/popular/season/1`. Numeric ids behave exactly as today.
@@ -85,12 +85,12 @@ Reasoning and options: see [rationale.md](rationale.md).
 
 - `lib/catalog/lists.ts` (pure, no `server-only`, so the proxy and the sitemap can import it):
   - `TV_LIST_SLUGS = ["trending", "popular", "airing-today", "on-the-air", "top-rated"] as const`, `MOVIE_LIST_SLUGS = ["trending", "popular", "now-playing", "upcoming", "top-rated"] as const`, in row order.
-  - `CatalogList = { mediaType: "tv" | "movie"; slug; rowTitle; heading; note; pageNoun; emptyRowText }` and `CATALOG_LISTS`, one entry per row, text from AC-1, AC-9 and AC-12.
-  - `listPath(mediaType, slug)` → `/shows/{slug}` or `/movies/{slug}`; `listPageHref(mediaType, slug, page)` → bare path for page 1, `?page=N` beyond.
-  - `isCatalogListSlug(mediaType, segment)`, an exact, case sensitive match, used by the proxy.
+  - `CatalogList = { mediaType: "tv" | "movie"; slug; rowTitle; heading; note; pageNoun }` and `CATALOG_LISTS`, one entry per row, text from AC-1 and AC-9. The AC-12 line is the same on every row, so it lives in `CarouselRowEmpty`, not the registry.
+  - `listPath(list)` → `/shows/{slug}` or `/movies/{slug}`; `listPageHref(list, page)` → bare path for page 1, `?page=N` beyond.
+  - `isCatalogListSlug(mediaType, segment)`, an exact, case sensitive match, used by the proxy on the undecoded segment: Next routes `/shows/top%2Drated` to `[id]`, not to the list folder, so an encoded slug is a 404.
 - `lib/tmdb/types.ts`: `TvListKind = "trending" | "airing_today" | "on_the_air" | "top_rated"`, `MovieListKind = "trending" | "now_playing" | "upcoming" | "top_rated"`. TMDB's own names, so the module never learns the app's slugs.
 - `lib/tmdb/constants.ts`: `TV_LIST_TIMEZONE = "Europe/Warsaw"`, `MOVIE_LIST_REGION = "PL"`.
-- `lib/tmdb/lists.ts` (new, server only): `fetchTvList(kind, { page })` and `fetchMovieList(kind, { page })`, the inner halves. Each maps the kind to its endpoint (trending uses `/trending/{tv|movie}/week`), adds `timezone` only for `airing_today` and `on_the_air` and `region` only for `now_playing` and `upcoming`, validates with the existing `pagedSchema(tvSummarySchema)` or `pagedSchema(movieSummarySchema)` (both already read `adult`), drops `adult === true` results, normalizes with the existing summary normalizers, and returns `Paged<…>` with TMDB's `page`, `totalPages`, `totalResults` unchanged.
+- `lib/tmdb/lists.ts` (new, server only): `fetchTvList(kind, { page })` and `fetchMovieList(kind, { page })`, the inner halves. Each maps the kind to its endpoint (trending uses `/trending/{tv|movie}/week`), adds `timezone` only for `airing_today` and `on_the_air` and `region` only for `now_playing` and `upcoming`, validates with `pagedSchema(tvListItemSchema)` or `pagedSchema(movieListItemSchema)`, new schemas that extend the summary schemas with `adult` (the summaries do not read it), drops `adult === true` results, normalizes with the existing summary normalizers, and returns `Paged<…>` with TMDB's `page`, `totalPages`, `totalResults` unchanged.
 - `lib/tmdb/reads.ts`: `getTvList` and `getMovieList`, the `use cache` wrappers, `cacheLife("hours")` on success, `cacheFailure` on failure. Exported from `lib/tmdb/index.ts` with the two kind types.
 - `lib/catalog-list-read.ts` (server side, beside `lib/landing-metadata.ts` for the same reason: it touches TMDB at runtime): `readCatalogList(list, page)` returns `Paged<TvShowSummary>` or `Paged<MovieSummary>` by dispatching `popular` to `discoverTvShows` / `discoverMovies` and every other slug to `getTvList` / `getMovieList` with the mapped kind. The one place a slug becomes a TMDB call.
 
@@ -127,13 +127,13 @@ Reasoning and options: see [rationale.md](rationale.md).
 | Row render | Card badge, meta, controls | existing slots, `gridShowIds` / `gridMovieIds` = the row's ids |
 | Row render | `returnPath` | `/shows` or `/movies` (the landing) |
 | Row render | Which cards are `priority` | row index 0 and card index < 6, on both landings |
-| Row render | Error and empty text | AC-11 template with `rowTitle`; `emptyRowText` in the registry |
+| Row render | Error and empty text | AC-11 template with `rowTitle`; one AC-12 line in `CarouselRowEmpty` |
 | Arrow buttons | Disabled state, scroll distance | the region's `scrollLeft`, `scrollWidth`, `clientWidth` in the browser; 90% of `clientWidth` |
 | Arrow buttons | Smooth or instant | `prefers-reduced-motion` media query |
 | List page | Page number | `searchParams.page` through `parsePageParam` |
 | List page | Titles, last page | `readCatalogList(list, page)`; `lastReachablePage(totalPages)` |
 | List page | h1, note, back link | registry `heading`, `note`; `/shows` or `/movies` |
-| List page | `returnPath`, Retry href, canonical | `listPageHref(mediaType, slug, page)` |
+| List page | `returnPath`, Retry href, canonical | `listPageHref(list, page)` |
 | Adult filter | Which results are dropped | TMDB's `adult` field on each list result |
 | Proxy | Is a segment a known slug | `isCatalogListSlug` from the registry |
 | Redirect | Destination and kept query | `next.config.ts` rule with `has: [{ type: "query", key: "page" }]`; Next carries the source query to the destination |

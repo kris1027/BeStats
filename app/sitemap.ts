@@ -34,8 +34,9 @@ const LIST_PATHS = [...catalogListsFor("movie"), ...catalogListsFor("tv")].map(
 
 /**
  * The ids on discover pages 1 to 10 for each media type, read with exactly the
- * calls the `/movies` and `/shows` landings make, so they share cache entries
- * and every listed title is linked from a public page (spec 0016, AC-6, AC-8).
+ * calls `/movies/popular` and `/shows/popular` make, so they share cache
+ * entries and every listed title is linked from a public page (spec 0016,
+ * AC-6, AC-8; spec 0021, AC-3).
  *
  * The 20 reads settle independently: a `TmdbError` drops only its own page,
  * so a TMDB hiccup shrinks the list instead of failing the file. Any other

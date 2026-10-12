@@ -17,7 +17,7 @@ export type CatalogMetadataInput = {
   title: string;
   /** Left undefined when TMDB has none: nothing is invented. */
   description: string | undefined;
-  /** The page path, never with a query string except a landing `?page=N`. */
+  /** The page path, never with a query string except a list page's `?page=N`. */
   path: string;
   /** An absolute TMDB image URL, or null to use the site card. */
   image: string | null;
