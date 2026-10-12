@@ -51,7 +51,7 @@ function TrailerButton({
         Trailer
       </DialogTrigger>
       <DialogContent
-        className="top-0 left-0 h-dvh w-full max-w-none translate-x-0 translate-y-0 justify-center rounded-none p-4 md:top-1/2 md:left-1/2 md:h-auto md:w-[min(90vw,1100px)] md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-panel md:p-6"
+        className="top-0 left-0 h-dvh w-full max-w-none translate-x-0 translate-y-0 justify-center p-4 max-md:rounded-none md:top-1/2 md:left-1/2 md:h-auto md:w-[min(90vw,1100px)] md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-panel md:p-6"
         showCloseButton={false}
         initialFocus={closeRef}
       >

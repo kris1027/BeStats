@@ -220,4 +220,13 @@ function MoreLikeThisFrame({ children }: { children: React.ReactNode }) {
   );
 }
 
-export { AgeRatingSlot, MoreLikeThisSection, TrailerSlot, WhereToWatchSection };
+export {
+  AgeRatingSlot,
+  AgeRatingSlotContent,
+  MoreLikeThisContent,
+  MoreLikeThisSection,
+  TrailerSlot,
+  TrailerSlotContent,
+  WhereToWatchContent,
+  WhereToWatchSection,
+};

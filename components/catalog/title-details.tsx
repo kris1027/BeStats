@@ -154,28 +154,28 @@ function ShowFacts({ show }: { show: TvShow }) {
 }
 
 /**
- * A show's networks: each `w154` logo on a light tile, since most network
- * logos are drawn dark for a white page, or the name when TMDB has no logo.
+ * A show's networks: each `w154` logo on a mid grey tile, followed by the
+ * name. TMDB's network logos come both white and dark, so no single tile
+ * keeps every one readable, and the name is what always reads; the logo is
+ * decoration beside it (`alt=""`). With no logo, the name alone.
  */
 function NetworkList({ networks }: { networks: Company[] }) {
   return (
-    <ul className="flex flex-wrap items-center gap-2">
+    <ul className="flex flex-wrap items-center gap-x-4 gap-y-2">
       {networks.map((network) => (
-        <li key={network.id}>
-          {network.logoUrl === null ? (
-            network.name
-          ) : (
-            <span className="inline-flex h-9 items-center rounded-md bg-foreground px-2.5">
+        <li key={network.id} className="flex items-center gap-2">
+          {network.logoUrl === null ? null : (
+            <span className="inline-flex h-8 items-center rounded-md bg-muted-foreground px-2">
               <Image
                 src={network.logoUrl}
-                alt={network.name}
-                title={network.name}
+                alt=""
                 width={77}
                 height={24}
-                className="h-5 w-auto max-w-28 object-contain"
+                className="h-5 w-auto max-w-24 object-contain"
               />
             </span>
           )}
+          {network.name}
         </li>
       ))}
     </ul>
