@@ -3,6 +3,14 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { JsonLd } from "@/components/catalog/json-ld";
+import { MovieCrew, MovieFacts } from "@/components/catalog/title-details";
+import {
+  AgeRatingSlot,
+  MoreLikeThisSection,
+  TrailerSlot,
+  WhereToWatchSection,
+} from "@/components/catalog/title-extras";
+import { SECTION_HEADING_CLASS } from "@/components/catalog/title-section";
 import { CastRow } from "@/components/movie/cast-row";
 import { MovieDetailSkeleton } from "@/components/movie/movie-detail-skeleton";
 import { MovieHero } from "@/components/movie/movie-hero";
@@ -71,6 +79,12 @@ export async function generateMetadata({
  * scoped piece is the tracking slot from spec 0007, which lives in
  * `components/tracking/` and streams inside its own Suspense boundary, so the
  * catalog content never waits on the session.
+ *
+ * Spec 0022 adds the Trailer button and age chip to the hero, the crew under
+ * the overview, then Where to watch, Cast, More like this and Facts, in that
+ * order (AC-17). The trailer, chip, Where to watch and More like this stream
+ * from the extras read in their own boundaries; the chip and Where to watch
+ * read the visitor's region there, never in this shell (AC-10).
  */
 export default function MoviePage({ params }: PageProps<"/movies/[id]">) {
   return (
@@ -107,6 +121,7 @@ async function MovieDetail({
   }
 
   const { movie } = result;
+  const title = { mediaType: "movie", id } as const;
 
   return (
     <article className="flex flex-col gap-10 md:gap-14">
@@ -130,33 +145,36 @@ async function MovieDetail({
             />
           </Suspense>
         }
+        actions={<TrailerSlot {...title} title={movie.title} />}
+        ageRating={<AgeRatingSlot {...title} />}
       />
 
       <section
         aria-labelledby="overview-heading"
         className="flex flex-col gap-3"
       >
-        <h2
-          id="overview-heading"
-          className="text-xl leading-tight font-bold text-foreground md:text-2xl"
-        >
+        <h2 id="overview-heading" className={SECTION_HEADING_CLASS}>
           Overview
         </h2>
         <MovieOverview
           overview={movie.overview}
           language={movie.overviewLanguage}
         />
+        <MovieCrew movie={movie} />
       </section>
 
+      <WhereToWatchSection {...title} />
+
       <section aria-labelledby="cast-heading" className="flex flex-col gap-4">
-        <h2
-          id="cast-heading"
-          className="text-xl leading-tight font-bold text-foreground md:text-2xl"
-        >
+        <h2 id="cast-heading" className={SECTION_HEADING_CLASS}>
           Cast
         </h2>
         <CastRow cast={movie.cast} />
       </section>
+
+      <MoreLikeThisSection {...title} />
+
+      <MovieFacts movie={movie} />
     </article>
   );
 }

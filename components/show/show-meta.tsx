@@ -1,3 +1,5 @@
+import type * as React from "react";
+
 import { GlassPill } from "@/components/glass-pill";
 import { GenreChips } from "@/components/movie/movie-hero";
 import type { Genre } from "@/lib/tmdb";
@@ -15,14 +17,20 @@ function ShowMeta({
   airSpan,
   status,
   genres,
+  ageRating,
 }: {
   /** From `formatAirSpan`, or null when TMDB has no first air year. */
   airSpan: string | null;
   /** TMDB's status word; empty when TMDB gives none. */
   status: string;
   genres: Genre[];
+  /**
+   * The age rating chip's slot, after the status pill (spec 0022, AC-13). It
+   * renders nothing when there is no rating.
+   */
+  ageRating?: React.ReactNode;
 }) {
-  const hasFacts = airSpan !== null || status !== "";
+  const hasFacts = airSpan !== null || status !== "" || Boolean(ageRating);
   if (!hasFacts && genres.length === 0) return null;
 
   return (
@@ -37,6 +45,7 @@ function ShowMeta({
           {status !== "" ? (
             <GlassPill data-slot="show-status">{status}</GlassPill>
           ) : null}
+          {ageRating}
         </div>
       ) : null}
       {genres.length > 0 ? <GenreChips genres={genres} /> : null}
