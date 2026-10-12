@@ -38,6 +38,7 @@ _2026-10-06: the `design/` artboards were removed. The UI built from them carrie
 | 21 | TV history on /watched | Slice 9 | done |
 | 22 | Media tabs on every page | Slice 9 | done |
 | 23 | Progress based library pages | Slice 10 | in progress |
+| 24 | Home carousels | Slice 11 | in progress |
 
 ## Foundations
 
@@ -398,9 +399,25 @@ Statuses are replaced by tracked or not; Stop tracking (with Undo) is the only w
 - [x] Document it: `/document progress based library pages`
 spec [0020](../specs/0020-progress-based-library-pages/index.md) · code in `lib/tv/library-page.ts`, `lib/catalog/movie-page.ts`, `lib/tracking/library-lists.ts`, `components/library/`, `components/tracking/`, `supabase/migrations/20261007120000_show_tracking_expand.sql`, `supabase/migrations/20261010120000_show_tracking_contract.sql`
 
+## Slice 11: Discovery
+
+### 24. Home carousels · in progress
+`/shows` and `/movies` become rows of sideways scrolling carousels instead of one paged grid of 20. TV rows: Trending this week, Popular, Airing today, On the air, Top rated. Movie rows: Trending this week, Popular, Now playing, Upcoming, Top rated (region `PL`). Each row has a See all link to its own paged list page at `/shows/{slug}` or `/movies/{slug}`. Settled in a grilling session on 2026-10-12.
+**Done when:** both landings show their five rows with the full card (badge, meta, controls), each row streams on its own and fails on its own with Retry; every See all page pages like today's grid with a back link; the proxy accepts the known slugs and still 404s anything else; old `?page=N` links redirect (308) to `/…/popular?page=N`; the sitemap lists page 1 of each list.
+- [x] Design it (spec): `/architect home carousels`
+- [ ] Build it: `/develop home carousels`
+  - [ ] TMDB list reads, the list registry and the slug dispatcher (AC-2, AC-3, AC-8, AC-17)
+  - [ ] Tracer bullet: proxy slugs, the shared list page and one `/shows` row end to end, built with no TMDB token (AC-1, AC-4, AC-5, AC-7, AC-9 to AC-13, AC-15)
+  - [ ] All ten lists on both landings, the `?page=N` 308 redirects, and the arrow scroller (AC-1, AC-2, AC-6, AC-14)
+  - [ ] Sitemap list paths, request scope tests and the running app pass at 375px and 1280px (AC-16, AC-17)
+- [ ] Verify it: `/check verify home carousels`
+- [ ] Test it: `/test home carousels`
+spec [0021](../specs/0021-home-carousels/index.md)
+
 ## Deferred
 Out of scope for the current build pass, kept so the plan stays honest.
 - **Public profiles and social features**: ruled out of the MVP by `AGENTS.md`
+- **Per visitor region and timezone on the home rows** (from spec 0021): Now playing, Upcoming, Airing today and On the air use the fixed `PL` region and `Europe/Warsaw`. Following the visitor needs its own decision (a request header or an account setting).
 - **Error monitoring and product analytics**: not selected for this pass
 - **Self serve account deletion and data export** (from specs 0005 and 0017): GDPR requests are handled by email for now. Undesigned; a `/account` flow needs the Supabase admin API or a security definer function, an elevated call nothing else in the app uses, so it deserves its own decision, including what happens to the cascading tracking data
 - **Rate limit on sign in and sign up** (from spec 0018): Supabase counts Vercel's addresses, so its auth limit is shared by every visitor ([docs/deploy.md](../deploy.md) section 6). If it bites, add a second Vercel Firewall rule on sign in and sign up posts per IP. (The `/api/search` limit from spec 0010 shipped as a firewall rule in feature 20.)
