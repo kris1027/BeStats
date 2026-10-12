@@ -53,6 +53,9 @@ const USD_COMPACT_FORMAT = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
   notation: "compact",
+  // Explicit, because Node 22's ICU floors a currency at one decimal under
+  // a maximum of 1 and prints `$165.0M`; Node 24 already drops it.
+  minimumFractionDigits: 0,
   maximumFractionDigits: 1,
 });
 
