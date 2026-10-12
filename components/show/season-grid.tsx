@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 
 import { PosterCard } from "@/components/poster-card";
-import { PosterGrid } from "@/components/poster-grid";
+import { POSTER_GRID_SIZES, PosterGrid } from "@/components/poster-grid";
 import { SeasonRatingBadgeSlot } from "@/components/tracking/season-rating-badge-slot";
 import { seasonMetaParts } from "@/lib/format";
 import type { SeasonSummary } from "@/lib/tmdb";
@@ -18,6 +18,9 @@ import type { SeasonSummary } from "@/lib/tmdb";
  * Each card's badge is the signed in user's calculated season rating
  * (spec 0012, AC-8), streamed in its own boundary with no fallback so the
  * grid itself stays part of the public page.
+ *
+ * The grid keeps the `wide` preset, 2 and 4 columns (spec 0022, AC-3): a show
+ * has few seasons, and their cards stay as large as they have always been.
  */
 function SeasonGrid({
   showId,
@@ -39,13 +42,14 @@ function SeasonGrid({
   }
 
   return (
-    <PosterGrid aria-label={`Seasons of ${showName}`}>
+    <PosterGrid columns="wide" aria-label={`Seasons of ${showName}`}>
       {seasons.map((season) => (
         <li key={season.seasonNumber}>
           <PosterCard
             title={season.name}
             posterUrl={season.posterUrl ?? showPosterUrl}
             href={`/shows/${showId}/season/${season.seasonNumber}`}
+            sizes={POSTER_GRID_SIZES.wide}
             badge={
               <Suspense fallback={null}>
                 <SeasonRatingBadgeSlot

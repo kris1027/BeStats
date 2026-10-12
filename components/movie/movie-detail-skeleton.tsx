@@ -1,5 +1,5 @@
 import {
-  CastRowSkeleton,
+  CastRowSkeletonFrame,
   DetailHeroSkeleton,
   OverviewSkeleton,
   SectionHeadingSkeleton,
@@ -24,7 +24,7 @@ function MovieDetailSkeleton() {
       <OverviewSkeleton />
       <div className="flex flex-col gap-4">
         <SectionHeadingSkeleton className="w-20" />
-        <CastRowSkeleton />
+        <CastRowSkeletonFrame />
       </div>
     </div>
   );

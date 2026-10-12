@@ -8,6 +8,7 @@ import {
   formatReleaseDate,
   formatRuntime,
   formatShortDate,
+  formatUsdCompact,
   formatVoteCount,
   languageName,
   parseTmdbDate,
@@ -278,5 +279,18 @@ describe("parseTmdbDate · covers spec 0011 AC-3", () => {
 
   it("keeps a year below 100 instead of reading it as 19xx", () => {
     expect(parseTmdbDate("0099-01-01")?.getUTCFullYear()).toBe(99);
+  });
+});
+
+/** covers: spec 0022, AC-16 */
+describe("formatUsdCompact", () => {
+  it.each([
+    [165_000_000, "$165M"],
+    [1_500_000_000, "$1.5B"],
+    [100_853_753, "$100.9M"],
+    [63_000_000, "$63M"],
+    [950, "$950"],
+  ])("formats %d as %s", (amount, expected) => {
+    expect(formatUsdCompact(amount)).toBe(expected);
   });
 });

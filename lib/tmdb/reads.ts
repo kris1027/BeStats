@@ -6,6 +6,7 @@ import {
   readEachSettled,
   type SettledBatch,
 } from "./batch";
+import { fetchMovieExtras, fetchTvExtras } from "./extras";
 import { fetchMovieGenres, fetchTvGenres } from "./genres";
 import { fetchMovieList, fetchTvList } from "./lists";
 import { fetchMovie } from "./movies";
@@ -30,6 +31,7 @@ import type {
   Genre,
   ListOptions,
   Movie,
+  MovieExtras,
   MovieListKind,
   MovieSummary,
   Paged,
@@ -37,6 +39,7 @@ import type {
   SeasonDetail,
   ShowCastMember,
   ShowEpisodes,
+  TvExtras,
   TvListKind,
   TvShow,
   TvShowSummary,
@@ -125,6 +128,59 @@ async function getTvShowCached(id: number): Promise<TmdbResult<TvShow>> {
 
 export async function getTvShow(id: number): Promise<TvShow> {
   return unwrap(await getTvShowCached(id));
+}
+
+/**
+ * A title page's extras (spec 0022, AC-8): `hours`, because watch providers
+ * and recommendations move within a day, and one entry per title shared by
+ * every visitor, since it holds every country and no request state. Only the
+ * title pages read it; the library and catalog grid reads never do.
+ */
+async function getMovieExtrasCached(
+  id: number,
+): Promise<TmdbResult<MovieExtras>> {
+  "use cache";
+  try {
+    const value = await fetchMovieExtras(id);
+    cacheLife("hours");
+    return { ok: true, value };
+  } catch (error) {
+    const failure = toFailure(error);
+    cacheFailure(failure);
+    return { ok: false, failure };
+  }
+}
+
+/**
+ * A movie's trailer, recommendations, watch providers and age ratings.
+ *
+ * @throws {TmdbError} Rebuilt outside the cached scope from the stored failure.
+ */
+export async function getMovieExtras(id: number): Promise<MovieExtras> {
+  return unwrap(await getMovieExtrasCached(id));
+}
+
+/** The show twin of `getMovieExtrasCached`, with the same lifetime. */
+async function getTvExtrasCached(id: number): Promise<TmdbResult<TvExtras>> {
+  "use cache";
+  try {
+    const value = await fetchTvExtras(id);
+    cacheLife("hours");
+    return { ok: true, value };
+  } catch (error) {
+    const failure = toFailure(error);
+    cacheFailure(failure);
+    return { ok: false, failure };
+  }
+}
+
+/**
+ * A show's trailer, recommendations, watch providers and age ratings.
+ *
+ * @throws {TmdbError} Rebuilt outside the cached scope from the stored failure.
+ */
+export async function getTvExtras(id: number): Promise<TvExtras> {
+  return unwrap(await getTvExtrasCached(id));
 }
 
 /** A series cast changes rarely, so it keeps the detail profile (AC-20). */

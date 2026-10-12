@@ -1,0 +1,214 @@
+{
+  "id": 1396,
+  "videos": {
+    "results": [
+      {
+        "iso_639_1": "en",
+        "iso_3166_1": "US",
+        "name": "Breaking Bad - Full Series Trailer",
+        "key": "VFkjBy2b50Q",
+        "site": "YouTube",
+        "size": 1080,
+        "type": "Trailer",
+        "official": false,
+        "id": "6abec1d63b14b1600ae7400f",
+        "published_at": "2024-09-17T16:44:25.000Z"
+      }
+    ]
+  },
+  "recommendations": {
+    "page": 1,
+    "results": [
+      {
+        "adult": false,
+        "backdrop_path": "/rfxryDIv8huejujg4JueDJx8zCz.jpg",
+        "id": 60059,
+        "name": "Better Call Saul",
+        "original_name": "Better Call Saul",
+        "overview": "Six years before Saul Goodman meets Walter White. We meet him when the man who will become Saul Goodman is known as Jimmy McGill, a small-time lawyer searching for his destiny, and, more immediately, hustling to make ends meet. Working alongside, and, often, against Jimmy, is \u201cfixer\u201d Mike Ehrmantraut. The series tracks Jimmy\u2019s transformation into Saul Goodman, the man who puts \u201ccriminal\u201d in \u201ccriminal lawyer\".",
+        "poster_path": "/fC2HDm5t0kHl7mTm7jxMR31b7by.jpg",
+        "media_type": "tv",
+        "original_language": "en",
+        "genre_ids": [80, 18],
+        "popularity": 108.5734,
+        "first_air_date": "2015-02-08",
+        "softcore": false,
+        "vote_average": 8.7,
+        "vote_count": 6967,
+        "origin_country": ["US"]
+      },
+      {
+        "adult": false,
+        "backdrop_path": "/64jEzC7YeKEpnn1YwjCGRo9ZvOX.jpg",
+        "id": 80968,
+        "name": "Narcos: Mexico",
+        "original_name": "Narcos: Mexico",
+        "overview": "See the rise of the Guadalajara Cartel as an American DEA agent learns the danger of targeting narcos in 1980s Mexico.",
+        "poster_path": "/aXwMx8OvRFMfI1RmkbJm6Bq1jVg.jpg",
+        "media_type": "tv",
+        "original_language": "en",
+        "genre_ids": [18, 80],
+        "popularity": 28.9348,
+        "first_air_date": "2018-11-16",
+        "softcore": false,
+        "vote_average": 7.9,
+        "vote_count": 1549,
+        "origin_country": ["US"]
+      },
+      {
+        "adult": false,
+        "backdrop_path": "/eEXwPg7nIERmRHC1yJoBf3Q5C7k.jpg",
+        "id": 71694,
+        "name": "Snowfall",
+        "original_name": "Snowfall",
+        "overview": "Los Angeles. 1983. A storm is coming and its name is crack. Set against the infancy of the crack cocaine epidemic and its ultimate radical impact on the culture as we know it, the story follows numerous characters on a violent collision course.",
+        "poster_path": "/y7ntzl7msiaS6o7dvDbNG7XFYcR.jpg",
+        "media_type": "tv",
+        "original_language": "en",
+        "genre_ids": [18, 80],
+        "popularity": 56.4355,
+        "first_air_date": "2017-07-05",
+        "softcore": false,
+        "vote_average": 8.4,
+        "vote_count": 818,
+        "origin_country": ["US"]
+      }
+    ],
+    "total_pages": 42,
+    "total_results": 821
+  },
+  "watch/providers": {
+    "results": {
+      "DE": {
+        "link": "https://www.themoviedb.org/tv/1396-breaking-bad/watch?locale=DE",
+        "buy": [
+          {
+            "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+            "provider_id": 2,
+            "provider_name": "Apple TV Store",
+            "display_priority": 5
+          },
+          {
+            "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+            "provider_id": 10,
+            "provider_name": "Amazon Video",
+            "display_priority": 7
+          },
+          {
+            "logo_path": "/f1uWfExJA6DSAvuTL0YJ9Kyftfg.png",
+            "provider_id": 178,
+            "provider_name": "MagentaTV",
+            "display_priority": 15
+          },
+          {
+            "logo_path": "/mjB4eyswPoC0XeJPUd1W1oitOlh.png",
+            "provider_id": 20,
+            "provider_name": "maxdome Store",
+            "display_priority": 18
+          },
+          {
+            "logo_path": "/kWgg0b4wHDr4pwSyOXVK8nAsNKB.png",
+            "provider_id": 1993,
+            "provider_name": "Videoload",
+            "display_priority": 103
+          }
+        ],
+        "flatrate": [
+          {
+            "logo_path": "/rK1KljqmbvO9HQa1PBFLILWah72.png",
+            "provider_id": 8,
+            "provider_name": "Netflix",
+            "display_priority": 0
+          },
+          {
+            "logo_path": "/eGUwOOIxcazwEBxqJpSN5sWEu6V.png",
+            "provider_id": 1796,
+            "provider_name": "Netflix Standard with Ads",
+            "display_priority": 83
+          }
+        ]
+      },
+      "PL": {
+        "link": "https://www.themoviedb.org/tv/1396-breaking-bad/watch?locale=PL",
+        "buy": [
+          {
+            "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+            "provider_id": 10,
+            "provider_name": "Amazon Video",
+            "display_priority": 27
+          }
+        ],
+        "flatrate": [
+          {
+            "logo_path": "/rK1KljqmbvO9HQa1PBFLILWah72.png",
+            "provider_id": 8,
+            "provider_name": "Netflix",
+            "display_priority": 0
+          }
+        ]
+      },
+      "US": {
+        "link": "https://www.themoviedb.org/tv/1396-breaking-bad/watch?locale=US",
+        "buy": [
+          {
+            "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+            "provider_id": 10,
+            "provider_name": "Amazon Video",
+            "display_priority": 8
+          },
+          {
+            "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+            "provider_id": 2,
+            "provider_name": "Apple TV Store",
+            "display_priority": 9
+          },
+          {
+            "logo_path": "/aZRENwYILujqs0RVOZutTh0BVGV.png",
+            "provider_id": 3,
+            "provider_name": "Google Play Movies",
+            "display_priority": 20
+          },
+          {
+            "logo_path": "/wpOt6x0dRxTrIzuBosto4LGd7E9.png",
+            "provider_id": 7,
+            "provider_name": "Fandango At Home",
+            "display_priority": 37
+          }
+        ],
+        "flatrate": [
+          {
+            "logo_path": "/rK1KljqmbvO9HQa1PBFLILWah72.png",
+            "provider_id": 8,
+            "provider_name": "Netflix",
+            "display_priority": 2
+          },
+          {
+            "logo_path": "/eGUwOOIxcazwEBxqJpSN5sWEu6V.png",
+            "provider_id": 1796,
+            "provider_name": "Netflix Standard with Ads",
+            "display_priority": 150
+          }
+        ]
+      }
+    }
+  },
+  "content_ratings": {
+    "results": [
+      {
+        "descriptors": [],
+        "iso_3166_1": "DE",
+        "rating": "16"
+      },
+      {
+        "descriptors": [],
+        "iso_3166_1": "GB",
+        "rating": "18"
+      },
+      {
+        "descriptors": [],
+        "iso_3166_1": "US",
+        "rating": "TV-MA"
+      }
+    ]
+  }
+}

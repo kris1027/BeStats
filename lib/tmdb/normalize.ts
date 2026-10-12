@@ -1,8 +1,11 @@
+import type { z } from "zod";
+
 import { parseTmdbDate } from "@/lib/format";
 
 import { SHOW_CAST_LIMIT } from "./constants";
 import {
   BACKDROP_SIZE,
+  COMPANY_LOGO_SIZE,
   imageUrl,
   POSTER_SIZE,
   PROFILE_SIZE,
@@ -11,6 +14,9 @@ import {
 import {
   aggregateCastMemberSchema,
   castMemberSchema,
+  companySchema,
+  creatorSchema,
+  crewMemberSchema,
   episodeToAirSchema,
   type RawEpisode,
   type RawMovie,
@@ -23,6 +29,7 @@ import {
 } from "./schemas";
 import type {
   CastMember,
+  Company,
   Episode,
   EpisodeToAir,
   Genre,
@@ -111,6 +118,87 @@ export function normalizeCast(
   return cast.sort((a, b) => a.order - b.order);
 }
 
+/** A money amount TMDB reports as 0 when it does not know it, so 0 is null. */
+function moneyOrNull(value: number | null | undefined): number | null {
+  return typeof value === "number" && value > 0 ? value : null;
+}
+
+/**
+ * The items of a TMDB list that parse and carry a name, each with that name
+ * trimmed, in TMDB's order. Companies, crew and creators all drop a bad entry
+ * this way rather than failing the read (spec 0022, AC-15, AC-16), as a cast
+ * credit is dropped.
+ */
+function namedItems<T extends { name: string }>(
+  items: unknown[] | null | undefined,
+  schema: z.ZodType<T>,
+): Array<{ data: T; name: string }> {
+  const named: Array<{ data: T; name: string }> = [];
+  for (const item of items ?? []) {
+    const parsed = schema.safeParse(item);
+    if (!parsed.success) continue;
+    const name = textOrNull(parsed.data.name);
+    if (name !== null) named.push({ data: parsed.data, name });
+  }
+  return named;
+}
+
+/**
+ * Production companies or networks, dropping any entry that does not parse
+ * (spec 0022, AC-16), in TMDB's order.
+ */
+export function normalizeCompanies(
+  items: unknown[] | null | undefined,
+): Company[] {
+  return namedItems(items, companySchema).map(({ data, name }) => ({
+    id: data.id,
+    name,
+    logoUrl: imageUrl(data.logo_path, COMPANY_LOGO_SIZE),
+  }));
+}
+
+/** Most writers a movie page names (spec 0022, AC-15). */
+const WRITER_LIMIT = 3;
+
+/** Most show creators a show page names (spec 0022, AC-15). */
+const CREATOR_LIMIT = 3;
+
+/** The crew jobs that count as writing. `Story` is left out on purpose. */
+const WRITER_JOBS: ReadonlySet<string> = new Set(["Screenplay", "Writer"]);
+
+/**
+ * A movie's directors and writers from the crew `credits` already carries,
+ * so the crew lines cost no request (spec 0022, AC-15). Names are
+ * deduplicated in credit order, because one person often holds both
+ * `Screenplay` and `Writer`; writers are cut to 3 after that. A malformed
+ * credit is dropped, like a cast credit.
+ */
+export function normalizeCrew(items: unknown[] | null | undefined): {
+  directors: string[];
+  writers: string[];
+} {
+  const directors = new Set<string>();
+  const writers = new Set<string>();
+  for (const { data, name } of namedItems(items, crewMemberSchema)) {
+    if (data.job === "Director") directors.add(name);
+    if (data.job != null && WRITER_JOBS.has(data.job)) writers.add(name);
+  }
+  return {
+    directors: [...directors],
+    writers: [...writers].slice(0, WRITER_LIMIT),
+  };
+}
+
+/** A show's `created_by` names, deduplicated and capped at 3 (AC-15). */
+export function normalizeCreators(
+  items: unknown[] | null | undefined,
+): string[] {
+  const names = new Set(
+    namedItems(items, creatorSchema).map(({ name }) => name),
+  );
+  return [...names].slice(0, CREATOR_LIMIT);
+}
+
 export function normalizeMovieSummary(raw: RawMovieSummary): MovieSummary {
   const releaseDate = textOrNull(raw.release_date);
   return {
@@ -174,6 +262,11 @@ export function normalizeMovie(raw: RawMovie): Movie {
     // the list the page shows rather than staying empty.
     genreIds: normalizeGenres(raw.genres).map((genre) => genre.id),
     cast: normalizeCast(raw.credits?.cast),
+    ...normalizeCrew(raw.credits?.crew),
+    status: textOrNull(raw.status),
+    budget: moneyOrNull(raw.budget),
+    revenue: moneyOrNull(raw.revenue),
+    productionCompanies: normalizeCompanies(raw.production_companies),
   };
 }
 
@@ -254,6 +347,10 @@ export function normalizeTvShow(raw: RawTvShow): TvShow {
     seasons: (raw.seasons ?? []).map(normalizeSeasonSummary),
     lastEpisodeToAir: normalizeEpisodeToAir(raw.last_episode_to_air),
     nextEpisodeToAir: normalizeEpisodeToAir(raw.next_episode_to_air),
+    type: textOrNull(raw.type),
+    createdBy: normalizeCreators(raw.created_by),
+    networks: normalizeCompanies(raw.networks),
+    productionCompanies: normalizeCompanies(raw.production_companies),
   };
 }
 

@@ -1,5 +1,5 @@
 import { PaginationLinks } from "@/components/pagination-links";
-import { PosterGrid } from "@/components/poster-grid";
+import { POSTER_GRID_EAGER, PosterGrid } from "@/components/poster-grid";
 import {
   getShowLibraryTab,
   type LibraryTabQuery,
@@ -20,9 +20,6 @@ import { MissingShowCard } from "./missing-show-card";
 import { UpcomingShowCard, WatchedShowCard } from "./show-cards";
 import type { LibraryList } from "./types";
 import { WatchlistShowCard } from "./watchlist-show-card";
-
-/** Posters that load eagerly: one full row at the widest grid. */
-const EAGER_POSTERS = 4;
 
 /**
  * A show tab (AC-9, AC-11, AC-12, AC-15 to AC-18): Watchlist with Mark
@@ -73,7 +70,7 @@ export async function showLibraryTab(query: LibraryTabQuery<LibraryList>) {
                 itemId={itemId}
                 today={today}
                 rating={ratings.get(card.showId) ?? null}
-                priority={index < EAGER_POSTERS}
+                priority={index < POSTER_GRID_EAGER.catalog}
               />
             </li>
           );

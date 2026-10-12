@@ -4,7 +4,7 @@ import { Suspense } from "react";
 
 import { CatalogListCards } from "@/components/catalog/catalog-list-cards";
 import { PaginationLinks } from "@/components/pagination-links";
-import { PosterGrid } from "@/components/poster-grid";
+import { POSTER_GRID_EAGER, PosterGrid } from "@/components/poster-grid";
 import { RetryLink } from "@/components/retry-link";
 import { PaginationSkeleton, PosterCardSkeleton } from "@/components/skeleton";
 import { StatePanel } from "@/components/state-panel";
@@ -20,13 +20,6 @@ import { TmdbError } from "@/lib/tmdb";
 
 /** TMDB's list page size, which the skeleton mirrors. */
 const PAGE_SIZE = 20;
-
-/**
- * Cards whose posters load eagerly: one full row at the widest grid (4
- * columns from `md`), so the first row is never lazy at any width (spec 0021,
- * AC-7, keeping spec 0006, AC-1).
- */
-const EAGER_POSTERS = 4;
 
 const LANDING_LABELS = { tv: "Shows", movie: "Movies" } as const;
 
@@ -124,7 +117,7 @@ async function ListGrid({
         <CatalogListCards
           result={result}
           returnPath={pageHref(page)}
-          eagerCount={EAGER_POSTERS}
+          eagerCount={POSTER_GRID_EAGER.catalog}
         />
       </PosterGrid>
 

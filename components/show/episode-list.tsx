@@ -7,7 +7,7 @@ import type { Episode } from "@/lib/tmdb";
 /**
  * Stills that load eagerly: the first two rows, which is what fits above the
  * fold on a desktop season page. The counterpart of the landing's
- * `EAGER_POSTERS` (spec 0009, AC-10); every later still loads lazily, so a
+ * `POSTER_GRID_EAGER` (spec 0009, AC-10); every later still loads lazily, so a
  * season of hundreds of episodes stays usable.
  */
 const EAGER_STILLS = 2;

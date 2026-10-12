@@ -4,6 +4,7 @@ import {
   isTypedPath,
   mediaTypeForLocation,
   parseMediaTypeParam,
+  titleHref,
   typedHref,
 } from "./media-type";
 
@@ -82,5 +83,12 @@ describe("typedHref", () => {
     expect(isTypedPath("/search")).toBe(true);
     expect(isTypedPath("/watchlist/x")).toBe(false);
     expect(isTypedPath(null)).toBe(false);
+  });
+});
+
+describe("titleHref", () => {
+  it("opens a movie on its movie page and a show on its show page", () => {
+    expect(titleHref("movie", 438631)).toBe("/movies/438631");
+    expect(titleHref("tv", 1396)).toBe("/shows/1396");
   });
 });

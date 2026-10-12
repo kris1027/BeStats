@@ -49,6 +49,25 @@ export function languageName(code: string): string {
   }
 }
 
+const USD_COMPACT_FORMAT = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  notation: "compact",
+  // Explicit, because Node 22's ICU floors a currency at one decimal under
+  // a maximum of 1 and prints `$165.0M`; Node 24 already drops it.
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 1,
+});
+
+/**
+ * A budget or revenue in US dollars, compact with at most one decimal, for
+ * example `$165M` or `$1.5B` (spec 0022, AC-16). TMDB reports both in US
+ * dollars; a 0 never reaches here, because the normalizer turns it to null.
+ */
+export function formatUsdCompact(amount: number): string {
+  return USD_COMPACT_FORMAT.format(amount);
+}
+
 /** Whitespace and punctuation left dangling where a sentence was cut. */
 const TRAILING_CUT = /[\s.,;:!?\-–—]+$/;
 

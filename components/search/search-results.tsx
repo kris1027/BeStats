@@ -2,7 +2,7 @@ import { Suspense } from "react";
 
 import { PaginationLinks } from "@/components/pagination-links";
 import { PosterCard } from "@/components/poster-card";
-import { PosterGrid } from "@/components/poster-grid";
+import { POSTER_GRID_EAGER, PosterGrid } from "@/components/poster-grid";
 import { TmdbRatingBadge } from "@/components/rating-badges";
 import { RetryLink } from "@/components/retry-link";
 import {
@@ -21,7 +21,11 @@ import {
   ShowCardMeta,
 } from "@/components/tracking/show-card-slots";
 import { ButtonLink } from "@/components/ui/button";
-import { parseMediaTypeParam, typedHref } from "@/lib/catalog/media-type";
+import {
+  parseMediaTypeParam,
+  titleHref,
+  typedHref,
+} from "@/lib/catalog/media-type";
 import { lastReachablePage } from "@/lib/catalog/pages";
 import { formatRange, mediaNoun } from "@/lib/search/count";
 import { searchMode } from "@/lib/search/mode";
@@ -32,7 +36,6 @@ import {
   type SearchType,
   searchHref,
 } from "@/lib/search/params";
-import { titleHref } from "@/lib/search/quick";
 import {
   readDiscoverPage,
   readSearchPage,
@@ -49,9 +52,6 @@ type RawParams = Record<string, string | string[] | undefined>;
 
 /** TMDB's page size, which the skeleton mirrors (AC-21). */
 const PAGE_SIZE = 20;
-
-/** One full row at the widest grid loads its posters eagerly. */
-const EAGER_POSTERS = 4;
 
 /**
  * The results half of `/search`, for one URL (spec 0010, AC-11 to AC-19).
@@ -225,7 +225,7 @@ function ResultGrid({
             result={result}
             gridIds={gridIds}
             returnPath={returnPath}
-            priority={index < EAGER_POSTERS}
+            priority={index < POSTER_GRID_EAGER.catalog}
           />
         </li>
       ))}

@@ -35,6 +35,12 @@ function movie(id: number): Movie {
     genres: [],
     genreIds: [],
     cast: [],
+    status: null,
+    budget: null,
+    revenue: null,
+    productionCompanies: [],
+    directors: [],
+    writers: [],
   };
 }
 
@@ -71,6 +77,10 @@ function show(id: number, seasonNumbers: number[]): TvShow {
     })),
     lastEpisodeToAir: null,
     nextEpisodeToAir: null,
+    type: null,
+    createdBy: [],
+    networks: [],
+    productionCompanies: [],
   };
 }
 

@@ -28,6 +28,12 @@ type DetailHeroProps = {
    * This component reads no session itself, so it stays a plain catalog piece.
    */
   tracking?: React.ReactNode;
+  /**
+   * Public actions beside the tracking row: the Trailer button (spec 0022,
+   * AC-11), streamed in its own boundary with no fallback, so it reserves no
+   * height and appears only when the title has a trailer.
+   */
+  actions?: React.ReactNode;
 };
 
 /**
@@ -54,6 +60,7 @@ function DetailHero({
   tmdbRating,
   tmdbVoteCount,
   tracking,
+  actions,
 }: DetailHeroProps) {
   return (
     <header data-slot="detail-hero" className="flex flex-col">
@@ -128,6 +135,7 @@ function DetailHero({
           {meta}
           <TmdbRatingBlock value={tmdbRating} voteCount={tmdbVoteCount} />
           {tracking}
+          {actions}
         </div>
       </div>
     </header>

@@ -3,6 +3,9 @@ import { describe, expect, it } from "vitest";
 import { SHOW_CAST_LIMIT } from "./constants";
 import {
   normalizeCast,
+  normalizeCompanies,
+  normalizeCreators,
+  normalizeCrew,
   normalizeEpisodeToAir,
   normalizeSeasonDetail,
   normalizeSeasonSummary,
@@ -290,5 +293,73 @@ describe("normalizeEpisodeToAir", () => {
     ],
   ])("reads %s as null", (_label, raw) => {
     expect(normalizeEpisodeToAir(raw)).toBeNull();
+  });
+});
+
+/** covers: spec 0022, AC-15 */
+describe("normalizeCrew", () => {
+  it("reads directors and writers, Screenplay and Writer but not Story", () => {
+    expect(
+      normalizeCrew([
+        { name: "David Fincher", job: "Director" },
+        { name: "Jim Uhls", job: "Screenplay" },
+        { name: "Chuck Palahniuk", job: "Novel" },
+        { name: "Someone", job: "Story" },
+      ]),
+    ).toEqual({ directors: ["David Fincher"], writers: ["Jim Uhls"] });
+  });
+
+  it("deduplicates writers in credit order, then caps them at 3", () => {
+    expect(
+      normalizeCrew([
+        { name: "A", job: "Writer" },
+        { name: "A", job: "Screenplay" },
+        { name: "B", job: "Screenplay" },
+        { name: "C", job: "Writer" },
+        { name: "D", job: "Writer" },
+      ]).writers,
+    ).toEqual(["A", "B", "C"]);
+  });
+
+  it("drops a malformed credit and has no names with no crew", () => {
+    expect(normalizeCrew([{ job: "Director" }, null])).toEqual({
+      directors: [],
+      writers: [],
+    });
+    expect(normalizeCrew(undefined)).toEqual({ directors: [], writers: [] });
+  });
+});
+
+/** covers: spec 0022, AC-15 */
+describe("normalizeCreators", () => {
+  it("keeps up to 3 names, deduplicated, dropping a malformed one", () => {
+    expect(
+      normalizeCreators([
+        { name: "A" },
+        { name: "A" },
+        {},
+        { name: "B" },
+        { name: "C" },
+        { name: "D" },
+      ]),
+    ).toEqual(["A", "B", "C"]);
+  });
+});
+
+/** covers: spec 0022, AC-16 */
+describe("normalizeCompanies", () => {
+  it("keeps a missing logo null and drops a malformed or unnamed entry", () => {
+    const companies = normalizeCompanies([
+      { id: 1, name: "AMC", logo_path: "/amc.png" },
+      { id: 2, name: "No Logo", logo_path: null },
+      { id: 3, name: "  " },
+      { name: "No id" },
+    ]);
+    expect(companies.map((company) => company.name)).toEqual([
+      "AMC",
+      "No Logo",
+    ]);
+    expect(companies[0]?.logoUrl).toContain("/w154/amc.png");
+    expect(companies[1]?.logoUrl).toBeNull();
   });
 });

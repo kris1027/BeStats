@@ -29,6 +29,10 @@ export const POSTER_SIZE: TmdbImageSize = "w500";
 export const BACKDROP_SIZE: TmdbImageSize = "w1280";
 export const PROFILE_SIZE: TmdbImageSize = "w185";
 export const STILL_SIZE: TmdbImageSize = "w300";
+/** A company or network logo in the Facts panel (spec 0022, AC-16). */
+export const COMPANY_LOGO_SIZE: TmdbImageSize = "w154";
+/** A watch provider logo (spec 0022, AC-12). */
+export const PROVIDER_LOGO_SIZE: TmdbImageSize = "w92";
 
 /**
  * Builds an absolute TMDB image URL, or null when there is no image.

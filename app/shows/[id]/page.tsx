@@ -4,7 +4,15 @@ import { Suspense } from "react";
 import { DetailHero } from "@/components/catalog/detail-hero";
 import { CastRowSkeleton } from "@/components/catalog/detail-skeletons";
 import { JsonLd } from "@/components/catalog/json-ld";
-import { CastRow } from "@/components/movie/cast-row";
+import { ShowCrew, ShowFacts } from "@/components/catalog/title-details";
+import {
+  AgeRatingSlot,
+  MoreLikeThisSection,
+  TrailerSlot,
+  WhereToWatchSection,
+} from "@/components/catalog/title-extras";
+import { SECTION_HEADING_CLASS } from "@/components/catalog/title-section";
+import { CastRow, CastSection } from "@/components/movie/cast-row";
 import { MovieOverview } from "@/components/movie/movie-overview";
 import { RetryLink } from "@/components/retry-link";
 import { SeasonGrid } from "@/components/show/season-grid";
@@ -77,6 +85,11 @@ export async function generateMetadata({
  * user's calculated ratings (spec 0012) stream from `components/tracking/`
  * beside the Seasons heading and on each season card, and the hero's tracking
  * pill (spec 0020) and progress line (spec 0013) stream into its tracking place.
+ *
+ * Spec 0022 adds the Trailer button and age chip to the hero, the creators
+ * under the overview, then Where to watch, Cast, More like this and Facts
+ * after the seasons (AC-17), each extras section in its own boundary, as on
+ * the movie page.
  */
 export default function ShowPage({ params }: PageProps<"/shows/[id]">) {
   return (
@@ -112,6 +125,7 @@ async function ShowDetail({
   }
 
   const { show } = result;
+  const title = { mediaType: "tv", id } as const;
 
   return (
     <article className="flex flex-col gap-10 md:gap-14">
@@ -126,6 +140,7 @@ async function ShowDetail({
             airSpan={formatAirSpan(show)}
             status={show.status}
             genres={show.genres}
+            ageRating={<AgeRatingSlot {...title} />}
           />
         }
         tmdbRating={show.tmdbRating}
@@ -143,19 +158,21 @@ async function ShowDetail({
             </Suspense>
           </>
         }
+        actions={<TrailerSlot {...title} title={show.name} />}
       />
 
       <section
         aria-labelledby="overview-heading"
         className="flex flex-col gap-3"
       >
-        <h2 id="overview-heading" className={SECTION_HEADING}>
+        <h2 id="overview-heading" className={SECTION_HEADING_CLASS}>
           Overview
         </h2>
         <MovieOverview
           overview={show.overview}
           language={show.overviewLanguage}
         />
+        <ShowCrew show={show} />
       </section>
 
       <section
@@ -163,7 +180,7 @@ async function ShowDetail({
         className="flex flex-col gap-4"
       >
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-          <h2 id="seasons-heading" className={SECTION_HEADING}>
+          <h2 id="seasons-heading" className={SECTION_HEADING_CLASS}>
             Seasons
           </h2>
           <Suspense fallback={null}>
@@ -178,20 +195,20 @@ async function ShowDetail({
         />
       </section>
 
-      <section aria-labelledby="cast-heading" className="flex flex-col gap-4">
-        <h2 id="cast-heading" className={SECTION_HEADING}>
-          Cast
-        </h2>
+      <WhereToWatchSection {...title} />
+
+      <CastSection>
         <Suspense fallback={<CastRowSkeleton />}>
           <ShowCast id={id} />
         </Suspense>
-      </section>
+      </CastSection>
+
+      <MoreLikeThisSection {...title} />
+
+      <ShowFacts show={show} />
     </article>
   );
 }
-
-const SECTION_HEADING =
-  "text-xl leading-tight font-bold text-foreground md:text-2xl";
 
 const NO_CAST_MESSAGE = "TMDB lists no cast for this show.";
 

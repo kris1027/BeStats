@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { quickSearchRequestSchema, seeAllHref, titleHref } from "./quick";
+import { quickSearchRequestSchema, seeAllHref } from "./quick";
 
 /** covers: spec 0010, AC-2, AC-4, AC-20 */
 
@@ -39,13 +39,6 @@ describe("quickSearchRequestSchema", () => {
     [{ type: "tv", q: "x".repeat(101) }],
   ])("refuses %o", (input) => {
     expect(quickSearchRequestSchema.safeParse(input).success).toBe(false);
-  });
-});
-
-describe("titleHref", () => {
-  it("opens a movie on its movie page and a show on its show page", () => {
-    expect(titleHref("movie", 438631)).toBe("/movies/438631");
-    expect(titleHref("tv", 1396)).toBe("/shows/1396");
   });
 });
 

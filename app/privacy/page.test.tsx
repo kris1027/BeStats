@@ -86,6 +86,17 @@ describe("/privacy", () => {
     expectOperatorLinks(container);
   });
 
+  it("names YouTube and says the region country is not stored (spec 0022, AC-19)", () => {
+    const { container } = render(<PrivacyPage />);
+    const text = container.textContent ?? "";
+
+    expect(text).toContain("YouTube");
+    expect(text).toContain("only after you press Trailer");
+    expect(text).toMatch(
+      /approximate country Vercel derives from your\s+connection picks the region for where to watch and the age rating\. It\s+is not stored\./,
+    );
+  });
+
   it("opens external links in a new tab, safely (AC-7)", () => {
     const { container } = render(<PrivacyPage />);
 

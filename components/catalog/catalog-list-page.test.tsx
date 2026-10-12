@@ -200,13 +200,13 @@ describe("the list page grid (AC-4, AC-9)", () => {
     );
   });
 
-  it("loads the first 4 posters eagerly and the rest lazily (AC-7)", async () => {
+  it("loads the first 6 posters eagerly and the rest lazily (AC-7; spec 0022, AC-5)", async () => {
     read.mockResolvedValue(tvPage(8, 30));
 
     await renderGrid();
 
-    expect(screen.getByText("Show 4")).toHaveAttribute("data-priority", "true");
-    expect(screen.getByText("Show 5")).toHaveAttribute(
+    expect(screen.getByText("Show 6")).toHaveAttribute("data-priority", "true");
+    expect(screen.getByText("Show 7")).toHaveAttribute(
       "data-priority",
       "false",
     );

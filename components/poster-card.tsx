@@ -4,16 +4,17 @@ import Image from "next/image";
 import Link from "next/link";
 import type * as React from "react";
 
+import { POSTER_GRID_SIZES } from "@/components/poster-grid";
+
 /**
- * The `sizes` string that matches the grid in `PosterGrid`.
+ * The `sizes` string that matches the default (`catalog`) `PosterGrid`.
  *
- * Kept next to the card rather than in the grid because `next/image` needs it
- * on the image, and kept as one constant because a grid change that misses it
- * silently ships the wrong image width to every screen (spec 0004, AC-8).
- * Mirrors the column counts: 2 at base, 4 from md, and a fixed width once the
- * grid reaches its 1200px cap.
+ * Kept as the card's default because nearly every card sits in that grid, and
+ * owned by the grid's preset map because a column change that misses it
+ * silently ships the wrong image width to every screen (spec 0004, AC-8;
+ * spec 0022, AC-4). A card in another preset passes that preset's sizes.
  */
-const POSTER_SIZES = "(min-width: 1232px) 288px, (min-width: 768px) 25vw, 50vw";
+const POSTER_SIZES = POSTER_GRID_SIZES.catalog;
 
 /**
  * The single most repeated element in the UI: a 2:3 poster inside a rounded

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { titleHref } from "@/lib/catalog/media-type";
 import {
   discoverMovies,
   discoverTvShows,
@@ -10,10 +11,9 @@ import {
   searchTvShows,
   type TvShowSummary,
 } from "@/lib/tmdb";
-
 import { MIN_VOTE_COUNT, QUICK_LIMIT } from "./constants";
 import type { SearchParams, SearchType } from "./params";
-import { type QuickSearchResponse, titleHref } from "./quick";
+import type { QuickSearchResponse } from "./quick";
 
 /**
  * A search result from either catalog, reduced to what search needs to show

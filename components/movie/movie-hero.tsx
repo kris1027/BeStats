@@ -12,6 +12,13 @@ type MovieHeroProps = {
    * session itself, so it stays a plain catalog piece.
    */
   tracking?: React.ReactNode;
+  /** The Trailer slot, passed through to `DetailHero` (spec 0022, AC-11). */
+  actions?: React.ReactNode;
+  /**
+   * The age rating chip's slot, shown in the meta row after the runtime
+   * (spec 0022, AC-13). It renders nothing when there is no rating.
+   */
+  ageRating?: React.ReactNode;
 } & Pick<
   Movie,
   | "title"
@@ -45,6 +52,8 @@ function MovieHero({
   tmdbRating,
   tmdbVoteCount,
   tracking,
+  actions,
+  ageRating,
 }: MovieHeroProps) {
   const meta = [
     releaseYear === null ? null : String(releaseYear),
@@ -57,30 +66,34 @@ function MovieHero({
       tagline={tagline}
       posterUrl={posterUrl}
       backdropUrl={backdropUrl}
-      meta={<MovieFacts meta={meta} genres={genres} />}
+      meta={<MovieMetaRow meta={meta} genres={genres} ageRating={ageRating} />}
       tmdbRating={tmdbRating}
       tmdbVoteCount={tmdbVoteCount}
       tracking={tracking}
+      actions={actions}
     />
   );
 }
 
 /**
- * The meta line and the genre chips in one wrapping row, or nothing when the
- * movie has neither.
+ * The meta line, the age rating slot and the genre chips in one wrapping
+ * row, or nothing when the movie has none of them.
  */
-function MovieFacts({
+function MovieMetaRow({
   meta,
   genres,
+  ageRating,
 }: {
   meta: string[];
   genres: Movie["genres"];
+  ageRating?: React.ReactNode;
 }) {
-  if (meta.length === 0 && genres.length === 0) return null;
+  if (meta.length === 0 && genres.length === 0 && !ageRating) return null;
 
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
       {meta.length > 0 ? <MetaLine parts={meta} /> : null}
+      {ageRating}
       {genres.length > 0 ? <GenreChips genres={genres} /> : null}
     </div>
   );

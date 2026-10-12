@@ -232,8 +232,8 @@ function LoadFailed({
 }
 
 /**
- * The static shell's stand in for the list: one row of cards, two below `md`
- * and four from it. The real count is unknown until the read, and a full page
+ * The static shell's stand in for the list: one row of cards at the current
+ * column count, 2 up to 6 (spec 0022, AC-6). The real count is unknown until the read, and a full page
  * of placeholders made a short library collapse by several rows when it
  * arrived (prompts/grid-tabs-footer-legend.md); one row is the smallest
  * honest guess and never wraps.
@@ -251,5 +251,12 @@ export function LibrarySkeleton() {
   );
 }
 
-/** Each card's visibility in that row: the last two show only from `md`. */
-const ROW_CARD_VISIBILITY = ["", "", "hidden md:block", "hidden md:block"];
+/** Each card's visibility in that row: one more card at each column step. */
+const ROW_CARD_VISIBILITY = [
+  "",
+  "",
+  "hidden sm:block",
+  "hidden md:block",
+  "hidden lg:block",
+  "hidden xl:block",
+];
