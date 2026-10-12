@@ -64,6 +64,15 @@ export function parseMediaTypeParam(
 }
 
 /**
+ * A title's own page: `/shows/{id}` or `/movies/{id}`, under its catalog's
+ * browse path (feature 22). The one builder of a title page URL, shared by
+ * search results and the title pages' Retry and return links.
+ */
+export function titleHref(type: MediaType, id: number): string {
+  return `${CATALOG_PATHS[type]}/${id}`;
+}
+
+/**
  * The media type of the page being viewed, which the tabs light and the
  * Library links and navbar search carry on (feature 22). The catalog and
  * title pages are typed by their path, the typed pages by their parameter

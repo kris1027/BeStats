@@ -21,7 +21,11 @@ import {
   ShowCardMeta,
 } from "@/components/tracking/show-card-slots";
 import { ButtonLink } from "@/components/ui/button";
-import { parseMediaTypeParam, typedHref } from "@/lib/catalog/media-type";
+import {
+  parseMediaTypeParam,
+  titleHref,
+  typedHref,
+} from "@/lib/catalog/media-type";
 import { lastReachablePage } from "@/lib/catalog/pages";
 import { formatRange, mediaNoun } from "@/lib/search/count";
 import { searchMode } from "@/lib/search/mode";
@@ -32,7 +36,6 @@ import {
   type SearchType,
   searchHref,
 } from "@/lib/search/params";
-import { titleHref } from "@/lib/search/quick";
 import {
   readDiscoverPage,
   readSearchPage,

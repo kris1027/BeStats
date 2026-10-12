@@ -38,11 +38,6 @@ export type QuickSearchError =
   | { error: "invalid" }
   | { error: "upstream"; kind: string };
 
-/** Where a result opens: `/shows/{id}` or `/movies/{id}`. */
-export function titleHref(type: SearchType, id: number): string {
-  return type === "movie" ? `/movies/${id}` : `/shows/${id}`;
-}
-
 /** The `See all` target, the results page for the same query (AC-4). */
 export function seeAllHref(type: SearchType, query: string): string {
   const params = new URLSearchParams({ type, q: query.trim() });

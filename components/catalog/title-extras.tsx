@@ -10,6 +10,7 @@ import {
 import { CarouselScroller } from "@/components/catalog/carousel-scroller";
 import { CatalogListCards } from "@/components/catalog/catalog-list-cards";
 import { RetryLink } from "@/components/retry-link";
+import { titleHref } from "@/lib/catalog/media-type";
 import { getVisitorRegion } from "@/lib/region";
 import {
   getMovieExtras,
@@ -63,11 +64,6 @@ const readExtras = cache(
     }
   },
 );
-
-/** The title page's own URL, which a Retry reloads in full. */
-function titleHref({ mediaType, id }: TitleRef): string {
-  return mediaType === "movie" ? `/movies/${id}` : `/shows/${id}`;
-}
 
 /**
  * The hero's Trailer button (AC-11), or nothing: while the extras load,
@@ -149,7 +145,12 @@ async function WhereToWatchContent(props: TitleRef) {
     getVisitorRegion(),
   ]);
   if (extras === null) {
-    return <WhereToWatchError region={region} href={titleHref(props)} />;
+    return (
+      <WhereToWatchError
+        region={region}
+        href={titleHref(props.mediaType, props.id)}
+      />
+    );
   }
   return (
     <WhereToWatch
@@ -194,7 +195,7 @@ async function MoreLikeThisContent(props: TitleRef) {
           <p className="text-[15px] text-muted-foreground">
             Couldn't load recommendations. TMDB didn't respond.
           </p>
-          <RetryLink href={titleHref(props)} />
+          <RetryLink href={titleHref(props.mediaType, props.id)} />
         </div>
       </MoreLikeThisFrame>
     );
@@ -206,7 +207,7 @@ async function MoreLikeThisContent(props: TitleRef) {
       <ul className="flex gap-3 md:gap-4">
         <CatalogListCards
           result={extras.recommendations}
-          returnPath={titleHref(props)}
+          returnPath={titleHref(props.mediaType, props.id)}
           eagerCount={0}
           limit={ROW_SIZE}
           sizes={ROW_POSTER_SIZES}
