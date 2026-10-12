@@ -167,7 +167,7 @@ function signInRedirect(request: NextRequest): NextResponse {
  * its page uses, one per captured segment. Deeper or other paths already
  * match no route, so they are not listed.
  *
- * `lists` marks the two paths that also hold a catalog's list pages
+ * `listMediaType` marks the two paths that also hold a catalog's list pages
  * (`/shows/top-rated`, spec 0021, AC-13): a segment naming one of that media
  * type's lists passes before the id parser judges it. Any other non numeric
  * segment is still a 404.
@@ -175,10 +175,18 @@ function signInRedirect(request: NextRequest): NextResponse {
 const CATALOG_PATHS: {
   pattern: RegExp;
   parsers: ((segment: string) => number | null)[];
-  lists?: MediaType;
+  listMediaType?: MediaType;
 }[] = [
-  { pattern: /^\/movies\/([^/]+)$/, parsers: [parseTmdbId], lists: "movie" },
-  { pattern: /^\/shows\/([^/]+)$/, parsers: [parseTmdbId], lists: "tv" },
+  {
+    pattern: /^\/movies\/([^/]+)$/,
+    parsers: [parseTmdbId],
+    listMediaType: "movie",
+  },
+  {
+    pattern: /^\/shows\/([^/]+)$/,
+    parsers: [parseTmdbId],
+    listMediaType: "tv",
+  },
   {
     pattern: /^\/shows\/([^/]+)\/season\/([^/]+)$/,
     parsers: [parseTmdbId, parseSeasonNumber],
@@ -204,11 +212,13 @@ const NOT_FOUND_PATH = "/_catalog-not-found";
  */
 function malformedCatalogResponse(request: NextRequest): NextResponse | null {
   const { pathname } = request.nextUrl;
-  for (const { pattern, parsers, lists } of CATALOG_PATHS) {
+  for (const { pattern, parsers, listMediaType } of CATALOG_PATHS) {
     const match = pattern.exec(pathname);
     if (!match) continue;
 
-    if (lists && isCatalogListSlug(lists, decodeSegment(match[1]))) {
+    // Undecoded on purpose: Next matches a static folder only on the literal
+    // path, so `/shows/top%2Drated` reaches `[id]`, and must be a 404 here.
+    if (listMediaType && isCatalogListSlug(listMediaType, match[1])) {
       return null;
     }
 

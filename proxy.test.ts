@@ -198,6 +198,11 @@ describe("the proxy's catalog id rule", () => {
     "/shows/Popular",
     "/shows/popular.jpg",
     "/shows/popular/season/1",
+    // An encoded slug is not the slug: Next routes it to `[id]`, not to the
+    // list folder, so it must be a real 404 here, not a soft one there.
+    "/shows/top%2Drated",
+    "/shows/top%2drated",
+    "/movies/now%2Dplaying",
   ])("answers %s with a 404 rewrite", async (path) => {
     const response = await run(path);
 
