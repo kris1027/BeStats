@@ -304,7 +304,8 @@ describe("private tracking state never enters a cache scope (spec 0007, AC-19; s
     const show = readFileSync("app/shows/[id]/page.tsx", "utf8");
     expect(show).toMatch(/<Suspense fallback=\{null\}>\s*<ShowTrackingSlot/);
     expect(show).toMatch(/<Suspense fallback=\{null\}>\s*<ShowProgressSlot/);
-    const shows = readFileSync("app/shows/page.tsx", "utf8");
+    // spec 0021, AC-4: the landing rows and list pages share these cards.
+    const shows = readFileSync("components/catalog/list-cards.tsx", "utf8");
     expect(shows).toMatch(/<Suspense fallback=\{null\}>\s*<ShowCardControls/);
     expect(shows).toMatch(/<Suspense fallback=\{null\}>\s*<ShowCardMeta/);
     expect(shows).toMatch(
