@@ -1,4 +1,6 @@
 import { render, screen } from "@testing-library/react";
+import type * as React from "react";
+import { Suspense } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 /**
@@ -45,7 +47,9 @@ vi.mock("@/components/catalog/list-cards", () => ({
 
 const { TmdbError } = await import("@/lib/tmdb/errors");
 const { catalogList } = await import("@/lib/catalog/lists");
-const { CarouselRowItems } = await import("./carousel-row");
+const { CarouselRow, CarouselRowItems } = await import("./carousel-row");
+const { CarouselRowSkeleton } = await import("./carousel-row-states");
+const { CarouselScroller } = await import("./carousel-scroller");
 
 const TOP_RATED = catalogList("tv", "top-rated");
 
@@ -127,5 +131,117 @@ describe("CarouselRowItems", () => {
     await expect(
       CarouselRowItems({ list: TOP_RATED, eagerCount: 0 }),
     ).rejects.toThrow("a bug");
+  });
+});
+
+type Element = React.ReactElement<Record<string, unknown>>;
+
+/**
+ * covers: spec 0021, AC-1, AC-7
+ *
+ * The row's static half, read from the element tree: the section named by its
+ * h2, the See all link, and the cards behind their own Suspense boundary with
+ * 12 skeletons as the fallback. The scroller itself is covered in
+ * `carousel-scroller.test.tsx`.
+ */
+describe("CarouselRow", () => {
+  const AIRING = catalogList("tv", "airing-today");
+
+  function rowParts(eagerCount = 0) {
+    const section = CarouselRow({ list: AIRING, eagerCount }) as Element;
+    const scroller = section.props.children as Element;
+    return { section, scroller };
+  }
+
+  it("is a section labelled by its h2", () => {
+    const { section, scroller } = rowParts();
+    expect(section.type).toBe("section");
+    expect(scroller.type).toBe(CarouselScroller);
+
+    render(scroller.props.heading as Element);
+
+    const heading = screen.getByRole("heading", {
+      level: 2,
+      name: "Airing today",
+    });
+    expect(heading).toHaveAttribute("id", section.props["aria-labelledby"]);
+  });
+
+  it("names the scroll region and its buttons by the row title (AC-5, AC-6)", () => {
+    expect(rowParts().scroller.props.label).toBe("Airing today");
+  });
+
+  it("links See all to the list page", () => {
+    render(rowParts().scroller.props.seeAll as Element);
+
+    expect(screen.getByRole("link", { name: "See all" })).toHaveAttribute(
+      "href",
+      "/shows/airing-today",
+    );
+  });
+
+  it("streams the cards in their own boundary, behind the 12 card skeleton (AC-7)", () => {
+    const boundary = rowParts(6).scroller.props.children as Element;
+    expect(boundary.type).toBe(Suspense);
+
+    const items = boundary.props.children as Element;
+    expect(items.type).toBe(CarouselRowItems);
+    expect(items.props).toMatchObject({ list: AIRING, eagerCount: 6 });
+
+    const fallback = boundary.props.fallback as Element;
+    expect(fallback.type).toBe(CarouselRowSkeleton);
+    const { container } = render(fallback);
+    expect(container.querySelectorAll("li")).toHaveLength(12);
+    expect(container.firstElementChild).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("gives each row a distinct heading id", () => {
+    const top = CarouselRow({ list: TOP_RATED, eagerCount: 0 }) as Element;
+    const airing = rowParts().section;
+
+    expect(top.props["aria-labelledby"]).not.toBe(
+      airing.props["aria-labelledby"],
+    );
+  });
+});
+
+describe("CarouselRowItems for movies", () => {
+  it("returns movie cards to /movies", async () => {
+    read.mockResolvedValue({
+      mediaType: "movie",
+      paged: {
+        results: [{ id: 550, title: "Fight Club" }],
+        totalPages: 1,
+        page: 1,
+        totalResults: 1,
+      },
+    });
+
+    render(
+      await CarouselRowItems({
+        list: catalogList("movie", "upcoming"),
+        eagerCount: 0,
+      }),
+    );
+
+    expect(screen.getByText("Fight Club")).toBeInTheDocument();
+    expect(screen.getAllByRole("listitem")).toHaveLength(1);
+  });
+
+  it("sends Try again on a failed movie row to /movies (AC-11)", async () => {
+    read.mockRejectedValue(new TmdbError("timeout", "/movie/upcoming", "x"));
+
+    render(
+      await CarouselRowItems({
+        list: catalogList("movie", "upcoming"),
+        eagerCount: 0,
+      }),
+    );
+
+    expect(screen.getByText("Couldn't load Upcoming")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Try again" })).toHaveAttribute(
+      "href",
+      "/movies",
+    );
   });
 });
