@@ -306,6 +306,13 @@ async function getTvListCached(
   }
 }
 
+/**
+ * One page of a TMDB TV list, cached (spec 0021, AC-2). Read through
+ * `readCatalogList`, never by a page directly, so a row, its list page and
+ * their metadata share one entry (AC-3).
+ *
+ * @throws {TmdbError} Rebuilt outside the cached scope from the stored failure.
+ */
 export async function getTvList(
   kind: TvListKind,
   options: ListOptions = {},
@@ -330,6 +337,11 @@ async function getMovieListCached(
   }
 }
 
+/**
+ * The movie twin of `getTvList`, read through `readCatalogList` the same way.
+ *
+ * @throws {TmdbError} Rebuilt outside the cached scope from the stored failure.
+ */
 export async function getMovieList(
   kind: MovieListKind,
   options: ListOptions = {},
