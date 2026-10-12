@@ -1,6 +1,13 @@
 import { UserRoundIcon } from "lucide-react";
 import Image from "next/image";
+import type * as React from "react";
 
+import {
+  ROW_ITEM_CLASS,
+  ROW_POSTER_SIZES,
+} from "@/components/catalog/carousel-row-states";
+import { CarouselScroller } from "@/components/catalog/carousel-scroller";
+import { SECTION_HEADING_CLASS } from "@/components/catalog/title-section";
 import type { CastMember } from "@/lib/tmdb";
 
 /**
@@ -11,11 +18,36 @@ import type { CastMember } from "@/lib/tmdb";
 const CAST_LIMIT = 12;
 
 /**
- * The top billed cast as one horizontal row (spec 0006, AC-6).
+ * The Cast section as a carousel row, the same frame as a landing row and
+ * More like this: the heading with the arrow buttons from `md`, then a
+ * focusable, labelled scroll region that touch, trackpad and the arrow keys
+ * scroll natively. It never widens the page (spec 0006, AC-14).
  *
- * The scroll container is a focusable, labelled region, so a keyboard user can
- * tab to it and scroll it with the arrow keys; touch and trackpad scroll it
- * natively. The row scrolls inside itself and never widens the page (AC-14).
+ * The cards stream in as `children`, so the show page can keep its cast in
+ * its own Suspense boundary under a prerendered heading.
+ */
+function CastSection({ children }: { children: React.ReactNode }) {
+  return (
+    <section aria-labelledby="cast-heading" className="flex flex-col gap-4">
+      <CarouselScroller
+        label="Cast"
+        heading={
+          <h2 id="cast-heading" className={SECTION_HEADING_CLASS}>
+            Cast
+          </h2>
+        }
+        seeAll={null}
+      >
+        {children}
+      </CarouselScroller>
+    </section>
+  );
+}
+
+/**
+ * The top billed cast as row cards (spec 0006, AC-6), drawn like the media
+ * cards beside them: the 2:3 frame and rim at a row card's width, the name as
+ * the caption and the character on the line under it.
  *
  * Cards are not links: there is no person page to go to, and a link that
  * leads nowhere useful is worse than none. The photo is decorative (`alt=""`)
@@ -37,58 +69,52 @@ function CastRow({
   }
 
   return (
-    <section
-      aria-label="Cast"
-      // biome-ignore lint/a11y/noNoninteractiveTabindex: a scrollable region must be focusable so keyboard users can scroll it (WCAG 2.1.1).
-      tabIndex={0}
-      className="-mx-4 overflow-x-auto overscroll-x-contain px-4 pb-3"
-    >
-      <ul className="flex w-max gap-3 md:gap-4">
-        {cast.slice(0, CAST_LIMIT).map((member) => (
-          <li
-            key={member.creditId}
-            className="flex w-[120px] shrink-0 flex-col gap-2 md:w-[140px]"
-          >
-            <div className="relative aspect-2/3 w-full overflow-hidden rounded-lg">
-              {member.profileUrl ? (
-                <Image
-                  src={member.profileUrl}
-                  alt=""
-                  fill
-                  sizes="(min-width: 768px) 140px, 120px"
-                  className="object-cover"
-                />
-              ) : (
-                <div
-                  data-slot="profile-fallback"
-                  className="absolute inset-0 flex items-center justify-center rounded-lg bg-glass-plate"
-                >
-                  <UserRoundIcon
-                    className="size-8 text-muted-foreground"
-                    aria-hidden="true"
-                  />
-                </div>
-              )}
-              <span
-                aria-hidden="true"
-                className="rim glass-rim pointer-events-none absolute inset-0 rounded-lg"
+    <ul className="flex gap-3 md:gap-4">
+      {cast.slice(0, CAST_LIMIT).map((member) => (
+        <li
+          key={member.creditId}
+          className={`${ROW_ITEM_CLASS} flex flex-col gap-2.5`}
+        >
+          <div className="relative aspect-2/3 w-full overflow-hidden rounded-lg">
+            {member.profileUrl ? (
+              <Image
+                src={member.profileUrl}
+                alt=""
+                fill
+                sizes={ROW_POSTER_SIZES}
+                className="object-cover"
               />
-            </div>
-            <div className="flex flex-col gap-0.5">
-              <p className="text-sm leading-snug font-semibold text-foreground">
-                {member.name}
-              </p>
-              {member.character ? (
-                <p className="text-xs leading-snug text-muted-foreground">
-                  {member.character}
-                </p>
-              ) : null}
-            </div>
-          </li>
-        ))}
-      </ul>
-    </section>
+            ) : (
+              <div
+                data-slot="profile-fallback"
+                className="absolute inset-0 flex items-center justify-center rounded-lg bg-glass-plate"
+              >
+                <UserRoundIcon
+                  className="size-8 text-muted-foreground"
+                  aria-hidden="true"
+                />
+              </div>
+            )}
+            <span
+              aria-hidden="true"
+              className="rim glass-rim pointer-events-none absolute inset-0 rounded-lg"
+            />
+          </div>
+          <h3 className="text-sm leading-snug text-foreground">
+            {member.name}
+          </h3>
+          {member.character ? (
+            <p
+              title={member.character}
+              className="-mt-1.5 truncate text-xs text-muted-foreground"
+            >
+              {member.character}
+            </p>
+          ) : null}
+        </li>
+      ))}
+    </ul>
   );
 }
 
-export { CAST_LIMIT, CastRow };
+export { CAST_LIMIT, CastRow, CastSection };

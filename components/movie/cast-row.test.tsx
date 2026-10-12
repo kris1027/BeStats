@@ -1,10 +1,10 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { CastRow } from "@/components/movie/cast-row";
+import { CastRow, CastSection } from "@/components/movie/cast-row";
 import type { CastMember } from "@/lib/tmdb";
 
-/** covers: spec 0006, AC-4, AC-6 */
+/** covers: spec 0006, AC-4, AC-6 (the row drawn as a carousel since spec 0022) */
 function member(index: number, overrides: Partial<CastMember> = {}) {
   return {
     personId: index,
@@ -17,6 +17,17 @@ function member(index: number, overrides: Partial<CastMember> = {}) {
   };
 }
 
+beforeEach(() => {
+  // The carousel's scroller measures itself; jsdom has no ResizeObserver.
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      observe() {}
+      disconnect() {}
+    },
+  );
+});
+
 describe("CastRow", () => {
   it("shows at most the first 12, in billing order", () => {
     render(<CastRow cast={Array.from({ length: 15 }, (_, i) => member(i))} />);
@@ -27,11 +38,35 @@ describe("CastRow", () => {
     expect(items[11]).toHaveTextContent("Actor 11");
   });
 
-  it("is a labelled region the keyboard can reach", () => {
+  it("is a carousel: a Cast heading and a labelled region the keyboard can reach", () => {
+    render(
+      <CastSection>
+        <CastRow cast={[member(1)]} />
+      </CastSection>,
+    );
+
+    expect(screen.getByRole("heading", { name: "Cast" })).toBeVisible();
+    // The section is named by its heading; the scroll region inside it is
+    // the focusable one, as on every carousel row.
+    const region = screen
+      .getAllByRole("region", { name: "Cast" })
+      .find((element) => element.getAttribute("tabindex") === "0");
+    expect(region).toBeDefined();
+    expect(region).toContainElement(screen.getByRole("listitem"));
+  });
+
+  it("draws each person like a row media card", () => {
     render(<CastRow cast={[member(1)]} />);
 
-    const region = screen.getByRole("region", { name: "Cast" });
-    expect(region).toHaveAttribute("tabindex", "0");
+    const item = screen.getByRole("listitem");
+    expect(item).toHaveClass("w-[140px]", "md:w-[180px]", "snap-start");
+    expect(
+      screen.getByRole("heading", { level: 3, name: "Actor 1" }),
+    ).toBeVisible();
+    expect(item.querySelector("img")).toHaveAttribute(
+      "sizes",
+      "(min-width: 768px) 180px, 140px",
+    );
   });
 
   it("has no links, because there is no person page", () => {
@@ -49,7 +84,8 @@ describe("CastRow", () => {
       container.querySelector('[data-slot="profile-fallback"]'),
     ).toBeInTheDocument();
     expect(container.querySelectorAll("img")).toHaveLength(0);
-    expect(screen.getByRole("listitem").querySelectorAll("p")).toHaveLength(1);
+    // The name is the caption; with no character there is no second line.
+    expect(screen.getByRole("listitem").querySelectorAll("p")).toHaveLength(0);
   });
 
   it("says so when TMDB lists no cast", () => {

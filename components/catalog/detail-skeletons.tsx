@@ -1,6 +1,7 @@
 import { cn } from "cn";
 
-import { Skeleton } from "@/components/skeleton";
+import { ROW_ITEM_CLASS } from "@/components/catalog/carousel-row-states";
+import { PosterCardSkeleton, Skeleton } from "@/components/skeleton";
 
 /**
  * The `DetailHero` while TMDB answers, at its footprint (spec 0006, AC-11;
@@ -103,36 +104,36 @@ const OVERVIEW_LINES = [
 ];
 
 /**
- * One row of cast cards at `CastRow`'s card widths, without a heading. The
- * caption reserves two lines each for the name and the character, the most
- * `CastRow` wraps them to, and `pb-3` matches the row's own padding.
+ * One row of cast cards at `CastRow`'s row card width, without a heading:
+ * the 2:3 frame, the name line and the character line, as on a media card.
+ * Inside the cast carousel it is the cards' fallback; on a page skeleton,
+ * `CastRowSkeletonFrame` stands in for the carousel's scroll region.
  */
 function CastRowSkeleton() {
   return (
-    <div className="flex gap-3 overflow-hidden pb-3 md:gap-4">
-      {Array.from({ length: 8 }, (_, index) => (
-        <div
-          // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders with no identity.
-          key={index}
-          className="flex w-30 shrink-0 flex-col gap-2 md:w-35"
-        >
-          <Skeleton shape="poster" />
-          <div className="flex flex-col gap-0.5">
-            <div className="h-[2lh] pt-[0.15lh] text-sm leading-snug">
-              <Skeleton shape="line" className="h-[0.7lh] w-3/4" />
-            </div>
-            <div className="h-[2lh] pt-[0.15lh] text-xs leading-snug">
-              <Skeleton shape="line" className="h-[0.7lh] w-1/2" />
-            </div>
-          </div>
-        </div>
+    <ul aria-hidden="true" className="flex gap-3 md:gap-4">
+      {Array.from({ length: 12 }, (_, index) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders with no identity.
+        <li key={index} className={ROW_ITEM_CLASS}>
+          <PosterCardSkeleton meta />
+        </li>
       ))}
+    </ul>
+  );
+}
+
+/** The cast row skeleton clipped and padded like the carousel's region. */
+function CastRowSkeletonFrame() {
+  return (
+    <div className="-mx-4 overflow-hidden px-4 pb-3">
+      <CastRowSkeleton />
     </div>
   );
 }
 
 export {
   CastRowSkeleton,
+  CastRowSkeletonFrame,
   DetailHeroSkeleton,
   OverviewSkeleton,
   SectionHeadingSkeleton,

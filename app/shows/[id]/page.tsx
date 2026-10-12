@@ -12,7 +12,7 @@ import {
   WhereToWatchSection,
 } from "@/components/catalog/title-extras";
 import { SECTION_HEADING_CLASS } from "@/components/catalog/title-section";
-import { CastRow } from "@/components/movie/cast-row";
+import { CastRow, CastSection } from "@/components/movie/cast-row";
 import { MovieOverview } from "@/components/movie/movie-overview";
 import { RetryLink } from "@/components/retry-link";
 import { SeasonGrid } from "@/components/show/season-grid";
@@ -197,14 +197,11 @@ async function ShowDetail({
 
       <WhereToWatchSection {...title} />
 
-      <section aria-labelledby="cast-heading" className="flex flex-col gap-4">
-        <h2 id="cast-heading" className={SECTION_HEADING_CLASS}>
-          Cast
-        </h2>
+      <CastSection>
         <Suspense fallback={<CastRowSkeleton />}>
           <ShowCast id={id} />
         </Suspense>
-      </section>
+      </CastSection>
 
       <MoreLikeThisSection {...title} />
 
