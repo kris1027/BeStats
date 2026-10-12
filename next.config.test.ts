@@ -23,9 +23,37 @@ describe("next.config", () => {
     vi.stubEnv("NEXT_PUBLIC_AUTH_EMAIL_DELIVERY", "on");
     const redirects = await nextConfig.redirects?.();
 
-    expect(redirects).toEqual([
+    expect(redirects).toContainEqual(
       expect.objectContaining({ source: "/", destination: "/shows" }),
-    ]);
+    );
+    expect(redirects).not.toContainEqual(
+      expect.objectContaining({ source: "/check-email" }),
+    );
+  });
+
+  /** covers: spec 0021, AC-14 */
+  it.each([
+    ["/shows", "/shows/popular"],
+    ["/movies", "/movies/popular"],
+  ])("sends %s with a page to %s, permanently", async (source, destination) => {
+    const redirects = await nextConfig.redirects?.();
+
+    expect(redirects).toContainEqual({
+      source,
+      has: [{ type: "query", key: "page" }],
+      destination,
+      permanent: true,
+    });
+  });
+
+  it("redirects a landing only when it carries a page (spec 0021, AC-14)", async () => {
+    const redirects = await nextConfig.redirects?.();
+
+    for (const redirect of redirects ?? []) {
+      if (redirect.source === "/shows" || redirect.source === "/movies") {
+        expect(redirect.has).toEqual([{ type: "query", key: "page" }]);
+      }
+    }
   });
 
   /** covers: spec 0018, AC-13 */
@@ -40,10 +68,10 @@ describe("next.config", () => {
     });
   });
 
-  it("makes that redirect temporary, so no browser caches it forever", async () => {
+  it("makes the / redirect temporary, so no browser caches it forever", async () => {
     const redirects = await nextConfig.redirects?.();
 
-    expect(redirects?.[0].permanent).toBe(false);
+    expect(redirects?.find((r) => r.source === "/")?.permanent).toBe(false);
   });
 
   it("allows TMDB images and nothing else", () => {
