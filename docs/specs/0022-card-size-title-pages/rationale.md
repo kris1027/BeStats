@@ -59,3 +59,13 @@ A link out avoids a processor, but the owner asked for trailers on the page. Loa
 The grid failure mode is silent (wrong image widths, nothing visibly broken), so the design keeps every number that depends on the column count in one exported map per preset, and the test iterates the map. The cross check showed the conditional `library` preset could not fail at a width that matters (library cards are 172px at 768px today and fit, and 6 columns give 186px), so it was dropped for one grid everywhere. The fixed 228px entry for the capped five column range removes an avoidable overshoot.
 
 For the data, the deciding force is the library read: appending to `getTvShow` would multiply the cost of the new data by every tracked show, while a separate read costs one request per title per hour shared across visitors. Watch providers and certifications arrive for every country in one response, so the cache stays free of request state and the region is a cheap pick afterward, which honours the `lib/tmdb` rule. Hiding a missing age rating rather than falling back to another country, and naming the country on Where to watch, follow the project rule never to present data that may be false. Failure states follow spec 0021's row pattern (one line with Retry), so a slow or failing extras read never takes the page or its tracking down.
+
+## Amendment 2026-10-12: recording what shipped
+
+A review of the branch against this spec found five places where the build went past or beside the text. The owner kept each as built and asked for the spec to say so:
+
+- **Cast as a carousel row.** Once More like this used the home row card, the old fixed width cast cards were the one row on the page drawn differently. Cast now uses the same card, scroller and skeleton, so the page has one row style.
+- **Network name beside its logo.** TMDB's network logos come in both white and dark, so a logo alone vanishes on one of them. The name always shows, with the logo beside it on a neutral tile.
+- **An error line with no cause.** "TMDB didn't respond" was untrue for a 404 or a bad response, which the extras read also turns into the error line, so the line now says only that the section couldn't load from TMDB.
+- **The trailer paragraph in `/privacy`.** Saying when the YouTube player loads and whose policy then applies belongs beside the cookie text, in addition to the one country sentence AC-19 asked for.
+- **The read signatures.** The extras reads follow the module's pair pattern: the cached twin returns a `TmdbResult` and the exported wrapper throws. The interface table described only the inner half.
