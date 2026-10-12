@@ -20,6 +20,8 @@ const fetchDiscoverMovies = vi.fn();
 const fetchTvShow = vi.fn();
 const fetchShowCast = vi.fn();
 const fetchSeason = vi.fn();
+const fetchTvList = vi.fn();
+const fetchMovieList = vi.fn();
 
 vi.mock("next/cache", () => ({
   cacheLife: (profile: string) => cacheLife(profile),
@@ -32,6 +34,11 @@ vi.mock("./tv", () => ({
   fetchShowCast: (id: number) => fetchShowCast(id),
   fetchSeason: (id: number, n: number) => fetchSeason(id, n),
 }));
+vi.mock("./lists", () => ({
+  fetchTvList: (kind: string, options: unknown) => fetchTvList(kind, options),
+  fetchMovieList: (kind: string, options: unknown) =>
+    fetchMovieList(kind, options),
+}));
 vi.mock("./search", () => ({
   fetchDiscoverMovies: (options: unknown) => fetchDiscoverMovies(options),
   fetchDiscoverTvShows: vi.fn(),
@@ -39,8 +46,15 @@ vi.mock("./search", () => ({
   fetchSearchTvShows: vi.fn(),
 }));
 
-const { discoverMovies, getMovie, getSeason, getShowCast, getTvShow } =
-  await import("./reads");
+const {
+  discoverMovies,
+  getMovie,
+  getMovieList,
+  getSeason,
+  getShowCast,
+  getTvList,
+  getTvShow,
+} = await import("./reads");
 
 afterEach(() => {
   cacheLife.mockReset();
@@ -49,6 +63,8 @@ afterEach(() => {
   fetchTvShow.mockReset();
   fetchShowCast.mockReset();
   fetchSeason.mockReset();
+  fetchTvList.mockReset();
+  fetchMovieList.mockReset();
 });
 
 const TRANSIENT: TmdbErrorKind[] = ["timeout", "rate_limited", "upstream"];
@@ -169,5 +185,68 @@ describe("the show, cast and season cache lifetimes", () => {
     const error = await getTvShow(999999999).catch((caught: unknown) => caught);
 
     expect(isTmdbNotFound(error)).toBe(true);
+  });
+});
+
+/**
+ * covers: spec 0021, AC-3, AC-17
+ *
+ * The landing rows' list reads live for `hours`, and a TMDB outage on one is
+ * pinned for seconds only, so a row's Try again really retries. Each failure
+ * comes back out of the scope as a `TmdbError`, which is what keeps it inside
+ * its own row (AC-11).
+ */
+describe("the catalog list cache lifetimes", () => {
+  it.each([
+    ["getTvList", () => getTvList("trending", { page: 1 }), fetchTvList],
+    [
+      "getMovieList",
+      () => getMovieList("now_playing", { page: 1 }),
+      fetchMovieList,
+    ],
+  ] as const)("%s caches a page for hours", async (_, read, fetcher) => {
+    fetcher.mockResolvedValue({ page: 1, results: [] });
+
+    await read();
+
+    expect(cacheLife).toHaveBeenCalledExactlyOnceWith("hours");
+  });
+
+  it("passes the kind and page through to the fetcher", async () => {
+    fetchTvList.mockResolvedValue({ page: 4, results: [] });
+    fetchMovieList.mockResolvedValue({ page: 1, results: [] });
+
+    await getTvList("airing_today", { page: 4 });
+    await getMovieList("upcoming");
+
+    expect(fetchTvList).toHaveBeenCalledWith("airing_today", { page: 4 });
+    expect(fetchMovieList).toHaveBeenCalledWith("upcoming", {});
+  });
+
+  it.each(TRANSIENT)(
+    "caches a %s list failure for seconds and rethrows it",
+    async (kind) => {
+      fetchTvList.mockRejectedValue(new TmdbError(kind, "/tv/top_rated", "x"));
+
+      await expect(getTvList("top_rated", { page: 1 })).rejects.toMatchObject({
+        kind,
+      });
+
+      expect(cacheLife).toHaveBeenCalledExactlyOnceWith("seconds");
+    },
+  );
+
+  it.each(SETTLED)("caches a %s list failure for minutes", async (kind) => {
+    fetchMovieList.mockRejectedValue(
+      new TmdbError(kind, "/movie/top_rated", "x"),
+    );
+
+    const error = await getMovieList("top_rated", { page: 1 }).catch(
+      (caught: unknown) => caught,
+    );
+
+    expect(error).toBeInstanceOf(TmdbError);
+    expect(error).toMatchObject({ kind, endpoint: "/movie/top_rated" });
+    expect(cacheLife).toHaveBeenCalledExactlyOnceWith("minutes");
   });
 });
