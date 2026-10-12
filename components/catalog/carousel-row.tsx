@@ -205,4 +205,4 @@ function CarouselRowSkeleton() {
   );
 }
 
-export { CarouselRow, CarouselRowSkeleton };
+export { CarouselRow, CarouselRowItems, CarouselRowSkeleton };
