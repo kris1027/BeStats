@@ -405,14 +405,14 @@ spec [0020](../specs/0020-progress-based-library-pages/index.md) · code in `lib
 `/shows` and `/movies` become rows of sideways scrolling carousels instead of one paged grid of 20. TV rows: Trending this week, Popular, Airing today, On the air, Top rated. Movie rows: Trending this week, Popular, Now playing, Upcoming, Top rated (region `PL`). Each row has a See all link to its own paged list page at `/shows/{slug}` or `/movies/{slug}`. Settled in a grilling session on 2026-10-12.
 **Done when:** both landings show their five rows with the full card (badge, meta, controls), each row streams on its own and fails on its own with Retry; every See all page pages like today's grid with a back link; the proxy accepts the known slugs and still 404s anything else; old `?page=N` links redirect (308) to `/…/popular?page=N`; the sitemap lists page 1 of each list.
 - [x] Design it (spec): `/architect home carousels`
-- [ ] Build it: `/develop home carousels`
-  - [ ] TMDB list reads, the list registry and the slug dispatcher (AC-2, AC-3, AC-8, AC-17)
-  - [ ] Tracer bullet: proxy slugs, the shared list page and one `/shows` row end to end, built with no TMDB token (AC-1, AC-4, AC-5, AC-7, AC-9 to AC-13, AC-15)
-  - [ ] All ten lists on both landings, the `?page=N` 308 redirects, and the arrow scroller (AC-1, AC-2, AC-6, AC-14)
-  - [ ] Sitemap list paths, request scope tests and the running app pass at 375px and 1280px (AC-16, AC-17)
+- [x] Build it: `/develop home carousels`
+  - [x] TMDB list reads, the list registry and the slug dispatcher (AC-2, AC-3, AC-8, AC-17)
+  - [x] Tracer bullet: proxy slugs, the shared list page and one `/shows` row end to end, built with no TMDB token (AC-1, AC-4, AC-5, AC-7, AC-9 to AC-13, AC-15)
+  - [x] All ten lists on both landings, the `?page=N` 308 redirects, and the arrow scroller (AC-1, AC-2, AC-6, AC-14)
+  - [x] Sitemap list paths, request scope tests and the running app pass at 375px and 1280px (AC-16, AC-17)
 - [ ] Verify it: `/check verify home carousels`
 - [ ] Test it: `/test home carousels`
-spec [0021](../specs/0021-home-carousels/index.md)
+spec [0021](../specs/0021-home-carousels/index.md) · code in `lib/catalog/lists.ts`, `lib/catalog-list-read.ts`, `lib/tmdb/lists.ts`, `components/catalog/`, `app/shows/{slug}/`, `app/movies/{slug}/`, `proxy.ts`, `next.config.ts`
 
 ## Deferred
 Out of scope for the current build pass, kept so the plan stays honest.
