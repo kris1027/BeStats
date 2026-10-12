@@ -29,7 +29,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
  * AC-16). From the registry, so a new list is listed with no change here.
  */
 const LIST_PATHS = [...catalogListsFor("movie"), ...catalogListsFor("tv")].map(
-  (list) => listPath(list.mediaType, list.slug),
+  listPath,
 );
 
 /**

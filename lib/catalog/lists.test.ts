@@ -56,13 +56,15 @@ describe("the list registry", () => {
 
 describe("list URLs (AC-9)", () => {
   it("puts a list under its catalog", () => {
-    expect(listPath("tv", "top-rated")).toBe("/shows/top-rated");
-    expect(listPath("movie", "upcoming")).toBe("/movies/upcoming");
+    expect(listPath(catalogList("tv", "top-rated"))).toBe("/shows/top-rated");
+    expect(listPath(catalogList("movie", "upcoming"))).toBe("/movies/upcoming");
   });
 
   it("writes page 1 as the bare path and page N as ?page=N", () => {
-    expect(listPageHref("tv", "popular", 1)).toBe("/shows/popular");
-    expect(listPageHref("movie", "trending", 4)).toBe(
+    expect(listPageHref(catalogList("tv", "popular"), 1)).toBe(
+      "/shows/popular",
+    );
+    expect(listPageHref(catalogList("movie", "trending"), 4)).toBe(
       "/movies/trending?page=4",
     );
   });

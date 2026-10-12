@@ -56,7 +56,7 @@ function CarouselRow({
         }
         seeAll={
           <Link
-            href={listPath(list.mediaType, list.slug)}
+            href={listPath(list)}
             className="hit-area inline-flex items-center gap-1 rounded-sm text-sm text-muted-foreground hover:text-foreground"
           >
             See all

@@ -84,8 +84,7 @@ async function ListGrid({
   const page = parsePageParam((await searchParams).page);
   if (page === null) return <NoSuchPage list={list} />;
 
-  const pageHref = (target: number) =>
-    listPageHref(list.mediaType, list.slug, target);
+  const pageHref = (target: number) => listPageHref(list, target);
 
   let result: TaggedCatalogPage;
   try {
@@ -176,7 +175,7 @@ function NoSuchPage({ list }: { list: CatalogList }) {
         title="That page doesn't exist"
         description={`There are no ${list.pageNoun} at this page number.`}
         action={
-          <ButtonLink size="touch" href={listPath(list.mediaType, list.slug)}>
+          <ButtonLink size="touch" href={listPath(list)}>
             Back to page 1
           </ButtonLink>
         }

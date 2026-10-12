@@ -64,6 +64,6 @@ export async function catalogListMetadata(
     discover: ({ page }) => readCatalogList(list, page),
     title: list.heading,
     description: list.note,
-    pageHref: (page) => listPageHref(list.mediaType, list.slug, page),
+    pageHref: (page) => listPageHref(list, page),
   });
 }

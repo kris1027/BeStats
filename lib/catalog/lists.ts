@@ -172,9 +172,13 @@ export function catalogList(mediaType: MediaType, slug: string): CatalogList {
   return list;
 }
 
-/** A list's page: `/shows/{slug}` or `/movies/{slug}` (spec 0021, AC-9). */
-export function listPath(mediaType: MediaType, slug: string): string {
-  return `${CATALOG_PATHS[mediaType]}/${slug}`;
+/**
+ * A list's page: `/shows/{slug}` or `/movies/{slug}` (spec 0021, AC-9). Takes
+ * the registry entry, not a media type and slug, so a caller cannot pair a
+ * slug with the wrong catalog.
+ */
+export function listPath(list: CatalogList): string {
+  return `${CATALOG_PATHS[list.mediaType]}/${list.slug}`;
 }
 
 /**
@@ -182,12 +186,8 @@ export function listPath(mediaType: MediaType, slug: string): string {
  * as the old landing grid was (spec 0021, AC-9, AC-15). The pagination links,
  * the canonical, the Retry link and each card's `returnPath` all use it.
  */
-export function listPageHref(
-  mediaType: MediaType,
-  slug: string,
-  page: number,
-): string {
-  const path = listPath(mediaType, slug);
+export function listPageHref(list: CatalogList, page: number): string {
+  const path = listPath(list);
   return page === 1 ? path : `${path}?page=${page}`;
 }
 
