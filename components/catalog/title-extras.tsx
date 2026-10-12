@@ -81,6 +81,11 @@ function TrailerSlot(props: TitleRef & { title: string }) {
   );
 }
 
+/**
+ * The trailer slot's body. Exported apart from its Suspense boundary so the
+ * tests can await it as the async Server Component it is; pages render
+ * `TrailerSlot`.
+ */
 async function TrailerSlotContent({
   mediaType,
   id,
@@ -109,6 +114,11 @@ function AgeRatingSlot(props: TitleRef) {
   );
 }
 
+/**
+ * The age rating slot's body. Exported apart from its Suspense boundary for
+ * the tests, like `TrailerSlotContent`; pages render `AgeRatingSlot`. It
+ * reads the region here, never above the boundary (AC-9).
+ */
 async function AgeRatingSlotContent({ mediaType, id }: TitleRef) {
   const [extras, region] = await Promise.all([
     readExtras(mediaType, id),
@@ -128,6 +138,11 @@ function WhereToWatchSection(props: TitleRef) {
   );
 }
 
+/**
+ * Where to watch's body. Exported apart from its Suspense boundary for the
+ * tests, like `TrailerSlotContent`; pages render `WhereToWatchSection`. It
+ * reads the region here, never above the boundary (AC-9).
+ */
 async function WhereToWatchContent(props: TitleRef) {
   const [extras, region] = await Promise.all([
     readExtras(props.mediaType, props.id),
@@ -166,6 +181,10 @@ function MoreLikeThisSection(props: TitleRef) {
   );
 }
 
+/**
+ * More like this's body. Exported apart from its Suspense boundary for the
+ * tests, like `TrailerSlotContent`; pages render `MoreLikeThisSection`.
+ */
 async function MoreLikeThisContent(props: TitleRef) {
   const extras = await readExtras(props.mediaType, props.id);
   if (extras === null) {
