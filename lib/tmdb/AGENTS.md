@@ -19,7 +19,9 @@ feature 4. Runtime steps live in that spec's `verify.md`.
   app's own types), `validation.ts` (input guards), `errors.ts`, `result.ts`,
   `images.ts`, `concurrency.ts`, then the reads themselves in `movies.ts`,
   `tv.ts`, `search.ts`, `genres.ts`, `batch.ts`, `show-episodes.ts` and
-  `lists.ts` (TMDB's trending, dated and top rated lists, spec 0021).
+  `lists.ts` (TMDB's trending, dated and top rated lists, spec 0021), and
+  `extras.ts` with `normalize-extras.ts` (a title's videos, recommendations,
+  watch providers and age ratings, spec 0022).
 
 ## Conventions this module holds to
 
@@ -39,6 +41,11 @@ feature 4. Runtime steps live in that spec's `verify.md`.
   rest.
 - **Nothing user specific enters a cached scope.** No `cookies()`, no
   `headers()`, no search params in this folder.
+- **Title extras are their own read, never appended to the detail read.**
+  `getMovieExtras` and `getTvExtras` (`hours`) carry every country's watch
+  providers and age ratings, so the cache holds no request state and the page
+  picks its region afterwards. Appending them to `getTvShow` would multiply
+  their cost by every tracked show the library pages read (spec 0022).
 - **No Zod schema is `.strict()`.** TMDB adds keys freely and an unknown key
   must never fail a read.
 - **Missing stays missing.** A null path yields a null URL, an empty string

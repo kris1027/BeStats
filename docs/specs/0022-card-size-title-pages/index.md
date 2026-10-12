@@ -1,7 +1,7 @@
 # 0022. Consistent card size and richer title pages
 
 **Date**: 2026-10-12
-**Status**: In Progress
+**Status**: Accepted
 
 ## Summary
 
