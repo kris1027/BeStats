@@ -1,7 +1,7 @@
 # 0021. Home carousels: rows of TMDB lists on /shows and /movies, each with a paged See all page
 
 **Date**: 2026-10-12
-**Status**: In Progress
+**Status**: Accepted
 
 Scope feature: [24. Home carousels](../../scope/scope.md) · Beta tier
 
