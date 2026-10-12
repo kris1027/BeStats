@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { CatalogLanding } from "@/components/catalog/catalog-landing";
-import { catalogList } from "@/lib/catalog/lists";
+import { catalogListsFor } from "@/lib/catalog/lists";
 import { landingMetadata } from "@/lib/seo/metadata";
 
 /**
@@ -17,12 +17,10 @@ export const metadata: Metadata = landingMetadata({
 });
 
 /**
- * The TV landing: one carousel row per TV list (spec 0021, AC-1). No session
- * is read here; each card's slots read it inside their own Suspense
- * boundaries (`components/catalog/list-cards.tsx`).
+ * The TV landing: one carousel row per TV list, in registry order (spec
+ * 0021, AC-1). No session is read here; each card's slots read it inside
+ * their own Suspense boundaries (`components/catalog/list-cards.tsx`).
  */
 export default function ShowsPage() {
-  return (
-    <CatalogLanding heading="Shows" lists={[catalogList("tv", "top-rated")]} />
-  );
+  return <CatalogLanding heading="Shows" lists={catalogListsFor("tv")} />;
 }
