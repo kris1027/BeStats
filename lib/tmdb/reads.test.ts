@@ -52,6 +52,28 @@ describe("fetchMovie", () => {
     expect(movie.cast[0]?.order).toBe(0);
   });
 
+  it("parses the facts and crew from the same response · covers spec 0022 AC-15, AC-16", async () => {
+    installFetchMock([{ body: movieFixture }]);
+
+    const movie = await fetchMovie(550);
+
+    expect(movie.status).toBe("Released");
+    expect(movie.budget).toBe(63000000);
+    expect(movie.productionCompanies.length).toBeGreaterThan(0);
+    // The fixture's trimmed crew holds only the novel's author.
+    expect(movie.directors).toEqual([]);
+    expect(movie.writers).toEqual([]);
+  });
+
+  it("reports a zero budget and revenue as missing · covers spec 0022 AC-16", async () => {
+    installFetchMock([{ body: { ...movieFixture, budget: 0, revenue: 0 } }]);
+
+    const movie = await fetchMovie(550);
+
+    expect(movie.budget).toBeNull();
+    expect(movie.revenue).toBeNull();
+  });
+
   it("builds every image URL with its pinned default size", async () => {
     installFetchMock([{ body: movieFixture }]);
 
@@ -288,6 +310,19 @@ describe("fetchTvShow", () => {
 });
 
 /** covers: spec 0009, AC-8 */
+describe("fetchTvShow facts · covers spec 0022 AC-15, AC-16", () => {
+  it("reads the type, creators, networks and companies with no extra request", async () => {
+    const fetchMock = installFetchMock([{ body: tvFixture }]);
+
+    const show = await fetchTvShow(1396);
+
+    expect(fetchMock.attempts).toBe(1);
+    expect(show.type).toBe("Scripted");
+    expect(show.createdBy).toEqual(["Vince Gilligan"]);
+    expect(show.networks.map((network) => network.name)).toEqual(["AMC"]);
+  });
+});
+
 describe("fetchShowCast", () => {
   it("reads the aggregate credits and keeps the most episodes first, capped at 12", async () => {
     const fetchMock = installFetchMock([{ body: aggregateFixture }]);

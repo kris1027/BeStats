@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { MovieHero } from "@/components/movie/movie-hero";
 
 /**
- * covers: spec 0006, AC-3, AC-4, AC-7
+ * covers: spec 0006, AC-3, AC-4, AC-7; spec 0022, AC-11, AC-13
  *
  * The hero is where a missing value is most tempting to paper over, so every
  * fallback is asserted: absent means absent, never a zero or a stand in.
@@ -99,5 +99,20 @@ describe("MovieHero", () => {
     render(<MovieHero {...FULL} />);
 
     expect(screen.queryByText(/watchlist|watched|your score/i)).toBeNull();
+  });
+
+  it("renders the age rating slot in the meta row and the actions slot under the rating (spec 0022)", () => {
+    render(
+      <MovieHero
+        {...EMPTY}
+        ageRating={<span>R</span>}
+        actions={<button type="button">Trailer</button>}
+      />,
+    );
+
+    expect(screen.getByText("R")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Trailer" })).toBeVisible();
+    // With no year, runtime or genres, the chip still has its row.
+    expect(screen.getByText("R").parentElement).toHaveClass("flex-wrap");
   });
 });

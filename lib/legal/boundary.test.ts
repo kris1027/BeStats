@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   CONTACT_EMAIL,
+  JUSTWATCH_ATTRIBUTION,
   OPERATOR_COUNTRY,
   OPERATOR_GITHUB_URL,
   OPERATOR_HANDLE,
@@ -51,6 +52,12 @@ describe("one home for each legal fact", () => {
     // A fragment, so a reworded copy of the sentence is caught too.
     expect(filesContaining("otherwise approved by TMDB")).toEqual([
       "lib/tmdb/constants.ts",
+    ]);
+  });
+
+  it("writes the JustWatch credit only in lib/legal/operator.ts (spec 0022, AC-12)", () => {
+    expect(filesContaining(JUSTWATCH_ATTRIBUTION)).toEqual([
+      "lib/legal/operator.ts",
     ]);
   });
 
