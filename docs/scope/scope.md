@@ -422,13 +422,13 @@ Two strands, one feature (merged on 2026-10-12). **Cards:** grid cards match the
 **Done when:** every changed grid renders cards close to the home row width with matching image `sizes` and the season grid unchanged; both title pages show each new section from cached TMDB data with missing values omitted, never invented; YouTube loads only after a click; the region is named wherever it applies; the shells stay prerendered; and `/privacy` lists YouTube with `LEGAL_LAST_UPDATED` bumped.
 - [x] Design it (spec): `/architect consistent card size and richer title pages`
 - [ ] Build it: `/develop consistent card size and richer title pages`
-  - [ ] Card strand: the `columns` preset with `catalog` and `wide`, the sizes and eager maps, the season grid on `wide`, the library skeleton and `/showcase`, checked at five widths — AC-1 to AC-7
-  - [ ] Tracer bullet: the movie extras read, `lib/region.ts` and Where to watch on the movie page end to end against live TMDB — AC-8 to AC-10, AC-12, AC-18
-  - [ ] Movie page thickened: Trailer dialog, age chip, the legal change, More like this, crew and facts in order — AC-11, AC-13 to AC-17, AC-19
+  - [x] Card strand: the `columns` preset with `catalog` and `wide`, the sizes and eager maps, the season grid on `wide`, the library skeleton and `/showcase`, checked at five widths — AC-1 to AC-7
+  - [x] Tracer bullet: the movie extras read, `lib/region.ts` and Where to watch on the movie page end to end against live TMDB — AC-8 to AC-10, AC-12, AC-18
+  - [x] Movie page thickened: Trailer dialog, age chip, the legal change, More like this, crew and facts in order — AC-11, AC-13 to AC-17, AC-19
   - [ ] Show page parity and proof: the TV extras read, the new show fields, every section, tests, 375px and keyboard passes, checks and spec amendments — AC-7, AC-8, AC-10 to AC-17, AC-20
 - [ ] Verify it: `/check verify consistent card size and richer title pages`
 - [ ] Test it: `/test consistent card size and richer title pages`
-spec [0022](../specs/0022-card-size-title-pages/index.md)
+spec [0022](../specs/0022-card-size-title-pages/index.md) · code in `components/poster-grid.tsx`, `lib/tmdb/extras.ts`, `lib/tmdb/normalize-extras.ts`, `lib/region.ts`, `lib/catalog/region.ts`, `components/catalog/title-extras.tsx`, `components/catalog/title-details.tsx`, `components/catalog/where-to-watch.tsx`, `components/catalog/trailer-button.tsx`, `app/movies/[id]/`, `app/shows/[id]/`
 
 ## Deferred
 Out of scope for the current build pass, kept so the plan stays honest.
