@@ -1,5 +1,6 @@
 import "server-only";
-import { tmdbRequest } from "./client";
+import type { z } from "zod";
+import { type TmdbQuery, tmdbRequest } from "./client";
 import { MOVIE_LIST_REGION, TV_LIST_TIMEZONE } from "./constants";
 import { normalizeMovieSummary, normalizeTvSummary } from "./normalize";
 import { movieListItemSchema, pagedSchema, tvListItemSchema } from "./schemas";
@@ -50,26 +51,18 @@ const MOVIE_ENDPOINTS: Record<MovieListKind, string> = {
  * @param options The page, 1 when left out.
  * @throws {TmdbError} `bad_response` for a page that is not a positive integer.
  */
-export async function fetchTvList(
+export function fetchTvList(
   kind: TvListKind,
   options: ListOptions = {},
 ): Promise<Paged<TvShowSummary>> {
-  const endpoint = TV_ENDPOINTS[kind];
-  const page = assertPage(options.page ?? 1, endpoint);
   const dated = kind === "airing_today" || kind === "on_the_air";
-  const raw = await tmdbRequest(
-    endpoint,
-    { page, timezone: dated ? TV_LIST_TIMEZONE : undefined },
+  return fetchList(
+    TV_ENDPOINTS[kind],
+    options,
+    { timezone: dated ? TV_LIST_TIMEZONE : undefined },
     pagedTvListSchema,
+    normalizeTvSummary,
   );
-  return {
-    page: raw.page,
-    results: raw.results
-      .filter((show) => show.adult !== true)
-      .map(normalizeTvSummary),
-    totalPages: raw.total_pages,
-    totalResults: raw.total_results,
-  };
 }
 
 /**
@@ -79,23 +72,42 @@ export async function fetchTvList(
  * @param options The page, 1 when left out.
  * @throws {TmdbError} `bad_response` for a page that is not a positive integer.
  */
-export async function fetchMovieList(
+export function fetchMovieList(
   kind: MovieListKind,
   options: ListOptions = {},
 ): Promise<Paged<MovieSummary>> {
-  const endpoint = MOVIE_ENDPOINTS[kind];
-  const page = assertPage(options.page ?? 1, endpoint);
   const dated = kind === "now_playing" || kind === "upcoming";
-  const raw = await tmdbRequest(
-    endpoint,
-    { page, region: dated ? MOVIE_LIST_REGION : undefined },
+  return fetchList(
+    MOVIE_ENDPOINTS[kind],
+    options,
+    { region: dated ? MOVIE_LIST_REGION : undefined },
     pagedMovieListSchema,
+    normalizeMovieSummary,
   );
+}
+
+/**
+ * The request both media types share: only the endpoint, the place param,
+ * the schema and the normalizer differ, so the adult drop and the totals
+ * pass through are written once (AC-8).
+ */
+async function fetchList<Raw extends { adult?: boolean | null }, Summary>(
+  endpoint: string,
+  options: ListOptions,
+  place: TmdbQuery,
+  schema: z.ZodType<{
+    page: number;
+    results: Raw[];
+    total_pages: number;
+    total_results: number;
+  }>,
+  normalize: (raw: Raw) => Summary,
+): Promise<Paged<Summary>> {
+  const page = assertPage(options.page ?? 1, endpoint);
+  const raw = await tmdbRequest(endpoint, { page, ...place }, schema);
   return {
     page: raw.page,
-    results: raw.results
-      .filter((movie) => movie.adult !== true)
-      .map(normalizeMovieSummary),
+    results: raw.results.filter((item) => item.adult !== true).map(normalize),
     totalPages: raw.total_pages,
     totalResults: raw.total_results,
   };
