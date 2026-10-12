@@ -2,6 +2,8 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { MOVIE_LIST_SLUGS, TV_LIST_SLUGS } from "@/lib/catalog/lists";
+
 /**
  * covers: spec 0006, AC-13, as amended by spec 0007, AC-19
  *
@@ -49,6 +51,10 @@ describe("the movie routes read no request scoped value directly (AC-13)", () =>
   it("finds the route files", () => {
     expect(files).toContain("app/movies/page.tsx");
     expect(files).toContain(join("app/movies/[id]/page.tsx"));
+    // spec 0021, AC-17: every list page is scanned too.
+    for (const slug of MOVIE_LIST_SLUGS) {
+      expect(files).toContain(join(`app/movies/${slug}/page.tsx`));
+    }
   });
 
   it.each(files)("%s reaches for none of them", (path) => {
@@ -58,8 +64,12 @@ describe("the movie routes read no request scoped value directly (AC-13)", () =>
     }
   });
 
-  it("does not opt either route out of the static shell (AC-11)", () => {
-    for (const path of ["app/movies/page.tsx", "app/movies/[id]/page.tsx"]) {
+  it("does not opt any route out of the static shell (AC-11; spec 0021, AC-7)", () => {
+    for (const path of [
+      "app/movies/page.tsx",
+      "app/movies/[id]/page.tsx",
+      ...MOVIE_LIST_SLUGS.map((slug) => `app/movies/${slug}/page.tsx`),
+    ]) {
       expect(readFileSync(path, "utf8")).not.toMatch(/instant\s*=\s*false/);
     }
   });
@@ -87,6 +97,12 @@ describe("the show routes read no request scoped value (spec 0009, AC-18; spec 0
     expect(files).toContain("app/shows/page.tsx");
     expect(files).toContain(join("app/shows/[id]/page.tsx"));
     expect(files).toContain(join("app/shows/[id]/season/[number]/page.tsx"));
+    // spec 0021, AC-17: every list page and the landing's row pieces too.
+    for (const slug of TV_LIST_SLUGS) {
+      expect(files).toContain(join(`app/shows/${slug}/page.tsx`));
+    }
+    expect(files).toContain(join("components/catalog/carousel-row.tsx"));
+    expect(files).toContain(join("components/catalog/catalog-list-page.tsx"));
   });
 
   it.each(files)("%s reaches for none of them", (path) => {
@@ -100,6 +116,7 @@ describe("the show routes read no request scoped value (spec 0009, AC-18; spec 0
     "app/shows/page.tsx",
     "app/shows/[id]/page.tsx",
     "app/shows/[id]/season/[number]/page.tsx",
+    ...TV_LIST_SLUGS.map((slug) => `app/shows/${slug}/page.tsx`),
   ])("%s does not opt out of the static shell (AC-17)", (path) => {
     expect(readFileSync(path, "utf8")).not.toMatch(/instant\s*=\s*false/);
   });
@@ -293,7 +310,8 @@ describe("private tracking state never enters a cache scope (spec 0007, AC-19; s
     expect(readFileSync("app/movies/[id]/page.tsx", "utf8")).toMatch(
       /<Suspense fallback=\{null\}>\s*<MovieTrackingSlot/,
     );
-    const movies = readFileSync("app/movies/page.tsx", "utf8");
+    // spec 0021, AC-4: the landing rows and list pages share these cards.
+    const movies = readFileSync("components/catalog/list-cards.tsx", "utf8");
     expect(movies).toMatch(/<Suspense fallback=\{null\}>\s*<MovieCardControls/);
     expect(movies).toMatch(
       /<Suspense\s+fallback=\{<TmdbRatingBadge[^}]*\} \/>\}\s*>\s*<MovieCardBadge/,
@@ -304,7 +322,8 @@ describe("private tracking state never enters a cache scope (spec 0007, AC-19; s
     const show = readFileSync("app/shows/[id]/page.tsx", "utf8");
     expect(show).toMatch(/<Suspense fallback=\{null\}>\s*<ShowTrackingSlot/);
     expect(show).toMatch(/<Suspense fallback=\{null\}>\s*<ShowProgressSlot/);
-    const shows = readFileSync("app/shows/page.tsx", "utf8");
+    // spec 0021, AC-4: the landing rows and list pages share these cards.
+    const shows = readFileSync("components/catalog/list-cards.tsx", "utf8");
     expect(shows).toMatch(/<Suspense fallback=\{null\}>\s*<ShowCardControls/);
     expect(shows).toMatch(/<Suspense fallback=\{null\}>\s*<ShowCardMeta/);
     expect(shows).toMatch(
@@ -326,5 +345,33 @@ describe("private tracking state never enters a cache scope (spec 0007, AC-19; s
     ]) {
       expect(readFileSync(path, "utf8")).not.toMatch(/instant\s*=\s*false/);
     }
+  });
+});
+
+/**
+ * covers: spec 0021, AC-7, AC-17
+ *
+ * The landing rows read TMDB at request time, never inside a cache scope of
+ * their own: `connection()` comes before the read in the row component, and
+ * the only cached scopes are the TMDB module's reads. Nothing in the catalog
+ * row and list pieces declares `use cache`.
+ */
+describe("the catalog rows and list pages (spec 0021, AC-7, AC-17)", () => {
+  const files = [
+    ...sourceFiles("components/catalog"),
+    "lib/catalog-list-read.ts",
+    "lib/landing-metadata.ts",
+  ];
+
+  it.each(files)("%s declares no use cache scope", (path) => {
+    expect(readFileSync(path, "utf8")).not.toMatch(/["']use cache/);
+  });
+
+  it("waits for the request before a row reads TMDB", () => {
+    const source = readFileSync("components/catalog/carousel-row.tsx", "utf8");
+    expect(source.indexOf("await connection()")).toBeGreaterThan(-1);
+    expect(source.indexOf("await connection()")).toBeLessThan(
+      source.indexOf("readTaggedCatalogList(list, 1)"),
+    );
   });
 });

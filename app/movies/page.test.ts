@@ -1,117 +1,44 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 /**
- * covers: spec 0016, AC-17
+ * covers: spec 0021, AC-15
  *
- * The movie landing indexes only a page that shows results: page N declares
- * its own canonical, and an invalid page, a page past the last one or a failed
- * TMDB read is `noindex`. The discover read is replaced; `TmdbError` is the
- * real one, so the catch branch is exercised as is. `/shows` is built the same
- * way from `discoverTvShows`.
+ * The landings are one page each now, so their metadata is static: the
+ * catalog title, the AC-15 description, and the bare path as canonical. The
+ * module is imported after the site URL is stubbed, because the metadata is
+ * built when the module loads.
  */
-const discoverMovies = vi.fn();
-
-vi.mock("@/lib/tmdb", async () => {
-  const errors = await import("@/lib/tmdb/errors");
-  return {
-    discoverMovies: (input: { page: number }) => discoverMovies(input),
-    TmdbError: errors.TmdbError,
-  };
-});
-
-const { TmdbError } = await import("@/lib/tmdb/errors");
-const { generateMetadata } = await import("./page");
-
 const ORIGIN = "https://bestats.example";
-const DESCRIPTION =
-  "Browse popular movies on BeStats. See the cast, ratings and details, and keep track of what you watch.";
-
-function metadataFor(page?: string | string[]) {
-  return generateMetadata({
-    searchParams: Promise.resolve(page === undefined ? {} : { page }),
-  } as Parameters<typeof generateMetadata>[0]);
-}
-
-beforeEach(() => vi.stubEnv("NEXT_PUBLIC_SITE_URL", ORIGIN));
 
 afterEach(() => {
-  discoverMovies.mockReset();
   vi.unstubAllEnvs();
+  vi.resetModules();
 });
 
-describe("the movie landing's metadata (AC-17)", () => {
-  it("declares /movies as the canonical of page 1, with the site card", async () => {
-    discoverMovies.mockResolvedValue({ totalPages: 50 });
+async function landingMetadataOf(path: "./page" | "../shows/page") {
+  vi.stubEnv("NEXT_PUBLIC_SITE_URL", ORIGIN);
+  return (await import(path)).metadata;
+}
 
-    const metadata = await metadataFor();
+describe("the landings' metadata (AC-15)", () => {
+  it("gives /movies its title, description and bare canonical", async () => {
+    const metadata = await landingMetadataOf("./page");
 
     expect(metadata.title).toBe("Movies");
-    expect(metadata.description).toBe(DESCRIPTION);
-    expect(metadata.alternates).toEqual({ canonical: `${ORIGIN}/movies` });
-    expect(metadata.openGraph).toMatchObject({
-      type: "website",
-      images: [`${ORIGIN}/opengraph-image`],
-    });
-    expect(metadata.robots).toBeUndefined();
-  });
-
-  it("gives page N its own canonical", async () => {
-    discoverMovies.mockResolvedValue({ totalPages: 50 });
-
-    const metadata = await metadataFor("2");
-
-    expect(discoverMovies).toHaveBeenCalledWith({ page: 2 });
-    expect(metadata.alternates).toEqual({
-      canonical: `${ORIGIN}/movies?page=2`,
-    });
-  });
-
-  it("indexes the last page itself", async () => {
-    discoverMovies.mockResolvedValue({ totalPages: 7 });
-
-    const metadata = await metadataFor("7");
-
-    expect(metadata.robots).toBeUndefined();
-    expect(metadata.alternates?.canonical).toBe(`${ORIGIN}/movies?page=7`);
-  });
-
-  it("is noindex with no canonical for a page past the last one", async () => {
-    discoverMovies.mockResolvedValue({ totalPages: 7 });
-
-    const metadata = await metadataFor("8");
-
-    expect(metadata).toEqual({
-      title: "Movies",
-      description: DESCRIPTION,
-      robots: { index: false },
-    });
-  });
-
-  it.each(["abc", "0", "", ["1", "2"]])(
-    "is noindex without asking TMDB for the page value %j",
-    async (page) => {
-      const metadata = await metadataFor(page);
-
-      expect(metadata.robots).toEqual({ index: false });
-      expect(metadata.alternates).toBeUndefined();
-      expect(discoverMovies).not.toHaveBeenCalled();
-    },
-  );
-
-  it("is noindex when the TMDB read fails", async () => {
-    discoverMovies.mockRejectedValue(
-      new TmdbError("unauthorized", "/discover/movie", "bad token", 401),
+    expect(metadata.description).toBe(
+      "Browse trending, popular, now playing, upcoming and top rated movies on BeStats, and keep track of what you watch.",
     );
-
-    const metadata = await metadataFor("7");
-
-    expect(metadata.robots).toEqual({ index: false });
-    expect(metadata.alternates).toBeUndefined();
+    expect(metadata.alternates).toEqual({ canonical: `${ORIGIN}/movies` });
+    expect(metadata.robots).toBeUndefined();
   });
 
-  it("rethrows a rejection that is not a TMDB failure", async () => {
-    discoverMovies.mockRejectedValue(new TypeError("a bug"));
+  it("gives /shows its title, description and bare canonical", async () => {
+    const metadata = await landingMetadataOf("../shows/page");
 
-    await expect(metadataFor()).rejects.toThrow("a bug");
+    expect(metadata.title).toBe("Shows");
+    expect(metadata.description).toBe(
+      "Browse trending, popular, airing and top rated TV shows on BeStats, and keep track of what you watch.",
+    );
+    expect(metadata.alternates).toEqual({ canonical: `${ORIGIN}/shows` });
   });
 });

@@ -38,6 +38,7 @@ function PosterCard({
   controls,
   meta,
   priority = false,
+  sizes = POSTER_SIZES,
   className,
 }: {
   title: string;
@@ -65,6 +66,11 @@ function PosterCard({
    */
   meta?: React.ReactNode;
   priority?: boolean;
+  /**
+   * The image `sizes`, `POSTER_SIZES` unless the card sits outside the grid
+   * at a fixed width, as a carousel row's card does (spec 0021, AC-5).
+   */
+  sizes?: string;
   className?: string;
 }) {
   return (
@@ -75,7 +81,7 @@ function PosterCard({
             src={posterUrl}
             alt=""
             fill
-            sizes={POSTER_SIZES}
+            sizes={sizes}
             priority={priority}
             className="object-cover transition-[filter] duration-200 group-hover:brightness-110"
           />

@@ -243,3 +243,27 @@ export type SearchOptions = {
   page?: number;
   year?: number;
 };
+
+/**
+ * The TV lists a landing row reads besides Popular, named as TMDB names them
+ * (spec 0021, AC-2). The app's URL slugs live in `lib/catalog/lists.ts`; this
+ * module never learns them, so one dispatcher (`lib/catalog-list-read.ts`)
+ * is the only place the two vocabularies meet.
+ */
+export type TvListKind =
+  | "trending"
+  | "airing_today"
+  | "on_the_air"
+  | "top_rated";
+
+/** The movie twin of `TvListKind` (spec 0021, AC-2). */
+export type MovieListKind =
+  | "trending"
+  | "now_playing"
+  | "upcoming"
+  | "top_rated";
+
+/** The one option a list read takes: TMDB's page, 1 when left out. */
+export type ListOptions = {
+  page?: number;
+};

@@ -189,6 +189,20 @@ describe("the proxy's catalog id rule", () => {
     "/shows/1396/season/1.0",
     "/shows/1396/season/10000",
     "/shows/1396/season/x",
+    // spec 0021, AC-13: a list slug of the other media type, the wrong
+    // case, an image suffix, or a season under a list is still a 404.
+    "/shows/upcoming",
+    "/shows/now-playing",
+    "/movies/airing-today",
+    "/movies/on-the-air",
+    "/shows/Popular",
+    "/shows/popular.jpg",
+    "/shows/popular/season/1",
+    // An encoded slug is not the slug: Next routes it to `[id]`, not to the
+    // list folder, so it must be a real 404 here, not a soft one there.
+    "/shows/top%2Drated",
+    "/shows/top%2drated",
+    "/movies/now%2Dplaying",
   ])("answers %s with a 404 rewrite", async (path) => {
     const response = await run(path);
 
@@ -246,6 +260,17 @@ describe("the proxy's catalog id rule", () => {
     "/shows/1396/season/9999",
     "/shows/1396/season",
     "/shows/1396/season/2/extra",
+    // spec 0021, AC-13: every list page of its own catalog.
+    "/shows/trending",
+    "/shows/popular",
+    "/shows/airing-today",
+    "/shows/on-the-air",
+    "/shows/top-rated",
+    "/movies/trending",
+    "/movies/popular",
+    "/movies/now-playing",
+    "/movies/upcoming",
+    "/movies/top-rated",
   ])("lets %s through untouched", async (path) => {
     const response = await run(path);
 

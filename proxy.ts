@@ -3,6 +3,8 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { isPrivatePath } from "@/lib/auth/private-paths";
 import { parseSeasonNumber, parseTmdbId } from "@/lib/catalog/ids";
+import { isCatalogListSlug } from "@/lib/catalog/lists";
+import type { MediaType } from "@/lib/catalog/media-type";
 import { getPublicEnv, publicEnvProblems } from "@/lib/env";
 import { sessionCookieOptions } from "@/lib/supabase/cookie-options";
 
@@ -164,13 +166,27 @@ function signInRedirect(request: NextRequest): NextResponse {
  * The catalog routes whose segments the proxy checks, each with the parser
  * its page uses, one per captured segment. Deeper or other paths already
  * match no route, so they are not listed.
+ *
+ * `listMediaType` marks the two paths that also hold a catalog's list pages
+ * (`/shows/top-rated`, spec 0021, AC-13): a segment naming one of that media
+ * type's lists passes before the id parser judges it. Any other non numeric
+ * segment is still a 404.
  */
 const CATALOG_PATHS: {
   pattern: RegExp;
   parsers: ((segment: string) => number | null)[];
+  listMediaType?: MediaType;
 }[] = [
-  { pattern: /^\/movies\/([^/]+)$/, parsers: [parseTmdbId] },
-  { pattern: /^\/shows\/([^/]+)$/, parsers: [parseTmdbId] },
+  {
+    pattern: /^\/movies\/([^/]+)$/,
+    parsers: [parseTmdbId],
+    listMediaType: "movie",
+  },
+  {
+    pattern: /^\/shows\/([^/]+)$/,
+    parsers: [parseTmdbId],
+    listMediaType: "tv",
+  },
   {
     pattern: /^\/shows\/([^/]+)\/season\/([^/]+)$/,
     parsers: [parseTmdbId, parseSeasonNumber],
@@ -188,16 +204,23 @@ const NOT_FOUND_PATH = "/_catalog-not-found";
  * The 404 for a catalog URL with a segment that is not canonical, or null for
  * every other request. Shares its parsers with the pages, so the proxy and
  * the routes cannot disagree about what a movie, show or season URL looks
- * like (spec 0006, AC-8; spec 0009, AC-13).
+ * like (spec 0006, AC-8; spec 0009, AC-13). A list slug is checked against
+ * the same registry the list routes are built from (spec 0021, AC-13).
  *
  * The status is set explicitly rather than left to the rewrite, so the answer
  * is a 404 even if the rendered page would otherwise report 200.
  */
 function malformedCatalogResponse(request: NextRequest): NextResponse | null {
   const { pathname } = request.nextUrl;
-  for (const { pattern, parsers } of CATALOG_PATHS) {
+  for (const { pattern, parsers, listMediaType } of CATALOG_PATHS) {
     const match = pattern.exec(pathname);
     if (!match) continue;
+
+    // Undecoded on purpose: Next matches a static folder only on the literal
+    // path, so `/shows/top%2Drated` reaches `[id]`, and must be a 404 here.
+    if (listMediaType && isCatalogListSlug(listMediaType, match[1])) {
+      return null;
+    }
 
     const valid = parsers.every(
       (parse, index) => parse(decodeSegment(match[index + 1])) !== null,

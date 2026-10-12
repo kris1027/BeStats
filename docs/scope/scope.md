@@ -37,7 +37,8 @@ _2026-10-06: the `design/` artboards were removed. The UI built from them carrie
 | 20 | Deploy and provider setup | Slice 8 | done |
 | 21 | TV history on /watched | Slice 9 | done |
 | 22 | Media tabs on every page | Slice 9 | done |
-| 23 | Progress based library pages | Slice 10 | in progress |
+| 23 | Progress based library pages | Slice 10 | done |
+| 24 | Home carousels | Slice 11 | done |
 
 ## Foundations
 
@@ -380,7 +381,7 @@ Code in `lib/catalog/media-type.ts`, `components/layout/`, `components/library/`
 
 ## Slice 10: Progress based pages
 
-### 23. Progress based library pages · in progress · GA
+### 23. Progress based library pages · done · GA
 Statuses are replaced by tracked or not; Stop tracking (with Undo) is the only way off the pages. Every title sits on exactly one page, worked out from what you watched and what TMDB has aired or dated: Watchlist (something aired to watch), Upcoming (a future or unknown date), Watched (caught up, nothing dated). Movies follow the same rule. Settled in a grilling session on 2026-10-07 (supersedes 0015 and parts of 0013, 0014 and 0019). Pause and Drop were removed in a second grilling session on 2026-10-10, and existing holds are cleared (0020 amended in place). A third amendment the same day offers the episode after the furthest watched one, not the first unwatched one.
 **Done when:** every tracked show and planned movie is on the one page its progress and air dates give, the show page offers a Plan to watch / Tracking toggle with no Pause or Drop, no page writes on load, the rollout keeps the old app working until the contract migration, and `AGENTS.md` describes the new model.
 - [x] Design it (spec): `/architect progress based library pages`
@@ -391,16 +392,32 @@ Statuses are replaced by tracked or not; Stop tracking (with Undo) is the only w
   - [x] Docs and proof: `AGENTS.md`, checks, 375px and keyboard, timing, `verify.md`, expand push and deploy — AC-23, AC-24 (production check folded into the contract strand)
   - [x] Contract migration and hold removal, one PR pushed then merged at once, production verified after deploy: [prompts/remove-show-holds.md](../../prompts/remove-show-holds.md) — AC-1 to AC-4, AC-10, AC-21
   - [x] Amendment 2026-10-10, next episode after the furthest watched: [prompts/next-after-furthest-watched.md](../../prompts/next-after-furthest-watched.md) — AC-7, AC-8
-  - [ ] Verify the amendment in the running app (the plan's manual steps) — AC-7
+  - [x] Verify the amendment in the running app (the plan's manual steps) — AC-7
 - [x] Verify it: `/check verify progress based library pages`
 - [x] Test it: `/test progress based library pages`
 - [x] Review it (fresh model): `/check review progress based library pages`
 - [x] Document it: `/document progress based library pages`
 spec [0020](../specs/0020-progress-based-library-pages/index.md) · code in `lib/tv/library-page.ts`, `lib/catalog/movie-page.ts`, `lib/tracking/library-lists.ts`, `components/library/`, `components/tracking/`, `supabase/migrations/20261007120000_show_tracking_expand.sql`, `supabase/migrations/20261010120000_show_tracking_contract.sql`
 
+## Slice 11: Discovery
+
+### 24. Home carousels · done
+`/shows` and `/movies` become rows of sideways scrolling carousels instead of one paged grid of 20. TV rows: Trending this week, Popular, Airing today, On the air, Top rated. Movie rows: Trending this week, Popular, Now playing, Upcoming, Top rated (region `PL`). Each row has a See all link to its own paged list page at `/shows/{slug}` or `/movies/{slug}`. Settled in a grilling session on 2026-10-12.
+**Done when:** both landings show their five rows with the full card (badge, meta, controls), each row streams on its own and fails on its own with Retry; every See all page pages like today's grid with a back link; the proxy accepts the known slugs and still 404s anything else; old `?page=N` links redirect (308) to `/…/popular?page=N`; the sitemap lists page 1 of each list.
+- [x] Design it (spec): `/architect home carousels`
+- [x] Build it: `/develop home carousels`
+  - [x] TMDB list reads, the list registry and the slug dispatcher (AC-2, AC-3, AC-8, AC-17)
+  - [x] Tracer bullet: proxy slugs, the shared list page and one `/shows` row end to end, built with no TMDB token (AC-1, AC-4, AC-5, AC-7, AC-9 to AC-13, AC-15)
+  - [x] All ten lists on both landings, the `?page=N` 308 redirects, and the arrow scroller (AC-1, AC-2, AC-6, AC-14)
+  - [x] Sitemap list paths, request scope tests and the running app pass at 375px and 1280px (AC-16, AC-17)
+- [x] Verify it: `/check verify home carousels`
+- [x] Test it: `/test home carousels`
+spec [0021](../specs/0021-home-carousels/index.md) · code in `lib/catalog/lists.ts`, `lib/catalog-list-read.ts`, `lib/tmdb/lists.ts`, `components/catalog/`, `app/shows/{slug}/`, `app/movies/{slug}/`, `proxy.ts`, `next.config.ts`
+
 ## Deferred
 Out of scope for the current build pass, kept so the plan stays honest.
 - **Public profiles and social features**: ruled out of the MVP by `AGENTS.md`
+- **Per visitor region and timezone on the home rows** (from spec 0021): Now playing, Upcoming, Airing today and On the air use the fixed `PL` region and `Europe/Warsaw`. Following the visitor needs its own decision (a request header or an account setting).
 - **Error monitoring and product analytics**: not selected for this pass
 - **Self serve account deletion and data export** (from specs 0005 and 0017): GDPR requests are handled by email for now. Undesigned; a `/account` flow needs the Supabase admin API or a security definer function, an elevated call nothing else in the app uses, so it deserves its own decision, including what happens to the cascading tracking data
 - **Rate limit on sign in and sign up** (from spec 0018): Supabase counts Vercel's addresses, so its auth limit is shared by every visitor ([docs/deploy.md](../deploy.md) section 6). If it bites, add a second Vercel Firewall rule on sign in and sign up posts per IP. (The `/api/search` limit from spec 0010 shipped as a firewall rule in feature 20.)

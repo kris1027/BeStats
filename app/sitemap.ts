@@ -1,13 +1,14 @@
 import type { MetadataRoute } from "next";
 import { cacheLife } from "next/cache";
 
+import { catalogListsFor, listPath } from "@/lib/catalog/lists";
 import { isIndexableDeployment, siteUrl } from "@/lib/seo/site";
 import { DISCOVER_PAGES_PER_TYPE, sitemapEntries } from "@/lib/seo/sitemap";
 import { discoverMovies, discoverTvShows, TmdbError } from "@/lib/tmdb";
 
 /**
- * `/sitemap.xml` (spec 0016, AC-6 to AC-9): the two landings, the two legal
- * pages (spec 0017, AC-13), then the 200 most popular movies and 200 most
+ * `/sitemap.xml` (spec 0016, AC-6 to AC-9): the two landings, the ten list
+ * pages (spec 0021, AC-16), the two legal pages (spec 0017, AC-13), then the 200 most popular movies and 200 most
  * popular shows, all pages a signed out visitor can open from a landing.
  *
  * A deployment that is not indexable answers an empty `urlset` and asks TMDB
@@ -20,13 +21,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   if (!isIndexableDeployment() || origin === null) return [];
 
   const { moviePages, showPages } = await popularTitleIds();
-  return sitemapEntries(origin, moviePages, showPages);
+  return sitemapEntries(origin, LIST_PATHS, moviePages, showPages);
 }
 
 /**
+ * Every list page at page 1, movie lists first, each in row order (spec 0021,
+ * AC-16). From the registry, so a new list is listed with no change here.
+ */
+const LIST_PATHS = [...catalogListsFor("movie"), ...catalogListsFor("tv")].map(
+  listPath,
+);
+
+/**
  * The ids on discover pages 1 to 10 for each media type, read with exactly the
- * calls the `/movies` and `/shows` landings make, so they share cache entries
- * and every listed title is linked from a public page (spec 0016, AC-6, AC-8).
+ * calls `/movies/popular` and `/shows/popular` make, so they share cache
+ * entries and every listed title is linked from a public page (spec 0016,
+ * AC-6, AC-8; spec 0021, AC-3).
  *
  * The 20 reads settle independently: a `TmdbError` drops only its own page,
  * so a TMDB hiccup shrinks the list instead of failing the file. Any other

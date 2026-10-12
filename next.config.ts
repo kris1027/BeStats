@@ -27,10 +27,28 @@ const nextConfig: NextConfig = {
    * because there is nothing to check for (spec 0018, AC-13). Decided here at
    * build time, so the page never streams a redirect after a 200. Temporary,
    * because turning email on brings the page back.
+   *
+   * `/shows?page=N` and `/movies?page=N` go to the Popular list page that now
+   * holds that paged grid (spec 0021, AC-14), any value of `page`, with the
+   * query string carried over by Next. Permanent on purpose: unlike `/`, a
+   * landing with `?page` has no future meaning, so a browser caching the 308
+   * forever is what an old bookmark should get.
    */
   async redirects() {
     return [
       { source: "/", destination: "/shows", permanent: false },
+      {
+        source: "/shows",
+        has: [{ type: "query", key: "page" }],
+        destination: "/shows/popular",
+        permanent: true,
+      },
+      {
+        source: "/movies",
+        has: [{ type: "query", key: "page" }],
+        destination: "/movies/popular",
+        permanent: true,
+      },
       ...(getAuthEmailDelivery() === "off"
         ? [
             {

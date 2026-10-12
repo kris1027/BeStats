@@ -100,6 +100,21 @@ export const tvSummarySchema = z.object({
   genre_ids: z.array(z.number()).nullish(),
 });
 
+/**
+ * A result of one of TMDB's list endpoints (trending, now playing, top rated
+ * and so on). The summary plus `adult`, because unlike discover these
+ * endpoints take no `include_adult` and the module drops adult titles itself
+ * (spec 0021, AC-8).
+ */
+export const movieListItemSchema = movieSummarySchema.extend({
+  adult: z.boolean().nullish(),
+});
+
+/** The TV twin of `movieListItemSchema` (spec 0021, AC-8). */
+export const tvListItemSchema = tvSummarySchema.extend({
+  adult: z.boolean().nullish(),
+});
+
 export const seasonSummarySchema = z.object({
   season_number: z.number(),
   name: z.string().nullish(),

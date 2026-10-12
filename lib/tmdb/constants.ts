@@ -61,3 +61,16 @@ export const SHOW_CAST_LIMIT = 12;
  */
 export const TMDB_ATTRIBUTION =
   "This website uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.";
+
+/**
+ * The timezone TMDB uses to decide "today" for the Airing today and On the air
+ * TV lists (spec 0021, AC-2). Fixed app wide rather than per visitor: following
+ * the visitor is a deferred decision in the scope, not a constant change.
+ */
+export const TV_LIST_TIMEZONE = "Europe/Warsaw";
+
+/**
+ * The release region of the Now playing and Upcoming movie lists (spec 0021,
+ * AC-2), fixed app wide for the same reason as `TV_LIST_TIMEZONE`.
+ */
+export const MOVIE_LIST_REGION = "PL";

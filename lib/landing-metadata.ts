@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
-
+import { type CatalogList, listPageHref } from "@/lib/catalog/lists";
 import { lastReachablePage, parsePageParam } from "@/lib/catalog/pages";
+import { readCatalogList } from "@/lib/catalog-list-read";
 import { landingMetadata } from "@/lib/seo/metadata";
 import { TmdbError } from "@/lib/tmdb";
 
 /**
- * The shared `generateMetadata` flow of the `/movies` and `/shows` landings
- * (spec 0016, AC-17): parse `page`, read the same cached discover call the
- * page body makes, and index the page only when it shows results.
+ * The shared `generateMetadata` flow of a paged catalog list (spec 0016,
+ * AC-17; since spec 0021 the list pages, through `catalogListMetadata`
+ * below): parse `page`, read the same cached call the page body makes, and
+ * index the page only when it shows results.
  *
  * It lives outside `lib/seo/` because it touches TMDB at runtime (it catches
  * `TmdbError`), and `lib/seo/AGENTS.md` keeps that folder free of TMDB
@@ -45,4 +47,23 @@ export async function landingPageMetadata({
     if (!(error instanceof TmdbError)) throw error;
     return noindex();
   }
+}
+
+/**
+ * A list page's metadata (spec 0021, AC-15): its h1 as the title, its note as
+ * the description, and page N's own canonical. The `landingPageMetadata` flow
+ * with `readCatalogList` as the read, the very call the page body makes, so
+ * metadata costs no extra TMDB request.
+ */
+export async function catalogListMetadata(
+  list: CatalogList,
+  searchParams: Promise<Record<string, string | string[] | undefined>>,
+): Promise<Metadata> {
+  return landingPageMetadata({
+    pageParam: (await searchParams).page,
+    discover: ({ page }) => readCatalogList(list, page),
+    title: list.heading,
+    description: list.note,
+    pageHref: (page) => listPageHref(list, page),
+  });
 }

@@ -1,192 +1,27 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 
-import { PaginationLinks } from "@/components/pagination-links";
-import { PosterCard } from "@/components/poster-card";
-import { PosterGrid } from "@/components/poster-grid";
-import { TmdbRatingBadge } from "@/components/rating-badges";
-import { RetryLink } from "@/components/retry-link";
-import { PaginationSkeleton, PosterCardSkeleton } from "@/components/skeleton";
-import { StatePanel } from "@/components/state-panel";
-import {
-  MovieCardBadge,
-  MovieCardControls,
-} from "@/components/tracking/movie-card-slots";
-import { ButtonLink } from "@/components/ui/button";
-import { lastReachablePage, parsePageParam } from "@/lib/catalog/pages";
-import { landingPageMetadata } from "@/lib/landing-metadata";
-import { discoverMovies, TmdbError } from "@/lib/tmdb";
-
-/** TMDB's discover page size, which the skeleton mirrors. */
-const PAGE_SIZE = 20;
+import { CatalogLanding } from "@/components/catalog/catalog-landing";
+import { catalogListsFor } from "@/lib/catalog/lists";
+import { landingMetadata } from "@/lib/seo/metadata";
 
 /**
- * Cards whose posters load eagerly: one full row at the widest grid (4
- * columns from `md`), so the first row is never lazy at any width (AC-1).
+ * The landing's metadata (spec 0021, AC-15): one page now, so one canonical,
+ * the bare path. A `?page=N` request never reaches it; `next.config.ts`
+ * redirects it to `/movies/popular` (AC-14).
  */
-const EAGER_POSTERS = 4;
-
-/** One URL per page: page 1 is the bare path. */
-function pageHref(page: number): string {
-  return page === 1 ? "/movies" : `/movies?page=${page}`;
-}
-
-/** Every page of the landing shares one description (spec 0016, AC-17). */
-const DESCRIPTION =
-  "Browse popular movies on BeStats. See the cast, ratings and details, and keep track of what you watch.";
+export const metadata: Metadata = landingMetadata({
+  title: "Movies",
+  description:
+    "Browse trending, popular, now playing, upcoming and top rated movies on BeStats, and keep track of what you watch.",
+  path: "/movies",
+});
 
 /**
- * The landing's metadata (spec 0016, AC-17). Page N declares its own
- * canonical through `pageHref`, the same address the pagination links use. A
- * page that shows no results is `noindex`. `landingPageMetadata` decides it
- * from the same cached `discoverMovies` call the body makes, so metadata costs no
- * extra TMDB request.
+ * The movie landing: one carousel row per movie list, in registry order
+ * (spec 0021, AC-1). No session is read here (spec 0006, AC-13); each card's
+ * badge and controls read it inside their own Suspense boundaries
+ * (`components/catalog/list-cards.tsx`).
  */
-export async function generateMetadata({
-  searchParams,
-}: PageProps<"/movies">): Promise<Metadata> {
-  return landingPageMetadata({
-    pageParam: (await searchParams).page,
-    discover: discoverMovies,
-    title: "Movies",
-    description: DESCRIPTION,
-    pageHref,
-  });
-}
-
-/**
- * The movie landing: popular movies from TMDB, paged (spec 0006, AC-1, AC-2).
- *
- * The heading is static and prerendered; the grid needs the `page` search
- * parameter, so it streams inside the Suspense boundary behind a grid of
- * skeleton cards at the same footprint (AC-11). No session is read here
- * (AC-13); each card's badge and controls read it inside their own Suspense
- * boundaries in `components/tracking/movie-card-slots.tsx`, one query for the
- * whole grid, so a card shows the movie as its library page does
- * (prompts/catalog-card-status.md).
- */
-export default function MoviesPage({ searchParams }: PageProps<"/movies">) {
-  return (
-    <div className="flex flex-col gap-8">
-      <header className="flex flex-col gap-2">
-        <h1 className="text-3xl leading-tight font-bold tracking-[-0.03em] text-foreground md:text-4xl">
-          Popular movies
-        </h1>
-        <p className="text-sm text-muted-foreground md:text-base">
-          Ordered by current popularity on TMDB.
-        </p>
-      </header>
-
-      <Suspense fallback={<PopularMoviesSkeleton />}>
-        <PopularMovies searchParams={searchParams} />
-      </Suspense>
-    </div>
-  );
-}
-
-async function PopularMovies({
-  searchParams,
-}: {
-  searchParams: PageProps<"/movies">["searchParams"];
-}) {
-  const page = parsePageParam((await searchParams).page);
-  if (page === null) return <NoSuchPage />;
-
-  let result: Awaited<ReturnType<typeof discoverMovies>>;
-  try {
-    result = await discoverMovies({ page });
-  } catch (error) {
-    if (!(error instanceof TmdbError)) throw error;
-    return (
-      <div className="py-12">
-        <StatePanel
-          variant="error"
-          title="Couldn't reach TMDB"
-          description="TMDB didn't respond. Try again in a moment."
-          action={<RetryLink href={pageHref(page)} />}
-        />
-      </div>
-    );
-  }
-
-  const lastPage = lastReachablePage(result.totalPages);
-  if (page > lastPage) return <NoSuchPage />;
-
-  const gridMovieIds = result.results.map((movie) => movie.id);
-
-  return (
-    <div className="flex flex-col gap-10">
-      <PosterGrid aria-label={`Popular movies, page ${page}`}>
-        {result.results.map((movie, index) => (
-          <li key={movie.id}>
-            <PosterCard
-              title={movie.title}
-              posterUrl={movie.posterUrl}
-              href={`/movies/${movie.id}`}
-              badge={
-                <Suspense
-                  fallback={<TmdbRatingBadge value={movie.tmdbRating} />}
-                >
-                  <MovieCardBadge
-                    movieId={movie.id}
-                    releaseDate={movie.releaseDate}
-                    tmdbRating={movie.tmdbRating}
-                    gridMovieIds={gridMovieIds}
-                  />
-                </Suspense>
-              }
-              controls={
-                <Suspense fallback={null}>
-                  <MovieCardControls
-                    movieId={movie.id}
-                    title={movie.title}
-                    releaseDate={movie.releaseDate}
-                    gridMovieIds={gridMovieIds}
-                    returnPath={pageHref(page)}
-                  />
-                </Suspense>
-              }
-              priority={index < EAGER_POSTERS}
-            />
-          </li>
-        ))}
-      </PosterGrid>
-
-      <PaginationLinks page={page} lastPage={lastPage} href={pageHref} />
-    </div>
-  );
-}
-
-/** Shown for a malformed page number, and for one past the last page. */
-function NoSuchPage() {
-  return (
-    <div className="py-12">
-      <StatePanel
-        variant="empty"
-        title="That page doesn't exist"
-        description="There are no popular movies at this page number."
-        action={
-          <ButtonLink size="touch" href="/movies">
-            Back to page 1
-          </ButtonLink>
-        }
-      />
-    </div>
-  );
-}
-
-function PopularMoviesSkeleton() {
-  return (
-    <div className="flex flex-col gap-10">
-      <PosterGrid aria-hidden="true">
-        {Array.from({ length: PAGE_SIZE }, (_, index) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders with no identity.
-          <li key={index}>
-            <PosterCardSkeleton />
-          </li>
-        ))}
-      </PosterGrid>
-      <PaginationSkeleton />
-    </div>
-  );
+export default function MoviesPage() {
+  return <CatalogLanding heading="Movies" lists={catalogListsFor("movie")} />;
 }
