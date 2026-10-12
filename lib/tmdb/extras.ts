@@ -1,4 +1,5 @@
 import "server-only";
+import type { z } from "zod";
 import { tmdbRequest } from "./client";
 import { normalizeMovieExtras, normalizeTvExtras } from "./normalize-extras";
 import { movieExtrasSchema, tvExtrasSchema } from "./schemas";
@@ -7,7 +8,9 @@ import { assertId } from "./validation";
 
 /**
  * The title page extras: trailer, recommendations, watch providers and age
- * ratings, in one request per title (spec 0022, AC-8).
+ * ratings, in one request per title (spec 0022, AC-8). The one request both
+ * `fetchMovieExtras` and `fetchTvExtras` make; they differ only in the path
+ * and in where TMDB keeps the age ratings.
  *
  * A separate read from `fetchMovie` and `fetchTvShow` on purpose: the
  * library pages read those for up to 500 titles, and none of them needs any
@@ -20,6 +23,20 @@ import { assertId } from "./validation";
  * sent: every country comes back, and the page picks its visitor's after the
  * cache returns (AC-9).
  */
+async function requestExtras<T>(
+  endpoint: string,
+  ageRatingsKey: "release_dates" | "content_ratings",
+  schema: z.ZodType<T>,
+): Promise<T> {
+  return tmdbRequest(
+    endpoint,
+    {
+      append_to_response: `videos,recommendations,watch/providers,${ageRatingsKey}`,
+      include_video_language: "en,null",
+    },
+    schema,
+  );
+}
 
 /**
  * Reads a movie's extras, uncached. The inner half of `getMovieExtras`.
@@ -30,15 +47,7 @@ import { assertId } from "./validation";
 export async function fetchMovieExtras(id: number): Promise<MovieExtras> {
   const endpoint = `/movie/${id}`;
   assertId(id, endpoint);
-  const raw = await tmdbRequest(
-    endpoint,
-    {
-      append_to_response:
-        "videos,recommendations,watch/providers,release_dates",
-      include_video_language: "en,null",
-    },
-    movieExtrasSchema,
-  );
+  const raw = await requestExtras(endpoint, "release_dates", movieExtrasSchema);
   return normalizeMovieExtras(raw);
 }
 
@@ -51,14 +60,6 @@ export async function fetchMovieExtras(id: number): Promise<MovieExtras> {
 export async function fetchTvExtras(id: number): Promise<TvExtras> {
   const endpoint = `/tv/${id}`;
   assertId(id, endpoint);
-  const raw = await tmdbRequest(
-    endpoint,
-    {
-      append_to_response:
-        "videos,recommendations,watch/providers,content_ratings",
-      include_video_language: "en,null",
-    },
-    tvExtrasSchema,
-  );
+  const raw = await requestExtras(endpoint, "content_ratings", tvExtrasSchema);
   return normalizeTvExtras(raw);
 }
