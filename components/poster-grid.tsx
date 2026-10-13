@@ -46,9 +46,9 @@ const POSTER_GRID_EAGER: Record<PosterGridColumns, number> = {
  * columns, so a wide screen card stays close to the home row card's 180px.
  * Every step divides the 24 title page (`GRID_PAGE_SIZE`), so a full page
  * fills every row at every width; there is deliberately no 5 column step
- * (spec 0022, AC-1, AC-22). `wide` keeps 2 and 4 for the season grid. The columns, `POSTER_GRID_SIZES` and
- * `POSTER_GRID_EAGER` change together; a card in the grid passes the preset's
- * sizes.
+ * (spec 0022, AC-1, AC-22). `wide` keeps 2 and 4 for the season grid. The
+ * columns, `POSTER_GRID_SIZES` and `POSTER_GRID_EAGER` change together; a
+ * card in the grid passes the preset's sizes.
  *
  * The 1200px cap keeps a full page a sensible length on a wide screen; past
  * the cap the grid is centred on every page, under the centred pagination.
