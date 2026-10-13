@@ -21,12 +21,12 @@ import {
   ShowCardMeta,
 } from "@/components/tracking/show-card-slots";
 import { ButtonLink } from "@/components/ui/button";
+import { GRID_PAGE_SIZE, readGridPage } from "@/lib/catalog/grid-page";
 import {
   parseMediaTypeParam,
   titleHref,
   typedHref,
 } from "@/lib/catalog/media-type";
-import { lastReachablePage } from "@/lib/catalog/pages";
 import { formatRange, mediaNoun } from "@/lib/search/count";
 import { searchMode } from "@/lib/search/mode";
 import {
@@ -49,9 +49,6 @@ import { FilteredPaging } from "./filtered-paging";
 import { ResultCount } from "./result-count";
 
 type RawParams = Record<string, string | string[] | undefined>;
-
-/** TMDB's page size, which the skeleton mirrors (AC-21). */
-const PAGE_SIZE = 20;
 
 /**
  * The results half of `/search`, for one URL (spec 0010, AC-11 to AC-19).
@@ -96,13 +93,16 @@ async function SearchResults({ raw }: { raw: RawParams }) {
     const mode = searchMode(params);
     if (mode === "filtered_search") return await FilteredResults({ params });
 
-    const page =
+    // 24 titles a page from the two TMDB pages that hold them (spec 0022,
+    // AC-21); filtered search above keeps its own cursor.
+    const page = await readGridPage(params.page, (tmdbPage) =>
       mode === "search"
-        ? await readSearchPage(type, params.q ?? "", {
+        ? readSearchPage(type, params.q ?? "", {
             year: params.year ?? undefined,
-            page: params.page,
+            page: tmdbPage,
           })
-        : await readDiscoverPage(params);
+        : readDiscoverPage({ ...params, page: tmdbPage }),
+    );
     return (
       <PagedResults
         params={params}
@@ -117,7 +117,10 @@ async function SearchResults({ raw }: { raw: RawParams }) {
   }
 }
 
-/** Browse, discover and plain search: TMDB's own numbered pages (AC-11, AC-12). */
+/**
+ * Browse, discover and plain search: numbered 24 title pages over TMDB's
+ * (AC-11, AC-12; spec 0022, AC-21).
+ */
 function PagedResults({
   params,
   page,
@@ -129,7 +132,7 @@ function PagedResults({
   endpoint: "search" | "discover";
   browse: boolean;
 }) {
-  const lastPage = lastReachablePage(page.totalPages);
+  const lastPage = page.totalPages;
   if (params.page > Math.max(lastPage, 1)) {
     return <NoSuchPage params={params} />;
   }
@@ -438,7 +441,7 @@ function resultsKey(raw: RawParams): string {
 }
 
 /**
- * The loading shape of the results: the count line, 20 cards and the
+ * The loading shape of the results: the count line, 24 cards and the
  * pagination row (AC-21).
  */
 function SearchResultsSkeleton() {
@@ -446,7 +449,7 @@ function SearchResultsSkeleton() {
     <div className="flex flex-col gap-6">
       <Skeleton shape="line" className="h-5 w-48" />
       <PosterGrid aria-hidden="true">
-        {Array.from({ length: PAGE_SIZE }, (_, index) => (
+        {Array.from({ length: GRID_PAGE_SIZE }, (_, index) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders with no identity.
           <li key={index}>
             <PosterCardSkeleton meta />
