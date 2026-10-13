@@ -27,6 +27,14 @@ function metadataFor(page?: string) {
   } as Parameters<typeof generateMetadata>[0]);
 }
 
+/** A TMDB list page with no titles, as the metadata reads only its counts. */
+const tmdbPage = (totalPages: number) => ({
+  page: 1,
+  results: [],
+  totalPages,
+  totalResults: totalPages * 20,
+});
+
 beforeEach(() => vi.stubEnv("NEXT_PUBLIC_SITE_URL", ORIGIN));
 
 afterEach(() => {
@@ -36,7 +44,7 @@ afterEach(() => {
 
 describe("the top rated shows list's metadata", () => {
   it("reads the top_rated list and names the page by its h1 and note", async () => {
-    getTvList.mockResolvedValue({ totalPages: 100 });
+    getTvList.mockResolvedValue(tmdbPage(100));
 
     const metadata = await metadataFor();
 
@@ -49,7 +57,7 @@ describe("the top rated shows list's metadata", () => {
   });
 
   it("gives page 2 its own canonical", async () => {
-    getTvList.mockResolvedValue({ totalPages: 100 });
+    getTvList.mockResolvedValue(tmdbPage(100));
 
     const metadata = await metadataFor("2");
 
@@ -59,7 +67,7 @@ describe("the top rated shows list's metadata", () => {
   });
 
   it("is noindex past the last page", async () => {
-    getTvList.mockResolvedValue({ totalPages: 100 });
+    getTvList.mockResolvedValue(tmdbPage(100));
 
     const metadata = await metadataFor("999");
 

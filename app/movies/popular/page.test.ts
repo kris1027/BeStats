@@ -20,6 +20,15 @@ vi.mock("@/lib/tmdb", async () => {
 });
 
 const { TmdbError } = await import("@/lib/tmdb/errors");
+
+/** A TMDB list page with no titles, as the metadata reads only its counts. */
+const tmdbPage = (totalPages: number) => ({
+  page: 1,
+  results: [],
+  totalPages,
+  totalResults: totalPages * 20,
+});
+
 const { generateMetadata } = await import("./page");
 
 const ORIGIN = "https://bestats.example";
@@ -41,7 +50,7 @@ afterEach(() => {
 
 describe("the popular movies list's metadata (spec 0021, AC-15)", () => {
   it("declares /movies/popular as the canonical of page 1, with the site card", async () => {
-    discoverMovies.mockResolvedValue({ totalPages: 50 });
+    discoverMovies.mockResolvedValue(tmdbPage(50));
 
     const metadata = await metadataFor();
 
@@ -58,7 +67,7 @@ describe("the popular movies list's metadata (spec 0021, AC-15)", () => {
   });
 
   it("gives page N its own canonical", async () => {
-    discoverMovies.mockResolvedValue({ totalPages: 50 });
+    discoverMovies.mockResolvedValue(tmdbPage(50));
 
     const metadata = await metadataFor("2");
 
@@ -69,20 +78,21 @@ describe("the popular movies list's metadata (spec 0021, AC-15)", () => {
   });
 
   it("indexes the last page itself", async () => {
-    discoverMovies.mockResolvedValue({ totalPages: 7 });
+    // 7 TMDB pages hold 140 titles, 6 pages of 24 (spec 0022, AC-21).
+    discoverMovies.mockResolvedValue(tmdbPage(7));
 
-    const metadata = await metadataFor("7");
+    const metadata = await metadataFor("6");
 
     expect(metadata.robots).toBeUndefined();
     expect(metadata.alternates?.canonical).toBe(
-      `${ORIGIN}/movies/popular?page=7`,
+      `${ORIGIN}/movies/popular?page=6`,
     );
   });
 
   it("is noindex with no canonical for a page past the last one", async () => {
-    discoverMovies.mockResolvedValue({ totalPages: 7 });
+    discoverMovies.mockResolvedValue(tmdbPage(7));
 
-    const metadata = await metadataFor("8");
+    const metadata = await metadataFor("7");
 
     expect(metadata).toEqual({
       title: TITLE,

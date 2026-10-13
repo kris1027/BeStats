@@ -9,17 +9,15 @@ import { RetryLink } from "@/components/retry-link";
 import { PaginationSkeleton, PosterCardSkeleton } from "@/components/skeleton";
 import { StatePanel } from "@/components/state-panel";
 import { ButtonLink } from "@/components/ui/button";
+import { GRID_PAGE_SIZE } from "@/lib/catalog/grid-page";
 import { type CatalogList, listPageHref, listPath } from "@/lib/catalog/lists";
 import { CATALOG_PATHS } from "@/lib/catalog/media-type";
-import { lastReachablePage, parsePageParam } from "@/lib/catalog/pages";
+import { parsePageParam } from "@/lib/catalog/pages";
 import {
-  readTaggedCatalogList,
+  readTaggedCatalogGridPage,
   type TaggedCatalogPage,
 } from "@/lib/catalog-list-read";
 import { TmdbError } from "@/lib/tmdb";
-
-/** TMDB's list page size, which the skeleton mirrors. */
-const PAGE_SIZE = 20;
 
 const LANDING_LABELS = { tv: "Shows", movie: "Movies" } as const;
 
@@ -81,7 +79,7 @@ async function ListGrid({
 
   let result: TaggedCatalogPage;
   try {
-    result = await readTaggedCatalogList(list, page);
+    result = await readTaggedCatalogGridPage(list, page);
   } catch (error) {
     if (!(error instanceof TmdbError)) throw error;
     return (
@@ -108,7 +106,7 @@ async function ListGrid({
     );
   }
 
-  const lastPage = lastReachablePage(result.paged.totalPages);
+  const lastPage = result.paged.totalPages;
   if (page > lastPage) return <NoSuchPage list={list} />;
 
   return (
@@ -148,7 +146,7 @@ function ListGridSkeleton() {
   return (
     <div className="flex flex-col gap-10">
       <PosterGrid aria-hidden="true">
-        {Array.from({ length: PAGE_SIZE }, (_, index) => (
+        {Array.from({ length: GRID_PAGE_SIZE }, (_, index) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders with no identity.
           <li key={index}>
             <PosterCardSkeleton />

@@ -1,3 +1,4 @@
+import { readGridPage } from "@/lib/catalog/grid-page";
 import type {
   CatalogList,
   MovieCatalogList,
@@ -78,9 +79,41 @@ export type TaggedCatalogPage =
   | { mediaType: "movie"; paged: Paged<MovieSummary> };
 
 /**
+ * One 24 title page of a list's See all grid (spec 0022, AC-21): the two
+ * `readCatalogList` pages that hold it, so the grid's pages share cache
+ * entries with each other and page 1 shares TMDB page 1 with the landing row.
+ * `totalPages` is the grid's own count. The landing rows keep calling
+ * `readCatalogList` directly, for TMDB page 1 alone.
+ *
+ * @throws {TmdbError} When either TMDB read fails.
+ */
+export function readCatalogGridPage(
+  list: TvCatalogList,
+  page: number,
+): Promise<Paged<TvShowSummary>>;
+export function readCatalogGridPage(
+  list: MovieCatalogList,
+  page: number,
+): Promise<Paged<MovieSummary>>;
+export function readCatalogGridPage(
+  list: CatalogList,
+  page: number,
+): Promise<Paged<TvShowSummary> | Paged<MovieSummary>>;
+export function readCatalogGridPage(
+  list: CatalogList,
+  page: number,
+): Promise<Paged<TvShowSummary> | Paged<MovieSummary>> {
+  if (list.mediaType === "tv") {
+    return readGridPage(page, (tmdbPage) => readCatalogList(list, tmdbPage));
+  }
+  return readGridPage(page, (tmdbPage) => readCatalogList(list, tmdbPage));
+}
+
+/**
  * `readCatalogList` with its result tagged, so a component rendering any list
  * picks the show or movie card by narrowing on `mediaType` rather than by a
- * cast. The very same call underneath, so it shares the cache entry.
+ * cast. The very same call underneath, so it shares the cache entry. The
+ * landing rows read TMDB page 1 through this.
  *
  * @throws {TmdbError} When TMDB fails.
  */
@@ -91,4 +124,19 @@ export async function readTaggedCatalogList(
   return list.mediaType === "tv"
     ? { mediaType: "tv", paged: await readCatalogList(list, page) }
     : { mediaType: "movie", paged: await readCatalogList(list, page) };
+}
+
+/**
+ * `readCatalogGridPage` tagged the same way, for the See all grid
+ * (spec 0022, AC-21).
+ *
+ * @throws {TmdbError} When either TMDB read fails.
+ */
+export async function readTaggedCatalogGridPage(
+  list: CatalogList,
+  page: number,
+): Promise<TaggedCatalogPage> {
+  return list.mediaType === "tv"
+    ? { mediaType: "tv", paged: await readCatalogGridPage(list, page) }
+    : { mediaType: "movie", paged: await readCatalogGridPage(list, page) };
 }

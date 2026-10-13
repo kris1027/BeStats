@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { type CatalogList, listPageHref } from "@/lib/catalog/lists";
 import { lastReachablePage, parsePageParam } from "@/lib/catalog/pages";
-import { readCatalogList } from "@/lib/catalog-list-read";
+import { readCatalogGridPage } from "@/lib/catalog-list-read";
 import { landingMetadata } from "@/lib/seo/metadata";
 import { TmdbError } from "@/lib/tmdb";
 
@@ -52,8 +52,9 @@ export async function landingPageMetadata({
 /**
  * A list page's metadata (spec 0021, AC-15): its h1 as the title, its note as
  * the description, and page N's own canonical. The `landingPageMetadata` flow
- * with `readCatalogList` as the read, the very call the page body makes, so
- * metadata costs no extra TMDB request.
+ * with `readCatalogGridPage` as the read, the very call the page body makes,
+ * so metadata costs no extra TMDB request and follows the 24 title page count
+ * (spec 0022, AC-21).
  */
 export async function catalogListMetadata(
   list: CatalogList,
@@ -61,7 +62,7 @@ export async function catalogListMetadata(
 ): Promise<Metadata> {
   return landingPageMetadata({
     pageParam: (await searchParams).page,
-    discover: ({ page }) => readCatalogList(list, page),
+    discover: ({ page }) => readCatalogGridPage(list, page),
     title: list.heading,
     description: list.note,
     pageHref: (page) => listPageHref(list, page),
