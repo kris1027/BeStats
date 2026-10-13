@@ -44,7 +44,7 @@ export const SCAN_TARGET = 20;
 export const SCAN_MAX_PAGES = 5;
 
 /** TMDB's result page size, which the partial range is computed from. */
-export const TMDB_PAGE_SIZE = 20;
+export { TMDB_PAGE_SIZE } from "@/lib/catalog/grid-page";
 
 /**
  * TMDB's search endpoints report at most this many results, so a total at the
