@@ -13,8 +13,7 @@ type PosterGridColumns = "catalog" | "wide";
  * every one of them.
  */
 const COLUMN_CLASSES: Record<PosterGridColumns, string> = {
-  catalog:
-    "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6",
+  catalog: "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6",
   wide: "grid-cols-2 md:grid-cols-4",
 };
 
@@ -27,7 +26,7 @@ const COLUMN_CLASSES: Record<PosterGridColumns, string> = {
  */
 const POSTER_GRID_SIZES: Record<PosterGridColumns, string> = {
   catalog:
-    "(min-width: 1280px) 187px, (min-width: 1232px) 228px, (min-width: 1024px) 20vw, (min-width: 768px) 25vw, (min-width: 640px) 33vw, 50vw",
+    "(min-width: 1280px) 187px, (min-width: 1232px) 288px, (min-width: 768px) 25vw, (min-width: 640px) 33vw, 50vw",
   wide: "(min-width: 1232px) 288px, (min-width: 768px) 25vw, 50vw",
 };
 
@@ -43,12 +42,13 @@ const POSTER_GRID_EAGER: Record<PosterGridColumns, number> = {
 /**
  * The poster grid, mobile first (spec 0004, AC-9, amended by spec 0022).
  *
- * `catalog` steps 2, 3 (`sm`), 4 (`md`), 5 (`lg`) and 6 (`xl`) columns, so a
- * grid card stays close to the home row card's 180px; a 20 title page leaves a
- * short last row at 3, 5 and 6 columns, accepted in spec 0022. `wide` keeps 2
- * and 4 for the season grid. The columns, `POSTER_GRID_SIZES` and
- * `POSTER_GRID_EAGER` change together; a card in the grid passes the preset's
- * sizes.
+ * `catalog` steps 2, 3 (`sm`), 4 (`md`, and still at `lg`) and 6 (`xl`)
+ * columns, so a wide screen card stays close to the home row card's 180px.
+ * Every step divides the 24 title page (`GRID_PAGE_SIZE`), so a full page
+ * fills every row at every width; there is deliberately no 5 column step
+ * (spec 0022, AC-1, AC-22). `wide` keeps 2 and 4 for the season grid. The
+ * columns, `POSTER_GRID_SIZES` and `POSTER_GRID_EAGER` change together; a
+ * card in the grid passes the preset's sizes.
  *
  * The 1200px cap keeps a full page a sensible length on a wide screen; past
  * the cap the grid is centred on every page, under the centred pagination.

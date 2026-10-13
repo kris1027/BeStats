@@ -21,7 +21,7 @@ vi.mock("@/lib/tmdb", async () => ({
   TmdbError: (await import("@/lib/tmdb/errors")).TmdbError,
 }));
 vi.mock("@/lib/catalog-list-read", () => ({
-  readTaggedCatalogList: (...args: unknown[]) => read(...args),
+  readTaggedCatalogGridPage: (...args: unknown[]) => read(...args),
 }));
 vi.mock("@/components/catalog/list-cards", () => ({
   ShowListCard: (props: {
@@ -162,17 +162,17 @@ describe("the list page header (AC-9)", () => {
 
 describe("the list page grid (AC-4, AC-9)", () => {
   it("reads the page from the URL and shows one card per title", async () => {
-    read.mockResolvedValue(tvPage(20, 30));
+    read.mockResolvedValue(tvPage(24, 30));
 
     await renderGrid(TOP_RATED, { page: "2" });
 
     expect(read).toHaveBeenCalledWith(TOP_RATED, 2);
     const grid = screen.getByRole("list", { name: "Top rated shows, page 2" });
-    expect(within(grid).getAllByRole("listitem")).toHaveLength(20);
+    expect(within(grid).getAllByRole("listitem")).toHaveLength(24);
   });
 
   it("reads page 1 when the URL has no page", async () => {
-    read.mockResolvedValue(tvPage(20, 30));
+    read.mockResolvedValue(tvPage(24, 30));
 
     await renderGrid();
 
@@ -232,7 +232,7 @@ describe("the list page grid (AC-4, AC-9)", () => {
   });
 
   it("pages with Page N of M, page 1 as the bare path", async () => {
-    read.mockResolvedValue(tvPage(20, 30));
+    read.mockResolvedValue(tvPage(24, 30));
 
     await renderGrid(TOP_RATED, { page: "2" });
 
@@ -248,12 +248,12 @@ describe("the list page grid (AC-4, AC-9)", () => {
     );
   });
 
-  it("caps the last page at TMDB's 500", async () => {
-    read.mockResolvedValue(tvPage(20, 900));
+  it("ends at the grid's own last page under TMDB's cap", async () => {
+    read.mockResolvedValue(tvPage(16, 417));
 
-    await renderGrid(TOP_RATED, { page: "500" });
+    await renderGrid(TOP_RATED, { page: "417" });
 
-    expect(screen.getByText("Page 500 of 500")).toBeInTheDocument();
+    expect(screen.getByText("Page 417 of 417")).toBeInTheDocument();
     expect(
       screen.queryByRole("link", { name: "Next" }),
     ).not.toBeInTheDocument();
@@ -338,13 +338,13 @@ describe("the list page states (AC-10)", () => {
     expect(screen.queryByRole("list")).not.toBeInTheDocument();
   });
 
-  it("holds the grid's place with 20 card skeletons and the pagination skeleton", () => {
+  it("holds the grid's place with 24 card skeletons and the pagination skeleton", () => {
     const fallback = gridBoundary().props.fallback as Element;
 
     const { container } = render(fallback);
 
     const grid = container.querySelector('[aria-hidden="true"]');
-    expect(grid?.querySelectorAll("li")).toHaveLength(20);
+    expect(grid?.querySelectorAll("li")).toHaveLength(24);
     expect(screen.queryByRole("list")).not.toBeInTheDocument();
   });
 });

@@ -69,3 +69,16 @@ A review of the branch against this spec found five places where the build went 
 - **An error line with no cause.** "TMDB didn't respond" was untrue for a 404 or a bad response, which the extras read also turns into the error line, so the line now says only that the section couldn't load from TMDB.
 - **The trailer paragraph in `/privacy`.** Saying when the YouTube player loads and whose policy then applies belongs beside the cookie text, in addition to the one country sentence AC-19 asked for.
 - **The read signatures.** The extras reads follow the module's pair pattern: the cached twin returns a `TmdbResult` and the exported wrapper throws. The interface table described only the inner half.
+
+## Amendment 2026-10-13: full grid rows
+
+The owner asked for every row of a full page to be filled at every width, reversing the ragged last row accepted in the premise note above. 20 does not divide by 3 or 6, so at 6 columns a page ended 4 cards short.
+
+Options weighed in the 2026-10-13 grilling session:
+
+- **Columns that divide 20 (2, 4, 5)**: no data change, but drops 3 and 6 columns and grows desktop cards to about 228px. Recommended, not chosen.
+- **24 a page with 2, 3, 4 and 6 columns (chosen)**: keeps six columns on wide screens and the 187px card. The premise note said a page size change could not work on TMDB pages fixed at 20; it can, by reading the two TMDB pages that hold each 24 title window. The cost is a second cached TMDB read per page and page numbers that move.
+- **60 a page**: fills every column count but costs three TMDB reads and very long pages.
+- **Hiding the extra cards**: titles would vanish between pages. Rejected.
+
+Filtered search keeps its cursor and 20 match target: its pages were never a fixed size, and making them exactly 24 would mean rewriting spec 0010's scan and cursor for a cosmetic gain. Old page links are not redirected because the lists are re-ranked by TMDB daily, so a page number never named stable content. A failed half of a page shows the whole page's error, not a half page with a notice, so no new state is added. Page 417 under TMDB's 10,000 result cap shows its 16 titles rather than hiding them.

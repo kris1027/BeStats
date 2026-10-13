@@ -1,5 +1,6 @@
 import "server-only";
 
+import { GRID_PAGE_SIZE } from "@/lib/catalog/grid-page";
 import type { LibraryList } from "@/lib/catalog/library-list";
 import {
   classifyMovie,
@@ -43,8 +44,11 @@ import { logTrackingEvent, TRACKING_EVENT } from "./log";
  * instant never swap places between pages.
  */
 
-/** Cards per page on every library tab (AC-16). */
-export const LIBRARY_PAGE_SIZE = 20;
+/**
+ * Cards per page on every library tab (AC-16): the grid's page size, so a
+ * full page fills every row (spec 0022, AC-21).
+ */
+export const LIBRARY_PAGE_SIZE = GRID_PAGE_SIZE;
 
 /**
  * How many titles one request classifies per media type (AC-16). Each is a

@@ -1,13 +1,8 @@
 import "server-only";
 
-import { lastReachablePage } from "@/lib/catalog/pages";
+import { lastReachablePage, TMDB_PAGE_SIZE } from "@/lib/catalog/pages";
 
-import {
-  MIN_VOTE_COUNT,
-  SCAN_MAX_PAGES,
-  SCAN_TARGET,
-  TMDB_PAGE_SIZE,
-} from "./constants";
+import { MIN_VOTE_COUNT, SCAN_MAX_PAGES, SCAN_TARGET } from "./constants";
 import type { SearchParams } from "./params";
 import { readSearchPage, type SearchPage, type SearchResult } from "./read";
 

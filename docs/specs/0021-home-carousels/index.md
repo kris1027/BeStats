@@ -2,6 +2,7 @@
 
 **Date**: 2026-10-12
 **Status**: Accepted
+**Amended**: 2026-10-13. A See all page shows 24 titles, read from the two TMDB pages that hold them; the landing rows still read TMDB page 1. See [spec 0022](../0022-card-size-title-pages/index.md), AC-21.
 
 Scope feature: [24. Home carousels](../../scope/scope.md) · Beta tier
 

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { readGridPage } from "@/lib/catalog/grid-page";
 import { titleHref } from "@/lib/catalog/media-type";
 import {
   discoverMovies,
@@ -12,6 +13,7 @@ import {
   type TvShowSummary,
 } from "@/lib/tmdb";
 import { MIN_VOTE_COUNT, QUICK_LIMIT } from "./constants";
+import type { SearchMode } from "./mode";
 import type { SearchParams, SearchType } from "./params";
 import type { QuickSearchResponse } from "./quick";
 
@@ -105,6 +107,29 @@ export async function readDiscoverPage(
   }
   const page = await discoverTvShows(options);
   return { ...page, results: page.results.map(fromShow) };
+}
+
+/**
+ * One 24 title page of browse, discover or plain search (spec 0022, AC-21):
+ * the two TMDB pages that hold it, read through `readSearchPage` or
+ * `readDiscoverPage`, so neighbouring grid pages share cache entries.
+ * `totalPages` is the grid's own count, already capped, which is what the
+ * results page checks `?page=` against. Filtered search is left out because
+ * it pages by its own cursor (AC-13). Throws the module's `TmdbError`
+ * unchanged.
+ */
+export function readSearchGridPage(
+  mode: Exclude<SearchMode, "filtered_search">,
+  params: SearchParams,
+): Promise<SearchPage> {
+  return readGridPage(params.page, (tmdbPage) =>
+    mode === "search"
+      ? readSearchPage(params.type, params.q ?? "", {
+          year: params.year ?? undefined,
+          page: tmdbPage,
+        })
+      : readDiscoverPage({ ...params, page: tmdbPage }),
+  );
 }
 
 /**

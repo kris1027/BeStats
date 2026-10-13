@@ -149,15 +149,15 @@ function settled(
 describe("libraryLastPage", () => {
   it.each([
     [0, 1],
-    [20, 1],
-    [21, 2],
-    [41, 3],
+    [24, 1],
+    [25, 2],
+    [49, 3],
   ])("a list of %s cards ends on page %s", (total, last) => {
     expect(libraryLastPage(total)).toBe(last);
   });
 
-  it("pages by 20 and checks at most 500 titles (AC-16)", () => {
-    expect(LIBRARY_PAGE_SIZE).toBe(20);
+  it("pages by 24 and checks at most 500 titles (AC-16; spec 0022, AC-21)", () => {
+    expect(LIBRARY_PAGE_SIZE).toBe(24);
     expect(LIBRARY_CLASSIFY_LIMIT).toBe(500);
   });
 });
@@ -383,7 +383,7 @@ describe("getShowLibraryTab (AC-7 to AC-12, AC-16)", () => {
     });
     if (tab.kind !== "ok") throw new Error("read failed");
     expect(tab.total).toBe(25);
-    expect(tab.cards.map((card) => card.showId)).toEqual([21, 22, 23, 24, 25]);
+    expect(tab.cards.map((card) => card.showId)).toEqual([25]);
   });
 
   it("reads past the response cap for the watched episodes, page by page", async () => {
@@ -741,7 +741,7 @@ describe("getMovieLibraryTab (AC-13, AC-16, AC-17)", () => {
 });
 
 describe("getWatchedMoviesPage (spec 0008, AC-2, AC-9)", () => {
-  it("reads the owner's watched movies, newest first, 20 per page, with an exact count", async () => {
+  it("reads the owner's watched movies, newest first, 24 per page, with an exact count", async () => {
     responses = [
       {
         data: [
@@ -752,7 +752,7 @@ describe("getWatchedMoviesPage (spec 0008, AC-2, AC-9)", () => {
           },
         ],
         error: null,
-        count: 22,
+        count: 25,
       },
     ];
     expect(await getWatchedMoviesPage("user-a", 2)).toEqual({
@@ -764,7 +764,7 @@ describe("getWatchedMoviesPage (spec 0008, AC-2, AC-9)", () => {
           rating: 9,
         },
       ],
-      total: 22,
+      total: 25,
     });
     expect(calls).toEqual([
       { method: "from", args: ["user_movie_state"] },
@@ -776,7 +776,7 @@ describe("getWatchedMoviesPage (spec 0008, AC-2, AC-9)", () => {
       { method: "not", args: ["watched_at", "is", null] },
       { method: "order", args: ["watched_at", { ascending: false }] },
       { method: "order", args: ["movie_id", { ascending: true }] },
-      { method: "range", args: [20, 39] },
+      { method: "range", args: [24, 47] },
     ]);
   });
 

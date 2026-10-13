@@ -3,6 +3,7 @@
 **Date**: 2026-10-12
 **Status**: Accepted
 **Amended**: 2026-10-12. After the branch review, the spec records what shipped: Cast is a carousel row of home row cards (AC-17), a network shows its name with its logo beside it (AC-16), the error line names no cause (AC-18), `/privacy` also explains the trailer player (AC-19), and the extras reads throw like every other read (interface table). The owner kept each as built; see [rationale.md](rationale.md#amendment-2026-10-12-recording-what-shipped).
+**Amended**: 2026-10-13. Full grid rows: every paged grid shows 24 titles, and the `catalog` grid steps 2, 3, 4 and 6 columns (no 5), so a full page fills every row at every width (AC-1, AC-2, AC-4, AC-6, new AC-21 and AC-22). This reverses the ragged last row accepted below; see [rationale.md](rationale.md#amendment-2026-10-13-full-grid-rows) and [prompts/full-grid-rows.md](../../../prompts/full-grid-rows.md).
 
 ## Summary
 
@@ -19,13 +20,15 @@ This spec covers two related changes. First, poster cards on every grid page (Se
 
 *Card size strand*
 
-- **AC-1**: The default (`catalog`) `PosterGrid` has 2 columns below `sm` (640px), 3 from `sm`, 4 from `md` (768px), 5 from `lg` (1024px) and 6 from `xl` (1280px). The 1200px cap, centring and gaps (`gap-x-4 gap-y-6`) are unchanged.
-- **AC-2**: The `catalog` grid applies to the See all list pages (`/shows/{slug}`, `/movies/{slug}`), `/search`, Watchlist, Upcoming and Watched (both types), every one of their skeletons, and `/showcase`. At 1280px and wider a card is between 180px and 190px wide. From 1024px to 1279px cards are deliberately larger (about 186px to 228px).
+- **AC-1**: The default (`catalog`) `PosterGrid` has 2 columns below `sm` (640px), 3 from `sm`, 4 from `md` (768px) and 6 from `xl` (1280px); `lg` (1024px) keeps 4 (amended 2026-10-13, was 5). The 1200px cap, centring and gaps (`gap-x-4 gap-y-6`) are unchanged.
+- **AC-2**: The `catalog` grid applies to the See all list pages (`/shows/{slug}`, `/movies/{slug}`), `/search`, Watchlist, Upcoming and Watched (both types), every one of their skeletons, and `/showcase`. At 1280px and wider a card is between 180px and 190px wide. From 1024px to 1279px cards are deliberately larger (4 columns, about 236px to 288px; amended 2026-10-13).
 - **AC-3**: The season grid on `/shows/{id}` and its skeleton use the `wide` preset, which is exactly today's layout: 2 columns below `md`, 4 from it, with today's `sizes`.
-- **AC-4**: Each preset's `sizes` string has one `floor(100 / columns)vw` entry per fluid column step, and one fixed px entry, `ceil((1200 - (columns - 1) × 16) / columns)`, for every column count the grid shows while capped at 1200px. For `catalog` that is `(min-width: 1280px) 187px, (min-width: 1232px) 228px, (min-width: 1024px) 20vw, (min-width: 768px) 25vw, (min-width: 640px) 33vw, 50vw`. For `wide` it is today's `(min-width: 1232px) 288px, (min-width: 768px) 25vw, 50vw`. `poster-grid.test.tsx` checks every key of `POSTER_GRID_SIZES` with this rule, so a preset with no sizes fails the type check, and a column change that misses its sizes fails the suite.
+- **AC-4**: Each preset's `sizes` string has one `floor(100 / columns)vw` entry per fluid column step, and one fixed px entry, `ceil((1200 - (columns - 1) × 16) / columns)`, for every column count the grid shows while capped at 1200px. For `catalog` that is `(min-width: 1280px) 187px, (min-width: 1232px) 288px, (min-width: 768px) 25vw, (min-width: 640px) 33vw, 50vw` (amended 2026-10-13). For `wide` it is today's `(min-width: 1232px) 288px, (min-width: 768px) 25vw, 50vw`. `poster-grid.test.tsx` checks every key of `POSTER_GRID_SIZES` with this rule, so a preset with no sizes fails the type check, and a column change that misses its sizes fails the suite.
 - **AC-5**: Eager posters are one full row at the preset's widest count: 6 for `catalog` and 4 for `wide`, read from one exported `POSTER_GRID_EAGER` map. The four local `EAGER_POSTERS` copies are removed.
-- **AC-6**: `LibrarySkeleton` shows one row at the current column count at every width (6 cards, visibility `["", "", "hidden sm:block", "hidden md:block", "hidden lg:block", "hidden xl:block"]`), so a one row library does not shift when it arrives. The list page and search skeletons keep their 20 cards.
+- **AC-6**: `LibrarySkeleton` shows one row at the current column count at every width (6 cards, visibility `["", "", "hidden sm:block", "hidden md:block", "hidden xl:block", "hidden xl:block"]`, amended 2026-10-13), so a one row library does not shift when it arrives. The list page and search skeletons show 24 cards (amended 2026-10-13, was 20).
 - **AC-7**: At 375px, 640px, 768px, 1024px and 1280px no grid page scrolls sideways, the missing poster tile keeps a real poster's footprint, and every card control keeps its 44px tap target. `/showcase` shows 6 grid cards.
+- **AC-21** (added 2026-10-13): Every paged `catalog` grid shows 24 titles a page: the See all list pages, `/search` in browse, search and discover modes, and every library tab (`LIBRARY_PAGE_SIZE = 24`). A TMDB backed page *p* shows TMDB results `(p - 1) × 24 + 1` to `p × 24`, read from the two TMDB pages that hold them in parallel through the existing cached reads (a page past TMDB's page 500 is never requested). Its last page is `ceil(min(total_results, min(total_pages, 500) × 20) / 24)`, so a 10,000 result list ends at page 417 with 16 titles. If either TMDB read fails, the page shows its existing error panel with Retry. A title TMDB returns on both pages appears once, and the gap is filled from results already read past the window, so the filler also opens the next page (the repeat TMDB itself served). `generateMetadata` reads the same 24 title page, so canonicals and `noindex` follow the new page count. Old `?page=N` links are not redirected.
+- **AC-22** (added 2026-10-13): A full page fills every row at 2, 3, 4 and 6 columns. A short last row is accepted only on the last page of a list, a filtered search page (query plus genre or rating, which stays cursor based with spec 0010's 20 match scan target), a library page after a card is removed in place, a page where TMDB repeated a title and nothing was read past the window to fill the gap, and the season grid.
 
 *Title page strand: data*
 
@@ -138,7 +141,7 @@ Reasoning and options: see [rationale.md](rationale.md).
 - The library pages pay nothing for the new data.
 
 **Negative / tradeoffs**:
-- A 20 title page ends with a short last row at 3, 5 and 6 columns, the problem the 2 and 4 column grid was built to remove.
+- ~~A 20 title page ends with a short last row at 3, 5 and 6 columns.~~ Fixed by the 2026-10-13 amendment (AC-21, AC-22), at the cost of two TMDB reads per catalog or search page instead of one, and page numbers that point at different titles than before.
 - Smaller desktop posters make captions and controls tighter, and six eager posters means a phone preloads three rows instead of two.
 - Each title page view can cost one more TMDB request per hour per title, and a cold page waits on it for two of its sections.
 - Embedding YouTube adds a processor and a legal update. Region from an IP header is approximate (VPNs and travel show another country), and local development always shows the `US` fallback.

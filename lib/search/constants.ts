@@ -43,9 +43,6 @@ export const SCAN_TARGET = 20;
 /** The most TMDB pages filtered search reads for one results page (AC-13). */
 export const SCAN_MAX_PAGES = 5;
 
-/** TMDB's result page size, which the partial range is computed from. */
-export const TMDB_PAGE_SIZE = 20;
-
 /**
  * TMDB's search endpoints report at most this many results, so a total at the
  * cap is a floor, not a count (AC-3). Observed live on 2026-09-24 and asserted

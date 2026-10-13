@@ -251,12 +251,15 @@ export function LibrarySkeleton() {
   );
 }
 
-/** Each card's visibility in that row: one more card at each column step. */
+/**
+ * Each card's visibility in that row, matching the grid's 2, 3, 4 and 6
+ * column steps (spec 0022, AC-6): the last two appear together at `xl`.
+ */
 const ROW_CARD_VISIBILITY = [
   "",
   "",
   "hidden sm:block",
   "hidden md:block",
-  "hidden lg:block",
+  "hidden xl:block",
   "hidden xl:block",
 ];

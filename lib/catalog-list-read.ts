@@ -1,3 +1,4 @@
+import { readGridPage } from "@/lib/catalog/grid-page";
 import type {
   CatalogList,
   MovieCatalogList,
@@ -80,7 +81,8 @@ export type TaggedCatalogPage =
 /**
  * `readCatalogList` with its result tagged, so a component rendering any list
  * picks the show or movie card by narrowing on `mediaType` rather than by a
- * cast. The very same call underneath, so it shares the cache entry.
+ * cast. The very same call underneath, so it shares the cache entry. The
+ * landing rows read TMDB page 1 through this.
  *
  * @throws {TmdbError} When TMDB fails.
  */
@@ -91,4 +93,35 @@ export async function readTaggedCatalogList(
   return list.mediaType === "tv"
     ? { mediaType: "tv", paged: await readCatalogList(list, page) }
     : { mediaType: "movie", paged: await readCatalogList(list, page) };
+}
+
+/**
+ * One 24 title page of a list's See all grid, tagged like
+ * `readTaggedCatalogList` (spec 0022, AC-21): the two `readCatalogList` pages
+ * that hold it, so the grid's pages share cache entries with each other and
+ * page 1 shares TMDB page 1 with the landing row. `totalPages` is the grid's
+ * own count. The landing rows keep reading TMDB page 1 alone.
+ *
+ * The two branches make the same call: each narrows `list`, which picks the
+ * `readCatalogList` overload and so the result type `readGridPage` infers.
+ *
+ * @throws {TmdbError} When either TMDB read fails.
+ */
+export async function readTaggedCatalogGridPage(
+  list: CatalogList,
+  page: number,
+): Promise<TaggedCatalogPage> {
+  return list.mediaType === "tv"
+    ? {
+        mediaType: "tv",
+        paged: await readGridPage(page, (tmdbPage) =>
+          readCatalogList(list, tmdbPage),
+        ),
+      }
+    : {
+        mediaType: "movie",
+        paged: await readGridPage(page, (tmdbPage) =>
+          readCatalogList(list, tmdbPage),
+        ),
+      };
 }
