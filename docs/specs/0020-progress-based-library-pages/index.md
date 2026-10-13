@@ -4,6 +4,7 @@
 **Status**: Accepted
 **Amended**: 2026-10-10. Pause and Drop are removed: a show is tracked or not, Stop tracking is the only way out, every existing hold is cleared, and the hold removal ships inside the contract migration. Settled in a grilling session on 2026-10-10; see [rationale.md](rationale.md#amendment-2026-10-10-pause-and-drop-removed).
 **Amended**: 2026-10-10. The Watchlist card's next episode is the first aired episode after the user's furthest watched episode, not the first unwatched one, and a show with nothing aired after that episode is caught up even with earlier gaps (AC-7). Settled in a grilling session on 2026-10-10; see [rationale.md](rationale.md#amendment-2026-10-10-next-episode-after-the-furthest-watched).
+**Amended**: 2026-10-13. Every tab pages 24 cards at a time, not 20 (AC-16), so a full page fills every grid row; see [spec 0022](../0022-card-size-title-pages/index.md), AC-21.
 
 Scope feature: [23. Progress based library pages](../../scope/scope.md) · GA tier
 

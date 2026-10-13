@@ -2,6 +2,7 @@
 
 **Date**: 2026-09-23
 **Status**: Accepted
+**Amended**: 2026-10-13. Library pages hold 24 cards, not 20 (`LIBRARY_PAGE_SIZE = GRID_PAGE_SIZE`), so a full page fills every grid row; see [spec 0022](../0022-card-size-title-pages/index.md), AC-21.
 
 Scope feature: [9. Watchlist and movie history](../../scope/scope.md) · Beta tier
 
