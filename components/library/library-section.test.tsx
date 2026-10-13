@@ -191,7 +191,7 @@ describe("the reads each tab makes (AC-15, AC-16)", () => {
   it("redirects a page past the end to the last page", async () => {
     getShowLibraryTab.mockResolvedValue(
       tab([{ page: "watched", showId: 1, title: TITLE, label: "finished" }], {
-        total: 21,
+        total: 25,
       }),
     );
     await expect(
