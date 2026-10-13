@@ -1,6 +1,8 @@
 # Verify: TV show page · spec 0009 · updated 2026-09-24
 _Steps derived from spec 0009 acceptance criteria. `/check verify` runs these; `/test` locks the durable ones._
 
+_Amended 2026-10-13: a paged title grid now shows 24 cards, not 20, and pages count 24 titles each ([spec 0022](../0022-card-size-title-pages/index.md), AC-21). The ticked steps below record the 20 card run._
+
 ## UI / manual
 - [x] Open `/shows` signed out → heading "Popular shows", the popularity note, 20 cards with TMDB badges, no bookmark on any card; tab title "Shows" → AC-1, AC-18
 - [x] Open `/shows?page=2` → "Page 2 of 500"; `/shows?page=abc` and `/shows?page=501` → "That page doesn't exist" with a link to `/shows` → AC-2

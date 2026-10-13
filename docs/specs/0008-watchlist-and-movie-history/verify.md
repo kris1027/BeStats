@@ -1,6 +1,8 @@
 # Verify: Watchlist and movie history · spec 0008 · updated 2026-09-23
 _Steps derived from spec 0008 acceptance criteria. `/check verify` runs these; `/test` locks the durable ones._
 
+_Amended 2026-10-13: a library page now holds 24 cards, not 20 ([spec 0022](../0022-card-size-title-pages/index.md), AC-21). The ticked steps below record the 20 card run; rerun them with 25 or more movies._
+
 **Run by /develop on 2026-09-23** (Proof milestone), in the running app at 1440px and 375px with both seed users. Ticked steps passed live. Still unticked, and why:
 - Bad TMDB token: needs a dev server restart; the "Couldn't reach TMDB" branch is covered only by unit tests so far.
 - Throttled load: not run live; `pnpm build` lists both pages as partial prerender (◐).

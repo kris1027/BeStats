@@ -2,6 +2,7 @@
 
 **Date**: 2026-09-24
 **Status**: Accepted
+**Amended**: 2026-10-13. A paged title grid now shows 24 cards, not 20, read from the two TMDB pages that hold them, so a full page fills every grid row; see [spec 0022](../0022-card-size-title-pages/index.md), AC-21. The 20 below is the page size when this spec shipped.
 
 Scope feature: [10. TV show page](../../scope/scope.md) · Beta tier
 
