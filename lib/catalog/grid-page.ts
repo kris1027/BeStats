@@ -102,6 +102,12 @@ export function combineGridPage<T extends { id: number }>(
  * cache entry. A failure on either half rejects with the read's own error,
  * so the caller shows its usual error panel rather than half a page.
  *
+ * The last grid page of a short list asks for one TMDB page past its end
+ * (grid page 3 of 60 results reads TMDB page 4). Both are read at once, so
+ * the end is not known yet; TMDB answers that page with an empty 200 on its
+ * list, search and discover endpoints (checked live on 2026-10-13), and it is
+ * cached like any other page.
+ *
  * Pure apart from the read it is handed, so the proxy rule for `lib/catalog/`
  * holds: no TMDB import here.
  */
