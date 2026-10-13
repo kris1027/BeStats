@@ -52,6 +52,14 @@ describe("gridPageWindow", () => {
   it("never asks for a TMDB page past 500", () => {
     expect(gridPageWindow(417)).toEqual({ tmdbPages: [500], skip: 4 });
   });
+
+  it("asks for nothing past grid page 417, so it reads as no such page", async () => {
+    expect(gridPageWindow(418).tmdbPages).toEqual([]);
+    const read = vi.fn(async (n: number) => tmdbPage(n));
+    const page = await readGridPage(418, read);
+    expect(read).not.toHaveBeenCalled();
+    expect(page.totalPages).toBe(0);
+  });
 });
 
 describe("lastGridPage", () => {

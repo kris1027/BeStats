@@ -1,6 +1,6 @@
 import type { Paged } from "@/lib/tmdb/types";
 
-import { lastReachablePage, TMDB_MAX_PAGE } from "./pages";
+import { lastReachablePage, TMDB_MAX_PAGE, TMDB_PAGE_SIZE } from "./pages";
 
 /**
  * Titles on one page of every paged `catalog` grid (spec 0022, AC-21). 24
@@ -9,33 +9,25 @@ import { lastReachablePage, TMDB_MAX_PAGE } from "./pages";
  */
 export const GRID_PAGE_SIZE = 24;
 
-/** TMDB's fixed result page size, which every window is cut from. */
-export const TMDB_PAGE_SIZE = 20;
-
 /**
  * The TMDB pages that hold grid page `page`, and how many results of the
  * first one come before it (spec 0022, AC-21).
  *
- * A 24 title window over 20 result pages always spans exactly two of them.
- * A page past TMDB's 500 is dropped rather than requested, because TMDB
- * refuses it; that only happens on the last grid page of a capped list.
+ * A 24 title window over 20 result pages always spans exactly two of them:
+ * it starts at most 16 into the first, so it ends inside the second. A page
+ * past TMDB's 500 is dropped rather than requested, because TMDB refuses it;
+ * that leaves one page for grid page 417 and none past it, which is how grid
+ * pages 418 to 500 come back empty and read as "no such page".
  */
 export function gridPageWindow(page: number): {
   tmdbPages: number[];
   skip: number;
 } {
   const first = (page - 1) * GRID_PAGE_SIZE;
-  const last = page * GRID_PAGE_SIZE - 1;
   const from = Math.floor(first / TMDB_PAGE_SIZE) + 1;
-  const to = Math.floor(last / TMDB_PAGE_SIZE) + 1;
-  const tmdbPages: number[] = [];
-  for (
-    let tmdbPage = from;
-    tmdbPage <= Math.min(to, TMDB_MAX_PAGE);
-    tmdbPage++
-  ) {
-    tmdbPages.push(tmdbPage);
-  }
+  const tmdbPages = [from, from + 1].filter(
+    (tmdbPage) => tmdbPage <= TMDB_MAX_PAGE,
+  );
   return { tmdbPages, skip: first % TMDB_PAGE_SIZE };
 }
 

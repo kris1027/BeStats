@@ -6,6 +6,12 @@ import { z } from "zod";
  */
 export const TMDB_MAX_PAGE = 500;
 
+/**
+ * TMDB's fixed result page size: the 24 title grid window and the filtered
+ * search range are both cut from it.
+ */
+export const TMDB_PAGE_SIZE = 20;
+
 const pageSchema = z.coerce.number().int().min(1).max(TMDB_MAX_PAGE);
 
 /**
