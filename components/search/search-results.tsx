@@ -21,7 +21,7 @@ import {
   ShowCardMeta,
 } from "@/components/tracking/show-card-slots";
 import { ButtonLink } from "@/components/ui/button";
-import { GRID_PAGE_SIZE, readGridPage } from "@/lib/catalog/grid-page";
+import { GRID_PAGE_SIZE } from "@/lib/catalog/grid-page";
 import {
   parseMediaTypeParam,
   titleHref,
@@ -37,8 +37,7 @@ import {
   searchHref,
 } from "@/lib/search/params";
 import {
-  readDiscoverPage,
-  readSearchPage,
+  readSearchGridPage,
   type SearchPage,
   type SearchResult,
 } from "@/lib/search/read";
@@ -93,16 +92,7 @@ async function SearchResults({ raw }: { raw: RawParams }) {
     const mode = searchMode(params);
     if (mode === "filtered_search") return await FilteredResults({ params });
 
-    // 24 titles a page from the two TMDB pages that hold them (spec 0022,
-    // AC-21); filtered search above keeps its own cursor.
-    const page = await readGridPage(params.page, (tmdbPage) =>
-      mode === "search"
-        ? readSearchPage(type, params.q ?? "", {
-            year: params.year ?? undefined,
-            page: tmdbPage,
-          })
-        : readDiscoverPage({ ...params, page: tmdbPage }),
-    );
+    const page = await readSearchGridPage(mode, params);
     return (
       <PagedResults
         params={params}

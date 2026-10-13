@@ -4,7 +4,7 @@ import type { MovieSummary, Paged, TvShowSummary } from "@/lib/tmdb/types";
 
 import { emptySearchParams, type SearchParams } from "./params";
 
-/** covers: spec 0010, AC-11, AC-12, AC-13, AC-16, AC-20 */
+/** covers: spec 0010, AC-11, AC-12, AC-13, AC-16, AC-20; spec 0022, AC-21 */
 
 const tmdb = vi.hoisted(() => ({
   searchMovies: vi.fn(),
@@ -18,9 +18,13 @@ vi.mock("@/lib/tmdb", async (importOriginal) => {
   return { ...actual, ...tmdb };
 });
 
-const { readDiscoverPage, readSearchPage, fromMovie, fromShow } = await import(
-  "./read"
-);
+const {
+  readDiscoverPage,
+  readSearchGridPage,
+  readSearchPage,
+  fromMovie,
+  fromShow,
+} = await import("./read");
 
 const MOVIE: MovieSummary = {
   id: 438631,
@@ -174,5 +178,84 @@ describe("readDiscoverPage", () => {
         minVoteCount: undefined,
       }),
     );
+  });
+});
+
+describe("readSearchGridPage", () => {
+  /** TMDB page `n` of a 600 result list, ids being 1 based positions. */
+  function tmdbPage(n: number, total = 600) {
+    const start = (n - 1) * 20 + 1;
+    const end = Math.min(n * 20, total);
+    return {
+      page: n,
+      results: Array.from({ length: Math.max(end - start + 1, 0) }, (_, i) => ({
+        ...SHOW,
+        id: start + i,
+      })),
+      totalPages: Math.ceil(total / 20),
+      totalResults: total,
+    };
+  }
+
+  it("reads the two search pages that hold a 24 title page, with the year", async () => {
+    tmdb.searchTvShows.mockImplementation(async (_q, { page }) =>
+      tmdbPage(page),
+    );
+
+    const page = await readSearchGridPage(
+      "search",
+      params({ q: "dune", year: 2024, page: 2 }),
+    );
+
+    expect(tmdb.searchTvShows.mock.calls).toEqual([
+      ["dune", { year: 2024, page: 2 }],
+      ["dune", { year: 2024, page: 3 }],
+    ]);
+    expect(page.results.map((result) => result.id)).toEqual(
+      Array.from({ length: 24 }, (_, index) => 25 + index),
+    );
+    expect(page).toMatchObject({ totalPages: 25, totalResults: 600 });
+  });
+
+  it("sends discover's filters with each of its two pages", async () => {
+    tmdb.discoverMovies.mockImplementation(async ({ page }) => tmdbPage(page));
+
+    await readSearchGridPage(
+      "discover",
+      params({ type: "movie", genreIds: [18], rating: 7, page: 3 }),
+    );
+
+    expect(tmdb.discoverMovies.mock.calls.map(([options]) => options)).toEqual(
+      [3, 4].map((page) => ({
+        genreIds: [18],
+        year: undefined,
+        minRating: 7,
+        minVoteCount: 100,
+        page,
+      })),
+    );
+  });
+
+  it("reports the grid's own last page for a short search", async () => {
+    tmdb.searchTvShows.mockImplementation(async (_q, { page }) =>
+      tmdbPage(page, 30),
+    );
+
+    const page = await readSearchGridPage(
+      "search",
+      params({ q: "dune", page: 2 }),
+    );
+
+    expect(page.results.map((result) => result.id)).toEqual([
+      25, 26, 27, 28, 29, 30,
+    ]);
+    expect(page.totalPages).toBe(2);
+  });
+
+  it("asks TMDB nothing for a page past grid page 417", async () => {
+    const page = await readSearchGridPage("browse", params({ page: 418 }));
+
+    expect(tmdb.discoverTvShows).not.toHaveBeenCalled();
+    expect(page.totalPages).toBe(0);
   });
 });
