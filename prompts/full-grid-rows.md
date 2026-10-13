@@ -27,7 +27,7 @@ On every full page, every row of every title grid is filled at every width. Toda
 4. **TMDB window.** Page *p* shows TMDB results `(p-1)×24+1` to `p×24`, which always span exactly two TMDB pages, read in parallel through the existing cached reads, so neighbours share one cache entry. A TMDB page past 500 is never requested.
 5. **Last page** `ceil(min(total_results, min(total_pages, 500) × 20) / 24)`: page 417 of a 10,000 result list shows 16 titles.
 6. **One failed half fails the page**: the existing error panel with Retry.
-7. **A title on both TMDB pages appears once** (deduplicated by id inside the window, which can leave that page one short; React keys need it).
+7. **A title on both TMDB pages appears once** (React keys need it). Each TMDB page is cut by its own positions, so the next page never shifts, and the gap is filled from results already read past the window. Amended during the build: TMDB repeats a title at the page 1/2 edge of popular movies today (id 1284046), which left page 1 at 23 cards.
 8. **Filtered search stays as is**: cursor based, `SCAN_TARGET = 20`, variable card count. Named exception.
 9. **Short rows accepted** on a last page, filtered search, a library page after an in place removal, a deduplicated page, the season grid.
 10. **No redirects** for old `?page=N` links; past the new last page they show the existing "That page doesn't exist" panel.

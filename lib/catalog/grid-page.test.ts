@@ -109,12 +109,41 @@ describe("combineGridPage", () => {
     expect(page.totalPages).toBe(2);
   });
 
-  it("keeps a title TMDB returned on both pages once", () => {
+  it("keeps a title TMDB repeated at a page edge once and stays full", () => {
+    // TMDB's own quirk, seen live: page 2 opens with page 1's last title.
     const second = tmdbPage(2);
-    second.results[0] = { id: 3 };
-    const page = combineGridPage(1, [tmdbPage(1), second]);
-    expect(ids(page).filter((id) => id === 3)).toHaveLength(1);
-    expect(page.results).toHaveLength(GRID_PAGE_SIZE);
+    second.results[0] = { id: 20 };
+    const first = combineGridPage(1, [tmdbPage(1), second]);
+    const next = combineGridPage(2, [second, tmdbPage(3)]);
+    expect(ids(first).filter((id) => id === 20)).toHaveLength(1);
+    expect(first.results).toHaveLength(GRID_PAGE_SIZE);
+    // The filler is the next page's first title, as TMDB's repeat was.
+    expect(ids(first).at(-1)).toBe(25);
+    expect(ids(next)[0]).toBe(25);
+  });
+
+  it("stays one short when nothing past the window was read", () => {
+    // Page 5 ends exactly at the end of TMDB page 6.
+    const sixth = tmdbPage(6);
+    sixth.results[0] = { id: 100 };
+    const page = combineGridPage(5, [tmdbPage(5), sixth]);
+    expect(page.results).toHaveLength(GRID_PAGE_SIZE - 1);
+  });
+
+  it("splits a short TMDB page between its two grid pages with no repeat or gap", () => {
+    // The list read dropped one adult title from TMDB page 2.
+    const second = tmdbPage(2);
+    second.results.splice(2, 1);
+    const first = combineGridPage(1, [tmdbPage(1), second]);
+    const next = combineGridPage(2, [second, tmdbPage(3)]);
+    const shown = [...ids(first), ...ids(next)];
+    expect(new Set(shown).size).toBe(shown.length);
+    expect(shown).toEqual(
+      [...ids(tmdbPage(1)), ...ids(second), ...ids(tmdbPage(3))].slice(
+        0,
+        shown.length,
+      ),
+    );
   });
 
   it("is empty with no results", () => {

@@ -54,30 +54,51 @@ export function lastGridPage(totalResults: number, totalPages: number): number {
 
 /**
  * Cuts grid page `page` out of the TMDB pages `gridPageWindow` named, in
- * order (spec 0022, AC-21). A title TMDB returns on both pages, which happens
- * when a list re-ranks between two cached reads, is kept once: a grid keys
- * its cards by id. `totalPages` becomes the grid's own page count, already
+ * order (spec 0022, AC-21).
+ *
+ * Each TMDB page is cut by its own positions, never by a running count over
+ * both: two grid pages that share a TMDB page then split that very array, so
+ * nothing is skipped even when a page came back short (an adult title dropped
+ * by the list read). A title TMDB returns on both pages, which its popularity
+ * order does at page edges, is kept once (a grid keys its cards by id), and
+ * the gap it leaves is filled from the results already read past the window,
+ * so the page stays full (AC-22). The filler also opens the next page, the
+ * same repeat TMDB itself served; with nothing read past the window the page
+ * stays one short. `totalPages` becomes the grid's own page count, already
  * capped, and `totalResults` stays TMDB's count from the first read.
  */
 export function combineGridPage<T extends { id: number }>(
   page: number,
   reads: Paged<T>[],
 ): Paged<T> {
-  const { skip } = gridPageWindow(page);
+  const { tmdbPages } = gridPageWindow(page);
+  const firstIndex = (page - 1) * GRID_PAGE_SIZE;
+  const endIndex = firstIndex + GRID_PAGE_SIZE;
   const seen = new Set<number>();
   const results: T[] = [];
-  for (const read of reads) {
-    for (const result of read.results) {
+  const spare: T[] = [];
+  for (const [index, read] of reads.entries()) {
+    const offset = (tmdbPages[index] - 1) * TMDB_PAGE_SIZE;
+    const start = Math.max(firstIndex - offset, 0);
+    const end = endIndex - offset;
+    for (const result of read.results.slice(start, end)) {
       if (seen.has(result.id)) continue;
       seen.add(result.id);
       results.push(result);
     }
+    spare.push(...read.results.slice(Math.max(end, start)));
+  }
+  for (const result of spare) {
+    if (results.length >= GRID_PAGE_SIZE) break;
+    if (seen.has(result.id)) continue;
+    seen.add(result.id);
+    results.push(result);
   }
   const first = reads[0];
   const totalResults = first?.totalResults ?? 0;
   return {
     page,
-    results: results.slice(skip, skip + GRID_PAGE_SIZE),
+    results,
     totalPages: lastGridPage(totalResults, first?.totalPages ?? 0),
     totalResults,
   };
