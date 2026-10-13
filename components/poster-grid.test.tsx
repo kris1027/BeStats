@@ -8,9 +8,10 @@ import {
   PosterGrid,
   type PosterGridColumns,
 } from "@/components/poster-grid";
+import { GRID_PAGE_SIZE } from "@/lib/catalog/grid-page";
 
 /**
- * covers: spec 0004 AC-9, AC-8; spec 0022 AC-1, AC-3, AC-4, AC-5
+ * covers: spec 0004 AC-9, AC-8; spec 0022 AC-1, AC-3, AC-4, AC-5, AC-22
  *
  * The grid's own comment names the failure this file is here to prevent: the
  * column counts and their image `sizes` live side by side in
@@ -35,7 +36,6 @@ const COLUMNS_AT: Record<
 > = {
   catalog: [
     { minWidth: 1280, columns: 6 },
-    { minWidth: 1024, columns: 5 },
     { minWidth: 768, columns: 4 },
     { minWidth: 640, columns: 3 },
     { minWidth: null, columns: 2 },
@@ -140,14 +140,19 @@ describe("PosterGrid", () => {
       "grid-cols-2",
       "sm:grid-cols-3",
       "md:grid-cols-4",
-      "lg:grid-cols-5",
       "xl:grid-cols-6",
       "max-w-[1200px]",
       "mx-auto",
       "gap-x-4",
       "gap-y-6",
     );
-    expect(grid.className).not.toMatch(/2xl:grid-cols-/);
+    expect(grid.className).not.toMatch(/(?:lg|2xl):grid-cols-/);
+  });
+
+  it("divides the 24 title page at every column step (spec 0022, AC-22)", () => {
+    for (const { columns } of COLUMNS_AT.catalog) {
+      expect(GRID_PAGE_SIZE % columns).toBe(0);
+    }
   });
 
   it("keeps the wide preset at today's 2 and 4 columns", () => {
