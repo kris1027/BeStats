@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { type CatalogList, listPageHref } from "@/lib/catalog/lists";
-import { lastReachablePage, parsePageParam } from "@/lib/catalog/pages";
-import { readCatalogGridPage } from "@/lib/catalog-list-read";
+import { parsePageParam } from "@/lib/catalog/pages";
+import { readTaggedCatalogGridPage } from "@/lib/catalog-list-read";
 import { landingMetadata } from "@/lib/seo/metadata";
 import { TmdbError } from "@/lib/tmdb";
 
@@ -17,9 +17,10 @@ import { TmdbError } from "@/lib/tmdb";
  * caller passes its own discover read, so the request is the very call the
  * body makes and shares its cache entry: metadata costs no extra TMDB request.
  *
- * An invalid page, a page past `lastReachablePage`, or a failed TMDB read is
- * `noindex` with no canonical. Only a `TmdbError` counts as a failed read;
- * anything else is a bug and is rethrown.
+ * An invalid page, a page past the read's own `totalPages` (already capped by
+ * the 24 title grid, spec 0022, AC-21), or a failed TMDB read is `noindex`
+ * with no canonical. Only a `TmdbError` counts as a failed read; anything
+ * else is a bug and is rethrown.
  */
 export async function landingPageMetadata({
   pageParam,
@@ -41,7 +42,7 @@ export async function landingPageMetadata({
 
   try {
     const { totalPages } = await discover({ page });
-    if (page > lastReachablePage(totalPages)) return noindex();
+    if (page > totalPages) return noindex();
     return landingMetadata({ title, description, path: pageHref(page) });
   } catch (error) {
     if (!(error instanceof TmdbError)) throw error;
@@ -52,7 +53,7 @@ export async function landingPageMetadata({
 /**
  * A list page's metadata (spec 0021, AC-15): its h1 as the title, its note as
  * the description, and page N's own canonical. The `landingPageMetadata` flow
- * with `readCatalogGridPage` as the read, the very call the page body makes,
+ * with the See all grid's own read as the read, the very call the page body makes,
  * so metadata costs no extra TMDB request and follows the 24 title page count
  * (spec 0022, AC-21).
  */
@@ -62,7 +63,8 @@ export async function catalogListMetadata(
 ): Promise<Metadata> {
   return landingPageMetadata({
     pageParam: (await searchParams).page,
-    discover: ({ page }) => readCatalogGridPage(list, page),
+    discover: async ({ page }) =>
+      (await readTaggedCatalogGridPage(list, page)).paged,
     title: list.heading,
     description: list.note,
     pageHref: (page) => listPageHref(list, page),

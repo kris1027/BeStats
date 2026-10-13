@@ -17,7 +17,7 @@ const tmdb = vi.hoisted(() => ({
 vi.mock("@/lib/tmdb", () => tmdb);
 
 const { catalogList } = await import("@/lib/catalog/lists");
-const { readCatalogGridPage, readCatalogList } = await import(
+const { readCatalogList, readTaggedCatalogGridPage } = await import(
   "./catalog-list-read"
 );
 
@@ -63,7 +63,7 @@ describe("readCatalogList", () => {
   });
 });
 
-describe("readCatalogGridPage", () => {
+describe("readTaggedCatalogGridPage", () => {
   const page = (n: number) => ({
     page: n,
     results: Array.from({ length: 20 }, (_, index) => ({
@@ -76,7 +76,10 @@ describe("readCatalogGridPage", () => {
   it("reads the two TMDB pages that hold a 24 title page", async () => {
     tmdb.getTvList.mockImplementation(async (_kind, { page: n }) => page(n));
 
-    const result = await readCatalogGridPage(catalogList("tv", "top-rated"), 2);
+    const { mediaType, paged: result } = await readTaggedCatalogGridPage(
+      catalogList("tv", "top-rated"),
+      2,
+    );
 
     expect(tmdb.getTvList.mock.calls).toEqual([
       ["top_rated", { page: 2 }],
@@ -86,5 +89,6 @@ describe("readCatalogGridPage", () => {
       Array.from({ length: 24 }, (_, index) => 25 + index),
     );
     expect(result.totalPages).toBe(25);
+    expect(mediaType).toBe("tv");
   });
 });
