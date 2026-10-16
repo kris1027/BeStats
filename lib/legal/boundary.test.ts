@@ -60,6 +60,12 @@ describe("one home for each legal fact", () => {
     expect(filesContaining(TMDB_HOME_URL)).toEqual(["lib/legal/operator.ts"]);
   });
 
+  it("names no processor's country in /privacy itself", () => {
+    expect(readFileSync("app/privacy/page.tsx", "utf8")).not.toContain(
+      "United States",
+    );
+  });
+
   it("writes the JustWatch credit only in lib/legal/operator.ts (spec 0022, AC-12)", () => {
     expect(filesContaining(JUSTWATCH_ATTRIBUTION)).toEqual([
       "lib/legal/operator.ts",

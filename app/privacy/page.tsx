@@ -149,16 +149,13 @@ export default function PrivacyPage() {
           {SUPABASE_REGION.name}, and the app&rsquo;s server functions in the
           matching Vercel region.
         </p>
-        <p>
-          Supabase and Vercel are United States companies. Where their staff
-          access your data for support and operations, that access is covered by
-          the EU Standard Contractual Clauses.
-        </p>
-        <p>
-          TMDB is a United States company. The images your browser loads from it
-          come from its content delivery network, which may serve them from
-          outside the EEA.
-        </p>
+        {PROCESSORS.flatMap((processor) =>
+          processor.transfer ? (
+            <p key={processor.name}>{processor.transfer}</p>
+          ) : (
+            []
+          ),
+        )}
       </LegalSection>
 
       <LegalSection title="How long we keep it">
