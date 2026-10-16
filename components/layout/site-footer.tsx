@@ -2,7 +2,11 @@ import { cn } from "cn";
 import Image from "next/image";
 import Link from "next/link";
 import type * as React from "react";
-import { OPERATOR_GITHUB_URL, OPERATOR_HANDLE } from "@/lib/legal/operator";
+import {
+  OPERATOR_GITHUB_URL,
+  OPERATOR_HANDLE,
+  TMDB_HOME_URL,
+} from "@/lib/legal/operator";
 import { TMDB_ATTRIBUTION } from "@/lib/tmdb";
 
 import { IconKey } from "./icon-key";
@@ -32,7 +36,7 @@ export function SiteFooter() {
       <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-3 px-4 py-4 md:flex-row md:items-center md:justify-between md:gap-6">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-4">
           <a
-            href="https://www.themoviedb.org"
+            href={TMDB_HOME_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex min-h-11 w-fit items-center rounded-sm md:min-h-9"

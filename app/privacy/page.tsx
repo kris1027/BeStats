@@ -18,6 +18,7 @@ import {
   RIGHTS_RESPONSE,
   SUPABASE_REGION,
   SUPERVISORY_AUTHORITY,
+  TMDB_HOME_URL,
 } from "@/lib/legal/operator";
 import { catalogMetadata } from "@/lib/seo/metadata";
 
@@ -134,11 +135,11 @@ export default function PrivacyPage() {
         </LegalList>
         <p>
           Catalog details come from{" "}
-          <ExternalLink href="https://www.themoviedb.org">TMDB</ExternalLink>.
-          Our server makes the catalog requests, so TMDB never receives your
-          account or tracking data. Your browser loads the images from
-          TMDB&rsquo;s image service, which sees your IP address and browser
-          details, and TMDB&rsquo;s own privacy policy applies to them.
+          <ExternalLink href={TMDB_HOME_URL}>TMDB</ExternalLink>. Our server
+          makes the catalog requests, so TMDB never receives your account or
+          tracking data. Your browser loads the images from TMDB&rsquo;s image
+          service, which sees your IP address and browser details, and
+          TMDB&rsquo;s own privacy policy applies to them.
         </p>
       </LegalSection>
 

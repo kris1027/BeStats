@@ -9,6 +9,7 @@ import {
   OPERATOR_GITHUB_URL,
   OPERATOR_HANDLE,
   SUPERVISORY_AUTHORITY,
+  TMDB_HOME_URL,
 } from "./operator";
 
 /**
@@ -53,6 +54,10 @@ describe("one home for each legal fact", () => {
     expect(filesContaining("otherwise approved by TMDB")).toEqual([
       "lib/tmdb/constants.ts",
     ]);
+  });
+
+  it("writes TMDB's site URL only in lib/legal/operator.ts", () => {
+    expect(filesContaining(TMDB_HOME_URL)).toEqual(["lib/legal/operator.ts"]);
   });
 
   it("writes the JustWatch credit only in lib/legal/operator.ts (spec 0022, AC-12)", () => {

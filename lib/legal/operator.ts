@@ -63,6 +63,15 @@ export const SUPABASE_REGION = {
  */
 export const JUSTWATCH_ATTRIBUTION = "Availability data from JustWatch";
 
+/**
+ * TMDB's own site, where the footer logo, the privacy policy and TMDB's
+ * processor entry link. One home, like `JUSTWATCH_ATTRIBUTION`, so the link
+ * cannot drift between the places that name TMDB. It lives here rather than in
+ * `lib/tmdb` because that entry point is server only and the footer test and
+ * the legal pages render in jsdom.
+ */
+export const TMDB_HOME_URL = "https://www.themoviedb.org";
+
 /** Days within which an account deletion request is completed. */
 export const DELETION_DAYS = 30;
 
@@ -98,7 +107,7 @@ export const PROCESSORS: readonly Processor[] = [
     name: "TMDB",
     purpose:
       "Delivers posters, photos and other catalog images straight to your browser, which shares your IP address with it.",
-    url: "https://www.themoviedb.org",
+    url: TMDB_HOME_URL,
   },
   {
     name: "YouTube",
