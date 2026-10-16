@@ -51,8 +51,9 @@ None of the installed skills cover image loaders. The Next.js docs shipped in
 1. **Images load directly from `image.tmdb.org`** (your choice, 2026-10-16),
    not through a same-origin Vercel rewrite, which would only swap image
    transformations for edge requests and origin transfer.
-2. **Width ladder:** `w92, w154, w185, w300, w342, w500, w780, w1280`. The
-   loader picks the smallest rung ≥ the requested width. `original` is never
+2. **Width ladder:** `w92, w154, w185, w300, w342, w500, w780, w1280`, kept as
+   `TMDB_IMAGE_WIDTHS` in `images.ts`, the one list `TmdbImageSize` is built
+   from too (amended after review). The loader picks the smallest rung ≥ the requested width. `original` is never
    chosen, because it can be several MB.
 3. **The size `lib/tmdb` pinned stays the ceiling.** A `w500` poster is never
    upgraded to `w780` on a 3× screen, so no image becomes heavier than it is
@@ -62,10 +63,12 @@ None of the installed skills cover image loaders. The Next.js docs shipped in
 4. **Anything else passes through unchanged:** a URL that isn't
    `https://image.tmdb.org/t/p/<size>/<file>`, or that has an unknown size,
    comes back untouched. The loader never builds a URL for another host.
+   Next's dev warning ("does not implement width") then names that image, the
+   signal to pin it to a ladder size; no caller does so today.
    `remotePatterns` stays in the config as documentation of the one allowed
    host.
 5. **`quality` is ignored**, because TMDB has no quality parameter.
-5a. **A URL already at its own size gets a `#tmdb` fragment** (found while
+5a. **A URL already at its own size gets a `#same-size` fragment** (found while
    verifying): Next's dev check warns "does not implement width" whenever the
    loader returns `src` unchanged, which every image at its pinned size does.
    A fragment never reaches TMDB, so the request and its cache entry are
@@ -122,9 +125,9 @@ None of the installed skills cover image loaders. The Next.js docs shipped in
 
 - AC-1. `tmdbImageLoader({ src: ".../w500/x.jpg", width: 200 })` returns
   `.../w300/x.jpg`. Width 92 returns `w92`, width 342 returns `w342`, and width
-  3840 returns `w500` (the ceiling).
-- AC-2. A `w1280` backdrop at width 828 returns `w1280`. At width 640 it returns
-  `w780`.
+  3840 returns `.../w500/x.jpg#same-size` (the ceiling, marked per 5a).
+- AC-2. A `w1280` backdrop at width 828 returns `.../w1280/x.jpg#same-size`.
+  At width 640 it returns `w780`.
 - AC-3. `original`, `h632` or unknown sources: the ceiling is treated as
   `w1280` for `original`, and anything not on the ladder or not under the TMDB
   base is returned unchanged.
