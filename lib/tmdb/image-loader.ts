@@ -12,6 +12,14 @@ const WIDTH_LADDER = [92, 154, 185, 300, 342, 500, 780, 1280] as const;
 /** What `original` is capped to, so a full size source never ships as is. */
 const ORIGINAL_CEILING = 1280;
 
+/**
+ * Appended when the fitting size is the source's own. Next warns in
+ * development that a loader "does not implement width" whenever it returns
+ * `src` unchanged, which every image at its pinned size would. A fragment never
+ * reaches TMDB, so the request and its CDN cache entry are the same file.
+ */
+const UNCHANGED_SIZE_MARK = "#tmdb";
+
 type LoaderParams = { src: string; width: number; quality?: number };
 
 /**
@@ -38,7 +46,8 @@ export function tmdbImageLoader({ src, width }: LoaderParams): string {
   if (ceiling === null) return src;
 
   const fit = WIDTH_LADDER.find((rung) => rung >= width) ?? ceiling;
-  return `${prefix}w${Math.min(fit, ceiling)}${rest.slice(slash)}`;
+  const url = `${prefix}w${Math.min(fit, ceiling)}${rest.slice(slash)}`;
+  return url === src ? `${url}${UNCHANGED_SIZE_MARK}` : url;
 }
 
 /** The pixel width a source size allows, or null when it is not on the ladder. */

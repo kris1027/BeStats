@@ -65,6 +65,11 @@ None of the installed skills cover image loaders. The Next.js docs shipped in
    `remotePatterns` stays in the config as documentation of the one allowed
    host.
 5. **`quality` is ignored**, because TMDB has no quality parameter.
+5a. **A URL already at its own size gets a `#tmdb` fragment** (found while
+   verifying): Next's dev check warns "does not implement width" whenever the
+   loader returns `src` unchanged, which every image at its pinned size does.
+   A fragment never reaches TMDB, so the request and its cache entry are
+   unchanged.
 6. **Privacy text follows the code** (AGENTS.md: legal pages describe only what
    the code does):
    - Vercel's `PROCESSORS` purpose becomes "Hosts the website and keeps request

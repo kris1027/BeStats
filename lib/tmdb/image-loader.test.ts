@@ -11,6 +11,8 @@ import tmdbImageLoaderDefault, { tmdbImageLoader } from "./image-loader";
  * image than the field size allows. Both are invisible until someone looks.
  */
 const at = (size: string) => `${TMDB_IMAGE_BASE}/${size}/abc123.jpg`;
+/** The source's own size comes back marked, so Next sees the width honoured. */
+const same = (size: string) => `${at(size)}#tmdb`;
 
 describe("tmdbImageLoader", () => {
   it("is the module's default export, which loaderFile needs", () => {
@@ -23,24 +25,34 @@ describe("tmdbImageLoader", () => {
     [93, "w154"],
     [200, "w300"],
     [342, "w342"],
-    [384, "w500"],
-    [3840, "w500"],
   ])("serves a w500 poster at width %i from %s (AC-1)", (width, size) => {
     expect(tmdbImageLoader({ src: at("w500"), width, quality: 75 })).toBe(
       at(size),
     );
   });
 
-  it.each([
-    [640, "w780"],
-    [828, "w1280"],
-    [3840, "w1280"],
-  ])("serves a w1280 backdrop at width %i from %s (AC-2)", (width, size) => {
-    expect(tmdbImageLoader({ src: at("w1280"), width })).toBe(at(size));
+  it.each([384, 3840])(
+    "serves a w500 poster at width %i from its own size, marked so Next does not warn",
+    (width) => {
+      expect(tmdbImageLoader({ src: at("w500"), width })).toBe(same("w500"));
+    },
+  );
+
+  it.each([[640, "w780"]])(
+    "serves a w1280 backdrop at width %i from %s (AC-2)",
+    (width, size) => {
+      expect(tmdbImageLoader({ src: at("w1280"), width })).toBe(at(size));
+    },
+  );
+
+  it("serves a w1280 backdrop from its own size above w780 (AC-2)", () => {
+    expect(tmdbImageLoader({ src: at("w1280"), width: 828 })).toBe(
+      same("w1280"),
+    );
   });
 
   it("never asks for more than the pinned profile size", () => {
-    expect(tmdbImageLoader({ src: at("w185"), width: 384 })).toBe(at("w185"));
+    expect(tmdbImageLoader({ src: at("w185"), width: 384 })).toBe(same("w185"));
   });
 
   it("caps an original source at w1280 and still sizes it down (AC-3)", () => {
