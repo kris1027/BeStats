@@ -1,13 +1,7 @@
 "use client";
 
 import { TMDB_IMAGE_BASE } from "./constants";
-
-/**
- * The TMDB widths the loader may pick, smallest first. Each answers 200 for
- * posters, backdrops, profiles and stills alike (checked live on 2026-10-16);
- * `original` is left out because it can be several megabytes.
- */
-const WIDTH_LADDER = [92, 154, 185, 300, 342, 500, 780, 1280] as const;
+import { splitImageUrl, TMDB_IMAGE_WIDTHS } from "./images";
 
 /** What `original` is capped to, so a full size source never ships as is. */
 const ORIGINAL_CEILING = 1280;
@@ -35,18 +29,14 @@ type LoaderParams = { src: string; width: number; quality?: number };
  * host it was not handed.
  */
 export function tmdbImageLoader({ src, width }: LoaderParams): string {
-  const prefix = `${TMDB_IMAGE_BASE}/`;
-  if (!src.startsWith(prefix)) return src;
-  const rest = src.slice(prefix.length);
-  const slash = rest.indexOf("/");
-  if (slash === -1) return src;
-
-  const size = rest.slice(0, slash);
-  const ceiling = sizeCeiling(size);
+  const parts = splitImageUrl(src);
+  if (!parts) return src;
+  const ceiling = sizeCeiling(parts.size);
   if (ceiling === null) return src;
 
-  const fit = WIDTH_LADDER.find((rung) => rung >= width) ?? ceiling;
-  const url = `${prefix}w${Math.min(fit, ceiling)}${rest.slice(slash)}`;
+  // `original` is left off the ladder because it can be several megabytes.
+  const fit = TMDB_IMAGE_WIDTHS.find((rung) => rung >= width) ?? ceiling;
+  const url = `${TMDB_IMAGE_BASE}/w${Math.min(fit, ceiling)}${parts.path}`;
   return url === src ? `${url}${UNCHANGED_SIZE_MARK}` : url;
 }
 
@@ -56,7 +46,9 @@ function sizeCeiling(size: string): number | null {
   const match = /^w(\d+)$/.exec(size);
   if (!match) return null;
   const value = Number(match[1]);
-  return (WIDTH_LADDER as readonly number[]).includes(value) ? value : null;
+  return (TMDB_IMAGE_WIDTHS as readonly number[]).includes(value)
+    ? value
+    : null;
 }
 
 export default tmdbImageLoader;

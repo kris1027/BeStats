@@ -1,21 +1,46 @@
 import { TMDB_IMAGE_BASE } from "./constants";
 
 /**
- * The TMDB image widths this app is allowed to request.
+ * The TMDB widths this app may request, smallest first. Each answers 200 for
+ * posters, backdrops, profiles and stills alike (checked live on 2026-10-16).
+ *
+ * One list for both the pinned sizes below and the `next/image` loader's
+ * ladder (`image-loader.ts`), so a width the loader can pick is always one the
+ * type allows, and adding a size is one edit.
+ */
+export const TMDB_IMAGE_WIDTHS = [
+  92, 154, 185, 300, 342, 500, 780, 1280,
+] as const;
+
+/**
+ * The TMDB image sizes this app is allowed to request.
  *
  * A closed union rather than a free string: a typo in a size produces a URL
  * TMDB answers with a 404 image, which is invisible until someone looks at the
  * page. `original` is included for the rare full size case.
  */
 export type TmdbImageSize =
-  | "w92"
-  | "w154"
-  | "w185"
-  | "w300"
-  | "w500"
-  | "w780"
-  | "w1280"
+  | `w${(typeof TMDB_IMAGE_WIDTHS)[number]}`
   | "original";
+
+/** A TMDB image URL split at its size segment. */
+export type TmdbImageParts = { size: string; path: string };
+
+/**
+ * Splits an absolute TMDB image URL into its size segment and file path, or
+ * returns null for a URL this module did not build. The one parser both
+ * `resizeImageUrl` and the `next/image` loader use, so they agree on what a
+ * TMDB size path is. The size comes back as a plain string because a URL from
+ * TMDB itself can carry sizes the app never requests, such as `h632`.
+ */
+export function splitImageUrl(url: string): TmdbImageParts | null {
+  const prefix = `${TMDB_IMAGE_BASE}/`;
+  if (!url.startsWith(prefix)) return null;
+  const rest = url.slice(prefix.length);
+  const slash = rest.indexOf("/");
+  if (slash === -1) return null;
+  return { size: rest.slice(0, slash), path: rest.slice(slash) };
+}
 
 /**
  * The size each normalized field is built with (spec 0002, AC-27).
@@ -72,10 +97,6 @@ export function resizeImageUrl(
   size: TmdbImageSize,
 ): string | null {
   if (!url) return null;
-  const prefix = `${TMDB_IMAGE_BASE}/`;
-  if (!url.startsWith(prefix)) return url;
-  const rest = url.slice(prefix.length);
-  const slash = rest.indexOf("/");
-  if (slash === -1) return url;
-  return `${prefix}${size}${rest.slice(slash)}`;
+  const parts = splitImageUrl(url);
+  return parts ? `${TMDB_IMAGE_BASE}/${size}${parts.path}` : url;
 }
