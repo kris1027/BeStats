@@ -12,7 +12,7 @@ import tmdbImageLoaderDefault, { tmdbImageLoader } from "./image-loader";
  */
 const at = (size: string) => `${TMDB_IMAGE_BASE}/${size}/abc123.jpg`;
 /** The source's own size comes back marked, so Next sees the width honoured. */
-const same = (size: string) => `${at(size)}#tmdb`;
+const same = (size: string) => `${at(size)}#same-size`;
 
 describe("tmdbImageLoader", () => {
   it("is the module's default export, which loaderFile needs", () => {
@@ -70,7 +70,10 @@ describe("tmdbImageLoader", () => {
     `${TMDB_IMAGE_BASE}/abc123.jpg`,
     "https://example.com/t/p/w500/abc123.jpg",
     "/tmdb-logo.svg",
-  ])("returns %s unchanged (AC-3)", (src) => {
-    expect(tmdbImageLoader({ src, width: 200 })).toBe(src);
-  });
+  ])(
+    "returns %s unchanged, leaving Next's width warning to flag it (AC-3)",
+    (src) => {
+      expect(tmdbImageLoader({ src, width: 200 })).toBe(src);
+    },
+  );
 });

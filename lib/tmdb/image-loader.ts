@@ -12,7 +12,7 @@ const ORIGINAL_CEILING = 1280;
  * `src` unchanged, which every image at its pinned size would. A fragment never
  * reaches TMDB, so the request and its CDN cache entry are the same file.
  */
-const UNCHANGED_SIZE_MARK = "#tmdb";
+const SAME_SIZE_FRAGMENT = "#same-size";
 
 type LoaderParams = { src: string; width: number; quality?: number };
 
@@ -25,8 +25,9 @@ type LoaderParams = { src: string; width: number; quality?: number };
  * The size `lib/tmdb/images.ts` pinned is the ceiling: a `w500` poster is never
  * upgraded on a dense screen, so no page gets heavier than its field size allows.
  * `quality` is ignored because TMDB has no such parameter. Any URL that is not
- * a TMDB size path comes back unchanged, so the loader never builds a URL for a
- * host it was not handed.
+ * a TMDB size path on the ladder comes back unchanged, so the loader never
+ * builds a URL for a host it was not handed. Next's development warning then
+ * names that image, which is the signal to pin it to a ladder size.
  */
 export function tmdbImageLoader({ src, width }: LoaderParams): string {
   const parts = splitImageUrl(src);
@@ -37,7 +38,7 @@ export function tmdbImageLoader({ src, width }: LoaderParams): string {
   // `original` is left off the ladder because it can be several megabytes.
   const fit = TMDB_IMAGE_WIDTHS.find((rung) => rung >= width) ?? ceiling;
   const url = `${TMDB_IMAGE_BASE}/w${Math.min(fit, ceiling)}${parts.path}`;
-  return url === src ? `${url}${UNCHANGED_SIZE_MARK}` : url;
+  return url === src ? `${url}${SAME_SIZE_FRAGMENT}` : url;
 }
 
 /** The pixel width a source size allows, or null when it is not on the ladder. */
