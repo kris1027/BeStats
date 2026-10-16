@@ -134,9 +134,11 @@ export default function PrivacyPage() {
         </LegalList>
         <p>
           Catalog details come from{" "}
-          <ExternalLink href="https://www.themoviedb.org">TMDB</ExternalLink>,
-          which receives no personal data from you: our server makes the catalog
-          requests, and our host delivers the images.
+          <ExternalLink href="https://www.themoviedb.org">TMDB</ExternalLink>.
+          Our server makes the catalog requests, so TMDB never receives your
+          account or tracking data. Your browser loads the images from
+          TMDB&rsquo;s image service, which sees your IP address and browser
+          details, and TMDB&rsquo;s own privacy policy applies to them.
         </p>
       </LegalSection>
 
@@ -150,6 +152,11 @@ export default function PrivacyPage() {
           Supabase and Vercel are United States companies. Where their staff
           access your data for support and operations, that access is covered by
           the EU Standard Contractual Clauses.
+        </p>
+        <p>
+          TMDB is a United States company. The images your browser loads from it
+          come from its content delivery network, which may serve them from
+          outside the EEA.
         </p>
       </LegalSection>
 

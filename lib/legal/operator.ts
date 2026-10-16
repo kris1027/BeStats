@@ -42,7 +42,7 @@ export const MINIMUM_AGE = 16;
  * whenever the text changes materially. Pages format it in UTC and never read
  * the clock (spec 0017, AC-7).
  */
-export const LEGAL_LAST_UPDATED = "2026-10-12";
+export const LEGAL_LAST_UPDATED = "2026-10-16";
 
 /**
  * Where the production Supabase project stores your data, read from
@@ -80,7 +80,8 @@ export type Processor = { name: string; purpose: string; url: string };
  * neither Google nor an email provider is listed; both join with the deferred
  * email delivery and Google sign in work, in the PR that turns them on.
  * YouTube joined with the title page trailers (spec 0022, AC-19): its player
- * loads only after you press Trailer.
+ * loads only after you press Trailer. TMDB joined when images moved off
+ * Vercel's optimizer onto TMDB's own CDN (prompts/tmdb-image-loader.md).
  */
 export const PROCESSORS: readonly Processor[] = [
   {
@@ -90,9 +91,14 @@ export const PROCESSORS: readonly Processor[] = [
   },
   {
     name: "Vercel",
-    purpose:
-      "Hosts the website, delivers catalog images, and keeps request logs.",
+    purpose: "Hosts the website and keeps request logs.",
     url: "https://vercel.com",
+  },
+  {
+    name: "TMDB",
+    purpose:
+      "Delivers posters, photos and other catalog images straight to your browser, which shares your IP address with it.",
+    url: "https://www.themoviedb.org",
   },
   {
     name: "YouTube",

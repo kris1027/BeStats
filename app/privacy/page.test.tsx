@@ -97,6 +97,18 @@ describe("/privacy", () => {
     );
   });
 
+  /** covers: prompts/tmdb-image-loader.md, AC-6 */
+  it("says images load from TMDB, not from the host", () => {
+    const { container } = render(<PrivacyPage />);
+    const text = container.textContent ?? "";
+
+    expect(text).toContain("Your browser loads the images from");
+    expect(text).not.toContain("our host delivers the images");
+    expect(
+      PROCESSORS.find((processor) => processor.name === "Vercel")?.purpose,
+    ).not.toMatch(/image/i);
+  });
+
   it("opens external links in a new tab, safely (AC-7)", () => {
     const { container } = render(<PrivacyPage />);
 
