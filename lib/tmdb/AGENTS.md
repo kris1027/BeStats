@@ -69,6 +69,12 @@ feature 4. Runtime steps live in that spec's `verify.md`.
   (`resolveOverview` in `normalize.ts`, spec 0006, AC-5).
 - **Errors carry a `kind`**, never a bare status. Pages branch through
   `isTmdbNotFound`, not through a hand rolled catch.
+- **Images skip Vercel's optimizer.** `image-loader.ts` (`'use client'`, the
+  `loaderFile` in `next.config.ts`) maps a `next/image` width onto TMDB's own
+  sizes, never above the size `images.ts` pinned and never `original`, so the
+  browser loads straight from TMDB's CDN (prompts/tmdb-image-loader.md). A new
+  image field keeps a size on its ladder; `w45`, `h632` or another host passes
+  through unresized.
 - Adding a field the app needs is a three place change: `schemas.ts`,
   `types.ts`, `normalize.ts`.
 
