@@ -47,8 +47,8 @@ A server only module that reads games from IGDB, the way `lib/tmdb/` reads movie
   - [x] Full `Game` normalization, the catalog filter with its parity test, and the 500 id batch, AC-9 to AC-11, AC-15, AC-16
   - [x] Search, discover, validation and the reference lists, AC-5, AC-12, AC-12b, AC-13, AC-14
   - [x] Cache lifetimes, the entry point surface test, the full fixture suite, and the AGENTS.md updates, AC-8, AC-19 to AC-21
-- [ ] Verify it: `/check verify IGDB integration module`
-- [ ] Test it: `/test IGDB integration module`
+- [x] Verify it: `/check verify IGDB integration module`
+- [x] Test it: `/test IGDB integration module`
 spec [0023](../specs/0023-igdb-integration-module/index.md) · code in [lib/igdb/](../../lib/igdb/)
 
 ### G2. Game data model and security policies · needs a decision · GA
