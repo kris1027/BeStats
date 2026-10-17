@@ -1,0 +1,37 @@
+[
+  {
+    "id": 1942,
+    "cover": {
+      "id": 480513,
+      "image_id": "coaarl"
+    },
+    "first_release_date": 1431993600,
+    "genres": [12, 31],
+    "name": "The Witcher 3: Wild Hunt",
+    "platforms": [169, 48, 508, 6, 167, 49, 130],
+    "rating": 93.77371445859636,
+    "rating_count": 5498,
+    "themes": [1, 17, 38],
+    "game_type": 0
+  },
+  {
+    "id": 336481,
+    "cover": {
+      "id": 488034,
+      "image_id": "coagki"
+    },
+    "first_release_date": 1798675200,
+    "genres": [32],
+    "name": "Memory Adventures in the Jungle",
+    "platforms": [6],
+    "game_type": 0
+  },
+  {
+    "id": 378958,
+    "first_release_date": 1766102400,
+    "name": "Hole io: Blossom Edition",
+    "platforms": [130],
+    "version_parent": 263553,
+    "game_type": 0
+  }
+]
