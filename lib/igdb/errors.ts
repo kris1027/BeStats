@@ -68,3 +68,18 @@ export class IgdbValidationError extends Error {
 export function isIgdbNotFound(error: unknown): boolean {
   return error instanceof IgdbError && error.kind === "not_found";
 }
+
+/**
+ * True when a `fetch` failed because its `AbortSignal.timeout` fired.
+ *
+ * Both IGDB and Twitch requests map this to `timeout`, which is never retried
+ * (spec 0023, AC-3, AC-6), so the one test lives here rather than in each
+ * caller. Node names a timed out signal `TimeoutError` and a manual abort
+ * `AbortError`; either means the request did not finish in time.
+ */
+export function isAbortError(caught: unknown): boolean {
+  return (
+    caught instanceof Error &&
+    (caught.name === "TimeoutError" || caught.name === "AbortError")
+  );
+}

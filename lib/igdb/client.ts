@@ -10,7 +10,7 @@ import {
   IGDB_TIMEOUT_MS,
 } from "./constants";
 import { getIgdbCredentials } from "./env";
-import { IgdbError, type IgdbErrorKind } from "./errors";
+import { IgdbError, type IgdbErrorKind, isAbortError } from "./errors";
 import { igdbLimiter, type ReleaseSlot, SlotWaitExceeded } from "./limiter";
 import { logIgdb } from "./log";
 import { getIgdbToken, invalidateIgdbToken } from "./token";
@@ -76,13 +76,6 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function isAbort(caught: unknown): boolean {
-  return (
-    caught instanceof Error &&
-    (caught.name === "TimeoutError" || caught.name === "AbortError")
-  );
-}
-
 function readTotalCount(response: Response): number | null {
   const header = response.headers.get("x-count");
   if (header === null) return null;
@@ -143,7 +136,7 @@ async function attempt(
       signal: AbortSignal.timeout(timeoutMs),
     });
   } catch (caught) {
-    const aborted = isAbort(caught);
+    const aborted = isAbortError(caught);
     return {
       ok: false,
       response: null,
@@ -176,7 +169,7 @@ async function attempt(
   try {
     text = await response.text();
   } catch (caught) {
-    const aborted = isAbort(caught);
+    const aborted = isAbortError(caught);
     return {
       ok: false,
       response,

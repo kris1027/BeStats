@@ -6,7 +6,7 @@ import {
   TWITCH_TOKEN_URL,
 } from "./constants";
 import { getIgdbCredentials } from "./env";
-import { IgdbError, type IgdbErrorKind } from "./errors";
+import { IgdbError, type IgdbErrorKind, isAbortError } from "./errors";
 import { logIgdb } from "./log";
 
 /**
@@ -76,10 +76,7 @@ async function fetchToken(): Promise<string> {
       signal: AbortSignal.timeout(IGDB_TOKEN_TIMEOUT_MS),
     });
   } catch (caught) {
-    const aborted =
-      caught instanceof Error &&
-      (caught.name === "TimeoutError" || caught.name === "AbortError");
-    return aborted
+    return isAbortError(caught)
       ? fail(
           "timeout",
           `Twitch did not issue a token within ${IGDB_TOKEN_TIMEOUT_MS}ms`,
