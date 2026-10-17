@@ -1,5 +1,5 @@
 import "server-only";
-import { int } from "./query";
+import { cond, type Sort } from "./query";
 import { readSummaryPage, sharedConditions, unixDay } from "./summary-page";
 import type {
   DiscoverGamesOptions,
@@ -19,14 +19,13 @@ import { validateDiscoverOptions } from "./validation";
  * sort key, so ties can repeat or skip an item across pages; that is accepted.
  */
 
-const SORT: Record<DiscoverSort, { field: string; direction: "asc" | "desc" }> =
-  {
-    rating_desc: { field: "rating", direction: "desc" },
-    rating_count_desc: { field: "rating_count", direction: "desc" },
-    release_desc: { field: "first_release_date", direction: "desc" },
-    release_asc: { field: "first_release_date", direction: "asc" },
-    hypes_desc: { field: "hypes", direction: "desc" },
-  };
+const SORT: Record<DiscoverSort, Sort> = {
+  rating_desc: { field: "rating", direction: "desc" },
+  rating_count_desc: { field: "rating_count", direction: "desc" },
+  release_desc: { field: "first_release_date", direction: "desc" },
+  release_asc: { field: "first_release_date", direction: "asc" },
+  hypes_desc: { field: "hypes", direction: "desc" },
+};
 
 const DAY_SECONDS = 24 * 60 * 60;
 
@@ -41,24 +40,24 @@ export async function fetchDiscoverGames(
   const where = sharedConditions(valid);
 
   if (valid.releasedFrom !== undefined) {
-    where.push(`first_release_date >= ${int(unixDay(valid.releasedFrom))}`);
+    where.push(cond.atLeast("first_release_date", unixDay(valid.releasedFrom)));
   }
   if (valid.releasedTo !== undefined) {
     where.push(
-      `first_release_date < ${int(unixDay(valid.releasedTo) + DAY_SECONDS)}`,
+      cond.below("first_release_date", unixDay(valid.releasedTo) + DAY_SECONDS),
     );
   }
   if (valid.minRatingCount !== undefined) {
-    where.push(`rating_count >= ${int(valid.minRatingCount)}`);
+    where.push(cond.atLeast("rating_count", valid.minRatingCount));
   }
   if (valid.minHypes !== undefined) {
-    where.push(`hypes >= ${int(valid.minHypes)}`);
+    where.push(cond.atLeast("hypes", valid.minHypes));
   }
-  where.push(`${sort.field} != null`);
+  where.push(cond.notNull(sort.field));
 
   return readSummaryPage({
     where,
-    sort: `${sort.field} ${sort.direction}`,
+    sort,
     page: valid.page,
   });
 }

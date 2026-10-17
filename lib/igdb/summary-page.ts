@@ -3,7 +3,7 @@ import { catalogWhereClause } from "./catalog-filter";
 import { igdbRequest } from "./client";
 import { IGDB_PAGE_SIZE, IGDB_SUMMARY_FIELDS } from "./constants";
 import { normalizeSummary } from "./normalize";
-import { buildQuery, intList } from "./query";
+import { buildQuery, type Condition, cond, type Sort } from "./query";
 import { gameSummarySchema, recordsSchema } from "./schemas";
 import type { GameFilters, GameSummary, Paged } from "./types";
 
@@ -24,17 +24,19 @@ export function unixDay(day: string): number {
  * any id; separate filters combine with AND. `minRating` is on the 0 to 10
  * scale against IGDB's 0 to 100 `rating`, and a minimum of 0 is no minimum.
  */
-export function sharedConditions(options: GameFilters): string[] {
+export function sharedConditions(options: GameFilters): Condition[] {
   const where = [catalogWhereClause()];
   if (options.genreIds?.length) {
-    where.push(`genres = ${intList(options.genreIds)}`);
+    where.push(cond.anyOf("genres", options.genreIds));
   }
   if (options.platformIds?.length) {
-    where.push(`platforms = ${intList(options.platformIds)}`);
+    where.push(cond.anyOf("platforms", options.platformIds));
   }
   if (options.minRating !== undefined && options.minRating > 0) {
     // Rounded so 0.7 writes 7, not 7.000000000000001.
-    where.push(`rating >= ${Number((options.minRating * 10).toFixed(6))}`);
+    where.push(
+      cond.atLeast("rating", Number((options.minRating * 10).toFixed(6))),
+    );
   }
   return where;
 }
@@ -45,8 +47,8 @@ export function sharedConditions(options: GameFilters): string[] {
  */
 export async function readSummaryPage(query: {
   search?: string;
-  where: readonly string[];
-  sort?: string;
+  where: readonly Condition[];
+  sort?: Sort;
   page: number;
 }): Promise<Paged<GameSummary>> {
   const { data, totalCount } = await igdbRequest(

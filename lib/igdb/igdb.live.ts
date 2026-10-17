@@ -9,7 +9,7 @@ import {
 import { fetchDiscoverGames } from "./discover";
 import { loadIgdbCredentialsFromFile } from "./env";
 import { fetchGame } from "./games";
-import { buildQuery, int } from "./query";
+import { buildQuery, type Condition, cond } from "./query";
 import { fetchGameGenres, fetchGamePlatforms } from "./reference";
 import { recordsSchema } from "./schemas";
 import { fetchSearchGames } from "./search";
@@ -82,7 +82,7 @@ async function passesQueryFilter(id: number): Promise<boolean> {
   const { data } = await games(
     buildQuery({
       fields: ["name"],
-      where: [`id = ${int(id)}`, catalogWhereClause()],
+      where: [cond.is("id", id), catalogWhereClause()],
       limit: 1,
     }),
   );
@@ -90,7 +90,7 @@ async function passesQueryFilter(id: number): Promise<boolean> {
 }
 
 /** One sample record matching a condition, or null when IGDB has none. */
-async function sample(where: string): Promise<LiveRecord | null> {
+async function sample(where: Condition): Promise<LiveRecord | null> {
   const { data } = await games(
     buildQuery({ fields: IGDB_SUMMARY_FIELDS, where: [where], limit: 1 }),
   );
@@ -117,7 +117,11 @@ describe.skipIf(!hasCredentials)("IGDB live check (real network)", () => {
   it("matches the pinned game type ids to their names, and reports new ones", async () => {
     const { data } = await igdbRequest(
       "game_types",
-      buildQuery({ fields: ["type"], sort: "id asc", limit: 500 }),
+      buildQuery({
+        fields: ["type"],
+        sort: { field: "id", direction: "asc" },
+        limit: 500,
+      }),
       recordsSchema,
     );
     const types = data as { id: number; type: string }[];
@@ -142,7 +146,7 @@ describe.skipIf(!hasCredentials)("IGDB live check (real network)", () => {
       "themes",
       buildQuery({
         fields: ["name"],
-        where: [`id = ${int(IGDB_EROTIC_THEME_ID)}`],
+        where: [cond.is("id", IGDB_EROTIC_THEME_ID)],
         limit: 1,
       }),
       recordsSchema,
@@ -151,8 +155,10 @@ describe.skipIf(!hasCredentials)("IGDB live check (real network)", () => {
   });
 
   it("excludes an edition and an Erotic themed game, by query and by rule", async () => {
-    const edition = await sample("version_parent != null & game_type = 0");
-    const erotic = await sample(`themes = (${IGDB_EROTIC_THEME_ID})`);
+    const edition = await sample(
+      cond.all([cond.notNull("version_parent"), cond.is("game_type", 0)]),
+    );
+    const erotic = await sample(cond.anyOf("themes", [IGDB_EROTIC_THEME_ID]));
     for (const record of [edition, erotic]) {
       expect(record).not.toBeNull();
       const id = (record as LiveRecord).id;
@@ -164,7 +170,11 @@ describe.skipIf(!hasCredentials)("IGDB live check (real network)", () => {
 
   it("keeps a game with no themes, by query and by rule", async () => {
     const record = await sample(
-      "themes = null & game_type = 0 & version_parent = null",
+      cond.all([
+        cond.isNull("themes"),
+        cond.is("game_type", 0),
+        cond.isNull("version_parent"),
+      ]),
     );
     expect(record).not.toBeNull();
     const game = record as LiveRecord;
@@ -173,7 +183,9 @@ describe.skipIf(!hasCredentials)("IGDB live check (real network)", () => {
   });
 
   it("keeps a game with no game type, when IGDB has one", async () => {
-    const record = await sample("game_type = null & version_parent = null");
+    const record = await sample(
+      cond.all([cond.isNull("game_type"), cond.isNull("version_parent")]),
+    );
     if (record === null) {
       // None existed on 2026-10-17. The clause still has to parse, which the
       // query below proves.
@@ -181,7 +193,7 @@ describe.skipIf(!hasCredentials)("IGDB live check (real network)", () => {
       const { totalCount } = await games(
         buildQuery({
           fields: ["name"],
-          where: ["game_type = null", catalogWhereClause()],
+          where: [cond.isNull("game_type"), catalogWhereClause()],
           limit: 1,
         }),
       );

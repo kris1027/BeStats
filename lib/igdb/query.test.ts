@@ -3,6 +3,7 @@ import { IgdbValidationError } from "./errors";
 import {
   buildQuery,
   cleanSearchText,
+  cond,
   escapeSearchText,
   intList,
 } from "./query";
@@ -50,12 +51,13 @@ describe("buildQuery", () => {
       buildQuery({
         search: "zelda",
         fields: ["name", "cover.image_id"],
-        where: ["genres = (5,9)", "rating >= 70"],
+        where: [cond.anyOf("genres", [5, 9]), cond.atLeast("rating", 70)],
+        sort: { field: "rating", direction: "desc" },
         limit: 21,
         offset: 20,
       }),
     ).toBe(
-      'search "zelda"; fields name,cover.image_id; where (genres = (5,9)) & (rating >= 70); limit 21; offset 20;',
+      'search "zelda"; fields name,cover.image_id; where (genres = (5,9)) & (rating >= 70); sort rating desc; limit 21; offset 20;',
     );
   });
 
@@ -82,6 +84,39 @@ describe("buildQuery", () => {
     expect(() => intList([1, 2.5])).toThrow(IgdbValidationError);
     expect(() => intList([])).toThrow(IgdbValidationError);
     expect(() => buildQuery({ fields: ["name"], limit: Number.NaN })).toThrow(
+      IgdbValidationError,
+    );
+  });
+});
+
+describe("cond", () => {
+  it("writes each condition from a field and checked numbers only", () => {
+    expect(cond.is("id", 1942)).toBe("id = 1942");
+    expect(cond.anyOf("genres", [5, 9])).toBe("genres = (5,9)");
+    expect(cond.noneOf("themes", [42])).toBe("themes != (42)");
+    expect(cond.isNull("game_type")).toBe("game_type = null");
+    expect(cond.notNull("rating")).toBe("rating != null");
+    expect(cond.atLeast("rating", 72.5)).toBe("rating >= 72.5");
+    expect(cond.below("first_release_date", 100)).toBe(
+      "first_release_date < 100",
+    );
+  });
+
+  it("groups any of in parentheses and joins all of with &", () => {
+    const group = cond.either([
+      cond.isNull("themes"),
+      cond.noneOf("themes", [42]),
+    ]);
+    expect(group).toBe("(themes = null | themes != (42))");
+    expect(cond.all([group, cond.isNull("version_parent")])).toBe(
+      "(themes = null | themes != (42)) & version_parent = null",
+    );
+  });
+
+  it("refuses a value that is not a checked number", () => {
+    expect(() => cond.is("id", 1.5)).toThrow(IgdbValidationError);
+    expect(() => cond.anyOf("id", [])).toThrow(IgdbValidationError);
+    expect(() => cond.atLeast("rating", Number.NaN)).toThrow(
       IgdbValidationError,
     );
   });

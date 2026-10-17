@@ -3,7 +3,7 @@ import { igdbRequest } from "./client";
 import { IGDB_GAME_FIELDS } from "./constants";
 import { IgdbError } from "./errors";
 import { normalizeGame } from "./normalize";
-import { buildQuery, int } from "./query";
+import { buildQuery, cond } from "./query";
 import { gameDetailSchema, recordsSchema } from "./schemas";
 import type { Game } from "./types";
 import { assertGameId } from "./validation";
@@ -26,7 +26,7 @@ export async function fetchGame(id: number): Promise<Game> {
     "games",
     buildQuery({
       fields: IGDB_GAME_FIELDS,
-      where: [`id = ${int(gameId)}`],
+      where: [cond.is("id", gameId)],
       limit: 1,
     }),
     recordsSchema,

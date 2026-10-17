@@ -15,7 +15,11 @@ import type { GameRef } from "./types";
 async function fetchRefs(endpoint: "genres" | "platforms"): Promise<GameRef[]> {
   const { data } = await igdbRequest(
     endpoint,
-    buildQuery({ fields: ["name"], sort: "name asc", limit: IGDB_BATCH_LIMIT }),
+    buildQuery({
+      fields: ["name"],
+      sort: { field: "name", direction: "asc" },
+      limit: IGDB_BATCH_LIMIT,
+    }),
     recordsSchema,
   );
   const refs: GameRef[] = [];

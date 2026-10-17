@@ -2,7 +2,7 @@ import "server-only";
 import { igdbRequest } from "./client";
 import { IGDB_BATCH_LIMIT, IGDB_SUMMARY_FIELDS } from "./constants";
 import { normalizeSummary } from "./normalize";
-import { buildQuery, intList } from "./query";
+import { buildQuery, cond } from "./query";
 import { gameSummarySchema, recordsSchema } from "./schemas";
 import type { BatchResult, GameSummary } from "./types";
 import { canonicalGameIds } from "./validation";
@@ -38,7 +38,7 @@ export async function fetchGamesByIds(
     "games",
     buildQuery({
       fields: IGDB_SUMMARY_FIELDS,
-      where: [`id = ${intList(wanted)}`],
+      where: [cond.anyOf("id", wanted)],
       limit: IGDB_BATCH_LIMIT,
     }),
     recordsSchema,

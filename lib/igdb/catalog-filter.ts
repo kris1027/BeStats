@@ -1,4 +1,5 @@
 import { IGDB_EROTIC_THEME_ID, IGDB_VISIBLE_GAME_TYPES } from "./constants";
+import { type Condition as Clause, cond, type IgdbField } from "./query";
 
 /**
  * The catalog filter, one rule used two ways (spec 0023, AC-10).
@@ -34,7 +35,7 @@ type Condition =
 /** Clauses combine with AND. */
 type Rule = readonly (readonly Condition[])[];
 
-const IGDB_FIELD: Record<Field, string> = {
+const IGDB_FIELD: Record<Field, IgdbField> = {
   gameType: "game_type",
   versionParent: "version_parent",
   themeIds: "themes",
@@ -54,15 +55,15 @@ const CATALOG_RULE: Rule = [
   ],
 ];
 
-function writeCondition(condition: Condition): string {
+function writeCondition(condition: Condition): Clause {
   const field = IGDB_FIELD[condition.field];
   switch (condition.op) {
     case "is_null":
-      return `${field} = null`;
+      return cond.isNull(field);
     case "any_of":
-      return `${field} = (${condition.ids.join(",")})`;
+      return cond.anyOf(field, condition.ids);
     case "none_of":
-      return `${field} != (${condition.ids.join(",")})`;
+      return cond.noneOf(field, condition.ids);
   }
 }
 
@@ -71,10 +72,10 @@ function writeCondition(condition: Condition): string {
  * `(game_type = (0,4,8,9,10) | game_type = null) & (version_parent = null) &
  * (themes = null | themes != (42))`.
  */
-export function catalogWhereClause(): string {
-  return CATALOG_RULE.map(
-    (clause) => `(${clause.map(writeCondition).join(" | ")})`,
-  ).join(" & ");
+export function catalogWhereClause(): Clause {
+  return cond.all(
+    CATALOG_RULE.map((clause) => cond.either(clause.map(writeCondition))),
+  );
 }
 
 function valuesOf(record: CatalogRecord, field: Field): readonly number[] {

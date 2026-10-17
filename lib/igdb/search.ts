@@ -1,5 +1,5 @@
 import "server-only";
-import { int } from "./query";
+import { cond } from "./query";
 import { readSummaryPage, sharedConditions } from "./summary-page";
 import type { GameSummary, Paged, SearchGamesOptions } from "./types";
 import { validateSearchOptions } from "./validation";
@@ -25,7 +25,10 @@ export async function fetchSearchGames(
     const from = Date.UTC(valid.year, 0, 1) / 1000;
     const to = Date.UTC(valid.year + 1, 0, 1) / 1000;
     where.push(
-      `first_release_date >= ${int(from)} & first_release_date < ${int(to)}`,
+      cond.all([
+        cond.atLeast("first_release_date", from),
+        cond.below("first_release_date", to),
+      ]),
     );
   }
   return readSummaryPage({ search: valid.query, where, page: valid.page });
