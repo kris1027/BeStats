@@ -10,7 +10,9 @@ import { defineConfig } from "vitest/config";
  * expect?". Its result is never a substitute for the fixture tests, and the
  * fixture tests are never reported as a live integration result.
  *
- * Run it with `pnpm tmdb:live`. With no token configured it skips.
+ * Run it with `pnpm tmdb:live`. With no token configured it skips. It
+ * includes `lib/tmdb` only, so the IGDB check (`vitest.igdb-live.mts`, spec
+ * 0023, AC-18) never runs under this name.
  */
 const SERVER_ONLY_STUB = fileURLToPath(
   new URL("./node_modules/server-only/empty.js", import.meta.url),
@@ -26,7 +28,7 @@ export default defineConfig({
   test: {
     name: "tmdb-live",
     environment: "node",
-    include: ["**/*.live.ts"],
+    include: ["lib/tmdb/**/*.live.ts"],
     exclude: ["node_modules/**", ".next/**"],
     // A real network round trip, several of them, against a rate limited API.
     testTimeout: 30_000,
