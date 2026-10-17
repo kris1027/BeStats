@@ -54,6 +54,11 @@ function canonical(ids: readonly number[]): number[] {
   return [...new Set(ids)].sort((a, b) => a - b);
 }
 
+/**
+ * A positive integer id, or `IgdbValidationError`. A page turns that error
+ * into a 404 for a bad URL value instead of asking IGDB (root `AGENTS.md`
+ * §11: validate ids).
+ */
 export function assertGameId(id: unknown): GameId {
   if (!isPositiveInt(id)) {
     throw new IgdbValidationError(
@@ -195,6 +200,13 @@ function withoutUndefined<T extends object>(value: T): Valid<T> {
 /** The validated search options, the query cleaned but not yet escaped. */
 export type ValidSearchOptions = Valid<SearchGamesOptions & { page: number }>;
 
+/**
+ * Checks and canonicalizes search options: the query cleaned (not escaped),
+ * ids deduped and sorted, absent options dropped, `page` filled with 1. Equal
+ * searches then share one cache entry.
+ *
+ * @throws {IgdbValidationError} Naming the first bad field.
+ */
 export function validateSearchOptions(
   options: SearchGamesOptions,
 ): ValidSearchOptions {
@@ -206,10 +218,17 @@ export function validateSearchOptions(
   });
 }
 
+/** The validated discover options, canonical like the search options. */
 export type ValidDiscoverOptions = Valid<
   DiscoverGamesOptions & { page: number }
 >;
 
+/**
+ * Checks and canonicalizes discover options, as `validateSearchOptions` does,
+ * plus a known `sort` and a date window whose start is not after its end.
+ *
+ * @throws {IgdbValidationError} Naming the first bad field.
+ */
 export function validateDiscoverOptions(
   options: DiscoverGamesOptions,
 ): ValidDiscoverOptions {

@@ -25,6 +25,10 @@ const SORT: Record<DiscoverSort, Sort> = {
 const DAY_SECONDS = 24 * 60 * 60;
 
 /**
+ * One page of a filtered browse. `releasedTo` becomes the start of the next
+ * UTC day, exclusive, which is how an inclusive day is written in unix
+ * seconds.
+ *
  * @param valid Checked by `validateDiscoverOptions` in `reads.ts`, before the
  * cache.
  */

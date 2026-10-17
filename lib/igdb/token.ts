@@ -11,7 +11,8 @@ import { logIgdb } from "./log";
 
 /**
  * The Twitch app access token IGDB wants, kept in process memory (spec 0023,
- * AC-3, AC-4). This is the only file that calls Twitch.
+ * AC-3, AC-4; root `AGENTS.md` §11: secrets stay server only and out of logs).
+ * This is the only file that calls Twitch.
  *
  * State moves `none → fetching → valid → fetching`: a token is reused until 10
  * minutes before it expires, or until IGDB answers 401, and every caller that

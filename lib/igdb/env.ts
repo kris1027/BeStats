@@ -4,7 +4,7 @@ import { IgdbError } from "./errors";
 
 /**
  * The Twitch app credentials IGDB needs, read on the server and nowhere else
- * (spec 0023, AC-1, AC-2).
+ * (spec 0023, AC-1, AC-2; root `AGENTS.md` §11 and "Commands and repo facts").
  *
  * `server-only` makes a Client Component import a build failure, and neither
  * variable carries a `NEXT_PUBLIC_` prefix, so Next never inlines them. This is

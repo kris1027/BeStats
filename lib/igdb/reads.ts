@@ -28,7 +28,8 @@ import {
 
 /**
  * The cached half of every IGDB read, and the only file that imports
- * `next/cache` (spec 0023, AC-7, AC-8).
+ * `next/cache` (spec 0023, AC-7, AC-8; root `AGENTS.md`, "Commands and repo
+ * facts": every cached read calls `cacheLife` in its own `use cache` scope).
  *
  * Each read is a pair, as in `lib/tmdb/reads.ts`: an inner uncached function
  * the tests call, and a thin exported wrapper here. The wrapper validates
@@ -84,6 +85,14 @@ async function getGameCached(id: GameId): Promise<IgdbResult<Game>> {
   return settle(() => fetchGame(id), "hours");
 }
 
+/**
+ * One game by id, cached for `hours` so a new release date unlocks Playing
+ * within hours. Validates before the cache, so a bad id is never cached (root
+ * `AGENTS.md`, "Commands and repo facts": cache components).
+ *
+ * @throws {IgdbValidationError} A bad id, before any request.
+ * @throws {IgdbError} Rebuilt from the cached result; `isIgdbNotFound` holds.
+ */
 export async function getGame(id: number): Promise<Game> {
   return unwrap(await getGameCached(assertGameId(id)));
 }
@@ -96,6 +105,13 @@ async function getGamesByIdsCached(
   return settle(() => fetchGamesByIds(ids), "hours");
 }
 
+/**
+ * Up to 500 games for a library page, cached as one entry on the canonical
+ * ids. An empty list answers without a cached read or a request.
+ *
+ * @throws {IgdbValidationError} Over 500 ids or an invalid one.
+ * @throws {IgdbError} On a systemic failure, rather than a short list.
+ */
 export async function getGamesByIds(
   ids: readonly number[],
 ): Promise<BatchResult<GameSummary>> {
@@ -111,6 +127,13 @@ async function searchGamesCached(
   return settle(() => fetchSearchGames(options), "minutes");
 }
 
+/**
+ * A title search with every filter in the same query, cached for `minutes`
+ * on the canonical options (root `AGENTS.md` §10: every result meets every
+ * filter, and the count is IGDB's own or null).
+ *
+ * @throws {IgdbValidationError} A bad option, before any request.
+ */
 export async function searchGames(
   options: SearchGamesOptions,
 ): Promise<Paged<GameSummary>> {
@@ -124,6 +147,12 @@ async function discoverGamesCached(
   return settle(() => fetchDiscoverGames(options), "minutes");
 }
 
+/**
+ * A filters only browse in an explicit order, for G6's rows and G7's empty
+ * query, cached for `minutes` on the canonical options.
+ *
+ * @throws {IgdbValidationError} A bad option, before any request.
+ */
 export async function discoverGames(
   options: DiscoverGamesOptions,
 ): Promise<Paged<GameSummary>> {
@@ -135,6 +164,7 @@ async function getGameGenresCached(): Promise<IgdbResult<GameRef[]>> {
   return settle(() => fetchGameGenres(), "max");
 }
 
+/** IGDB's genres by name, cached for `max`: the list barely ever changes. */
 export async function getGameGenres(): Promise<GameRef[]> {
   return unwrap(await getGameGenresCached());
 }
@@ -144,6 +174,7 @@ async function getGamePlatformsCached(): Promise<IgdbResult<GameRef[]>> {
   return settle(() => fetchGamePlatforms(), "max");
 }
 
+/** IGDB's platforms by name, cached for `max` like the genres. */
 export async function getGamePlatforms(): Promise<GameRef[]> {
   return unwrap(await getGamePlatformsCached());
 }

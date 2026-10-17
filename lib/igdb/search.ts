@@ -14,6 +14,10 @@ import type { ValidSearchOptions } from "./validation";
  */
 
 /**
+ * One page of a title search. The year becomes a UTC window on
+ * `first_release_date`, as AC-12 fixes, so a game released late on 31
+ * December in some timezone still counts for the year IGDB gives it.
+ *
  * @param valid Checked by `validateSearchOptions` in `reads.ts`, before the
  * cache.
  */

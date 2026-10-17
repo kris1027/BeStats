@@ -104,6 +104,12 @@ function isHidden(record: GameDetailRecord | GameSummaryRecord): boolean {
   });
 }
 
+/**
+ * A `getGame` record as a `Game`. Platform, genre and theme names come from
+ * IGDB's expansion here, and `hidden` from the catalog rule rather than a
+ * refusal, so a reclassified game in a user's list stays visible (root
+ * `AGENTS.md`, "Games": catalog filter).
+ */
 export function normalizeGame(record: GameDetailRecord): Game {
   return {
     id: record.id,
@@ -122,6 +128,11 @@ export function normalizeGame(record: GameDetailRecord): Game {
   };
 }
 
+/**
+ * A batch, search or discover record as a `GameSummary`. Genres and platforms
+ * stay ids, because a card names them from the cached reference lists instead
+ * of making every list read expand them.
+ */
 export function normalizeSummary(record: GameSummaryRecord): GameSummary {
   return {
     id: record.id,

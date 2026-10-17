@@ -62,7 +62,9 @@ scope feature G1. It mirrors `lib/tmdb/` in shape but shares no code with it.
   agree.
 - **Search text only enters a body through `buildQuery`**, cleaned (trim,
   reject empty, strip control characters, 1 to 100 characters) and then
-  escaped. Numbers go through `int` and `intList`.
+  escaped. Numbers go through `int` and `intList`, and every `where`
+  condition is a branded `Condition` from `cond` (with `Sort` for an order),
+  so no raw clause text reaches a body.
 - **Missing stays missing**: an absent value, a blank string, and a rating or
   rating count of 0 become `null`. `communityRating` is IGDB's `rating` / 10 at
   full precision, and always labelled as the community rating on a page.

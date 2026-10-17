@@ -16,6 +16,12 @@ export type IgdbLogRecord = {
   elapsedMs: number;
 };
 
+/**
+ * Writes one record as a single JSON line. `console.warn`, not a logging
+ * library, so Vercel's log view picks it up with no setup; the record type is
+ * the whole allow list of what may be logged, which keeps tokens, the secret
+ * and visitor search text out (root `AGENTS.md` §11).
+ */
 export function logIgdb(record: IgdbLogRecord): void {
   console.warn(JSON.stringify(record));
 }

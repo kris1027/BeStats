@@ -30,6 +30,10 @@ export type MockResponse = {
 
 type Call = { url: string; init: RequestInit };
 
+/**
+ * A Twitch token answer. The default expiry is far off, so a test only meets
+ * a refresh when it asks for one.
+ */
 export function tokenResponse(
   accessToken = TEST_TOKEN,
   expiresIn = 5_000_000,

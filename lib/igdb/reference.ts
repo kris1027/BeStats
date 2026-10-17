@@ -30,10 +30,12 @@ async function fetchRefs(endpoint: "genres" | "platforms"): Promise<GameRef[]> {
   return refs.sort((a, b) => a.name.localeCompare(b.name, "en"));
 }
 
+/** The genre list; a named export so `reads.ts` caches it under its own key. */
 export function fetchGameGenres(): Promise<GameRef[]> {
   return fetchRefs("genres");
 }
 
+/** The platform list, cached apart from the genres for the same reason. */
 export function fetchGamePlatforms(): Promise<GameRef[]> {
   return fetchRefs("platforms");
 }
