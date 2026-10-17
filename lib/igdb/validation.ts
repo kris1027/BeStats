@@ -10,6 +10,7 @@ import { cleanSearchText } from "./query";
 import type {
   DiscoverGamesOptions,
   DiscoverSort,
+  GameFilters,
   SearchGamesOptions,
 } from "./types";
 
@@ -152,6 +153,15 @@ function utcDay(field: string, value: unknown): string | undefined {
   return value;
 }
 
+/** The filters both reads share, checked in one place. */
+function filters(options: GameFilters): GameFilters {
+  return {
+    genreIds: filterIds("genreIds", options.genreIds),
+    platformIds: filterIds("platformIds", options.platformIds),
+    minRating: minRating(options.minRating),
+  };
+}
+
 const SORTS: readonly DiscoverSort[] = [
   "rating_desc",
   "rating_count_desc",
@@ -174,10 +184,8 @@ export function validateSearchOptions(
 ): ValidSearchOptions {
   return withoutUndefined({
     query: cleanSearchText(options?.query),
-    genreIds: filterIds("genreIds", options.genreIds),
-    platformIds: filterIds("platformIds", options.platformIds),
+    ...filters(options),
     year: year(options.year),
-    minRating: minRating(options.minRating),
     page: page(options.page),
   });
 }
@@ -202,11 +210,9 @@ export function validateDiscoverOptions(
     );
   }
   return withoutUndefined({
-    genreIds: filterIds("genreIds", options.genreIds),
-    platformIds: filterIds("platformIds", options.platformIds),
+    ...filters(options),
     releasedFrom,
     releasedTo,
-    minRating: minRating(options.minRating),
     minRatingCount: nonNegative("minRatingCount", options.minRatingCount),
     minHypes: nonNegative("minHypes", options.minHypes),
     sort: options.sort,

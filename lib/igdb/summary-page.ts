@@ -5,7 +5,7 @@ import { IGDB_PAGE_SIZE, IGDB_SUMMARY_FIELDS } from "./constants";
 import { normalizeSummary } from "./normalize";
 import { buildQuery, intList } from "./query";
 import { gameSummarySchema, recordsSchema } from "./schemas";
-import type { GameSummary, Paged } from "./types";
+import type { GameFilters, GameSummary, Paged } from "./types";
 
 /**
  * The paged summary read and the filters that `search.ts` and `discover.ts`
@@ -24,11 +24,7 @@ export function unixDay(day: string): number {
  * any id; separate filters combine with AND. `minRating` is on the 0 to 10
  * scale against IGDB's 0 to 100 `rating`, and a minimum of 0 is no minimum.
  */
-export function sharedConditions(options: {
-  genreIds?: readonly number[];
-  platformIds?: readonly number[];
-  minRating?: number;
-}): string[] {
+export function sharedConditions(options: GameFilters): string[] {
   const where = [catalogWhereClause()];
   if (options.genreIds?.length) {
     where.push(`genres = ${intList(options.genreIds)}`);

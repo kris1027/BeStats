@@ -65,14 +65,21 @@ export type Paged<T> = {
   totalResults: number | null;
 };
 
-export type SearchGamesOptions = {
-  query: string;
+/**
+ * The filters search and discover share. Within one id list a game matches on
+ * any id; separate filters combine with AND (AC-12).
+ */
+export type GameFilters = {
   genreIds?: readonly number[];
   platformIds?: readonly number[];
-  /** The UTC year of the first release. */
-  year?: number;
   /** On the 0 to 10 scale. */
   minRating?: number;
+};
+
+export type SearchGamesOptions = GameFilters & {
+  query: string;
+  /** The UTC year of the first release. */
+  year?: number;
   page?: number;
 };
 
@@ -83,14 +90,11 @@ export type DiscoverSort =
   | "release_asc"
   | "hypes_desc";
 
-export type DiscoverGamesOptions = {
-  genreIds?: readonly number[];
-  platformIds?: readonly number[];
+export type DiscoverGamesOptions = GameFilters & {
   /** A UTC day, `YYYY-MM-DD`, inclusive. */
   releasedFrom?: string;
   /** A UTC day, `YYYY-MM-DD`, inclusive. */
   releasedTo?: string;
-  minRating?: number;
   minRatingCount?: number;
   minHypes?: number;
   sort: DiscoverSort;
