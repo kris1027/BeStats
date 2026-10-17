@@ -128,3 +128,31 @@ describe("the TMDB token boundary", () => {
     expect(offenders("next_public_tmdb")).toEqual([]);
   });
 });
+
+/**
+ * Spec 0023 AC-2: the Twitch app credentials behind IGDB are server only, and
+ * only the IGDB module's environment reader names them (the live check loads
+ * them through it, so it does not name them either).
+ */
+const IGDB_VARIABLES = ["IGDB_CLIENT_ID", "IGDB_CLIENT_SECRET"];
+const IGDB_READERS = new Set(["lib/igdb/env.ts", ".env.example"]);
+
+describe("the IGDB credential boundary", () => {
+  it.each(IGDB_VARIABLES)("%s is read only by lib/igdb/env.ts", (variable) => {
+    const named = offenders(variable.toLowerCase()).filter(
+      (path) => !IGDB_READERS.has(path),
+    );
+    expect(named).toEqual([]);
+  });
+
+  it("is never given a NEXT_PUBLIC_ prefix, which would publish it", () => {
+    expect(offenders("next_public_igdb")).toEqual([]);
+  });
+
+  it("is listed in .env.example", () => {
+    const example = readFileSync(".env.example", "utf8");
+    for (const variable of IGDB_VARIABLES) {
+      expect(example).toContain(`${variable}=`);
+    }
+  });
+});

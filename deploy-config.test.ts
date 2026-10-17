@@ -235,9 +235,20 @@ describe(".env.example", () => {
     );
   });
 
+  /**
+   * The Twitch client secret behind IGDB is not a Supabase credential and
+   * bypasses nothing; spec 0023 AC-1 requires it here. Named, so any other
+   * `SECRET` still fails.
+   */
+  const ALLOWED_SECRETS = new Set(["IGDB_CLIENT_SECRET"]);
+
   it("names no service role, secret key or database password", () => {
     expect(
-      assigned.filter((name) => /SERVICE_ROLE|SECRET|DB_PASSWORD/.test(name)),
+      assigned.filter(
+        (name) =>
+          /SERVICE_ROLE|SECRET|DB_PASSWORD/.test(name) &&
+          !ALLOWED_SECRETS.has(name),
+      ),
     ).toEqual([]);
   });
 });
