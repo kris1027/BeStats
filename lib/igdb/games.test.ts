@@ -77,6 +77,42 @@ describe("fetchGame", () => {
     }
   });
 
+  it("keeps a game whose optional fields are malformed, reading them as null", async () => {
+    const { error, value } = await readWith({
+      id: 3,
+      name: "Odd",
+      first_release_date: "soon",
+      rating: "high",
+      rating_count: {},
+      game_type: "main",
+      slug: 5,
+      summary: [],
+      platforms: "PC",
+    });
+    expect(error).toBeUndefined();
+    expect(value).toMatchObject({
+      id: 3,
+      name: "Odd",
+      releaseDate: null,
+      communityRating: null,
+      communityRatingCount: null,
+      gameType: null,
+      slug: null,
+      summary: null,
+      platforms: [],
+      hidden: false,
+    });
+  });
+
+  it("still hides an edition whose version_parent has an odd shape", async () => {
+    const { value } = await readWith({
+      id: 4,
+      name: "Deluxe",
+      version_parent: { id: 1942 },
+    });
+    expect(value?.hidden).toBe(true);
+  });
+
   it("returns a game that fails the catalog filter, marked hidden", async () => {
     const { value } = await readWith({ id: 7, name: "A DLC", game_type: 1 });
     expect(value?.hidden).toBe(true);

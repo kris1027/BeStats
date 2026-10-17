@@ -9,6 +9,7 @@ import { z } from "zod";
  * A response is an array, checked loosely here (`z.array(z.unknown())`), and
  * each record is parsed on its own, so one malformed game in a list is dropped
  * instead of failing the whole page. In `getGame` the one record is required.
+ * "Malformed" means a missing or invalid `id` or `name`, nothing else.
  */
 
 /** Every IGDB read answers with a JSON array. */
@@ -20,11 +21,25 @@ export const refSchema = z.object({
   name: z.string().trim().min(1),
 });
 
-const optionalNumber = z.number().nullish();
-const optionalId = z.number().int().nullish();
+/*
+ * Only `id` and `name` may fail a record (AC-11, AC-16). Every other field
+ * falls back to null when IGDB sends it in a shape this module does not
+ * expect, so a game with a valid id and name is never dropped from a batch
+ * (where it would read as missing) or refused by `getGame` over one odd field.
+ */
+const optionalNumber = z.number().nullish().catch(null);
+const optionalId = z.number().int().nullish().catch(null);
+const optionalText = z.string().nullish().catch(null);
+
+/**
+ * A present `version_parent` of any shape still marks an edition, so the game
+ * stays hidden rather than turning visible. IGDB ids are positive, so 0 stands
+ * for a parent this module could not read.
+ */
+const versionParent = z.number().int().nullish().catch(0);
 
 /** An array that may hold anything; `normalize.ts` keeps the valid entries. */
-const looseArray = z.array(z.unknown()).nullish();
+const looseArray = z.array(z.unknown()).nullish().catch(null);
 
 const coverSchema = z
   .object({ image_id: z.string().nullish() })
@@ -40,13 +55,13 @@ const baseGameSchema = z.object({
   rating: optionalNumber,
   rating_count: optionalNumber,
   game_type: optionalId,
-  version_parent: optionalId,
+  version_parent: versionParent,
 });
 
 /** `getGame`: platforms, genres and themes expanded to `{ id, name }`. */
 export const gameDetailSchema = baseGameSchema.extend({
-  slug: z.string().nullish(),
-  summary: z.string().nullish(),
+  slug: optionalText,
+  summary: optionalText,
   platforms: looseArray,
   genres: looseArray,
   themes: looseArray,

@@ -53,6 +53,17 @@ describe("fetchGamesByIds", () => {
     expect(value?.missingIds).toEqual([5, 6]);
   });
 
+  it("finds a game with a valid id and name even when another field is malformed", async () => {
+    installIgdbMock({
+      igdb: [
+        { body: [{ id: 7, name: "Odd", rating: "high", game_type: "x" }] },
+      ],
+    });
+    const { value } = await settle(fetchGamesByIds([7]));
+    expect(value?.missingIds).toEqual([]);
+    expect(value?.found[0]).toMatchObject({ id: 7, communityRating: null });
+  });
+
   it("makes no request for an empty list", async () => {
     const mock = installIgdbMock();
     const { value } = await settle(fetchGamesByIds([]));
