@@ -1,13 +1,8 @@
 import "server-only";
 import { cond, type Sort } from "./query";
 import { readSummaryPage, sharedConditions, unixDay } from "./summary-page";
-import type {
-  DiscoverGamesOptions,
-  DiscoverSort,
-  GameSummary,
-  Paged,
-} from "./types";
-import { validateDiscoverOptions } from "./validation";
+import type { DiscoverSort, GameSummary, Paged } from "./types";
+import type { ValidDiscoverOptions } from "./validation";
 
 /**
  * Filtered browsing with an explicit order, which G6's rows and G7's filters
@@ -30,12 +25,12 @@ const SORT: Record<DiscoverSort, Sort> = {
 const DAY_SECONDS = 24 * 60 * 60;
 
 /**
- * @throws {IgdbValidationError} On a bad option, before any request.
+ * @param valid Checked by `validateDiscoverOptions` in `reads.ts`, before the
+ * cache.
  */
 export async function fetchDiscoverGames(
-  options: DiscoverGamesOptions,
+  valid: ValidDiscoverOptions,
 ): Promise<Paged<GameSummary>> {
-  const valid = validateDiscoverOptions(options);
   const sort = SORT[valid.sort];
   const where = sharedConditions(valid);
 

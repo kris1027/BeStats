@@ -7,10 +7,19 @@ import {
 } from "./__fixtures__/helpers";
 import searchWitcher from "./__fixtures__/search-witcher.json";
 import { catalogWhereClause } from "./catalog-filter";
-import { fetchDiscoverGames } from "./discover";
+import { fetchDiscoverGames as fetchValidDiscoverGames } from "./discover";
 import { IgdbValidationError } from "./errors";
 import { fetchGameGenres, fetchGamePlatforms } from "./reference";
-import { fetchSearchGames } from "./search";
+import { fetchSearchGames as fetchValidSearchGames } from "./search";
+import type { DiscoverGamesOptions, SearchGamesOptions } from "./types";
+import { validateDiscoverOptions, validateSearchOptions } from "./validation";
+
+/** The inner read, given the input `reads.ts` would check first. */
+const fetchSearchGames = async (options: SearchGamesOptions) =>
+  fetchValidSearchGames(validateSearchOptions(options));
+/** The inner read, given the input `reads.ts` would check first. */
+const fetchDiscoverGames = async (options: DiscoverGamesOptions) =>
+  fetchValidDiscoverGames(validateDiscoverOptions(options));
 
 /**
  * Search, discover and the reference lists (spec 0023, AC-10, AC-12 to

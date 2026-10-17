@@ -5,7 +5,7 @@ import { normalizeSummary } from "./normalize";
 import { buildQuery, cond } from "./query";
 import { gameSummarySchema, recordsSchema } from "./schemas";
 import type { BatchResult, GameSummary } from "./types";
-import { canonicalGameIds } from "./validation";
+import type { CanonicalGameIds } from "./validation";
 
 /**
  * Reads up to 500 games by id in one IGDB request, which is what a library
@@ -23,15 +23,13 @@ import { canonicalGameIds } from "./validation";
  * Hidden games are returned with `hidden: true`, never filtered out, for the
  * same reason `getGame` keeps them.
  *
- * @param ids 0 to 500 positive integers, in any order, repeats allowed.
+ * @param wanted 0 to 500 ids, deduped and sorted by `canonicalGameIds` in
+ * `reads.ts`, before the cache. An empty list makes no request at all.
  * @returns `found` in no promised order, and every id that did not come back.
- * @throws {IgdbValidationError} Over 500 ids, or an invalid one, before any
- * request. An empty list makes no request at all.
  */
 export async function fetchGamesByIds(
-  ids: readonly number[],
+  wanted: CanonicalGameIds,
 ): Promise<BatchResult<GameSummary>> {
-  const wanted = canonicalGameIds(ids);
   if (wanted.length === 0) return { found: [], missingIds: [] };
 
   const { data } = await igdbRequest(

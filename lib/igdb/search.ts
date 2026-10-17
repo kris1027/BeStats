@@ -1,8 +1,8 @@
 import "server-only";
 import { cond } from "./query";
 import { readSummaryPage, sharedConditions } from "./summary-page";
-import type { GameSummary, Paged, SearchGamesOptions } from "./types";
-import { validateSearchOptions } from "./validation";
+import type { GameSummary, Paged } from "./types";
+import type { ValidSearchOptions } from "./validation";
 
 /**
  * Title search, with every filter in the same IGDB query (spec 0023, AC-12).
@@ -14,12 +14,12 @@ import { validateSearchOptions } from "./validation";
  */
 
 /**
- * @throws {IgdbValidationError} On a bad option, before any request.
+ * @param valid Checked by `validateSearchOptions` in `reads.ts`, before the
+ * cache.
  */
 export async function fetchSearchGames(
-  options: SearchGamesOptions,
+  valid: ValidSearchOptions,
 ): Promise<Paged<GameSummary>> {
-  const valid = validateSearchOptions(options);
   const where = sharedConditions(valid);
   if (valid.year !== undefined) {
     const from = Date.UTC(valid.year, 0, 1) / 1000;

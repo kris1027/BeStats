@@ -6,7 +6,7 @@ import { normalizeGame } from "./normalize";
 import { buildQuery, cond } from "./query";
 import { gameDetailSchema, recordsSchema } from "./schemas";
 import type { Game } from "./types";
-import { assertGameId } from "./validation";
+import type { GameId } from "./validation";
 
 /**
  * Reads one game by id, in exactly one IGDB request (spec 0023, AC-9).
@@ -16,12 +16,11 @@ import { assertGameId } from "./validation";
  * reclassified (as a DLC, say), and it must stay visible and removable there
  * instead of vanishing as if it were deleted; the page decides what to show.
  *
- * @throws {IgdbValidationError} When the id is not a positive integer.
+ * @param gameId Checked by `assertGameId` in `reads.ts`, before the cache.
  * @throws {IgdbError} `not_found` for an empty answer, `bad_response` when the
  * record lacks an `id` or `name` (nothing partial), or any client kind.
  */
-export async function fetchGame(id: number): Promise<Game> {
-  const gameId = assertGameId(id);
+export async function fetchGame(gameId: GameId): Promise<Game> {
   const { data } = await igdbRequest(
     "games",
     buildQuery({

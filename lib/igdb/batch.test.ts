@@ -5,8 +5,13 @@ import {
   restoreIgdbMock,
   settle,
 } from "./__fixtures__/helpers";
-import { fetchGamesByIds } from "./batch";
+import { fetchGamesByIds as fetchValidGamesByIds } from "./batch";
 import { type IgdbError, IgdbValidationError } from "./errors";
+import { canonicalGameIds } from "./validation";
+
+/** The inner read, given the input `reads.ts` would check first. */
+const fetchGamesByIds = async (ids: readonly number[]) =>
+  fetchValidGamesByIds(canonicalGameIds(ids));
 
 /** The 500 id batch (spec 0023, AC-11). */
 

@@ -6,14 +6,29 @@ import {
   IGDB_SUMMARY_FIELDS,
   IGDB_VISIBLE_GAME_TYPES,
 } from "./constants";
-import { fetchDiscoverGames } from "./discover";
+import { fetchDiscoverGames as fetchValidDiscoverGames } from "./discover";
 import { loadIgdbCredentialsFromFile } from "./env";
-import { fetchGame } from "./games";
+import { fetchGame as fetchValidGame } from "./games";
 import { buildQuery, type Condition, cond } from "./query";
 import { fetchGameGenres, fetchGamePlatforms } from "./reference";
 import { recordsSchema } from "./schemas";
-import { fetchSearchGames } from "./search";
+import { fetchSearchGames as fetchValidSearchGames } from "./search";
 import { getIgdbToken } from "./token";
+import type { DiscoverGamesOptions, SearchGamesOptions } from "./types";
+import {
+  assertGameId,
+  validateDiscoverOptions,
+  validateSearchOptions,
+} from "./validation";
+
+/** The inner read, given the input `reads.ts` would check first. */
+const fetchGame = async (id: number) => fetchValidGame(assertGameId(id));
+/** The inner read, given the input `reads.ts` would check first. */
+const fetchSearchGames = async (options: SearchGamesOptions) =>
+  fetchValidSearchGames(validateSearchOptions(options));
+/** The inner read, given the input `reads.ts` would check first. */
+const fetchDiscoverGames = async (options: DiscoverGamesOptions) =>
+  fetchValidDiscoverGames(validateDiscoverOptions(options));
 
 /**
  * LIVE CHECK. This file talks to the real Twitch and IGDB APIs.

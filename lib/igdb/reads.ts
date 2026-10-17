@@ -17,7 +17,11 @@ import type {
 } from "./types";
 import {
   assertGameId,
+  type CanonicalGameIds,
   canonicalGameIds,
+  type GameId,
+  type ValidDiscoverOptions,
+  type ValidSearchOptions,
   validateDiscoverOptions,
   validateSearchOptions,
 } from "./validation";
@@ -75,7 +79,7 @@ async function settle<T>(
   }
 }
 
-async function getGameCached(id: number): Promise<IgdbResult<Game>> {
+async function getGameCached(id: GameId): Promise<IgdbResult<Game>> {
   "use cache";
   return settle(() => fetchGame(id), "hours");
 }
@@ -86,7 +90,7 @@ export async function getGame(id: number): Promise<Game> {
 
 /** Keyed on the deduped, sorted ids, so `[3, 1]` and `[1, 3, 3]` share one. */
 async function getGamesByIdsCached(
-  ids: number[],
+  ids: CanonicalGameIds,
 ): Promise<IgdbResult<BatchResult<GameSummary>>> {
   "use cache";
   return settle(() => fetchGamesByIds(ids), "hours");
@@ -101,7 +105,7 @@ export async function getGamesByIds(
 }
 
 async function searchGamesCached(
-  options: SearchGamesOptions,
+  options: ValidSearchOptions,
 ): Promise<IgdbResult<Paged<GameSummary>>> {
   "use cache";
   return settle(() => fetchSearchGames(options), "minutes");
@@ -114,7 +118,7 @@ export async function searchGames(
 }
 
 async function discoverGamesCached(
-  options: DiscoverGamesOptions,
+  options: ValidDiscoverOptions,
 ): Promise<IgdbResult<Paged<GameSummary>>> {
   "use cache";
   return settle(() => fetchDiscoverGames(options), "minutes");

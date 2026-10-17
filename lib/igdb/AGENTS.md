@@ -33,13 +33,15 @@ scope feature G1. It mirrors `lib/tmdb/` in shape but shares no code with it.
 ## Conventions this module holds to
 
 - **Every read is a pair.** An inner uncached function in its own file does
-  the request, validation and normalization; a thin wrapper in `reads.ts`
-  carries `use cache` and calls `cacheLife` in its own scope. Tests call the
-  inner half.
-- **Validate before the cache.** A wrapper validates its input first, outside
-  any cached scope, so a bad value throws `IgdbValidationError` and is never
-  sent or cached. The validated form is canonical (ids deduped and sorted,
-  absent options dropped) and is the cache key.
+  the request and normalization; a thin wrapper in `reads.ts` carries
+  `use cache` and calls `cacheLife` in its own scope (through `settle`). Tests
+  call the inner half.
+- **Validate once, before the cache.** A wrapper validates its input first,
+  outside any cached scope, so a bad value throws `IgdbValidationError` and is
+  never sent or cached. The validated form is canonical (ids deduped and
+  sorted, absent options dropped), is the cache key, and is branded `Valid<T>`:
+  inner reads take only branded values, so they never re-check, and a test
+  hands them input through the same validator.
 - **A failure crosses the cache boundary as a plain `IgdbResult`**, and the
   wrapper rebuilds the `IgdbError`, so `kind` and `isIgdbNotFound` survive.
   Never throw an `IgdbError` out of a cached scope.

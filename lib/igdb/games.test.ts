@@ -6,7 +6,11 @@ import {
   settle,
 } from "./__fixtures__/helpers";
 import { type IgdbError, IgdbValidationError } from "./errors";
-import { fetchGame } from "./games";
+import { fetchGame as fetchValidGame } from "./games";
+import { assertGameId } from "./validation";
+
+/** The inner read, given the input `reads.ts` would check first. */
+const fetchGame = async (id: number) => fetchValidGame(assertGameId(id));
 
 /**
  * `getGame`'s inner read and the normalization behind it, against a payload

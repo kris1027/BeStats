@@ -26,6 +26,22 @@ import type {
  * options dropped), so equal requests share one cache entry.
  */
 
+declare const validBrand: unique symbol;
+
+/**
+ * A value that came out of a guard in this file. The inner reads take only
+ * branded values, so the compiler proves every input was checked once, in
+ * `reads.ts` before the cache, and no inner read re-checks it (spec 0023,
+ * AC-12b).
+ */
+export type Valid<T> = T & { readonly [validBrand]: true };
+
+/** A checked game id. */
+export type GameId = Valid<number>;
+
+/** Checked game ids, deduped and sorted: the batch cache key. */
+export type CanonicalGameIds = Valid<number[]>;
+
 function isPositiveInt(value: unknown): value is number {
   return typeof value === "number" && Number.isSafeInteger(value) && value > 0;
 }
@@ -38,18 +54,18 @@ function canonical(ids: readonly number[]): number[] {
   return [...new Set(ids)].sort((a, b) => a - b);
 }
 
-export function assertGameId(id: unknown): number {
+export function assertGameId(id: unknown): GameId {
   if (!isPositiveInt(id)) {
     throw new IgdbValidationError(
       "id",
       "A game id must be a positive integer.",
     );
   }
-  return id;
+  return id as GameId;
 }
 
 /** 0 to 500 positive integers, deduped and sorted (AC-11). */
-export function canonicalGameIds(ids: readonly unknown[]): number[] {
+export function canonicalGameIds(ids: readonly unknown[]): CanonicalGameIds {
   if (!Array.isArray(ids) || !ids.every(isPositiveInt)) {
     throw new IgdbValidationError(
       "ids",
@@ -63,7 +79,7 @@ export function canonicalGameIds(ids: readonly unknown[]): number[] {
       `At most ${IGDB_BATCH_LIMIT} game ids load in one batch.`,
     );
   }
-  return sorted;
+  return sorted as CanonicalGameIds;
 }
 
 function filterIds(
@@ -170,14 +186,14 @@ const SORTS: readonly DiscoverSort[] = [
   "hypes_desc",
 ];
 
-function withoutUndefined<T extends object>(value: T): T {
+function withoutUndefined<T extends object>(value: T): Valid<T> {
   return Object.fromEntries(
     Object.entries(value).filter(([, entry]) => entry !== undefined),
-  ) as T;
+  ) as Valid<T>;
 }
 
 /** The validated search options, the query cleaned but not yet escaped. */
-export type ValidSearchOptions = SearchGamesOptions & { page: number };
+export type ValidSearchOptions = Valid<SearchGamesOptions & { page: number }>;
 
 export function validateSearchOptions(
   options: SearchGamesOptions,
@@ -190,7 +206,9 @@ export function validateSearchOptions(
   });
 }
 
-export type ValidDiscoverOptions = DiscoverGamesOptions & { page: number };
+export type ValidDiscoverOptions = Valid<
+  DiscoverGamesOptions & { page: number }
+>;
 
 export function validateDiscoverOptions(
   options: DiscoverGamesOptions,
