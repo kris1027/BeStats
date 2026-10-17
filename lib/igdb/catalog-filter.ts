@@ -42,7 +42,7 @@ const IGDB_FIELD: Record<Field, string> = {
 
 const VISIBLE_GAME_TYPE_IDS = Object.keys(IGDB_VISIBLE_GAME_TYPES).map(Number);
 
-export const CATALOG_RULE: Rule = [
+const CATALOG_RULE: Rule = [
   [
     { field: "gameType", op: "any_of", ids: VISIBLE_GAME_TYPE_IDS },
     { field: "gameType", op: "is_null" },
@@ -71,10 +71,10 @@ function writeCondition(condition: Condition): string {
  * `(game_type = (0,4,8,9,10) | game_type = null) & (version_parent = null) &
  * (themes = null | themes != (42))`.
  */
-export function catalogWhereClause(rule: Rule = CATALOG_RULE): string {
-  return rule
-    .map((clause) => `(${clause.map(writeCondition).join(" | ")})`)
-    .join(" & ");
+export function catalogWhereClause(): string {
+  return CATALOG_RULE.map(
+    (clause) => `(${clause.map(writeCondition).join(" | ")})`,
+  ).join(" & ");
 }
 
 function valuesOf(record: CatalogRecord, field: Field): readonly number[] {
@@ -101,11 +101,8 @@ function holds(record: CatalogRecord, condition: Condition): boolean {
 }
 
 /** True when a record passes the rule, the same answer the query gives. */
-export function isCatalogVisible(
-  record: CatalogRecord,
-  rule: Rule = CATALOG_RULE,
-): boolean {
-  return rule.every((clause) =>
+export function isCatalogVisible(record: CatalogRecord): boolean {
+  return CATALOG_RULE.every((clause) =>
     clause.some((condition) => holds(record, condition)),
   );
 }
