@@ -50,6 +50,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { catalogList, listPath } from "@/lib/catalog/lists";
+import { TMDB_HOME_URL } from "@/lib/legal/operator";
 
 import { CardRoundButtonDemo } from "./card-round-button-demo";
 
@@ -568,9 +569,7 @@ export default function ShowcasePage() {
           <LegalSection title="Sample section">
             <p>
               Body text in the secondary token, with an{" "}
-              <ExternalLink href="https://www.themoviedb.org">
-                external link
-              </ExternalLink>{" "}
+              <ExternalLink href={TMDB_HOME_URL}>external link</ExternalLink>{" "}
               and the contact address, <ContactEmail />.
             </p>
             <LegalList>

@@ -84,6 +84,12 @@ describe("next.config", () => {
     ]);
   });
 
+  /** covers: prompts/tmdb-image-loader.md, AC-4 */
+  it("loads images through the TMDB loader, never Vercel's optimizer", () => {
+    expect(nextConfig.images?.loader).toBe("custom");
+    expect(nextConfig.images?.loaderFile).toBe("./lib/tmdb/image-loader.ts");
+  });
+
   it("keeps Cache Components on, which every route is written against", () => {
     expect(nextConfig.cacheComponents).toBe(true);
   });

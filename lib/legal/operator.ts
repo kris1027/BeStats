@@ -42,7 +42,7 @@ export const MINIMUM_AGE = 16;
  * whenever the text changes materially. Pages format it in UTC and never read
  * the clock (spec 0017, AC-7).
  */
-export const LEGAL_LAST_UPDATED = "2026-10-12";
+export const LEGAL_LAST_UPDATED = "2026-10-16";
 
 /**
  * Where the production Supabase project stores your data, read from
@@ -63,6 +63,15 @@ export const SUPABASE_REGION = {
  */
 export const JUSTWATCH_ATTRIBUTION = "Availability data from JustWatch";
 
+/**
+ * TMDB's own site, where the footer logo, the privacy policy and TMDB's
+ * processor entry link. One home, like `JUSTWATCH_ATTRIBUTION`, so the link
+ * cannot drift between the places that name TMDB. It lives here rather than in
+ * `lib/tmdb` because that entry point is server only and the footer test and
+ * the legal pages render in jsdom.
+ */
+export const TMDB_HOME_URL = "https://www.themoviedb.org";
+
 /** Days within which an account deletion request is completed. */
 export const DELETION_DAYS = 30;
 
@@ -72,27 +81,48 @@ export const RIGHTS_RESPONSE = "one month";
 /** Days within which a complaint about the service is answered. */
 export const COMPLAINT_RESPONSE_DAYS = 14;
 
-/** A service provider that processes personal data on the operator's behalf. */
-export type Processor = { name: string; purpose: string; url: string };
+/**
+ * A service provider that processes personal data on the operator's behalf.
+ * `transfer`, when set, is what "Transfers outside the EEA" says about it, so
+ * the company's country lives beside its other facts and not in page text.
+ */
+export type Processor = {
+  name: string;
+  purpose: string;
+  url: string;
+  transfer?: string;
+};
 
 /**
  * Only the processors live today. Production sends no email (spec 0018), so
  * neither Google nor an email provider is listed; both join with the deferred
  * email delivery and Google sign in work, in the PR that turns them on.
  * YouTube joined with the title page trailers (spec 0022, AC-19): its player
- * loads only after you press Trailer.
+ * loads only after you press Trailer. TMDB joined when images moved off
+ * Vercel's optimizer onto TMDB's own CDN (prompts/tmdb-image-loader.md).
  */
 export const PROCESSORS: readonly Processor[] = [
   {
     name: "Supabase",
     purpose: "Stores your account and tracking data and handles sign in.",
     url: "https://supabase.com",
+    transfer:
+      "Supabase is a United States company. Where its staff access your data for support and operations, that access is covered by the EU Standard Contractual Clauses.",
   },
   {
     name: "Vercel",
-    purpose:
-      "Hosts the website, delivers catalog images, and keeps request logs.",
+    purpose: "Hosts the website and keeps request logs.",
     url: "https://vercel.com",
+    transfer:
+      "Vercel is a United States company. Where its staff access your data for support and operations, that access is covered by the EU Standard Contractual Clauses.",
+  },
+  {
+    name: "TMDB",
+    purpose:
+      "Delivers posters, photos and other catalog images straight to your browser, which shares your IP address with it.",
+    url: TMDB_HOME_URL,
+    transfer:
+      "TMDB is a United States company. The images your browser loads from it come from its content delivery network, which may serve them from outside the EEA.",
   },
   {
     name: "YouTube",

@@ -97,6 +97,18 @@ describe("/privacy", () => {
     );
   });
 
+  /** covers: prompts/tmdb-image-loader.md, AC-6 */
+  it("says images load from TMDB, not from the host", () => {
+    const { container } = render(<PrivacyPage />);
+    const text = container.textContent ?? "";
+
+    expect(text).toContain("Your browser loads the images from");
+    expect(text).not.toContain("our host delivers the images");
+    expect(
+      PROCESSORS.find((processor) => processor.name === "Vercel")?.purpose,
+    ).not.toMatch(/image/i);
+  });
+
   it("opens external links in a new tab, safely (AC-7)", () => {
     const { container } = render(<PrivacyPage />);
 
@@ -133,6 +145,18 @@ describe("/privacy", () => {
 
     expect(text).toContain(`the database in ${SUPABASE_REGION.name}`);
     expect(text).toContain("EU Standard Contractual Clauses");
+  });
+
+  it("states each processor's transfer from the one module", () => {
+    const { container } = render(<PrivacyPage />);
+    const text = container.textContent ?? "";
+
+    for (const processor of PROCESSORS) {
+      if (processor.transfer) expect(text).toContain(processor.transfer);
+    }
+    expect(
+      PROCESSORS.find((processor) => processor.name === "TMDB")?.transfer,
+    ).toMatch(/outside the EEA/);
   });
 
   it("promises no account email production can't send (spec 0018, AC-23)", () => {
