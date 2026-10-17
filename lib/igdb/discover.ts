@@ -1,6 +1,6 @@
 import "server-only";
 import { int } from "./query";
-import { readSummaryPage, sharedConditions, unixDay } from "./search";
+import { readSummaryPage, sharedConditions, unixDay } from "./summary-page";
 import type {
   DiscoverGamesOptions,
   DiscoverSort,

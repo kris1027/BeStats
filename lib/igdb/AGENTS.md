@@ -25,7 +25,7 @@ scope feature G1. It mirrors `lib/tmdb/` in shape but shares no code with it.
   holds the catalog rule; `limiter.ts`, `log.ts`, `constants.ts`,
   `schemas.ts`, `normalize.ts`, `types.ts`, `validation.ts`, `errors.ts`,
   `result.ts`, then the reads in `games.ts`, `batch.ts`, `search.ts`,
-  `discover.ts` and `reference.ts`.
+  `discover.ts` (both paging through `summary-page.ts`) and `reference.ts`.
 - Pure files (no `server-only`, so tests and the live check read them):
   `catalog-filter.ts`, `constants.ts`, `errors.ts`, `query.ts`, `types.ts`,
   `validation.ts`. Every other file starts with `import "server-only";`.

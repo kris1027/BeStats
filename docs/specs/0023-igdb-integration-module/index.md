@@ -71,7 +71,7 @@ Reasoning and options: see [rationale.md](rationale.md).
 | `IgdbValidationError` | `field: string` | class extending `Error`; a caller bug or a bad URL value, thrown before any request |
 | `IgdbResult<T>` | `{ ok: true, value } \| { ok: false, failure }` | internal, crosses the cache boundary |
 
-**Files** (mirroring `lib/tmdb/`): `index.ts` (entry), `reads.ts` (every `use cache` wrapper, the only `next/cache` import), `client.ts` (the only `fetch` to IGDB: headers, deadline, retries, status mapping, logging), `token.ts` (the only `fetch` to Twitch, memo and single flight), `limiter.ts`, `query.ts` (Apicalypse builder and escaping), `catalog-filter.ts`, `constants.ts`, `env.ts`, `errors.ts`, `result.ts`, `schemas.ts`, `normalize.ts`, `types.ts`, `validation.ts`, `games.ts`, `batch.ts`, `search.ts`, `discover.ts`, `reference.ts`, `igdb.live.ts`, `__fixtures__/`.
+**Files** (mirroring `lib/tmdb/`): `index.ts` (entry), `reads.ts` (every `use cache` wrapper, the only `next/cache` import), `client.ts` (the only `fetch` to IGDB: headers, deadline, retries, status mapping, logging), `token.ts` (the only `fetch` to Twitch, memo and single flight), `limiter.ts`, `query.ts` (Apicalypse builder and escaping), `catalog-filter.ts`, `constants.ts`, `env.ts`, `errors.ts`, `result.ts`, `schemas.ts`, `normalize.ts`, `types.ts`, `validation.ts`, `games.ts`, `batch.ts`, `search.ts`, `discover.ts`, `summary-page.ts` (the paging and filters those two share), `reference.ts`, `igdb.live.ts`, `__fixtures__/`.
 
 **Pinned constants** (`constants.ts`, each confirmed by the live check before release, AC-18):
 
