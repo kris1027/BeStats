@@ -10,8 +10,8 @@ scope feature G1. It mirrors `lib/tmdb/` in shape but shares no code with it.
 - `index.ts` is the only entry point a page may import. It exports the six
   cached reads (`getGame`, `getGamesByIds`, `searchGames`, `discoverGames`,
   `getGameGenres`, `getGamePlatforms`), `isIgdbNotFound`, `IgdbError`,
-  `IgdbValidationError` and the normalized types. `surface.test.ts` fails on
-  any other runtime export.
+  `IgdbValidationError` and the types in the spec's design section.
+  `surface.test.ts` fails on any other export, runtime or type.
 - `reads.ts` holds every `use cache` wrapper and is the only file that imports
   `next/cache`.
 - `client.ts` is the only `fetch` to IGDB: headers, the limiter, deadlines,

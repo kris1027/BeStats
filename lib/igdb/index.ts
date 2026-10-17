@@ -5,7 +5,9 @@ import "server-only";
  * `lib/igdb/` (spec 0023, AC-20).
  *
  * It exports the cached reads, `isIgdbNotFound`, the two error classes and the
- * normalized types, nothing else; `surface.test.ts` fails on any addition. The
+ * types in the spec's design section (the normalized shapes, the read options
+ * and the error kind), nothing else; `surface.test.ts` fails on any addition,
+ * runtime or type. The
  * client, the token, the limiter, the query builder, the schemas and the inner
  * reads stay internal, so no raw IGDB object or `snake_case` field crosses
  * this boundary (AC-15). `server-only` here makes a Client Component import a

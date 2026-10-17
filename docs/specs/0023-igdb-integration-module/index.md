@@ -40,7 +40,7 @@ This decides how BeStats talks to IGDB, the games database that will supply ever
 - **AC-17**: Only failures and retries are logged, as one JSON line with `event` (`igdb_request_failed` or `igdb_request_retry`, plus `igdb_token_failed`), `endpoint`, `status`, `kind`, `attempt`, `elapsedMs`. No token, client id, secret or request body (which can hold a visitor's search text) is logged.
 - **AC-18**: `pnpm igdb:live` runs `lib/igdb/igdb.live.ts` against real IGDB and skips without credentials. It proves: a token is issued; `getGame` parses a known game; the pinned game type ids and the Erotic theme id match their names on IGDB's `game_types` and `themes` endpoints; a known hidden game (an edition, an Erotic themed game) is excluded by the query filter; a game with no themes and one with no `game_type` pass both the query filter and the `hidden` rule; the any of syntax for a genre list; `search` combined with a `where` filter returns only matching games; a `;` inside the quoted search text stays literal; whether the count header is present; and a built cover URL answers 200. It also reports any `game_type` id it sees that is not pinned. It has its own config, `vitest.igdb-live.mts`, and `vitest.live.mts` is narrowed to `lib/tmdb`, so the two never run or label each other.
 - **AC-19**: `pnpm test` covers the module with fixtures under `lib/igdb/__fixtures__/` and no network: token memo and expiry, single flight, 401 refresh, retry and timeout, the limiter, query escaping, the filter rule, normalization of missing values, batch `missingIds`, and the failure cache profile.
-- **AC-20**: `lib/igdb/index.ts` is the only entry point and exports exactly the reads, `isIgdbNotFound`, `IgdbError`, `IgdbValidationError` and the types in the design section; a surface test fails on anything else.
+- **AC-20**: `lib/igdb/index.ts` is the only entry point and exports exactly the reads, `isIgdbNotFound`, `IgdbError`, `IgdbValidationError` and the types in the design section (every row but the internal `IgdbResult`); a surface test fails on anything else, runtime export or type.
 - **AC-21**: `lib/igdb/AGENTS.md` records this module's conventions, and root `AGENTS.md` gains a pointer to it plus the settled games rules from [games.md](../../scope/games.md), as the scope's G1 row asks.
 
 ## Decision
@@ -67,6 +67,9 @@ Reasoning and options: see [rationale.md](rationale.md).
 | `GameType` | `'main_game' \| 'standalone_expansion' \| 'remake' \| 'remaster' \| 'expanded_game' \| 'other'` | `other` covers every id outside the visible set, so the union stays closed |
 | `BatchResult<GameSummary>` | `found: GameSummary[]`, `missingIds: number[]` | |
 | `Paged<GameSummary>` | `page: number`, `results: GameSummary[]`, `hasNextPage: boolean`, `totalResults: number \| null` | `null` when IGDB sends no count |
+| `SearchGamesOptions` | `query`, `genreIds?`, `platformIds?`, `year?`, `minRating?`, `page?` | the input of `searchGames` (AC-12) |
+| `DiscoverGamesOptions`, `DiscoverSort` | the filters of AC-13 and `sort` from its five values | the input of `discoverGames` |
+| `IgdbErrorKind` | `'not_found' \| 'unauthorized' \| 'rate_limited' \| 'timeout' \| 'upstream' \| 'bad_response'` | the `kind` a page branches on (AC-7) |
 | `IgdbError` | `kind`, `status: number \| null`, `endpoint: string` | class extending `Error` |
 | `IgdbValidationError` | `field: string` | class extending `Error`; a caller bug or a bad URL value, thrown before any request |
 | `IgdbResult<T>` | `{ ok: true, value } \| { ok: false, failure }` | internal, crosses the cache boundary |

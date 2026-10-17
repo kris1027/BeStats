@@ -4,8 +4,9 @@ import { describe, expect, it, vi } from "vitest";
 
 /**
  * The module's surface (spec 0023, AC-2, AC-20): `index.ts` exports exactly
- * the reads, `isIgdbNotFound` and the two error classes at runtime, and every
- * file with state or a request in it is server only.
+ * the reads, `isIgdbNotFound` and the two error classes at runtime, exactly
+ * the design section's types, and every file with state or a request in it is
+ * server only. Types vanish at runtime, so the type list is read from source.
  */
 
 vi.mock("next/cache", () => ({ cacheLife: () => {} }));
@@ -25,6 +26,41 @@ describe("lib/igdb/index.ts", () => {
         "getGamesByIds",
         "isIgdbNotFound",
         "searchGames",
+      ].sort(),
+    );
+  });
+});
+
+/** Every type name `index.ts` re-exports, read from its source. */
+function exportedTypeNames(source: string): string[] {
+  const names: string[] = [];
+  for (const [, keyword, list] of source.matchAll(
+    /export (type )?\{([^}]*)\}/g,
+  )) {
+    for (const entry of list.split(",").map((part) => part.trim())) {
+      if (entry === "") continue;
+      if (keyword) names.push(entry);
+      else if (entry.startsWith("type ")) names.push(entry.slice(5).trim());
+    }
+  }
+  return names.sort();
+}
+
+describe("lib/igdb/index.ts types", () => {
+  it("exports exactly the types in spec 0023's design section", () => {
+    const source = readFileSync(join("lib", "igdb", "index.ts"), "utf8");
+    expect(exportedTypeNames(source)).toEqual(
+      [
+        "BatchResult",
+        "DiscoverGamesOptions",
+        "DiscoverSort",
+        "Game",
+        "GameRef",
+        "GameSummary",
+        "GameType",
+        "IgdbErrorKind",
+        "Paged",
+        "SearchGamesOptions",
       ].sort(),
     );
   });
