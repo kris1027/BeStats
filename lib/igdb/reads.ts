@@ -4,13 +4,7 @@ import { fetchGamesByIds } from "./batch";
 import { fetchDiscoverGames } from "./discover";
 import { fetchGame } from "./games";
 import { fetchGameGenres, fetchGamePlatforms } from "./reference";
-import {
-  failureProfile,
-  type IgdbFailure,
-  type IgdbResult,
-  toFailure,
-  unwrap,
-} from "./result";
+import { failureProfile, type IgdbResult, toFailure, unwrap } from "./result";
 import { fetchSearchGames } from "./search";
 import type {
   BatchResult,
@@ -49,25 +43,41 @@ import {
  * never in a cache entry.
  */
 
-function cacheFailure(failure: IgdbFailure): void {
-  if (failureProfile(failure.kind) === "seconds") {
-    cacheLife("seconds");
-  } else {
-    cacheLife("minutes");
+type Lifetime = "seconds" | "minutes" | "hours" | "max";
+
+/** One literal call per profile, since `cacheLife` is typed per literal. */
+function setLifetime(profile: Lifetime): void {
+  if (profile === "seconds") cacheLife("seconds");
+  else if (profile === "minutes") cacheLife("minutes");
+  else if (profile === "hours") cacheLife("hours");
+  else cacheLife("max");
+}
+
+/**
+ * Runs one inner read and turns its outcome into a plain `IgdbResult`, setting
+ * the entry's lifetime on the way: `profile` on success, `failureProfile(kind)`
+ * on failure. Called only from inside a `use cache` function, so `cacheLife`
+ * still lands in that read's own scope (root `AGENTS.md`, "Commands and repo
+ * facts"); keeping the try and catch here means no read can forget one half.
+ */
+async function settle<T>(
+  read: () => Promise<T>,
+  profile: Exclude<Lifetime, "seconds">,
+): Promise<IgdbResult<T>> {
+  try {
+    const value = await read();
+    setLifetime(profile);
+    return { ok: true, value };
+  } catch (error) {
+    const failure = toFailure(error);
+    setLifetime(failureProfile(failure.kind));
+    return { ok: false, failure };
   }
 }
 
 async function getGameCached(id: number): Promise<IgdbResult<Game>> {
   "use cache";
-  try {
-    const value = await fetchGame(id);
-    cacheLife("hours");
-    return { ok: true, value };
-  } catch (error) {
-    const failure = toFailure(error);
-    cacheFailure(failure);
-    return { ok: false, failure };
-  }
+  return settle(() => fetchGame(id), "hours");
 }
 
 export async function getGame(id: number): Promise<Game> {
@@ -79,15 +89,7 @@ async function getGamesByIdsCached(
   ids: number[],
 ): Promise<IgdbResult<BatchResult<GameSummary>>> {
   "use cache";
-  try {
-    const value = await fetchGamesByIds(ids);
-    cacheLife("hours");
-    return { ok: true, value };
-  } catch (error) {
-    const failure = toFailure(error);
-    cacheFailure(failure);
-    return { ok: false, failure };
-  }
+  return settle(() => fetchGamesByIds(ids), "hours");
 }
 
 export async function getGamesByIds(
@@ -102,15 +104,7 @@ async function searchGamesCached(
   options: SearchGamesOptions,
 ): Promise<IgdbResult<Paged<GameSummary>>> {
   "use cache";
-  try {
-    const value = await fetchSearchGames(options);
-    cacheLife("minutes");
-    return { ok: true, value };
-  } catch (error) {
-    const failure = toFailure(error);
-    cacheFailure(failure);
-    return { ok: false, failure };
-  }
+  return settle(() => fetchSearchGames(options), "minutes");
 }
 
 export async function searchGames(
@@ -123,15 +117,7 @@ async function discoverGamesCached(
   options: DiscoverGamesOptions,
 ): Promise<IgdbResult<Paged<GameSummary>>> {
   "use cache";
-  try {
-    const value = await fetchDiscoverGames(options);
-    cacheLife("minutes");
-    return { ok: true, value };
-  } catch (error) {
-    const failure = toFailure(error);
-    cacheFailure(failure);
-    return { ok: false, failure };
-  }
+  return settle(() => fetchDiscoverGames(options), "minutes");
 }
 
 export async function discoverGames(
@@ -142,15 +128,7 @@ export async function discoverGames(
 
 async function getGameGenresCached(): Promise<IgdbResult<GameRef[]>> {
   "use cache";
-  try {
-    const value = await fetchGameGenres();
-    cacheLife("max");
-    return { ok: true, value };
-  } catch (error) {
-    const failure = toFailure(error);
-    cacheFailure(failure);
-    return { ok: false, failure };
-  }
+  return settle(() => fetchGameGenres(), "max");
 }
 
 export async function getGameGenres(): Promise<GameRef[]> {
@@ -159,15 +137,7 @@ export async function getGameGenres(): Promise<GameRef[]> {
 
 async function getGamePlatformsCached(): Promise<IgdbResult<GameRef[]>> {
   "use cache";
-  try {
-    const value = await fetchGamePlatforms();
-    cacheLife("max");
-    return { ok: true, value };
-  } catch (error) {
-    const failure = toFailure(error);
-    cacheFailure(failure);
-    return { ok: false, failure };
-  }
+  return settle(() => fetchGamePlatforms(), "max");
 }
 
 export async function getGamePlatforms(): Promise<GameRef[]> {
