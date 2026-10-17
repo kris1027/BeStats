@@ -1,5 +1,4 @@
 import "server-only";
-import { readFileSync } from "node:fs";
 import { z } from "zod";
 import { IgdbError } from "./errors";
 
@@ -63,34 +62,4 @@ export function getIgdbCredentials(): IgdbCredentials {
 /** Drops the memo, so one test's stubbed variables never decide the next's. */
 export function resetIgdbCredentialsCache(): void {
   cached = null;
-}
-
-/**
- * Fills both variables from `.env.local` when the environment lacks them, and
- * says whether the live check can run.
- *
- * Only `igdb.live.ts` calls this: Vitest does not load `.env.local` the way
- * `next dev` does. It lives here so the variable names stay in this one file
- * (AC-2), and it never returns or logs a value.
- *
- * @param path The env file to read.
- * @returns True when both variables are set afterwards.
- */
-export function loadIgdbCredentialsFromFile(path = ".env.local"): boolean {
-  let lines: string[] = [];
-  try {
-    lines = readFileSync(path, "utf8").split("\n");
-  } catch {
-    // No env file is a normal state, for example in CI.
-  }
-  for (const variable of [CLIENT_ID_VARIABLE, CLIENT_SECRET_VARIABLE]) {
-    if (process.env[variable]) continue;
-    const line = lines.find((entry) => entry.startsWith(`${variable}=`));
-    const value = line?.slice(variable.length + 1).trim();
-    if (value) process.env[variable] = value;
-  }
-  resetIgdbCredentialsCache();
-  return Boolean(
-    process.env[CLIENT_ID_VARIABLE] && process.env[CLIENT_SECRET_VARIABLE],
-  );
 }

@@ -1,12 +1,5 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  getIgdbCredentials,
-  loadIgdbCredentialsFromFile,
-  resetIgdbCredentialsCache,
-} from "./env";
+import { getIgdbCredentials, resetIgdbCredentialsCache } from "./env";
 import { IgdbError } from "./errors";
 
 /**
@@ -18,16 +11,12 @@ import { IgdbError } from "./errors";
 const ID = "IGDB_CLIENT_ID";
 const SECRET = "IGDB_CLIENT_SECRET";
 
-let dir: string;
-
 beforeEach(() => {
   resetIgdbCredentialsCache();
-  dir = mkdtempSync(join(tmpdir(), "igdb-env-"));
 });
 afterEach(() => {
   vi.unstubAllEnvs();
   resetIgdbCredentialsCache();
-  rmSync(dir, { recursive: true, force: true });
 });
 
 function caught(run: () => unknown): unknown {
@@ -83,62 +72,5 @@ describe("getIgdbCredentials", () => {
 
     resetIgdbCredentialsCache();
     expect(getIgdbCredentials().clientId).toBe("second");
-  });
-});
-
-describe("loadIgdbCredentialsFromFile", () => {
-  it("fills missing variables from the file and says the live check can run", () => {
-    vi.stubEnv(ID, "");
-    vi.stubEnv(SECRET, "");
-    const path = join(dir, ".env.local");
-    writeFileSync(
-      path,
-      `OTHER=1\n${ID}= from-file-id \n${SECRET}=from-file-secret\n`,
-    );
-
-    expect(loadIgdbCredentialsFromFile(path)).toBe(true);
-    expect(getIgdbCredentials()).toEqual({
-      clientId: "from-file-id",
-      clientSecret: "from-file-secret",
-    });
-  });
-
-  it("never overrides a value already in the environment", () => {
-    vi.stubEnv(ID, "from-env");
-    vi.stubEnv(SECRET, "");
-    const path = join(dir, ".env.local");
-    writeFileSync(path, `${ID}=from-file\n${SECRET}=s\n`);
-
-    loadIgdbCredentialsFromFile(path);
-
-    expect(process.env[ID]).toBe("from-env");
-  });
-
-  it("answers false, without throwing, when the file is missing", () => {
-    vi.stubEnv(ID, "");
-    vi.stubEnv(SECRET, "");
-    expect(loadIgdbCredentialsFromFile(join(dir, "absent"))).toBe(false);
-  });
-
-  it("answers false when the file has only one of the two", () => {
-    vi.stubEnv(ID, "");
-    vi.stubEnv(SECRET, "");
-    const path = join(dir, ".env.local");
-    writeFileSync(path, `${ID}=only-id\n${SECRET}=\n`);
-    expect(loadIgdbCredentialsFromFile(path)).toBe(false);
-  });
-
-  it("drops the memo, so the next read sees the loaded values", () => {
-    vi.stubEnv(ID, "old");
-    vi.stubEnv(SECRET, "old");
-    getIgdbCredentials();
-    vi.stubEnv(ID, "");
-    vi.stubEnv(SECRET, "");
-    const path = join(dir, ".env.local");
-    writeFileSync(path, `${ID}=new\n${SECRET}=new\n`);
-
-    loadIgdbCredentialsFromFile(path);
-
-    expect(getIgdbCredentials().clientId).toBe("new");
   });
 });

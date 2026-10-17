@@ -7,7 +7,7 @@ import {
   IGDB_VISIBLE_GAME_TYPES,
 } from "./constants";
 import { fetchDiscoverGames as fetchValidDiscoverGames } from "./discover";
-import { loadIgdbCredentialsFromFile } from "./env";
+import { getIgdbCredentials } from "./env";
 import { fetchGame as fetchValidGame } from "./games";
 import { buildQuery, type Condition, cond } from "./query";
 import { fetchGameGenres, fetchGamePlatforms } from "./reference";
@@ -41,7 +41,25 @@ const fetchDiscoverGames = async (options: DiscoverGamesOptions) =>
  * Run: `pnpm igdb:live`. Without credentials it skips rather than fails.
  */
 
-const hasCredentials = loadIgdbCredentialsFromFile();
+// Vitest does not load `.env.local` the way `next dev` does. Node's own loader
+// reads it without this file naming either variable (AC-2), and never
+// overrides a value already in the environment.
+try {
+  process.loadEnvFile(".env.local");
+} catch {
+  // No env file is a normal state, for example in CI.
+}
+
+function credentialsConfigured(): boolean {
+  try {
+    getIgdbCredentials();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const hasCredentials = credentialsConfigured();
 
 /** The Witcher 3, a stable main game with a cover, rating and themes. */
 const KNOWN_GAME_ID = 1942;

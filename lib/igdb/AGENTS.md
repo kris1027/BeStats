@@ -20,7 +20,7 @@ scope feature G1. It mirrors `lib/tmdb/` in shape but shares no code with it.
   single flight request.
 - `env.ts` is the only file that names `IGDB_CLIENT_ID` and
   `IGDB_CLIENT_SECRET` (`security-boundary.test.ts`). The live check loads
-  them through `loadIgdbCredentialsFromFile` for that reason.
+  `.env.local` with Node's `process.loadEnvFile`, which names neither.
 - `query.ts` is the only builder of Apicalypse bodies; `catalog-filter.ts`
   holds the catalog rule; `limiter.ts`, `log.ts`, `constants.ts`,
   `schemas.ts`, `normalize.ts`, `types.ts`, `validation.ts`, `errors.ts`,
