@@ -6,7 +6,7 @@ _Steps derived from spec 0023 acceptance criteria. `/check verify` runs these; `
 - [x] `pnpm test` → passes with no network and no IGDB credentials → AC-1, AC-19
 - [x] Add a temp file naming `IGDB_CLIENT_SECRET` outside `lib/igdb/env.ts`, run `pnpm vitest run security-boundary.test.ts` → fails naming that file; remove it → passes → AC-2
 - [x] After `pnpm build`, `grep -rl "IGDB_CLIENT\|api.igdb.com\|id.twitch.tv" .next/static` → no hits → AC-2
-- [x] `pnpm igdb:live` with real credentials in `.env.local` → 12 checks pass; the log reports the count header on search and on a plain `where`, and any unpinned game type → AC-3, AC-5, AC-9, AC-10, AC-18
+- [x] `pnpm igdb:live` with real credentials in `.env.local` → 12 checks pass; the log reports the count header on search and on a plain `where`, and any unpinned game type → AC-3, AC-5, AC-9, AC-10, AC-18. A game with no `game_type` is proven by query and rule only when IGDB has one; on 2026-10-18 it had none, and the check says `UNPROVEN LIVE` and falls back to the rule
 - [x] `pnpm igdb:live` with no credentials (move `.env.local` aside) → skips, does not fail → AC-18
 - [x] `pnpm tmdb:live` → runs only `lib/tmdb/tmdb.live.ts`, labelled `tmdb-live` → AC-18
 - [x] `pnpm vitest run lib/igdb/surface.test.ts` → `index.ts` exports exactly the six reads, `isIgdbNotFound`, `IgdbError`, `IgdbValidationError`; every non pure file starts with `server-only` → AC-2, AC-20

@@ -195,29 +195,37 @@ describe.skipIf(!hasCredentials)("IGDB live check (real network)", () => {
     const game = record as LiveRecord;
     expect(await passesQueryFilter(game.id)).toBe(true);
     expect(isCatalogVisible(asCatalog(game))).toBe(true);
+    expect((await fetchGame(game.id)).hidden).toBe(false);
   });
 
-  it("keeps a game with no game type, when IGDB has one", async () => {
+  it("keeps a game with no game type, by query and by rule", async () => {
+    // Written without the catalog clause, so the query filter below is a
+    // real test rather than a restatement of how the sample was found.
     const record = await sample(
-      cond.all([cond.isNull("game_type"), cond.isNull("version_parent")]),
+      cond.all([
+        cond.isNull("game_type"),
+        cond.isNull("version_parent"),
+        cond.either([
+          cond.isNull("themes"),
+          cond.noneOf("themes", [IGDB_EROTIC_THEME_ID]),
+        ]),
+      ]),
     );
     if (record === null) {
-      // None existed on 2026-10-17. The clause still has to parse, which the
-      // query below proves.
-      console.info("IGDB has no game without a game_type; nothing to sample.");
-      const { totalCount } = await games(
-        buildQuery({
-          fields: ["name"],
-          where: [cond.isNull("game_type"), catalogWhereClause()],
-          limit: 1,
-        }),
+      // None existed on 2026-10-17, so no live record can prove the query
+      // keeps one; the sample query itself proved `game_type = null` parses.
+      // Say so plainly instead of passing on a count that is 0 either way.
+      console.warn(
+        "UNPROVEN LIVE: IGDB has no game without a game_type, so the query filter's handling of one is checked by the rule only.",
       );
-      expect(totalCount ?? 0).toBe(0);
+      expect(
+        isCatalogVisible({ gameType: null, versionParent: null, themeIds: [] }),
+      ).toBe(true);
       return;
     }
-    expect(isCatalogVisible(asCatalog(record))).toBe(
-      await passesQueryFilter(record.id),
-    );
+    expect(await passesQueryFilter(record.id)).toBe(true);
+    expect(isCatalogVisible(asCatalog(record))).toBe(true);
+    expect((await fetchGame(record.id)).hidden).toBe(false);
   });
 
   it("matches any of a genre list", async () => {
