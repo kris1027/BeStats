@@ -273,6 +273,19 @@ Keep the scope small. Follow the existing UI. Use TMDB for catalog metadata and 
 
 Inspect the code and current documentation, record material decisions in `prompts/`, obtain approval before coding, run the relevant checks, and provide clear verification steps.
 
+## Games
+
+Games are a third media type, planned in [docs/scope/games.md](docs/scope/games.md) (features G1 to G10, settled on 2026-10-17). Until a later spec moves a rule elsewhere, these hold:
+
+- **Catalog:** IGDB, read only through `lib/igdb/` with Twitch app credentials that never reach the browser. IGDB and Twitch receive no user data, so they are credited (footer and `/terms`, in G10), not listed as processors. BeStats stays non commercial; IGDB's terms are checked again before launch.
+- **Catalog filter:** main games, standalone expansions, remakes, remasters and expanded games only; no editions (`version_parent`), DLC, bundles, mods, seasons or episodes, and no Erotic theme. Search and discover never show a hidden game; a read by id returns it with `hidden: true`, so a game in a user's list stays visible and removable.
+- **Statuses, set by hand:** Want to play, Playing, Finished, one row per user and game, any status to any other in one click; removing deletes the row, with Undo. Nothing is derived from progress, and there is no Dropped or Paused.
+- **Release gate:** before its first release date (UTC day of IGDB `first_release_date`), a game can only be Want to play; Playing, Finished and a rating are disabled with a "Releases {date}" or "TBA" hint, and the Server Action checks it too.
+- **Ratings:** a personal score from 1 to 10, only on Playing or Finished. Moving back to Want to play clears it, with Undo restoring status, score and timestamps; Playing to Finished and back keeps it. IGDB's community rating shows out of 10 and is always labelled as the community rating.
+- **Timestamps:** added, started (the first time a game becomes Playing) and finished (every time it becomes Finished). Want to play sorts by added, Playing by started, Finished by finished.
+- **Not tracked:** platform played on, hours played, 100% completion.
+- **Navigation:** SHOWS | MOVIES | GAMES with `?type=game`; for games `/watchlist` is Want to play, `/upcoming` Playing, `/watched` Finished. The GAMES tab stays hidden until G5 ships, and game pages reach the sitemap only in G10.
+
 ## Build approach
 
 Tracer Bullet: prove the whole pipe works with one thin real thread, then thicken one strand at a time, always end to end. Mirrored from the scope header in `docs/scope/scope.md`.
@@ -280,7 +293,7 @@ Tracer Bullet: prove the whole pipe works with one thin real thread, then thicke
 ## Commands and repo facts
 
 - Imports use the `@/*` alias, which maps to the repo root (set in `tsconfig.json`). Prefer it over long relative paths.
-- Scripts: `pnpm dev`, `pnpm dev:docker` (the dev server against the local Supabase stack, see `scripts/dev-docker.sh`), `pnpm build`, `pnpm start`, `pnpm typecheck`, `pnpm lint`, `pnpm lint:ci`, `pnpm format`, `pnpm test`, `pnpm test:db`, `pnpm tmdb:live`, `pnpm db:types`, `pnpm db:types:check`.
+- Scripts: `pnpm dev`, `pnpm dev:docker` (the dev server against the local Supabase stack, see `scripts/dev-docker.sh`), `pnpm build`, `pnpm start`, `pnpm typecheck`, `pnpm lint`, `pnpm lint:ci`, `pnpm format`, `pnpm test`, `pnpm test:db`, `pnpm tmdb:live`, `pnpm igdb:live`, `pnpm db:types`, `pnpm db:types:check`.
 - Supabase, Zod, shadcn/ui and `server-only` are installed. `zod` validates every external input; `server-only` is what makes a Client Component import of a server module a build failure.
 - Routes live in `app/` at the repo root (there is no `src/` directory). `supabase/`, `components/` and `prompts/` exist; there is no `design/` folder any more.
 - `/` is a temporary (307) redirect to `/shows`, declared in `redirects()` in `next.config.ts` rather than a Server Component, so nothing renders and no browser caches it permanently. There is no `app/page.tsx`.
@@ -296,6 +309,7 @@ Tracer Bullet: prove the whole pipe works with one thin real thread, then thicke
 - `pnpm-workspace.yaml` exists only to pin `allowBuilds`. This is a single package repo, not a monorepo.
 - `cacheComponents: true` is on in `next.config.ts`. Every route must be prerenderable or opt out with `export const instant = false`, and every cached read calls `cacheLife` inside its own `use cache` scope. A rejection thrown inside a cached scope loses its class and its fields, so return a plain result and rebuild the error outside the scope.
 - The TMDB token is server only. Only `lib/tmdb/env.ts` may read `TMDB_READ_ACCESS_TOKEN`, and `security-boundary.test.ts` fails if any other file names it or gives it a `NEXT_PUBLIC_` prefix, the same rule the Supabase service role key carries.
+- The IGDB credentials are server only too. Only `lib/igdb/env.ts` may name `IGDB_CLIENT_ID` and `IGDB_CLIENT_SECRET` (the live check loads them through it), and `security-boundary.test.ts` fails on any other file or a `NEXT_PUBLIC_` prefix (spec 0023).
 - No page writes when it loads (spec 0020, AC-21): the library pages and `/shows/{id}` only read. A library tab classifies every tracked show (or every planned unwatched movie) per request, at most 500 per media type, from one cached TMDB details read per title (`lib/tracking/library-lists.ts`, the pure `lib/tv/library-page.ts` and `lib/catalog/movie-page.ts`). The catalog grids on `/shows`, `/movies` and `/search` place their own titles with the same classifiers, so a card always matches its library page: one `cache()`d read per grid, and TMDB details only for the grid's tracked shows (`lib/tracking/show-grid-status.ts`, `getMovieGridStates`; prompts/catalog-card-status.md). Keep it that way unless a spec says otherwise.
 - `user_show_state` is `user_id`, `show_id`, `tracked_at` and the timestamps, nothing more: the spec 0020 contract migration (`20261010120000_show_tracking_contract.sql`) dropped the legacy status columns, the `tv_status`, `status_source` and `show_hold` enums, the old views and every status and hold function. `user_tracked_shows` is the one view. A show page control is a Plan to watch / Tracking toggle.
 - The navbar's SHOWS | MOVIES tabs filter every page (scope feature 22, [prompts/media-tabs-everywhere.md](prompts/media-tabs-everywhere.md)). `/watchlist`, `/upcoming`, `/watched` and `/search` take their media type from `?type=tv|movie`. A bare URL means `tv`, and an invalid value shows a "That page doesn't exist" panel, never a redirect. Each tab has its own reads, count and pages. The parsing and URL building live only in `lib/catalog/media-type.ts`, so use `typedHref` for any link to these pages and always write `type`. The client shell reads `useSearchParams` only on those four paths, inside its own Suspense boundary; reading it anywhere else takes `/shows`, `/movies` and the title pages out of their prerendered shells.
@@ -315,6 +329,8 @@ Tracer Bullet: prove the whole pipe works with one thin real thread, then thicke
 
 - [docs/scope/scope.md](docs/scope/scope.md) (living feature list and status, owned by /scope; the stack and rules stay here in AGENTS.md)
 - [lib/tmdb/AGENTS.md](lib/tmdb/AGENTS.md): the server only TMDB module, its cache and error conventions, and how to run the live check
+- [lib/igdb/AGENTS.md](lib/igdb/AGENTS.md): the server only IGDB module (games), its token, limiter, catalog filter and cache conventions, and the live facts check
+- [docs/scope/games.md](docs/scope/games.md): the games scope (features G1 to G10)
 - [components/AGENTS.md](components/AGENTS.md): the UI foundation, the plate rule, the token and glass utility vocabulary, and the server by default policy for the shell
 - [lib/auth/AGENTS.md](lib/auth/AGENTS.md): the session boundary (`requireUser`, `getOptionalUser`), the private path registry, and the rules every auth form and Server Action follows
 - [lib/seo/AGENTS.md](lib/seo/AGENTS.md): canonicals, share cards, JSON-LD, robots and the sitemap, the deployment gate, and why no SEO surface reads request state

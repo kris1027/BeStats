@@ -41,15 +41,15 @@ _This is the second scope for BeStats. The movie and TV scope lives in [scope.md
 A server only module that reads games from IGDB, the way `lib/tmdb/` reads movies and shows, so every later games feature has one trusted source.
 **Done when:** the Twitch app token is fetched and cached on the server until it expires; game details, lists and search come back normalized with the catalog filter applied; up to 500 ids load in one batched request and each game's details are cached for a few hours; rate limit (4 requests a second) and failed requests return a plain result the UI can show; the `IGDB_*` variables are in `.env.example`, a boundary test fails if any other file reads them or gives them a `NEXT_PUBLIC_` prefix, and a live check script runs against real IGDB; the games rules above are added to `AGENTS.md`.
 - [x] Design it (spec): `/architect IGDB integration module`
-- [ ] Build it: `/develop IGDB integration module`
-  - [ ] Credentials, the boundary test and the thin live thread (token, client, `getGame`) with the IGDB facts gate run against real IGDB, AC-1 to AC-3, AC-5, AC-9, AC-18
-  - [ ] Hardened client: typed errors and results, retries, 401 refresh, limiter with bounded waits, failure logging, AC-4, AC-6, AC-7, AC-17
-  - [ ] Full `Game` normalization, the catalog filter with its parity test, and the 500 id batch, AC-9 to AC-11, AC-15, AC-16
-  - [ ] Search, discover, validation and the reference lists, AC-5, AC-12, AC-12b, AC-13, AC-14
-  - [ ] Cache lifetimes, the entry point surface test, the full fixture suite, and the AGENTS.md updates, AC-8, AC-19 to AC-21
+- [x] Build it: `/develop IGDB integration module`
+  - [x] Credentials, the boundary test and the thin live thread (token, client, `getGame`) with the IGDB facts gate run against real IGDB, AC-1 to AC-3, AC-5, AC-9, AC-18
+  - [x] Hardened client: typed errors and results, retries, 401 refresh, limiter with bounded waits, failure logging, AC-4, AC-6, AC-7, AC-17
+  - [x] Full `Game` normalization, the catalog filter with its parity test, and the 500 id batch, AC-9 to AC-11, AC-15, AC-16
+  - [x] Search, discover, validation and the reference lists, AC-5, AC-12, AC-12b, AC-13, AC-14
+  - [x] Cache lifetimes, the entry point surface test, the full fixture suite, and the AGENTS.md updates, AC-8, AC-19 to AC-21
 - [ ] Verify it: `/check verify IGDB integration module`
 - [ ] Test it: `/test IGDB integration module`
-spec [0023](../specs/0023-igdb-integration-module/index.md)
+spec [0023](../specs/0023-igdb-integration-module/index.md) · code in [lib/igdb/](../../lib/igdb/)
 
 ### G2. Game data model and security policies · needs a decision · GA
 The private table behind every games feature: one row per user and game holding its status, score and dates.
