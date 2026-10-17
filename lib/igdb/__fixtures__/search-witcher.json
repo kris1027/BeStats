@@ -1,0 +1,71 @@
+[
+  {
+    "id": 194662,
+    "cover": {
+      "id": 427032,
+      "image_id": "co95i0"
+    },
+    "first_release_date": 1861833600,
+    "genres": [12, 31],
+    "name": "The Witcher IV",
+    "platforms": [169, 6, 167],
+    "themes": [1, 17, 31, 38],
+    "game_type": 0
+  },
+  {
+    "id": 1942,
+    "cover": {
+      "id": 480513,
+      "image_id": "coaarl"
+    },
+    "first_release_date": 1431993600,
+    "genres": [12, 31],
+    "name": "The Witcher 3: Wild Hunt",
+    "platforms": [169, 48, 508, 6, 167, 49, 130],
+    "rating": 93.77371445859636,
+    "rating_count": 5498,
+    "themes": [1, 17, 38],
+    "game_type": 0
+  },
+  {
+    "id": 80,
+    "cover": {
+      "id": 90429,
+      "image_id": "co1xrx"
+    },
+    "first_release_date": 1193356800,
+    "genres": [12, 31],
+    "name": "The Witcher",
+    "platforms": [6, 14],
+    "rating": 81.95867942565762,
+    "rating_count": 840,
+    "themes": [1, 17],
+    "game_type": 0
+  },
+  {
+    "id": 141472,
+    "cover": {
+      "id": 372851,
+      "image_id": "co7zoz"
+    },
+    "first_release_date": 1540512000,
+    "genres": [12, 31],
+    "name": "The Witcher 3: Wild Hunt + Dark Souls III",
+    "platforms": [48, 49],
+    "themes": [1, 17],
+    "game_type": 3
+  },
+  {
+    "id": 198179,
+    "cover": {
+      "id": 218262,
+      "image_id": "co4oeu"
+    },
+    "first_release_date": 1215561600,
+    "genres": [12],
+    "name": "The Witcher: Versus",
+    "platforms": [82, 39],
+    "themes": [1, 17],
+    "game_type": 0
+  }
+]
