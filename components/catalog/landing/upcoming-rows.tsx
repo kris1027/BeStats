@@ -43,6 +43,12 @@ function UpcomingRows({ list }: { list: CatalogList }) {
   );
 }
 
+/**
+ * The two rows, streamed behind `UpcomingSkeleton`. One read of twenty
+ * titles split in two, so the rows never repeat a title, and one `ids` for
+ * both, so every card's badge and controls share a single session read.
+ * Exported so its states can be tested without the section's frame.
+ */
 async function UpcomingItems({ list }: { list: CatalogList }) {
   const size = LANDING_COUNTS.upcomingRow;
   const section = await readLandingSection(list, 2 * size);

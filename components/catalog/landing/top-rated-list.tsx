@@ -36,6 +36,11 @@ function TopRatedList({ list }: { list: CatalogList }) {
   );
 }
 
+/**
+ * The ranked list, streamed behind `TopRatedSkeleton`. An ordered list, so
+ * the rank is announced from the markup and the large numbers can stay
+ * decorative. Exported so its states can be tested on their own.
+ */
 async function TopRatedItems({ list }: { list: CatalogList }) {
   const section = await readLandingSection(list, LANDING_COUNTS.top);
   if (section.kind === "state") return section.state;

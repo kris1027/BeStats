@@ -38,6 +38,11 @@ function PopularGrid({ list }: { list: CatalogList }) {
   );
 }
 
+/**
+ * The staggered grid, streamed behind `PopularSkeleton`. Each card cycles
+ * through the offsets and speeds by its index, so the stagger needs no
+ * per title data. Exported so its states can be tested on their own.
+ */
 async function PopularItems({ list }: { list: CatalogList }) {
   const section = await readLandingSection(list, LANDING_COUNTS.popular);
   if (section.kind === "state") return section.state;

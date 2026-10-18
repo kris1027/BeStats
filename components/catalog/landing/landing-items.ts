@@ -51,7 +51,12 @@ export async function readLandingList(
   }
 }
 
-/** The titles from `start` up to `end`, as `LandingItem`s. */
+/**
+ * The titles from `start` up to `end`, as `LandingItem`s. The one place a
+ * TV result and a movie result are told apart, so every section draws both
+ * catalogs from the same shape; the `href` comes from `titleHref`, the one
+ * title URL builder (prompts/landing-review-fixes.md, decision 1).
+ */
 export function landingItems(
   page: TaggedCatalogPage,
   start: number,
@@ -85,7 +90,12 @@ export function landingItems(
   }));
 }
 
-/** Every id a section renders, so its status badges share one read. */
+/**
+ * Every id a section renders. The badge and control slots key their one
+ * session read on this array, so a section passes the same `ids` to every
+ * card and the whole section costs one read, not one per card
+ * (prompts/catalog-card-status.md).
+ */
 export function itemIds(items: readonly LandingItem[]): number[] {
   return items.map((item) => item.id);
 }

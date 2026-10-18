@@ -75,6 +75,13 @@ async function NowBlurb({ list }: { list: CatalogList }) {
   );
 }
 
+/**
+ * The three drifting columns, streamed behind `NowSkeleton`. The cards stay
+ * one list in reading order; each carries its column's speed and measures
+ * from the grid (`data-speed-root`), so a column moves as one without the
+ * markup being split into columns. Exported so its states can be tested on
+ * their own.
+ */
 async function NowItems({ list }: { list: CatalogList }) {
   const section = await readLandingSection(list, LANDING_COUNTS.now);
   if (section.kind === "state") return section.state;
