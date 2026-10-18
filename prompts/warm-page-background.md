@@ -147,3 +147,10 @@ None in scope: no data, no request state, no new dependency, and no external req
 3. `feat(layout): draw the warm page background and remove the film scene`
 4. `feat(showcase): show the warm page background`
 5. `docs: record the warm page background and supersede the film strip plans`
+
+## As built (2026-10-18)
+
+- The starting values held: wash `60%`, glow `6%`, orb `8%`, every other strength the design's. `app/page-background-contrast.test.ts`, with the grain at its brightest noise, passes them, and fails at the design's `42%` wash (3.63:1) and at `55%` (4.28:1).
+- Every blob's `filter: blur()` is gone (decision 5). The grain stays: a scripted 180 frame scroll on `/privacy` in the dev build measured a median frame of 8.3ms and a slowest of 9.4ms, on a 120Hz display with no dropped frames. This was not a full performance trace.
+- Added at the owner's request after the first look: the landing hero's artwork was too see-through over the new background. Its masks now start later, so more of the image stays opaque: bottom `mask-b-from-75%` (was 55%), left `lg:mask-l-from-70%` (was 40%), right `min-[1600px]:mask-r-from-90%` (was 83%). The title shade (`from-background/70`) is unchanged.
+- `app/layout-purity.test.ts` now lists `page-background-motion.tsx` in place of the canvas island.

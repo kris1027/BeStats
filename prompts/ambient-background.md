@@ -1,5 +1,7 @@
 # Ambient background on every page
 
+> Superseded on 2026-10-18 by [warm-page-background.md](warm-page-background.md): the film strip scene and its code were removed.
+
 > Superseded on 2026-10-11 by [film-strip-background.md](film-strip-background.md). The code this plan describes has been removed.
 
 ## Goal

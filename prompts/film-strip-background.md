@@ -1,5 +1,7 @@
 # Film strip background on every page
 
+> Superseded on 2026-10-18 by [warm-page-background.md](warm-page-background.md): the film strip scene and its code were removed.
+
 ## Goal
 
 Replace the ambient background (prompts/ambient-background.md: point wave, drifting screens, dust) with the Claude Design file `BeStats Background v2.dc.html`, and remove every piece of the old one: code, tokens, tests and showcase entry. The new scene has these layers:
