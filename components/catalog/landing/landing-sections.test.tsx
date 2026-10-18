@@ -4,11 +4,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 /**
  * covers: prompts/home-parallax-landing.md, AC-1, AC-2, AC-4, AC-5, AC-6
+ * covers: prompts/landing-card-controls.md, AC-1, AC-4
  *
  * Each landing section's streamed body on its own: how many titles it shows
  * from page 1, in what order, the Upcoming rows' split and labels, the
  * missing artwork fallback, and the failure and empty states that stay
- * inside one section. The list read and the status badge are replaced;
+ * inside one section. The list read, the status badge and the card controls
+ * are replaced;
  * `TmdbError` is the real one.
  */
 const read = vi.fn();
@@ -26,6 +28,17 @@ vi.mock("@/lib/tracking/episode-state", () => ({
 vi.mock("./landing-badge", () => ({
   LandingBadge: ({ item }: { item: { id: number } }) => (
     <span data-testid="badge">{item.id}</span>
+  ),
+  LandingControls: ({
+    item,
+    ids,
+  }: {
+    item: { id: number; mediaType: string };
+    ids: readonly number[];
+  }) => (
+    <span data-testid="controls" data-ids={ids.join(",")}>
+      {item.mediaType}:{item.id}
+    </span>
   ),
 }));
 
@@ -112,6 +125,42 @@ describe("each section's count (AC-2)", () => {
     const { container } = render(await PopularItems({ list: MOVIES.popular }));
 
     expect(titles(container)).toHaveLength(3);
+  });
+});
+
+describe("card controls (landing-card-controls AC-1)", () => {
+  it.each([
+    ["Trending", TrendingItems, MOVIES.trending, 9],
+    ["Popular", PopularItems, MOVIES.popular, 14],
+    ["Now playing", NowItems, MOVIES.now, 12],
+    ["Upcoming", UpcomingItems, MOVIES.upcoming, 20],
+    ["Top rated", TopRatedItems, MOVIES.top, 8],
+  ] as const)(
+    "%s puts the controls on every card, sharing the section's ids",
+    async (_name, Section, list, count) => {
+      read.mockResolvedValue(moviePage(movies(20)));
+
+      render(await Section({ list }));
+
+      const controls = screen.getAllByTestId("controls");
+      expect(controls.map((node) => node.textContent)).toEqual(
+        Array.from({ length: count }, (_, index) => `movie:${index + 1}`),
+      );
+      const ids = Array.from({ length: count }, (_, index) => index + 1);
+      for (const node of controls) {
+        expect(node).toHaveAttribute("data-ids", ids.join(","));
+      }
+    },
+  );
+
+  it("gives a show card the show's controls", async () => {
+    read.mockResolvedValue(tvPage(shows(2)));
+
+    render(await UpcomingItems({ list: TV.upcoming }));
+
+    expect(
+      screen.getAllByTestId("controls").map((node) => node.textContent),
+    ).toEqual(["tv:1", "tv:2"]);
   });
 });
 

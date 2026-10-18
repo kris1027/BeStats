@@ -6,7 +6,7 @@ import type * as React from "react";
 import { PosterCard } from "@/components/poster-card";
 import { type CatalogList, listPath } from "@/lib/catalog/lists";
 
-import { LandingBadge } from "./landing-badge";
+import { LandingBadge, LandingControls } from "./landing-badge";
 import type { LandingItem } from "./landing-items";
 
 /** A landing section's h2, larger than a row title (the design's 32 to 56px). */
@@ -65,8 +65,9 @@ function SectionHeader({
 }
 
 /**
- * A landing poster: the shared `PosterCard` with the section's badge and no
- * controls (decision 5). `drift` marks the artwork for the poster parallax.
+ * A landing poster: the shared `PosterCard` with the section's badge and the
+ * card controls (decision 5, amended by prompts/landing-card-controls.md).
+ * `drift` marks the artwork for the poster parallax.
  */
 function LandingPoster({
   item,
@@ -92,6 +93,7 @@ function LandingPoster({
         posterUrl={item.posterUrl}
         href={item.href}
         badge={<LandingBadge item={item} ids={ids} />}
+        controls={<LandingControls item={item} ids={ids} />}
         priority={priority}
         sizes={sizes}
       />

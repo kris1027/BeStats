@@ -9,7 +9,7 @@ import {
 } from "@/components/catalog/carousel-row-states";
 import { LANDING_COUNTS } from "@/lib/catalog/landing";
 import type { CatalogList } from "@/lib/catalog/lists";
-import { LandingBadge } from "./landing-badge";
+import { LandingBadge, LandingControls } from "./landing-badge";
 import {
   itemIds,
   type LandingItem,
@@ -65,7 +65,8 @@ async function TopRatedItems({ list }: { list: CatalogList }) {
 
 /**
  * One entry: the whole row is the title's link, through an overlay under
- * the badge, as on `PosterCard`. Missing artwork gets the same flat tile.
+ * the badge and controls, as on `PosterCard`. Missing artwork gets the same
+ * flat tile.
  */
 function TopRatedRow({
   item,
@@ -113,8 +114,9 @@ function TopRatedRow({
         />
       </div>
       <div className="flex min-w-0 flex-col items-start gap-2">
-        <div className="relative z-20">
+        <div className="relative z-20 flex flex-wrap items-center gap-2">
           <LandingBadge item={item} ids={ids} />
+          <LandingControls item={item} ids={ids} />
         </div>
         <h3 className="text-lg leading-tight font-semibold tracking-[-0.01em] text-pretty text-foreground md:text-[22px]">
           <Link href={item.href} className="rounded-sm hover:underline">

@@ -11,7 +11,7 @@ import { LANDING_COUNTS } from "@/lib/catalog/landing";
 import type { CatalogList } from "@/lib/catalog/lists";
 import { formatShortDate } from "@/lib/format";
 import { requestTodayUtc } from "@/lib/tracking/episode-state";
-import { LandingBadge } from "./landing-badge";
+import { LandingBadge, LandingControls } from "./landing-badge";
 import {
   itemIds,
   type LandingItem,
@@ -105,7 +105,9 @@ function dateLabel(item: LandingItem, today: string): string | null {
 /**
  * A wide card: the backdrop, or the poster cropped to fill, or the flat
  * missing image plate (decision 10), with the title and date over a shade at
- * the bottom. The whole card is the title's link; the badge sits above it.
+ * the bottom. The whole card is the title's link; the badge and, top left,
+ * the controls sit above it (prompts/landing-card-controls.md). The control
+ * row lets clicks through between its children, as `PosterCard`'s does.
  */
 function WideCard({
   item,
@@ -147,6 +149,9 @@ function WideCard({
       />
       <div className="plate-solid absolute top-2.5 right-2.5 z-20 rounded-full backdrop-blur-glass">
         <LandingBadge item={item} ids={ids} />
+      </div>
+      <div className="plate-solid pointer-events-none absolute top-2.5 left-2.5 z-20 flex items-center gap-2 *:pointer-events-auto">
+        <LandingControls item={item} ids={ids} />
       </div>
       <div className="absolute inset-x-4 bottom-3.5 flex items-end justify-between gap-3">
         <h3 className="line-clamp-2 text-base leading-snug font-semibold text-foreground">
