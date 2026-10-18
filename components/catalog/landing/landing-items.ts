@@ -1,6 +1,7 @@
 import { connection } from "next/server";
 
 import type { CatalogList } from "@/lib/catalog/lists";
+import { type MediaType, titleHref } from "@/lib/catalog/media-type";
 import {
   readTaggedCatalogList,
   type TaggedCatalogPage,
@@ -14,7 +15,7 @@ import { TmdbError } from "@/lib/tmdb";
  * except to pick the status badge.
  */
 export type LandingItem = {
-  mediaType: "movie" | "tv";
+  mediaType: MediaType;
   id: number;
   title: string;
   href: string;
@@ -61,7 +62,7 @@ export function landingItems(
       mediaType: "tv",
       id: show.id,
       title: show.name,
-      href: `/shows/${show.id}`,
+      href: titleHref("tv", show.id),
       posterUrl: show.posterUrl,
       backdropUrl: show.backdropUrl,
       tmdbRating: show.tmdbRating,
@@ -74,7 +75,7 @@ export function landingItems(
     mediaType: "movie",
     id: movie.id,
     title: movie.title,
-    href: `/movies/${movie.id}`,
+    href: titleHref("movie", movie.id),
     posterUrl: movie.posterUrl,
     backdropUrl: movie.backdropUrl,
     tmdbRating: movie.tmdbRating,

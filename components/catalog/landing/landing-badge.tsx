@@ -10,6 +10,8 @@ import {
   ShowCardControls,
 } from "@/components/tracking/show-card-slots";
 
+import { CATALOG_PATHS } from "@/lib/catalog/media-type";
+
 import type { LandingItem } from "./landing-items";
 
 /**
@@ -68,7 +70,7 @@ function LandingControls({
           showId={item.id}
           name={item.title}
           gridShowIds={ids}
-          returnPath="/shows"
+          returnPath={CATALOG_PATHS.tv}
         />
       ) : (
         <MovieCardControls
@@ -76,7 +78,7 @@ function LandingControls({
           title={item.title}
           releaseDate={item.releaseDate}
           gridMovieIds={ids}
-          returnPath="/movies"
+          returnPath={CATALOG_PATHS.movie}
         />
       )}
     </Suspense>
