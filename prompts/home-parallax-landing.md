@@ -40,7 +40,7 @@ This supersedes the landing half of spec 0021 (`docs/specs/0021-home-carousels`)
    | Numbered list | Top rated | Top rated |
 
 2. **Header (Q2).** The app navbar stays and the design's own fixed header is dropped. The h1 is `sr-only` "Movies" / "Shows". The hero title is an h2, with each section's heading below it.
-3. **Popular stays (Q3).** It sits between Trending and Now playing as in the updated design. It is a 10-card auto-fill grid (cards at least 180px wide) with per-card top offsets `[0, 60, 20, 80, 40]` and drift speeds `[0.06, -0.08, 0.14, -0.04, 0.1]`, cycled.
+3. **Popular stays (Q3).** It sits between Trending and Now playing as in the updated design. It is a 14-card auto-fill grid (cards at least 180px wide) with per-card top offsets `[0, 60, 20, 80, 40]` and drift speeds `[0.06, -0.08, 0.14, -0.04, 0.1]`, cycled.
 4. **Hero (Q4, Q12).** Shows TMDB's #1 trending title. Its data comes from:
    - the trending page-1 read the Trending section already makes;
    - one cached detail read (`getMovie` / `getTvShow`) for its backdrop and genre names;
@@ -61,7 +61,7 @@ This supersedes the landing half of spec 0021 (`docs/specs/0021-home-carousels`)
    - The design's `#071116` becomes the existing page background (film strips).
    - The blob tints become new tokens in `globals.css` only.
    - The star uses `rating-tmdb`.
-8. **Counts (Q8).** Trending 9, Popular 10, Now playing 12, Upcoming 20 (two rows of 10), Top rated 8. All come from page 1 of each list.
+8. **Counts (Q8).** Trending 9, Popular 14, Now playing 12, Upcoming 20 (two rows of 10), Top rated 8. All come from page 1 of each list.
 9. **Motion (Q9).** Intensity 1, with mouse parallax and poster parallax on. There is no user setting. `prefers-reduced-motion: reduce` sets every transform to identity, makes Trending a native swipe row, and removes the hero fade.
 10. **Backdrops for wide cards (Q11).** `normalizeMovieSummary` / `normalizeTvSummary` gain `backdropUrl` from the `backdrop_path` TMDB already returns, so there are no new requests. Without a backdrop, the card uses the poster cropped to fill (`object-cover`). With neither, it shows the existing missing-image state.
 11. **Full bleed (Q13).**

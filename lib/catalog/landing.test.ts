@@ -45,7 +45,7 @@ describe("LANDING_COUNTS (AC-2)", () => {
   it("holds the design's counts", () => {
     expect(LANDING_COUNTS).toEqual({
       trending: 9,
-      popular: 10,
+      popular: 14,
       now: 12,
       upcomingRow: 10,
       top: 8,

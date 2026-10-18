@@ -50,7 +50,7 @@ export function landingSlots(mediaType: MediaType): LandingSlots {
  */
 export const LANDING_COUNTS = {
   trending: 9,
-  popular: 10,
+  popular: 14,
   now: 12,
   /** Per Upcoming row; the second row takes the next ten (decision 13). */
   upcomingRow: 10,

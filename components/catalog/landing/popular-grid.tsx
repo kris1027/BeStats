@@ -20,7 +20,7 @@ const POPULAR_SIZES = "(min-width: 768px) 240px, 50vw";
 const SPEEDS = [0.06, -0.08, 0.14, -0.04, 0.1] as const;
 
 /**
- * Popular (prompts/home-parallax-landing.md, decision 3): ten posters in a
+ * Popular (prompts/home-parallax-landing.md, decision 3): fourteen posters in a
  * staggered grid, each drifting at its own speed from `md`. A phone gets a
  * plain two column grid with no offsets.
  */

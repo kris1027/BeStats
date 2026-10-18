@@ -92,7 +92,7 @@ afterEach(() => read.mockReset());
 describe("each section's count (AC-2)", () => {
   it.each([
     ["Trending", TrendingItems, MOVIES.trending, 9],
-    ["Popular", PopularItems, MOVIES.popular, 10],
+    ["Popular", PopularItems, MOVIES.popular, 14],
     ["Now playing", NowItems, MOVIES.now, 12],
     ["Top rated", TopRatedItems, MOVIES.top, 8],
   ] as const)("%s shows the first %#", async (_name, Section, list, count) => {
