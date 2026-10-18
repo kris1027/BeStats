@@ -69,7 +69,7 @@ async function LandingHeroContent({ list }: { list: CatalogList }) {
         suppressHydrationWarning
         className={cn(
           HERO_ART_BOX,
-          "mask-b-from-55% lg:mask-l-from-40% min-[1600px]:mask-r-from-83%",
+          "mask-b-from-75% lg:mask-l-from-70% min-[1600px]:mask-r-from-90%",
         )}
       >
         <HeroArtwork item={item} />
