@@ -12,19 +12,12 @@ import {
   TOP_CARD_CLASS,
   TOP_LIST_CLASS,
   TopRatedSkeleton,
+  topColumnSpeeds,
   topOffsetClass,
 } from "./landing-skeletons";
 
 const POSTER_SIZES =
   "(min-width: 1024px) 260px, (min-width: 768px) 330px, 45vw";
-
-/**
- * Each column's drift (prompts/top-rated-parallax-columns.md, decision 3):
- * two columns below `lg`, four from it, so a card carries both speeds and
- * the loop picks one.
- */
-const COLUMN_SPEEDS = [0, 0.12] as const;
-const COLUMN_SPEEDS_LG = [0, 0.14, 0.04, 0.18] as const;
 
 /**
  * Top rated (prompts/top-rated-parallax-columns.md, superseding the list of
@@ -60,17 +53,20 @@ async function TopRatedItems({ list }: { list: CatalogList }) {
 
   return (
     <ol data-speed-root="" className={TOP_LIST_CLASS}>
-      {items.map((item, index) => (
-        <li key={item.id} className={topOffsetClass(index)}>
-          <div
-            data-speed={COLUMN_SPEEDS[index % COLUMN_SPEEDS.length]}
-            data-speed-lg={COLUMN_SPEEDS_LG[index % COLUMN_SPEEDS_LG.length]}
-            suppressHydrationWarning
-          >
-            <TopRatedCard item={item} ids={ids} rank={index + 1} />
-          </div>
-        </li>
-      ))}
+      {items.map((item, index) => {
+        const speeds = topColumnSpeeds(index);
+        return (
+          <li key={item.id} className={topOffsetClass(index)}>
+            <div
+              data-speed={speeds.base}
+              data-speed-lg={speeds.lg}
+              suppressHydrationWarning
+            >
+              <TopRatedCard item={item} ids={ids} rank={index + 1} />
+            </div>
+          </li>
+        );
+      })}
     </ol>
   );
 }

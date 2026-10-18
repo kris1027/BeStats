@@ -2,9 +2,9 @@ import { PosterCardSkeleton, Skeleton } from "@/components/skeleton";
 import { LANDING_COUNTS } from "@/lib/catalog/landing";
 
 /*
- * The landing sections' layout classes and loading shapes
- * (prompts/home-parallax-landing.md, decision 16), apart from the sections
- * themselves so `/showcase` can render the shapes without importing the
+ * The landing sections' layout classes, Top rated's column speeds and the
+ * loading shapes (prompts/home-parallax-landing.md, decision 16), apart from
+ * the sections themselves so `/showcase` can render the shapes without importing the
  * server only TMDB reads. Each section and its skeleton share these classes,
  * so a section arriving moves nothing.
  */
@@ -49,6 +49,21 @@ export function topOffsetClass(index: number): string | undefined {
   return index % 2
     ? "translate-y-12 md:translate-y-20 lg:translate-y-35"
     : undefined;
+}
+
+const TOP_COLUMN_SPEEDS = [0, 0.12] as const;
+const TOP_COLUMN_SPEEDS_LG = [0, 0.14, 0.04, 0.18] as const;
+
+/**
+ * Each column's drift (decision 3), kept beside the stagger because both
+ * follow from the column count: two columns below `lg`, four from it, so a
+ * card carries both speeds and the motion loop picks one.
+ */
+export function topColumnSpeeds(index: number): { base: number; lg: number } {
+  return {
+    base: TOP_COLUMN_SPEEDS[index % TOP_COLUMN_SPEEDS.length],
+    lg: TOP_COLUMN_SPEEDS_LG[index % TOP_COLUMN_SPEEDS_LG.length],
+  };
 }
 
 /** The poster's frame, room above it for the rank (decision 4). */
@@ -157,7 +172,7 @@ function UpcomingSkeleton() {
 
 function TopRatedSkeleton() {
   return (
-    <ul aria-hidden="true" className={TOP_LIST_CLASS}>
+    <ol aria-hidden="true" className={TOP_LIST_CLASS}>
       {Array.from({ length: 4 }, (_, index) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders with no identity.
         <li key={index} className={topOffsetClass(index)}>
@@ -170,7 +185,7 @@ function TopRatedSkeleton() {
           </div>
         </li>
       ))}
-    </ul>
+    </ol>
   );
 }
 
