@@ -9,7 +9,7 @@
 -- distinct dates so a kept date is told apart from a new one.
 
 begin;
-select plan(30);
+select plan(38);
 
 set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
 set local role authenticated;
@@ -304,6 +304,94 @@ select ok(
   (select added_at = now() and started_at = now()
    from public.user_game_state where game_id = 5302),
   'with the escape set back to off the same insert gets now'
+);
+
+-- Score bounds (AC-2): the ends of the range are allowed.
+select lives_ok(
+  $$insert into public.user_game_state (user_id, game_id, status, rating)
+    values ('11111111-1111-1111-1111-111111111111', 5405, 'playing', 1)$$,
+  'a score of 1 on a Playing game is allowed'
+);
+select lives_ok(
+  $$insert into public.user_game_state (user_id, game_id, status, rating)
+    values ('11111111-1111-1111-1111-111111111111', 5406, 'finished', 10)$$,
+  'a score of 10 on a Finished game is allowed'
+);
+
+-- Round trips (AC-5, AC-8): fixtures with earlier dates, under the escape.
+select set_config('bestats.restore_game', 'on', true);
+insert into public.user_game_state (user_id, game_id, status, rating, added_at, started_at, finished_at)
+values
+  ('11111111-1111-1111-1111-111111111111', 5401, 'want_to_play', null, '2026-01-01', null, null),
+  ('11111111-1111-1111-1111-111111111111', 5402, 'playing', 4, '2026-01-01', '2026-02-01', null),
+  ('11111111-1111-1111-1111-111111111111', 5403, 'finished', 7, '2026-01-01', '2026-02-01', '2026-03-01'),
+  ('11111111-1111-1111-1111-111111111111', 5404, 'want_to_play', null, '2026-01-01', null, null);
+select set_config('bestats.restore_game', 'off', true);
+
+update public.user_game_state set status = 'want_to_play', added_at = '1999-01-01'
+  where game_id = 5401;
+select ok(
+  (select added_at = '2026-01-01' and updated_at = now()
+   from public.user_game_state where game_id = 5401),
+  'saving Want to play again on a Want to play game keeps added'
+);
+
+update public.user_game_state set status = 'want_to_play', rating = null
+  where game_id = 5402;
+update public.user_game_state set status = 'playing' where game_id = 5402;
+select ok(
+  (select added_at = now() and started_at = '2026-02-01' and finished_at is null
+   from public.user_game_state where game_id = 5402),
+  'Playing to Want to play and back keeps the first start'
+);
+
+update public.user_game_state set status = 'playing' where game_id = 5403;
+update public.user_game_state set status = 'finished' where game_id = 5403;
+select ok(
+  (select added_at = '2026-01-01' and started_at = '2026-02-01' and finished_at = now()
+     and rating = 7
+   from public.user_game_state where game_id = 5403),
+  'a replayed game finished again gets a new finish and keeps its first start and score'
+);
+
+-- The upsert PostgREST sends, sending back every column the insert branch
+-- stamped: the update branch still decides from the stored row.
+insert into public.user_game_state (user_id, game_id, status, added_at, started_at)
+  values ('11111111-1111-1111-1111-111111111111', 5404, 'playing', '1999-01-01', '1999-01-01')
+  on conflict (user_id, game_id) do update
+    set status = excluded.status, added_at = excluded.added_at,
+        started_at = excluded.started_at, finished_at = excluded.finished_at;
+select ok(
+  (select count(*) = 1 from public.user_game_state where game_id = 5404)
+  and (select status = 'playing' and added_at = '2026-01-01' and started_at = now()
+         and finished_at is null
+       from public.user_game_state where game_id = 5404),
+  'an upsert that changes the status of an existing row moves the dates as a plain update does'
+);
+
+-- Only the exact value `on` opens the escape (AC-7).
+select set_config('bestats.restore_game', 'true', true);
+insert into public.user_game_state (user_id, game_id, status, added_at, started_at)
+values ('11111111-1111-1111-1111-111111111111', 5407, 'playing', '2026-01-05', '2026-01-06');
+select set_config('bestats.restore_game', 'ON', true);
+insert into public.user_game_state (user_id, game_id, status, added_at, started_at)
+values ('11111111-1111-1111-1111-111111111111', 5408, 'playing', '2026-01-05', '2026-01-06');
+select set_config('bestats.restore_game', 'off', true);
+select ok(
+  (select bool_and(added_at = now() and started_at = now())
+   from public.user_game_state where game_id in (5407, 5408)),
+  'a setting of true or ON does not open the escape, so the trigger stamps now'
+);
+
+-- The owner pin holds under the escape too (AC-6, AC-7).
+select set_config('bestats.restore_game', 'on', true);
+update public.user_game_state set user_id = '22222222-2222-2222-2222-222222222222'
+  where game_id = 5401;
+select set_config('bestats.restore_game', 'off', true);
+select ok(
+  exists (select 1 from public.user_game_state
+          where game_id = 5401 and user_id = '11111111-1111-1111-1111-111111111111'),
+  'under the escape an update that sends another owner keeps the row with user A'
 );
 
 -- Cascade (AC-11): deleting an account takes its games with it.

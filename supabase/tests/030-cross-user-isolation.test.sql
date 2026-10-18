@@ -8,7 +8,7 @@
 -- `set local` confines both to this transaction, which is rolled back.
 
 begin;
-select plan(38);
+select plan(41);
 
 -- User A and user B come from supabase/seed.sql.
 -- A owns: movie 603 and 27205, show 1396 and 1399, episodes 62085 to 62087 and 62131,
@@ -351,6 +351,24 @@ select is(
    where user_id = '11111111-1111-1111-1111-111111111111' and movie_id = 27205),
   0::bigint,
   'the row user A deleted is really gone'
+);
+
+-- Spec 0024 AC-9: the same for games, so four owner policies that refused
+-- everything could not pass the game refusals above.
+select lives_ok(
+  $$insert into public.user_game_state (user_id, game_id, status)
+    values ('11111111-1111-1111-1111-111111111111', 999, 'want_to_play')$$,
+  'user A can add a game of their own'
+);
+select lives_ok(
+  $$delete from public.user_game_state where game_id = 1942$$,
+  'user A can delete their own game row'
+);
+select is(
+  (select count(*) from public.user_game_state
+   where user_id = '11111111-1111-1111-1111-111111111111' and game_id = 1942),
+  0::bigint,
+  'the game row user A deleted is really gone'
 );
 
 reset role;
