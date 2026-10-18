@@ -5,12 +5,14 @@ import { useEffect, useRef } from "react";
 
 import { type Lean, REDUCED_MOTION, startMotionLoop } from "@/lib/motion/loop";
 
+/** Tailwind's `md` and `lg`, where the motion starts and the columns change. */
 const WIDE = "(min-width: 48rem)";
 const LARGE = "(min-width: 64rem)";
 const FINE_POINTER = "(pointer: fine)";
 
 /**
- * How far an Upcoming / On the air row slides per pixel the section moves.
+ * How far an Upcoming / On the air row slides per pixel the section moves
+ * (prompts/home-parallax-landing.md, decision 13, amended 2026-10-18).
  * Neighbouring rows go opposite ways, so they part at twice this; 0.6 made the
  * cards blur past before they could be read.
  */
@@ -260,4 +262,4 @@ function LandingParallax({
   );
 }
 
-export { LandingParallax };
+export { LARGE, LandingParallax, WIDE };

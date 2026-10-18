@@ -1,7 +1,7 @@
 import { render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { LandingParallax } from "./landing-parallax";
+import { LARGE, LandingParallax, WIDE } from "./landing-parallax";
 
 /**
  * covers: prompts/home-parallax-landing.md, AC-7 (decisions 9 and 16)
@@ -25,8 +25,8 @@ beforeEach(() => {
   vi.stubGlobal("matchMedia", (query: string) => ({
     get matches() {
       if (query.includes("reduced-motion")) return reduced;
-      if (query.includes("64rem")) return large;
-      if (query.includes("min-width")) return wide;
+      if (query === LARGE) return large;
+      if (query === WIDE) return wide;
       return true;
     },
     addEventListener: (_: string, listener: () => void) =>
@@ -109,6 +109,7 @@ describe("LandingParallax (AC-7)", () => {
     runFrame();
 
     expect(getByTestId("speed").style.transform).toBe("");
+    expect(getByTestId("speed-lg").style.transform).toBe("");
     expect(getByTestId("depth").style.transform).toContain("translate3d");
   });
 
