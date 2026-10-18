@@ -1,4 +1,3 @@
-import { FilmIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -7,6 +6,7 @@ import { LANDING_COUNTS } from "@/lib/catalog/landing";
 import type { CatalogList } from "@/lib/catalog/lists";
 import { formatShortDate } from "@/lib/format";
 import { requestTodayUtc } from "@/lib/tracking/episode-state";
+import { ArtFallback } from "./art-fallback";
 import { LandingBadge, LandingControls } from "./landing-badge";
 import type { LandingItem } from "./landing-items";
 import { headingId, readLandingSection, SectionHeader } from "./landing-parts";
@@ -122,12 +122,7 @@ function WideCard({
           className="object-cover transition-[filter] duration-200 group-hover:brightness-110"
         />
       ) : (
-        <div className="absolute inset-0 flex items-center justify-center bg-glass-plate">
-          <FilmIcon
-            className="size-8 text-muted-foreground"
-            aria-hidden="true"
-          />
-        </div>
+        <ArtFallback />
       )}
       <div
         aria-hidden="true"

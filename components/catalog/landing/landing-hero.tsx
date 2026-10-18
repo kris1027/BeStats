@@ -1,5 +1,4 @@
 import { cn } from "cn";
-import { FilmIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -17,6 +16,7 @@ import {
   resizeImageUrl,
   TmdbError,
 } from "@/lib/tmdb";
+import { ArtFallback } from "./art-fallback";
 import {
   type LandingItem,
   landingItems,
@@ -139,14 +139,7 @@ async function LandingHeroContent({ list }: { list: CatalogList }) {
 function HeroArtwork({ item }: { item: LandingItem }) {
   const src = resizeImageUrl(item.backdropUrl, "original") ?? item.posterUrl;
   if (src === null) {
-    return (
-      <div className="absolute inset-0 flex items-center justify-center bg-glass-plate">
-        <FilmIcon
-          className="size-10 text-muted-foreground"
-          aria-hidden="true"
-        />
-      </div>
-    );
+    return <ArtFallback iconClassName="size-10" />;
   }
   return (
     <Image

@@ -292,6 +292,9 @@ describe("missing artwork (AC-5)", () => {
     const { container } = render(await UpcomingItems({ list: TV.upcoming }));
 
     expect(container.querySelector("img")).toBeNull();
+    expect(
+      container.querySelector('[data-slot="poster-fallback"]'),
+    ).not.toBeNull();
     expect(screen.getByRole("link", { name: "Show 1" })).toBeInTheDocument();
   });
 });
