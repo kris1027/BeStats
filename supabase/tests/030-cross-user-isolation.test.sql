@@ -288,13 +288,14 @@ update public.user_game_state set status = 'finished'
 delete from public.user_game_state
   where user_id = '22222222-2222-2222-2222-222222222222';
 
--- AC-6 and AC-10: handing one's own game to B is not refused, unlike movies
--- and episodes; the trigger puts the stored owner back, so the row stays A's.
-select lives_ok(
+-- AC-6 and AC-10: handing one's own game to B is refused by the trigger's
+-- identity lock, before the update policy's check would see it.
+select throws_ok(
   $$update public.user_game_state
       set user_id = '22222222-2222-2222-2222-222222222222'
     where game_id = 119133$$,
-  'user A sending user B as the owner of their own game is not an error'
+  'BS003', 'game_identity_locked',
+  'user A cannot hand their own game to user B'
 );
 
 reset role;
@@ -303,7 +304,7 @@ reset request.jwt.claims;
 select is(
   (select user_id from public.user_game_state where game_id = 119133),
   '11111111-1111-1111-1111-111111111111'::uuid,
-  'the identity pin keeps user A''s game theirs'
+  'user A''s game stays theirs'
 );
 select is(
   (select count(*) from public.user_game_state

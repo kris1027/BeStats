@@ -125,10 +125,12 @@ begin
 end;
 $$;
 
--- Owns every date on `user_game_state` and pins its identity (spec 0024,
+-- Owns every date on `user_game_state` and locks its identity (spec 0024,
 -- AC-4 to AC-7). An insert stamps `created_at` and `updated_at`; an update
--- keeps `user_id`, `game_id` and `created_at`, so a row never moves to another
--- person or game, whichever write path is used. `updated_at` on update is
+-- keeps `created_at` and refuses any change to `user_id` or `game_id` with
+-- `BS003`, so a row never moves to another person or game, whichever write
+-- path is used, and a client that tries sees a failed write rather than a
+-- false success (AGENTS.md section 11). `updated_at` on update is
 -- `set_updated_at`'s.
 --
 -- The three list dates follow the status, whatever the client sent: added is
@@ -139,7 +141,7 @@ $$;
 --
 -- The one exception is Undo. G4's restore function sets the transaction local
 -- `bestats.restore_game` to `on`, and only then are the three list dates kept
--- as given, so a game returns exactly as it was. The identity pin and the
+-- as given, so a game returns exactly as it was. The identity lock and the
 -- checks still apply. PostgREST gives a client no way to set a custom
 -- setting, and no other write path may set it.
 --
@@ -156,8 +158,12 @@ begin
     new.created_at := now();
     new.updated_at := now();
   else
-    new.user_id := old.user_id;
-    new.game_id := old.game_id;
+    -- `BS003` is the app's own code, like `BS001` and `BS002`, so a caller
+    -- can recognise it without reading the message.
+    if new.user_id is distinct from old.user_id
+       or new.game_id is distinct from old.game_id then
+      raise exception 'game_identity_locked' using errcode = 'BS003';
+    end if;
     new.created_at := old.created_at;
   end if;
 

@@ -58,7 +58,7 @@ The private table behind every games feature: one row per user and game holding 
 - [x] Build it: `/develop game data model and security policies`
   - [x] Thin thread: enum, table, forced RLS, owner policies, hardened grants, seed rows, cross user pgTAP cases and regenerated types, AC-1, AC-9 to AC-11, AC-14
   - [x] Score and status checks, AC-2, AC-3
-  - [x] Trigger owned dates with the identity pin and the restore escape, and their tests in `180-game-state.test.sql`, AC-4 to AC-8
+  - [x] Trigger owned dates with the identity lock and the restore escape, and their tests in `180-game-state.test.sql`, AC-4 to AC-8
   - [x] Structure and sweep tests, drift check and type checks, then `supabase db push` before merge, AC-12 to AC-15
 - [x] Verify it: `/check verify game data model and security policies`
 - [x] Test it: `/test game data model and security policies`

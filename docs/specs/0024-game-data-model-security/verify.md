@@ -13,7 +13,7 @@ _Steps come from the acceptance criteria in spec 0024. `/check verify` runs thes
 - [x] PATCH that row with `{ status: "finished" }` → `finished_at` is now, `started_at` unchanged → AC-5
 - [x] PATCH it with `{ status: "want_to_play" }` while it has a score → refused with `23514`; with `{ status: "want_to_play", rating: null }` → succeeds, `added_at` moves to now → AC-2, AC-5
 - [x] POST with `user_id` set to user B → refused with `42501` → AC-9, AC-10, Value sourcing (`user_id` comes from the session)
-- [x] PATCH your own row with `{ user_id: <B>, game_id: 999 }` → succeeds, row still belongs to A with its old game id → AC-6
+- [x] PATCH your own row with `{ user_id: <B>, game_id: 999 }` → refused with `BS003`, row still belongs to A with its old game id → AC-6 (amended 2026-10-18)
 - [x] GET `/rest/v1/user_game_state` as A → only A's rows; with only the anon key → permission denied (`42501`) → AC-9, AC-10
 - [x] POST the same upsert (`Prefer: resolution=merge-duplicates`) twice → one row, dates unchanged by the second → AC-8
 
@@ -21,7 +21,7 @@ _Steps come from the acceptance criteria in spec 0024. `/check verify` runs thes
 - AC-1: 010 (table, columns, key, enum order), 180 (game id check)
 - AC-2, AC-3: 180 checks and the Want to play cases
 - AC-4, AC-5: 180 insert and update transition cases
-- AC-6: 180 game id pin, 030 user id pin
+- AC-6: 180 game id lock, 030 user id lock
 - AC-7: 180 restore escape cases, seed query above
 - AC-8: 180 upsert shapes
 - AC-9: 020, 180 (trigger function execute)

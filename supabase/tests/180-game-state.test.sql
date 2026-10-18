@@ -1,6 +1,6 @@
 -- Game data model (spec 0024): the checks that hold the games rules on
 -- `user_game_state`, and `set_game_timestamps`, which owns every date and
--- pins each row's identity, whatever a client sends.
+-- locks each row's identity, whatever a client sends.
 --
 -- Runs as user A from supabase/seed.sql, who owns games 1942 (Playing, 8) and
 -- 119133 (Finished). Every new row uses an id the seed does not, and the whole
@@ -9,7 +9,7 @@
 -- distinct dates so a kept date is told apart from a new one.
 
 begin;
-select plan(38);
+select plan(41);
 
 set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
 set local role authenticated;
@@ -223,15 +223,22 @@ select ok(
   'an update keeps the stored created_at and the seeded dates, and stamps updated now'
 );
 
--- Identity pin (AC-6). The user_id half is in 030, as the cross user case.
-select lives_ok(
+-- Identity lock (AC-6). The user_id half is in 030, as the cross user case.
+select throws_ok(
   $$update public.user_game_state set game_id = 9999 where game_id = 5207$$,
-  'an update that sends another game id is not an error'
+  'BS003', 'game_identity_locked',
+  'an update that sends another game id is refused'
 );
 select ok(
   exists (select 1 from public.user_game_state where game_id = 5207)
   and not exists (select 1 from public.user_game_state where game_id = 9999),
   'the row keeps its game id'
+);
+select lives_ok(
+  $$update public.user_game_state
+      set user_id = '11111111-1111-1111-1111-111111111111', game_id = 5207, rating = 4
+    where game_id = 5207$$,
+  'an update that sends back the stored owner and game id is allowed'
 );
 
 -- Upsert shapes (AC-8).
@@ -285,15 +292,19 @@ select ok(
 );
 
 update public.user_game_state
-  set game_id = 9998, status = 'want_to_play', rating = null,
+  set status = 'want_to_play', rating = null,
       added_at = '2026-01-02', created_at = '2000-01-01'
   where game_id = 5301;
 select ok(
   (select added_at = '2026-01-02' and started_at = '2026-01-06' and created_at = now()
      and updated_at = now()
-   from public.user_game_state where game_id = 5301)
-  and not exists (select 1 from public.user_game_state where game_id = 9998),
-  'under the escape an update keeps the dates it is given, but not a new identity or created'
+   from public.user_game_state where game_id = 5301),
+  'under the escape an update keeps the dates it is given, but not a new created'
+);
+select throws_ok(
+  $$update public.user_game_state set game_id = 9998 where game_id = 5301$$,
+  'BS003', 'game_identity_locked',
+  'under the escape an update that sends another game id is still refused'
 );
 
 select set_config('bestats.restore_game', 'off', true);
@@ -383,15 +394,19 @@ select ok(
   'a setting of true or ON does not open the escape, so the trigger stamps now'
 );
 
--- The owner pin holds under the escape too (AC-6, AC-7).
+-- The owner lock holds under the escape too (AC-6, AC-7).
 select set_config('bestats.restore_game', 'on', true);
-update public.user_game_state set user_id = '22222222-2222-2222-2222-222222222222'
-  where game_id = 5401;
+select throws_ok(
+  $$update public.user_game_state set user_id = '22222222-2222-2222-2222-222222222222'
+    where game_id = 5401$$,
+  'BS003', 'game_identity_locked',
+  'under the escape an update that sends another owner is refused'
+);
 select set_config('bestats.restore_game', 'off', true);
 select ok(
   exists (select 1 from public.user_game_state
           where game_id = 5401 and user_id = '11111111-1111-1111-1111-111111111111'),
-  'under the escape an update that sends another owner keeps the row with user A'
+  'the row stays with user A'
 );
 
 -- Cascade (AC-11): deleting an account takes its games with it.
