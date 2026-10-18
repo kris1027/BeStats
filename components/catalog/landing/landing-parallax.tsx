@@ -5,8 +5,18 @@ import { useEffect, useRef } from "react";
 
 import { type Lean, REDUCED_MOTION, startMotionLoop } from "@/lib/motion/loop";
 
+/** Tailwind's `md` and `lg`, where the motion starts and the columns change. */
 const WIDE = "(min-width: 48rem)";
+const LARGE = "(min-width: 64rem)";
 const FINE_POINTER = "(pointer: fine)";
+
+/**
+ * How far an Upcoming / On the air row slides per pixel the section moves
+ * (prompts/home-parallax-landing.md, decision 13, amended 2026-10-18).
+ * Neighbouring rows go opposite ways, so they part at twice this; 0.6 made the
+ * cards blur past before they could be read.
+ */
+const MARQUEE_SPEED = 0.25;
 
 /** How far a poster's artwork drifts inside its frame, in pixels. */
 const POSTER_DRIFT = 24;
@@ -62,7 +72,9 @@ function centreAlong(item: HTMLElement, row: HTMLElement): number {
  * - `data-pin` with `data-pin-track` and `data-pin-bar`: the pinned row's
  *   sideways pan and progress bar.
  * - `data-speed`: a vertical drift against the centre of the viewport,
- *   measured from the nearest `data-speed-root` or the parent.
+ *   measured from the nearest `data-speed-root` or the parent. A node whose
+ *   column count changes at `lg` also carries `data-speed-lg`, its speed from
+ *   there (prompts/top-rated-parallax-columns.md, decision 3).
  * - `data-marquee`: a row that slides sideways as it crosses the viewport;
  *   while a card in it has focus, the row holds that card in view instead.
  * - `data-poster-drift`: the artwork drifts inside its frame, through the
@@ -91,6 +103,7 @@ function LandingParallax({
 
     const reduced = window.matchMedia(REDUCED_MOTION);
     const wide = window.matchMedia(WIDE);
+    const large = window.matchMedia(LARGE);
     const finePointer = window.matchMedia(FINE_POINTER);
 
     const all = <T extends Element = HTMLElement>(selector: string) =>
@@ -156,8 +169,11 @@ function LandingParallax({
         const rect = reference.getBoundingClientRect();
         if (!visible(rect)) continue;
         const offset = rect.top + rect.height / 2 - viewport / 2;
+        const speed =
+          (large.matches ? node.dataset.speedLg : undefined) ??
+          node.dataset.speed;
         node.style.transform = `translate3d(0, ${
-          -offset * Number(node.dataset.speed)
+          -offset * Number(speed)
         }px, 0)`;
       }
 
@@ -177,7 +193,7 @@ function LandingParallax({
           : min / 2 +
             Number(row.dataset.marquee) *
               (rect.top + rect.height / 2 - viewport / 2) *
-              0.6;
+              MARQUEE_SPEED;
         row.style.transform = `translate3d(${Math.min(0, Math.max(min, x))}px, 0, 0)`;
       }
 
@@ -246,4 +262,4 @@ function LandingParallax({
   );
 }
 
-export { LandingParallax };
+export { LARGE, LandingParallax, WIDE };

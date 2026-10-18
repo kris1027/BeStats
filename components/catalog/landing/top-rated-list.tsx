@@ -9,18 +9,22 @@ import { LandingBadge, LandingControls } from "./landing-badge";
 import type { LandingItem } from "./landing-items";
 import { headingId, readLandingSection, SectionHeader } from "./landing-parts";
 import {
+  TOP_CARD_CLASS,
   TOP_LIST_CLASS,
-  TOP_POSTER_CLASS,
   TopRatedSkeleton,
+  topColumnSpeeds,
+  topOffsetClass,
 } from "./landing-skeletons";
 
-const POSTER_SIZES = "(min-width: 768px) 140px, 100px";
+const POSTER_SIZES =
+  "(min-width: 1024px) 260px, (min-width: 768px) 330px, 45vw";
 
 /**
- * Top rated (prompts/home-parallax-landing.md): a numbered list of eight,
- * each a poster beside its rating and title, with a large faint rank that
- * drifts behind it from `md`. An ordered list, so the rank is announced
- * without reading the decorative number.
+ * Top rated (prompts/top-rated-parallax-columns.md, superseding the list of
+ * prompts/home-parallax-landing.md): eight tall posters in staggered columns
+ * that drift at their own speeds from `md`, each with a large faint rank
+ * behind it. An ordered list, so the rank is announced without reading the
+ * decorative number.
  */
 function TopRatedList({ list }: { list: CatalogList }) {
   return (
@@ -37,9 +41,10 @@ function TopRatedList({ list }: { list: CatalogList }) {
 }
 
 /**
- * The ranked list, streamed behind `TopRatedSkeleton`. An ordered list, so
- * the rank is announced from the markup and the large numbers can stay
- * decorative. Exported so its states can be tested on their own.
+ * The ranked columns, streamed behind `TopRatedSkeleton`. One ordered list in
+ * rank order laid out as a grid, so reading and tab order run 1 to 8 while
+ * each card carries its column's offset and speed and measures from the grid
+ * (`data-speed-root`). Exported so its states can be tested on their own.
  */
 async function TopRatedItems({ list }: { list: CatalogList }) {
   const section = await readLandingSection(list, LANDING_COUNTS.top);
@@ -47,22 +52,33 @@ async function TopRatedItems({ list }: { list: CatalogList }) {
   const { items, ids } = section;
 
   return (
-    <ol className={TOP_LIST_CLASS}>
-      {items.map((item, index) => (
-        <li key={item.id}>
-          <TopRatedRow item={item} ids={ids} rank={index + 1} />
-        </li>
-      ))}
+    <ol data-speed-root="" className={TOP_LIST_CLASS}>
+      {items.map((item, index) => {
+        const speeds = topColumnSpeeds(index);
+        return (
+          <li key={item.id} className={topOffsetClass(index)}>
+            <div
+              data-speed={speeds.base}
+              data-speed-lg={speeds.lg}
+              suppressHydrationWarning
+            >
+              <TopRatedCard item={item} ids={ids} rank={index + 1} />
+            </div>
+          </li>
+        );
+      })}
     </ol>
   );
 }
 
 /**
- * One entry: the whole row is the title's link, through an overlay under
- * the badge and controls, as on `PosterCard`. Missing artwork gets the same
- * flat tile.
+ * One card: the rank behind the poster's top left, the poster, then the
+ * badge and title beside the bookmark. The whole card is the title's link,
+ * through an overlay under the badge and controls, as on `PosterCard`. The
+ * card is its rank's `data-speed-root`, so the number drifts against its own
+ * poster rather than the grid.
  */
-function TopRatedRow({
+function TopRatedCard({
   item,
   ids,
   rank,
@@ -72,19 +88,19 @@ function TopRatedRow({
   rank: number;
 }) {
   return (
-    <article className="group relative flex items-center gap-5 md:gap-7">
+    <article data-speed-root="" className={`group ${TOP_CARD_CLASS}`}>
       <span
-        data-speed="0.18"
+        data-speed="-0.1"
         suppressHydrationWarning
         aria-hidden="true"
-        className="pointer-events-none absolute -top-10 right-0 text-[96px] leading-none font-extrabold tracking-[-0.06em] text-foreground/6 md:-top-16 md:text-[150px]"
+        className="rank-ghost pointer-events-none absolute top-0 -left-1 text-[88px] leading-[0.8] font-extrabold tracking-[-0.06em] select-none md:-left-2 md:text-[130px] lg:text-[140px]"
       >
         {rank}
       </span>
       <div
         data-poster-drift=""
         suppressHydrationWarning
-        className={`poster-drift relative aspect-2/3 overflow-hidden rounded-lg ${TOP_POSTER_CLASS}`}
+        className="poster-drift poster-lift relative aspect-2/3 overflow-hidden rounded-xl transition-transform duration-300 ease-out motion-safe:group-hover:-translate-y-1.5"
       >
         {item.posterUrl ? (
           <Image
@@ -95,24 +111,28 @@ function TopRatedRow({
             className="object-cover transition-[filter] duration-200 group-hover:brightness-110"
           />
         ) : (
-          <ArtFallback iconClassName="size-6" />
+          <ArtFallback iconClassName="size-8" />
         )}
         <span
           aria-hidden="true"
-          className="rim glass-rim pointer-events-none absolute inset-0 rounded-lg"
+          className="rim glass-rim pointer-events-none absolute inset-0 rounded-xl"
         />
       </div>
-      <div className="flex min-w-0 flex-col items-start gap-2">
-        <div className="relative z-20 flex flex-wrap items-center gap-2">
-          <LandingBadge item={item} ids={ids} />
+      <div className="mt-4 flex items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-col items-start gap-2">
+          <div className="relative z-20">
+            <LandingBadge item={item} ids={ids} />
+          </div>
+          <h3 className="text-base leading-tight font-semibold tracking-[-0.01em] text-pretty text-foreground md:text-[19px]">
+            <Link href={item.href} className="rounded-sm hover:underline">
+              <span className="absolute inset-0 z-10" aria-hidden="true" />
+              {item.title}
+            </Link>
+          </h3>
+        </div>
+        <div className="relative z-20 flex shrink-0 items-center">
           <LandingControls item={item} ids={ids} />
         </div>
-        <h3 className="text-lg leading-tight font-semibold tracking-[-0.01em] text-pretty text-foreground md:text-[22px]">
-          <Link href={item.href} className="rounded-sm hover:underline">
-            <span className="absolute inset-0 z-10" aria-hidden="true" />
-            {item.title}
-          </Link>
-        </h3>
       </div>
     </article>
   );

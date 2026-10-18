@@ -30,10 +30,12 @@ export type LandingItem = {
 };
 
 /**
- * Page 1 of a landing list, read at request time (`connection()` before the
+ * One page of a landing list, read at request time (`connection()` before the
  * read), so the build asks TMDB nothing and passes with no token, as the old
  * rows did (spec 0021, AC-7). Every section asks the same cached call, so the
- * hero and the pinned row share one request.
+ * hero and the pinned row share one request for page 1. `page` exists only
+ * for the Upcoming rows, whose rows 3 and 4 come from page 2
+ * (prompts/home-parallax-landing.md, decision 13, amended 2026-10-18).
  *
  * @returns The page, or null when TMDB failed: the section shows its own
  * Try again and the rest of the landing renders (decision 16). Anything other
@@ -41,10 +43,11 @@ export type LandingItem = {
  */
 export async function readLandingList(
   list: CatalogList,
+  page = 1,
 ): Promise<TaggedCatalogPage | null> {
   await connection();
   try {
-    return await readTaggedCatalogList(list, 1);
+    return await readTaggedCatalogList(list, page);
   } catch (error) {
     if (!(error instanceof TmdbError)) throw error;
     return null;
@@ -98,4 +101,22 @@ export function landingItems(
  */
 export function itemIds(items: readonly LandingItem[]): number[] {
   return items.map((item) => item.id);
+}
+
+/**
+ * Up to `count` titles of `page` that are not already in `seen`, in TMDB's
+ * order. A list such as Upcoming shifts while it is read, so a title can sit
+ * on both pages; skipping it here keeps a section from showing it twice
+ * (decision 13, amended 2026-10-18). The limit applies after the skip, so
+ * repeats never cost the page its share of the rows.
+ */
+export function newLandingItems(
+  page: TaggedCatalogPage,
+  seen: readonly number[],
+  count: number,
+): LandingItem[] {
+  const skip = new Set(seen);
+  return landingItems(page, 0, page.paged.results.length)
+    .filter((item) => !skip.has(item.id))
+    .slice(0, count);
 }

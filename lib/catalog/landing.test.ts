@@ -48,6 +48,8 @@ describe("LANDING_COUNTS (AC-2)", () => {
       popular: 14,
       now: 12,
       upcomingRow: 10,
+      upcomingRows: 4,
+      upcomingRowsPerPage: 2,
       top: 8,
     });
   });

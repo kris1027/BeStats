@@ -377,7 +377,7 @@ describe("the catalog rows and list pages (spec 0021, AC-7, AC-17)", () => {
     );
     expect(source.indexOf("await connection()")).toBeGreaterThan(-1);
     expect(source.indexOf("await connection()")).toBeLessThan(
-      source.indexOf("readTaggedCatalogList(list, 1)"),
+      source.indexOf("readTaggedCatalogList(list, page)"),
     );
   });
 });

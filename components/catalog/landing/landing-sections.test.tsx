@@ -203,9 +203,135 @@ describe("the ranked sections", () => {
       "/movies/8",
     );
   });
+
+  it("staggers Top rated into drifting columns, ranks hidden (prompts/top-rated-parallax-columns.md)", async () => {
+    read.mockResolvedValue(moviePage(movies(8)));
+
+    const { container } = render(await TopRatedItems({ list: MOVIES.top }));
+
+    const list = container.querySelector("ol") as HTMLElement;
+    expect(list).toHaveAttribute("data-speed-root");
+    const items = within(list).getAllByRole("listitem");
+    expect(items.map((item) => item.className.includes("translate-y"))).toEqual(
+      [false, true, false, true, false, true, false, true],
+    );
+    expect(
+      items.map((item) =>
+        item.firstElementChild?.getAttribute("data-speed-lg"),
+      ),
+    ).toEqual(["0", "0.14", "0.04", "0.18", "0", "0.14", "0.04", "0.18"]);
+    const ranks = container.querySelectorAll(".rank-ghost");
+    expect([...ranks].map((rank) => rank.textContent)).toEqual(
+      Array.from({ length: 8 }, (_, index) => String(index + 1)),
+    );
+    for (const rank of ranks) {
+      expect(rank).toHaveAttribute("aria-hidden", "true");
+      expect(rank.closest("[data-speed-root]")?.tagName).toBe("ARTICLE");
+    }
+  });
 });
 
 describe("Upcoming rows (AC-4)", () => {
+  it("fills four rows of ten from pages 1 and 2, alternating direction", async () => {
+    read.mockImplementation(async (_list: unknown, page: number) =>
+      moviePage(
+        page === 1
+          ? movies(20)
+          : movies(20).map((movie) => ({
+              ...movie,
+              id: movie.id + 20,
+              title: `Movie ${movie.id + 20}`,
+            })),
+      ),
+    );
+
+    const { container } = render(
+      await UpcomingItems({ list: MOVIES.upcoming }),
+    );
+
+    expect(read.mock.calls.map((call) => call[1]).sort()).toEqual([1, 2]);
+    const rows = container.querySelectorAll("[data-marquee]");
+    expect([...rows].map((row) => row.getAttribute("data-marquee"))).toEqual([
+      "1",
+      "-1",
+      "1",
+      "-1",
+    ]);
+    rows.forEach((row, index) => {
+      expect(titles(row as HTMLElement)).toEqual(
+        Array.from(
+          { length: 10 },
+          (_, item) => `Movie ${index * 10 + item + 1}`,
+        ),
+      );
+    });
+  });
+
+  it("shows a title TMDB moved onto page 2 only once", async () => {
+    read.mockImplementation(async (_list: unknown, page: number) =>
+      moviePage(
+        page === 1
+          ? movies(20)
+          : [
+              ...movies(20).slice(19),
+              ...movies(5).map((movie) => ({
+                ...movie,
+                id: movie.id + 20,
+                title: `Movie ${movie.id + 20}`,
+              })),
+            ],
+      ),
+    );
+
+    const { container } = render(
+      await UpcomingItems({ list: MOVIES.upcoming }),
+    );
+
+    const rows = container.querySelectorAll("[data-marquee]");
+    expect(rows).toHaveLength(3);
+    expect(titles(rows[2] as HTMLElement)).toEqual(
+      Array.from({ length: 5 }, (_, index) => `Movie ${index + 21}`),
+    );
+  });
+
+  it("keeps page 2 out of rows 1 and 2 when page 1 is short", async () => {
+    read.mockImplementation(async (_list: unknown, page: number) =>
+      moviePage(
+        page === 1
+          ? movies(15)
+          : movies(20).map((movie) => ({
+              ...movie,
+              id: movie.id + 20,
+              title: `Movie ${movie.id + 20}`,
+            })),
+      ),
+    );
+
+    const { container } = render(
+      await UpcomingItems({ list: MOVIES.upcoming }),
+    );
+
+    const rows = [...container.querySelectorAll("[data-marquee]")].map((row) =>
+      titles(row as HTMLElement),
+    );
+    expect(rows.map((row) => row.length)).toEqual([10, 5, 10, 10]);
+    expect(rows[1].at(-1)).toBe("Movie 15");
+    expect(rows[2][0]).toBe("Movie 21");
+  });
+
+  it("keeps rows 1 and 2 when page 2 fails", async () => {
+    read.mockImplementation(async (_list: unknown, page: number) => {
+      if (page === 2) throw new TmdbError("upstream", "/x", "503", 503);
+      return moviePage(movies(20));
+    });
+
+    const { container } = render(
+      await UpcomingItems({ list: MOVIES.upcoming }),
+    );
+
+    expect(container.querySelectorAll("[data-marquee]")).toHaveLength(2);
+  });
+
   it("splits 1 to 10 and 11 to 20 across two rows moving opposite ways", async () => {
     read.mockResolvedValue(moviePage(movies(20)));
 

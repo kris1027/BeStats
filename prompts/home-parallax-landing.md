@@ -61,7 +61,7 @@ This supersedes the landing half of spec 0021 (`docs/specs/0021-home-carousels`)
    - The design's `#071116` becomes the existing page background (film strips).
    - The blob tints become new tokens in `globals.css` only.
    - The star uses `rating-tmdb`.
-8. **Counts (Q8).** Trending 9, Popular 14, Now playing 12, Upcoming 20 (two rows of 10), Top rated 8. All come from page 1 of each list.
+8. **Counts (Q8).** Trending 9, Popular 14, Now playing 12, Upcoming 40 (four rows of 10), Top rated 8. All come from page 1 of each list, except Upcoming, which reads page 2 for rows 3 and 4 (amended 2026-10-18).
 9. **Motion (Q9).** Intensity 1, with mouse parallax and poster parallax on. There is no user setting. `prefers-reduced-motion: reduce` sets every transform to identity, makes Trending a native swipe row, and removes the hero fade.
 10. **Backdrops for wide cards (Q11).** `normalizeMovieSummary` / `normalizeTvSummary` gain `backdropUrl` from the `backdrop_path` TMDB already returns, so there are no new requests. Without a backdrop, the card uses the poster cropped to fill (`object-cover`). With neither, it shows the existing missing-image state.
 11. **Full bleed (Q13).**
@@ -73,7 +73,7 @@ This supersedes the landing half of spec 0021 (`docs/specs/0021-home-carousels`)
     - Upcoming cards show the release date ("Nov 6", formatted in UTC) for movies and the first-air year for shows.
     - The sidebar blurb uses the real rendered count: "{n} films in cinemas this week." / "{n} shows airing today."
     - The "See all" links go to the list pages.
-13. **Upcoming rows (Q15).** Row 1 shows items 1 to 10 and row 2 shows 11 to 20, so no title appears twice. With 10 results or fewer there is one row. Rows move in opposite directions as you scroll (`translateX = base ± offset × 0.6`).
+13. **Upcoming rows (Q15).** Rows 1 and 2 show items 1 to 20 of page 1, rows 3 and 4 the first 20 new titles of page 2 (amended 2026-10-18), so no title appears twice. Each page fills only its own rows: a short page 1 leaves row 2 short rather than pulling page 2 titles up. A list with fewer titles shows fewer rows, and a failed page 2 leaves rows 3 and 4 out. Each row moves the opposite way from the one above as you scroll (`translateX = base ± offset × 0.25`; first shipped at 0.6, slowed on 2026-10-18 because the cards passed too fast to read).
 14. **Keyboard in the pinned track (Q16).**
     - Every card is a normal link in DOM order.
     - On `focusin` inside the pinned track, the window scrolls to the progress that brings the focused card into view: `scrollTo` with `behavior: "instant"` under reduced motion.
