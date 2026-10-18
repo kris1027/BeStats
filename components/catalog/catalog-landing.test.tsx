@@ -1,103 +1,113 @@
 import { render, screen } from "@testing-library/react";
+import type * as React from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { CatalogList } from "@/lib/catalog/lists";
 
 /**
- * covers: spec 0021, AC-1, AC-7
+ * covers: prompts/home-parallax-landing.md, AC-1
  *
- * The two landings through their real route files: the h1, then one row per
- * list in AC-1 order, with only the first row's posters eager. The row is
- * replaced by a stub that prints what it was given; its own header and cards
- * are covered in `carousel-row.test.tsx`.
+ * The two landings through their real route files: a hidden h1, then the
+ * hero and the five sections in order, each given its slot's list. The
+ * sections are replaced by stubs that print what they were given; their own
+ * bodies are covered in `landing/landing-sections.test.tsx` and
+ * `landing/landing-hero.test.tsx`.
  */
-vi.mock("@/components/catalog/carousel-row", () => ({
-  CarouselRow: ({
-    list,
-    eagerCount,
-  }: {
-    list: CatalogList;
-    eagerCount: number;
-  }) => (
-    <section aria-label={list.rowTitle} data-eager={String(eagerCount)}>
-      {list.slug}
-    </section>
+function stub(name: string) {
+  return ({ list, label }: { list: CatalogList; label?: string }) => (
+    <section
+      aria-label={name}
+      data-list={`${list.mediaType}/${list.slug}`}
+      data-label={label}
+    />
+  );
+}
+
+vi.mock("@/components/catalog/landing/landing-parallax", () => ({
+  LandingParallax: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
   ),
+}));
+vi.mock("@/components/catalog/landing/landing-hero", () => ({
+  LandingHero: stub("hero"),
+}));
+vi.mock("@/components/catalog/landing/trending-pin", () => ({
+  TrendingPin: stub("trending"),
+}));
+vi.mock("@/components/catalog/landing/popular-grid", () => ({
+  PopularGrid: stub("popular"),
+}));
+vi.mock("@/components/catalog/landing/now-playing-columns", () => ({
+  NowPlayingColumns: stub("now"),
+}));
+vi.mock("@/components/catalog/landing/upcoming-rows", () => ({
+  UpcomingRows: stub("upcoming"),
+}));
+vi.mock("@/components/catalog/landing/top-rated-list", () => ({
+  TopRatedList: stub("top"),
 }));
 
 const { default: ShowsPage } = await import("@/app/shows/page");
 const { default: MoviesPage } = await import("@/app/movies/page");
 
-function rowTitles() {
+function sections() {
   return screen
     .getAllByRole("region")
-    .map((row) => row.getAttribute("aria-label"));
+    .map(
+      (section) =>
+        `${section.getAttribute("aria-label")}:${section.getAttribute("data-list")}`,
+    );
 }
 
+describe("the movie landing (AC-1)", () => {
+  it("has the h1 Movies for assistive technology only", () => {
+    render(<MoviesPage />);
+
+    const heading = screen.getByRole("heading", { level: 1, name: "Movies" });
+    expect(heading).toHaveClass("sr-only");
+  });
+
+  it("renders the hero and the five sections in order", () => {
+    render(<MoviesPage />);
+
+    expect(sections()).toEqual([
+      "hero:movie/trending",
+      "trending:movie/trending",
+      "popular:movie/popular",
+      "now:movie/now-playing",
+      "upcoming:movie/upcoming",
+      "top:movie/top-rated",
+    ]);
+    expect(screen.getByRole("region", { name: "now" })).toHaveAttribute(
+      "data-label",
+      "In cinemas",
+    );
+  });
+});
+
 describe("the TV landing (AC-1)", () => {
-  it("shows the h1 Shows", () => {
+  it("has the h1 Shows for assistive technology only", () => {
     render(<ShowsPage />);
 
     expect(
       screen.getByRole("heading", { level: 1, name: "Shows" }),
-    ).toBeInTheDocument();
+    ).toHaveClass("sr-only");
   });
 
-  it("shows the five TV rows in order", () => {
+  it("puts Airing today and On the air in the middle slots", () => {
     render(<ShowsPage />);
 
-    expect(rowTitles()).toEqual([
-      "Trending this week",
-      "Popular",
-      "Airing today",
-      "On the air",
-      "Top rated",
+    expect(sections()).toEqual([
+      "hero:tv/trending",
+      "trending:tv/trending",
+      "popular:tv/popular",
+      "now:tv/airing-today",
+      "upcoming:tv/on-the-air",
+      "top:tv/top-rated",
     ]);
-  });
-
-  it("loads 6 posters eagerly on the first row only (AC-7)", () => {
-    render(<ShowsPage />);
-
-    const eager = screen
-      .getAllByRole("region")
-      .map((row) => row.getAttribute("data-eager"));
-    expect(eager).toEqual(["6", "0", "0", "0", "0"]);
-  });
-});
-
-describe("the movie landing (AC-1)", () => {
-  it("shows the h1 Movies", () => {
-    render(<MoviesPage />);
-
-    expect(
-      screen.getByRole("heading", { level: 1, name: "Movies" }),
-    ).toBeInTheDocument();
-  });
-
-  it("shows the five movie rows in order", () => {
-    render(<MoviesPage />);
-
-    expect(rowTitles()).toEqual([
-      "Trending this week",
-      "Popular",
-      "Now playing",
-      "Upcoming",
-      "Top rated",
-    ]);
-  });
-
-  it("loads 6 posters eagerly on the first row only (AC-7)", () => {
-    render(<MoviesPage />);
-
-    const eager = screen
-      .getAllByRole("region")
-      .map((row) => row.getAttribute("data-eager"));
-    expect(eager).toEqual(["6", "0", "0", "0", "0"]);
-  });
-
-  it("has no subtitle under the h1", () => {
-    const { container } = render(<MoviesPage />);
-
-    expect(container.querySelector("p")).toBeNull();
+    expect(screen.getByRole("region", { name: "now" })).toHaveAttribute(
+      "data-label",
+      "On TV today",
+    );
   });
 });

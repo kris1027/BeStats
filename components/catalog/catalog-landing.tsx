@@ -1,34 +1,76 @@
-import { CarouselRow } from "@/components/catalog/carousel-row";
-import type { CatalogList } from "@/lib/catalog/lists";
-
-/** Posters loaded eagerly on a landing: the first 6 cards of row 0 (AC-7). */
-const FIRST_ROW_EAGER = 6;
+import { LandingHero } from "@/components/catalog/landing/landing-hero";
+import { LandingParallax } from "@/components/catalog/landing/landing-parallax";
+import { NowPlayingColumns } from "@/components/catalog/landing/now-playing-columns";
+import { PopularGrid } from "@/components/catalog/landing/popular-grid";
+import { TopRatedList } from "@/components/catalog/landing/top-rated-list";
+import { TrendingPin } from "@/components/catalog/landing/trending-pin";
+import { UpcomingRows } from "@/components/catalog/landing/upcoming-rows";
+import { landingSlots } from "@/lib/catalog/landing";
+import type { MediaType } from "@/lib/catalog/media-type";
 
 /**
- * A catalog landing, `/shows` or `/movies` (spec 0021, AC-1): the h1, then one
- * carousel row per list in registry order. The h1 and every row header are
- * prerendered; each row's cards stream on their own.
+ * A catalog landing, `/shows` or `/movies` (prompts/home-parallax-landing.md,
+ * superseding the rows of spec 0021): the hero, then Trending, Popular, Now
+ * playing (Airing today), Upcoming (On the air) and Top rated, each with its
+ * own layout and motion.
+ *
+ * The h1 is for the outline and assistive technology only; the hero's title
+ * is the visible headline. Every heading, label and See all link is in the
+ * prerendered shell, and each section's titles stream in their own Suspense
+ * boundary, so a slow or failing list holds up nothing else (decision 16).
  */
 function CatalogLanding({
   heading,
-  lists,
+  mediaType,
 }: {
   heading: string;
-  lists: readonly CatalogList[];
+  mediaType: MediaType;
 }) {
+  const slots = landingSlots(mediaType);
+
   return (
-    <div className="flex flex-col gap-8">
-      <h1 className="text-3xl leading-tight font-bold tracking-[-0.03em] text-foreground md:text-4xl">
-        {heading}
-      </h1>
-      <div className="flex flex-col gap-10">
-        {lists.map((list, index) => (
-          <CarouselRow
-            key={list.slug}
-            list={list}
-            eagerCount={index === 0 ? FIRST_ROW_EAGER : 0}
-          />
-        ))}
+    <LandingParallax className="relative flex flex-col">
+      <LandingBlobs />
+      <h1 className="sr-only">{heading}</h1>
+      <LandingHero list={slots.trending} />
+      <TrendingPin list={slots.trending} />
+      <PopularGrid list={slots.popular} />
+      <NowPlayingColumns list={slots.now} label={slots.nowLabel} />
+      <UpcomingRows list={slots.upcoming} />
+      <TopRatedList list={slots.top} />
+    </LandingParallax>
+  );
+}
+
+/**
+ * Soft lights behind the landing that drift at two depths with the scroll
+ * and the mouse (decision 7). Fixed above the page background and below the
+ * content, decorative, and never in the way of a click. Their tints are the
+ * background's own (`landing-blob`, `landing-orb` in `globals.css`).
+ */
+function LandingBlobs() {
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none fixed inset-0 -z-1 overflow-hidden"
+    >
+      <div
+        data-depth="0.12"
+        suppressHydrationWarning
+        className="absolute inset-0"
+      >
+        <div className="landing-blob absolute top-[120vh] left-[70%] size-80" />
+        <div className="landing-blob absolute top-[220vh] left-[6%] size-105" />
+        <div className="landing-blob absolute top-[420vh] left-[55%] size-95" />
+      </div>
+      <div
+        data-depth="0.35"
+        suppressHydrationWarning
+        className="absolute inset-0"
+      >
+        <div className="landing-orb absolute top-[150vh] left-[88%] size-17.5" />
+        <div className="landing-orb absolute top-[300vh] left-[12%] size-11.5" />
+        <div className="landing-orb absolute top-[520vh] left-[80%] size-22.5" />
       </div>
     </div>
   );

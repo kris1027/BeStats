@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
 import { CatalogLanding } from "@/components/catalog/catalog-landing";
-import { catalogListsFor } from "@/lib/catalog/lists";
 import { landingMetadata } from "@/lib/seo/metadata";
 
 /**
@@ -22,5 +21,5 @@ export const metadata: Metadata = landingMetadata({
  * their own Suspense boundaries (`components/catalog/list-cards.tsx`).
  */
 export default function ShowsPage() {
-  return <CatalogLanding heading="Shows" lists={catalogListsFor("tv")} />;
+  return <CatalogLanding heading="Shows" mediaType="tv" />;
 }

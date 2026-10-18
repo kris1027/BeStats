@@ -10,6 +10,12 @@ import {
   ROW_POSTER_SIZES,
 } from "@/components/catalog/carousel-row-states";
 import { CarouselScroller } from "@/components/catalog/carousel-scroller";
+import {
+  PopularSkeleton,
+  TopRatedSkeleton,
+  TrendingSkeleton,
+  UpcomingSkeleton,
+} from "@/components/catalog/landing/landing-skeletons";
 import { GlassPill } from "@/components/glass-pill";
 import { IconKey } from "@/components/layout/icon-key";
 import { LibraryNavView } from "@/components/layout/library-nav";
@@ -410,7 +416,7 @@ export default function ShowcasePage() {
 
       <Section
         title="Carousel row"
-        note="A landing row (spec 0021): the header and arrows are prerendered, the cards stream behind 12 skeletons, and a failed or empty list keeps a card's height so nothing shifts. The arrows show from md and are disabled at each end."
+        note="A title page row (Cast, More like this): the header and arrows are prerendered, the cards stream behind skeletons, and a failed or empty list keeps a card's height so nothing shifts. The arrows show from md and are disabled at each end. The landing sections reuse the error and empty lines."
       >
         <div className="flex flex-col gap-10">
           <ShowcaseRow title="With cards">
@@ -438,6 +444,20 @@ export default function ShowcasePage() {
           <ShowcaseRow title="Empty">
             <CarouselRowEmpty />
           </ShowcaseRow>
+        </div>
+      </Section>
+
+      <Section
+        title="Landing sections"
+        note="The /movies and /shows landing (prompts/home-parallax-landing.md): each section's loading shape, as it streams. The motion lives in LandingParallax and never runs here."
+      >
+        <div className="flex flex-col gap-10">
+          <div className="-mx-4 overflow-x-auto px-4">
+            <TrendingSkeleton />
+          </div>
+          <PopularSkeleton />
+          <UpcomingSkeleton />
+          <TopRatedSkeleton />
         </div>
       </Section>
 
