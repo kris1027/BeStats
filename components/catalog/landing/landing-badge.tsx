@@ -54,14 +54,17 @@ function LandingBadge({
  * cards have. Its own Suspense with no fallback, so the artwork never waits
  * on the session, and the same `ids` as the badge, so both share one read.
  * A visitor gets nothing, as everywhere else. The return path is the landing
- * the card sits on.
+ * the card sits on. `releasePill` is false on a card that already prints a
+ * movie's date (prompts/landing-review-fixes.md, decision 3).
  */
 function LandingControls({
   item,
   ids,
+  releasePill = true,
 }: {
   item: LandingItem;
   ids: readonly number[];
+  releasePill?: boolean;
 }) {
   return (
     <Suspense fallback={null}>
@@ -79,6 +82,7 @@ function LandingControls({
           releaseDate={item.releaseDate}
           gridMovieIds={ids}
           returnPath={CATALOG_PATHS.movie}
+          releasePill={releasePill}
         />
       )}
     </Suspense>

@@ -39,7 +39,7 @@ None beyond the repo docs: no schema, cache or route change.
 
 - AC-1: Signed in, every card in Trending, Popular, Now playing, Upcoming and Top rated shows the bookmark; a planned movie or tracked show shows it filled.
 - AC-2: Pressing it plans / tracks (or removes, with the existing Undo) and the card updates, as on the list pages.
-- AC-3: Upcoming titles show their date pill; a watched movie shows the watched mark instead of the bookmark.
+- AC-3: Upcoming titles show their date pill; a watched movie shows the watched mark instead of the bookmark. (Amended by prompts/landing-review-fixes.md, decision 3: a wide Upcoming card prints the movie's date at its bottom already, so its controls leave the pill out.)
 - AC-4: Signed out, no controls appear (unchanged behaviour of the slots); the cards still link to their pages.
 - AC-5: Clicking anywhere on a card outside the controls still opens the title page.
 - AC-6: The controls never delay the posters (own Suspense, `null` fallback), and the landing still prerenders its shell.

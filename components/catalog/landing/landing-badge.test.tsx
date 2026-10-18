@@ -62,6 +62,7 @@ describe("LandingControls", () => {
       releaseDate: "2026-11-06",
       gridMovieIds: [1, 2],
       returnPath: "/movies",
+      releasePill: true,
     });
   });
 

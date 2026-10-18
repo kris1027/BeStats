@@ -32,11 +32,17 @@ vi.mock("./landing-badge", () => ({
   LandingControls: ({
     item,
     ids,
+    releasePill = true,
   }: {
     item: { id: number; mediaType: string };
     ids: readonly number[];
+    releasePill?: boolean;
   }) => (
-    <span data-testid="controls" data-ids={ids.join(",")}>
+    <span
+      data-testid="controls"
+      data-ids={ids.join(",")}
+      data-release-pill={String(releasePill)}
+    >
       {item.mediaType}:{item.id}
     </span>
   ),
@@ -242,6 +248,16 @@ describe("Upcoming rows (AC-4)", () => {
 
     expect(screen.getByText("Nov 6")).toBeInTheDocument();
     expect(screen.getByText("Jan 8, 2027")).toBeInTheDocument();
+  });
+
+  it("leaves the controls' release pill out, since the card prints the date", async () => {
+    read.mockResolvedValue(moviePage(movies(2)));
+
+    render(await UpcomingItems({ list: MOVIES.upcoming }));
+
+    for (const controls of screen.getAllByTestId("controls")) {
+      expect(controls).toHaveAttribute("data-release-pill", "false");
+    }
   });
 
   it("labels a show with its first air year", async () => {

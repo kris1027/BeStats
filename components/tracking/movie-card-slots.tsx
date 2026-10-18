@@ -76,12 +76,20 @@ async function MovieCardBadge({
  *
  * @param title The TMDB title, for the accessible names.
  * @param returnPath The grid page, for the session expired toast.
+ * @param releasePill False on a card that already prints the release date
+ *   for everyone, so the date is not shown twice
+ *   (prompts/landing-review-fixes.md, decision 3).
  */
 async function MovieCardControls({
   title,
   returnPath,
+  releasePill = true,
   ...props
-}: MovieCardProps & { title: string; returnPath: string }) {
+}: MovieCardProps & {
+  title: string;
+  returnPath: string;
+  releasePill?: boolean;
+}) {
   const read = await readStatus(props);
   if (read === undefined) return null;
   const { state, status } = read;
@@ -98,7 +106,7 @@ async function MovieCardControls({
 
   return (
     <>
-      {status?.page === "upcoming" && (
+      {releasePill && status?.page === "upcoming" && (
         <ReleasePill
           release={formatReleaseDate(status.releaseDate, requestTodayUtc())}
         />
