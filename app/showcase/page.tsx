@@ -10,11 +10,15 @@ import {
   ROW_POSTER_SIZES,
 } from "@/components/catalog/carousel-row-states";
 import { CarouselScroller } from "@/components/catalog/carousel-scroller";
+import { ArtFallback } from "@/components/catalog/landing/art-fallback";
 import {
+  LandingHeroSkeleton,
+  NowSkeleton,
   PopularSkeleton,
   TopRatedSkeleton,
   TrendingSkeleton,
   UpcomingSkeleton,
+  WIDE_CARD_CLASS,
 } from "@/components/catalog/landing/landing-skeletons";
 import { GlassPill } from "@/components/glass-pill";
 import { IconKey } from "@/components/layout/icon-key";
@@ -107,6 +111,24 @@ function Section({
 }
 
 /** A carousel row as a landing renders it, around fixed demo content. */
+/** A landing state demo under its own small heading. */
+function ShowcaseLanding({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-4">
+      <h3 className="text-xl font-semibold tracking-[-0.02em] text-foreground md:text-2xl">
+        {title}
+      </h3>
+      {children}
+    </div>
+  );
+}
+
 function ShowcaseRow({
   title,
   children,
@@ -449,15 +471,45 @@ export default function ShowcasePage() {
 
       <Section
         title="Landing sections"
-        note="The /movies and /shows landing (prompts/home-parallax-landing.md): each section's loading shape, as it streams. The motion lives in LandingParallax and never runs here."
+        note="The /movies and /shows landing (prompts/home-parallax-landing.md): each section's loading shape as it streams, a failed and an empty section, and the missing artwork tile of the hero and a wide card. A failed trending read shows no hero, only the Trending row's error. The motion lives in LandingParallax and never runs here."
       >
         <div className="flex flex-col gap-10">
+          {/*
+           * The hero pulls up behind the navbar by main's padding plus the
+           * bar's height; the padding here gives that pull room in place.
+           */}
+          <div className="relative overflow-hidden pt-[calc(2rem+var(--navbar-height))] md:pt-[calc(3rem+var(--navbar-height))]">
+            <LandingHeroSkeleton />
+          </div>
           <div className="-mx-4 overflow-x-auto px-4">
             <TrendingSkeleton />
           </div>
           <PopularSkeleton />
+          <NowSkeleton />
           <UpcomingSkeleton />
           <TopRatedSkeleton />
+          <ShowcaseLanding title="A failed section">
+            <CarouselRowError list={catalogList("movie", "trending")} />
+          </ShowcaseLanding>
+          <ShowcaseLanding title="An empty section">
+            <CarouselRowEmpty />
+          </ShowcaseLanding>
+          <ShowcaseLanding title="Missing artwork">
+            <div className="flex flex-wrap items-start gap-4">
+              <div className="relative aspect-video w-full max-w-md overflow-hidden rounded-lg">
+                <ArtFallback iconClassName="size-10" />
+              </div>
+              <div
+                className={`relative overflow-hidden rounded-lg ${WIDE_CARD_CLASS}`}
+              >
+                <ArtFallback />
+                <span
+                  aria-hidden="true"
+                  className="rim glass-rim pointer-events-none absolute inset-0 rounded-lg"
+                />
+              </div>
+            </div>
+          </ShowcaseLanding>
         </div>
       </Section>
 
