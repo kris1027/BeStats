@@ -152,7 +152,8 @@ function WideCard({
       <div className="plate-solid absolute top-2.5 right-2.5 z-20 rounded-full backdrop-blur-glass">
         <LandingBadge item={item} ids={ids} />
       </div>
-      <div className="plate-solid pointer-events-none absolute top-2.5 left-2.5 z-20 flex items-center gap-2 *:pointer-events-auto">
+      {/* `empty:hidden`: a visitor's controls render nothing, so no plate. */}
+      <div className="plate-solid pointer-events-none absolute top-2.5 left-2.5 z-20 flex items-center gap-2 empty:hidden *:pointer-events-auto">
         <LandingControls item={item} ids={ids} releasePill={false} />
       </div>
       <div className="absolute inset-x-4 bottom-3.5 flex items-end justify-between gap-3">
