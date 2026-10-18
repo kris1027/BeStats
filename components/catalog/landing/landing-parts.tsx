@@ -3,11 +3,20 @@ import { ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
 import type * as React from "react";
 
+import {
+  CarouselRowEmpty,
+  CarouselRowError,
+} from "@/components/catalog/carousel-row-states";
 import { PosterCard } from "@/components/poster-card";
 import { type CatalogList, listPath } from "@/lib/catalog/lists";
 
 import { LandingBadge, LandingControls } from "./landing-badge";
-import type { LandingItem } from "./landing-items";
+import {
+  itemIds,
+  type LandingItem,
+  landingItems,
+  readLandingList,
+} from "./landing-items";
 
 /** A landing section's h2, larger than a row title (the design's 32 to 56px). */
 const SECTION_HEADING_CLASS =
@@ -64,6 +73,33 @@ function SectionHeader({
   );
 }
 
+/** A section's titles and their ids, or the state it shows instead. */
+type LandingSection =
+  | { kind: "items"; items: LandingItem[]; ids: number[] }
+  | { kind: "state"; state: React.ReactElement };
+
+/**
+ * The first `count` titles of a section's list, read the one way every
+ * section reads it: a failed read is the row's Try again and an empty list
+ * its empty line, both inside the section so the rest of the landing still
+ * renders (decision 16). `ids` is the whole section, so its badges and
+ * controls share one session read. Kept in one place so the five sections
+ * cannot drift apart on those states (prompts/landing-review-fixes.md,
+ * decision 5).
+ */
+async function readLandingSection(
+  list: CatalogList,
+  count: number,
+): Promise<LandingSection> {
+  const page = await readLandingList(list);
+  if (page === null) {
+    return { kind: "state", state: <CarouselRowError list={list} /> };
+  }
+  const items = landingItems(page, 0, count);
+  if (items.length === 0) return { kind: "state", state: <CarouselRowEmpty /> };
+  return { kind: "items", items, ids: itemIds(items) };
+}
+
 /**
  * A landing poster: the shared `PosterCard` with the section's badge and the
  * card controls (decision 5, amended by prompts/landing-card-controls.md).
@@ -104,6 +140,7 @@ function LandingPoster({
 export {
   headingId,
   LandingPoster,
+  readLandingSection,
   SECTION_HEADING_CLASS,
   SECTION_LABEL_CLASS,
   SectionHeader,

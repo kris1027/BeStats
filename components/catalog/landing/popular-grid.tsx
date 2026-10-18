@@ -1,13 +1,13 @@
 import { Suspense } from "react";
 
-import {
-  CarouselRowEmpty,
-  CarouselRowError,
-} from "@/components/catalog/carousel-row-states";
 import { LANDING_COUNTS } from "@/lib/catalog/landing";
 import type { CatalogList } from "@/lib/catalog/lists";
-import { itemIds, landingItems, readLandingList } from "./landing-items";
-import { headingId, LandingPoster, SectionHeader } from "./landing-parts";
+import {
+  headingId,
+  LandingPoster,
+  readLandingSection,
+  SectionHeader,
+} from "./landing-parts";
 import {
   POPULAR_GRID_CLASS,
   POPULAR_OFFSETS,
@@ -39,11 +39,9 @@ function PopularGrid({ list }: { list: CatalogList }) {
 }
 
 async function PopularItems({ list }: { list: CatalogList }) {
-  const page = await readLandingList(list);
-  if (page === null) return <CarouselRowError list={list} />;
-  const items = landingItems(page, 0, LANDING_COUNTS.popular);
-  if (items.length === 0) return <CarouselRowEmpty />;
-  const ids = itemIds(items);
+  const section = await readLandingSection(list, LANDING_COUNTS.popular);
+  if (section.kind === "state") return section.state;
+  const { items, ids } = section;
 
   return (
     <ul className={POPULAR_GRID_CLASS}>

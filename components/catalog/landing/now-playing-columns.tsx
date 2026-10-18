@@ -1,16 +1,13 @@
 import { Suspense } from "react";
 
-import {
-  CarouselRowEmpty,
-  CarouselRowError,
-} from "@/components/catalog/carousel-row-states";
 import { Skeleton } from "@/components/skeleton";
 import { LANDING_COUNTS, nowBlurb } from "@/lib/catalog/landing";
 import type { CatalogList } from "@/lib/catalog/lists";
-import { itemIds, landingItems, readLandingList } from "./landing-items";
+import { landingItems, readLandingList } from "./landing-items";
 import {
   headingId,
   LandingPoster,
+  readLandingSection,
   SECTION_HEADING_CLASS,
   SECTION_LABEL_CLASS,
   SeeAllLink,
@@ -79,11 +76,9 @@ async function NowBlurb({ list }: { list: CatalogList }) {
 }
 
 async function NowItems({ list }: { list: CatalogList }) {
-  const page = await readLandingList(list);
-  if (page === null) return <CarouselRowError list={list} />;
-  const items = landingItems(page, 0, LANDING_COUNTS.now);
-  if (items.length === 0) return <CarouselRowEmpty />;
-  const ids = itemIds(items);
+  const section = await readLandingSection(list, LANDING_COUNTS.now);
+  if (section.kind === "state") return section.state;
+  const { items, ids } = section;
 
   return (
     <ul data-speed-root="" className={NOW_GRID_CLASS}>

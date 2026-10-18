@@ -1,15 +1,11 @@
 import { Suspense } from "react";
 
-import {
-  CarouselRowEmpty,
-  CarouselRowError,
-} from "@/components/catalog/carousel-row-states";
 import { LANDING_COUNTS } from "@/lib/catalog/landing";
 import type { CatalogList } from "@/lib/catalog/lists";
-import { itemIds, landingItems, readLandingList } from "./landing-items";
 import {
   headingId,
   LandingPoster,
+  readLandingSection,
   SECTION_LABEL_CLASS,
   SectionHeader,
   SeeAllLink,
@@ -82,11 +78,9 @@ function TrendingPin({ list }: { list: CatalogList }) {
 
 /** The ranked cards, or the row's error or empty line (decision 16). */
 async function TrendingItems({ list }: { list: CatalogList }) {
-  const page = await readLandingList(list);
-  if (page === null) return <CarouselRowError list={list} />;
-  const items = landingItems(page, 0, LANDING_COUNTS.trending);
-  if (items.length === 0) return <CarouselRowEmpty />;
-  const ids = itemIds(items);
+  const section = await readLandingSection(list, LANDING_COUNTS.trending);
+  if (section.kind === "state") return section.state;
+  const { items, ids } = section;
 
   return (
     <ol

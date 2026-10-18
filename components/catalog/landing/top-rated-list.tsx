@@ -3,20 +3,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 
-import {
-  CarouselRowEmpty,
-  CarouselRowError,
-} from "@/components/catalog/carousel-row-states";
 import { LANDING_COUNTS } from "@/lib/catalog/landing";
 import type { CatalogList } from "@/lib/catalog/lists";
 import { LandingBadge, LandingControls } from "./landing-badge";
-import {
-  itemIds,
-  type LandingItem,
-  landingItems,
-  readLandingList,
-} from "./landing-items";
-import { headingId, SectionHeader } from "./landing-parts";
+import type { LandingItem } from "./landing-items";
+import { headingId, readLandingSection, SectionHeader } from "./landing-parts";
 import {
   TOP_LIST_CLASS,
   TOP_POSTER_CLASS,
@@ -46,11 +37,9 @@ function TopRatedList({ list }: { list: CatalogList }) {
 }
 
 async function TopRatedItems({ list }: { list: CatalogList }) {
-  const page = await readLandingList(list);
-  if (page === null) return <CarouselRowError list={list} />;
-  const items = landingItems(page, 0, LANDING_COUNTS.top);
-  if (items.length === 0) return <CarouselRowEmpty />;
-  const ids = itemIds(items);
+  const section = await readLandingSection(list, LANDING_COUNTS.top);
+  if (section.kind === "state") return section.state;
+  const { items, ids } = section;
 
   return (
     <ol className={TOP_LIST_CLASS}>

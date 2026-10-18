@@ -3,22 +3,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 
-import {
-  CarouselRowEmpty,
-  CarouselRowError,
-} from "@/components/catalog/carousel-row-states";
 import { LANDING_COUNTS } from "@/lib/catalog/landing";
 import type { CatalogList } from "@/lib/catalog/lists";
 import { formatShortDate } from "@/lib/format";
 import { requestTodayUtc } from "@/lib/tracking/episode-state";
 import { LandingBadge, LandingControls } from "./landing-badge";
-import {
-  itemIds,
-  type LandingItem,
-  landingItems,
-  readLandingList,
-} from "./landing-items";
-import { headingId, SectionHeader } from "./landing-parts";
+import type { LandingItem } from "./landing-items";
+import { headingId, readLandingSection, SectionHeader } from "./landing-parts";
 import { UpcomingSkeleton, WIDE_CARD_CLASS } from "./landing-skeletons";
 
 const CARD_SIZES = "(min-width: 768px) 340px, 260px";
@@ -53,16 +44,13 @@ function UpcomingRows({ list }: { list: CatalogList }) {
 }
 
 async function UpcomingItems({ list }: { list: CatalogList }) {
-  const page = await readLandingList(list);
-  if (page === null) return <CarouselRowError list={list} />;
   const size = LANDING_COUNTS.upcomingRow;
-  const rows = [
-    landingItems(page, 0, size),
-    landingItems(page, size, 2 * size),
-  ];
-  const filled = rows.filter((row) => row.length > 0);
-  if (filled.length === 0) return <CarouselRowEmpty />;
-  const ids = itemIds(filled.flat());
+  const section = await readLandingSection(list, 2 * size);
+  if (section.kind === "state") return section.state;
+  const { items, ids } = section;
+  const filled = [items.slice(0, size), items.slice(size)].filter(
+    (row) => row.length > 0,
+  );
   const today = requestTodayUtc();
 
   return (
