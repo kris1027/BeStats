@@ -9,6 +9,13 @@ const WIDE = "(min-width: 48rem)";
 const LARGE = "(min-width: 64rem)";
 const FINE_POINTER = "(pointer: fine)";
 
+/**
+ * How far an Upcoming / On the air row slides per pixel the section moves.
+ * Neighbouring rows go opposite ways, so they part at twice this; 0.6 made the
+ * cards blur past before they could be read.
+ */
+const MARQUEE_SPEED = 0.25;
+
 /** How far a poster's artwork drifts inside its frame, in pixels. */
 const POSTER_DRIFT = 24;
 
@@ -184,7 +191,7 @@ function LandingParallax({
           : min / 2 +
             Number(row.dataset.marquee) *
               (rect.top + rect.height / 2 - viewport / 2) *
-              0.6;
+              MARQUEE_SPEED;
         row.style.transform = `translate3d(${Math.min(0, Math.max(min, x))}px, 0, 0)`;
       }
 
