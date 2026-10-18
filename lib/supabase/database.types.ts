@@ -69,6 +69,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_game_state: {
+        Row: {
+          added_at: string
+          created_at: string
+          finished_at: string | null
+          game_id: number
+          rating: number | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["game_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          created_at?: string
+          finished_at?: string | null
+          game_id: number
+          rating?: number | null
+          started_at?: string | null
+          status: Database["public"]["Enums"]["game_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          created_at?: string
+          finished_at?: string | null
+          game_id?: number
+          rating?: number | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["game_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_movie_state: {
         Row: {
           created_at: string
@@ -300,7 +336,7 @@ export type Database = {
       username_available: { Args: { p_username: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      game_status: "want_to_play" | "playing" | "finished"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -427,7 +463,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      game_status: ["want_to_play", "playing", "finished"],
+    },
   },
 } as const
 

@@ -31,11 +31,14 @@ alter table public.user_episode_state enable row level security;
 alter table public.user_episode_state force row level security;
 alter table public.profiles enable row level security;
 alter table public.profiles force row level security;
+alter table public.user_game_state enable row level security;
+alter table public.user_game_state force row level security;
 
 revoke all on table public.user_movie_state from anon, public;
 revoke all on table public.user_show_state from anon, public;
 revoke all on table public.user_episode_state from anon, public;
 revoke all on table public.profiles from anon, public;
+revoke all on table public.user_game_state from anon, public;
 
 -- `authenticated` is revoked from as well, then granted back only the four
 -- commands. The same default privileges that reach `anon` also hand
@@ -46,10 +49,12 @@ revoke all on table public.user_movie_state from authenticated;
 revoke all on table public.user_show_state from authenticated;
 revoke all on table public.user_episode_state from authenticated;
 revoke all on table public.profiles from authenticated;
+revoke all on table public.user_game_state from authenticated;
 
 grant select, insert, update, delete on table public.user_movie_state to authenticated;
 grant select, insert, update, delete on table public.user_show_state to authenticated;
 grant select, insert, update, delete on table public.user_episode_state to authenticated;
+grant select, insert, update, delete on table public.user_game_state to authenticated;
 
 -- No delete on `profiles`, deliberately (prompts/account-username.md).
 -- Deleting the row and inserting it again would restart the weekly lock, so
@@ -151,6 +156,29 @@ create policy "Users delete their own profile"
   to authenticated
   using ((select auth.uid()) = user_id);
 
+-- user_game_state (spec 0024)
+
+create policy "Users select their own game state"
+  on public.user_game_state for select
+  to authenticated
+  using ((select auth.uid()) = user_id);
+
+create policy "Users insert their own game state"
+  on public.user_game_state for insert
+  to authenticated
+  with check ((select auth.uid()) = user_id);
+
+create policy "Users update their own game state"
+  on public.user_game_state for update
+  to authenticated
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
+
+create policy "Users delete their own game state"
+  on public.user_game_state for delete
+  to authenticated
+  using ((select auth.uid()) = user_id);
+
 -- Every trigger function: Postgres grants EXECUTE to PUBLIC on every new
 -- function, so narrow them here too. They return `trigger`, which Postgres
 -- refuses to call directly, so this is tidiness rather than a live hole.
@@ -158,6 +186,7 @@ revoke all on function public.set_updated_at() from public, anon, authenticated;
 revoke all on function public.set_watchlisted_at() from public, anon, authenticated;
 revoke all on function public.set_tracked_at() from public, anon, authenticated;
 revoke all on function public.guard_username_change() from public, anon, authenticated;
+revoke all on function public.set_game_timestamps() from public, anon, authenticated;
 
 -- Caveat worth knowing before you edit this file. The declarative diff engine
 -- does not track grants that come from Supabase's default privileges, so the

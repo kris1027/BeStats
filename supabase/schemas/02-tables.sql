@@ -141,3 +141,50 @@ create table public.profiles (
 -- the index `username_available` reads.
 create unique index profiles_username_lower_key
   on public.profiles (lower(username));
+
+-- A game's place in a person's list (spec 0024, AGENTS.md "Games"). Set by
+-- hand, any status to any other in one click; nothing is derived from
+-- progress, so there is no Dropped, Paused or computed status.
+create type public.game_status as enum ('want_to_play', 'playing', 'finished');
+
+-- One row per person per IGDB game (spec 0024): the game is in the list while
+-- the row exists, and removing it deletes the row. A game id lives only here,
+-- so an IGDB id can never collide with a TMDB id (AGENTS.md section 8,
+-- "Catalog identity"), and no IGDB metadata is stored, the same rule as TMDB.
+--
+-- The checks hold the games rules whatever a client sends: a score only on
+-- Playing or Finished, and the date each of those needs. Nothing clears a
+-- score silently, so the write that moves a game back to Want to play nulls it
+-- in the same statement. The five dates belong to `set_game_timestamps` in
+-- `03-triggers.sql`, so no client can choose them.
+create table public.user_game_state (
+  user_id uuid not null references auth.users (id) on delete cascade,
+  game_id integer not null,
+  status public.game_status not null,
+  rating smallint,
+  -- When the game last became Want to play (or was added), the Want to play
+  -- order. Started is the first time it became Playing, finished the latest
+  -- time it became Finished, each its own tab's order.
+  added_at timestamptz not null default now(),
+  started_at timestamptz,
+  finished_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint user_game_state_pkey primary key (user_id, game_id),
+  constraint user_game_state_game_id_check check (game_id > 0),
+  constraint user_game_state_rating_check check (rating between 1 and 10),
+  -- A score only on a game being played or finished (AGENTS.md "Games").
+  constraint user_game_state_rating_needs_status_check
+    check (rating is null or status in ('playing', 'finished')),
+  -- Each of those has the date its tab sorts by. No order between the two: a
+  -- game set straight to Finished and replayed later starts after its finish.
+  constraint user_game_state_playing_started_check
+    check (status <> 'playing' or started_at is not null),
+  constraint user_game_state_finished_at_check
+    check (status <> 'finished' or finished_at is not null)
+);
+
+-- No index beyond the primary key, on purpose (spec 0024, AC-12). A tab holds
+-- at most 500 games per person, which the key's `user_id` prefix scan and an
+-- in memory sort serve. G5 adds a partial index only if `EXPLAIN` on real data
+-- shows it needs one.

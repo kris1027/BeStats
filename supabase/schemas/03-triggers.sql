@@ -125,6 +125,80 @@ begin
 end;
 $$;
 
+-- Owns every date on `user_game_state` and locks its identity (spec 0024,
+-- AC-4 to AC-7). An insert stamps `created_at` and `updated_at`; an update
+-- keeps `created_at` and refuses any change to `user_id` or `game_id` with
+-- `BS003`, so a row never moves to another person or game, whichever write
+-- path is used, and a client that tries sees a failed write rather than a
+-- false success (AGENTS.md section 11). `updated_at` on update is
+-- `set_updated_at`'s.
+--
+-- The three list dates follow the status, whatever the client sent: added is
+-- now on insert and on a move back to Want to play, started is the first time
+-- the game becomes Playing, and finished is the latest time it becomes
+-- Finished. Every other write keeps the stored value, so a score change or a
+-- repeated save moves nothing.
+--
+-- The one exception is Undo. G4's restore function sets the transaction local
+-- `bestats.restore_game` to `on`, and only then are the three list dates kept
+-- as given, so a game returns exactly as it was. The identity lock and the
+-- checks still apply. PostgREST gives a client no way to set a custom
+-- setting, and no other write path may set it.
+--
+-- On an upsert that hits an existing row, the insert branch runs first on the
+-- proposed row and the update branch then decides, as in `set_watchlisted_at`.
+create or replace function public.set_game_timestamps()
+returns trigger
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+begin
+  if tg_op = 'INSERT' then
+    new.created_at := now();
+    new.updated_at := now();
+  else
+    -- `BS003` is the app's own code, like `BS001` and `BS002`, so a caller
+    -- can recognise it without reading the message.
+    if new.user_id is distinct from old.user_id
+       or new.game_id is distinct from old.game_id then
+      raise exception 'game_identity_locked' using errcode = 'BS003';
+    end if;
+    new.created_at := old.created_at;
+  end if;
+
+  if coalesce(current_setting('bestats.restore_game', true), '') = 'on' then
+    return new;
+  end if;
+
+  if tg_op = 'INSERT' then
+    new.added_at := now();
+    new.started_at := case when new.status = 'playing' then now() end;
+    new.finished_at := case when new.status = 'finished' then now() end;
+    return new;
+  end if;
+
+  new.added_at := old.added_at;
+  new.started_at := old.started_at;
+  new.finished_at := old.finished_at;
+
+  -- No `else` on purpose: a status added to `game_status` later raises
+  -- `CASE_NOT_FOUND` here until its dates are decided, rather than moving none.
+  if new.status is distinct from old.status then
+    case new.status
+      when 'want_to_play' then
+        new.added_at := now();
+      when 'playing' then
+        new.started_at := coalesce(old.started_at, now());
+      when 'finished' then
+        new.finished_at := now();
+    end case;
+  end if;
+
+  return new;
+end;
+$$;
+
 -- Triggers on one table fire in name order. This one does not read
 -- `updated_at`, so its place beside `user_movie_state_set_updated_at` does not
 -- matter.
@@ -154,4 +228,16 @@ create trigger profiles_guard_username_change
 
 create trigger profiles_set_updated_at
   before update on public.profiles
+  for each row execute function public.set_updated_at();
+
+-- Triggers on one table fire in name order: `user_game_state_set_timestamps`
+-- sorts before `user_game_state_set_updated_at`, so on update the dates are
+-- settled first and `updated_at` is stamped last. Renaming either can swap
+-- them.
+create trigger user_game_state_set_timestamps
+  before insert or update on public.user_game_state
+  for each row execute function public.set_game_timestamps();
+
+create trigger user_game_state_set_updated_at
+  before update on public.user_game_state
   for each row execute function public.set_updated_at();
