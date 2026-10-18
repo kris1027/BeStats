@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 
-import { CarouselRowError } from "@/components/catalog/carousel-row-states";
 import { TrailerSlot } from "@/components/catalog/title-extras";
 import { GlassPill } from "@/components/glass-pill";
 import { TmdbRatingBadge } from "@/components/rating-badges";
@@ -45,19 +44,15 @@ function LandingHero({ list }: { list: CatalogList }) {
 }
 
 /**
- * The hero's body. When trending fails the hero shrinks to the row's own
- * error with Try again rather than a tall empty box; when it loads empty
- * there is no hero at all, because there is no title to feature.
+ * The hero's body. When trending fails or loads empty there is no hero at
+ * all: the pinned Trending row right below makes the same cached read and
+ * shows the section's heading with its one error or empty state, so the page
+ * never shows two Try again panels for one list (decision 4,
+ * prompts/landing-review-fixes.md, decision 2).
  */
 async function LandingHeroContent({ list }: { list: CatalogList }) {
   const page = await readLandingList(list);
-  if (page === null) {
-    return (
-      <div className="pt-4 pb-12">
-        <CarouselRowError list={list} />
-      </div>
-    );
-  }
+  if (page === null) return null;
   const [item] = landingItems(page, 0, 1);
   if (!item) return null;
   const genres = await genreNames(item);

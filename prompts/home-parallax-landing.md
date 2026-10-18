@@ -46,7 +46,7 @@ This supersedes the landing half of spec 0021 (`docs/specs/0021-home-carousels`)
    - one cached detail read (`getMovie` / `getTvShow`) for its backdrop and genre names;
    - the existing extras read for the trailer.
 
-   It shows the chip "#1 Trending", the TMDB rating, its genres, the title linked to the detail page, `TrailerButton` (only when a trailer exists), and `MovieTrackingSlot` / `ShowTrackingSlot` (which handle signed-out visitors and the release gate). Each read streams in its own Suspense. If a read fails, its part is left out. If trending fails, the hero is the plain heading with the section's error state.
+   It shows the chip "#1 Trending", the TMDB rating, its genres, the title linked to the detail page, `TrailerButton` (only when a trailer exists), and `MovieTrackingSlot` / `ShowTrackingSlot` (which handle signed-out visitors and the release gate). Each read streams in its own Suspense. If a read fails, its part is left out. If trending fails, the hero is the plain heading with the section's error state. (As built after prompts/landing-review-fixes.md: the hero renders nothing and the Trending row right below carries that heading and the one error state.)
 5. **Cards (Q5).** Each card has a poster, `TmdbRatingBadge` as the badge, the title, and a link to the title page. The personal status badge is kept by reusing `MovieCardBadge` / `ShowCardBadge` with a shared `grid*Ids` read per section. There are no inline controls on the landing. Superseded on 2026-10-18 by prompts/landing-card-controls.md: every card has the catalog card controls again.
 6. **Mobile and touch (Q6).** Below `md`:
    - Trending is a native swipe row using `CarouselScroller`.

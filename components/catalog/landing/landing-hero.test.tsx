@@ -155,18 +155,12 @@ describe("LandingHeroContent (AC-3)", () => {
 });
 
 describe("LandingHeroContent's failure states (AC-6)", () => {
-  it("shrinks to Trending's own error with Try again when trending fails", async () => {
+  it("renders nothing when trending fails, leaving the error to the Trending row", async () => {
     read.mockRejectedValue(new TmdbError("upstream", "/x", "503", 503));
 
-    render(await LandingHeroContent({ list: landingSlots("movie").trending }));
-
     expect(
-      screen.getByText("Couldn't load Trending this week"),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Try again" })).toHaveAttribute(
-      "href",
-      "/movies",
-    );
+      await LandingHeroContent({ list: landingSlots("movie").trending }),
+    ).toBeNull();
   });
 
   it("renders nothing when trending is empty", async () => {
