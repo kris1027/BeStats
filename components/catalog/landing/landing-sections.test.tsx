@@ -294,6 +294,31 @@ describe("Upcoming rows (AC-4)", () => {
     );
   });
 
+  it("keeps page 2 out of rows 1 and 2 when page 1 is short", async () => {
+    read.mockImplementation(async (_list: unknown, page: number) =>
+      moviePage(
+        page === 1
+          ? movies(15)
+          : movies(20).map((movie) => ({
+              ...movie,
+              id: movie.id + 20,
+              title: `Movie ${movie.id + 20}`,
+            })),
+      ),
+    );
+
+    const { container } = render(
+      await UpcomingItems({ list: MOVIES.upcoming }),
+    );
+
+    const rows = [...container.querySelectorAll("[data-marquee]")].map((row) =>
+      titles(row as HTMLElement),
+    );
+    expect(rows.map((row) => row.length)).toEqual([10, 5, 10, 10]);
+    expect(rows[1].at(-1)).toBe("Movie 15");
+    expect(rows[2][0]).toBe("Movie 21");
+  });
+
   it("keeps rows 1 and 2 when page 2 fails", async () => {
     read.mockImplementation(async (_list: unknown, page: number) => {
       if (page === 2) throw new TmdbError("upstream", "/x", "503", 503);

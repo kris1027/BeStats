@@ -11,7 +11,7 @@ import { LandingBadge, LandingControls } from "./landing-badge";
 import {
   itemIds,
   type LandingItem,
-  landingItems,
+  newLandingItems,
   readLandingList,
 } from "./landing-items";
 import { headingId, readLandingSection, SectionHeader } from "./landing-parts";
@@ -51,33 +51,28 @@ function UpcomingRows({ list }: { list: CatalogList }) {
 
 /**
  * The rows, streamed behind `UpcomingSkeleton`. Page 1 fills rows 1 and 2
- * and page 2, read alongside it, rows 3 and 4 (decision 13, amended
- * 2026-10-18). Page 1 alone decides the section's error and empty states; a
- * failed page 2 only leaves the extra rows out. A title TMDB moved between
- * the pages shows once, so no row repeats another, and one `ids` covers
- * every row, so every card's badge and controls share a single session read.
- * Exported so its states can be tested without the section's frame.
+ * and page 2 rows 3 and 4, each page only its own rows, so a short page 1
+ * leaves row 2 short rather than pulling page 2 titles up (decision 13,
+ * amended 2026-10-18). Page 1 alone decides the section's error and empty
+ * states; a failed page 2 only leaves the extra rows out. The two reads run
+ * together: when page 1 fails the page 2 read is wasted, but that is rare and
+ * cached, while reading them in turn would delay every render. One `ids`
+ * covers every row, so every card's badge and controls share a single
+ * session read. Exported so its states can be tested without the section's
+ * frame.
  */
 async function UpcomingItems({ list }: { list: CatalogList }) {
   const size = LANDING_COUNTS.upcomingRow;
-  const total = size * LANDING_COUNTS.upcomingRows;
-  const [section, next] = await Promise.all([
-    readLandingSection(list, total),
+  const perPage = size * LANDING_COUNTS.upcomingRowsPerPage;
+  const [section, pageTwo] = await Promise.all([
+    readLandingSection(list, perPage),
     readLandingList(list, 2),
   ]);
   if (section.kind === "state") return section.state;
-  const items = [...section.items];
-  const seen = new Set(section.ids);
-  for (const item of next === null ? [] : landingItems(next, 0, total)) {
-    if (seen.has(item.id)) continue;
-    seen.add(item.id);
-    items.push(item);
-  }
-  items.splice(total);
-  const ids = itemIds(items);
-  const filled = Array.from({ length: LANDING_COUNTS.upcomingRows }, (_, row) =>
-    items.slice(row * size, (row + 1) * size),
-  ).filter((row) => row.length > 0);
+  const extra =
+    pageTwo === null ? [] : newLandingItems(pageTwo, section.ids, perPage);
+  const ids = [...section.ids, ...itemIds(extra)];
+  const filled = [...toRows(section.items, size), ...toRows(extra, size)];
   const today = requestTodayUtc();
 
   return (
@@ -102,6 +97,13 @@ async function UpcomingItems({ list }: { list: CatalogList }) {
         </div>
       ))}
     </div>
+  );
+}
+
+/** `items` cut into rows of `size`, with no empty row. */
+function toRows(items: readonly LandingItem[], size: number): LandingItem[][] {
+  return Array.from({ length: Math.ceil(items.length / size) }, (_, row) =>
+    items.slice(row * size, (row + 1) * size),
   );
 }
 

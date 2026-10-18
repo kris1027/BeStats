@@ -57,6 +57,8 @@ export const LANDING_COUNTS = {
   upcomingRow: 10,
   /** Upcoming rows, alternating direction; rows 3 and 4 come from page 2. */
   upcomingRows: 4,
+  /** Upcoming rows each page fills: page 1 rows 1 and 2, page 2 rows 3 and 4. */
+  upcomingRowsPerPage: 2,
   top: 8,
 } as const;
 

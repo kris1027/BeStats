@@ -73,7 +73,7 @@ This supersedes the landing half of spec 0021 (`docs/specs/0021-home-carousels`)
     - Upcoming cards show the release date ("Nov 6", formatted in UTC) for movies and the first-air year for shows.
     - The sidebar blurb uses the real rendered count: "{n} films in cinemas this week." / "{n} shows airing today."
     - The "See all" links go to the list pages.
-13. **Upcoming rows (Q15).** Rows 1 and 2 show items 1 to 20 of page 1, rows 3 and 4 the first 20 new titles of page 2 (amended 2026-10-18), so no title appears twice. A list with fewer titles shows fewer rows, and a failed page 2 leaves rows 3 and 4 out. Each row moves the opposite way from the one above as you scroll (`translateX = base ± offset × 0.25`; first shipped at 0.6, slowed on 2026-10-18 because the cards passed too fast to read).
+13. **Upcoming rows (Q15).** Rows 1 and 2 show items 1 to 20 of page 1, rows 3 and 4 the first 20 new titles of page 2 (amended 2026-10-18), so no title appears twice. Each page fills only its own rows: a short page 1 leaves row 2 short rather than pulling page 2 titles up. A list with fewer titles shows fewer rows, and a failed page 2 leaves rows 3 and 4 out. Each row moves the opposite way from the one above as you scroll (`translateX = base ± offset × 0.25`; first shipped at 0.6, slowed on 2026-10-18 because the cards passed too fast to read).
 14. **Keyboard in the pinned track (Q16).**
     - Every card is a normal link in DOM order.
     - On `focusin` inside the pinned track, the window scrolls to the progress that brings the focused card into view: `scrollTo` with `behavior: "instant"` under reduced motion.
