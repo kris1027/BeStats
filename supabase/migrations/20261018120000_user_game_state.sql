@@ -37,7 +37,17 @@ create table public.user_game_state (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint user_game_state_pkey primary key (user_id, game_id),
-  constraint user_game_state_game_id_check check (game_id > 0)
+  constraint user_game_state_game_id_check check (game_id > 0),
+  constraint user_game_state_rating_check check (rating between 1 and 10),
+  -- A score only on a game being played or finished (AGENTS.md "Games").
+  constraint user_game_state_rating_needs_status_check
+    check (rating is null or status in ('playing', 'finished')),
+  -- Each of those has the date its tab sorts by. No order between the two: a
+  -- game set straight to Finished and replayed later starts after its finish.
+  constraint user_game_state_playing_started_check
+    check (status <> 'playing' or started_at is not null),
+  constraint user_game_state_finished_at_check
+    check (status <> 'finished' or finished_at is not null)
 );
 
 -- No index beyond the primary key, on purpose (spec 0024, AC-12).
