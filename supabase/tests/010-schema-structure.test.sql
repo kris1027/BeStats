@@ -1,14 +1,14 @@
 -- Spec 0001 AC-1: the migration creates every table, key, index, function
 -- and trigger the data model calls for. Since the spec 0020 contract a show
--- is tracked or not, so no show status enum is left (`160-show-tracking.test.sql`
--- pins their absence). The one enum is the games status of spec 0024, whose
--- table is pinned at the end (AC-1, AC-12).
+-- is tracked or not, so no show status enum is left. The one enum is the
+-- games status of spec 0024; `enums_are` at the end pins it as the only one,
+-- next to its table (AC-1, AC-12).
 --
 -- Runs against the seeded local database. Everything is wrapped in a
 -- transaction that is rolled back, so the fixture is untouched.
 
 begin;
-select plan(25);
+select plan(26);
 
 -- The three tables and their composite primary keys. The key is what makes a
 -- repeated write idempotent, so it is part of the contract, not an detail.
@@ -112,6 +112,10 @@ select columns_are(
 select col_is_pk(
   'public', 'user_game_state', array['user_id', 'game_id'],
   'user_game_state is keyed on (user_id, game_id)'
+);
+select enums_are(
+  'public', array['game_status'],
+  'game_status is the only enum: no show status enum is left (spec 0020)'
 );
 select enum_has_labels(
   'public', 'game_status', array['want_to_play', 'playing', 'finished'],
