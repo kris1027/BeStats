@@ -6,9 +6,8 @@ import { Suspense } from "react";
 import { TrailerSlot } from "@/components/catalog/title-extras";
 import { GlassPill } from "@/components/glass-pill";
 import { TmdbRatingBadge } from "@/components/rating-badges";
-import { MovieTrackingSlot } from "@/components/tracking/movie-tracking-slot";
-import { ShowTrackingSlot } from "@/components/tracking/show-tracking-slot";
 import type { CatalogList } from "@/lib/catalog/lists";
+import type { MediaType } from "@/lib/catalog/media-type";
 import {
   type Genre,
   getMovieGenres,
@@ -17,6 +16,7 @@ import {
   TmdbError,
 } from "@/lib/tmdb";
 import { ArtFallback } from "./art-fallback";
+import { LandingTracking } from "./landing-badge";
 import {
   type LandingItem,
   landingItems,
@@ -102,17 +102,7 @@ async function LandingHeroContent({ list }: { list: CatalogList }) {
             id={item.id}
             title={item.title}
           />
-          <Suspense fallback={null}>
-            {item.mediaType === "tv" ? (
-              <ShowTrackingSlot showId={item.id} showName={item.title} />
-            ) : (
-              <MovieTrackingSlot
-                movieId={item.id}
-                title={item.title}
-                releaseDate={item.releaseDate}
-              />
-            )}
-          </Suspense>
+          <LandingTracking item={item} />
         </div>
       </div>
 
@@ -153,6 +143,12 @@ function HeroArtwork({ item }: { item: LandingItem }) {
   );
 }
 
+/** Each media type's cached genre list, read by the hero's genre line. */
+const GENRE_LISTS: Record<MediaType, () => Promise<Genre[]>> = {
+  tv: getTvGenres,
+  movie: getMovieGenres,
+};
+
 /**
  * The featured title's genre names, from the cached genre list its media
  * type has. A failed genre read leaves the genres out rather than failing
@@ -161,8 +157,7 @@ function HeroArtwork({ item }: { item: LandingItem }) {
 async function genreNames(item: LandingItem): Promise<string[]> {
   let genres: Genre[];
   try {
-    genres =
-      item.mediaType === "tv" ? await getTvGenres() : await getMovieGenres();
+    genres = await GENRE_LISTS[item.mediaType]();
   } catch (error) {
     if (!(error instanceof TmdbError)) throw error;
     return [];
