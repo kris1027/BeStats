@@ -8,7 +8,7 @@
 -- `set local` confines both to this transaction, which is rolled back.
 
 begin;
-select plan(41);
+select plan(43);
 
 -- User A and user B come from supabase/seed.sql.
 -- A owns: movie 603 and 27205, show 1396 and 1399, episodes 62085 to 62087 and 62131,
@@ -283,10 +283,24 @@ select throws_ok(
   'user A cannot insert a game row owned by user B'
 );
 
-update public.user_game_state set status = 'finished'
-  where user_id = '22222222-2222-2222-2222-222222222222';
-delete from public.user_game_state
-  where user_id = '22222222-2222-2222-2222-222222222222';
+select results_eq(
+  $$with changed as (
+      update public.user_game_state set status = 'finished'
+        where user_id = '22222222-2222-2222-2222-222222222222'
+      returning 1)
+    select count(*) from changed$$,
+  $$values (0::bigint)$$,
+  'user A updating user B game rows affects zero rows'
+);
+select results_eq(
+  $$with removed as (
+      delete from public.user_game_state
+        where user_id = '22222222-2222-2222-2222-222222222222'
+      returning 1)
+    select count(*) from removed$$,
+  $$values (0::bigint)$$,
+  'user A deleting user B game rows affects zero rows'
+);
 
 -- AC-6 and AC-10: handing one's own game to B is refused by the trigger's
 -- identity lock, before the update policy's check would see it.
