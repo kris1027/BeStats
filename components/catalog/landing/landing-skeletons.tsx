@@ -136,7 +136,8 @@ function NowSkeleton() {
 function UpcomingSkeleton() {
   return (
     <div aria-hidden="true" className="flex flex-col gap-4 md:gap-5">
-      {[0, 1].map((row) => (
+      {Array.from({ length: LANDING_COUNTS.upcomingRows }, (_, row) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders with no identity.
         <div key={row} className="-mx-4 overflow-hidden px-4">
           <div className="flex w-max gap-4 md:gap-5">
             {Array.from({ length: 5 }, (_, index) => (

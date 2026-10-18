@@ -232,6 +232,81 @@ describe("the ranked sections", () => {
 });
 
 describe("Upcoming rows (AC-4)", () => {
+  it("fills four rows of ten from pages 1 and 2, alternating direction", async () => {
+    read.mockImplementation(async (_list: unknown, page: number) =>
+      moviePage(
+        page === 1
+          ? movies(20)
+          : movies(20).map((movie) => ({
+              ...movie,
+              id: movie.id + 20,
+              title: `Movie ${movie.id + 20}`,
+            })),
+      ),
+    );
+
+    const { container } = render(
+      await UpcomingItems({ list: MOVIES.upcoming }),
+    );
+
+    expect(read.mock.calls.map((call) => call[1]).sort()).toEqual([1, 2]);
+    const rows = container.querySelectorAll("[data-marquee]");
+    expect([...rows].map((row) => row.getAttribute("data-marquee"))).toEqual([
+      "1",
+      "-1",
+      "1",
+      "-1",
+    ]);
+    rows.forEach((row, index) => {
+      expect(titles(row as HTMLElement)).toEqual(
+        Array.from(
+          { length: 10 },
+          (_, item) => `Movie ${index * 10 + item + 1}`,
+        ),
+      );
+    });
+  });
+
+  it("shows a title TMDB moved onto page 2 only once", async () => {
+    read.mockImplementation(async (_list: unknown, page: number) =>
+      moviePage(
+        page === 1
+          ? movies(20)
+          : [
+              ...movies(20).slice(19),
+              ...movies(5).map((movie) => ({
+                ...movie,
+                id: movie.id + 20,
+                title: `Movie ${movie.id + 20}`,
+              })),
+            ],
+      ),
+    );
+
+    const { container } = render(
+      await UpcomingItems({ list: MOVIES.upcoming }),
+    );
+
+    const rows = container.querySelectorAll("[data-marquee]");
+    expect(rows).toHaveLength(3);
+    expect(titles(rows[2] as HTMLElement)).toEqual(
+      Array.from({ length: 5 }, (_, index) => `Movie ${index + 21}`),
+    );
+  });
+
+  it("keeps rows 1 and 2 when page 2 fails", async () => {
+    read.mockImplementation(async (_list: unknown, page: number) => {
+      if (page === 2) throw new TmdbError("upstream", "/x", "503", 503);
+      return moviePage(movies(20));
+    });
+
+    const { container } = render(
+      await UpcomingItems({ list: MOVIES.upcoming }),
+    );
+
+    expect(container.querySelectorAll("[data-marquee]")).toHaveLength(2);
+  });
+
   it("splits 1 to 10 and 11 to 20 across two rows moving opposite ways", async () => {
     read.mockResolvedValue(moviePage(movies(20)));
 

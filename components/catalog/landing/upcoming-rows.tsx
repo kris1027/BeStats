@@ -8,7 +8,12 @@ import { formatShortDate } from "@/lib/format";
 import { requestTodayUtc } from "@/lib/tracking/episode-state";
 import { ArtFallback } from "./art-fallback";
 import { LandingBadge, LandingControls } from "./landing-badge";
-import type { LandingItem } from "./landing-items";
+import {
+  itemIds,
+  type LandingItem,
+  landingItems,
+  readLandingList,
+} from "./landing-items";
 import { headingId, readLandingSection, SectionHeader } from "./landing-parts";
 import { UpcomingSkeleton, WIDE_CARD_CLASS } from "./landing-skeletons";
 
@@ -25,9 +30,10 @@ const FRAME_CLASS =
 
 /**
  * Upcoming, or On the air on the TV landing (prompts/home-parallax-
- * landing.md, decisions 12 and 13): wide backdrop cards in two rows that
- * slide in opposite directions as the section crosses the viewport. The rows
- * hold different titles, 1 to 10 and 11 to 20, so nothing is announced twice.
+ * landing.md, decisions 12 and 13): wide backdrop cards in up to four rows,
+ * each sliding the other way from the one above as the section crosses the
+ * viewport. The rows hold different titles, ten each, so nothing is
+ * announced twice.
  */
 function UpcomingRows({ list }: { list: CatalogList }) {
   return (
@@ -44,19 +50,34 @@ function UpcomingRows({ list }: { list: CatalogList }) {
 }
 
 /**
- * The two rows, streamed behind `UpcomingSkeleton`. One read of twenty
- * titles split in two, so the rows never repeat a title, and one `ids` for
- * both, so every card's badge and controls share a single session read.
+ * The rows, streamed behind `UpcomingSkeleton`. Page 1 fills rows 1 and 2
+ * and page 2, read alongside it, rows 3 and 4 (decision 13, amended
+ * 2026-10-18). Page 1 alone decides the section's error and empty states; a
+ * failed page 2 only leaves the extra rows out. A title TMDB moved between
+ * the pages shows once, so no row repeats another, and one `ids` covers
+ * every row, so every card's badge and controls share a single session read.
  * Exported so its states can be tested without the section's frame.
  */
 async function UpcomingItems({ list }: { list: CatalogList }) {
   const size = LANDING_COUNTS.upcomingRow;
-  const section = await readLandingSection(list, 2 * size);
+  const total = size * LANDING_COUNTS.upcomingRows;
+  const [section, next] = await Promise.all([
+    readLandingSection(list, total),
+    readLandingList(list, 2),
+  ]);
   if (section.kind === "state") return section.state;
-  const { items, ids } = section;
-  const filled = [items.slice(0, size), items.slice(size)].filter(
-    (row) => row.length > 0,
-  );
+  const items = [...section.items];
+  const seen = new Set(section.ids);
+  for (const item of next === null ? [] : landingItems(next, 0, total)) {
+    if (seen.has(item.id)) continue;
+    seen.add(item.id);
+    items.push(item);
+  }
+  items.splice(total);
+  const ids = itemIds(items);
+  const filled = Array.from({ length: LANDING_COUNTS.upcomingRows }, (_, row) =>
+    items.slice(row * size, (row + 1) * size),
+  ).filter((row) => row.length > 0);
   const today = requestTodayUtc();
 
   return (
@@ -64,7 +85,7 @@ async function UpcomingItems({ list }: { list: CatalogList }) {
       {filled.map((row, index) => (
         <div key={row[0].id} className={FRAME_CLASS}>
           <ul
-            data-marquee={index === 0 ? "1" : "-1"}
+            data-marquee={index % 2 === 0 ? "1" : "-1"}
             suppressHydrationWarning
             className="flex w-max gap-4 md:gap-5"
           >

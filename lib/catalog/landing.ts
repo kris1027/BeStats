@@ -16,7 +16,7 @@ export type LandingSlots = {
   now: CatalogList;
   /** The small label above the sidebar's heading. */
   nowLabel: string;
-  /** The two counter moving rows: Upcoming, or On the air for TV. */
+  /** The counter moving rows: Upcoming, or On the air for TV. */
   upcoming: CatalogList;
   top: CatalogList;
 };
@@ -45,15 +45,18 @@ export function landingSlots(mediaType: MediaType): LandingSlots {
 }
 
 /**
- * How many titles each part shows, all from TMDB's page 1 (decision 8). A
- * list that returns fewer shows fewer; nothing is padded.
+ * How many titles each part shows, all from TMDB's page 1 except the Upcoming
+ * rows, which also read page 2 (decision 8, amended 2026-10-18). A list that
+ * returns fewer shows fewer; nothing is padded.
  */
 export const LANDING_COUNTS = {
   trending: 9,
   popular: 14,
   now: 12,
-  /** Per Upcoming row; the second row takes the next ten (decision 13). */
+  /** Per Upcoming row; each row takes the next ten (decision 13). */
   upcomingRow: 10,
+  /** Upcoming rows, alternating direction; rows 3 and 4 come from page 2. */
+  upcomingRows: 4,
   top: 8,
 } as const;
 

@@ -30,7 +30,7 @@ export type LandingItem = {
 };
 
 /**
- * Page 1 of a landing list, read at request time (`connection()` before the
+ * One page of a landing list, page 1 unless asked, read at request time (`connection()` before the
  * read), so the build asks TMDB nothing and passes with no token, as the old
  * rows did (spec 0021, AC-7). Every section asks the same cached call, so the
  * hero and the pinned row share one request.
@@ -41,10 +41,11 @@ export type LandingItem = {
  */
 export async function readLandingList(
   list: CatalogList,
+  page = 1,
 ): Promise<TaggedCatalogPage | null> {
   await connection();
   try {
-    return await readTaggedCatalogList(list, 1);
+    return await readTaggedCatalogList(list, page);
   } catch (error) {
     if (!(error instanceof TmdbError)) throw error;
     return null;
