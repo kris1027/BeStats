@@ -31,13 +31,7 @@ type EpisodeRating =
 type GameRow = Database["public"]["Tables"]["user_game_state"]["Row"];
 
 describe("the generated database types", () => {
-  it("has only the game status enum and no status or hold on a tracked show (spec 0020, AC-1)", () => {
-    const onlyGameStatus: Assert<
-      Equal<
-        Database["public"]["Enums"],
-        { game_status: "want_to_play" | "playing" | "finished" }
-      >
-    > = true;
+  it("has no status or hold on a tracked show (spec 0020, AC-1)", () => {
     const showColumns: Assert<
       Equal<
         keyof Database["public"]["Tables"]["user_show_state"]["Row"],
@@ -45,8 +39,18 @@ describe("the generated database types", () => {
       >
     > = true;
 
-    expect(onlyGameStatus).toBe(true);
     expect(showColumns).toBe(true);
+  });
+
+  it("has the game status as its only enum (spec 0024, AC-1)", () => {
+    const onlyGameStatus: Assert<
+      Equal<
+        Database["public"]["Enums"],
+        { game_status: "want_to_play" | "playing" | "finished" }
+      >
+    > = true;
+
+    expect(onlyGameStatus).toBe(true);
   });
 
   it("carries the game row exactly as spec 0024 sets it (AC-14)", () => {
