@@ -9,7 +9,7 @@
 -- distinct dates so a kept date is told apart from a new one.
 
 begin;
-select plan(41);
+select plan(44);
 
 -- Runs one statement under the restore escape and sets it back to `off`, the
 -- shape G4's restore function will have, so the fixtures below that need
@@ -125,6 +125,42 @@ select ok(
      and created_at = now() and updated_at = now()
    from public.user_game_state where game_id = 5103),
   'adding as Finished stamps added and finished now, and no start'
+);
+
+-- Future dates (AC-4, AC-5): a date after now is replaced just as a past one.
+insert into public.user_game_state
+  (user_id, game_id, status, added_at, started_at, finished_at, created_at, updated_at)
+values
+  ('11111111-1111-1111-1111-111111111111', 5104, 'playing',
+   '2999-01-01', '2999-01-01', '2999-01-01', '2999-01-01', '2999-01-01');
+select ok(
+  (select added_at = now() and started_at = now() and finished_at is null
+     and created_at = now() and updated_at = now()
+   from public.user_game_state where game_id = 5104),
+  'an insert that sends future dates gets the trigger''s dates'
+);
+update public.user_game_state
+  set status = 'finished', added_at = '2999-01-01', started_at = '2999-01-01',
+      finished_at = '2999-01-01', created_at = '2999-01-01', updated_at = '2999-01-01'
+  where game_id = 5104;
+select ok(
+  (select added_at = now() and started_at = now() and finished_at = now()
+     and created_at = now() and updated_at = now()
+   from public.user_game_state where game_id = 5104),
+  'an update that sends future dates gets the trigger''s dates'
+);
+
+-- Happy path (AC-4, AC-5): add, start, rate, finish, as one game's life.
+insert into public.user_game_state (user_id, game_id, status)
+values ('11111111-1111-1111-1111-111111111111', 5105, 'want_to_play');
+update public.user_game_state set status = 'playing' where game_id = 5105;
+update public.user_game_state set rating = 8 where game_id = 5105;
+update public.user_game_state set status = 'finished' where game_id = 5105;
+select ok(
+  (select status = 'finished' and rating = 8 and added_at = now()
+     and started_at = now() and finished_at = now()
+   from public.user_game_state where game_id = 5105),
+  'Want to play, then Playing, rated 8, then Finished keeps the score and stamps each date'
 );
 
 -- Update fixtures: earlier, distinct dates, written under the escape.
