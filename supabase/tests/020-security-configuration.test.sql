@@ -1,4 +1,5 @@
--- Spec 0001 AC-2 and AC-4, the configuration half of the security boundary.
+-- Spec 0001 AC-2 and AC-4, the configuration half of the security boundary,
+-- and spec 0024 AC-9 for `user_game_state`, which carries the same lock.
 --
 -- These assert the shape of the lock rather than trying the door. The
 -- behavioural half is in 030. Both are needed: `supabase db advisors` checks
@@ -17,11 +18,11 @@ select is(
     from pg_class c
     join pg_namespace n on n.oid = c.relnamespace
     where n.nspname = 'public'
-      and c.relname in ('user_movie_state', 'user_show_state', 'user_episode_state')
+      and c.relname in ('user_movie_state', 'user_show_state', 'user_episode_state', 'user_game_state')
       and c.relrowsecurity
   ),
-  3::bigint,
-  'row level security is enabled on all three tables'
+  4::bigint,
+  'row level security is enabled on all four tables'
 );
 select is(
   (
@@ -29,11 +30,11 @@ select is(
     from pg_class c
     join pg_namespace n on n.oid = c.relnamespace
     where n.nspname = 'public'
-      and c.relname in ('user_movie_state', 'user_show_state', 'user_episode_state')
+      and c.relname in ('user_movie_state', 'user_show_state', 'user_episode_state', 'user_game_state')
       and c.relforcerowsecurity
   ),
-  3::bigint,
-  'row level security is forced on all three tables, so it applies to the owner too'
+  4::bigint,
+  'row level security is forced on all four tables, so it applies to the owner too'
 );
 
 -- Exactly four policies per table, one per command, no more and no fewer. An
@@ -43,18 +44,18 @@ select is(
   (
     select count(*) from pg_policies
     where schemaname = 'public'
-      and tablename in ('user_movie_state', 'user_show_state', 'user_episode_state')
+      and tablename in ('user_movie_state', 'user_show_state', 'user_episode_state', 'user_game_state')
   ),
-  12::bigint,
-  'twelve policies exist in total, four per table'
+  16::bigint,
+  'sixteen policies exist in total, four per table'
 );
 select is(
   (
     select count(distinct (tablename, cmd)) from pg_policies
     where schemaname = 'public'
-      and tablename in ('user_movie_state', 'user_show_state', 'user_episode_state')
+      and tablename in ('user_movie_state', 'user_show_state', 'user_episode_state', 'user_game_state')
   ),
-  12::bigint,
+  16::bigint,
   'each table carries one policy per command, with no command covered twice'
 );
 
@@ -64,10 +65,10 @@ select is(
   (
     select count(*) from pg_policies
     where schemaname = 'public'
-      and tablename in ('user_movie_state', 'user_show_state', 'user_episode_state')
+      and tablename in ('user_movie_state', 'user_show_state', 'user_episode_state', 'user_game_state')
       and roles::text[] = array['authenticated']
   ),
-  12::bigint,
+  16::bigint,
   'every policy targets the authenticated role only'
 );
 
@@ -77,11 +78,11 @@ select is(
   (
     select count(*) from pg_policies
     where schemaname = 'public'
-      and tablename in ('user_movie_state', 'user_show_state', 'user_episode_state')
+      and tablename in ('user_movie_state', 'user_show_state', 'user_episode_state', 'user_game_state')
       and coalesce(qual, '') || coalesce(with_check, '') like '%auth.uid()%'
       and coalesce(qual, '') || coalesce(with_check, '') like '%user_id%'
   ),
-  12::bigint,
+  16::bigint,
   'every policy predicates on auth.uid() against user_id'
 );
 
@@ -91,10 +92,10 @@ select is(
   (
     select count(*) from pg_policies
     where schemaname = 'public'
-      and tablename in ('user_movie_state', 'user_show_state', 'user_episode_state')
+      and tablename in ('user_movie_state', 'user_show_state', 'user_episode_state', 'user_game_state')
       and coalesce(qual, '') || coalesce(with_check, '') like '%SELECT auth.uid()%'
   ),
-  12::bigint,
+  16::bigint,
   'every policy wraps auth.uid() in a subselect so it runs once per statement'
 );
 
@@ -104,12 +105,12 @@ select is(
   (
     select count(*) from pg_policies
     where schemaname = 'public'
-      and tablename in ('user_movie_state', 'user_show_state', 'user_episode_state')
+      and tablename in ('user_movie_state', 'user_show_state', 'user_episode_state', 'user_game_state')
       and cmd = 'UPDATE'
       and qual is not null
       and with_check is not null
   ),
-  3::bigint,
+  4::bigint,
   'every update policy carries both a using and a with check clause'
 );
 
@@ -122,16 +123,16 @@ select is(
     select count(*)
     from information_schema.table_privileges
     where table_schema = 'public'
-      and table_name in ('user_movie_state', 'user_show_state', 'user_episode_state')
+      and table_name in ('user_movie_state', 'user_show_state', 'user_episode_state', 'user_game_state')
       and grantee in ('anon', 'PUBLIC')
   ),
   0::bigint,
-  'anon and public hold no privilege at all on any of the three tables'
+  'anon and public hold no privilege at all on any of the four tables'
 );
 select is(
   (
     select count(*)
-    from unnest(array['user_movie_state', 'user_show_state', 'user_episode_state']) as t(tbl),
+    from unnest(array['user_movie_state', 'user_show_state', 'user_episode_state', 'user_game_state']) as t(tbl),
          unnest(array['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE']) as p(priv)
     where has_table_privilege('anon', ('public.' || t.tbl)::regclass, p.priv)
   ),
@@ -147,7 +148,7 @@ select is(
     select count(*)
     from information_schema.table_privileges
     where table_schema = 'public'
-      and table_name in ('user_movie_state', 'user_show_state', 'user_episode_state')
+      and table_name in ('user_movie_state', 'user_show_state', 'user_episode_state', 'user_game_state')
       and grantee = 'authenticated'
       and privilege_type not in ('SELECT', 'INSERT', 'UPDATE', 'DELETE')
   ),
@@ -159,11 +160,11 @@ select is(
     select count(distinct (table_name, privilege_type))
     from information_schema.table_privileges
     where table_schema = 'public'
-      and table_name in ('user_movie_state', 'user_show_state', 'user_episode_state')
+      and table_name in ('user_movie_state', 'user_show_state', 'user_episode_state', 'user_game_state')
       and grantee = 'authenticated'
       and privilege_type in ('SELECT', 'INSERT', 'UPDATE', 'DELETE')
   ),
-  12::bigint,
+  16::bigint,
   'authenticated holds all four of select, insert, update and delete on every table'
 );
 
