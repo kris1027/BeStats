@@ -11,6 +11,21 @@
 begin;
 select plan(41);
 
+-- Runs one statement under the restore escape and sets it back to `off`, the
+-- shape G4's restore function will have, so the fixtures below that need
+-- fixed dates do not each repeat the pair. A refused statement rolls the
+-- setting back with it.
+create function pg_temp.under_restore(statement text)
+returns void
+language plpgsql
+as $f$
+begin
+  perform set_config('bestats.restore_game', 'on', true);
+  execute statement;
+  perform set_config('bestats.restore_game', 'off', true);
+end;
+$f$;
+
 set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
 set local role authenticated;
 
@@ -43,28 +58,27 @@ select throws_ok(
 
 -- The trigger would stamp the missing dates, so these go in under the restore
 -- escape, the one path that keeps the dates it is given.
-select set_config('bestats.restore_game', 'on', true);
-
 select throws_ok(
-  $$insert into public.user_game_state (user_id, game_id, status, started_at)
-    values ('11111111-1111-1111-1111-111111111111', 5001, 'playing', null)$$,
+  $$select pg_temp.under_restore($q$
+    insert into public.user_game_state (user_id, game_id, status, started_at)
+    values ('11111111-1111-1111-1111-111111111111', 5001, 'playing', null)$q$)$$,
   '23514', null,
   'a Playing game with no start is refused, even under the restore escape'
 );
 select throws_ok(
-  $$insert into public.user_game_state (user_id, game_id, status, finished_at)
-    values ('11111111-1111-1111-1111-111111111111', 5001, 'finished', null)$$,
+  $$select pg_temp.under_restore($q$
+    insert into public.user_game_state (user_id, game_id, status, finished_at)
+    values ('11111111-1111-1111-1111-111111111111', 5001, 'finished', null)$q$)$$,
   '23514', null,
   'a Finished game with no finish is refused, even under the restore escape'
 );
 select lives_ok(
-  $$insert into public.user_game_state (user_id, game_id, status, started_at, finished_at)
+  $$select pg_temp.under_restore($q$
+    insert into public.user_game_state (user_id, game_id, status, started_at, finished_at)
     values ('11111111-1111-1111-1111-111111111111', 5002, 'playing',
-            '2026-10-01T00:00:00Z', '2026-09-01T00:00:00Z')$$,
+            '2026-10-01T00:00:00Z', '2026-09-01T00:00:00Z')$q$)$$,
   'a start after the finish is allowed: a replayed game has one'
 );
-
-select set_config('bestats.restore_game', 'off', true);
 
 -- Shape
 
@@ -114,7 +128,7 @@ select ok(
 );
 
 -- Update fixtures: earlier, distinct dates, written under the escape.
-select set_config('bestats.restore_game', 'on', true);
+select pg_temp.under_restore($q$
 insert into public.user_game_state (user_id, game_id, status, rating, added_at, started_at, finished_at)
 values
   ('11111111-1111-1111-1111-111111111111', 5201, 'want_to_play', null, '2026-01-01', null, null),
@@ -124,8 +138,8 @@ values
   ('11111111-1111-1111-1111-111111111111', 5205, 'finished', 7, '2026-01-01', '2026-02-01', '2026-03-01'),
   ('11111111-1111-1111-1111-111111111111', 5206, 'playing', 9, '2026-01-01', '2026-02-01', '2025-12-01'),
   ('11111111-1111-1111-1111-111111111111', 5207, 'playing', 5, '2026-01-01', '2026-02-01', null),
-  ('11111111-1111-1111-1111-111111111111', 5208, 'finished', 8, '2026-01-01', '2026-02-01', '2026-03-01');
-select set_config('bestats.restore_game', 'off', true);
+  ('11111111-1111-1111-1111-111111111111', 5208, 'finished', 8, '2026-01-01', '2026-02-01', '2026-03-01')
+$q$);
 
 -- Update (AC-5): every update sends 1999-01-01 for all five dates, and the
 -- trigger decides each one from the stored row.
@@ -277,13 +291,13 @@ select lives_ok(
 );
 
 -- Restore escape (AC-7).
-select set_config('bestats.restore_game', 'on', true);
-
+select pg_temp.under_restore($q$
 insert into public.user_game_state
   (user_id, game_id, status, rating, added_at, started_at, finished_at, created_at, updated_at)
 values
   ('11111111-1111-1111-1111-111111111111', 5301, 'playing', 6,
-   '2026-01-05', '2026-01-06', '2026-01-07', '2000-01-01', '2000-01-01');
+   '2026-01-05', '2026-01-06', '2026-01-07', '2000-01-01', '2000-01-01')
+$q$);
 select ok(
   (select added_at = '2026-01-05' and started_at = '2026-01-06' and finished_at = '2026-01-07'
      and created_at = now() and updated_at = now()
@@ -291,10 +305,12 @@ select ok(
   'under the escape an insert keeps its list dates, and still owns created and updated'
 );
 
+select pg_temp.under_restore($q$
 update public.user_game_state
   set status = 'want_to_play', rating = null,
       added_at = '2026-01-02', created_at = '2000-01-01'
-  where game_id = 5301;
+  where game_id = 5301
+$q$);
 select ok(
   (select added_at = '2026-01-02' and started_at = '2026-01-06' and created_at = now()
      and updated_at = now()
@@ -302,12 +318,11 @@ select ok(
   'under the escape an update keeps the dates it is given, but not a new created'
 );
 select throws_ok(
-  $$update public.user_game_state set game_id = 9998 where game_id = 5301$$,
+  $$select pg_temp.under_restore($q$
+    update public.user_game_state set game_id = 9998 where game_id = 5301$q$)$$,
   'BS003', 'game_identity_locked',
   'under the escape an update that sends another game id is still refused'
 );
-
-select set_config('bestats.restore_game', 'off', true);
 
 insert into public.user_game_state (user_id, game_id, status, added_at, started_at)
 values ('11111111-1111-1111-1111-111111111111', 5302, 'playing', '2026-01-05', '2026-01-06');
@@ -330,14 +345,14 @@ select lives_ok(
 );
 
 -- Round trips (AC-5, AC-8): fixtures with earlier dates, under the escape.
-select set_config('bestats.restore_game', 'on', true);
+select pg_temp.under_restore($q$
 insert into public.user_game_state (user_id, game_id, status, rating, added_at, started_at, finished_at)
 values
   ('11111111-1111-1111-1111-111111111111', 5401, 'want_to_play', null, '2026-01-01', null, null),
   ('11111111-1111-1111-1111-111111111111', 5402, 'playing', 4, '2026-01-01', '2026-02-01', null),
   ('11111111-1111-1111-1111-111111111111', 5403, 'finished', 7, '2026-01-01', '2026-02-01', '2026-03-01'),
-  ('11111111-1111-1111-1111-111111111111', 5404, 'want_to_play', null, '2026-01-01', null, null);
-select set_config('bestats.restore_game', 'off', true);
+  ('11111111-1111-1111-1111-111111111111', 5404, 'want_to_play', null, '2026-01-01', null, null)
+$q$);
 
 update public.user_game_state set status = 'want_to_play', added_at = '1999-01-01'
   where game_id = 5401;
@@ -395,14 +410,13 @@ select ok(
 );
 
 -- The owner lock holds under the escape too (AC-6, AC-7).
-select set_config('bestats.restore_game', 'on', true);
 select throws_ok(
-  $$update public.user_game_state set user_id = '22222222-2222-2222-2222-222222222222'
-    where game_id = 5401$$,
+  $$select pg_temp.under_restore($q$
+    update public.user_game_state set user_id = '22222222-2222-2222-2222-222222222222'
+    where game_id = 5401$q$)$$,
   'BS003', 'game_identity_locked',
   'under the escape an update that sends another owner is refused'
 );
-select set_config('bestats.restore_game', 'off', true);
 select ok(
   exists (select 1 from public.user_game_state
           where game_id = 5401 and user_id = '11111111-1111-1111-1111-111111111111'),
