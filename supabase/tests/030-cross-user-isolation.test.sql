@@ -8,7 +8,7 @@
 -- `set local` confines both to this transaction, which is rolled back.
 
 begin;
-select plan(36);
+select plan(38);
 
 -- User A and user B come from supabase/seed.sql.
 -- A owns: movie 603 and 27205, show 1396 and 1399, episodes 62085 to 62087 and 62131,
@@ -288,9 +288,23 @@ update public.user_game_state set status = 'finished'
 delete from public.user_game_state
   where user_id = '22222222-2222-2222-2222-222222222222';
 
+-- AC-6 and AC-10: handing one's own game to B is not refused, unlike movies
+-- and episodes; the trigger puts the stored owner back, so the row stays A's.
+select lives_ok(
+  $$update public.user_game_state
+      set user_id = '22222222-2222-2222-2222-222222222222'
+    where game_id = 119133$$,
+  'user A sending user B as the owner of their own game is not an error'
+);
+
 reset role;
 reset request.jwt.claims;
 
+select is(
+  (select user_id from public.user_game_state where game_id = 119133),
+  '11111111-1111-1111-1111-111111111111'::uuid,
+  'the identity pin keeps user A''s game theirs'
+);
 select is(
   (select count(*) from public.user_game_state
    where user_id = '22222222-2222-2222-2222-222222222222'),

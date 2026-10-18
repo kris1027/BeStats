@@ -186,6 +186,7 @@ revoke all on function public.set_updated_at() from public, anon, authenticated;
 revoke all on function public.set_watchlisted_at() from public, anon, authenticated;
 revoke all on function public.set_tracked_at() from public, anon, authenticated;
 revoke all on function public.guard_username_change() from public, anon, authenticated;
+revoke all on function public.set_game_timestamps() from public, anon, authenticated;
 
 -- Caveat worth knowing before you edit this file. The declarative diff engine
 -- does not track grants that come from Supabase's default privileges, so the
