@@ -3,7 +3,8 @@
 import type * as React from "react";
 import { useEffect, useRef } from "react";
 
-const REDUCED = "(prefers-reduced-motion: reduce)";
+import { type Lean, REDUCED_MOTION, startMotionLoop } from "@/lib/motion/loop";
+
 const WIDE = "(min-width: 48rem)";
 const FINE_POINTER = "(pointer: fine)";
 
@@ -49,7 +50,7 @@ function centreAlong(item: HTMLElement, row: HTMLElement): number {
 
 /**
  * The landing's motion (prompts/home-parallax-landing.md, decisions 6, 9,
- * 14 and 16): one `requestAnimationFrame` loop that writes transforms to the
+ * 14 and 16): one `requestAnimationFrame` loop (`startMotionLoop`) that writes transforms to the
  * `data-*` marked nodes the Server Components render. It holds no data and
  * renders nothing of its own, so every card, link and heading stays server
  * HTML that works with this script missing.
@@ -88,15 +89,9 @@ function LandingParallax({
     const root = rootRef.current;
     if (!root) return;
 
-    const reduced = window.matchMedia(REDUCED);
+    const reduced = window.matchMedia(REDUCED_MOTION);
     const wide = window.matchMedia(WIDE);
     const finePointer = window.matchMedia(FINE_POINTER);
-
-    let frame = 0;
-    let pointerX = 0;
-    let pointerY = 0;
-    let easedX = 0;
-    let easedY = 0;
 
     const all = <T extends Element = HTMLElement>(selector: string) =>
       root.querySelectorAll<T & HTMLElement>(selector);
@@ -110,26 +105,23 @@ function LandingParallax({
       }
     }
 
-    function tick() {
+    function tick(_now: number, lean: Lean) {
       const scroll = window.scrollY;
       const viewport = window.innerHeight;
       const isWide = wide.matches;
       const visible = (rect: DOMRect) =>
         rect.bottom > -100 && rect.top < viewport + 100;
 
-      easedX += ((finePointer.matches ? pointerX : 0) - easedX) * 0.06;
-      easedY += ((finePointer.matches ? pointerY : 0) - easedY) * 0.06;
-
       for (const node of all("[data-depth]")) {
         const depth = Number(node.dataset.depth) * (isWide ? 1 : 0.5);
-        node.style.transform = `translate3d(${-easedX * depth * 80}px, ${
-          -scroll * depth - easedY * depth * 40
+        node.style.transform = `translate3d(${-lean.x * depth * 80}px, ${
+          -scroll * depth - lean.y * depth * 40
         }px, 0)`;
       }
 
       if (scroll < viewport * 1.5) {
         for (const node of all("[data-hero-bg]")) {
-          node.style.transform = `translate3d(${-easedX * 14}px, ${
+          node.style.transform = `translate3d(${-lean.x * 14}px, ${
             scroll * 0.45
           }px, 0)`;
         }
@@ -207,23 +199,6 @@ function LandingParallax({
       }
     }
 
-    function loop() {
-      tick();
-      frame = window.requestAnimationFrame(loop);
-    }
-
-    function start() {
-      window.cancelAnimationFrame(frame);
-      reset();
-      if (!reduced.matches) frame = window.requestAnimationFrame(loop);
-    }
-
-    function onPointerMove(event: PointerEvent) {
-      if (event.pointerType !== "mouse") return;
-      pointerX = (event.clientX / window.innerWidth) * 2 - 1;
-      pointerY = (event.clientY / window.innerHeight) * 2 - 1;
-    }
-
     /*
      * A card tabbed to inside the pinned row could sit off screen, because
      * the row moves with the page's scroll. Scroll the page to the point of
@@ -250,17 +225,16 @@ function LandingParallax({
       });
     }
 
-    start();
-    reduced.addEventListener("change", start);
-    wide.addEventListener("change", start);
-    window.addEventListener("pointermove", onPointerMove, { passive: true });
+    const stop = startMotionLoop({
+      tick,
+      reset,
+      restartOn: [wide],
+      leans: () => finePointer.matches,
+    });
     root.addEventListener("focusin", onFocusIn);
 
     return () => {
-      window.cancelAnimationFrame(frame);
-      reduced.removeEventListener("change", start);
-      wide.removeEventListener("change", start);
-      window.removeEventListener("pointermove", onPointerMove);
+      stop();
       root.removeEventListener("focusin", onFocusIn);
     };
   }, []);
