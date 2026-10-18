@@ -72,6 +72,7 @@ function toMovieSummary(movie: Movie): MovieSummary {
     tmdbRating: movie.tmdbRating,
     tmdbVoteCount: movie.tmdbVoteCount,
     genreIds: movie.genreIds,
+    backdropUrl: movie.backdropUrl,
   };
 }
 
@@ -86,6 +87,7 @@ function toTvSummary(show: TvShow): TvShowSummary {
     tmdbRating: show.tmdbRating,
     tmdbVoteCount: show.tmdbVoteCount,
     genreIds: show.genreIds,
+    backdropUrl: show.backdropUrl,
   };
 }
 

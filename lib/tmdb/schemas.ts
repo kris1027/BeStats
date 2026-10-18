@@ -82,6 +82,7 @@ export const movieSummarySchema = z.object({
   vote_average: nullableNumber,
   vote_count: nullableNumber,
   genre_ids: z.array(z.number()).nullish(),
+  backdrop_path: nullableString,
 });
 
 /**
@@ -106,7 +107,6 @@ const translationsSchema = z
 
 export const movieSchema = movieSummarySchema.extend({
   adult: z.boolean().nullish(),
-  backdrop_path: nullableString,
   original_title: z.string(),
   original_language: z.string(),
   tagline: nullableString,
@@ -129,6 +129,7 @@ export const tvSummarySchema = z.object({
   vote_average: nullableNumber,
   vote_count: nullableNumber,
   genre_ids: z.array(z.number()).nullish(),
+  backdrop_path: nullableString,
 });
 
 /**
@@ -158,7 +159,6 @@ export const tvShowSchema = tvSummarySchema.extend({
   adult: z.boolean().nullish(),
   original_language: z.string(),
   tagline: nullableString,
-  backdrop_path: nullableString,
   status: z.string().nullish(),
   in_production: z.boolean().nullish(),
   last_air_date: nullableString,

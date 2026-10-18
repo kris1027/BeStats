@@ -211,6 +211,7 @@ export function normalizeMovieSummary(raw: RawMovieSummary): MovieSummary {
     tmdbRating: ratingOrNull(raw.vote_average),
     tmdbVoteCount: raw.vote_count ?? 0,
     genreIds: raw.genre_ids ?? [],
+    backdropUrl: imageUrl(raw.backdrop_path, BACKDROP_SIZE),
   };
 }
 
@@ -252,7 +253,6 @@ export function normalizeMovie(raw: RawMovie): Movie {
       raw.translations?.translations,
     ),
     adult: raw.adult ?? false,
-    backdropUrl: imageUrl(raw.backdrop_path, BACKDROP_SIZE),
     originalTitle: raw.original_title,
     originalLanguage: raw.original_language,
     tagline: textOrNull(raw.tagline),
@@ -282,6 +282,7 @@ export function normalizeTvSummary(raw: RawTvSummary): TvShowSummary {
     tmdbRating: ratingOrNull(raw.vote_average),
     tmdbVoteCount: raw.vote_count ?? 0,
     genreIds: raw.genre_ids ?? [],
+    backdropUrl: imageUrl(raw.backdrop_path, BACKDROP_SIZE),
   };
 }
 
@@ -333,7 +334,6 @@ export function normalizeTvShow(raw: RawTvShow): TvShow {
     adult: raw.adult ?? false,
     originalLanguage: raw.original_language,
     tagline: textOrNull(raw.tagline),
-    backdropUrl: imageUrl(raw.backdrop_path, BACKDROP_SIZE),
     // Narrowed, not interpreted. What `Ended` or `Canceled` means for a
     // library page belongs to `lib/tv/library-page.ts`, not to this module.
     status: showStatusOf(raw.status),
