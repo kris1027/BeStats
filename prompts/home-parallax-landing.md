@@ -136,7 +136,7 @@ There are no new data paths, Server Actions or user data. The TMDB reads go thro
 ## Acceptance criteria
 
 - AC-1: Section order and the slot mapping per media type follow the table above.
-- AC-2: Counts are 9 / 10 / 12 / 20 / 8, fewer when TMDB returns fewer, never padded.
+- AC-2: Counts are 9 / 14 / 12 / 20 / 8, fewer when TMDB returns fewer, never padded.
 - AC-3: The hero shows trending #1 with its backdrop, genres, the TMDB rating, Trailer when available, and the tracking control.
 - AC-4: Upcoming shows no duplicate titles. Movie cards show a UTC date and TV cards a year.
 - AC-5: A missing backdrop falls back to the poster, then to the missing-image state.
