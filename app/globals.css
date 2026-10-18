@@ -581,6 +581,47 @@
 }
 
 /*
+ * The catalog landing's drifting lights (prompts/home-parallax-landing.md,
+ * decision 7): a large soft blob and a small crisp orb, tinted from the
+ * background's own bokeh, so they read as more of the background rather than
+ * a surface. Kept faint, so `text-muted-foreground` keeps its contrast where
+ * one passes behind it.
+ */
+@utility landing-blob {
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--color-bokeh-4) 8%, transparent);
+  filter: blur(40px);
+}
+
+@utility landing-orb {
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--color-bokeh-2) 10%, transparent);
+}
+
+/*
+ * A landing poster's artwork drifting inside its frame. `LandingParallax`
+ * sets the two properties on the card; the image itself is never written to,
+ * so the HTML React hydrates is the HTML the server sent.
+ */
+@utility poster-drift {
+  & img {
+    transform: translate3d(0, var(--poster-drift-y, 0px), 0)
+      scale(var(--poster-drift-scale, 1));
+  }
+}
+
+/*
+ * A rank drawn as an outline, the landing's Trending numbers. Decorative
+ * only: the list they sit beside is ordered, so the rank is announced
+ * without them.
+ */
+@utility rank-outline {
+  color: transparent;
+  -webkit-text-stroke: 2px
+    color-mix(in srgb, var(--foreground) 35%, transparent);
+}
+
+/*
  * Loading pulse, 2 seconds ease in out, cut entirely under reduced motion
  * rather than merely slowed: a permanently animating page is the thing the
  * setting exists to prevent (AC-12).
