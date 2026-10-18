@@ -7,7 +7,7 @@ _Steps come from the acceptance criteria in spec 0024. `/check verify` runs thes
 - [x] `pnpm db:types:check`, `pnpm typecheck`, `pnpm lint`, `pnpm test` → all pass; `lib/supabase/database.types.test.ts` pins the game row and `Enums.game_status` → AC-14
 - [x] `docker exec supabase_db_BeStats psql -U postgres -c "select game_id, status, added_at, started_at, finished_at from public.user_game_state order by 1"` after a reset → three seed rows with the fixed 2026-08 and 2026-09 dates, not today (the seed went in under the restore escape) → AC-7
 - [x] `supabase db push` against the linked project, per `docs/deploy.md` → `20261018120000_user_game_state` is listed as applied: `pnpm exec supabase migration list` on 2026-10-18 shows it with local and remote both `20261018120000` → AC-15
-- [ ] `supabase db push` for `20261018130000_game_identity_lock` (the AC-6 amendment), before the PR merges → `pnpm exec supabase migration list` shows it on the remote too → AC-15
+- [x] `supabase db push` for `20261018130000_game_identity_lock` (the AC-6 amendment), before the PR merges → applied 2026-10-18; `pnpm exec supabase migration list` shows local and remote both `20261018130000` → AC-15
 
 ## Direct API (PostgREST, local stack, signed in as seed user A with `password-a`)
 - [x] POST `/rest/v1/user_game_state` `{ user_id: <A>, game_id: 500, status: "playing", added_at: "2000-01-01" }` → returned row has `added_at` and `started_at` equal to now, not 2000 → AC-4, Value sourcing (dates come from the trigger)
@@ -31,4 +31,4 @@ _Steps come from the acceptance criteria in spec 0024. `/check verify` runs thes
 - AC-12: 010 no extra index
 - AC-13: db diff and test:db commands
 - AC-14: types check, typecheck, lint
-- AC-15: db push; `20261018120000` applied 2026-10-18 (confirmed by `migration list`), `20261018130000` still to push
+- AC-15: db push; `20261018120000` applied 2026-10-18 (confirmed by `migration list`), `20261018130000` applied 2026-10-18
