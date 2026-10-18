@@ -169,3 +169,17 @@ There are no new data paths, Server Actions or user data. The TMDB reads go thro
 8. Resize to 375px wide and check for swipe rows, 2-column grids and no horizontal page scroll.
 9. Tab from the top through the Trending cards and check each focused card is visible.
 10. With the TMDB token broken, check every section shows Try again and the navbar and footer still render.
+
+## As built
+
+Where the build differs from the decisions above, and why:
+
+- **Hero genres come from the cached genre list**, not a detail read. With `backdropUrl` on the summary, the genre ids on the trending item plus `getMovieGenres` / `getTvGenres` give the names, so the hero needs no `getMovie` / `getTvShow` call.
+- **Signed-out visitors see no tracking control in the hero.** `MovieTrackingSlot` and `ShowTrackingSlot` render nothing for a visitor, as they do on the title pages. The hero reuses them as they are.
+- **The Trailer button keeps its existing label**, "Trailer", rather than the design's "Watch trailer".
+- **Trending on a phone is a native scroll frame** with snap points, not `CarouselScroller`. One set of markup serves both the pinned and the swipe layouts, so no card is rendered twice.
+- **Full bleed is the column's bleed** (`-mx-4`), as on the title page backdrop. Beyond 1600px the hero and the Upcoming rows fade at the column's edge rather than reaching the window's edge, so nothing can cause a horizontal scrollbar.
+- **The blobs use the background's bokeh tokens** through the `landing-blob` and `landing-orb` utilities, so there is no new colour.
+- **Poster drift writes custom properties on the card wrapper** (the `poster-drift` utility). Every node the loop writes to carries `suppressHydrationWarning`, because a streamed section can be moved before React hydrates it.
+- **The skeletons and shared layout classes live in `landing-skeletons.tsx`**, so `/showcase` can render them without importing the server-only TMDB reads.
+- **`carousel-row-states.tsx` and `CarouselScroller` stay.** The title pages' Cast and More like this rows use them, and the landing sections reuse the row's error and empty lines.
