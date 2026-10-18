@@ -20,7 +20,7 @@ import { GlassPill } from "@/components/glass-pill";
 import { IconKey } from "@/components/layout/icon-key";
 import { LibraryNavView } from "@/components/layout/library-nav";
 import { MobileMenuSheet } from "@/components/layout/mobile-menu-sheet";
-import { PageBackgroundCanvas } from "@/components/layout/page-background-canvas";
+import { PageBackgroundLayers } from "@/components/layout/page-background";
 import {
   ContactEmail,
   ExternalLink,
@@ -539,45 +539,31 @@ export default function ShowcasePage() {
 
       <Section
         title="Page background"
-        note="Behind every page, this one included: three coiled film strips and rising bokeh over a teal gradient, under the vignette. The gradient and vignette are the first paint; the scene fades in once the browser is idle, draws in a worker where it can, pauses in a hidden tab, and freezes into one still frame under reduced motion. Without WebGL2 only the gradient and vignette show. Every pixel stays dark enough for muted text to keep 4.5:1 (prompts/film-strip-background.md)."
+        note="Behind every page, this one included: a warm red gradient fading to near black, three soft blobs, a faint pinstripe, a dark wash, a vignette and film grain. Every layer is in the prerendered HTML; one small client loop drifts the blobs over time, slides the layers with scroll and leans them toward a mouse, and stays still under reduced motion. The wash and the landing's glows and orbs are set so muted text keeps 4.5:1 over the brightest pixel the layers can stack to (prompts/warm-page-background.md)."
       >
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <Swatch name="--color-page-glow" className="bg-page-glow" />
+          <Swatch name="--color-page-top" className="bg-page-top" />
           <Swatch name="--color-page-mid" className="bg-page-mid" />
           <Swatch name="--color-page-deep" className="bg-page-deep" />
-          <Swatch name="--color-page-abyss" className="bg-page-abyss" />
-          <Swatch name="--color-film-base" className="bg-film-base" />
-          <Swatch name="--color-film-window" className="bg-film-window" />
-          <Swatch name="--color-film-shadow" className="bg-film-shadow" />
-          <Swatch name="--color-film-edge" className="bg-film-edge" />
-          <Swatch name="--color-film-rail" className="bg-film-rail" />
-          <Swatch name="--color-film-glow" className="bg-film-glow" />
-          <Swatch name="--color-light-ambient" className="bg-light-ambient" />
-          <Swatch name="--color-light-key" className="bg-light-key" />
-          <Swatch name="--color-light-rim" className="bg-light-rim" />
-          <Swatch name="--color-bokeh-1" className="bg-bokeh-1" />
-          <Swatch name="--color-bokeh-2" className="bg-bokeh-2" />
-          <Swatch name="--color-bokeh-3" className="bg-bokeh-3" />
-          <Swatch name="--color-bokeh-4" className="bg-bokeh-4" />
+          <Swatch name="--color-page-blob-red" className="bg-page-blob-red" />
+          <Swatch
+            name="--color-page-blob-amber"
+            className="bg-page-blob-amber"
+          />
+          <Swatch name="--color-page-blob-deep" className="bg-page-blob-deep" />
+          <Swatch name="--color-page-stripe" className="bg-page-stripe" />
+          <Swatch name="--color-page-wash" className="bg-page-wash" />
+          <Swatch name="--color-page-shade" className="bg-page-shade" />
+          <Swatch name="--color-page-glow" className="bg-page-glow" />
+          <Swatch name="--color-page-orb" className="bg-page-orb" />
         </div>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <div className="flex flex-col gap-2">
-            <div className="relative h-64 overflow-hidden rounded-panel border border-border page-gradient">
-              <div className="absolute inset-0 page-vignette" />
-            </div>
-            <code className="text-xs text-muted-foreground">
-              page-gradient and page-vignette, the first paint
-            </code>
+        <div className="mt-4 flex flex-col gap-2">
+          <div className="relative h-80 overflow-hidden rounded-panel border border-border">
+            <PageBackgroundLayers />
           </div>
-          <div className="flex flex-col gap-2">
-            <div className="relative h-64 overflow-hidden rounded-panel border border-border page-gradient">
-              <PageBackgroundCanvas still />
-              <div className="absolute inset-0 page-vignette" />
-            </div>
-            <code className="text-xs text-muted-foreground">
-              the reduced motion still frame
-            </code>
-          </div>
+          <code className="text-xs text-muted-foreground">
+            the layers at rest, as under reduced motion
+          </code>
         </div>
       </Section>
 
