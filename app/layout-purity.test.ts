@@ -27,9 +27,10 @@ const LAYOUT_TREE = [
   "components/layout/navbar.tsx",
   "components/layout/media-type-tabs.tsx",
   "components/layout/mobile-menu-sheet.tsx",
-  // The page background, behind every route (prompts/film-strip-background.md).
+  // The page background and its motion, behind every route
+  // (prompts/warm-page-background.md).
   "components/layout/page-background.tsx",
-  "components/layout/page-background-canvas.tsx",
+  "components/layout/page-background-motion.tsx",
   // TMDB's attribution and the legal links, on every route (spec 0017, AC-1).
   "components/layout/site-footer.tsx",
   // Rendered inside the account slot rather than the layout, but it sits in

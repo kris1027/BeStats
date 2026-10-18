@@ -151,6 +151,7 @@ describe("fetchMoviesByIds", () => {
     // The summary shape only: detail fields do not leak through a list read.
     expect(Object.keys(result.found[0]).sort()).toEqual(
       [
+        "backdropUrl",
         "genreIds",
         "id",
         "overview",

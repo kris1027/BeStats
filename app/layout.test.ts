@@ -43,7 +43,7 @@ describe("the site footer in the root layout", () => {
 });
 
 /**
- * covers: prompts/film-strip-background.md, AC-1
+ * covers: prompts/warm-page-background.md, AC-1
  *
  * The background renders once, from the root layout, before everything else
  * in the body, so every route has it and it stacks below the shell.

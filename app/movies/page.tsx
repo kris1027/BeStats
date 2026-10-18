@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
 import { CatalogLanding } from "@/components/catalog/catalog-landing";
-import { catalogListsFor } from "@/lib/catalog/lists";
 import { landingMetadata } from "@/lib/seo/metadata";
 
 /**
@@ -23,5 +22,5 @@ export const metadata: Metadata = landingMetadata({
  * (`components/catalog/list-cards.tsx`).
  */
 export default function MoviesPage() {
-  return <CatalogLanding heading="Movies" lists={catalogListsFor("movie")} />;
+  return <CatalogLanding heading="Movies" mediaType="movie" />;
 }

@@ -70,9 +70,9 @@ const BLACK: Rgb = [0, 0, 0];
 const WHITE: Rgb = [1, 1, 1];
 
 /**
- * The background's brightest pixel. The scene caps every fragment so muted
- * text keeps 4.5:1 over it (`peakLuminance`, which also shaves a safety
- * margin); this uses the uncapped ceiling, the stricter case.
+ * The background's brightest pixel, taken at the ceiling where muted text
+ * still keeps 4.5:1. `app/page-background-contrast.test.ts` proves the page
+ * background's layers never stack brighter than this.
  */
 const PEAK = greyOf(
   (relativeLuminance(hex("--muted-foreground")) + 0.05) / TEXT_CONTRAST - 0.05,

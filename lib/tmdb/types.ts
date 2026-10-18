@@ -65,6 +65,11 @@ export type MovieSummary = {
    * (spec 0010, AC-13). Missing means `[]`, never a guess.
    */
   genreIds: number[];
+  /**
+   * The wide artwork at `BACKDROP_SIZE`, which list results carry too, so a
+   * landing's wide cards and hero cost no detail read (prompts/home-parallax-landing.md).
+   */
+  backdropUrl: string | null;
 };
 
 export type Movie = Omit<MovieSummary, "overview"> & {
@@ -82,7 +87,6 @@ export type Movie = Omit<MovieSummary, "overview"> & {
   overview: string | null;
   /** ISO 639-1 code of `overview` (`"en"` for English), null with no overview. */
   overviewLanguage: string | null;
-  backdropUrl: string | null;
   originalTitle: string;
   originalLanguage: string;
   tagline: string | null;
@@ -116,6 +120,8 @@ export type TvShowSummary = {
   tmdbVoteCount: number;
   /** As on `MovieSummary`. */
   genreIds: number[];
+  /** As on `MovieSummary`. */
+  backdropUrl: string | null;
 };
 
 export type SeasonSummary = {
@@ -156,7 +162,6 @@ export type TvShow = Omit<TvShowSummary, "overview"> & {
   overviewLanguage: string | null;
   originalLanguage: string;
   tagline: string | null;
-  backdropUrl: string | null;
   /** TMDB's own wording, for example `Ended`. Scope feature 16 interprets it. */
   status: TmdbShowStatus;
   inProduction: boolean;

@@ -1,0 +1,125 @@
+import { render } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { LandingParallax } from "./landing-parallax";
+
+/**
+ * covers: prompts/home-parallax-landing.md, AC-7 (decisions 9 and 16)
+ *
+ * The motion layer writes transforms only when motion is allowed, puts every
+ * node back when the visitor asks for reduced motion, and stops its loop on
+ * unmount. `matchMedia` and `requestAnimationFrame` are driven by hand.
+ */
+let reduced = false;
+let wide = true;
+const listeners = new Set<() => void>();
+let frames: FrameRequestCallback[] = [];
+
+beforeEach(() => {
+  reduced = false;
+  wide = true;
+  frames = [];
+  listeners.clear();
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    get matches() {
+      if (query.includes("reduced-motion")) return reduced;
+      if (query.includes("min-width")) return wide;
+      return true;
+    },
+    addEventListener: (_: string, listener: () => void) =>
+      listeners.add(listener),
+    removeEventListener: (_: string, listener: () => void) =>
+      listeners.delete(listener),
+  }));
+  vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+    frames.push(callback);
+    return frames.length;
+  });
+  vi.stubGlobal("cancelAnimationFrame", (id: number) => {
+    frames[id - 1] = () => {};
+  });
+});
+
+afterEach(() => vi.unstubAllGlobals());
+
+function runFrame() {
+  const pending = frames;
+  frames = [];
+  for (const callback of pending) callback(0);
+}
+
+function setup() {
+  return render(
+    <LandingParallax>
+      <div data-depth="0.5" data-testid="depth" />
+      <div data-hero-bg="" data-testid="backdrop" />
+      <div data-hero-fg="" data-testid="hero" />
+      <ul data-speed-root="">
+        <li data-speed="0.2" data-testid="speed" />
+      </ul>
+    </LandingParallax>,
+  );
+}
+
+describe("LandingParallax (AC-7)", () => {
+  it("moves the marked nodes when motion is allowed", () => {
+    const { getByTestId } = setup();
+
+    runFrame();
+
+    expect(getByTestId("depth").style.transform).toContain("translate3d");
+    expect(getByTestId("hero").style.opacity).toBe("1");
+    expect(getByTestId("speed").style.transform).toContain("translate3d");
+  });
+
+  it("drifts the hero backdrop without zooming it (prompts/home-hero-backdrop-quality.md, AC-1)", () => {
+    const { getByTestId } = setup();
+
+    runFrame();
+
+    const transform = getByTestId("backdrop").style.transform;
+    expect(transform).toContain("translate3d");
+    expect(transform).not.toContain("scale");
+  });
+
+  it("leaves the speed drift off below md", () => {
+    wide = false;
+    const { getByTestId } = setup();
+
+    runFrame();
+
+    expect(getByTestId("speed").style.transform).toBe("");
+    expect(getByTestId("depth").style.transform).toContain("translate3d");
+  });
+
+  it("writes nothing under reduced motion", () => {
+    reduced = true;
+    const { getByTestId } = setup();
+
+    expect(frames).toHaveLength(0);
+    expect(getByTestId("depth").style.transform).toBe("");
+  });
+
+  it("puts every node back when reduced motion turns on", () => {
+    const { getByTestId } = setup();
+    runFrame();
+
+    reduced = true;
+    for (const listener of listeners) listener();
+    runFrame();
+
+    expect(getByTestId("depth").style.transform).toBe("");
+    expect(getByTestId("hero").style.opacity).toBe("");
+  });
+
+  it("stops the loop and its listeners on unmount", () => {
+    const { unmount } = setup();
+
+    unmount();
+
+    expect(listeners.size).toBe(0);
+    const before = frames.length;
+    runFrame();
+    expect(frames.length).toBeLessThanOrEqual(before);
+  });
+});

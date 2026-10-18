@@ -7,9 +7,11 @@ import {
   normalizeCreators,
   normalizeCrew,
   normalizeEpisodeToAir,
+  normalizeMovieSummary,
   normalizeSeasonDetail,
   normalizeSeasonSummary,
   normalizeShowCast,
+  normalizeTvSummary,
   resolveOverview,
   showStatusOf,
 } from "./normalize";
@@ -361,5 +363,35 @@ describe("normalizeCompanies", () => {
     ]);
     expect(companies[0]?.logoUrl).toContain("/w154/amc.png");
     expect(companies[1]?.logoUrl).toBeNull();
+  });
+});
+
+/**
+ * covers: prompts/home-parallax-landing.md, decision 10
+ *
+ * A list result's backdrop reaches the summary, so the landing's wide cards
+ * and hero need no detail read, and a missing one stays null.
+ */
+describe("summary backdrops", () => {
+  const movie = { id: 1, title: "A", poster_path: null, release_date: null };
+  const show = { id: 2, name: "B", poster_path: null, first_air_date: null };
+
+  it("carries a movie's backdrop at the backdrop size", () => {
+    expect(
+      normalizeMovieSummary({ ...movie, backdrop_path: "/m.jpg" }).backdropUrl,
+    ).toBe("https://image.tmdb.org/t/p/w1280/m.jpg");
+  });
+
+  it("carries a show's backdrop at the backdrop size", () => {
+    expect(
+      normalizeTvSummary({ ...show, backdrop_path: "/s.jpg" }).backdropUrl,
+    ).toBe("https://image.tmdb.org/t/p/w1280/s.jpg");
+  });
+
+  it("keeps a missing backdrop null", () => {
+    expect(
+      normalizeMovieSummary({ ...movie, backdrop_path: null }).backdropUrl,
+    ).toBeNull();
+    expect(normalizeTvSummary(show).backdropUrl).toBeNull();
   });
 });

@@ -71,9 +71,9 @@ export const metadata: Metadata = {
  * it costs no route its static shell.
  *
  * `PageBackground` paints behind everything on every route
- * (prompts/film-strip-background.md). Its only client piece mounts after the
- * browser is idle and reads no request state, so it costs no route its static
- * shell either.
+ * (prompts/warm-page-background.md). Its only client piece moves the layers
+ * the server rendered and reads no request state, so it costs no route its
+ * static shell either.
  *
  * `AccountSlot` is the one exception, and a Suspense boundary around each of
  * its two instances, one per navbar layout, is what contains it (spec 0005,

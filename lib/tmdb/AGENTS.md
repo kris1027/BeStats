@@ -74,8 +74,11 @@ feature 4. Runtime steps live in that spec's `verify.md`.
   `isTmdbNotFound`, not through a hand rolled catch.
 - **Images skip Vercel's optimizer.** `image-loader.ts` (`'use client'`, the
   `loaderFile` in `next.config.ts`) maps a `next/image` width onto TMDB's own
-  sizes, never above the size `images.ts` pinned and never `original`, so the
-  browser loads straight from TMDB's CDN (prompts/tmdb-image-loader.md). A new
+  sizes, never above the size `images.ts` pinned, so the browser loads
+  straight from TMDB's CDN (prompts/tmdb-image-loader.md). `original` is
+  requested only by the landing hero, the one exception: the loader serves it
+  whole past the `w1280` rung and a ladder size below it
+  (prompts/home-hero-backdrop-quality.md). A new
   image field keeps a size from `TMDB_IMAGE_WIDTHS` in `images.ts`, the one
   list the loader and `TmdbImageSize` share. `h632`, another host or a size
   off that list passes through unresized, and Next's dev warning ("does not

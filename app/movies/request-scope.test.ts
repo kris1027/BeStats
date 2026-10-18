@@ -101,7 +101,9 @@ describe("the show routes read no request scoped value (spec 0009, AC-18; spec 0
     for (const slug of TV_LIST_SLUGS) {
       expect(files).toContain(join(`app/shows/${slug}/page.tsx`));
     }
-    expect(files).toContain(join("components/catalog/carousel-row.tsx"));
+    expect(files).toContain(
+      join("components/catalog/landing/landing-items.ts"),
+    );
     expect(files).toContain(join("components/catalog/catalog-list-page.tsx"));
   });
 
@@ -367,8 +369,12 @@ describe("the catalog rows and list pages (spec 0021, AC-7, AC-17)", () => {
     expect(readFileSync(path, "utf8")).not.toMatch(/["']use cache/);
   });
 
-  it("waits for the request before a row reads TMDB", () => {
-    const source = readFileSync("components/catalog/carousel-row.tsx", "utf8");
+  it("waits for the request before a landing section reads TMDB", () => {
+    // prompts/home-parallax-landing.md: every section reads through here.
+    const source = readFileSync(
+      "components/catalog/landing/landing-items.ts",
+      "utf8",
+    );
     expect(source.indexOf("await connection()")).toBeGreaterThan(-1);
     expect(source.indexOf("await connection()")).toBeLessThan(
       source.indexOf("readTaggedCatalogList(list, 1)"),

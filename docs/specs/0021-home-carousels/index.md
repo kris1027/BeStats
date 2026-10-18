@@ -3,6 +3,7 @@
 **Date**: 2026-10-12
 **Status**: Accepted
 **Amended**: 2026-10-13. A See all page shows 24 titles, read from the two TMDB pages that hold them; the landing rows still read TMDB page 1. See [spec 0022](../0022-card-size-title-pages/index.md), AC-21.
+**Superseded in part**: 2026-10-18. The landing rows (AC-1, AC-5, AC-6 and the landing half of AC-7) are replaced by the parallax landing in [prompts/home-parallax-landing.md](../../../prompts/home-parallax-landing.md). The See all pages, the registry, the dispatcher, AC-15 metadata and the sitemap stand.
 
 Scope feature: [24. Home carousels](../../scope/scope.md) · Beta tier
 

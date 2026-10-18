@@ -1,5 +1,7 @@
 # Film strip background plays its intro once per tab
 
+> Superseded on 2026-10-18 by [warm-page-background.md](warm-page-background.md): the film strip scene and its code were removed.
+
 ## Goal
 
 The film strip background (prompts/film-strip-background.md) should start once and then keep going. After the first load in a browser tab, a full page load must not replay the intro. That covers a reload, a typed URL, and the return from OAuth or an email link. The strips continue from the pose they had and appear without the 1.6s fade. A rebuild after a resize across the compact breakpoint continues the same way. A new tab gets the intro once (owner, 2026-10-11).

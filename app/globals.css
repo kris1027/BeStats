@@ -78,31 +78,25 @@
   --color-glass-plate-score: #0c1419;
 
   /*
-   * The page background (prompts/film-strip-background.md): the teal
-   * gradient's four stops, the film strip's frame, the three lights it is lit
-   * by and the four bokeh tints, all the design file's own values. Page
-   * background only: no surface or text may use them. "Backdrop" is kept for
-   * a title's TMDB artwork (`backdrop-scrim`), so the two never share a
-   * name. The scene reads them through `getComputedStyle`, never writing one
-   * in a shader, so this file stays the one home of every colour.
+   * The page background (prompts/warm-page-background.md): the warm
+   * gradient's three stops, the three blobs, the pinstripe, the wash, the
+   * vignette's edge, and the landing's glows and orbs, all the design file's
+   * own values. Page background only: no surface or text may use them, and
+   * the amber blob is not the TMDB rating amber. "Backdrop" is kept for a
+   * title's TMDB artwork (`backdrop-scrim`), so the two never share a name.
+   * Each one's strength is a `--page-*-alpha` in `:root`.
    */
-  --color-page-glow: #04303a;
-  --color-page-mid: #021820;
-  --color-page-deep: #010a10;
-  --color-page-abyss: #000306;
-  --color-film-base: #0e6a80;
-  --color-film-window: #05303a;
-  --color-film-shadow: #01090c;
-  --color-film-edge: #4fe0ff;
-  --color-film-rail: #3fd8ff;
-  --color-film-glow: #1fb8d8;
-  --color-light-ambient: #145060;
-  --color-light-key: #a8f4ff;
-  --color-light-rim: #2fd8ff;
-  --color-bokeh-1: #8ff0ff;
-  --color-bokeh-2: #c9f8ff;
-  --color-bokeh-3: #ffffff;
-  --color-bokeh-4: #4fd8f0;
+  --color-page-top: oklch(0.3 0.12 22);
+  --color-page-mid: oklch(0.16 0.05 20);
+  --color-page-deep: oklch(0.1 0.01 40);
+  --color-page-blob-red: oklch(0.45 0.18 25);
+  --color-page-blob-amber: oklch(0.78 0.14 75);
+  --color-page-blob-deep: oklch(0.32 0.13 18);
+  --color-page-stripe: #ffffff;
+  --color-page-wash: #0b0807;
+  --color-page-shade: #050302;
+  --color-page-glow: #dc9646;
+  --color-page-orb: #f5c882;
 
   /* Text greys, beyond the shadcn semantic set. */
   --color-text-label: #e2e5ef;
@@ -193,6 +187,23 @@
   --frost-blur-control: blur(var(--blur-control));
   --frost-blur-panel: blur(var(--blur-panel));
   --frost-blur-overlay: blur(var(--blur-overlay));
+
+  /*
+   * The page background's strengths (prompts/warm-page-background.md,
+   * decision 6). The blobs and stripe are the design's; the wash is darker
+   * and the glow and orb fainter than the design, so the brightest pixel the
+   * layers can stack to keeps `--muted-foreground` at 4.5:1.
+   * `app/page-background-contrast.test.ts` recomputes it from these.
+   */
+  --page-blob-red-alpha: 60%;
+  --page-blob-amber-alpha: 30%;
+  --page-blob-deep-alpha: 60%;
+  --page-stripe-alpha: 4.5%;
+  --page-wash-alpha: 60%;
+  --page-shade-alpha: 75%;
+  --page-grain-alpha: 7%;
+  --page-glow-alpha: 6%;
+  --page-orb-alpha: 8%;
 
   /*
    * The navbar's height: two 40px rows, an 8px gap and 8px of padding above
@@ -527,41 +538,112 @@
 }
 
 /*
- * The page background's gradient (prompts/film-strip-background.md): the
- * design's teal, brightest along the top left. It is in the prerendered HTML,
- * so it is the first paint, and with the vignette the whole background where
- * WebGL2 is missing.
+ * The page background's layers (prompts/warm-page-background.md), in paint
+ * order: the warm gradient, three soft blobs, the pinstripe, the wash, the
+ * vignette and the grain. All of them are in the prerendered HTML, so the
+ * still layer is the first paint; `PageBackgroundMotion` only moves them.
  */
 @utility page-gradient {
-  background: radial-gradient(
-    ellipse at 30% 5%,
-    var(--color-page-glow) 0%,
+  background: linear-gradient(
+    165deg,
+    var(--color-page-top) 0%,
     var(--color-page-mid) 45%,
-    var(--color-page-deep) 80%,
-    var(--color-page-abyss) 100%
+    var(--color-page-deep) 100%
   );
 }
 
 /*
- * The vignette over the scene: lit from above, so it is lightest along the
- * top and closes to near black at the edges, with a second layer deepening
- * the lower half. It only ever darkens, so the scene's contrast cap, which
- * counts the gradient without it, still holds.
+ * A blob fades to nothing well inside its box, so it needs no `filter:
+ * blur()`: a large filtered layer repainted under the frosted plates is what
+ * this avoids (decision 5).
  */
+@utility page-blob-red {
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle,
+    color-mix(
+        in srgb,
+        var(--color-page-blob-red) var(--page-blob-red-alpha),
+        transparent
+      )
+      0%,
+    transparent 65%
+  );
+}
+
+@utility page-blob-amber {
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle,
+    color-mix(
+        in srgb,
+        var(--color-page-blob-amber) var(--page-blob-amber-alpha),
+        transparent
+      )
+      0%,
+    transparent 65%
+  );
+}
+
+@utility page-blob-deep {
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle,
+    color-mix(
+        in srgb,
+        var(--color-page-blob-deep) var(--page-blob-deep-alpha),
+        transparent
+      )
+      0%,
+    transparent 65%
+  );
+}
+
+/*
+ * One stripe every 14px across a 135 degree line, so the pattern repeats
+ * every 14√2 px along either axis; the motion moves it modulo that period
+ * and the 80px bleed hides every edge.
+ */
+@utility page-stripes {
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(
+        in srgb,
+        var(--color-page-stripe) var(--page-stripe-alpha),
+        transparent
+      )
+      0 2px,
+    transparent 2px 14px
+  );
+}
+
+@utility page-wash {
+  background: color-mix(
+    in srgb,
+    var(--color-page-wash) var(--page-wash-alpha),
+    transparent
+  );
+}
+
+/* Clear across the middle, closing to near black at the edges. */
 @utility page-vignette {
-  background:
-    linear-gradient(
-      to bottom,
-      transparent 35%,
-      color-mix(in srgb, var(--color-page-abyss) 20%, transparent) 75%,
-      color-mix(in srgb, var(--color-page-abyss) 40%, transparent) 100%
-    ),
-    radial-gradient(
-      ellipse at 50% 20%,
-      color-mix(in srgb, var(--color-page-abyss) 5%, transparent) 0%,
-      color-mix(in srgb, var(--color-page-abyss) 45%, transparent) 60%,
-      color-mix(in srgb, var(--color-page-abyss) 90%, transparent) 100%
-    );
+  background: radial-gradient(
+    120% 90% at 50% 40%,
+    transparent 45%,
+    color-mix(
+        in srgb,
+        var(--color-page-shade) var(--page-shade-alpha),
+        transparent
+      )
+      100%
+  );
+}
+
+/* Film grain: a fractal noise tile, laid over the rest at a few percent. */
+@utility page-grain {
+  opacity: var(--page-grain-alpha);
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 /*
@@ -578,6 +660,55 @@
     color-mix(in srgb, var(--background) 75%, transparent) var(--navbar-height),
     transparent calc(var(--navbar-height) + 8rem)
   );
+}
+
+/*
+ * The catalog landing's drifting lights (prompts/home-parallax-landing.md,
+ * decision 7): a large soft glow and a small crisp orb in the background's
+ * own amber (prompts/warm-page-background.md), so they read as more of the
+ * background rather than a surface. Kept faint, so `text-muted-foreground`
+ * keeps its contrast where one passes over the brightest blobs.
+ */
+@utility landing-blob {
+  border-radius: 9999px;
+  background: color-mix(
+    in srgb,
+    var(--color-page-glow) var(--page-glow-alpha),
+    transparent
+  );
+  filter: blur(40px);
+}
+
+@utility landing-orb {
+  border-radius: 9999px;
+  background: color-mix(
+    in srgb,
+    var(--color-page-orb) var(--page-orb-alpha),
+    transparent
+  );
+}
+
+/*
+ * A landing poster's artwork drifting inside its frame. `LandingParallax`
+ * sets the two properties on the card; the image itself is never written to,
+ * so the HTML React hydrates is the HTML the server sent.
+ */
+@utility poster-drift {
+  & img {
+    transform: translate3d(0, var(--poster-drift-y, 0px), 0)
+      scale(var(--poster-drift-scale, 1));
+  }
+}
+
+/*
+ * A rank drawn as an outline, the landing's Trending numbers. Decorative
+ * only: the list they sit beside is ordered, so the rank is announced
+ * without them.
+ */
+@utility rank-outline {
+  color: transparent;
+  -webkit-text-stroke: 2px
+    color-mix(in srgb, var(--foreground) 35%, transparent);
 }
 
 /*

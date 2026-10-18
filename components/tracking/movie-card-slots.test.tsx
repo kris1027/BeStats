@@ -112,6 +112,21 @@ describe("MovieCardBadge and MovieCardControls", () => {
     ).toHaveAttribute("aria-pressed", "true");
   });
 
+  it("leaves the release pill out on a card that already prints the date", async () => {
+    grid({ ...none, inWatchlist: true });
+    render(
+      await MovieCardControls({
+        ...props,
+        releaseDate: "2026-11-20",
+        releasePill: false,
+      }),
+    );
+    expect(screen.queryByText("Releases Nov 20, 2026")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Plan Fight Club" }),
+    ).toHaveAttribute("aria-pressed", "true");
+  });
+
   it("shows Date TBA for a planned undated movie", async () => {
     grid({ ...none, inWatchlist: true });
     await renderCard({ releaseDate: null });

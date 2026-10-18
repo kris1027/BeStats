@@ -3,8 +3,8 @@
 import { TMDB_IMAGE_BASE } from "./constants";
 import { splitImageUrl, TMDB_IMAGE_WIDTHS } from "./images";
 
-/** What `original` is capped to, so a full size source never ships as is. */
-const ORIGINAL_CEILING = 1280;
+/** The largest ladder rung, past which an `original` source is served whole. */
+const LADDER_TOP = TMDB_IMAGE_WIDTHS[TMDB_IMAGE_WIDTHS.length - 1];
 
 /**
  * Appended when the fitting size is the source's own. Next warns in
@@ -24,6 +24,9 @@ type LoaderParams = { src: string; width: number; quality?: number };
  *
  * The size `lib/tmdb/images.ts` pinned is the ceiling: a `w500` poster is never
  * upgraded on a dense screen, so no page gets heavier than its field size allows.
+ * An `original` source, which only the landing hero asks for
+ * (prompts/home-hero-backdrop-quality.md), follows the ladder up to its top
+ * rung and is served whole past it, because no TMDB rung is wider.
  * `quality` is ignored because TMDB has no such parameter. Any URL that is not
  * a TMDB size path on the ladder comes back unchanged, so the loader never
  * builds a URL for a host it was not handed. Next's development warning then
@@ -32,10 +35,12 @@ type LoaderParams = { src: string; width: number; quality?: number };
 export function tmdbImageLoader({ src, width }: LoaderParams): string {
   const parts = splitImageUrl(src);
   if (!parts) return src;
+  if (parts.size === "original" && width > LADDER_TOP) {
+    return `${src}${SAME_SIZE_FRAGMENT}`;
+  }
   const ceiling = sizeCeiling(parts.size);
   if (ceiling === null) return src;
 
-  // `original` is left off the ladder because it can be several megabytes.
   const fit = TMDB_IMAGE_WIDTHS.find((rung) => rung >= width) ?? ceiling;
   const url = `${TMDB_IMAGE_BASE}/w${Math.min(fit, ceiling)}${parts.path}`;
   return url === src ? `${url}${SAME_SIZE_FRAGMENT}` : url;
@@ -43,7 +48,7 @@ export function tmdbImageLoader({ src, width }: LoaderParams): string {
 
 /** The pixel width a source size allows, or null when it is not on the ladder. */
 function sizeCeiling(size: string): number | null {
-  if (size === "original") return ORIGINAL_CEILING;
+  if (size === "original") return LADDER_TOP;
   const match = /^w(\d+)$/.exec(size);
   if (!match) return null;
   const value = Number(match[1]);

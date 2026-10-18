@@ -10,11 +10,21 @@ import {
   ROW_POSTER_SIZES,
 } from "@/components/catalog/carousel-row-states";
 import { CarouselScroller } from "@/components/catalog/carousel-scroller";
+import { ArtFallback } from "@/components/catalog/landing/art-fallback";
+import {
+  LandingHeroSkeleton,
+  NowSkeleton,
+  PopularSkeleton,
+  TopRatedSkeleton,
+  TrendingSkeleton,
+  UpcomingSkeleton,
+  WIDE_CARD_CLASS,
+} from "@/components/catalog/landing/landing-skeletons";
 import { GlassPill } from "@/components/glass-pill";
 import { IconKey } from "@/components/layout/icon-key";
 import { LibraryNavView } from "@/components/layout/library-nav";
 import { MobileMenuSheet } from "@/components/layout/mobile-menu-sheet";
-import { PageBackgroundCanvas } from "@/components/layout/page-background-canvas";
+import { PageBackgroundLayers } from "@/components/layout/page-background";
 import {
   ContactEmail,
   ExternalLink,
@@ -101,6 +111,24 @@ function Section({
 }
 
 /** A carousel row as a landing renders it, around fixed demo content. */
+/** A landing state demo under its own small heading. */
+function ShowcaseLanding({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-4">
+      <h3 className="text-xl font-semibold tracking-[-0.02em] text-foreground md:text-2xl">
+        {title}
+      </h3>
+      {children}
+    </div>
+  );
+}
+
 function ShowcaseRow({
   title,
   children,
@@ -410,7 +438,7 @@ export default function ShowcasePage() {
 
       <Section
         title="Carousel row"
-        note="A landing row (spec 0021): the header and arrows are prerendered, the cards stream behind 12 skeletons, and a failed or empty list keeps a card's height so nothing shifts. The arrows show from md and are disabled at each end."
+        note="A title page row (Cast, More like this): the header and arrows are prerendered, the cards stream behind skeletons, and a failed or empty list keeps a card's height so nothing shifts. The arrows show from md and are disabled at each end. The landing sections reuse the error and empty lines."
       >
         <div className="flex flex-col gap-10">
           <ShowcaseRow title="With cards">
@@ -438,6 +466,50 @@ export default function ShowcasePage() {
           <ShowcaseRow title="Empty">
             <CarouselRowEmpty />
           </ShowcaseRow>
+        </div>
+      </Section>
+
+      <Section
+        title="Landing sections"
+        note="The /movies and /shows landing (prompts/home-parallax-landing.md): each section's loading shape as it streams, a failed and an empty section, and the missing artwork tile of the hero and a wide card. A failed trending read shows no hero, only the Trending row's error. The motion lives in LandingParallax and never runs here."
+      >
+        <div className="flex flex-col gap-10">
+          {/*
+           * The hero pulls up behind the navbar by main's padding plus the
+           * bar's height; the padding here gives that pull room in place.
+           */}
+          <div className="relative overflow-hidden pt-[calc(2rem+var(--navbar-height))] md:pt-[calc(3rem+var(--navbar-height))]">
+            <LandingHeroSkeleton />
+          </div>
+          <div className="-mx-4 overflow-x-auto px-4">
+            <TrendingSkeleton />
+          </div>
+          <PopularSkeleton />
+          <NowSkeleton />
+          <UpcomingSkeleton />
+          <TopRatedSkeleton />
+          <ShowcaseLanding title="A failed section">
+            <CarouselRowError list={catalogList("movie", "trending")} />
+          </ShowcaseLanding>
+          <ShowcaseLanding title="An empty section">
+            <CarouselRowEmpty />
+          </ShowcaseLanding>
+          <ShowcaseLanding title="Missing artwork">
+            <div className="flex flex-wrap items-start gap-4">
+              <div className="relative aspect-video w-full max-w-md overflow-hidden rounded-lg">
+                <ArtFallback iconClassName="size-10" />
+              </div>
+              <div
+                className={`relative overflow-hidden rounded-lg ${WIDE_CARD_CLASS}`}
+              >
+                <ArtFallback />
+                <span
+                  aria-hidden="true"
+                  className="rim glass-rim pointer-events-none absolute inset-0 rounded-lg"
+                />
+              </div>
+            </div>
+          </ShowcaseLanding>
         </div>
       </Section>
 
@@ -519,45 +591,31 @@ export default function ShowcasePage() {
 
       <Section
         title="Page background"
-        note="Behind every page, this one included: three coiled film strips and rising bokeh over a teal gradient, under the vignette. The gradient and vignette are the first paint; the scene fades in once the browser is idle, draws in a worker where it can, pauses in a hidden tab, and freezes into one still frame under reduced motion. Without WebGL2 only the gradient and vignette show. Every pixel stays dark enough for muted text to keep 4.5:1 (prompts/film-strip-background.md)."
+        note="Behind every page, this one included: a warm red gradient fading to near black, three soft blobs, a faint pinstripe, a dark wash, a vignette and film grain. Every layer is in the prerendered HTML; one small client loop drifts the blobs over time, slides the layers with scroll and leans them toward a mouse, and stays still under reduced motion. The wash and the landing's glows and orbs are set so muted text keeps 4.5:1 over the brightest pixel the layers can stack to (prompts/warm-page-background.md)."
       >
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <Swatch name="--color-page-glow" className="bg-page-glow" />
+          <Swatch name="--color-page-top" className="bg-page-top" />
           <Swatch name="--color-page-mid" className="bg-page-mid" />
           <Swatch name="--color-page-deep" className="bg-page-deep" />
-          <Swatch name="--color-page-abyss" className="bg-page-abyss" />
-          <Swatch name="--color-film-base" className="bg-film-base" />
-          <Swatch name="--color-film-window" className="bg-film-window" />
-          <Swatch name="--color-film-shadow" className="bg-film-shadow" />
-          <Swatch name="--color-film-edge" className="bg-film-edge" />
-          <Swatch name="--color-film-rail" className="bg-film-rail" />
-          <Swatch name="--color-film-glow" className="bg-film-glow" />
-          <Swatch name="--color-light-ambient" className="bg-light-ambient" />
-          <Swatch name="--color-light-key" className="bg-light-key" />
-          <Swatch name="--color-light-rim" className="bg-light-rim" />
-          <Swatch name="--color-bokeh-1" className="bg-bokeh-1" />
-          <Swatch name="--color-bokeh-2" className="bg-bokeh-2" />
-          <Swatch name="--color-bokeh-3" className="bg-bokeh-3" />
-          <Swatch name="--color-bokeh-4" className="bg-bokeh-4" />
+          <Swatch name="--color-page-blob-red" className="bg-page-blob-red" />
+          <Swatch
+            name="--color-page-blob-amber"
+            className="bg-page-blob-amber"
+          />
+          <Swatch name="--color-page-blob-deep" className="bg-page-blob-deep" />
+          <Swatch name="--color-page-stripe" className="bg-page-stripe" />
+          <Swatch name="--color-page-wash" className="bg-page-wash" />
+          <Swatch name="--color-page-shade" className="bg-page-shade" />
+          <Swatch name="--color-page-glow" className="bg-page-glow" />
+          <Swatch name="--color-page-orb" className="bg-page-orb" />
         </div>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <div className="flex flex-col gap-2">
-            <div className="relative h-64 overflow-hidden rounded-panel border border-border page-gradient">
-              <div className="absolute inset-0 page-vignette" />
-            </div>
-            <code className="text-xs text-muted-foreground">
-              page-gradient and page-vignette, the first paint
-            </code>
+        <div className="mt-4 flex flex-col gap-2">
+          <div className="relative h-80 overflow-hidden rounded-panel border border-border">
+            <PageBackgroundLayers />
           </div>
-          <div className="flex flex-col gap-2">
-            <div className="relative h-64 overflow-hidden rounded-panel border border-border page-gradient">
-              <PageBackgroundCanvas still />
-              <div className="absolute inset-0 page-vignette" />
-            </div>
-            <code className="text-xs text-muted-foreground">
-              the reduced motion still frame
-            </code>
-          </div>
+          <code className="text-xs text-muted-foreground">
+            the layers at rest, as under reduced motion
+          </code>
         </div>
       </Section>
 
