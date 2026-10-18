@@ -25,7 +25,7 @@ _This is the second scope for BeStats. The movie and TV scope lives in [scope.md
 | # | Feature | Phase | Status |
 |---|---------|-------|--------|
 | G1 | IGDB integration module | Foundation | in-progress |
-| G2 | Game data model and security policies | Foundation | planned |
+| G2 | Game data model and security policies | Foundation | in-progress |
 | G3 | Game page (tracer) | Slice G1 | planned |
 | G4 | Game status and rating | Slice G1 | planned |
 | G5 | Games tab and library pages | Slice G2 | planned |
@@ -51,10 +51,20 @@ A server only module that reads games from IGDB, the way `lib/tmdb/` reads movie
 - [x] Test it: `/test IGDB integration module`
 spec [0023](../specs/0023-igdb-integration-module/index.md) · code in [lib/igdb/](../../lib/igdb/)
 
-### G2. Game data model and security policies · needs a decision · GA
+### G2. Game data model and security policies · in-progress · GA
 The private table behind every games feature: one row per user and game holding its status, score and dates.
 **Done when:** a migration adds the table with a status enum, one row per user and game, a score from 1 to 10 that needs Playing or Finished, and the three timestamps; owner only RLS covers read, insert, update and delete; pgTAP tests prove two users cannot read or change each other's games; generated types are updated.
-- [ ] Design it (spec): `/architect game data model and security policies`
+- [x] Design it (spec): `/architect game data model and security policies`
+- [ ] Build it: `/develop game data model and security policies`
+  - [ ] Thin thread: enum, table, forced RLS, owner policies, hardened grants, seed rows, cross user pgTAP cases and regenerated types, AC-1, AC-9 to AC-11, AC-14
+  - [ ] Score and status checks, AC-2, AC-3
+  - [ ] Trigger owned dates with the identity pin and the restore escape, and their tests in `180-game-state.test.sql`, AC-4 to AC-8
+  - [ ] Structure and sweep tests, drift check and type checks, then `supabase db push` before merge, AC-12 to AC-15
+- [ ] Verify it: `/check verify game data model and security policies`
+- [ ] Test it: `/test game data model and security policies`
+- [ ] Review it (fresh model): `/check review game data model and security policies`
+- [ ] Document it: `/document game data model and security policies`
+spec [0024](../specs/0024-game-data-model-security/index.md) · code in [supabase/](../../supabase/)
 
 ## Slice G1: One game, end to end
 
