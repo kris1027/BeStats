@@ -55,14 +55,25 @@ describe("tmdbImageLoader", () => {
     expect(tmdbImageLoader({ src: at("w185"), width: 384 })).toBe(same("w185"));
   });
 
-  it("caps an original source at w1280 and still sizes it down (AC-3)", () => {
-    expect(tmdbImageLoader({ src: at("original"), width: 3840 })).toBe(
-      at("w1280"),
-    );
-    expect(tmdbImageLoader({ src: at("original"), width: 128 })).toBe(
-      at("w154"),
-    );
-  });
+  it.each([1281, 1920, 3840])(
+    "serves an original source whole at width %i, past the top rung (prompts/home-hero-backdrop-quality.md, AC-2)",
+    (width) => {
+      expect(tmdbImageLoader({ src: at("original"), width })).toBe(
+        same("original"),
+      );
+    },
+  );
+
+  it.each([
+    [128, "w154"],
+    [1080, "w1280"],
+    [1280, "w1280"],
+  ])(
+    "sizes an original source down the ladder at width %i to %s (AC-3)",
+    (width, size) => {
+      expect(tmdbImageLoader({ src: at("original"), width })).toBe(at(size));
+    },
+  );
 
   it.each([
     at("h632"),
