@@ -712,6 +712,25 @@
 }
 
 /*
+ * The fainter rank behind a Top rated poster: a barely there fill under a
+ * thin outline, so it reads as depth rather than as a second label
+ * (prompts/top-rated-parallax-columns.md, decision 4).
+ */
+@utility rank-ghost {
+  color: color-mix(in srgb, var(--foreground) 7%, transparent);
+  -webkit-text-stroke: 1px
+    color-mix(in srgb, var(--foreground) 14%, transparent);
+}
+
+/*
+ * The deep drop shadow under a Top rated poster, which lifts it off the
+ * rank behind it (decision 5).
+ */
+@utility poster-lift {
+  box-shadow: 0 30px 60px -20px rgb(0 0 0 / 0.7);
+}
+
+/*
  * Loading pulse, 2 seconds ease in out, cut entirely under reduced motion
  * rather than merely slowed: a permanently animating page is the thing the
  * setting exists to prevent (AC-12).

@@ -32,10 +32,27 @@ export const NOW_GRID_CLASS = "grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-5";
 
 export const WIDE_CARD_CLASS = "h-[150px] w-[260px] md:h-[200px] md:w-[340px]";
 
+/**
+ * Two columns, four from `lg` (prompts/top-rated-parallax-columns.md,
+ * decision 1), held to a width that keeps a poster near 240px on a wide
+ * screen. The bottom padding is the stagger's, so the lowered last cards
+ * never reach the next block.
+ */
 export const TOP_LIST_CLASS =
-  "grid gap-x-[5vw] gap-y-10 md:grid-cols-[repeat(auto-fit,minmax(min(100%,460px),1fr))] md:gap-y-14";
+  "mx-auto grid w-full grid-cols-2 gap-x-5 gap-y-12 pb-12 md:max-w-2xl md:gap-y-14 md:pb-20 lg:max-w-[70rem] lg:grid-cols-4 lg:gap-x-8 lg:pb-35";
 
-export const TOP_POSTER_CLASS = "w-[100px] shrink-0 md:w-[140px]";
+/**
+ * The stagger (decision 2): an odd index is an odd column in both layouts,
+ * so it moves down. A translate, so the grid rows stay tight.
+ */
+export function topOffsetClass(index: number): string | undefined {
+  return index % 2
+    ? "translate-y-12 md:translate-y-20 lg:translate-y-35"
+    : undefined;
+}
+
+/** The poster's frame, room above it for the rank (decision 4). */
+export const TOP_CARD_CLASS = "relative pt-14 md:pt-20 lg:pt-23";
 
 /**
  * The hero's box: pulled up behind the transparent navbar and out to the
@@ -142,13 +159,13 @@ function TopRatedSkeleton() {
     <ul aria-hidden="true" className={TOP_LIST_CLASS}>
       {Array.from({ length: 4 }, (_, index) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders with no identity.
-        <li key={index} className="flex items-center gap-5 md:gap-7">
-          <div className={TOP_POSTER_CLASS}>
-            <Skeleton shape="poster" />
-          </div>
-          <div className="flex flex-1 flex-col gap-2">
-            <Skeleton shape="pill" />
-            <Skeleton shape="line" className="w-3/4" />
+        <li key={index} className={topOffsetClass(index)}>
+          <div className={TOP_CARD_CLASS}>
+            <Skeleton shape="poster" className="rounded-xl" />
+            <div className="mt-4 flex flex-col gap-2">
+              <Skeleton shape="pill" />
+              <Skeleton shape="line" className="w-3/4" />
+            </div>
           </div>
         </li>
       ))}

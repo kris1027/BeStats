@@ -203,6 +203,32 @@ describe("the ranked sections", () => {
       "/movies/8",
     );
   });
+
+  it("staggers Top rated into drifting columns, ranks hidden (prompts/top-rated-parallax-columns.md)", async () => {
+    read.mockResolvedValue(moviePage(movies(8)));
+
+    const { container } = render(await TopRatedItems({ list: MOVIES.top }));
+
+    const list = container.querySelector("ol") as HTMLElement;
+    expect(list).toHaveAttribute("data-speed-root");
+    const items = within(list).getAllByRole("listitem");
+    expect(items.map((item) => item.className.includes("translate-y"))).toEqual(
+      [false, true, false, true, false, true, false, true],
+    );
+    expect(
+      items.map((item) =>
+        item.firstElementChild?.getAttribute("data-speed-lg"),
+      ),
+    ).toEqual(["0", "0.14", "0.04", "0.18", "0", "0.14", "0.04", "0.18"]);
+    const ranks = container.querySelectorAll(".rank-ghost");
+    expect([...ranks].map((rank) => rank.textContent)).toEqual(
+      Array.from({ length: 8 }, (_, index) => String(index + 1)),
+    );
+    for (const rank of ranks) {
+      expect(rank).toHaveAttribute("aria-hidden", "true");
+      expect(rank.closest("[data-speed-root]")?.tagName).toBe("ARTICLE");
+    }
+  });
 });
 
 describe("Upcoming rows (AC-4)", () => {
