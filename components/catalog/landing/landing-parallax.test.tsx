@@ -12,17 +12,20 @@ import { LandingParallax } from "./landing-parallax";
  */
 let reduced = false;
 let wide = true;
+let large = false;
 const listeners = new Set<() => void>();
 let frames: FrameRequestCallback[] = [];
 
 beforeEach(() => {
   reduced = false;
   wide = true;
+  large = false;
   frames = [];
   listeners.clear();
   vi.stubGlobal("matchMedia", (query: string) => ({
     get matches() {
       if (query.includes("reduced-motion")) return reduced;
+      if (query.includes("64rem")) return large;
       if (query.includes("min-width")) return wide;
       return true;
     },
@@ -56,6 +59,7 @@ function setup() {
       <div data-hero-fg="" data-testid="hero" />
       <ul data-speed-root="">
         <li data-speed="0.2" data-testid="speed" />
+        <li data-speed="0" data-speed-lg="0.2" data-testid="speed-lg" />
       </ul>
     </LandingParallax>,
   );
@@ -80,6 +84,22 @@ describe("LandingParallax (AC-7)", () => {
     const transform = getByTestId("backdrop").style.transform;
     expect(transform).toContain("translate3d");
     expect(transform).not.toContain("scale");
+  });
+
+  it("uses data-speed-lg only from lg (prompts/top-rated-parallax-columns.md, decision 3)", () => {
+    const below = setup();
+    runFrame();
+    expect(below.getByTestId("speed-lg").style.transform).toBe(
+      "translate3d(0, 0px, 0)",
+    );
+    below.unmount();
+
+    large = true;
+    const above = setup();
+    runFrame();
+    expect(above.getByTestId("speed-lg").style.transform).toBe(
+      above.getByTestId("speed").style.transform,
+    );
   });
 
   it("leaves the speed drift off below md", () => {
