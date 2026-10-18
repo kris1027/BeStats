@@ -44,6 +44,8 @@ begin
   new.started_at := old.started_at;
   new.finished_at := old.finished_at;
 
+  -- No `else` on purpose: a status added to `game_status` later raises
+  -- `CASE_NOT_FOUND` here until its dates are decided, rather than moving none.
   if new.status is distinct from old.status then
     case new.status
       when 'want_to_play' then

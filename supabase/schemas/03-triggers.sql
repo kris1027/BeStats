@@ -182,6 +182,8 @@ begin
   new.started_at := old.started_at;
   new.finished_at := old.finished_at;
 
+  -- No `else` on purpose: a status added to `game_status` later raises
+  -- `CASE_NOT_FOUND` here until its dates are decided, rather than moving none.
   if new.status is distinct from old.status then
     case new.status
       when 'want_to_play' then
@@ -228,8 +230,10 @@ create trigger profiles_set_updated_at
   before update on public.profiles
   for each row execute function public.set_updated_at();
 
--- `set_timestamps` sorts before `set_updated_at`, so on update the dates are
--- settled first and `updated_at` is stamped last.
+-- Triggers on one table fire in name order: `user_game_state_set_timestamps`
+-- sorts before `user_game_state_set_updated_at`, so on update the dates are
+-- settled first and `updated_at` is stamped last. Renaming either can swap
+-- them.
 create trigger user_game_state_set_timestamps
   before insert or update on public.user_game_state
   for each row execute function public.set_game_timestamps();
