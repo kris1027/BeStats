@@ -71,6 +71,22 @@ None of the installed skills applies (no caching, Supabase or data change).
 8. **Out of scope.** The design's intensity and stagger knobs, its "Scroll to
    preview" spacer and background gradient (the landing has its own).
 
+## Amendment (2026-10-18): Upcoming rows on the same branch
+
+Two Upcoming changes shipped with this work. Their decisions live in
+`prompts/home-parallax-landing.md` (decisions 8 and 13, amended 2026-10-18),
+not here:
+
+- The rows slide at `MARQUEE_SPEED = 0.25` instead of 0.6, because the cards
+  went by too fast to read.
+- Four rows instead of two: page 1 fills rows 1 and 2, page 2 rows 3 and 4,
+  and a title on both pages shows once. Each page fills only its own rows.
+  A failed page 2 leaves rows 3 and 4 out.
+
+Extra files: `upcoming-rows.tsx`, `landing-items.ts` (`readLandingList` takes
+a `page`, `newLandingItems`), `lib/catalog/landing.ts` (`upcomingRows`,
+`upcomingRowsPerPage`).
+
 ## Files
 
 - `components/catalog/landing/top-rated-list.tsx`
