@@ -31,11 +31,14 @@ alter table public.user_episode_state enable row level security;
 alter table public.user_episode_state force row level security;
 alter table public.profiles enable row level security;
 alter table public.profiles force row level security;
+alter table public.user_game_state enable row level security;
+alter table public.user_game_state force row level security;
 
 revoke all on table public.user_movie_state from anon, public;
 revoke all on table public.user_show_state from anon, public;
 revoke all on table public.user_episode_state from anon, public;
 revoke all on table public.profiles from anon, public;
+revoke all on table public.user_game_state from anon, public;
 
 -- `authenticated` is revoked from as well, then granted back only the four
 -- commands. The same default privileges that reach `anon` also hand
@@ -46,10 +49,12 @@ revoke all on table public.user_movie_state from authenticated;
 revoke all on table public.user_show_state from authenticated;
 revoke all on table public.user_episode_state from authenticated;
 revoke all on table public.profiles from authenticated;
+revoke all on table public.user_game_state from authenticated;
 
 grant select, insert, update, delete on table public.user_movie_state to authenticated;
 grant select, insert, update, delete on table public.user_show_state to authenticated;
 grant select, insert, update, delete on table public.user_episode_state to authenticated;
+grant select, insert, update, delete on table public.user_game_state to authenticated;
 
 -- No delete on `profiles`, deliberately (prompts/account-username.md).
 -- Deleting the row and inserting it again would restart the weekly lock, so
@@ -148,6 +153,29 @@ create policy "Users update their own profile"
 
 create policy "Users delete their own profile"
   on public.profiles for delete
+  to authenticated
+  using ((select auth.uid()) = user_id);
+
+-- user_game_state (spec 0024)
+
+create policy "Users select their own game state"
+  on public.user_game_state for select
+  to authenticated
+  using ((select auth.uid()) = user_id);
+
+create policy "Users insert their own game state"
+  on public.user_game_state for insert
+  to authenticated
+  with check ((select auth.uid()) = user_id);
+
+create policy "Users update their own game state"
+  on public.user_game_state for update
+  to authenticated
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
+
+create policy "Users delete their own game state"
+  on public.user_game_state for delete
   to authenticated
   using ((select auth.uid()) = user_id);
 

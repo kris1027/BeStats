@@ -90,3 +90,21 @@ values
   ('11111111-1111-1111-1111-111111111111', 62087, 1396, 1, 3, null, null),
   ('11111111-1111-1111-1111-111111111111', 62131, 1396, 0, 1, now(), 7),
   ('22222222-2222-2222-2222-222222222222', 63056, 1399, 1, 1, now(), 9);
+
+-- Game state (spec 0024). 1942 is The Witcher 3: Wild Hunt and 119133 is
+-- Elden Ring: real IGDB ids. The dates are fixed and distinct so the library
+-- sort tests see a real order, which is why they go in under the restore
+-- escape: without it the trigger stamps every date now. The escape is
+-- transaction local and set back to `off` before the transaction ends.
+begin;
+select set_config('bestats.restore_game', 'on', true);
+insert into public.user_game_state (user_id, game_id, status, rating, added_at, started_at, finished_at)
+values
+  ('11111111-1111-1111-1111-111111111111', 1942, 'playing', 8,
+   '2026-09-01T10:00:00Z', '2026-09-05T10:00:00Z', null),
+  ('11111111-1111-1111-1111-111111111111', 119133, 'finished', null,
+   '2026-08-01T10:00:00Z', null, '2026-08-20T10:00:00Z'),
+  ('22222222-2222-2222-2222-222222222222', 1942, 'want_to_play', null,
+   '2026-09-10T10:00:00Z', null, null);
+select set_config('bestats.restore_game', 'off', true);
+commit;

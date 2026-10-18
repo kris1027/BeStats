@@ -8,11 +8,12 @@
 -- `set local` confines both to this transaction, which is rolled back.
 
 begin;
-select plan(28);
+select plan(36);
 
 -- User A and user B come from supabase/seed.sql.
--- A owns: movie 603 and 27205, show 1396 and 1399, episodes 62085 to 62087 and 62131.
--- B owns: movie 603, show 1396, episode 63056.
+-- A owns: movie 603 and 27205, show 1396 and 1399, episodes 62085 to 62087 and 62131,
+--         games 1942 and 119133.
+-- B owns: movie 603, show 1396, episode 63056, game 1942.
 
 set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
 set local role authenticated;
@@ -249,6 +250,74 @@ select throws_ok(
   '42501',
   null,
   'a session with no subject claim cannot write either'
+);
+
+-- Spec 0024 AC-10: the same door on `user_game_state`. Both users hold game
+-- 1942, so a leak or a cross user write would have something to hit.
+reset role;
+reset request.jwt.claims;
+set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+set local role authenticated;
+
+select is(
+  (select count(*) from public.user_game_state
+   where user_id = '22222222-2222-2222-2222-222222222222'),
+  0::bigint,
+  'user A reads none of user B game rows'
+);
+select is(
+  (select count(*) from public.user_game_state
+   where user_id <> '11111111-1111-1111-1111-111111111111'),
+  0::bigint,
+  'every game row visible to user A belongs to user A'
+);
+select ok(
+  (select count(*) from public.user_game_state) = 2,
+  'user A still sees their own two game rows'
+);
+select throws_ok(
+  $$insert into public.user_game_state (user_id, game_id, status)
+    values ('22222222-2222-2222-2222-222222222222', 999, 'want_to_play')$$,
+  '42501',
+  null,
+  'user A cannot insert a game row owned by user B'
+);
+
+update public.user_game_state set status = 'finished'
+  where user_id = '22222222-2222-2222-2222-222222222222';
+delete from public.user_game_state
+  where user_id = '22222222-2222-2222-2222-222222222222';
+
+reset role;
+reset request.jwt.claims;
+
+select is(
+  (select count(*) from public.user_game_state
+   where user_id = '22222222-2222-2222-2222-222222222222'),
+  1::bigint,
+  'user B game row survived user A delete attempt'
+);
+select is(
+  (select status::text from public.user_game_state
+   where user_id = '22222222-2222-2222-2222-222222222222' and game_id = 1942),
+  'want_to_play',
+  'user B game row was not changed by user A update attempt'
+);
+
+set local role anon;
+
+select throws_ok(
+  $$select * from public.user_game_state$$,
+  '42501',
+  null,
+  'anon cannot read game state at all'
+);
+select throws_ok(
+  $$insert into public.user_game_state (user_id, game_id, status)
+    values ('11111111-1111-1111-1111-111111111111', 1, 'want_to_play')$$,
+  '42501',
+  null,
+  'anon cannot write game state at all'
 );
 
 -- The positive half of the boundary. Every assertion above is a refusal, and a

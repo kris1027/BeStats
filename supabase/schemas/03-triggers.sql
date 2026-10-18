@@ -155,3 +155,7 @@ create trigger profiles_guard_username_change
 create trigger profiles_set_updated_at
   before update on public.profiles
   for each row execute function public.set_updated_at();
+
+create trigger user_game_state_set_updated_at
+  before update on public.user_game_state
+  for each row execute function public.set_updated_at();
