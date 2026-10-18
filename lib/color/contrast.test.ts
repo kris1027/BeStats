@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   channelsFromComputed,
   channelsFromHex,
+  channelsFromOklch,
   contrastRatio,
   relativeLuminance,
 } from "./contrast";
@@ -38,6 +39,43 @@ describe("channelsFromHex", () => {
   it("rejects anything else", () => {
     expect(channelsFromHex("fff")).toBeNull();
     expect(channelsFromHex("0 0 0")).toBeNull();
+  });
+});
+
+// Written as the bare numbers, for the same reason as the hex values above.
+describe("channelsFromOklch", () => {
+  it("reads white, black and a mid grey", () => {
+    const white = channelsFromOklch("1 0 0");
+    const black = channelsFromOklch("0 0 0");
+    expect(white?.map((c) => c.toFixed(3))).toEqual([
+      "1.000",
+      "1.000",
+      "1.000",
+    ]);
+    expect(black).toEqual([0, 0, 0]);
+    const grey = channelsFromOklch("0.5 0 0");
+    expect(grey?.[0]).toBeCloseTo(grey?.[1] ?? 0, 5);
+    expect(grey?.[0]).toBeCloseTo(0.389, 2);
+  });
+
+  it("reads a saturated red as red, ignoring an alpha", () => {
+    const red = channelsFromOklch("0.628 0.2577 29.23 / 50%");
+    expect(red?.[0]).toBeCloseTo(1, 2);
+    expect(red?.[1]).toBeCloseTo(0, 2);
+    expect(red?.[2]).toBeCloseTo(0, 2);
+  });
+
+  it("clamps a colour outside sRGB", () => {
+    const vivid = channelsFromOklch("0.7 0.4 140");
+    for (const c of vivid ?? []) {
+      expect(c).toBeGreaterThanOrEqual(0);
+      expect(c).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it("rejects anything else", () => {
+    expect(channelsFromOklch("")).toBeNull();
+    expect(channelsFromOklch("0.5 0.1")).toBeNull();
   });
 });
 

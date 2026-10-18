@@ -1,8 +1,8 @@
 /**
- * Colour channels and WCAG 2 contrast, shared by the film strip background
- * (its luminance cap, prompts/film-strip-background.md, decision 5) and the
+ * Colour channels and WCAG 2 contrast, shared by the page background's
+ * contrast guard (prompts/warm-page-background.md, decision 6) and the
  * frosted glass contrast guard (prompts/frosted-glass.md, AC-3). Pure and
- * free of `server-only`, so the scene's worker and the tests can both use it.
+ * free of `server-only`, so any test can use it.
  */
 
 /** An sRGB colour as three channels from 0 to 1. */
@@ -42,6 +42,37 @@ export function channelsFromHex(value: string): Rgb | null {
     (i) => Number.parseInt(match[1].slice(i, i + 2), 16) / 255,
   );
   return [r, g, b];
+}
+
+/**
+ * The gamma encoded sRGB channels of an OKLCH colour, the notation the page
+ * background's tokens keep from their design file. Takes the whole function
+ * or just its three numbers (lightness 0 to 1, chroma, hue in degrees); an
+ * alpha after them is ignored. Channels outside sRGB are clamped, as a
+ * browser draws them. Null for anything else.
+ */
+export function channelsFromOklch(value: string): Rgb | null {
+  const match = value
+    .trim()
+    .match(/^(?:oklch\(\s*)?(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)/i);
+  if (!match) return null;
+  const [lightness, chroma, hue] = match.slice(1, 4).map(Number);
+  if (![lightness, chroma, hue].every(Number.isFinite)) return null;
+  const a = chroma * Math.cos((hue * Math.PI) / 180);
+  const b = chroma * Math.sin((hue * Math.PI) / 180);
+  const l = (lightness + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+  const m = (lightness - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+  const s = (lightness - 0.0894841775 * a - 1.291485548 * b) ** 3;
+  const linear = [
+    4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+    -0.0041960863 * l - 0.7034186147 * m + 1.707695601 * s,
+  ];
+  const [r, g, bl] = linear.map((c) => {
+    const x = Math.min(1, Math.max(0, c));
+    return x <= 0.0031308 ? 12.92 * x : 1.055 * x ** (1 / 2.4) - 0.055;
+  });
+  return [r, g, bl];
 }
 
 /** WCAG 2 relative luminance of an sRGB colour. */
