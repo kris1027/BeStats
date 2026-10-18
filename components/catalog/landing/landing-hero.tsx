@@ -1,3 +1,4 @@
+import { cn } from "cn";
 import { FilmIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -10,13 +11,24 @@ import { TmdbRatingBadge } from "@/components/rating-badges";
 import { MovieTrackingSlot } from "@/components/tracking/movie-tracking-slot";
 import { ShowTrackingSlot } from "@/components/tracking/show-tracking-slot";
 import type { CatalogList } from "@/lib/catalog/lists";
-import { type Genre, getMovieGenres, getTvGenres, TmdbError } from "@/lib/tmdb";
+import {
+  type Genre,
+  getMovieGenres,
+  getTvGenres,
+  resizeImageUrl,
+  TmdbError,
+} from "@/lib/tmdb";
 import {
   type LandingItem,
   landingItems,
   readLandingList,
 } from "./landing-items";
-import { HERO_BOX, LandingHeroSkeleton } from "./landing-skeletons";
+import {
+  HERO_ART_BOX,
+  HERO_BOX,
+  HERO_TEXT_BOX,
+  LandingHeroSkeleton,
+} from "./landing-skeletons";
 
 /**
  * The landing's hero (prompts/home-parallax-landing.md, decisions 4 and 11):
@@ -55,25 +67,25 @@ async function LandingHeroContent({ list }: { list: CatalogList }) {
       <div
         data-hero-bg=""
         suppressHydrationWarning
-        className="absolute inset-x-0 -inset-y-[10%] mask-b-from-55% mask-l-from-40% min-[1600px]:mask-r-from-83%"
+        className={cn(
+          HERO_ART_BOX,
+          "mask-b-from-55% lg:mask-l-from-40% min-[1600px]:mask-r-from-83%",
+        )}
       >
         <HeroArtwork item={item} />
         {/*
          * Keeps the title block readable over bright artwork, inside the
          * mask so it fades out with the image rather than painting a band.
+         * Below `lg` the title sits under the artwork and needs no shade.
          */}
         <div
           aria-hidden="true"
-          className="absolute inset-0 bg-linear-to-r from-background/70 via-background/25 to-transparent"
+          className="absolute inset-0 hidden bg-linear-to-r from-background/70 via-background/25 to-transparent lg:block"
         />
       </div>
       <div aria-hidden="true" className="backdrop-scrim absolute inset-0" />
 
-      <div
-        data-hero-fg=""
-        suppressHydrationWarning
-        className="absolute inset-x-4 bottom-[16vh] flex max-w-3xl flex-col gap-4 md:inset-x-[5vw] md:gap-5"
-      >
+      <div data-hero-fg="" suppressHydrationWarning className={HERO_TEXT_BOX}>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-text-secondary">
           <GlassPill className="font-semibold text-foreground">
             #1 Trending
@@ -113,7 +125,7 @@ async function LandingHeroContent({ list }: { list: CatalogList }) {
         data-hero-cue=""
         suppressHydrationWarning
         aria-hidden="true"
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 text-xs tracking-[0.14em] text-muted-foreground uppercase"
+        className="absolute bottom-8 left-1/2 hidden -translate-x-1/2 text-xs tracking-[0.14em] text-muted-foreground uppercase lg:block"
       >
         Scroll
       </div>
@@ -124,9 +136,13 @@ async function LandingHeroContent({ list }: { list: CatalogList }) {
 /**
  * The backdrop, or the poster cropped to fill when TMDB has no backdrop, or
  * the flat missing image plate (decision 10). Decorative: the h2 names it.
+ * The backdrop is TMDB's `original`, the one surface that asks for it: it
+ * fills a full width box, which `w1280` can only fill stretched, and the
+ * loader still serves a ladder size to a screen that needs no more
+ * (prompts/home-hero-backdrop-quality.md, decision 2).
  */
 function HeroArtwork({ item }: { item: LandingItem }) {
-  const src = item.backdropUrl ?? item.posterUrl;
+  const src = resizeImageUrl(item.backdropUrl, "original") ?? item.posterUrl;
   if (src === null) {
     return (
       <div className="absolute inset-0 flex items-center justify-center bg-glass-plate">

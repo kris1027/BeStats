@@ -2,7 +2,8 @@ import { render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 /**
- * covers: prompts/home-parallax-landing.md, AC-3, AC-5, AC-6 (decision 4)
+ * covers: prompts/home-parallax-landing.md, AC-3, AC-5, AC-6 (decision 4);
+ * prompts/home-hero-backdrop-quality.md, AC-2 and AC-7
  *
  * The hero's body: trending number one over its backdrop, its TMDB rating,
  * up to three genre names, the Trailer and tracking slots for its media
@@ -18,6 +19,7 @@ vi.mock("@/lib/tmdb", async () => ({
   TmdbError: (await import("@/lib/tmdb/errors")).TmdbError,
   getMovieGenres: () => movieGenres(),
   getTvGenres: () => tvGenres(),
+  resizeImageUrl: (await import("@/lib/tmdb/images")).resizeImageUrl,
 }));
 vi.mock("@/lib/catalog-list-read", () => ({
   readTaggedCatalogList: (...args: unknown[]) => read(...args),
@@ -98,8 +100,9 @@ describe("LandingHeroContent (AC-3)", () => {
     ).toBeInTheDocument();
     expect(screen.getByTestId("trailer")).toHaveTextContent("movie/7");
     expect(screen.getByTestId("tracking")).toHaveTextContent("movie/7");
+    // The hero alone asks for TMDB's original (prompts/home-hero-backdrop-quality.md, AC-2).
     expect(container.querySelector("img")?.getAttribute("src")).toContain(
-      "b.jpg",
+      encodeURIComponent("/t/p/original/b.jpg"),
     );
   });
 

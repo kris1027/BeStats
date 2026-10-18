@@ -66,7 +66,7 @@ This supersedes the landing half of spec 0021 (`docs/specs/0021-home-carousels`)
 10. **Backdrops for wide cards (Q11).** `normalizeMovieSummary` / `normalizeTvSummary` gain `backdropUrl` from the `backdrop_path` TMDB already returns, so there are no new requests. Without a backdrop, the card uses the poster cropped to fill (`object-cover`). With neither, it shows the existing missing-image state.
 11. **Full bleed (Q13).**
     - The hero breaks out of `<main>`'s gutters and top padding, the way `detail-hero.tsx` does: a negative margin plus `--navbar-height`, `backdrop-scrim` under the bar, and the mask fade into the page.
-    - The hero is `100svh` tall with a 620px minimum.
+    - The hero is `100svh` tall with a 620px minimum. Superseded on 2026-10-18 by prompts/home-hero-backdrop-quality.md: from `lg` only, with the backdrop in a 16:9 box; below `lg` the backdrop is a band with the title under it.
     - The Upcoming rows are full viewport width. Every other section keeps the 1600px column.
     - The blob layer is `fixed inset-0 -z-0 pointer-events-none`, behind content and inside the landing only.
 12. **TV wording (Q14).**
@@ -154,7 +154,7 @@ There are no new data paths, Server Actions or user data. The TMDB reads go thro
 ## Manual test steps
 
 1. Run `pnpm dev`, open `/movies` at 1440×900, and scroll slowly:
-   - The hero backdrop drifts and zooms, and the title fades.
+   - The hero backdrop drifts (no zoom since prompts/home-hero-backdrop-quality.md), and the title fades.
    - Trending pins, its posters slide left, and the bar fills.
    - The Popular cards drift at staggered offsets.
    - The Now playing sidebar sticks while the 3 columns move at different speeds.

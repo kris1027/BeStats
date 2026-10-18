@@ -57,7 +57,7 @@ function centreAlong(item: HTMLElement, row: HTMLElement): number {
  * - `data-depth`: the background blobs, moved by scroll and, with a mouse,
  *   by the pointer. Half depth below `md`.
  * - `data-hero-bg`, `data-hero-fg`, `data-hero-cue`: the hero's backdrop
- *   drifts and zooms, its text rises and fades, the scroll cue fades.
+ *   drifts, its text rises and fades, the scroll cue fades.
  * - `data-pin` with `data-pin-track` and `data-pin-bar`: the pinned row's
  *   sideways pan and progress bar.
  * - `data-speed`: a vertical drift against the centre of the viewport,
@@ -128,11 +128,10 @@ function LandingParallax({
       }
 
       if (scroll < viewport * 1.5) {
-        const progress = clamp01(scroll / viewport);
         for (const node of all("[data-hero-bg]")) {
           node.style.transform = `translate3d(${-easedX * 14}px, ${
             scroll * 0.45
-          }px, 0) scale(${1 + progress * 0.12})`;
+          }px, 0)`;
         }
         for (const node of all("[data-hero-fg]")) {
           node.style.transform = `translate3d(0, ${-scroll * 0.25}px, 0)`;

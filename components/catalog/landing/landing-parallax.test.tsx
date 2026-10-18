@@ -52,6 +52,7 @@ function setup() {
   return render(
     <LandingParallax>
       <div data-depth="0.5" data-testid="depth" />
+      <div data-hero-bg="" data-testid="backdrop" />
       <div data-hero-fg="" data-testid="hero" />
       <ul data-speed-root="">
         <li data-speed="0.2" data-testid="speed" />
@@ -69,6 +70,16 @@ describe("LandingParallax (AC-7)", () => {
     expect(getByTestId("depth").style.transform).toContain("translate3d");
     expect(getByTestId("hero").style.opacity).toBe("1");
     expect(getByTestId("speed").style.transform).toContain("translate3d");
+  });
+
+  it("drifts the hero backdrop without zooming it (prompts/home-hero-backdrop-quality.md, AC-1)", () => {
+    const { getByTestId } = setup();
+
+    runFrame();
+
+    const transform = getByTestId("backdrop").style.transform;
+    expect(transform).toContain("translate3d");
+    expect(transform).not.toContain("scale");
   });
 
   it("leaves the speed drift off below md", () => {
