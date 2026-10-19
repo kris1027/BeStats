@@ -8,9 +8,9 @@ import { getAuthEmailDelivery } from "./lib/env";
  * on must be prerenderable or explicitly opt out with `export const instant =
  * false`, and every cached read calls `cacheLife` inside its own scope.
  *
- * `image.tmdb.org` is the only remote image host: TMDB serves every poster,
- * backdrop, profile and still the app renders, and `lib/tmdb` builds those URLs
- * from a hardcoded base (spec 0002, AC-20).
+ * TMDB serves every poster, backdrop, profile and still the app renders, and
+ * `lib/tmdb` builds those URLs from the hardcoded `TMDB_IMAGE_BASE` (spec 0002,
+ * AC-20), so the image config below needs no remote host of its own.
  */
 const nextConfig: NextConfig = {
   cacheComponents: true,
