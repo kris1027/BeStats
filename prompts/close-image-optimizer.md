@@ -33,7 +33,11 @@ in the config so it rejects every request.
 - `node_modules/next/dist/server/image-optimizer.js` and
   `shared/lib/match-local-pattern.js`: a remote URL needs a `remotePatterns`
   (or `domains`) match; an undefined `localPatterns` allows **every** local
-  path, while an empty array allows none. `build/index.js` writes
+  path, while an empty array allows none of ours. (Amended 2026-10-19 after
+  review: `server/config.js` appends `/_next/static/media/**` and
+  `/_next/static/immutable/media/**` to any array, so static image imports
+  stay optimizable. The app imports none, and those folders hold only
+  fonts, which the optimizer rejects.) `build/index.js` writes
   `remotePatterns` to the build output as `[]` when unset, which is what
   Vercel's optimizer reads.
 

@@ -66,10 +66,13 @@ const nextConfig: NextConfig = {
    * a catalog this size outgrows, never runs (prompts/tmdb-image-loader.md).
    *
    * The loader alone leaves `/_next/image` answering anyone who still holds an
-   * old URL, so the optimizer is also given nothing it may fetch: no
+   * old URL, so the optimizer is also given no source of ours to fetch: no
    * `remotePatterns`, and an empty `localPatterns`, because an absent one allows
-   * every local path (prompts/close-image-optimizer.md). The one image host is
-   * recorded by `TMDB_IMAGE_BASE` in `lib/tmdb/constants.ts`.
+   * every local path (prompts/close-image-optimizer.md). Next still appends
+   * its static import folders (`/_next/static/media/**` and the immutable
+   * one) to any array, which stay harmless only while no code imports an
+   * image file. The one image host is recorded by `TMDB_IMAGE_BASE` in
+   * `lib/tmdb/constants.ts`.
    */
   images: {
     loader: "custom",
