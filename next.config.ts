@@ -64,18 +64,17 @@ const nextConfig: NextConfig = {
    * A custom loader points every `next/image` at TMDB's own pre-sized files, so
    * the browser loads from TMDB's CDN and Vercel's optimizer, whose Hobby quota
    * a catalog this size outgrows, never runs (prompts/tmdb-image-loader.md).
-   * `remotePatterns` stays as the record of the one image host.
+   *
+   * The loader alone leaves `/_next/image` answering anyone who still holds an
+   * old URL, so the optimizer is also given nothing it may fetch: no
+   * `remotePatterns`, and an empty `localPatterns`, because an absent one allows
+   * every local path (prompts/close-image-optimizer.md). The one image host is
+   * recorded by `TMDB_IMAGE_BASE` in `lib/tmdb/constants.ts`.
    */
   images: {
     loader: "custom",
     loaderFile: "./lib/tmdb/image-loader.ts",
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "image.tmdb.org",
-        pathname: "/t/p/**",
-      },
-    ],
+    localPatterns: [],
   },
 };
 

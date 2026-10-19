@@ -74,14 +74,11 @@ describe("next.config", () => {
     expect(redirects?.find((r) => r.source === "/")?.permanent).toBe(false);
   });
 
-  it("allows TMDB images and nothing else", () => {
-    expect(nextConfig.images?.remotePatterns).toEqual([
-      {
-        protocol: "https",
-        hostname: "image.tmdb.org",
-        pathname: "/t/p/**",
-      },
-    ]);
+  /** covers: prompts/close-image-optimizer.md, AC-1 and AC-4 */
+  it("gives the image optimizer no source it may fetch", () => {
+    expect(nextConfig.images?.remotePatterns).toBeUndefined();
+    expect(nextConfig.images?.domains).toBeUndefined();
+    expect(nextConfig.images?.localPatterns).toEqual([]);
   });
 
   /** covers: prompts/tmdb-image-loader.md, AC-4 */
