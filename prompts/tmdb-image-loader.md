@@ -66,7 +66,8 @@ None of the installed skills cover image loaders. The Next.js docs shipped in
    Next's dev warning ("does not implement width") then names that image, the
    signal to pin it to a ladder size; no caller does so today.
    `remotePatterns` stays in the config as documentation of the one allowed
-   host.
+   host. (2026-10-19: removed, with `localPatterns: []` added, because it kept
+   `/_next/image` transforming old URLs; see prompts/close-image-optimizer.md.)
 5. **`quality` is ignored**, because TMDB has no quality parameter.
 5a. **A URL already at its own size gets a `#same-size` fragment** (found while
    verifying): Next's dev check warns "does not implement width" whenever the
