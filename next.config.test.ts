@@ -74,8 +74,10 @@ describe("next.config", () => {
     expect(redirects?.find((r) => r.source === "/")?.permanent).toBe(false);
   });
 
-  /** covers: prompts/close-image-optimizer.md, AC-1 and AC-4 */
+  /** covers: prompts/close-image-optimizer.md, AC-1, AC-4 */
   it("gives the image optimizer no source it may fetch", () => {
+    expect(nextConfig.images?.loader).toBe("custom");
+    expect(nextConfig.images?.loaderFile).toBe("./lib/tmdb/image-loader.ts");
     expect(nextConfig.images?.remotePatterns).toBeUndefined();
     expect(nextConfig.images?.domains).toBeUndefined();
     expect(nextConfig.images?.localPatterns).toEqual([]);
