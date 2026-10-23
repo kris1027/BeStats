@@ -56,5 +56,3 @@ function sizeCeiling(size: string): number | null {
     ? value
     : null;
 }
-
-export default tmdbImageLoader;

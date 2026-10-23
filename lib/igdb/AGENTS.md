@@ -73,6 +73,11 @@ scope feature G1. It mirrors `lib/tmdb/` in shape but shares no code with it.
   for 21 and returns 20 to know `hasNextPage`.
 - **The module never reads the clock for a filter.** Discover callers pass UTC
   days; only the year bound of a filter reads the current year.
+- **Covers are built at `t_cover_big_2x` (528px), the ceiling, not the size
+  every image loads.** `lib/images/igdb-loader.ts` steps a `next/image` width
+  down `IGDB_COVER_LADDER` in `constants.ts` and never past the URL's own size
+  (spec 0025, AC-12). It lives outside this folder because it runs in the
+  browser; `lib/images/loader.ts`, the `loaderFile`, sends it every IGDB URL.
 - Adding a field is a three place change: `schemas.ts`, `types.ts`,
   `normalize.ts`, plus the field list in `constants.ts`.
 
@@ -84,7 +89,8 @@ scope feature G1. It mirrors `lib/tmdb/` in shape but shares no code with it.
 - `pnpm igdb:live` runs `igdb.live.ts` against real Twitch and IGDB (its own
   config, `vitest.igdb-live.mts`) and skips without credentials. It is the
   facts gate: the pinned game type ids, the Erotic theme id, the filter syntax,
-  `search` with `where`, the count header and the cover URL. Run it after any
+  `search` with `where`, the count header, the cover URL and every cover
+  ladder rung's real pixel width. Run it after any
   change to `constants.ts`, `catalog-filter.ts` or `query.ts`.
 - Fixtures under `__fixtures__/` are IGDB responses captured on 2026-10-17.
 
