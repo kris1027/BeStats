@@ -26,7 +26,7 @@ _This is the second scope for BeStats. The movie and TV scope lives in [scope.md
 |---|---------|-------|--------|
 | G1 | IGDB integration module | Foundation | in-progress |
 | G2 | Game data model and security policies | Foundation | in-progress |
-| G3 | Game page (tracer) | Slice G1 | planned |
+| G3 | Game page (tracer) | Slice G1 | in-progress |
 | G4 | Game status and rating | Slice G1 | planned |
 | G5 | Games tab and library pages | Slice G2 | planned |
 | G6 | Games home and list pages | Slice G3 | planned |
@@ -68,10 +68,19 @@ spec [0024](../specs/0024-game-data-model-security/index.md) · code in [supabas
 
 ## Slice G1: One game, end to end
 
-### G3. Game page (tracer) · needs a decision
+### G3. Game page (tracer) · in-progress
 The thinnest real `/games/{id}`: hero only (cover, title, release date, platforms, genres, IGDB rating), proving IGDB data reaches a shipped page.
 **Done when:** a valid id renders the hero from cached IGDB data with missing values omitted; the proxy answers a malformed id with a real 404 and an unknown or hidden id gets the soft 404; `images.igdb.com` is allowed with its own loader; the shell stays prerendered; loading, error and missing image states work at 375px and 1280px.
-- [ ] Design it (spec): `/architect game page`
+- [x] Design it (spec): `/architect game page`
+- [ ] Build it: `/develop game page`
+  - [ ] Thin thread: `parseGameId`, `loadGame`, the Suspense shell and a first `GameHero` showing a real IGDB game, AC-1, AC-9
+  - [ ] Shared hero: `DetailHero` rating slot and fallback icon, the IGDB rating block, the moved meta pieces, then the full hero with every missing value rule, AC-1 to AC-5
+  - [ ] Outcomes and proxy: soft 404, retry panel, `noindex` metadata, the `/games/` proxy rule and matcher exception, AC-6 to AC-8, AC-10
+  - [ ] Images: the 2x cover ceiling, the IGDB ladder and loader behind the host dispatching loader file, the live width check, AC-11, AC-12
+  - [ ] States and checks: the game skeleton, 375px and 1280px states, typecheck, lint, test, build, AC-9, AC-13
+- [ ] Verify it: `/check verify game page`
+- [ ] Test it: `/test game page`
+spec [0025](../specs/0025-game-page.md) · code in [app/games/](../../app/games/)
 
 ### G4. Game status and rating · needs a decision · GA
 The segmented control (Want to play · Playing · Finished) and the score on the game page, saved through Server Actions.
@@ -123,6 +132,7 @@ Out of scope for the current build pass, kept so the plan stays honest.
 - **Platform you play on, hours played, 100% completion** (from the 2026-10-17 grilling): skipped for the first pass
 - **Dropped or Paused status**: left out, matching the removal of TV holds on 2026-10-10
 - **Where to buy a game**: no store links in this pass
+- **Artwork backdrop on the game hero** (from spec 0025): G3 ships without one; G9 or a later spec decides
 
 ## Legend
 
