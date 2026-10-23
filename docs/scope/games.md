@@ -80,7 +80,7 @@ The thinnest real `/games/{id}`: hero only (cover, title, release date, platform
   - [x] States and checks: the game skeleton, 375px and 1280px states, typecheck, lint, test, build, AC-9, AC-13
 - [ ] Verify it: `/check verify game page`
 - [ ] Test it: `/test game page`
-spec [0025](../specs/0025-game-page.md) · code in [app/games/](../../app/games/)
+spec [0025](../specs/0025-game-page/index.md) · code in [app/games/](../../app/games/)
 
 ### G4. Game status and rating · needs a decision · GA
 The segmented control (Want to play · Playing · Finished) and the score on the game page, saved through Server Actions.
