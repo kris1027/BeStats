@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { DetailHero } from "@/components/catalog/detail-hero";
+import { DetailHero, TmdbRatingBlock } from "@/components/catalog/detail-hero";
 import { CastRowSkeleton } from "@/components/catalog/detail-skeletons";
 import { JsonLd } from "@/components/catalog/json-ld";
 import { ShowCrew, ShowFacts } from "@/components/catalog/title-details";
@@ -143,8 +143,12 @@ async function ShowDetail({
             ageRating={<AgeRatingSlot {...title} />}
           />
         }
-        tmdbRating={show.tmdbRating}
-        tmdbVoteCount={show.tmdbVoteCount}
+        rating={
+          <TmdbRatingBlock
+            value={show.tmdbRating}
+            voteCount={show.tmdbVoteCount}
+          />
+        }
         tracking={
           // Two boundaries, not one: the pill never waits on the progress
           // line's TMDB read (spec 0013, AC-11). A fragment, so a visitor's

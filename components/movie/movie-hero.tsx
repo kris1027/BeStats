@@ -1,7 +1,7 @@
 import type * as React from "react";
 
-import { DetailHero } from "@/components/catalog/detail-hero";
-import { GlassPill } from "@/components/glass-pill";
+import { DetailHero, TmdbRatingBlock } from "@/components/catalog/detail-hero";
+import { GenreChips, MetaLine } from "@/components/catalog/detail-hero-meta";
 import { formatRuntime } from "@/lib/format";
 import type { Movie } from "@/lib/tmdb";
 
@@ -67,8 +67,7 @@ function MovieHero({
       posterUrl={posterUrl}
       backdropUrl={backdropUrl}
       meta={<MovieMetaRow meta={meta} genres={genres} ageRating={ageRating} />}
-      tmdbRating={tmdbRating}
-      tmdbVoteCount={tmdbVoteCount}
+      rating={<TmdbRatingBlock value={tmdbRating} voteCount={tmdbVoteCount} />}
       tracking={tracking}
       actions={actions}
     />
@@ -99,39 +98,6 @@ function MovieMetaRow({
   );
 }
 
-/**
- * Facts joined with a decorative ` · `, so a missing part takes its separator
- * with it. Shared with the show hero (spec 0009, AC-7 reuses the separator).
- */
-function MetaLine({ parts }: { parts: string[] }) {
-  return (
-    <p className="text-sm text-text-secondary md:text-base">
-      {parts.map((part, index) => (
-        <span key={part}>
-          {index > 0 ? (
-            <span aria-hidden="true" className="px-1.5">
-              ·
-            </span>
-          ) : null}
-          {part}
-        </span>
-      ))}
-    </p>
-  );
-}
-
-/** Genre labels, not controls: there is no genre page to open. */
-function GenreChips({ genres }: { genres: Movie["genres"] }) {
-  return (
-    <ul aria-label="Genres" className="flex flex-wrap gap-2">
-      {genres.map((genre) => (
-        <li key={genre.id}>
-          <GlassPill className="font-semibold">{genre.name}</GlassPill>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 export { TmdbRatingBlock } from "@/components/catalog/detail-hero";
-export { GenreChips, MetaLine, MovieHero };
+export { GenreChips, MetaLine } from "@/components/catalog/detail-hero-meta";
+export { MovieHero };

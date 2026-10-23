@@ -38,6 +38,31 @@ function TmdbRatingBadge({ value }: { value: number | null }) {
 }
 
 /**
+ * The IGDB community rating (spec 0025, AC-4), in the same amber as TMDB's,
+ * because amber means "community rating" everywhere in the app. Its own
+ * component, not a label prop on the TMDB badge, so the screen reader text
+ * always names the catalog the number came from. Renders nothing with no
+ * rating, like the TMDB badge.
+ */
+function IgdbRatingBadge({ value }: { value: number | null }) {
+  if (value === null) return null;
+
+  return (
+    <GlassPill
+      icon={
+        <StarIcon
+          className="fill-rating-tmdb text-rating-tmdb"
+          aria-hidden="true"
+        />
+      }
+    >
+      <span className="sr-only">IGDB rating </span>
+      {value.toFixed(1)}
+    </GlassPill>
+  );
+}
+
+/**
  * The user's own score, in cyan on the score plate with the cyan rim.
  *
  * Unlike the TMDB badge this one still renders when the value is null, as
@@ -96,4 +121,9 @@ function CalculatedRatingBadge({
   );
 }
 
-export { CalculatedRatingBadge, PersonalScoreBadge, TmdbRatingBadge };
+export {
+  CalculatedRatingBadge,
+  IgdbRatingBadge,
+  PersonalScoreBadge,
+  TmdbRatingBadge,
+};

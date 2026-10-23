@@ -17,7 +17,7 @@ vi.mock("@/components/tracking/season-rating-badge-slot", () => ({
     seasonBadge(props),
 }));
 
-import { DetailHero } from "@/components/catalog/detail-hero";
+import { DetailHero, TmdbRatingBlock } from "@/components/catalog/detail-hero";
 import { EpisodeList } from "@/components/show/episode-list";
 import { EpisodeRow } from "@/components/show/episode-row";
 import { SeasonGrid } from "@/components/show/season-grid";
@@ -44,8 +44,7 @@ describe("the show hero", () => {
         posterUrl={POSTER}
         backdropUrl="https://image.tmdb.org/t/p/w1280/backdrop.jpg"
         meta={meta}
-        tmdbRating={8.9}
-        tmdbVoteCount={16000}
+        rating={<TmdbRatingBlock value={8.9} voteCount={16000} />}
       />,
     );
   }

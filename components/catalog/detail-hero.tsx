@@ -1,9 +1,9 @@
 import { cn } from "cn";
-import { FilmIcon } from "lucide-react";
+import { FilmIcon, type LucideIcon } from "lucide-react";
 import Image from "next/image";
 import type * as React from "react";
 
-import { TmdbRatingBadge } from "@/components/rating-badges";
+import { IgdbRatingBadge, TmdbRatingBadge } from "@/components/rating-badges";
 import { formatVoteCount } from "@/lib/format";
 
 type DetailHeroProps = {
@@ -18,8 +18,17 @@ type DetailHeroProps = {
    * wrapper has nothing to say.
    */
   meta: React.ReactNode;
-  tmdbRating: number | null;
-  tmdbVoteCount: number;
+  /**
+   * The community rating block under the facts: `TmdbRatingBlock` on a movie
+   * or show, `IgdbRatingBlock` on a game (spec 0025, AC-4). A slot rather than
+   * TMDB's numbers, so the hero never assumes which catalog the title is from.
+   */
+  rating: React.ReactNode;
+  /**
+   * The icon on the missing poster tile. A film by default; a game passes a
+   * controller (spec 0025, AC-5), so a missing cover never reads as a film.
+   */
+  fallbackIcon?: LucideIcon;
   /**
    * The tracking row, rendered under the rating block. The movie page passes
    * a Suspense wrapped `MovieTrackingSlot` (spec 0007); the show page passes
@@ -57,8 +66,8 @@ function DetailHero({
   posterUrl,
   backdropUrl,
   meta,
-  tmdbRating,
-  tmdbVoteCount,
+  rating,
+  fallbackIcon,
   tracking,
   actions,
 }: DetailHeroProps) {
@@ -112,7 +121,7 @@ function DetailHero({
           backdropUrl ? "-mt-10 sm:-mt-20 md:-mt-40" : null,
         )}
       >
-        <HeroPoster posterUrl={posterUrl} />
+        <HeroPoster posterUrl={posterUrl} fallbackIcon={fallbackIcon} />
 
         <div className="col-start-2 row-start-1 flex flex-col gap-2 self-end md:gap-3">
           <h1 className="text-2xl leading-tight font-extrabold tracking-[-0.03em] text-balance text-foreground sm:text-3xl md:text-5xl">
@@ -133,7 +142,7 @@ function DetailHero({
          */}
         <div className="col-span-2 mt-4 flex flex-col gap-3 sm:col-span-1 sm:col-start-2 sm:row-start-2 sm:mt-3">
           {meta}
-          <TmdbRatingBlock value={tmdbRating} voteCount={tmdbVoteCount} />
+          {rating}
           {tracking}
           {actions}
         </div>
@@ -146,7 +155,13 @@ function DetailHero({
  * The poster at the hero's size, or the fallback tile at the same 2:3
  * footprint (spec 0006, AC-4; spec 0009, AC-5), matching `PosterCard`'s frame, rim and missing poster tile.
  */
-function HeroPoster({ posterUrl }: { posterUrl: string | null }) {
+function HeroPoster({
+  posterUrl,
+  fallbackIcon: FallbackIcon = FilmIcon,
+}: {
+  posterUrl: string | null;
+  fallbackIcon?: LucideIcon;
+}) {
   return (
     <div className="relative col-start-1 row-start-1 aspect-2/3 w-28 shrink-0 self-end overflow-hidden rounded-lg glass-shadow sm:row-span-2 sm:w-40 md:w-60">
       {posterUrl ? (
@@ -163,7 +178,7 @@ function HeroPoster({ posterUrl }: { posterUrl: string | null }) {
           data-slot="poster-fallback"
           className="absolute inset-0 flex items-center justify-center rounded-lg bg-glass-plate"
         >
-          <FilmIcon
+          <FallbackIcon
             className="size-8 text-muted-foreground md:size-10"
             aria-hidden="true"
           />
@@ -208,4 +223,38 @@ function TmdbRatingBlock({
   );
 }
 
-export { DetailHero, TmdbRatingBlock };
+/**
+ * The IGDB community rating, beside the TMDB block and built the same way
+ * (spec 0025, AC-4): the amber community badge, the word IGDB, and the count.
+ * IGDB may send a rating with no count, so the count is left out rather than
+ * shown as `0 votes`. No rating is stated as absent (AC-5).
+ */
+function IgdbRatingBlock({
+  value,
+  count,
+}: {
+  value: number | null;
+  count: number | null;
+}) {
+  if (value === null) {
+    return (
+      <p data-slot="igdb-rating" className="text-sm text-muted-foreground">
+        No IGDB rating yet
+      </p>
+    );
+  }
+
+  return (
+    <p data-slot="igdb-rating" className="flex flex-wrap items-center gap-2.5">
+      <IgdbRatingBadge value={value} />
+      <span className="text-sm font-bold text-text-label">IGDB</span>
+      {count === null ? null : (
+        <span className="text-sm text-muted-foreground">
+          {formatVoteCount(count)}
+        </span>
+      )}
+    </p>
+  );
+}
+
+export { DetailHero, IgdbRatingBlock, TmdbRatingBlock };

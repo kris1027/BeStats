@@ -8,24 +8,40 @@ import { PosterCardSkeleton, Skeleton } from "@/components/skeleton";
  * spec 0009, AC-17): the backdrop, then the poster beside the title and meta
  * lines.
  *
- * It assumes a backdrop, which most titles have. A title without one
- * collapses upwards when it arrives, which is a smaller jump than reserving no
- * space for the common case.
+ * By default it assumes a backdrop, which most movies and shows have. A title
+ * without one collapses upwards when it arrives, which is a smaller jump than
+ * reserving no space for the common case. A game never has a backdrop or a
+ * tagline (spec 0025, AC-9), so its page turns both off and nothing jumps.
  */
-function DetailHeroSkeleton({ metaRows = 1 }: { metaRows?: 1 | 2 }) {
+function DetailHeroSkeleton({
+  metaRows = 1,
+  backdrop = true,
+  tagline = true,
+}: {
+  metaRows?: 1 | 2;
+  backdrop?: boolean;
+  tagline?: boolean;
+}) {
   return (
     <div className="flex flex-col">
-      <Skeleton
-        shape="line"
-        className="-mx-4 -mt-[calc(2rem+var(--navbar-height))] aspect-video h-auto w-auto max-h-[70vh] min-h-[calc(var(--navbar-height)+12rem)] rounded-none md:-mt-[calc(3rem+var(--navbar-height))]"
-      />
+      {backdrop ? (
+        <Skeleton
+          shape="line"
+          className="-mx-4 -mt-[calc(2rem+var(--navbar-height))] aspect-video h-auto w-auto max-h-[70vh] min-h-[calc(var(--navbar-height)+12rem)] rounded-none md:-mt-[calc(3rem+var(--navbar-height))]"
+        />
+      ) : null}
       {/*
        * The same grid as `DetailHero`, so the info block lands where the
        * real one does at every width: under the poster on mobile, beside it
        * from `sm`. Each line sits in a box one line of the real type tall
        * (`h-[1lh]`), and each row of pills at the real row's height.
        */}
-      <div className="relative z-10 -mt-10 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 sm:-mt-20 sm:grid-rows-[1fr_auto] md:-mt-40 md:gap-x-8">
+      <div
+        className={cn(
+          "relative z-10 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 sm:grid-rows-[1fr_auto] md:gap-x-8",
+          backdrop ? "-mt-10 sm:-mt-20 md:-mt-40" : null,
+        )}
+      >
         <Skeleton
           shape="poster"
           className="col-start-1 row-start-1 w-28 shrink-0 self-end sm:row-span-2 sm:w-40 md:w-60"
@@ -34,9 +50,11 @@ function DetailHeroSkeleton({ metaRows = 1 }: { metaRows?: 1 | 2 }) {
           <div className="flex h-[1lh] items-center text-2xl leading-tight sm:text-3xl md:text-5xl">
             <Skeleton shape="line" className="h-[0.8lh] w-3/4" />
           </div>
-          <div className="flex h-[1lh] items-center text-sm md:text-lg">
-            <Skeleton shape="line" className="h-[0.8lh] w-1/2" />
-          </div>
+          {tagline ? (
+            <div className="flex h-[1lh] items-center text-sm md:text-lg">
+              <Skeleton shape="line" className="h-[0.8lh] w-1/2" />
+            </div>
+          ) : null}
         </div>
         <div className="col-span-2 mt-4 flex flex-col gap-3 sm:col-span-1 sm:col-start-2 sm:row-start-2 sm:mt-3">
           {Array.from({ length: metaRows }, (_, index) => (

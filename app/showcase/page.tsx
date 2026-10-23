@@ -36,6 +36,7 @@ import { PosterCard } from "@/components/poster-card";
 import { PosterGrid } from "@/components/poster-grid";
 import {
   CalculatedRatingBadge,
+  IgdbRatingBadge,
   PersonalScoreBadge,
   TmdbRatingBadge,
 } from "@/components/rating-badges";
@@ -298,6 +299,7 @@ export default function ShowcasePage() {
         <div className="flex flex-wrap items-center gap-3">
           <TmdbRatingBadge value={8.2} />
           <TmdbRatingBadge value={null} />
+          <IgdbRatingBadge value={8.7} />
           <PersonalScoreBadge value={9} />
           <PersonalScoreBadge value={null} />
           <CalculatedRatingBadge value={7} label="Your season rating" />
