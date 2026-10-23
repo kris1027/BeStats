@@ -12,6 +12,7 @@ import {
 } from "@/components/legal/legal-document";
 import {
   DELETION_DAYS,
+  IGDB_HOME_URL,
   MINIMUM_AGE,
   OPERATOR_COUNTRY,
   PROCESSORS,
@@ -140,6 +141,14 @@ export default function PrivacyPage() {
           tracking data. Your browser loads the images from TMDB&rsquo;s image
           service, which sees your IP address and browser details, and
           TMDB&rsquo;s own privacy policy applies to them.
+        </p>
+        <p>
+          Game details come from{" "}
+          <ExternalLink href={IGDB_HOME_URL}>IGDB</ExternalLink> in the same
+          way: our server makes the requests and sends no account or tracking
+          data. Your browser loads game covers from IGDB&rsquo;s image service,
+          which sees your IP address and browser details, and IGDB&rsquo;s own
+          privacy policy applies to them.
         </p>
       </LegalSection>
 

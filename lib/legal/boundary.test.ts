@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   CONTACT_EMAIL,
+  IGDB_HOME_URL,
   JUSTWATCH_ATTRIBUTION,
   OPERATOR_COUNTRY,
   OPERATOR_GITHUB_URL,
@@ -54,6 +55,10 @@ describe("one home for each legal fact", () => {
     expect(filesContaining("otherwise approved by TMDB")).toEqual([
       "lib/tmdb/constants.ts",
     ]);
+  });
+
+  it("writes IGDB's site URL only in lib/legal/operator.ts", () => {
+    expect(filesContaining(IGDB_HOME_URL)).toEqual(["lib/legal/operator.ts"]);
   });
 
   it("writes TMDB's site URL only in lib/legal/operator.ts", () => {
