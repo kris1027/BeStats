@@ -72,12 +72,12 @@ spec [0024](../specs/0024-game-data-model-security/index.md) · code in [supabas
 The thinnest real `/games/{id}`: hero only (cover, title, release date, platforms, genres, IGDB rating), proving IGDB data reaches a shipped page.
 **Done when:** a valid id renders the hero from cached IGDB data with missing values omitted; the proxy answers a malformed id with a real 404 and an unknown or hidden id gets the soft 404; `images.igdb.com` is allowed with its own loader; the shell stays prerendered; loading, error and missing image states work at 375px and 1280px.
 - [x] Design it (spec): `/architect game page`
-- [ ] Build it: `/develop game page`
-  - [ ] Thin thread: `parseGameId`, `loadGame`, the Suspense shell and a first `GameHero` showing a real IGDB game, AC-1, AC-9
-  - [ ] Shared hero: `DetailHero` rating slot and fallback icon, the IGDB rating block, the moved meta pieces, then the full hero with every missing value rule, AC-1 to AC-5
-  - [ ] Outcomes and proxy: soft 404, retry panel, `noindex` metadata, the `/games/` proxy rule and matcher exception, AC-6 to AC-8, AC-10
-  - [ ] Images: the 2x cover ceiling, the IGDB ladder and loader behind the host dispatching loader file, the live width check, AC-11, AC-12
-  - [ ] States and checks: the game skeleton, 375px and 1280px states, typecheck, lint, test, build, AC-9, AC-13
+- [x] Build it: `/develop game page`
+  - [x] Thin thread: `parseGameId`, `loadGame`, the Suspense shell and a first `GameHero` showing a real IGDB game, AC-1, AC-9
+  - [x] Shared hero: `DetailHero` rating slot and fallback icon, the IGDB rating block, the moved meta pieces, then the full hero with every missing value rule, AC-1 to AC-5
+  - [x] Outcomes and proxy: soft 404, retry panel, `noindex` metadata, the `/games/` proxy rule and matcher exception, AC-6 to AC-8, AC-10
+  - [x] Images: the 2x cover ceiling, the IGDB ladder and loader behind the host dispatching loader file, the live width check, AC-11, AC-12
+  - [x] States and checks: the game skeleton, 375px and 1280px states, typecheck, lint, test, build, AC-9, AC-13
 - [ ] Verify it: `/check verify game page`
 - [ ] Test it: `/test game page`
 spec [0025](../specs/0025-game-page.md) · code in [app/games/](../../app/games/)
