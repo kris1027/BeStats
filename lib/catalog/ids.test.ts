@@ -1,6 +1,21 @@
 import { describe, expect, it } from "vitest";
 
-import { parseSeasonNumber, parseTmdbId } from "./ids";
+import { parseGameId, parseSeasonNumber, parseTmdbId } from "./ids";
+
+/** covers: spec 0025, AC-6 */
+describe("parseGameId", () => {
+  it("accepts a canonical id up to the integer column's ceiling", () => {
+    expect(parseGameId("1942")).toBe(1942);
+    expect(parseGameId("2147483647")).toBe(2147483647);
+  });
+
+  it.each(["0", "0550", "+5", "abc", "5.0", "2147483648", "1.jpg", ""])(
+    "refuses %j",
+    (segment) => {
+      expect(parseGameId(segment)).toBeNull();
+    },
+  );
+});
 
 /** covers: spec 0006, AC-8 */
 describe("parseTmdbId", () => {
