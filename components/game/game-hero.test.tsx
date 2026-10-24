@@ -126,14 +126,21 @@ describe("GameHero", () => {
     expect(container).not.toHaveTextContent("votes");
   });
 
-  it("shows a rating with no count as the badge and IGDB alone", () => {
-    const { container } = render(
-      <GameHero {...EMPTY} communityRating={6} communityRatingCount={null} />,
-    );
+  it.each([null, 0])(
+    "shows a rating with a %s count as the badge and IGDB alone",
+    (count) => {
+      const { container } = render(
+        <GameHero
+          {...EMPTY}
+          communityRating={6}
+          communityRatingCount={count}
+        />,
+      );
 
-    const block = container.querySelector('[data-slot="igdb-rating"]');
-    expect(block).toHaveTextContent(/^IGDB community rating 6\.0IGDB$/);
-  });
+      const block = container.querySelector('[data-slot="igdb-rating"]');
+      expect(block).toHaveTextContent(/^IGDB community rating 6\.0IGDB$/);
+    },
+  );
 
   it("renders the cover as a decorative image", () => {
     const { container } = render(<GameHero {...FULL} />);

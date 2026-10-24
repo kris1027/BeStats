@@ -226,8 +226,8 @@ function TmdbRatingBlock({
 /**
  * The IGDB community rating, beside the TMDB block and built the same way
  * (spec 0025, AC-4): the amber community badge, the word IGDB, and the count.
- * IGDB may send a rating with no count, so the count is left out rather than
- * shown as `0 votes`. No rating is stated as absent (AC-5).
+ * IGDB may send a rating with no count, so a null or zero count is left out
+ * rather than shown as `0 votes`. No rating is stated as absent (AC-5).
  */
 function IgdbRatingBlock({
   value,
@@ -248,7 +248,7 @@ function IgdbRatingBlock({
     <p data-slot="igdb-rating" className="flex flex-wrap items-center gap-2.5">
       <IgdbRatingBadge value={value} />
       <span className="text-sm font-bold text-text-label">IGDB</span>
-      {count === null ? null : (
+      {count === null || count === 0 ? null : (
         <span className="text-sm text-muted-foreground">
           {formatVoteCount(count)}
         </span>
