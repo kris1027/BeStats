@@ -98,6 +98,4 @@ function MovieMetaRow({
   );
 }
 
-export { TmdbRatingBlock } from "@/components/catalog/detail-hero";
-export { GenreChips, MetaLine } from "@/components/catalog/detail-hero-meta";
 export { MovieHero };
