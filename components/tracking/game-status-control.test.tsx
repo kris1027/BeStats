@@ -258,4 +258,89 @@ describe("GameStatusControl", () => {
     options.action.onClick();
     expect(push).toHaveBeenCalledWith("/sign-in?next=%2Fgames%2F1942");
   });
+  describe("the Undo in the toast (AC-4, AC-5, AC-14)", () => {
+    const REMOVED = {
+      kind: "removed",
+      removedAt: "2026-10-24T10:00:00+00:00",
+      previous: {
+        status: "finished",
+        rating: 9,
+        addedAt: "2026-09-01T10:00:00+00:00",
+        startedAt: "2026-09-02T10:00:00+00:00",
+        finishedAt: "2026-09-20T10:00:00+00:00",
+      },
+    } as const;
+
+    async function removeThenUndo() {
+      const user = userEvent.setup();
+      const { rerender } = renderControl({ status: "finished", rating: 9 });
+      await user.click(pill("Finished"));
+      await settle(0, { ok: true, undo: REMOVED });
+      // What refresh() delivers after the removal: the row is gone.
+      rerender(
+        <GameStatusControl
+          gameId={1942}
+          name="The Witcher 3"
+          state={NONE}
+          returnPath="/games/1942"
+          releaseNote={null}
+        />,
+      );
+      const options = toast.mock.calls[0][1] as {
+        action: { onClick: (event: { preventDefault: () => void }) => void };
+      };
+      await act(async () =>
+        options.action.onClick({ preventDefault: () => {} }),
+      );
+    }
+
+    it("restores a removal with the exact values and time it returned, showing them at once", async () => {
+      await removeThenUndo();
+      expect(deferredAction).toHaveBeenLastCalledWith(
+        "restoreRemoved",
+        1942,
+        REMOVED.previous,
+        REMOVED.removedAt,
+      );
+      expect(pill("Finished")).toHaveAttribute("aria-pressed", "true");
+      expect(score()).toHaveAccessibleName("Your score for The Witcher 3: 9");
+    });
+
+    it("dismisses the toast once the restore lands", async () => {
+      await removeThenUndo();
+      await settle(1, { ok: true });
+      expect(dismiss).toHaveBeenCalledWith("game-undo-1942");
+    });
+
+    it("says the Undo expired when the restore is refused, and rolls back", async () => {
+      await removeThenUndo();
+      await settle(1, { ok: false, error: "undo_expired" });
+      expect(toast).toHaveBeenLastCalledWith(
+        "Couldn't undo. Set the status again on this page.",
+        expect.objectContaining({ id: "game-undo-1942" }),
+      );
+      expect(pill("Finished")).toHaveAttribute("aria-pressed", "false");
+    });
+
+    it("restores a cleared score through restoreGameStatus", async () => {
+      const user = userEvent.setup();
+      renderControl({ status: "finished", rating: 9 });
+      await user.click(pill("Want to play"));
+      await settle(0, {
+        ok: true,
+        undo: { kind: "status", previous: REMOVED.previous },
+      });
+      const options = toast.mock.calls[0][1] as {
+        action: { onClick: (event: { preventDefault: () => void }) => void };
+      };
+      await act(async () =>
+        options.action.onClick({ preventDefault: () => {} }),
+      );
+      expect(deferredAction).toHaveBeenLastCalledWith(
+        "restoreStatus",
+        1942,
+        REMOVED.previous,
+      );
+    });
+  });
 });

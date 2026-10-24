@@ -367,3 +367,114 @@ describe("the restores", () => {
     },
   );
 });
+
+describe("input and failure edges", () => {
+  it("refuses game id 0 as invalid_input, with nothing read or written (value source: gameIdSchema)", async () => {
+    expect(await setGameStatus(0, "playing")).toEqual({
+      ok: false,
+      error: "invalid_input",
+    });
+    expect(getOptionalUser).not.toHaveBeenCalled();
+    expect(readGame).not.toHaveBeenCalled();
+    expect(createClient).not.toHaveBeenCalled();
+  });
+
+  it.each([-1, 1.5, 2147483648])(
+    "refuses the game id %s on every action (AC-15)",
+    async (id) => {
+      const refused = { ok: false, error: "invalid_input" };
+      expect(await setGameRating(id, 5)).toEqual(refused);
+      expect(await removeGame(id)).toEqual(refused);
+      expect(await restoreGameStatus(id, PREVIOUS)).toEqual(refused);
+      expect(createClient).not.toHaveBeenCalled();
+    },
+  );
+
+  it("returns session_expired with no IGDB read and no write when signed out (AC-10)", async () => {
+    getOptionalUser.mockResolvedValue(null);
+    expect(await setGameStatus(GAME, "playing")).toEqual({
+      ok: false,
+      error: "session_expired",
+    });
+    expect(readGame).not.toHaveBeenCalled();
+    expect(createClient).not.toHaveBeenCalled();
+    expect(refresh).not.toHaveBeenCalled();
+  });
+
+  it("turns a thrown network failure into write_failed, with no refresh and no message in the log (AC-15)", async () => {
+    createClient.mockRejectedValueOnce(new Error("fetch failed: token=abc"));
+    expect(await removeGame(GAME)).toEqual({
+      ok: false,
+      error: "write_failed",
+    });
+    expect(refresh).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledWith("game_tracking.remove refused db_error");
+    expect(JSON.stringify(warn.mock.calls)).not.toContain("token=abc");
+  });
+
+  it("does not refresh after a refused write (AC-10)", async () => {
+    result = { data: null, error: { code: "XX000" } };
+    expect(await setGameStatus(GAME, "playing")).toEqual({
+      ok: false,
+      error: "write_failed",
+    });
+    expect(refresh).not.toHaveBeenCalled();
+  });
+});
+
+describe("the server release gate by UTC day (AC-9)", () => {
+  beforeEach(() => {
+    // Late evening UTC, when a local clock east of UTC is already on the 25th.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-24T23:30:00Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("accepts Playing and a score on the release day itself", async () => {
+    readGame.mockResolvedValue(released({ releaseDate: "2026-10-24" }));
+    result = { data: [], error: null };
+    expect(await setGameStatus(GAME, "playing")).toEqual({ ok: true });
+    expect(await setGameRating(GAME, 7)).toEqual({ ok: true });
+  });
+
+  it("refuses Playing, Finished and a score for a game out tomorrow", async () => {
+    readGame.mockResolvedValue(released({ releaseDate: "2026-10-25" }));
+    const refused = { ok: false, error: "not_released" };
+    expect(await setGameStatus(GAME, "playing")).toEqual(refused);
+    expect(await setGameStatus(GAME, "finished")).toEqual(refused);
+    expect(await setGameRating(GAME, 7)).toEqual(refused);
+    expect(createClient).not.toHaveBeenCalled();
+  });
+
+  it("still removes, clears a score and restores before release, with no IGDB read (AC-8)", async () => {
+    readGame.mockResolvedValue(released({ releaseDate: null }));
+    expect(await removeGame(GAME)).toEqual({ ok: true });
+    expect(await setGameRating(GAME, null)).toEqual({ ok: true });
+    expect(await restoreGameStatus(GAME, PREVIOUS)).toEqual({ ok: true });
+    expect(readGame).not.toHaveBeenCalled();
+  });
+});
+
+describe("restoreRemovedGame refusals (AC-14)", () => {
+  it("maps P0002, a removal older than 10 minutes, to undo_expired", async () => {
+    result = { data: null, error: { code: "P0002" } };
+    expect(
+      await restoreRemovedGame(GAME, PREVIOUS, "2026-10-24T09:00:00+00:00"),
+    ).toEqual({ ok: false, error: "undo_expired" });
+    expect(refresh).not.toHaveBeenCalled();
+  });
+
+  it.each(["yesterday", "2026-10-24", "2026-10-24T10:00:00"])(
+    "refuses the removal time %j as invalid_input before any call",
+    async (removedAt) => {
+      expect(await restoreRemovedGame(GAME, PREVIOUS, removedAt)).toEqual({
+        ok: false,
+        error: "invalid_input",
+      });
+      expect(getOptionalUser).not.toHaveBeenCalled();
+    },
+  );
+});
