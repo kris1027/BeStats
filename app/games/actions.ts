@@ -1,17 +1,7 @@
 "use server";
 
-import { refresh } from "next/cache";
-import type { z } from "zod";
-
-import { getOptionalUser } from "@/lib/auth/user";
 import { isGameReleased } from "@/lib/catalog/game-page";
-import type { Database } from "@/lib/supabase/database.types";
-import { createClient } from "@/lib/supabase/server";
-import {
-  logTrackingEvent,
-  TRACKING_EVENT,
-  type TrackingEvent,
-} from "@/lib/tracking/log";
+import { TRACKING_EVENT, type TrackingEvent } from "@/lib/tracking/log";
 import {
   gameRatingInputSchema,
   gameStatusInputSchema,
@@ -23,16 +13,22 @@ import { classifyGameTrackingError } from "@/lib/tracking/supabase-error";
 import type {
   GameRestoreState,
   GameStatus,
+  GameTrackingError,
   GameTrackingResult,
   GameUndo,
 } from "@/lib/tracking/types";
+import {
+  parseTrackingInput,
+  runTrackingWrite,
+  type WriteStep,
+} from "@/lib/tracking/write";
 import { todayUtc } from "@/lib/tv/air-status";
 
-import { readGame } from "./[id]/load-game";
+import { readGameIncludingHidden } from "./[id]/load-game";
 
 /**
  * The game status and rating mutations, as Server Actions (spec 0026, API
- * surface), shaped like `app/movies/actions.ts`.
+ * surface), sharing `runTrackingWrite` with `app/movies/actions.ts`.
  *
  * Each takes a target value, never a toggle, so the same call twice gives the
  * same row (AC-3). Each runs the same order: Zod parse, then the verified
@@ -47,31 +43,6 @@ import { readGame } from "./[id]/load-game";
  * (`AGENTS.md` section 5).
  */
 
-type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
-
-type GameFunctions = Database["public"]["Functions"];
-
-/**
- * A function's result row with the named columns widened to nullable. The
- * generated types mark every returned column not null, but some are null at
- * run time. Widening from the generated row, rather than casting to a hand
- * written shape, keeps a renamed SQL column a compile error.
- */
-type RowWithNulls<
-  Name extends keyof GameFunctions,
-  Nullable extends keyof RowOf<Name>,
-> = Omit<RowOf<Name>, Nullable> & {
-  [K in Nullable]: RowOf<Name>[K] | null;
-};
-type RowOf<Name extends keyof GameFunctions> =
-  GameFunctions[Name]["Returns"] extends (infer Row)[] ? Row : never;
-
-/** A write step: PostgREST's typed data, and its error or null. */
-type WriteStep<D> = (
-  supabase: SupabaseClient,
-  userId: string,
-) => PromiseLike<{ data: D | null; error: { code?: string | null } | null }>;
-
 /**
  * What a write confirms with IGDB first (AC-9). `none` for a removal, a
  * cleared score and both restores, which only ever put back or take away and
@@ -79,12 +50,14 @@ type WriteStep<D> = (
  * `known` for Want to play: any id IGDB has, hidden included, so a listed
  * game IGDB later hides can still be moved back. `listed` for Playing and
  * Finished: known, not hidden, and released. `released` for a score: known
- * and released.
+ * and released. A hidden game can still be scored: `rate_game` needs Playing
+ * or Finished, which the game could only have reached while it was listed.
  */
 type IgdbCheck = "none" | "known" | "listed" | "released";
 
 /**
- * The shared shape of every game action.
+ * The game side of `runTrackingWrite`: the IGDB check and release gate, and
+ * the Undo that comes back.
  *
  * @param event The log event for a refusal.
  * @param gameId The already parsed game id.
@@ -99,66 +72,71 @@ async function runGameWrite<D>(
   write: WriteStep<D>,
   readUndo?: (data: D | null) => GameUndo | undefined,
 ): Promise<GameTrackingResult> {
-  let undo: GameUndo | undefined;
-  try {
-    const user = await getOptionalUser();
-    if (!user) {
-      logTrackingEvent(event, "session_expired");
-      return { ok: false, error: "session_expired" };
-    }
-
-    if (check !== "none") {
-      const result = await readGame(gameId);
-      if (result.kind === "failed") {
-        logTrackingEvent(event, "igdb_unavailable");
-        return { ok: false, error: "igdb_unavailable" };
-      }
-      if (
-        result.kind === "not_found" ||
-        (check === "listed" && result.game.hidden)
-      ) {
-        logTrackingEvent(event, "not_found");
-        return { ok: false, error: "not_found" };
-      }
-      if (
-        check !== "known" &&
-        !isGameReleased(result.game.releaseDate, todayUtc(new Date()))
-      ) {
-        logTrackingEvent(event, "not_released");
-        return { ok: false, error: "not_released" };
-      }
-    }
-
-    const supabase = await createClient();
-    const { data, error } = await write(supabase, user.id);
-    if (error) {
-      const classified = classifyGameTrackingError(error);
-      logTrackingEvent(event, classified.outcome);
-      return { ok: false, error: classified.error };
-    }
-    undo = readUndo?.(data);
-  } catch {
-    // A network failure inside supabase-js, or a bug `readGame` rethrew. The
-    // error object is dropped on purpose: its message can carry request
-    // details that must not reach a log line (AC-15).
-    logTrackingEvent(event, "db_error");
-    return { ok: false, error: "write_failed" };
-  }
-
-  refresh();
-  return undo ? { ok: true, undo } : { ok: true };
+  const outcome = await runTrackingWrite({
+    event,
+    check: check === "none" ? undefined : () => checkIgdb(gameId, check),
+    write,
+    classify: classifyGameTrackingError,
+    read: readUndo,
+  });
+  if (!outcome.ok) return outcome;
+  return outcome.value ? { ok: true, undo: outcome.value } : { ok: true };
 }
 
-/** Parses an action's arguments, or reports `invalid_input` (AC-15). */
-function parse<T>(
-  schema: z.ZodType<T>,
-  input: unknown,
-  event: TrackingEvent,
-): T | null {
-  const parsed = schema.safeParse(input);
-  if (parsed.success) return parsed.data;
-  logTrackingEvent(event, "invalid_input");
+/** Confirms the game with IGDB, and where asked, that it is out. */
+async function checkIgdb(
+  gameId: number,
+  check: Exclude<IgdbCheck, "none">,
+): Promise<GameTrackingError | null> {
+  const result = await readGameIncludingHidden(gameId);
+  if (result.kind === "failed") return "igdb_unavailable";
+  if (
+    result.kind === "not_found" ||
+    (check === "listed" && result.game.hidden)
+  ) {
+    return "not_found";
+  }
+  if (
+    check !== "known" &&
+    !isGameReleased(result.game.releaseDate, todayUtc(new Date()))
+  ) {
+    return "not_released";
+  }
   return null;
+}
+
+/**
+ * The five columns `set_game_status` (`prev_*`) and `remove_game`
+ * (`removed_*`) both return, under their prefix. Every column is nullable
+ * here although the generated row marks them not null: `prev_*` are all null
+ * when there was no row. Typed from the prefix rather than a hand written
+ * shape, so a renamed SQL column is still a compile error at the call.
+ */
+type RestoreColumns<P extends "prev_" | "removed_"> = Record<
+  `${P}status`,
+  GameStatus | null
+> &
+  Record<`${P}rating`, number | null> &
+  Record<`${P}added_at` | `${P}started_at` | `${P}finished_at`, string | null>;
+
+/**
+ * Reads the state an Undo puts back from a write's prefixed columns, or null
+ * when the row held no game (no status or no added date).
+ */
+function readRestoreState<P extends "prev_" | "removed_">(
+  row: RestoreColumns<P>,
+  prefix: P,
+): GameRestoreState | null {
+  const status: GameStatus | null = row[`${prefix}status`];
+  const addedAt: string | null = row[`${prefix}added_at`];
+  if (status === null || addedAt === null) return null;
+  return {
+    status,
+    addedAt,
+    rating: row[`${prefix}rating`],
+    startedAt: row[`${prefix}started_at`],
+    finishedAt: row[`${prefix}finished_at`],
+  };
 }
 
 /** The restore arguments both Undo functions share. */
@@ -183,14 +161,19 @@ function restoreArgs(previous: GameRestoreState) {
  * two tabs can never both receive the same Undo (AC-13).
  *
  * The generated row type marks every `prev_*` column not null, but all of
- * them are null when there was no row, so the reader treats them as nullable.
+ * them are null when there was no row, so `readRestoreState` treats them as
+ * nullable.
  */
 export async function setGameStatus(
   gameId: number,
   status: GameStatus,
 ): Promise<GameTrackingResult> {
   const event = TRACKING_EVENT.gameStatus;
-  const input = parse(gameStatusInputSchema, { gameId, status }, event);
+  const input = parseTrackingInput(
+    gameStatusInputSchema,
+    { gameId, status },
+    event,
+  );
   if (!input) return { ok: false, error: "invalid_input" };
 
   return runGameWrite(
@@ -203,35 +186,17 @@ export async function setGameStatus(
         p_status: input.status,
       }),
     (data) => {
-      const prev:
-        | RowWithNulls<
-            "set_game_status",
-            | "prev_status"
-            | "prev_rating"
-            | "prev_added_at"
-            | "prev_started_at"
-            | "prev_finished_at"
-          >
-        | undefined = data?.[0];
+      const row = data?.[0];
+      const previous = row ? readRestoreState(row, "prev_") : null;
       if (
         input.status !== "want_to_play" ||
-        !prev?.prev_status ||
-        prev.prev_status === "want_to_play" ||
-        prev.prev_rating === null ||
-        prev.prev_added_at === null
+        !previous ||
+        previous.status === "want_to_play" ||
+        previous.rating === null
       ) {
         return undefined;
       }
-      return {
-        kind: "status",
-        previous: {
-          status: prev.prev_status,
-          rating: prev.prev_rating,
-          addedAt: prev.prev_added_at,
-          startedAt: prev.prev_started_at,
-          finishedAt: prev.prev_finished_at,
-        },
-      };
+      return { kind: "status", previous };
     },
   );
 }
@@ -255,7 +220,11 @@ export async function setGameRating(
   rating: number | null,
 ): Promise<GameTrackingResult> {
   const event = TRACKING_EVENT.gameRate;
-  const input = parse(gameRatingInputSchema, { gameId, rating }, event);
+  const input = parseTrackingInput(
+    gameRatingInputSchema,
+    { gameId, rating },
+    event,
+  );
   if (!input) return { ok: false, error: "invalid_input" };
 
   const score = input.rating;
@@ -281,11 +250,11 @@ export async function setGameRating(
  * no Undo, a quiet success. Never calls IGDB (AC-9).
  *
  * As with `set_game_status`, the generated row type marks the nullable
- * columns not null, so the reader widens them.
+ * columns not null, so `readRestoreState` widens them.
  */
 export async function removeGame(gameId: number): Promise<GameTrackingResult> {
   const event = TRACKING_EVENT.gameRemove;
-  const input = parse(removeGameInputSchema, { gameId }, event);
+  const input = parseTrackingInput(removeGameInputSchema, { gameId }, event);
   if (!input) return { ok: false, error: "invalid_input" };
 
   return runGameWrite(
@@ -294,24 +263,10 @@ export async function removeGame(gameId: number): Promise<GameTrackingResult> {
     "none",
     (supabase) => supabase.rpc("remove_game", { p_game_id: input.gameId }),
     (data) => {
-      const row:
-        | RowWithNulls<
-            "remove_game",
-            "removed_rating" | "removed_started_at" | "removed_finished_at"
-          >
-        | undefined = data?.[0];
-      if (!row) return undefined;
-      return {
-        kind: "removed",
-        removedAt: row.removed_at,
-        previous: {
-          status: row.removed_status,
-          rating: row.removed_rating,
-          addedAt: row.removed_added_at,
-          startedAt: row.removed_started_at,
-          finishedAt: row.removed_finished_at,
-        },
-      };
+      const row = data?.[0];
+      const previous = row ? readRestoreState(row, "removed_") : null;
+      if (!row || !previous) return undefined;
+      return { kind: "removed", removedAt: row.removed_at, previous };
     },
   );
 }
@@ -331,7 +286,7 @@ export async function restoreGameStatus(
   previous: GameRestoreState,
 ): Promise<GameTrackingResult> {
   const event = TRACKING_EVENT.gameRestoreStatus;
-  const input = parse(
+  const input = parseTrackingInput(
     restoreGameStatusInputSchema,
     { gameId, previous },
     event,
@@ -358,7 +313,7 @@ export async function restoreRemovedGame(
   removedAt: string,
 ): Promise<GameTrackingResult> {
   const event = TRACKING_EVENT.gameRestoreRemoved;
-  const input = parse(
+  const input = parseTrackingInput(
     restoreRemovedGameInputSchema,
     { gameId, previous, removedAt },
     event,

@@ -11,8 +11,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const getOptionalUser = vi.fn();
 vi.mock("@/lib/auth/user", () => ({ getOptionalUser }));
 
-const readGame = vi.fn();
-vi.mock("./[id]/load-game", () => ({ readGame }));
+const readGameIncludingHidden = vi.fn();
+vi.mock("./[id]/load-game", () => ({ readGameIncludingHidden }));
 
 const refresh = vi.fn();
 vi.mock("next/cache", () => ({ refresh }));
@@ -72,7 +72,7 @@ let warn: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
   getOptionalUser.mockResolvedValue(USER);
-  readGame.mockResolvedValue(released());
+  readGameIncludingHidden.mockResolvedValue(released());
   result = { data: null, error: null };
   calls.length = 0;
   warn = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -153,7 +153,7 @@ describe("setGameStatus", () => {
   ])(
     "refuses Playing and Finished before release, with %s (AC-9)",
     async (_, releaseDate) => {
-      readGame.mockResolvedValue(released({ releaseDate }));
+      readGameIncludingHidden.mockResolvedValue(released({ releaseDate }));
       for (const status of ["playing", "finished"] as const) {
         expect(await setGameStatus(GAME, status)).toEqual({
           ok: false,
@@ -165,13 +165,13 @@ describe("setGameStatus", () => {
   );
 
   it("accepts Want to play before release (AC-8)", async () => {
-    readGame.mockResolvedValue(released({ releaseDate: null }));
+    readGameIncludingHidden.mockResolvedValue(released({ releaseDate: null }));
     result = { data: [NO_ROW], error: null };
     expect(await setGameStatus(GAME, "want_to_play")).toEqual({ ok: true });
   });
 
   it("refuses a hidden game on Playing and Finished, but accepts Want to play (AC-9)", async () => {
-    readGame.mockResolvedValue(released({ hidden: true }));
+    readGameIncludingHidden.mockResolvedValue(released({ hidden: true }));
     expect(await setGameStatus(GAME, "playing")).toEqual({
       ok: false,
       error: "not_found",
@@ -185,7 +185,7 @@ describe("setGameStatus", () => {
   });
 
   it("refuses an id IGDB does not know (AC-9)", async () => {
-    readGame.mockResolvedValue({ kind: "not_found" });
+    readGameIncludingHidden.mockResolvedValue({ kind: "not_found" });
     expect(await setGameStatus(GAME, "want_to_play")).toEqual({
       ok: false,
       error: "not_found",
@@ -193,7 +193,7 @@ describe("setGameStatus", () => {
   });
 
   it("refuses with igdb_unavailable when IGDB fails, Want to play too (AC-9)", async () => {
-    readGame.mockResolvedValue({ kind: "failed" });
+    readGameIncludingHidden.mockResolvedValue({ kind: "failed" });
     expect(await setGameStatus(GAME, "want_to_play")).toEqual({
       ok: false,
       error: "igdb_unavailable",
@@ -209,7 +209,7 @@ describe("setGameStatus", () => {
   });
 
   it("logs a refusal with its event and outcome only (AC-15)", async () => {
-    readGame.mockResolvedValue(released({ releaseDate: null }));
+    readGameIncludingHidden.mockResolvedValue(released({ releaseDate: null }));
     await setGameStatus(GAME, "playing");
     expect(warn).toHaveBeenCalledWith(
       "game_tracking.status refused not_released",
@@ -226,7 +226,7 @@ describe("setGameRating", () => {
   });
 
   it("clears with a plain update that never calls IGDB (AC-6, AC-9)", async () => {
-    readGame.mockResolvedValue({ kind: "failed" });
+    readGameIncludingHidden.mockResolvedValue({ kind: "failed" });
     expect(await setGameRating(GAME, null)).toEqual({ ok: true });
     expect(writes()).toEqual([
       { method: "from", args: ["user_game_state"] },
@@ -234,11 +234,13 @@ describe("setGameRating", () => {
       // Only a scored row, so an unscored one keeps its Undo window.
       { method: "not", args: ["rating", "is", null] },
     ]);
-    expect(readGame).not.toHaveBeenCalled();
+    expect(readGameIncludingHidden).not.toHaveBeenCalled();
   });
 
   it("refuses a score before release (AC-9)", async () => {
-    readGame.mockResolvedValue(released({ releaseDate: "2999-01-01" }));
+    readGameIncludingHidden.mockResolvedValue(
+      released({ releaseDate: "2999-01-01" }),
+    );
     expect(await setGameRating(GAME, 8)).toEqual({
       ok: false,
       error: "not_released",
@@ -275,7 +277,7 @@ describe("setGameRating", () => {
 
 describe("removeGame", () => {
   it("returns the removal Undo when a row came back, with no IGDB call (AC-4, AC-9)", async () => {
-    readGame.mockResolvedValue({ kind: "failed" });
+    readGameIncludingHidden.mockResolvedValue({ kind: "failed" });
     result = {
       data: [
         {
@@ -297,7 +299,7 @@ describe("removeGame", () => {
         removedAt: "2026-10-24T10:00:00+00:00",
       },
     });
-    expect(readGame).not.toHaveBeenCalled();
+    expect(readGameIncludingHidden).not.toHaveBeenCalled();
   });
 
   it("is a quiet success with no Undo when the row was already gone (AC-4)", async () => {
@@ -308,7 +310,7 @@ describe("removeGame", () => {
 
 describe("the restores", () => {
   it("restores a status with the old values and no IGDB call (AC-5, AC-9)", async () => {
-    readGame.mockResolvedValue({ kind: "failed" });
+    readGameIncludingHidden.mockResolvedValue({ kind: "failed" });
     expect(await restoreGameStatus(GAME, PREVIOUS)).toEqual({ ok: true });
     expect(writes()).toEqual([
       {
@@ -326,7 +328,7 @@ describe("the restores", () => {
         ],
       },
     ]);
-    expect(readGame).not.toHaveBeenCalled();
+    expect(readGameIncludingHidden).not.toHaveBeenCalled();
   });
 
   it("restores a removal with its time of removal (AC-4)", async () => {
@@ -375,7 +377,7 @@ describe("input and failure edges", () => {
       error: "invalid_input",
     });
     expect(getOptionalUser).not.toHaveBeenCalled();
-    expect(readGame).not.toHaveBeenCalled();
+    expect(readGameIncludingHidden).not.toHaveBeenCalled();
     expect(createClient).not.toHaveBeenCalled();
   });
 
@@ -396,7 +398,7 @@ describe("input and failure edges", () => {
       ok: false,
       error: "session_expired",
     });
-    expect(readGame).not.toHaveBeenCalled();
+    expect(readGameIncludingHidden).not.toHaveBeenCalled();
     expect(createClient).not.toHaveBeenCalled();
     expect(refresh).not.toHaveBeenCalled();
   });
@@ -434,14 +436,18 @@ describe("the server release gate by UTC day (AC-9)", () => {
   });
 
   it("accepts Playing and a score on the release day itself", async () => {
-    readGame.mockResolvedValue(released({ releaseDate: "2026-10-24" }));
+    readGameIncludingHidden.mockResolvedValue(
+      released({ releaseDate: "2026-10-24" }),
+    );
     result = { data: [], error: null };
     expect(await setGameStatus(GAME, "playing")).toEqual({ ok: true });
     expect(await setGameRating(GAME, 7)).toEqual({ ok: true });
   });
 
   it("refuses Playing, Finished and a score for a game out tomorrow", async () => {
-    readGame.mockResolvedValue(released({ releaseDate: "2026-10-25" }));
+    readGameIncludingHidden.mockResolvedValue(
+      released({ releaseDate: "2026-10-25" }),
+    );
     const refused = { ok: false, error: "not_released" };
     expect(await setGameStatus(GAME, "playing")).toEqual(refused);
     expect(await setGameStatus(GAME, "finished")).toEqual(refused);
@@ -450,11 +456,11 @@ describe("the server release gate by UTC day (AC-9)", () => {
   });
 
   it("still removes, clears a score and restores before release, with no IGDB read (AC-8)", async () => {
-    readGame.mockResolvedValue(released({ releaseDate: null }));
+    readGameIncludingHidden.mockResolvedValue(released({ releaseDate: null }));
     expect(await removeGame(GAME)).toEqual({ ok: true });
     expect(await setGameRating(GAME, null)).toEqual({ ok: true });
     expect(await restoreGameStatus(GAME, PREVIOUS)).toEqual({ ok: true });
-    expect(readGame).not.toHaveBeenCalled();
+    expect(readGameIncludingHidden).not.toHaveBeenCalled();
   });
 });
 

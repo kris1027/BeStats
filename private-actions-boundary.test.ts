@@ -37,8 +37,8 @@ const loadSeason = vi.fn();
 vi.mock("@/app/shows/[id]/season/[number]/load-season", () => ({
   loadSeason,
 }));
-const readGame = vi.fn();
-vi.mock("@/app/games/[id]/load-game", () => ({ readGame }));
+const readGameIncludingHidden = vi.fn();
+vi.mock("@/app/games/[id]/load-game", () => ({ readGameIncludingHidden }));
 const applyAutoCompletion = vi.fn();
 vi.mock("@/lib/tracking/auto-completion", () => ({ applyAutoCompletion }));
 
@@ -202,7 +202,7 @@ beforeEach(() => {
       episodes: [{ id: 62085, episodeNumber: 1, airDate: "2020-01-01" }],
     },
   });
-  readGame.mockResolvedValue({
+  readGameIncludingHidden.mockResolvedValue({
     kind: "found",
     game: { id: GAME, releaseDate: "2015-05-19", hidden: false },
   });

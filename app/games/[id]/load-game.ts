@@ -20,7 +20,7 @@ export type LoadGameResult =
  * those out of browsing, the way an adult movie is (spec 0025, rationale).
  */
 export async function loadGame(id: number): Promise<LoadGameResult> {
-  const result = await readGame(id);
+  const result = await readGameIncludingHidden(id);
   return result.kind === "found" && result.game.hidden
     ? { kind: "not_found" }
     : result;
@@ -36,7 +36,9 @@ export async function loadGame(id: number): Promise<LoadGameResult> {
  * included, is a bug rather than an IGDB outcome, so it is rethrown instead
  * of being dressed up as "Couldn't reach IGDB" (spec 0025, AC-8).
  */
-export async function readGame(id: number): Promise<LoadGameResult> {
+export async function readGameIncludingHidden(
+  id: number,
+): Promise<LoadGameResult> {
   try {
     return { kind: "found", game: await getGame(id) };
   } catch (error) {
