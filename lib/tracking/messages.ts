@@ -2,6 +2,8 @@ import type { MediaType } from "@/lib/catalog/media-type";
 
 import type {
   EpisodeTrackingError,
+  GameStatus,
+  GameTrackingError,
   MovieTrackingError,
   ShowTrackingError,
   TrackingError,
@@ -295,4 +297,42 @@ export const MISSING_SHOW_COPY = {
   toastName: "this show",
   /** The Stop tracking button's accessible name. */
   stopLabel: "Stop tracking missing title",
+} as const;
+
+/** The game page's three status pills, in their order (spec 0026, AC-2). */
+export const GAME_STATUS_LABELS: Record<GameStatus, string> = {
+  want_to_play: "Want to play",
+  playing: "Playing",
+  finished: "Finished",
+};
+
+/** What a refused game Undo says: change it again on the game page. */
+const GAME_UNDO_EXPIRED = "Couldn't undo. Set the status again on this page.";
+
+/**
+ * The game status control's failure copy (spec 0026, API surface): the movie
+ * copy for the shared classes, with the lines that name a game, IGDB in place
+ * of TMDB, and the game's own refusals.
+ */
+export const GAME_TRACKING_MESSAGES: Record<GameTrackingError, string> = {
+  session_expired: SHARED_TRACKING_MESSAGES.session_expired,
+  write_failed: SHARED_TRACKING_MESSAGES.write_failed,
+  invalid_input: SHARED_TRACKING_MESSAGES.invalid_input,
+  not_found: "This game isn't available to track.",
+  undo_expired: GAME_UNDO_EXPIRED,
+  igdb_unavailable: "Couldn't reach IGDB. Try again.",
+  not_released: "This game isn't out yet.",
+  // Only a stale tab or a crafted call reaches it: the score pill shows only
+  // on Playing or Finished.
+  not_started: "Set Playing or Finished to score this game.",
+};
+
+/**
+ * The two game toasts that carry an Undo (spec 0026, AC-4, AC-5). A status
+ * change that removed nothing confirms itself through the pill alone.
+ */
+export const GAME_UNDO_MESSAGES = {
+  removed: "Removed from your games.",
+  scoreCleared: "Moved to Want to play. Your score was removed.",
+  undoExpired: GAME_UNDO_EXPIRED,
 } as const;

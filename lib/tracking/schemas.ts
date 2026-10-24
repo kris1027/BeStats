@@ -148,3 +148,56 @@ export const restoreShowTrackingInputSchema = z.object({
   showId: tmdbIdSchema,
   undo: z.object({ trackedAt: pastInstantSchema }),
 });
+
+/** An IGDB game id: the bounds `parseGameId` applies (spec 0026). */
+export const gameIdSchema = movieIdSchema;
+
+/** The three statuses, set by hand (`AGENTS.md` "Games"). */
+export const gameStatusSchema = z.enum(["want_to_play", "playing", "finished"]);
+
+export const gameStatusInputSchema = z.object({
+  gameId: gameIdSchema,
+  status: gameStatusSchema,
+});
+
+export const gameRatingInputSchema = z.object({
+  gameId: gameIdSchema,
+  rating: ratingSchema.nullable(),
+});
+
+export const removeGameInputSchema = z.object({ gameId: gameIdSchema });
+
+const instantSchema = z.iso.datetime({ offset: true });
+
+/**
+ * What a game Undo puts back (spec 0026, API surface). The dates are full ISO
+ * timestamps with an offset, as PostgREST returned them, and the refinement
+ * refuses the shapes the table's checks would (Playing with no start,
+ * Finished with no finish, a score on Want to play) as `invalid_input`
+ * before a round trip. The restores bound every date to the past again.
+ */
+export const gameRestoreStateSchema = z
+  .object({
+    status: gameStatusSchema,
+    rating: ratingSchema.nullable(),
+    addedAt: instantSchema,
+    startedAt: instantSchema.nullable(),
+    finishedAt: instantSchema.nullable(),
+  })
+  .refine(
+    (state) =>
+      (state.status !== "playing" || state.startedAt !== null) &&
+      (state.status !== "finished" || state.finishedAt !== null) &&
+      (state.status !== "want_to_play" || state.rating === null),
+  );
+
+export const restoreGameStatusInputSchema = z.object({
+  gameId: gameIdSchema,
+  previous: gameRestoreStateSchema,
+});
+
+export const restoreRemovedGameInputSchema = z.object({
+  gameId: gameIdSchema,
+  previous: gameRestoreStateSchema,
+  removedAt: instantSchema,
+});
