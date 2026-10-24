@@ -37,16 +37,27 @@ const loadSeason = vi.fn();
 vi.mock("@/app/shows/[id]/season/[number]/load-season", () => ({
   loadSeason,
 }));
+const readGame = vi.fn();
+vi.mock("@/app/games/[id]/load-game", () => ({ readGame }));
 const applyAutoCompletion = vi.fn();
 vi.mock("@/lib/tracking/auto-completion", () => ({ applyAutoCompletion }));
 
 const movieActions = await import("@/app/movies/actions");
 const showActions = await import("@/app/shows/actions");
 const accountActions = await import("@/app/account/actions");
+const gameActions = await import("@/app/games/actions");
 
 /** Valid arguments for each action, so the session check is what refuses. */
 const SHOW = 1396;
 const MOVIE = 550;
+const GAME = 1942;
+const GAME_PREVIOUS = {
+  status: "finished",
+  rating: 8,
+  addedAt: "2026-09-01T10:00:00+00:00",
+  startedAt: null,
+  finishedAt: "2026-09-20T10:00:00+00:00",
+} as const;
 
 function passwordForm(): FormData {
   const form = new FormData();
@@ -120,6 +131,23 @@ const PRIVATE_ACTIONS: Record<
         }),
     },
   },
+  "app/games/actions.ts": {
+    module: gameActions,
+    refusal: TRACKING_REFUSAL,
+    calls: {
+      setGameStatus: () => gameActions.setGameStatus(GAME, "playing"),
+      setGameRating: () => gameActions.setGameRating(GAME, 8),
+      removeGame: () => gameActions.removeGame(GAME),
+      restoreGameStatus: () =>
+        gameActions.restoreGameStatus(GAME, GAME_PREVIOUS),
+      restoreRemovedGame: () =>
+        gameActions.restoreRemovedGame(
+          GAME,
+          GAME_PREVIOUS,
+          "2026-10-24T10:00:00+00:00",
+        ),
+    },
+  },
   "app/account/actions.ts": {
     module: accountActions,
     refusal: failure(AUTH_OUTCOME.sessionExpired),
@@ -173,6 +201,10 @@ beforeEach(() => {
       seasonNumber: 1,
       episodes: [{ id: 62085, episodeNumber: 1, airDate: "2020-01-01" }],
     },
+  });
+  readGame.mockResolvedValue({
+    kind: "found",
+    game: { id: GAME, releaseDate: "2015-05-19", hidden: false },
   });
   applyAutoCompletion.mockResolvedValue({ changed: null });
   warn = vi.spyOn(console, "warn").mockImplementation(() => {});
