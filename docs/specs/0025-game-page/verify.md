@@ -8,7 +8,7 @@ Run `pnpm dev` with `IGDB_CLIENT_ID` and `IGDB_CLIENT_SECRET` in `.env.local`. N
 - [x] On `/games/1942`, the meta row reads the full UTC date (`May 19, 2015`) with no release kind label (a main game), then the genre chips, which are not links → AC-2
 - [x] Open a remake or remaster (for example Resident Evil 3, 2020) → the date is followed by ` · Remake` (or `Remaster`) → AC-2
 - [x] The platforms line reads `Platforms: ` and the names sorted by name, ignoring case, joined by `, `, and wraps at 375px → AC-3
-- [x] The rating block shows the amber star badge with one decimal, the word `IGDB` and the count (`5,501 votes`); a screen reader hears "IGDB rating" before the number → AC-4
+- [x] The rating block shows the amber star badge with one decimal, the word `IGDB` and the count (`5,501 votes`); a screen reader hears "IGDB community rating" before the number → AC-4
 - [x] Open a game with no cover, no date, no genres, no platforms or no rating (or check `game-hero.test.tsx`) → the controller icon tile, no date part or separator, no chips, no platforms line, `No IGDB rating yet`; never `TBA`, `0` or today's date → AC-5
 - [x] Open `/games/abc`, `/games/0550`, `/games/+5`, `/games/5.0`, `/games/2147483648` and `/games/1.jpg` → each answers status 404 with the site's 404 page → AC-6
 - [x] Open `/games/2147483647` (unknown) and a DLC id such as `/games/12503` (hidden) → status 200, "We couldn't find that game" with a Go to home button linking to `/`, tab title `Game not found`, `noindex` → AC-7

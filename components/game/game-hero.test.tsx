@@ -84,7 +84,7 @@ describe("GameHero", () => {
     expect(block).toHaveTextContent("7.9");
     expect(block).toHaveTextContent("IGDB");
     expect(block).toHaveTextContent("1,234 votes");
-    expect(screen.getByText("IGDB rating")).toHaveClass("sr-only");
+    expect(screen.getByText("IGDB community rating")).toHaveClass("sr-only");
     expect(container.querySelector('[data-slot="tmdb-rating"]')).toBeNull();
     expect(screen.queryByText(/your score/i)).toBeNull();
   });
@@ -132,7 +132,7 @@ describe("GameHero", () => {
     );
 
     const block = container.querySelector('[data-slot="igdb-rating"]');
-    expect(block).toHaveTextContent(/^IGDB rating 6\.0IGDB$/);
+    expect(block).toHaveTextContent(/^IGDB community rating 6\.0IGDB$/);
   });
 
   it("renders the cover as a decorative image", () => {

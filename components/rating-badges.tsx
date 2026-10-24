@@ -41,7 +41,8 @@ function TmdbRatingBadge({ value }: { value: number | null }) {
  * The IGDB community rating (spec 0025, AC-4), in the same amber as TMDB's,
  * because amber means "community rating" everywhere in the app. Its own
  * component, not a label prop on the TMDB badge, so the screen reader text
- * always names the catalog the number came from. Renders nothing with no
+ * always names the catalog the number came from and calls it the community
+ * rating (AGENTS.md, Games). Renders nothing with no
  * rating, like the TMDB badge.
  */
 function IgdbRatingBadge({ value }: { value: number | null }) {
@@ -56,7 +57,7 @@ function IgdbRatingBadge({ value }: { value: number | null }) {
         />
       }
     >
-      <span className="sr-only">IGDB rating </span>
+      <span className="sr-only">IGDB community rating </span>
       {value.toFixed(1)}
     </GlassPill>
   );
