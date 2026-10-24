@@ -91,9 +91,9 @@ The segmented control (Want to play · Playing · Finished) and the score on the
   - [x] Removal and score: `remove_game`, `rate_game`, both restores and their Undo toasts, the score pill with auto open on Finished, AC-4 to AC-7, AC-14, AC-15
   - [x] Release gate: `isGameReleased`, the server checks, the release line and disabled pills, AC-8, AC-9
   - [ ] Optimistic, states and checks: `applyGameIntent`, 375px and 1280px, grants and sweep tests, drift and type checks, then `supabase db push` before merge, AC-11, AC-16, AC-17
-- [ ] Verify it: `/check verify game status and rating`
-- [ ] Test it: `/test game status and rating`
-- [ ] Review it (fresh model): `/check review game status and rating`
+- [x] Verify it: `/check verify game status and rating`
+- [x] Test it: `/test game status and rating`
+- [x] Review it (fresh model): `/check review game status and rating`
 - [ ] Document it: `/document game status and rating`
 spec [0026](../specs/0026-game-status-rating/index.md) · code in [app/games/](../../app/games/)
 
