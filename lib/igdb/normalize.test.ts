@@ -12,15 +12,15 @@ import {
  */
 
 describe("coverUrl", () => {
-  it("builds the t_cover_big URL from an image id", () => {
+  it("builds the t_cover_big_2x URL from an image id", () => {
     expect(coverUrl("coaarl")).toBe(
-      "https://images.igdb.com/igdb/image/upload/t_cover_big/coaarl.jpg",
+      "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coaarl.jpg",
     );
   });
 
   it("trims the id, and answers null for a blank or absent one", () => {
     expect(coverUrl(" coaarl ")).toBe(
-      "https://images.igdb.com/igdb/image/upload/t_cover_big/coaarl.jpg",
+      "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coaarl.jpg",
     );
     expect(coverUrl("   ")).toBeNull();
     expect(coverUrl(null)).toBeNull();

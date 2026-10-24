@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { TMDB_IMAGE_BASE } from "./constants";
-import tmdbImageLoaderDefault, { tmdbImageLoader } from "./image-loader";
+import { tmdbImageLoader } from "./image-loader";
 
 /**
  * covers: prompts/tmdb-image-loader.md, AC-1 to AC-3
@@ -15,10 +15,6 @@ const at = (size: string) => `${TMDB_IMAGE_BASE}/${size}/abc123.jpg`;
 const same = (size: string) => `${at(size)}#same-size`;
 
 describe("tmdbImageLoader", () => {
-  it("is the module's default export, which loaderFile needs", () => {
-    expect(tmdbImageLoaderDefault).toBe(tmdbImageLoader);
-  });
-
   it.each([
     [32, "w92"],
     [92, "w92"],

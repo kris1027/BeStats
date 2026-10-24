@@ -20,7 +20,10 @@ import type { Game, GameRef, GameSummary, GameType } from "./types";
  * votes". Nothing here invents a value or reads the clock.
  */
 
-/** `{base}/t_cover_big/{image_id}.jpg`, or null with no image id. */
+/**
+ * `{base}/t_cover_big_2x/{image_id}.jpg`, or null with no image id. The size is
+ * the loader's ceiling (spec 0025, AC-12), never what every image loads.
+ */
 export function coverUrl(imageId: string | null | undefined): string | null {
   const id = imageId?.trim();
   return id ? `${IGDB_IMAGE_BASE}/${IGDB_COVER_SIZE}/${id}.jpg` : null;

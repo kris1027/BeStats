@@ -203,6 +203,15 @@ describe("the proxy's catalog id rule", () => {
     "/shows/top%2Drated",
     "/shows/top%2drated",
     "/movies/now%2Dplaying",
+    // spec 0025, AC-6
+    "/games/0",
+    "/games/0550",
+    "/games/+5",
+    "/games/%2B5",
+    "/games/abc",
+    "/games/5.0",
+    "/games/2147483648",
+    "/games/1.jpg",
   ])("answers %s with a 404 rewrite", async (path) => {
     const response = await run(path);
 
@@ -271,6 +280,12 @@ describe("the proxy's catalog id rule", () => {
     "/movies/now-playing",
     "/movies/upcoming",
     "/movies/top-rated",
+    // spec 0025, AC-6: `/games` and deeper paths match no route, so the
+    // plain 404 answers them, not this rule.
+    "/games/1942",
+    "/games/2147483647",
+    "/games",
+    "/games/1942/extra",
   ])("lets %s through untouched", async (path) => {
     const response = await run(path);
 
@@ -286,7 +301,7 @@ describe("the proxy's catalog id rule", () => {
 });
 
 /**
- * covers: spec 0006, AC-8; spec 0009, AC-13
+ * covers: spec 0006, AC-8; spec 0009, AC-13; spec 0025, AC-6
  *
  * The matcher decides whether the proxy runs at all, so a movie path that
  * looks like an image file must still reach the malformed id rule, while real
@@ -303,6 +318,7 @@ describe("the proxy matcher", () => {
     "/movies/x.svg",
     "/shows/1396.jpg",
     "/shows/1396/season/1.png",
+    "/games/1.jpg",
   ])("runs for %s so it can answer 404", (url) => {
     expect(matches(url)).toBe(true);
   });

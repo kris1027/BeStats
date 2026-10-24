@@ -9,8 +9,9 @@ import { getAuthEmailDelivery } from "./lib/env";
  * false`, and every cached read calls `cacheLife` inside its own scope.
  *
  * TMDB serves every poster, backdrop, profile and still the app renders, and
- * `lib/tmdb` builds those URLs from the hardcoded `TMDB_IMAGE_BASE` (spec 0002,
- * AC-20), so the image config below needs no remote host of its own.
+ * IGDB every game cover; `lib/tmdb` and `lib/igdb` build those URLs from the
+ * hardcoded `TMDB_IMAGE_BASE` and `IGDB_IMAGE_BASE` (spec 0002, AC-20; spec
+ * 0025, AC-11), so the image config below needs no remote host of its own.
  */
 const nextConfig: NextConfig = {
   cacheComponents: true,
@@ -61,9 +62,11 @@ const nextConfig: NextConfig = {
     ];
   },
   /**
-   * A custom loader points every `next/image` at TMDB's own pre-sized files, so
-   * the browser loads from TMDB's CDN and Vercel's optimizer, whose Hobby quota
-   * a catalog this size outgrows, never runs (prompts/tmdb-image-loader.md).
+   * A custom loader points every `next/image` at its host's own pre-sized
+   * files, so the browser loads from TMDB's or IGDB's CDN and Vercel's
+   * optimizer, whose Hobby quota a catalog this size outgrows, never runs
+   * (prompts/tmdb-image-loader.md). One file dispatches by host, because Next
+   * takes a single `loaderFile` (spec 0025, AC-11).
    *
    * The loader alone leaves `/_next/image` answering anyone who still holds an
    * old URL, so the optimizer is also given no source of ours to fetch: no
@@ -71,12 +74,12 @@ const nextConfig: NextConfig = {
    * every local path (prompts/close-image-optimizer.md). Next still appends
    * its static import folders (`/_next/static/media/**` and the immutable
    * one) to any array, which stay harmless only while no code imports an
-   * image file. The one image host is recorded by `TMDB_IMAGE_BASE` in
-   * `lib/tmdb/constants.ts`.
+   * image file. The image hosts are recorded by `TMDB_IMAGE_BASE` in
+   * `lib/tmdb/constants.ts` and `IGDB_IMAGE_BASE` in `lib/igdb/constants.ts`.
    */
   images: {
     loader: "custom",
-    loaderFile: "./lib/tmdb/image-loader.ts",
+    loaderFile: "./lib/images/loader.ts",
     localPatterns: [],
   },
 };

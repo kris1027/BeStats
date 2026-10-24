@@ -1,7 +1,8 @@
 # AGENTS.md · lib/tmdb
 
 The server only module every TMDB request goes through, plus the one browser
-file, `image-loader.ts`, that `next.config.ts` hands to `next/image`. Decided in
+file, `image-loader.ts`, that `lib/images/loader.ts` (the `loaderFile`)
+sends every TMDB URL to. Decided in
 [spec 0002](../../docs/specs/0002-tmdb-integration-module/index.md); scope
 feature 4. Runtime steps live in that spec's `verify.md`.
 
@@ -10,8 +11,8 @@ feature 4. Runtime steps live in that spec's `verify.md`.
 - `index.ts` is the only entry point a page may import. It exports the cached
   reads, `imageUrl`, `isTmdbNotFound`, `TmdbError`, `TMDB_ATTRIBUTION` and the
   normalized types. Everything else in this folder is internal, except
-  `image-loader.ts` (`'use client'`), which only the `loaderFile` setting
-  imports, and the pure `images.ts` it reads.
+  `image-loader.ts` (`'use client'`), which only `lib/images/loader.ts` (the
+  `loaderFile`) imports, and the pure `images.ts` it reads.
 - `reads.ts` holds every `use cache` wrapper and is the only file that imports
   `next/cache`.
 - `client.ts` owns auth, the deadline, the retry budget, the status mapping and
@@ -72,8 +73,9 @@ feature 4. Runtime steps live in that spec's `verify.md`.
   (`resolveOverview` in `normalize.ts`, spec 0006, AC-5).
 - **Errors carry a `kind`**, never a bare status. Pages branch through
   `isTmdbNotFound`, not through a hand rolled catch.
-- **Images skip Vercel's optimizer.** `image-loader.ts` (`'use client'`, the
-  `loaderFile` in `next.config.ts`) maps a `next/image` width onto TMDB's own
+- **Images skip Vercel's optimizer.** `image-loader.ts` (`'use client'`, reached
+  through `lib/images/loader.ts` (the `loaderFile`), which dispatches by host)
+  maps a `next/image` width onto TMDB's own
   sizes, never above the size `images.ts` pinned, so the browser loads
   straight from TMDB's CDN (prompts/tmdb-image-loader.md). `original` is
   requested only by the landing hero, the one exception: the loader serves it

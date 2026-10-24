@@ -42,7 +42,7 @@ export const MINIMUM_AGE = 16;
  * whenever the text changes materially. Pages format it in UTC and never read
  * the clock (spec 0017, AC-7).
  */
-export const LEGAL_LAST_UPDATED = "2026-10-16";
+export const LEGAL_LAST_UPDATED = "2026-10-23";
 
 /**
  * Where the production Supabase project stores your data, read from
@@ -71,6 +71,13 @@ export const JUSTWATCH_ATTRIBUTION = "Availability data from JustWatch";
  * the legal pages render in jsdom.
  */
 export const TMDB_HOME_URL = "https://www.themoviedb.org";
+
+/**
+ * IGDB's own site, linked where `/privacy` says game covers load from IGDB's
+ * image service (spec 0025). One home, like `TMDB_HOME_URL`. IGDB is not a
+ * processor: the server sends it no user data, only the browser loads covers.
+ */
+export const IGDB_HOME_URL = "https://www.igdb.com";
 
 /** Days within which an account deletion request is completed. */
 export const DELETION_DAYS = 30;

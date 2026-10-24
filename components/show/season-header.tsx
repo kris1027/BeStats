@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type * as React from "react";
 
-import { MetaLine } from "@/components/movie/movie-hero";
+import { MetaLine } from "@/components/catalog/detail-hero-meta";
 import { seasonMetaParts } from "@/lib/format";
 
 /**

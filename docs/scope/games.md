@@ -24,9 +24,9 @@ _This is the second scope for BeStats. The movie and TV scope lives in [scope.md
 
 | # | Feature | Phase | Status |
 |---|---------|-------|--------|
-| G1 | IGDB integration module | Foundation | in-progress |
-| G2 | Game data model and security policies | Foundation | in-progress |
-| G3 | Game page (tracer) | Slice G1 | planned |
+| G1 | IGDB integration module | Foundation | done |
+| G2 | Game data model and security policies | Foundation | done |
+| G3 | Game page (tracer) | Slice G1 | done |
 | G4 | Game status and rating | Slice G1 | planned |
 | G5 | Games tab and library pages | Slice G2 | planned |
 | G6 | Games home and list pages | Slice G3 | planned |
@@ -37,7 +37,7 @@ _This is the second scope for BeStats. The movie and TV scope lives in [scope.md
 
 ## Foundations
 
-### G1. IGDB integration module · in-progress
+### G1. IGDB integration module · done
 A server only module that reads games from IGDB, the way `lib/tmdb/` reads movies and shows, so every later games feature has one trusted source.
 **Done when:** the Twitch app token is fetched and cached on the server until it expires; game details, lists and search come back normalized with the catalog filter applied; up to 500 ids load in one batched request and each game's details are cached for a few hours; rate limit (4 requests a second) and failed requests return a plain result the UI can show; the `IGDB_*` variables are in `.env.example`, a boundary test fails if any other file reads them or gives them a `NEXT_PUBLIC_` prefix, and a live check script runs against real IGDB; the games rules above are added to `AGENTS.md`.
 - [x] Design it (spec): `/architect IGDB integration module`
@@ -51,7 +51,7 @@ A server only module that reads games from IGDB, the way `lib/tmdb/` reads movie
 - [x] Test it: `/test IGDB integration module`
 spec [0023](../specs/0023-igdb-integration-module/index.md) · code in [lib/igdb/](../../lib/igdb/)
 
-### G2. Game data model and security policies · in-progress · GA
+### G2. Game data model and security policies · done · GA
 The private table behind every games feature: one row per user and game holding its status, score and dates.
 **Done when:** a migration adds the table with a status enum, one row per user and game, a score from 1 to 10 that needs Playing or Finished, and the three timestamps; owner only RLS covers read, insert, update and delete; pgTAP tests prove two users cannot read or change each other's games; generated types are updated.
 - [x] Design it (spec): `/architect game data model and security policies`
@@ -68,10 +68,19 @@ spec [0024](../specs/0024-game-data-model-security/index.md) · code in [supabas
 
 ## Slice G1: One game, end to end
 
-### G3. Game page (tracer) · needs a decision
+### G3. Game page (tracer) · done
 The thinnest real `/games/{id}`: hero only (cover, title, release date, platforms, genres, IGDB rating), proving IGDB data reaches a shipped page.
 **Done when:** a valid id renders the hero from cached IGDB data with missing values omitted; the proxy answers a malformed id with a real 404 and an unknown or hidden id gets the soft 404; `images.igdb.com` is allowed with its own loader; the shell stays prerendered; loading, error and missing image states work at 375px and 1280px.
-- [ ] Design it (spec): `/architect game page`
+- [x] Design it (spec): `/architect game page`
+- [x] Build it: `/develop game page`
+  - [x] Thin thread: `parseGameId`, `loadGame`, the Suspense shell and a first `GameHero` showing a real IGDB game, AC-1, AC-9
+  - [x] Shared hero: `DetailHero` rating slot and fallback icon, the IGDB rating block, the moved meta pieces, then the full hero with every missing value rule, AC-1 to AC-5
+  - [x] Outcomes and proxy: soft 404, retry panel, `noindex` metadata, the `/games/` proxy rule and matcher exception, AC-6 to AC-8, AC-10
+  - [x] Images: the 2x cover ceiling, the IGDB ladder and loader behind the host dispatching loader file, the live width check, AC-11, AC-12
+  - [x] States and checks: the game skeleton, 375px and 1280px states, typecheck, lint, test, build, AC-9, AC-13
+- [x] Verify it: `/check verify game page`
+- [x] Test it: `/test game page`
+spec [0025](../specs/0025-game-page/index.md) · code in [app/games/](../../app/games/)
 
 ### G4. Game status and rating · needs a decision · GA
 The segmented control (Want to play · Playing · Finished) and the score on the game page, saved through Server Actions.
@@ -123,6 +132,7 @@ Out of scope for the current build pass, kept so the plan stays honest.
 - **Platform you play on, hours played, 100% completion** (from the 2026-10-17 grilling): skipped for the first pass
 - **Dropped or Paused status**: left out, matching the removal of TV holds on 2026-10-10
 - **Where to buy a game**: no store links in this pass
+- **Artwork backdrop on the game hero** (from spec 0025): G3 ships without one; G9 or a later spec decides
 
 ## Legend
 

@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
 import { isPrivatePath } from "@/lib/auth/private-paths";
-import { parseSeasonNumber, parseTmdbId } from "@/lib/catalog/ids";
+import { parseGameId, parseSeasonNumber, parseTmdbId } from "@/lib/catalog/ids";
 import { isCatalogListSlug } from "@/lib/catalog/lists";
 import type { MediaType } from "@/lib/catalog/media-type";
 import { getPublicEnv, publicEnvProblems } from "@/lib/env";
@@ -191,6 +191,11 @@ const CATALOG_PATHS: {
     pattern: /^\/shows\/([^/]+)\/season\/([^/]+)$/,
     parsers: [parseTmdbId, parseSeasonNumber],
   },
+  // spec 0025, AC-6. No list pages live under `/games/` yet, so no slug passes.
+  {
+    pattern: /^\/games\/([^/]+)$/,
+    parsers: [parseGameId],
+  },
 ];
 
 /**
@@ -205,7 +210,8 @@ const NOT_FOUND_PATH = "/_catalog-not-found";
  * every other request. Shares its parsers with the pages, so the proxy and
  * the routes cannot disagree about what a movie, show or season URL looks
  * like (spec 0006, AC-8; spec 0009, AC-13). A list slug is checked against
- * the same registry the list routes are built from (spec 0021, AC-13).
+ * the same registry the list routes are built from (spec 0021, AC-13). A
+ * game URL follows the same rule (spec 0025, AC-6).
  *
  * The status is set explicitly rather than left to the rewrite, so the answer
  * is a 404 even if the rendered page would otherwise report 200.
@@ -261,9 +267,10 @@ export const config = {
     /*
      * Every path except the ones Next.js serves as static assets, plus common
      * image files. Without this the proxy would run for every CSS, JS and image
-     * request too. `/movies/` and `/shows/` are never images, so
-     * `/movies/550.jpg` and `/shows/1396.jpg` still reach the malformed id
-     * rule and get their 404 (spec 0006, AC-8; spec 0009, AC-13).
+     * request too. `/movies/`, `/shows/` and `/games/` are never images, so
+     * `/movies/550.jpg`, `/shows/1396.jpg` and `/games/1.jpg` still reach the
+     * malformed id rule and get their 404 (spec 0006, AC-8; spec 0009, AC-13;
+     * spec 0025, AC-6).
      *
      * `api/` is skipped too. No Route Handler there needs a session, and a
      * refresh could attach `Set-Cookie` to a response a CDN must be free to
@@ -273,6 +280,6 @@ export const config = {
      * same reason: each is prerendered and shared by every visitor, so no
      * refresh may ever attach a cookie to one (spec 0016, AC-25).
      */
-    "/((?!api/|robots\\.txt$|sitemap\\.xml$|opengraph-image|_next/static|_next/image|favicon.ico|(?!movies/|shows/).*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)",
+    "/((?!api/|robots\\.txt$|sitemap\\.xml$|opengraph-image|_next/static|_next/image|favicon.ico|(?!movies/|shows/|games/).*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)",
   ],
 };

@@ -1,7 +1,7 @@
 import type * as React from "react";
 
+import { GenreChips } from "@/components/catalog/detail-hero-meta";
 import { GlassPill } from "@/components/glass-pill";
-import { GenreChips } from "@/components/movie/movie-hero";
 import type { Genre } from "@/lib/tmdb";
 
 /**

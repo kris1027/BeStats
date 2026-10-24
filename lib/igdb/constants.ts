@@ -17,8 +17,25 @@ export const TWITCH_TOKEN_URL = "https://id.twitch.tv/oauth2/token";
 /** IGDB's image CDN. A cover is `{base}/{size}/{image_id}.jpg`. */
 export const IGDB_IMAGE_BASE = "https://images.igdb.com/igdb/image/upload";
 
-/** The cover size the module builds. G3's loader resizes from it. */
-export const IGDB_COVER_SIZE = "t_cover_big";
+/**
+ * The cover size the module builds, and the ceiling the image loader steps
+ * down from (spec 0025, AC-12). The 2x size, 528px wide, so the game hero's
+ * 240px cover is sharp on a dense screen; a card asks for less and the loader
+ * hands it a smaller rung, the rule the TMDB loader follows.
+ */
+export const IGDB_COVER_SIZE = "t_cover_big_2x";
+
+/**
+ * IGDB's cover sizes the loader may pick, narrowest first, with their pixel
+ * widths (spec 0025, AC-12). `pnpm igdb:live` fetches each one and checks the
+ * real width, so a changed IGDB size fails the live check, not a page.
+ */
+export const IGDB_COVER_LADDER: readonly { size: string; width: number }[] = [
+  { size: "t_cover_small", width: 90 },
+  { size: "t_cover_small_2x", width: 180 },
+  { size: "t_cover_big", width: 264 },
+  { size: "t_cover_big_2x", width: 528 },
+];
 
 /**
  * The game types the catalog shows, by IGDB id (games.md, settled filter).

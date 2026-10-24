@@ -32,6 +32,22 @@ export function parseTmdbId(segment: string): number | null {
   return id <= MAX_TMDB_ID ? id : null;
 }
 
+/**
+ * Parses a `/games/[id]` path segment, or returns null (spec 0025, AC-6).
+ *
+ * The same canonical rule and ceiling as `parseTmdbId`, not a looser one of
+ * its own: G2 stores `game_id` as `integer` too, so an IGDB id above
+ * 2147483647 names no game a user could track, and one spelling per game
+ * keeps `/games/01942` from serving a duplicate of `/games/1942`. Shared by
+ * `proxy.ts` and the game page, so the two never disagree.
+ *
+ * @param segment The raw path segment, already URL decoded by Next.
+ * @returns The id, or null.
+ */
+export function parseGameId(segment: string): number | null {
+  return parseTmdbId(segment);
+}
+
 /** `0`, or a positive integer with no leading zero, at most four digits. */
 const CANONICAL_SEASON = /^(0|[1-9]\d{0,3})$/;
 

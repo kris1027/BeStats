@@ -77,16 +77,16 @@ describe("next.config", () => {
   /** covers: prompts/close-image-optimizer.md, AC-1, AC-4 */
   it("gives the image optimizer no source it may fetch", () => {
     expect(nextConfig.images?.loader).toBe("custom");
-    expect(nextConfig.images?.loaderFile).toBe("./lib/tmdb/image-loader.ts");
+    expect(nextConfig.images?.loaderFile).toBe("./lib/images/loader.ts");
     expect(nextConfig.images?.remotePatterns).toBeUndefined();
     expect(nextConfig.images?.domains).toBeUndefined();
     expect(nextConfig.images?.localPatterns).toEqual([]);
   });
 
-  /** covers: prompts/tmdb-image-loader.md, AC-4 */
-  it("loads images through the TMDB loader, never Vercel's optimizer", () => {
+  /** covers: prompts/tmdb-image-loader.md, AC-4; spec 0025, AC-11 */
+  it("loads images through the host dispatching loader, never Vercel's optimizer", () => {
     expect(nextConfig.images?.loader).toBe("custom");
-    expect(nextConfig.images?.loaderFile).toBe("./lib/tmdb/image-loader.ts");
+    expect(nextConfig.images?.loaderFile).toBe("./lib/images/loader.ts");
   });
 
   it("keeps Cache Components on, which every route is written against", () => {

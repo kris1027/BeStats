@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { catalogWhereClause, isCatalogVisible } from "./catalog-filter";
 import { igdbRequest } from "./client";
 import {
+  IGDB_COVER_LADDER,
   IGDB_EROTIC_THEME_ID,
+  IGDB_IMAGE_BASE,
   IGDB_SUMMARY_FIELDS,
   IGDB_VISIBLE_GAME_TYPES,
 } from "./constants";
@@ -304,6 +306,18 @@ describe.skipIf(!hasCredentials)("IGDB live check (real network)", () => {
     expect(response.status).toBe(200);
   });
 
+  // spec 0025, AC-12: the loader's ladder widths are IGDB's real ones.
+  it("serves every cover ladder rung at its stated width", async () => {
+    const game = await fetchGame(KNOWN_GAME_ID);
+    const file = (game.coverUrl as string).split("/").at(-1);
+    for (const { size, width } of IGDB_COVER_LADDER) {
+      const response = await fetch(`${IGDB_IMAGE_BASE}/${size}/${file}`);
+      expect(response.status, size).toBe(200);
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      expect(jpegWidth(bytes), size).toBe(width);
+    }
+  });
+
   it("reads the genre and platform lists", async () => {
     const genres = await fetchGameGenres();
     const platforms = await fetchGamePlatforms();
@@ -318,3 +332,25 @@ describe.skipIf(hasCredentials)("IGDB live check", () => {
     expect(hasCredentials).toBe(false);
   });
 });
+
+/**
+ * A JPEG's pixel width, read from its first start of frame marker, or null.
+ * Enough to confirm a cover size without an image library.
+ */
+function jpegWidth(bytes: Uint8Array): number | null {
+  let offset = 2;
+  while (offset + 9 < bytes.length) {
+    if (bytes[offset] !== 0xff) return null;
+    const marker = bytes[offset + 1];
+    const length = (bytes[offset + 2] << 8) | bytes[offset + 3];
+    const isFrame =
+      marker >= 0xc0 &&
+      marker <= 0xcf &&
+      marker !== 0xc4 &&
+      marker !== 0xc8 &&
+      marker !== 0xcc;
+    if (isFrame) return (bytes[offset + 7] << 8) | bytes[offset + 8];
+    offset += 2 + length;
+  }
+  return null;
+}
