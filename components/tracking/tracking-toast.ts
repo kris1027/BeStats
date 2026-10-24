@@ -5,12 +5,14 @@ import { toast } from "sonner";
 
 import {
   EPISODE_TRACKING_MESSAGES,
+  GAME_TRACKING_MESSAGES,
   SHOW_TRACKING_MESSAGES,
   SIGN_IN_ACTION_LABEL,
   TRACKING_MESSAGES,
 } from "@/lib/tracking/messages";
 import type {
   EpisodeTrackingError,
+  GameTrackingError,
   MovieTrackingError,
   ShowTrackingError,
 } from "@/lib/tracking/types";
@@ -205,9 +207,52 @@ export function showShowTrackingError(
   });
 }
 
+/** Which game control failed, so each keeps one toast of its own (AC-11). */
+export type GameControl = "status" | "rating";
+
+/**
+ * The id of a game's failure toast, one per game and control, so repeated
+ * failures replace each other (spec 0026, AC-11). The status control and the
+ * Undo hook both build it here, so a failed Undo replaces a failed click.
+ */
+export function gameTrackingToastId(
+  gameId: number,
+  control: GameControl,
+): string {
+  return `game-tracking-${gameId}-${control}`;
+}
+
+/**
+ * Shows the toast for a failed game write (spec 0026, AC-11). The caller
+ * names the toast id with `gameTrackingToastId`.
+ *
+ * @param error The error class the action returned.
+ * @param options.id The toast id.
+ * @param options.returnPath The page to come back to after signing in.
+ * @param options.navigate The router push, for the Sign in action.
+ */
+export function showGameTrackingError(
+  error: GameTrackingError,
+  {
+    id,
+    returnPath,
+    navigate,
+  }: { id: string; returnPath: string; navigate: (href: string) => void },
+): void {
+  toast(GAME_TRACKING_MESSAGES[error], {
+    id,
+    description: undefined,
+    action: signInAction(error, returnPath, navigate),
+  });
+}
+
 /** The Sign in action a session expired toast carries, and no other. */
 function signInAction(
-  error: MovieTrackingError | EpisodeTrackingError | ShowTrackingError,
+  error:
+    | MovieTrackingError
+    | EpisodeTrackingError
+    | ShowTrackingError
+    | GameTrackingError,
   returnPath: string,
   navigate: (href: string) => void,
 ) {

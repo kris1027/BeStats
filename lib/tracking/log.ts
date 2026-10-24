@@ -2,6 +2,7 @@ import "server-only";
 
 import type {
   EpisodeTrackingError,
+  GameTrackingError,
   MovieTrackingError,
   ShowTrackingError,
 } from "./types";
@@ -35,6 +36,12 @@ export const TRACKING_EVENT = {
   showTrackingRead: "show_tracking.read",
   watchedEpisodesRead: "show_tracking.watched_read",
   showGridRead: "show_tracking.grid_read",
+  gameStatus: "game_tracking.status",
+  gameRate: "game_tracking.rate",
+  gameRemove: "game_tracking.remove",
+  gameRestoreStatus: "game_tracking.restore_status",
+  gameRestoreRemoved: "game_tracking.restore_removed",
+  gameRead: "game_tracking.read",
 } as const;
 
 export type TrackingEvent =
@@ -44,12 +51,16 @@ export type TrackingEvent =
  * The classified reason. `forbidden` is a `42501` (a missing grant or a policy
  * refusal, which means a bug) and `db_error` is anything else from Postgres;
  * both reach the client as `write_failed` but stay apart here, so a broken
- * grant is not mistaken for a flaky network.
+ * grant is not mistaken for a flaky network. `identity_locked` is a game
+ * write that tried to move a row (`BS003`), which no app path can reach
+ * (spec 0026, AC-15).
  */
 export type TrackingOutcome =
   | MovieTrackingError
   | EpisodeTrackingError
   | ShowTrackingError
+  | GameTrackingError
+  | "identity_locked"
   | "forbidden"
   | "db_error";
 

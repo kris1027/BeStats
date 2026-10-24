@@ -1,7 +1,11 @@
 import "server-only";
 
 import type { TrackingOutcome } from "./log";
-import type { MovieTrackingError, TrackingError } from "./types";
+import type {
+  GameTrackingError,
+  MovieTrackingError,
+  TrackingError,
+} from "./types";
 
 /**
  * Reduces a PostgREST error to the class the client sees and the outcome the
@@ -28,7 +32,8 @@ import type { MovieTrackingError, TrackingError } from "./types";
  * @param error Anything with an optional string `code`, as PostgREST returns.
  */
 export function classifyTrackingError(error: { code?: string | null }): {
-  error: TrackingError;
+  /** Never `tmdb_unavailable`: no database error means TMDB failed. */
+  error: Exclude<TrackingError, "tmdb_unavailable">;
   outcome: TrackingOutcome;
 } {
   switch (error.code) {
@@ -62,6 +67,27 @@ export function classifyMovieTrackingError(error: { code?: string | null }): {
 } {
   if (error.code === "BS001") {
     return { error: "not_watched", outcome: "not_watched" };
+  }
+  return classifyTrackingError(error);
+}
+
+/**
+ * `classifyTrackingError` plus the SQLSTATEs only a game write raises (spec
+ * 0026, AC-15): `BS004`, which `rate_game` raises for a score on a game that
+ * is not Playing or Finished, and `BS003`, the identity lock of spec 0024,
+ * which these functions cannot reach and so is logged apart as a bug.
+ *
+ * @param error Anything with an optional string `code`, as PostgREST returns.
+ */
+export function classifyGameTrackingError(error: { code?: string | null }): {
+  error: GameTrackingError;
+  outcome: TrackingOutcome;
+} {
+  if (error.code === "BS004") {
+    return { error: "not_started", outcome: "not_started" };
+  }
+  if (error.code === "BS003") {
+    return { error: "write_failed", outcome: "identity_locked" };
   }
   return classifyTrackingError(error);
 }

@@ -6,6 +6,7 @@ import { GameDetailSkeleton } from "@/components/game/game-detail-skeleton";
 import { GameHero } from "@/components/game/game-hero";
 import { RetryLink } from "@/components/retry-link";
 import { StatePanel } from "@/components/state-panel";
+import { GameTrackingSlot } from "@/components/tracking/game-tracking-slot";
 import { parseGameId } from "@/lib/catalog/ids";
 import { truncateAtWord } from "@/lib/format";
 
@@ -60,8 +61,9 @@ export async function generateMetadata({
  * the boundary.
  *
  * Nothing here reads a cookie, a header, the session or the visitor's region
- * (AC-9). G4 adds the status control in its own boundary through the hero's
- * `tracking` slot, and G9 adds the sections under the hero.
+ * (AC-9). The status control reads the session in its own Suspense boundary
+ * through the hero's `tracking` slot (spec 0026, AC-1), and G9 adds the
+ * sections under the hero.
  */
 export default function GamePage({ params }: PageProps<"/games/[id]">) {
   return (
@@ -110,6 +112,15 @@ async function GameDetail({
         platforms={game.platforms}
         communityRating={game.communityRating}
         communityRatingCount={game.communityRatingCount}
+        tracking={
+          <Suspense fallback={null}>
+            <GameTrackingSlot
+              gameId={id}
+              name={game.name}
+              releaseDate={game.releaseDate}
+            />
+          </Suspense>
+        }
       />
     </article>
   );

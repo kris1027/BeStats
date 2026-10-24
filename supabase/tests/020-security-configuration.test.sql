@@ -1,5 +1,6 @@
 -- Spec 0001 AC-2 and AC-4, the configuration half of the security boundary,
--- and spec 0024 AC-9 for `user_game_state`, which carries the same lock.
+-- spec 0024 AC-9 for `user_game_state`, which carries the same lock, and
+-- spec 0026 AC-13 for the game functions that write it.
 --
 -- These assert the shape of the lock rather than trying the door. The
 -- behavioural half is in 030. Both are needed: `supabase db advisors` checks
@@ -8,7 +9,7 @@
 -- only place the full requirement is actually proven.
 
 begin;
-select plan(12);
+select plan(14);
 
 -- Row level security enabled AND forced. Forced is the half nothing else
 -- checks: without it the rules do not apply to the table owner.
@@ -166,6 +167,35 @@ select is(
   ),
   16::bigint,
   'authenticated holds all four of select, insert, update and delete on every table'
+);
+
+-- The game writes (spec 0026, AC-13): execute is revoked from `public` and
+-- `anon` and granted back to `authenticated` only. The declarative diff does
+-- not track function privileges, so only the migration's own lines hold this.
+select is(
+  (
+    select count(*) from pg_proc p
+    where p.pronamespace = 'public'::regnamespace
+      and p.proname in ('set_game_status', 'rate_game', 'remove_game',
+                        'restore_game_status', 'restore_removed_game')
+      and (has_function_privilege('anon', p.oid, 'execute')
+           or exists (
+             select 1 from aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) a
+             where a.grantee = 0))
+  ),
+  0::bigint,
+  'anon and public may execute none of the five game functions'
+);
+select is(
+  (
+    select count(*) from pg_proc p
+    where p.pronamespace = 'public'::regnamespace
+      and p.proname in ('set_game_status', 'rate_game', 'remove_game',
+                        'restore_game_status', 'restore_removed_game')
+      and has_function_privilege('authenticated', p.oid, 'execute')
+  ),
+  5::bigint,
+  'authenticated may execute all five game functions'
 );
 
 select * from finish();

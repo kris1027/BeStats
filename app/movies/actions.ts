@@ -1,16 +1,7 @@
 "use server";
 
-import { refresh } from "next/cache";
-import type { z } from "zod";
-
-import { getOptionalUser } from "@/lib/auth/user";
 import { isMovieReleased } from "@/lib/catalog/movie-page";
-import { createClient } from "@/lib/supabase/server";
-import {
-  logTrackingEvent,
-  TRACKING_EVENT,
-  type TrackingEvent,
-} from "@/lib/tracking/log";
+import { TRACKING_EVENT, type TrackingEvent } from "@/lib/tracking/log";
 import {
   ratingInputSchema,
   restoreWatchedInputSchema,
@@ -21,8 +12,14 @@ import {
 import { classifyMovieTrackingError } from "@/lib/tracking/supabase-error";
 import type {
   MovieClearedState,
+  MovieTrackingError,
   MovieTrackingResult,
 } from "@/lib/tracking/types";
+import {
+  parseTrackingInput,
+  runTrackingWrite,
+  type WriteStep,
+} from "@/lib/tracking/write";
 import { todayUtc } from "@/lib/tv/air-status";
 
 import { loadMovie } from "./[id]/load-movie";
@@ -44,18 +41,6 @@ import { loadMovie } from "./[id]/load-movie";
  * always the verified session's, never an argument (`AGENTS.md` section 5,
  * AC-18).
  */
-
-type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
-
-/**
- * What a write step returns: PostgREST's typed row, and its error or null on
- * success. `D` is the generated return type of the call, so the reader that
- * consumes it is checked against `database.types.ts`.
- */
-type WriteStep<D> = (
-  supabase: SupabaseClient,
-  userId: string,
-) => PromiseLike<{ data: D | null; error: { code?: string | null } | null }>;
 
 /**
  * Reads what `plan_movie` or `unmark_movie_watched` cleared. Both return the
@@ -86,7 +71,8 @@ function readCleared(
 type TmdbCheck = "none" | "exists" | "released";
 
 /**
- * The shared shape of every tracking action.
+ * The movie side of `runTrackingWrite`: the TMDB check and release gate, and
+ * the cleared watch mark that comes back for an Undo.
  *
  * @param event The log event for a refusal.
  * @param movieId The already parsed movie id.
@@ -94,67 +80,39 @@ type TmdbCheck = "none" | "exists" | "released";
  * @param write The Supabase call, given the request client and the user id.
  * @param readResult For a write whose row says what it cleared, reads it.
  */
-async function runTrackingWrite<D>(
+async function runMovieWrite<D>(
   event: TrackingEvent,
   movieId: number,
   check: TmdbCheck,
   write: WriteStep<D>,
   readResult?: (data: D | null) => MovieClearedState | undefined,
 ): Promise<MovieTrackingResult> {
-  let cleared: MovieClearedState | undefined;
-  try {
-    const user = await getOptionalUser();
-    if (!user) {
-      logTrackingEvent(event, "session_expired");
-      return { ok: false, error: "session_expired" };
-    }
-
-    if (check !== "none") {
-      const movie = await loadMovie(movieId);
-      if (movie.kind !== "found") {
-        const error =
-          movie.kind === "failed" ? "tmdb_unavailable" : "not_found";
-        logTrackingEvent(event, error);
-        return { ok: false, error };
-      }
-      if (
-        check === "released" &&
-        !isMovieReleased(movie.movie.releaseDate, todayUtc(new Date()))
-      ) {
-        logTrackingEvent(event, "not_released");
-        return { ok: false, error: "not_released" };
-      }
-    }
-
-    const supabase = await createClient();
-    const { data, error } = await write(supabase, user.id);
-    if (error) {
-      const classified = classifyMovieTrackingError(error);
-      logTrackingEvent(event, classified.outcome);
-      return { ok: false, error: classified.error };
-    }
-    cleared = readResult?.(data);
-  } catch {
-    // A network failure inside supabase-js or a bug surfaced by `loadMovie`.
-    // The error object is dropped on purpose: its message can carry request
-    // details that must not reach a log line (AC-21).
-    logTrackingEvent(event, "db_error");
-    return { ok: false, error: "write_failed" };
-  }
-
-  refresh();
-  return cleared ? { ok: true, cleared } : { ok: true };
+  const outcome = await runTrackingWrite({
+    event,
+    check: check === "none" ? undefined : () => checkTmdb(movieId, check),
+    write,
+    classify: classifyMovieTrackingError,
+    read: readResult,
+  });
+  if (!outcome.ok) return outcome;
+  return outcome.value ? { ok: true, cleared: outcome.value } : { ok: true };
 }
 
-/** Parses an action's arguments, or reports `invalid_input` (AC-13). */
-function parse<T>(
-  schema: z.ZodType<T>,
-  input: unknown,
-  event: TrackingEvent,
-): T | null {
-  const parsed = schema.safeParse(input);
-  if (parsed.success) return parsed.data;
-  logTrackingEvent(event, "invalid_input");
+/** Confirms the movie with TMDB, and for `released` its release date. */
+async function checkTmdb(
+  movieId: number,
+  check: Exclude<TmdbCheck, "none">,
+): Promise<MovieTrackingError | null> {
+  const movie = await loadMovie(movieId);
+  if (movie.kind !== "found") {
+    return movie.kind === "failed" ? "tmdb_unavailable" : "not_found";
+  }
+  if (
+    check === "released" &&
+    !isMovieReleased(movie.movie.releaseDate, todayUtc(new Date()))
+  ) {
+    return "not_released";
+  }
   return null;
 }
 
@@ -173,11 +131,15 @@ export async function setMovieWatchlist(
   inWatchlist: boolean,
 ): Promise<MovieTrackingResult> {
   const event = TRACKING_EVENT.watchlist;
-  const input = parse(watchlistInputSchema, { movieId, inWatchlist }, event);
+  const input = parseTrackingInput(
+    watchlistInputSchema,
+    { movieId, inWatchlist },
+    event,
+  );
   if (!input) return { ok: false, error: "invalid_input" };
 
   if (input.inWatchlist) {
-    return runTrackingWrite(
+    return runMovieWrite(
       event,
       input.movieId,
       "exists",
@@ -187,7 +149,7 @@ export async function setMovieWatchlist(
     );
   }
 
-  return runTrackingWrite(event, input.movieId, "none", (supabase, userId) =>
+  return runMovieWrite(event, input.movieId, "none", (supabase, userId) =>
     supabase
       .from("user_movie_state")
       .update({ in_watchlist: false })
@@ -212,16 +174,20 @@ export async function setMovieWatched(
   watched: boolean,
 ): Promise<MovieTrackingResult> {
   const event = TRACKING_EVENT.watched;
-  const input = parse(watchedInputSchema, { movieId, watched }, event);
+  const input = parseTrackingInput(
+    watchedInputSchema,
+    { movieId, watched },
+    event,
+  );
   if (!input) return { ok: false, error: "invalid_input" };
 
   if (input.watched) {
-    return runTrackingWrite(event, input.movieId, "released", (supabase) =>
+    return runMovieWrite(event, input.movieId, "released", (supabase) =>
       supabase.rpc("mark_movie_watched", { p_movie_id: input.movieId }),
     );
   }
 
-  return runTrackingWrite(
+  return runMovieWrite(
     event,
     input.movieId,
     "none",
@@ -248,12 +214,16 @@ export async function setMovieRating(
   rating: number | null,
 ): Promise<MovieTrackingResult> {
   const event = TRACKING_EVENT.rate;
-  const input = parse(ratingInputSchema, { movieId, rating }, event);
+  const input = parseTrackingInput(
+    ratingInputSchema,
+    { movieId, rating },
+    event,
+  );
   if (!input) return { ok: false, error: "invalid_input" };
 
   const score = input.rating;
   if (score !== null) {
-    return runTrackingWrite(event, input.movieId, "released", (supabase) =>
+    return runMovieWrite(event, input.movieId, "released", (supabase) =>
       supabase.rpc("rate_movie", {
         p_movie_id: input.movieId,
         p_rating: score,
@@ -261,7 +231,7 @@ export async function setMovieRating(
     );
   }
 
-  return runTrackingWrite(event, input.movieId, "none", (supabase, userId) =>
+  return runMovieWrite(event, input.movieId, "none", (supabase, userId) =>
     supabase
       .from("user_movie_state")
       .update({ rating: null })
@@ -284,10 +254,14 @@ export async function restoreMovieWatchlist(
   movieId: number,
 ): Promise<MovieTrackingResult> {
   const event = TRACKING_EVENT.restoreWatchlist;
-  const input = parse(restoreWatchlistInputSchema, { movieId }, event);
+  const input = parseTrackingInput(
+    restoreWatchlistInputSchema,
+    { movieId },
+    event,
+  );
   if (!input) return { ok: false, error: "invalid_input" };
 
-  return runTrackingWrite(event, input.movieId, "none", (supabase) =>
+  return runMovieWrite(event, input.movieId, "none", (supabase) =>
     supabase.rpc("restore_movie_watchlist", { p_movie_id: input.movieId }),
   );
 }
@@ -314,14 +288,14 @@ export async function restoreMovieWatched(
   rating: number | null,
 ): Promise<MovieTrackingResult> {
   const event = TRACKING_EVENT.restoreWatched;
-  const input = parse(
+  const input = parseTrackingInput(
     restoreWatchedInputSchema,
     { movieId, watchedAt, rating },
     event,
   );
   if (!input) return { ok: false, error: "invalid_input" };
 
-  return runTrackingWrite(event, input.movieId, "released", (supabase) =>
+  return runMovieWrite(event, input.movieId, "released", (supabase) =>
     supabase.rpc("restore_movie_watched", {
       p_movie_id: input.movieId,
       p_watched_at: input.watchedAt,

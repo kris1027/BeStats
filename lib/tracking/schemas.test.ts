@@ -4,9 +4,12 @@ import {
   episodeIdListSchema,
   episodeRatingInputSchema,
   episodeWatchedInputSchema,
+  gameRestoreStateSchema,
+  gameStatusInputSchema,
   movieIdSchema,
   ratingInputSchema,
   ratingSchema,
+  restoreRemovedGameInputSchema,
   restoreShowTrackingInputSchema,
   restoreWatchedInputSchema,
   restoreWatchlistInputSchema,
@@ -309,5 +312,88 @@ describe("restoreShowTrackingInputSchema (spec 0020, AC-3)", () => {
     vi.setSystemTime(new Date("2026-09-26T10:00:00Z"));
     expect(parse({ trackedAt: "2026-09-26T10:00:00.001Z" })).toBe(false);
     expect(parse({ trackedAt: "2026-09-26T10:00:00Z" })).toBe(true);
+  });
+});
+
+describe("game input schemas (spec 0026)", () => {
+  const PREVIOUS = {
+    status: "finished",
+    rating: 9,
+    addedAt: "2026-09-01T10:00:00+00:00",
+    startedAt: "2026-09-02T10:00:00+00:00",
+    finishedAt: "2026-09-20T10:00:00Z",
+  };
+
+  it("takes the three statuses and nothing else (AGENTS.md Games)", () => {
+    for (const status of ["want_to_play", "playing", "finished"]) {
+      expect(
+        gameStatusInputSchema.safeParse({ gameId: 1942, status }).success,
+      ).toBe(true);
+    }
+    for (const status of ["dropped", "paused", "", null]) {
+      expect(
+        gameStatusInputSchema.safeParse({ gameId: 1942, status }).success,
+      ).toBe(false);
+    }
+  });
+
+  it("refuses game id 0 (value source: gameIdSchema)", () => {
+    expect(
+      gameStatusInputSchema.safeParse({ gameId: 0, status: "playing" }).success,
+    ).toBe(false);
+  });
+
+  it("drops a client supplied user_id (AGENTS.md section 5)", () => {
+    expect(
+      gameStatusInputSchema.parse({
+        gameId: 1942,
+        status: "playing",
+        user_id: "user-b",
+      }),
+    ).toEqual({ gameId: 1942, status: "playing" });
+  });
+
+  it("accepts a full restore state with a Z or an offset (AC-14)", () => {
+    expect(gameRestoreStateSchema.safeParse(PREVIOUS).success).toBe(true);
+  });
+
+  it.each([
+    ["Playing with no start", { status: "playing", startedAt: null }],
+    ["Finished with no finish", { status: "finished", finishedAt: null }],
+    ["Want to play with a score", { status: "want_to_play", rating: 7 }],
+    ["a date with no offset", { addedAt: "2026-09-01T10:00:00" }],
+    ["a score of 0", { rating: 0 }],
+  ])("refuses %s", (_, change) => {
+    expect(
+      gameRestoreStateSchema.safeParse({ ...PREVIOUS, ...change }).success,
+    ).toBe(false);
+  });
+
+  it("accepts Want to play with no score and no dates beyond added", () => {
+    expect(
+      gameRestoreStateSchema.safeParse({
+        status: "want_to_play",
+        rating: null,
+        addedAt: PREVIOUS.addedAt,
+        startedAt: null,
+        finishedAt: null,
+      }).success,
+    ).toBe(true);
+  });
+
+  it("requires the removal time on a removal Undo (AC-4, AC-14)", () => {
+    expect(
+      restoreRemovedGameInputSchema.safeParse({
+        gameId: 1942,
+        previous: PREVIOUS,
+      }).success,
+    ).toBe(false);
+    expect(
+      restoreRemovedGameInputSchema.safeParse({
+        gameId: 1942,
+        previous: PREVIOUS,
+        removedAt: "2026-10-24T10:00:00+00:00",
+      }).success,
+    ).toBe(true);
   });
 });

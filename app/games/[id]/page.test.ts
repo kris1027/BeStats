@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { GameDetailSkeleton } from "@/components/game/game-detail-skeleton";
 import { GameHero } from "@/components/game/game-hero";
+import { GameTrackingSlot } from "@/components/tracking/game-tracking-slot";
 
 /**
  * covers: spec 0025, AC-1, AC-6, AC-7, AC-8, AC-9, AC-10
@@ -148,7 +149,8 @@ describe("the streamed body", () => {
 
     expect(loadGame).toHaveBeenCalledWith(1942);
     expect(hero.type).toBe(GameHero);
-    expect(hero.props).toEqual({
+    const { tracking, ...facts } = hero.props as { tracking: Element };
+    expect(facts).toEqual({
       name: FOUND.name,
       coverUrl: FOUND.coverUrl,
       releaseDate: FOUND.releaseDate,
@@ -157,6 +159,24 @@ describe("the streamed body", () => {
       platforms: FOUND.platforms,
       communityRating: FOUND.communityRating,
       communityRatingCount: FOUND.communityRatingCount,
+    });
+  });
+
+  it("puts the status control in the hero's tracking slot, in its own null fallback boundary (spec 0026, AC-1)", async () => {
+    loadGame.mockResolvedValue({ kind: "found", game: FOUND });
+
+    const article = await bodyFor("1942");
+    const hero = article.props.children as Element;
+    const tracking = hero.props.tracking as Element;
+    const slot = tracking.props.children as Element;
+
+    expect(tracking.type).toBe(Suspense);
+    expect(tracking.props.fallback).toBeNull();
+    expect(slot.type).toBe(GameTrackingSlot);
+    expect(slot.props).toEqual({
+      gameId: 1942,
+      name: FOUND.name,
+      releaseDate: FOUND.releaseDate,
     });
   });
 

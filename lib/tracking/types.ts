@@ -5,6 +5,8 @@
  * `MovieTrackingState` and branch on a `MovieTrackingError` to pick a toast.
  */
 
+import { Constants, type Database } from "@/lib/supabase/database.types";
+
 /** What the reads return and what the controls hold between clicks. */
 export type MovieTrackingState = {
   inWatchlist: boolean;
@@ -167,3 +169,75 @@ export type ShowTrackingResult =
 export type UntrackShowResult =
   | { ok: true; undo: ShowTrackingUndo | null }
   | { ok: false; error: ShowTrackingError };
+
+/**
+ * A game's place in a person's list, set by hand (spec 0024, `AGENTS.md`
+ * "Games"). Taken from the generated enum, so a status added in SQL fails
+ * the type check everywhere it is not handled.
+ */
+export type GameStatus = Database["public"]["Enums"]["game_status"];
+
+/**
+ * Every status, from the generated enum in its SQL order, which is also the
+ * pill order (spec 0026, AC-2). The Zod schema and the control both read it,
+ * so a status added in SQL reaches them with `pnpm db:types` alone.
+ */
+export const GAME_STATUSES = Constants.public.Enums.game_status;
+
+/**
+ * One game's stored state (spec 0026, API surface): no status means the game
+ * is not in the list. A score lives only on Playing or Finished.
+ */
+export type GameTrackingState = {
+  status: GameStatus | null;
+  /** The personal score, an integer from 1 to 10, or null when unrated. */
+  rating: number | null;
+};
+
+/** No row: the game is not in the list. */
+export const EMPTY_GAME_TRACKING: GameTrackingState = {
+  status: null,
+  rating: null,
+};
+
+/**
+ * Everything an Undo puts back exactly (spec 0026, AC-4, AC-5): the status,
+ * the score and the three list dates, as the write that removed them
+ * returned them. Carried in the toast, never shown or edited.
+ */
+export type GameRestoreState = {
+  status: GameStatus;
+  rating: number | null;
+  addedAt: string;
+  startedAt: string | null;
+  finishedAt: string | null;
+};
+
+/**
+ * How to take back a game write: a move to Want to play that cleared a
+ * score (`status`), or a removal (`removed`), which also carries when it
+ * happened, since the 10 minute window is measured from it (AC-14).
+ */
+export type GameUndo =
+  | { kind: "status"; previous: GameRestoreState }
+  | { kind: "removed"; previous: GameRestoreState; removedAt: string };
+
+/**
+ * The shared refusals with IGDB in place of TMDB, plus the game's own: a
+ * forward move before the release date (AC-9), and a score on a game that
+ * is not Playing or Finished (AC-6).
+ */
+export type GameTrackingError =
+  | Exclude<TrackingError, "tmdb_unavailable">
+  | "igdb_unavailable"
+  | "not_released"
+  | "not_started";
+
+/**
+ * What every game action returns. As for movies, no state comes back: the
+ * control converges on the server prop `refresh()` delivers. `undo` is the
+ * one thing only the write knows.
+ */
+export type GameTrackingResult =
+  | { ok: true; undo?: GameUndo }
+  | { ok: false; error: GameTrackingError };

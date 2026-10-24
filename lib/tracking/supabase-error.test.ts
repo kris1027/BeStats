@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  classifyGameTrackingError,
   classifyMovieTrackingError,
   classifyTrackingError,
 } from "./supabase-error";
@@ -87,4 +88,37 @@ describe("classifyMovieTrackingError", () => {
       );
     },
   );
+});
+
+describe("classifyGameTrackingError (spec 0026, AC-15)", () => {
+  it("reports rate_game's BS004 as not_started", () => {
+    expect(classifyGameTrackingError({ code: "BS004" })).toEqual({
+      error: "not_started",
+      outcome: "not_started",
+    });
+  });
+
+  it("shows the identity lock BS003 as a failed save, logged apart as identity_locked", () => {
+    expect(classifyGameTrackingError({ code: "BS003" })).toEqual({
+      error: "write_failed",
+      outcome: "identity_locked",
+    });
+  });
+
+  it("falls back to the shared classes for every other code", () => {
+    expect(classifyGameTrackingError({ code: "P0002" })).toEqual(
+      classifyTrackingError({ code: "P0002" }),
+    );
+    expect(classifyGameTrackingError({ code: "42501" })).toEqual(
+      classifyTrackingError({ code: "42501" }),
+    );
+    expect(classifyGameTrackingError({})).toEqual(classifyTrackingError({}));
+  });
+
+  it("leaves BS004 and BS003 out of the shared classifier", () => {
+    expect(classifyTrackingError({ code: "BS004" }).error).toBe("write_failed");
+    expect(classifyTrackingError({ code: "BS003" }).outcome).not.toBe(
+      "identity_locked",
+    );
+  });
 });

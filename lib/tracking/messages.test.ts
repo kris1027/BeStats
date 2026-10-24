@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   EPISODE_TRACKING_MESSAGES,
+  GAME_STATUS_LABELS,
+  GAME_TRACKING_MESSAGES,
+  GAME_UNDO_MESSAGES,
   LIBRARY_COPY,
   LIBRARY_NOTES,
   MARK_NEXT_MESSAGES,
@@ -220,5 +223,40 @@ describe("LIBRARY_NOTES, labels and the held section (spec 0020, AC-10, AC-12, A
       finished: "Finished",
       caught_up: "Caught up",
     });
+  });
+});
+
+describe("game copy (spec 0026, AC-2, AC-4, AC-5)", () => {
+  it("labels the three pills in their order", () => {
+    expect(Object.values(GAME_STATUS_LABELS)).toEqual([
+      "Want to play",
+      "Playing",
+      "Finished",
+    ]);
+  });
+
+  it("pins the two Undo toasts and the refused Undo line", () => {
+    expect(GAME_UNDO_MESSAGES).toEqual({
+      removed: "Removed from your games.",
+      scoreCleared: "Moved to Want to play. Your score was removed.",
+      undoExpired: "Couldn't undo. Set the status again on this page.",
+    });
+    expect(GAME_TRACKING_MESSAGES.undo_expired).toBe(
+      GAME_UNDO_MESSAGES.undoExpired,
+    );
+  });
+
+  it("names IGDB, never TMDB or a movie, on every failure line", () => {
+    for (const line of Object.values(GAME_TRACKING_MESSAGES)) {
+      expect(line.length).toBeGreaterThan(0);
+      expect(line).not.toMatch(/TMDB|movie/i);
+    }
+    expect(GAME_TRACKING_MESSAGES.igdb_unavailable).toMatch(/IGDB/);
+  });
+
+  it("keeps the shared session copy, so the Sign in toast reads the same (AC-10)", () => {
+    expect(GAME_TRACKING_MESSAGES.session_expired).toBe(
+      TRACKING_MESSAGES.session_expired,
+    );
   });
 });
