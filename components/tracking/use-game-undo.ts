@@ -8,6 +8,7 @@ import { GAME_UNDO_MESSAGES, UNDO_ACTION_LABEL } from "@/lib/tracking/messages";
 import type { GameUndo } from "@/lib/tracking/types";
 
 import {
+  gameTrackingToastId,
   runUndoInToast,
   showGameTrackingError,
   UNDO_TOAST_MS,
@@ -62,7 +63,7 @@ export function useGameUndo({
             restoring,
             onError: (error) =>
               showGameTrackingError(error, {
-                id: `game-tracking-${gameId}-status`,
+                id: gameTrackingToastId(gameId, "status"),
                 returnPath,
                 navigate: router.push,
               }),

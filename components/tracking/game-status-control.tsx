@@ -14,26 +14,30 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { formatPersonalScore } from "@/lib/format";
-import { applyGameIntent, type GameIntent } from "@/lib/tracking/game-intent";
+import {
+  applyGameIntent,
+  canHoldScore,
+  type GameIntent,
+} from "@/lib/tracking/game-intent";
 import { GAME_STATUS_LABELS } from "@/lib/tracking/messages";
-import type {
-  GameStatus,
-  GameTrackingResult,
-  GameTrackingState,
-  GameUndo,
+import {
+  GAME_STATUSES,
+  type GameStatus,
+  type GameTrackingResult,
+  type GameTrackingState,
+  type GameUndo,
 } from "@/lib/tracking/types";
 
 import { ScorePicker } from "./score-picker";
 import { WatchedIcon } from "./tracking-icons";
 import { TRACKING_PILL, TRACKING_PILL_UNAVAILABLE } from "./tracking-pill";
-import { settleResultCall, showGameTrackingError } from "./tracking-toast";
+import {
+  type GameControl,
+  gameTrackingToastId,
+  settleResultCall,
+  showGameTrackingError,
+} from "./tracking-toast";
 import { useGameUndo } from "./use-game-undo";
-
-/** The pills in their order (AC-2). */
-const STATUSES: readonly GameStatus[] = ["want_to_play", "playing", "finished"];
-
-/** Which toast a failure replaces: one per game and control (AC-11). */
-type GameControl = "status" | "rating";
 
 /**
  * The game page's status pills and score (spec 0026, AC-2 to AC-8, AC-11).
@@ -52,7 +56,8 @@ type GameControl = "status" | "rating";
  *
  * Before release, Playing and Finished are `aria-disabled` unless pressed
  * (the pressed one can still remove), and the picker can clear but not score
- * (AC-8). The server checks the same gate again.
+ * (`AGENTS.md` "Games", release gate; AC-8). The server checks the same gate
+ * again.
  */
 function GameStatusControl({
   gameId,
@@ -83,11 +88,9 @@ function GameStatusControl({
   const showUndo = useGameUndo({ gameId, returnPath });
 
   /** Shows the restored status and score at once while an Undo runs. */
-  function restoring(undo: GameUndo) {
-    return () => {
-      addIntent({ kind: "status", value: undo.previous.status });
-      addIntent({ kind: "rating", value: undo.previous.rating });
-    };
+  function showRestored(undo: GameUndo) {
+    addIntent({ kind: "status", value: undo.previous.status });
+    addIntent({ kind: "rating", value: undo.previous.rating });
   }
 
   function run(
@@ -111,14 +114,15 @@ function GameStatusControl({
           return;
         }
         showGameTrackingError(result.error, {
-          id: `game-tracking-${gameId}-${control}`,
+          id: gameTrackingToastId(gameId, control),
           returnPath,
           navigate: router.push,
         });
         return;
       }
       if ("undo" in result && result.undo) {
-        showUndo(result.undo, restoring(result.undo));
+        const undo = result.undo;
+        showUndo(undo, () => showRestored(undo));
       }
     });
   }
@@ -157,8 +161,7 @@ function GameStatusControl({
     );
   }
 
-  const canScore =
-    optimistic.status === "playing" || optimistic.status === "finished";
+  const canScore = canHoldScore(optimistic.status);
   const scoreText = formatPersonalScore(optimistic.rating);
 
   return (
@@ -168,7 +171,7 @@ function GameStatusControl({
           aria-label={`Status for ${name}`}
           className="m-0 flex min-w-0 flex-wrap gap-2 border-0 p-0"
         >
-          {STATUSES.map((status) => {
+          {GAME_STATUSES.map((status) => {
             const pressed = optimistic.status === status;
             const heldBack = isHeldBack(status);
             const label = GAME_STATUS_LABELS[status];

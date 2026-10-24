@@ -207,10 +207,24 @@ export function showShowTrackingError(
   });
 }
 
+/** Which game control failed, so each keeps one toast of its own (AC-11). */
+export type GameControl = "status" | "rating";
+
+/**
+ * The id of a game's failure toast, one per game and control, so repeated
+ * failures replace each other (spec 0026, AC-11). The status control and the
+ * Undo hook both build it here, so a failed Undo replaces a failed click.
+ */
+export function gameTrackingToastId(
+  gameId: number,
+  control: GameControl,
+): string {
+  return `game-tracking-${gameId}-${control}`;
+}
+
 /**
  * Shows the toast for a failed game write (spec 0026, AC-11). The caller
- * names the toast id, `game-tracking-{id}-status` or
- * `game-tracking-{id}-rating`, so repeated failures replace each other.
+ * names the toast id with `gameTrackingToastId`.
  *
  * @param error The error class the action returned.
  * @param options.id The toast id.
