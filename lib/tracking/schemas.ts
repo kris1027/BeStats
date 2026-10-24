@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+import { canHoldScore } from "./game-intent";
+import { GAME_STATUSES } from "./types";
+
 /**
  * The input rules every movie tracking action applies before any Supabase or
  * TMDB call (spec 0007, AC-13).
@@ -153,18 +156,21 @@ export const restoreShowTrackingInputSchema = z.object({
 export const gameIdSchema = movieIdSchema;
 
 /** The three statuses, set by hand (`AGENTS.md` "Games"). */
-export const gameStatusSchema = z.enum(["want_to_play", "playing", "finished"]);
+export const gameStatusSchema = z.enum(GAME_STATUSES);
 
+/** `setGameStatus`: a target status, never a toggle (spec 0026, AC-3). */
 export const gameStatusInputSchema = z.object({
   gameId: gameIdSchema,
   status: gameStatusSchema,
 });
 
+/** `setGameRating`: a score from 1 to 10, or null to clear it (AC-6). */
 export const gameRatingInputSchema = z.object({
   gameId: gameIdSchema,
   rating: ratingSchema.nullable(),
 });
 
+/** `removeGame`: only the id, since removal works from any status (AC-4). */
 export const removeGameInputSchema = z.object({ gameId: gameIdSchema });
 
 const instantSchema = z.iso.datetime({ offset: true });
@@ -188,14 +194,16 @@ export const gameRestoreStateSchema = z
     (state) =>
       (state.status !== "playing" || state.startedAt !== null) &&
       (state.status !== "finished" || state.finishedAt !== null) &&
-      (state.status !== "want_to_play" || state.rating === null),
+      (canHoldScore(state.status) || state.rating === null),
   );
 
+/** `restoreGameStatus`: the state `setGameStatus` returned as its Undo (AC-5). */
 export const restoreGameStatusInputSchema = z.object({
   gameId: gameIdSchema,
   previous: gameRestoreStateSchema,
 });
 
+/** `restoreRemovedGame`: the row `removeGame` returned, and when (AC-4). */
 export const restoreRemovedGameInputSchema = z.object({
   gameId: gameIdSchema,
   previous: gameRestoreStateSchema,

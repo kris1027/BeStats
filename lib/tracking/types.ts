@@ -5,7 +5,7 @@
  * `MovieTrackingState` and branch on a `MovieTrackingError` to pick a toast.
  */
 
-import type { Database } from "@/lib/supabase/database.types";
+import { Constants, type Database } from "@/lib/supabase/database.types";
 
 /** What the reads return and what the controls hold between clicks. */
 export type MovieTrackingState = {
@@ -176,6 +176,13 @@ export type UntrackShowResult =
  * the type check everywhere it is not handled.
  */
 export type GameStatus = Database["public"]["Enums"]["game_status"];
+
+/**
+ * Every status, from the generated enum in its SQL order, which is also the
+ * pill order (spec 0026, AC-2). The Zod schema and the control both read it,
+ * so a status added in SQL reaches them with `pnpm db:types` alone.
+ */
+export const GAME_STATUSES = Constants.public.Enums.game_status;
 
 /**
  * One game's stored state (spec 0026, API surface): no status means the game

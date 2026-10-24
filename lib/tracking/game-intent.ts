@@ -1,6 +1,15 @@
 import type { GameStatus, GameTrackingState } from "./types";
 
 /**
+ * Whether a status can carry a score: Playing or Finished, never Want to
+ * play or no status (`AGENTS.md` "Games", spec 0026, AC-6). The one copy the
+ * TypeScript side reads; `rate_game` and the table's check hold it in SQL.
+ */
+export function canHoldScore(status: GameStatus | null): boolean {
+  return status === "playing" || status === "finished";
+}
+
+/**
  * One click on the game status control, as the target it asks for (spec
  * 0026, AC-11). A null status is a removal. Targets rather than toggles, so
  * replaying an intent gives the same state.
@@ -34,7 +43,7 @@ export function applyGameIntent(
     return { status: intent.value, rating: state.rating };
   }
   if (intent.value === null) return { ...state, rating: null };
-  return state.status === "playing" || state.status === "finished"
+  return canHoldScore(state.status)
     ? { ...state, rating: intent.value }
     : state;
 }
