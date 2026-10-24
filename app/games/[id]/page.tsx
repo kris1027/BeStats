@@ -14,6 +14,12 @@ import { loadGame } from "./load-game";
 /** Longest meta description the page emits, the movie page's limit. */
 const DESCRIPTION_LIMIT = 160;
 
+/** A malformed id and an unknown or hidden game share one not found title. */
+const NOT_FOUND_METADATA: Metadata = {
+  title: "Game not found",
+  robots: { index: false },
+};
+
 /**
  * The tab title and description, from the same `loadGame` the body uses
  * (spec 0025, AC-10).
@@ -28,12 +34,10 @@ export async function generateMetadata({
   params,
 }: PageProps<"/games/[id]">): Promise<Metadata> {
   const id = parseGameId((await params).id);
-  if (id === null) return { title: "Game not found", robots: { index: false } };
+  if (id === null) return NOT_FOUND_METADATA;
 
   const result = await loadGame(id);
-  if (result.kind === "not_found") {
-    return { title: "Game not found", robots: { index: false } };
-  }
+  if (result.kind === "not_found") return NOT_FOUND_METADATA;
   if (result.kind === "failed") {
     return { title: "Game", robots: { index: false } };
   }
