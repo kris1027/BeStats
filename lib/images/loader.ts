@@ -1,12 +1,12 @@
 "use client";
 
+import type { ImageLoaderProps } from "next/image";
+
 import { IGDB_IMAGE_BASE } from "@/lib/igdb/constants";
 import { TMDB_IMAGE_BASE } from "@/lib/tmdb/constants";
 import { tmdbImageLoader } from "@/lib/tmdb/image-loader";
 
 import { igdbImageLoader } from "./igdb-loader";
-
-type LoaderParams = { src: string; width: number; quality?: number };
 
 /**
  * The one `loaderFile` every `next/image` goes through, sending each URL to
@@ -19,7 +19,7 @@ type LoaderParams = { src: string; width: number; quality?: number };
  * comes back unchanged, so the closed optimizer stays closed
  * (prompts/close-image-optimizer.md).
  */
-export default function imageLoader(params: LoaderParams): string {
+export default function imageLoader(params: ImageLoaderProps): string {
   if (params.src.startsWith(`${TMDB_IMAGE_BASE}/`)) {
     return tmdbImageLoader(params);
   }

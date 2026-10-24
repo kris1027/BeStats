@@ -1,5 +1,7 @@
 "use client";
 
+import type { ImageLoaderProps } from "next/image";
+
 import { IGDB_COVER_LADDER, IGDB_IMAGE_BASE } from "@/lib/igdb/constants";
 
 /**
@@ -11,8 +13,6 @@ const SAME_SIZE_FRAGMENT = "#same-size";
 
 /** The rest of a cover URL after the base: `{size}/{image_id}.jpg`. */
 const COVER_PATH = /^([^/]+)\/([^/?#]+\.jpg)$/;
-
-type LoaderParams = { src: string; width: number; quality?: number };
 
 /**
  * Maps a `next/image` width request onto IGDB's own pre-sized covers, so the
@@ -28,7 +28,7 @@ type LoaderParams = { src: string; width: number; quality?: number };
  * Lives in `lib/images/`, not `lib/igdb/`, because it runs in the browser and
  * every file in `lib/igdb/` with behaviour is server only (spec 0023, AC-2).
  */
-export function igdbImageLoader({ src, width }: LoaderParams): string {
+export function igdbImageLoader({ src, width }: ImageLoaderProps): string {
   const source = src.endsWith(SAME_SIZE_FRAGMENT)
     ? src.slice(0, -SAME_SIZE_FRAGMENT.length)
     : src;

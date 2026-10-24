@@ -1,5 +1,7 @@
 "use client";
 
+import type { ImageLoaderProps } from "next/image";
+
 import { TMDB_IMAGE_BASE } from "./constants";
 import { splitImageUrl, TMDB_IMAGE_WIDTHS } from "./images";
 
@@ -13,8 +15,6 @@ const LADDER_TOP = TMDB_IMAGE_WIDTHS[TMDB_IMAGE_WIDTHS.length - 1];
  * reaches TMDB, so the request and its CDN cache entry are the same file.
  */
 const SAME_SIZE_FRAGMENT = "#same-size";
-
-type LoaderParams = { src: string; width: number; quality?: number };
 
 /**
  * Maps a `next/image` width request onto TMDB's own pre-sized images, so the
@@ -32,7 +32,7 @@ type LoaderParams = { src: string; width: number; quality?: number };
  * builds a URL for a host it was not handed. Next's development warning then
  * names that image, which is the signal to pin it to a ladder size.
  */
-export function tmdbImageLoader({ src, width }: LoaderParams): string {
+export function tmdbImageLoader({ src, width }: ImageLoaderProps): string {
   const parts = splitImageUrl(src);
   if (!parts) return src;
   if (parts.size === "original" && width > LADDER_TOP) {
