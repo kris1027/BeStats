@@ -27,7 +27,7 @@ _This is the second scope for BeStats. The movie and TV scope lives in [scope.md
 | G1 | IGDB integration module | Foundation | done |
 | G2 | Game data model and security policies | Foundation | done |
 | G3 | Game page (tracer) | Slice G1 | done |
-| G4 | Game status and rating | Slice G1 | planned |
+| G4 | Game status and rating | Slice G1 | in-progress |
 | G5 | Games tab and library pages | Slice G2 | planned |
 | G6 | Games home and list pages | Slice G3 | planned |
 | G7 | Game search and filters | Slice G4 | planned |
@@ -82,10 +82,20 @@ The thinnest real `/games/{id}`: hero only (cover, title, release date, platform
 - [x] Test it: `/test game page`
 spec [0025](../specs/0025-game-page/index.md) · code in [app/games/](../../app/games/)
 
-### G4. Game status and rating · needs a decision · GA
+### G4. Game status and rating · in-progress · GA
 The segmented control (Want to play · Playing · Finished) and the score on the game page, saved through Server Actions.
 **Done when:** a signed in user can set any status, remove the game by clicking the active option, and rate it 1 to 10 on Playing or Finished; every change survives reload and another session; the release gate disables Playing, Finished and rating before release, also in the Server Action; moving back to Want to play clears the score and Undo restores it; a signed out user is sent to sign in; failed writes never show false success.
-- [ ] Design it (spec): `/architect game status and rating`
+- [x] Design it (spec): `/architect game status and rating`
+- [ ] Build it: `/develop game status and rating`
+  - [x] Thin thread: `set_game_status`, `getGameTracking`, `setGameStatus` and the three pills in the hero slot, surviving reload, AC-1 to AC-3, AC-10, AC-12, AC-13
+  - [x] Removal and score: `remove_game`, `rate_game`, both restores and their Undo toasts, the score pill with auto open on Finished, AC-4 to AC-7, AC-14, AC-15
+  - [x] Release gate: `isGameReleased`, the server checks, the release line and disabled pills, AC-8, AC-9
+  - [ ] Optimistic, states and checks: `applyGameIntent`, 375px and 1280px, grants and sweep tests, drift and type checks, then `supabase db push` before merge, AC-11, AC-16, AC-17
+- [ ] Verify it: `/check verify game status and rating`
+- [ ] Test it: `/test game status and rating`
+- [ ] Review it (fresh model): `/check review game status and rating`
+- [ ] Document it: `/document game status and rating`
+spec [0026](../specs/0026-game-status-rating/index.md) · code in [app/games/](../../app/games/)
 
 ## Slice G2: The games library
 
