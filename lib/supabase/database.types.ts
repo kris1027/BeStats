@@ -257,6 +257,10 @@ export type Database = {
           watched_at: string
         }[]
       }
+      rate_game: {
+        Args: { p_game_id: number; p_rating: number }
+        Returns: undefined
+      }
       rate_movie: {
         Args: { p_movie_id: number; p_rating: number }
         Returns: {
@@ -276,9 +280,31 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      remove_game: {
+        Args: { p_game_id: number }
+        Returns: {
+          removed_added_at: string
+          removed_at: string
+          removed_finished_at: string
+          removed_rating: number
+          removed_started_at: string
+          removed_status: Database["public"]["Enums"]["game_status"]
+        }[]
+      }
       restore_episodes_watched: {
         Args: { p_entries: Json; p_show_id: number }
         Returns: number
+      }
+      restore_game_status: {
+        Args: {
+          p_added_at: string
+          p_finished_at?: string
+          p_game_id: number
+          p_rating?: number
+          p_started_at?: string
+          p_status: Database["public"]["Enums"]["game_status"]
+        }
+        Returns: undefined
       }
       restore_movie_watched: {
         Args: { p_movie_id: number; p_rating?: number; p_watched_at: string }
@@ -286,6 +312,18 @@ export type Database = {
       }
       restore_movie_watchlist: {
         Args: { p_movie_id: number }
+        Returns: undefined
+      }
+      restore_removed_game: {
+        Args: {
+          p_added_at: string
+          p_finished_at?: string
+          p_game_id: number
+          p_rating?: number
+          p_removed_at: string
+          p_started_at?: string
+          p_status: Database["public"]["Enums"]["game_status"]
+        }
         Returns: undefined
       }
       restore_show_tracking: {
@@ -303,6 +341,19 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      set_game_status: {
+        Args: {
+          p_game_id: number
+          p_status: Database["public"]["Enums"]["game_status"]
+        }
+        Returns: {
+          prev_added_at: string
+          prev_finished_at: string
+          prev_rating: number
+          prev_started_at: string
+          prev_status: Database["public"]["Enums"]["game_status"]
+        }[]
       }
       track_show: { Args: { p_show_id: number }; Returns: boolean }
       track_show_after_watch: {
