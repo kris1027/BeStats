@@ -26,17 +26,17 @@ Run against the local stack (`pnpm dev:docker`), signed in as user A (`user-a@ex
 - [x] `pnpm db:types:check` → the types match the schema → AC-16
 - [x] `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm build` → all pass, and `/games/[id]` stays a partial prerender → AC-1, AC-16
 - [x] `pnpm vitest run app/games/actions.test.ts private-actions-boundary.test.ts` → the release gate, hidden game, IGDB failure and missing session cases pass → AC-9, AC-10, AC-15
-- [ ] `supabase db push` before the PR merges (docs/deploy.md) → the five functions exist in the cloud project → AC-16
+- [x] `supabase db push` before the PR merges (docs/deploy.md) → the five functions exist in the cloud project → AC-16
 
 ## Value sourcing checks
 - [x] `user_id`: call `set_game_status` as user A for game 1942 → user B's row for 1942 stays Want to play with its seed date → value source `auth.uid()`
-- [ ] `game_id`: call `setGameStatus(0, "playing")` → `invalid_input`, nothing written → `gameIdSchema`
+- [x] `game_id`: call `setGameStatus(0, "playing")` → `invalid_input`, nothing written → `gameIdSchema`
 - [x] status target: double click a pill quickly → two different targets are sent (set, then remove), never the same one twice → optimistic state
 - [x] cleared score Undo payload: in two tabs, move Finished (scored) to Want to play in both → only the first gets an Undo with the score → `prev_*` under the row lock
-- [ ] removal Undo payload and `removedAt`: remove, wait over 10 minutes (or move `removed_at` back in a direct call), then Undo → `Couldn't undo. Set the status again on this page.` → `remove_game` and its `now()`
+- [x] removal Undo payload and `removedAt`: remove, wait over 10 minutes (or move `removed_at` back in a direct call), then Undo → `Couldn't undo. Set the status again on this page.` → `remove_game` and its `now()`
 - [x] restore window: change `updated_at` to 10 minutes ago and call `restore_game_status` → `P0002` → `updated_at` against `now()`
 - [x] release gate server side: set a game with today's UTC date and one with tomorrow's → today's accepts Playing, tomorrow's returns `not_released` → `Game.releaseDate` against `todayUtc(new Date())`
-- [ ] release gate on the page: the same two games show no line and the `Releases {date}` line, deciding by the UTC day, not the local day → `requestTodayUtc()`
+- [x] release gate on the page: the same two games show no line and the `Releases {date}` line, deciding by the UTC day, not the local day → `requestTodayUtc()`
 - [x] score display: a score of 7 shows `7`, none shows `Rate` with the name `… Not rated` → `formatPersonalScore`
 - [x] Sign in return: the session expired toast's Sign in returns to `/games/{id}` → `returnPath`
 
