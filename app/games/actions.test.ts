@@ -22,7 +22,7 @@ let result: { data: unknown; error: unknown } = { data: null, error: null };
 
 function builder() {
   const chain: Record<string, unknown> = {};
-  for (const method of ["from", "update", "eq", "rpc"]) {
+  for (const method of ["from", "update", "eq", "not", "rpc"]) {
     chain[method] = (...args: unknown[]) => {
       calls.push({ method, args });
       return chain;
@@ -231,6 +231,8 @@ describe("setGameRating", () => {
     expect(writes()).toEqual([
       { method: "from", args: ["user_game_state"] },
       { method: "update", args: [{ rating: null }] },
+      // Only a scored row, so an unscored one keeps its Undo window.
+      { method: "not", args: ["rating", "is", null] },
     ]);
     expect(readGame).not.toHaveBeenCalled();
   });

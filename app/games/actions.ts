@@ -5,6 +5,7 @@ import type { z } from "zod";
 
 import { getOptionalUser } from "@/lib/auth/user";
 import { isGameReleased } from "@/lib/catalog/game-page";
+import type { Database } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
 import {
   logTrackingEvent,
@@ -47,6 +48,23 @@ import { readGame } from "./[id]/load-game";
  */
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
+
+type GameFunctions = Database["public"]["Functions"];
+
+/**
+ * A function's result row with the named columns widened to nullable. The
+ * generated types mark every returned column not null, but some are null at
+ * run time. Widening from the generated row, rather than casting to a hand
+ * written shape, keeps a renamed SQL column a compile error.
+ */
+type RowWithNulls<
+  Name extends keyof GameFunctions,
+  Nullable extends keyof RowOf<Name>,
+> = Omit<RowOf<Name>, Nullable> & {
+  [K in Nullable]: RowOf<Name>[K] | null;
+};
+type RowOf<Name extends keyof GameFunctions> =
+  GameFunctions[Name]["Returns"] extends (infer Row)[] ? Row : never;
 
 /** A write step: PostgREST's typed data, and its error or null. */
 type WriteStep<D> = (
@@ -185,15 +203,16 @@ export async function setGameStatus(
         p_status: input.status,
       }),
     (data) => {
-      const prev = data?.[0] as
-        | {
-            prev_status: GameStatus | null;
-            prev_rating: number | null;
-            prev_added_at: string | null;
-            prev_started_at: string | null;
-            prev_finished_at: string | null;
-          }
-        | undefined;
+      const prev:
+        | RowWithNulls<
+            "set_game_status",
+            | "prev_status"
+            | "prev_rating"
+            | "prev_added_at"
+            | "prev_started_at"
+            | "prev_finished_at"
+          >
+        | undefined = data?.[0];
       if (
         input.status !== "want_to_play" ||
         !prev?.prev_status ||
@@ -225,7 +244,11 @@ export async function setGameStatus(
  * A score goes through `rate_game`, which writes only on Playing or Finished
  * and otherwise refuses with `not_started`. Clearing is a plain update that
  * touches only `rating`, so no date moves; on a row another tab removed it
- * matches nothing and succeeds, and `refresh()` shows the truth.
+ * matches nothing and succeeds, and `refresh()` shows the truth. It matches
+ * only a scored row, because any update moves `updated_at`, and
+ * `restore_game_status` measures its 10 minute window from that: a stale
+ * tab clearing an unscored Want to play row would otherwise extend an old
+ * Undo.
  */
 export async function setGameRating(
   gameId: number,
@@ -247,7 +270,8 @@ export async function setGameRating(
       .from("user_game_state")
       .update({ rating: null })
       .eq("user_id", userId)
-      .eq("game_id", input.gameId),
+      .eq("game_id", input.gameId)
+      .not("rating", "is", null),
   );
 }
 
@@ -270,16 +294,12 @@ export async function removeGame(gameId: number): Promise<GameTrackingResult> {
     "none",
     (supabase) => supabase.rpc("remove_game", { p_game_id: input.gameId }),
     (data) => {
-      const row = data?.[0] as
-        | {
-            removed_status: GameStatus;
-            removed_rating: number | null;
-            removed_added_at: string;
-            removed_started_at: string | null;
-            removed_finished_at: string | null;
-            removed_at: string;
-          }
-        | undefined;
+      const row:
+        | RowWithNulls<
+            "remove_game",
+            "removed_rating" | "removed_started_at" | "removed_finished_at"
+          >
+        | undefined = data?.[0];
       if (!row) return undefined;
       return {
         kind: "removed",
