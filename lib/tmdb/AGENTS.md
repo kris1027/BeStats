@@ -1,7 +1,7 @@
 # AGENTS.md · lib/tmdb
 
 The server only module every TMDB request goes through, plus the one browser
-file, `image-loader.ts`, that the global loader in `lib/images/loader.ts`
+file, `image-loader.ts`, that `lib/images/loader.ts` (the `loaderFile`)
 sends every TMDB URL to. Decided in
 [spec 0002](../../docs/specs/0002-tmdb-integration-module/index.md); scope
 feature 4. Runtime steps live in that spec's `verify.md`.
@@ -74,7 +74,7 @@ feature 4. Runtime steps live in that spec's `verify.md`.
 - **Errors carry a `kind`**, never a bare status. Pages branch through
   `isTmdbNotFound`, not through a hand rolled catch.
 - **Images skip Vercel's optimizer.** `image-loader.ts` (`'use client'`, reached
-  through the `loaderFile`, `lib/images/loader.ts`, which dispatches by host)
+  through `lib/images/loader.ts` (the `loaderFile`), which dispatches by host)
   maps a `next/image` width onto TMDB's own
   sizes, never above the size `images.ts` pinned, so the browser loads
   straight from TMDB's CDN (prompts/tmdb-image-loader.md). `original` is
