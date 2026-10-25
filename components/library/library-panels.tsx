@@ -17,7 +17,11 @@ import {
   type LibraryTab,
   libraryLastPage,
 } from "@/lib/tracking/library-lists";
-import { LIBRARY_COPY, LIBRARY_NOTES } from "@/lib/tracking/messages";
+import {
+  LIBRARY_COPY,
+  LIBRARY_LIST_FAILED,
+  LIBRARY_NOTES,
+} from "@/lib/tracking/messages";
 
 import type { LibraryList } from "./types";
 
@@ -201,7 +205,7 @@ export function ListFailed({
   return (
     <LoadFailed
       title={LIBRARY_COPY[list].failed}
-      description="Your list didn't load. Try again in a moment."
+      description={LIBRARY_LIST_FAILED}
       href={pageHref(list, type, page)}
     />
   );

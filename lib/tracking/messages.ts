@@ -290,6 +290,14 @@ export const LIBRARY_COPY: Record<
   },
 };
 
+/**
+ * The line under every failed library list, beside `LIBRARY_COPY[list].failed`:
+ * a failed read (`ListFailed`) and a section that threw (`LibraryErrorBoundary`,
+ * spec 0027, AC-5) read the same.
+ */
+export const LIBRARY_LIST_FAILED =
+  "Your list didn't load. Try again in a moment.";
+
 /** The month line under a Playing or Finished game card (spec 0027, AC-9). */
 export const GAME_DATE_LINES = {
   started: (month: string) => `Started ${month}`,

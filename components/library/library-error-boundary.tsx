@@ -4,7 +4,7 @@ import { catchError, type ErrorInfo } from "next/error";
 
 import { StatePanel } from "@/components/state-panel";
 import { Button } from "@/components/ui/button";
-import { LIBRARY_COPY } from "@/lib/tracking/messages";
+import { LIBRARY_COPY, LIBRARY_LIST_FAILED } from "@/lib/tracking/messages";
 
 import type { LibraryList } from "./types";
 
@@ -33,7 +33,7 @@ function LibraryErrorFallback(
       <StatePanel
         variant="error"
         title={LIBRARY_COPY[list].failed}
-        description="Your list didn't load. Try again in a moment."
+        description={LIBRARY_LIST_FAILED}
         action={
           <Button size="touch" onClick={() => retry()}>
             Try again
