@@ -29,7 +29,7 @@ _This is the second scope for BeStats. The movie and TV scope lives in [scope.md
 | G3 | Game page (tracer) | Slice G1 | done |
 | G4 | Game status and rating | Slice G1 | done |
 | G5 | Games tab and library pages | Slice G2 | done |
-| G6 | Games home and list pages | Slice G3 | in-progress |
+| G6 | Games home and list pages | Slice G3 | done |
 | G7 | Game search and filters | Slice G4 | planned |
 | G8 | Game cards everywhere | Slice G4 | planned |
 | G9 | Richer game page | Slice G5 | planned |
@@ -117,7 +117,7 @@ spec [0027](../specs/0027-games-library-pages/index.md) · code in [components/l
 
 ## Slice G3: Discovery
 
-### G6. Games home and list pages · in-progress
+### G6. Games home and list pages · done
 `/games` becomes the games landing, built on the parallax landing `/shows` and `/movies` use (the carousel rows were retired on 2026-10-18).
 **Done when:** `/games` shows the hero and five sections (Trending, Popular, Recently released in the last 60 days, Coming soon in the next 120 days by hype, Top rated with at least 100 ratings), each streaming and failing on its own with Retry; each See all link opens a paged list page of 24; the proxy accepts the known slugs and 404s anything else; GAMES shows on every page while the flag is on; every games page stays `noindex` until G10.
 - [x] Design it (spec): `/architect games home and list pages`

@@ -1,7 +1,7 @@
 # 0028. Games home and list pages: the parallax landing at /games and five paged IGDB lists
 
 **Date**: 2026-10-25
-**Status**: In Progress
+**Status**: Accepted
 
 Scope feature: [G6. Games home and list pages](../../scope/games.md) · Beta tier
 
