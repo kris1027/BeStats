@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  artUrl,
   coverUrl,
   normalizeGame,
   normalizeSummary,
@@ -25,6 +26,46 @@ describe("coverUrl", () => {
     expect(coverUrl("   ")).toBeNull();
     expect(coverUrl(null)).toBeNull();
     expect(coverUrl(undefined)).toBeNull();
+  });
+});
+
+describe("artUrl (spec 0028, AC-6)", () => {
+  const at = (id: string) =>
+    `https://images.igdb.com/igdb/image/upload/t_1080p/${id}.jpg`;
+
+  it("picks the artwork with the lowest image id, whatever the order", () => {
+    expect(
+      artUrl({
+        artworks: [
+          { image_id: "arc" },
+          { image_id: "ara" },
+          { image_id: "arb" },
+        ],
+        screenshots: [{ image_id: "sc0" }],
+      }),
+    ).toBe(at("ara"));
+  });
+
+  it("falls back to the lowest screenshot when no artwork has an id", () => {
+    expect(
+      artUrl({
+        artworks: [{ image_id: "  " }, null, {}],
+        screenshots: [{ image_id: "scb" }, { image_id: "sca" }],
+      }),
+    ).toBe(at("sca"));
+  });
+
+  it("answers null with no art at all", () => {
+    expect(artUrl({})).toBeNull();
+    expect(artUrl({ artworks: [], screenshots: null })).toBeNull();
+  });
+
+  it("is carried on a summary, and survives an odd art list", () => {
+    expect(
+      normalizeSummary({ id: 1, name: "G", artworks: [{ image_id: "ar1" }] })
+        .artUrl,
+    ).toBe(at("ar1"));
+    expect(normalizeSummary({ id: 1, name: "G" }).artUrl).toBeNull();
   });
 });
 

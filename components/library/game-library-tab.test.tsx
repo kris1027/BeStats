@@ -94,6 +94,7 @@ function game(id: number, extra: Record<string, unknown> = {}) {
     id,
     name: `Game ${id}`,
     coverUrl: null,
+    artUrl: null,
     releaseDate: "2020-05-01",
     releaseYear: 2020,
     communityRating: 8.1,

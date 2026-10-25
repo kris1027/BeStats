@@ -38,6 +38,26 @@ export const IGDB_COVER_LADDER: readonly { size: string; width: number }[] = [
 ];
 
 /**
+ * The art size the module builds, artwork or screenshot alike: the ceiling
+ * the loader steps down from for the games hero and the wide cards (spec
+ * 0028, AC-6). 1920px, so the full width hero is sharp.
+ */
+export const IGDB_ART_SIZE = "t_1080p";
+
+/**
+ * IGDB's 16:9 art sizes the loader may pick, narrowest first, with their
+ * pixel widths (spec 0028, AC-6). Kept apart from the cover ladder, so an art
+ * URL is never matched against cover rungs. `pnpm igdb:live` checks each
+ * real width.
+ */
+export const IGDB_ART_LADDER: readonly { size: string; width: number }[] = [
+  { size: "t_screenshot_med", width: 569 },
+  { size: "t_screenshot_big", width: 889 },
+  { size: "t_720p", width: 1280 },
+  { size: IGDB_ART_SIZE, width: 1920 },
+];
+
+/**
  * The game types the catalog shows, by IGDB id (games.md, settled filter).
  * Every other id (DLC 1, expansion 2, bundle 3, mod 5, episode 6, season 7,
  * port 11, fork 12, pack 13, update 14) is hidden and normalizes to `other`.
@@ -131,11 +151,14 @@ export const IGDB_GAME_FIELDS = [
 
 /**
  * The `fields` clause of a batch, search or discover read. Genres, platforms
- * and themes stay ids; their names come from the reference lists.
+ * and themes stay ids; their names come from the reference lists. Artworks
+ * and screenshots give a card its wide art (spec 0028, AC-6).
  */
 export const IGDB_SUMMARY_FIELDS = [
   "name",
   "cover.image_id",
+  "artworks.image_id",
+  "screenshots.image_id",
   "first_release_date",
   "rating",
   "rating_count",

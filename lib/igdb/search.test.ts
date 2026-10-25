@@ -50,7 +50,7 @@ describe("fetchSearchGames", () => {
     const { value } = await settle(fetchSearchGames({ query: " witcher " }));
 
     expect(mock.body()).toBe(
-      `search "witcher"; fields name,cover.image_id,first_release_date,rating,rating_count,genres,platforms,themes,game_type,version_parent; where ${FILTER}; limit 21;`,
+      `search "witcher"; fields name,cover.image_id,artworks.image_id,screenshots.image_id,first_release_date,rating,rating_count,genres,platforms,themes,game_type,version_parent; where ${FILTER}; limit 21;`,
     );
     expect(value?.results.map((game) => game.id)).toEqual(
       searchWitcher.map((game) => game.id),

@@ -44,6 +44,11 @@ export type GameSummary = {
   id: number;
   name: string;
   coverUrl: string | null;
+  /**
+   * Wide 16:9 art for the games hero and wide cards: an artwork, else a
+   * screenshot, else null (spec 0028, AC-6).
+   */
+  artUrl: string | null;
   releaseDate: string | null;
   releaseYear: number | null;
   communityRating: number | null;

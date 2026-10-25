@@ -5,13 +5,14 @@ import { IGDB_IMAGE_BASE } from "@/lib/igdb/constants";
 import { igdbImageLoader } from "./igdb-loader";
 
 /**
- * covers: spec 0025, AC-12
+ * covers: spec 0025, AC-12; spec 0028, AC-6
  *
  * A wrong rung is either a heavier cover than the field needs or an upgrade
  * past the size the URL named; neither shows up until someone looks.
  */
 const at = (size: string) => `${IGDB_IMAGE_BASE}/${size}/co1abc.jpg`;
 const same = (size: string) => `${at(size)}#same-size`;
+const art = (size: string) => `${IGDB_IMAGE_BASE}/${size}/ar1abc.jpg`;
 
 describe("igdbImageLoader", () => {
   it.each([
@@ -49,8 +50,26 @@ describe("igdbImageLoader", () => {
     );
   });
 
+  // spec 0028, AC-6: art steps down its own ladder, never the cover one.
   it.each([
-    `${IGDB_IMAGE_BASE}/t_screenshot_big/sc1.jpg`,
+    [300, "t_screenshot_med"],
+    [569, "t_screenshot_med"],
+    [800, "t_screenshot_big"],
+    [1200, "t_720p"],
+    [1600, "t_1080p"],
+  ])("serves 1080p art at width %i from %s", (width, size) => {
+    const url = igdbImageLoader({ src: art("t_1080p"), width });
+    expect(url.replace("#same-size", "")).toBe(art(size));
+  });
+
+  it("never steps art past the size the URL names", () => {
+    expect(igdbImageLoader({ src: art("t_screenshot_big"), width: 1600 })).toBe(
+      `${art("t_screenshot_big")}#same-size`,
+    );
+  });
+
+  it.each([
+    `${IGDB_IMAGE_BASE}/t_screenshot_huge/sc1.jpg`,
     `${IGDB_IMAGE_BASE}/t_cover_big/co1.png`,
     `${IGDB_IMAGE_BASE}/co1.jpg`,
     `${IGDB_IMAGE_BASE}/t_cover_big/a/co1.jpg`,
