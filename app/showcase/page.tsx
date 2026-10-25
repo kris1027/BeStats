@@ -64,6 +64,7 @@ import { catalogList, listPath } from "@/lib/catalog/lists";
 import { TMDB_HOME_URL } from "@/lib/legal/operator";
 
 import { CardRoundButtonDemo } from "./card-round-button-demo";
+import { GameLibraryCardDemo } from "./game-library-card-demo";
 
 export const metadata: Metadata = {
   title: "Design system",
@@ -436,6 +437,13 @@ export default function ShowcasePage() {
             />
           </li>
         </PosterGrid>
+      </Section>
+
+      <Section
+        title="Game library card"
+        note="The games tabs of /watchlist, /upcoming and /watched (spec 0027): Want to play shows the IGDB community rating and, before release, its date or Date TBA; Playing and Finished show your score when there is one, else the community rating, with the month under the name. A game IGDB hides keeps its card but has no link, and a game IGDB no longer has keeps only its removal."
+      >
+        <GameLibraryCardDemo poster={LIGHT_POSTER} />
       </Section>
 
       <Section
