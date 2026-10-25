@@ -137,12 +137,12 @@ spec [0028](../specs/0028-games-home-list-pages/index.md) · code in `app/games/
 Games in `/search?type=game` with a title query and filters for genre, release year, minimum IGDB rating and platform.
 **Done when:** every shown result meets every selected filter; filters live in shareable URL parameters and survive opening a game and coming back; pagination works and counts stay truthful (omitted or marked partial when unknown); loading, empty and failure states have a retry path.
 - [x] Design it (spec): `/architect game search and filters`
-- [ ] Build it: `/develop game search and filters`
-  - [ ] Thin thread: `SearchType` widened behind the flag, `pageSize` on `searchGames`, a titled game search to a grid of `GameListCard`s with an exact count and pages, AC-1, AC-3, AC-6, AC-8, AC-12
-  - [ ] Module and URL: genres as all of, `minRatingCount` on search, `requireSortField`, the live checks, then every games parameter, discover and browse, AC-2 to AC-5, AC-7, AC-8, AC-19
-  - [ ] Filter bar and states: the IGDB genres, `PlatformPicker` with its filter box and the 20 cap, the IGDB rating labels, list failures, the games copy, AC-9 to AC-11, AC-13
-  - [ ] Navigation and quick search: `Search games` on games pages, GAMES in place on `/search`, the logo, `/api/search` for games and the `rating` rename, AC-14 to AC-18
-  - [ ] Proof: `/showcase`, request scope tests, the prerendered shell, 375px and 1280px, keyboard, all checks, AC-20, AC-21
+- [x] Build it: `/develop game search and filters`
+  - [x] Thin thread: `SearchType` widened behind the flag, `pageSize` on `searchGames`, a titled game search to a grid of `GameListCard`s with an exact count and pages, AC-1, AC-3, AC-6, AC-8, AC-12
+  - [x] Module and URL: genres as all of, `minRatingCount` on search, `requireSortField`, the live checks, then every games parameter, discover and browse, AC-2 to AC-5, AC-7, AC-8, AC-19
+  - [x] Filter bar and states: the IGDB genres, `PlatformPicker` with its filter box and the 20 cap, the IGDB rating labels, list failures, the games copy, AC-9 to AC-11, AC-13
+  - [x] Navigation and quick search: `Search games` on games pages, GAMES in place on `/search`, the logo, `/api/search` for games and the `rating` rename, AC-14 to AC-18
+  - [x] Proof: `/showcase`, request scope tests, the prerendered shell, 375px and 1280px, keyboard, all checks, AC-20, AC-21
 - [ ] Verify it: `/check verify game search and filters`
 - [ ] Test it: `/test game search and filters`
 spec [0029](../specs/0029-game-search-filters/index.md) · code in `app/search/`, `components/search/`, `lib/search/`, `lib/igdb/`
