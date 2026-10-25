@@ -99,4 +99,12 @@ export type DiscoverGamesOptions = GameFilters & {
   minHypes?: number;
   sort: DiscoverSort;
   page?: number;
+  /**
+   * Results per page, 20 or 24 (spec 0028, AC-5). 24 fills a games list
+   * page's grid; the default 20 keeps G7 and the search read unchanged.
+   */
+  pageSize?: DiscoverPageSize;
 };
+
+/** The page sizes discover serves (spec 0028, AC-5). */
+export type DiscoverPageSize = 20 | 24;

@@ -175,6 +175,8 @@ describe("fetchDiscoverGames", () => {
     ],
     [{ sort: "rating_desc", minRatingCount: -1 }, "minRatingCount"],
     [{ sort: "rating_desc", minHypes: 0.5 }, "minHypes"],
+    [{ sort: "rating_desc", pageSize: 21 }, "pageSize"],
+    [{ sort: "rating_desc", pageSize: "24" }, "pageSize"],
   ])("refuses %j before any request", async (options, field) => {
     const mock = installIgdbMock();
     const error = await fetchDiscoverGames(
@@ -182,6 +184,32 @@ describe("fetchDiscoverGames", () => {
     ).catch((caught) => caught);
     expect((error as IgdbValidationError).field).toBe(field);
     expect(mock.mock).not.toHaveBeenCalled();
+  });
+});
+
+describe("fetchDiscoverGames page size (spec 0028, AC-5)", () => {
+  it("asks for 25 and keeps 24, offsetting by 24, so pages never overlap", async () => {
+    const mock = installIgdbMock({ igdb: [{ body: rows(25) }] });
+
+    const { value } = await settle(
+      fetchDiscoverGames({ sort: "rating_desc", page: 3, pageSize: 24 }),
+    );
+
+    expect(mock.body()).toContain("limit 25; offset 48;");
+    expect(value?.results).toHaveLength(24);
+    expect(value?.hasNextPage).toBe(true);
+  });
+
+  it("keeps 20 by default", async () => {
+    const mock = installIgdbMock({ igdb: [{ body: rows(20) }] });
+
+    const { value } = await settle(
+      fetchDiscoverGames({ sort: "rating_desc", page: 2 }),
+    );
+
+    expect(mock.body()).toContain("limit 21; offset 20;");
+    expect(value?.results).toHaveLength(20);
+    expect(value?.hasNextPage).toBe(false);
   });
 });
 

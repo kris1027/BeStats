@@ -1,7 +1,7 @@
 import "server-only";
 import { catalogWhereClause } from "./catalog-filter";
 import { igdbRequest } from "./client";
-import { IGDB_PAGE_SIZE, IGDB_SUMMARY_FIELDS } from "./constants";
+import { IGDB_SUMMARY_FIELDS } from "./constants";
 import { normalizeSummary } from "./normalize";
 import { buildQuery, type Condition, cond, type Sort } from "./query";
 import { gameSummarySchema, recordsSchema } from "./schemas";
@@ -42,15 +42,19 @@ export function sharedConditions(options: GameFilters): Condition[] {
 }
 
 /**
- * One page of summaries. It asks for 21 and keeps 20, so `hasNextPage` is
- * always known; `totalResults` is IGDB's count header or null, never a guess.
+ * One page of summaries. It asks for one more than `pageSize` and keeps
+ * `pageSize`, so `hasNextPage` is always known; `totalResults` is IGDB's count
+ * header or null, never a guess. The offset is counted in the same page size,
+ * so pages never overlap (spec 0028, AC-5).
  */
 export async function readSummaryPage(query: {
   search?: string;
   where: readonly Condition[];
   sort?: Sort;
   page: number;
+  pageSize: number;
 }): Promise<Paged<GameSummary>> {
+  const { pageSize } = query;
   const { data, totalCount } = await igdbRequest(
     "games",
     buildQuery({
@@ -58,14 +62,14 @@ export async function readSummaryPage(query: {
       fields: IGDB_SUMMARY_FIELDS,
       where: query.where,
       sort: query.sort,
-      limit: IGDB_PAGE_SIZE + 1,
-      offset: (query.page - 1) * IGDB_PAGE_SIZE,
+      limit: pageSize + 1,
+      offset: (query.page - 1) * pageSize,
     }),
     recordsSchema,
   );
 
   const results: GameSummary[] = [];
-  for (const record of data.slice(0, IGDB_PAGE_SIZE)) {
+  for (const record of data.slice(0, pageSize)) {
     const parsed = gameSummarySchema.safeParse(record);
     if (parsed.success) results.push(normalizeSummary(parsed.data));
   }
@@ -73,7 +77,7 @@ export async function readSummaryPage(query: {
   return {
     page: query.page,
     results,
-    hasNextPage: data.length > IGDB_PAGE_SIZE,
+    hasNextPage: data.length > pageSize,
     totalResults: totalCount,
   };
 }
