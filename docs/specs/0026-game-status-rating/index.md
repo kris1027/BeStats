@@ -1,7 +1,7 @@
 # 0026. Game status and rating: the status pills, the score and their Undo on the game page
 
 **Date**: 2026-10-24
-**Status**: In Progress
+**Status**: Accepted
 
 Scope feature: [G4. Game status and rating](../../scope/games.md) · GA tier
 

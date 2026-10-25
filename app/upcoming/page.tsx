@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
+import { LibraryErrorBoundary } from "@/components/library/library-error-boundary";
 import { LibraryHeading } from "@/components/library/library-heading";
 import {
   LibrarySection,
@@ -23,6 +24,7 @@ export const metadata: Metadata = {
  * the session, the `type` and `page` parameters or the user's rows streams in
  * behind the Suspense boundary, inside `LibrarySection`, which calls
  * `requireUser()` itself: the proxy's redirect is only the convenience layer.
+ * A section that throws shows `LibraryErrorBoundary`'s panel under the heading.
  * Nothing on this page writes when it loads (AC-21).
  */
 export default function UpcomingPage({ searchParams }: PageProps<"/upcoming">) {
@@ -30,9 +32,11 @@ export default function UpcomingPage({ searchParams }: PageProps<"/upcoming">) {
     <div className="flex flex-col gap-8">
       <LibraryHeading>Upcoming</LibraryHeading>
 
-      <Suspense fallback={<LibrarySkeleton />}>
-        <LibrarySection list="upcoming" searchParams={searchParams} />
-      </Suspense>
+      <LibraryErrorBoundary list="upcoming">
+        <Suspense fallback={<LibrarySkeleton />}>
+          <LibrarySection list="upcoming" searchParams={searchParams} />
+        </Suspense>
+      </LibraryErrorBoundary>
     </div>
   );
 }

@@ -290,7 +290,7 @@ export async function getShowLibraryTab(
       .order("last_activity_at", { ascending: false })
       .order("show_id", { ascending: true })
       .limit(LIBRARY_CLASSIFY_LIMIT + 1);
-    if (error) return failed();
+    if (error) return listReadFailed();
 
     // A view's columns are all nullable to the type generator; the view
     // itself never yields a null id or `tracked_at`.
@@ -316,12 +316,12 @@ export async function getShowLibraryTab(
       userId,
       rows.map((row) => row.id),
     );
-    if (read === null) return failed();
+    if (read === null) return listReadFailed();
     watched = read;
   } catch {
     // A network failure inside supabase-js. The error is dropped on purpose,
     // as in the actions: its message can carry request details.
-    return failed();
+    return listReadFailed();
   }
 
   return classifyTab({
@@ -468,7 +468,7 @@ export async function getMovieLibraryTab(
       .order("watchlisted_at", { ascending: false })
       .order("movie_id", { ascending: true })
       .limit(LIBRARY_CLASSIFY_LIMIT + 1);
-    if (error) return failed();
+    if (error) return listReadFailed();
 
     // A planned row always has a plan time (a check constraint).
     ({ rows, capped } = capRows(
@@ -477,7 +477,7 @@ export async function getMovieLibraryTab(
       ),
     ));
   } catch {
-    return failed();
+    return listReadFailed();
   }
 
   // The rows are already in plan order, so a stable sort on the date alone
@@ -539,37 +539,29 @@ export type WatchedMovieRow = {
  * @param userId The verified session's user, never a client value.
  * @param page A page already parsed by `parsePageParam`.
  */
-export async function getWatchedMoviesPage(
+export function getWatchedMoviesPage(
   userId: string,
   page: number,
 ): Promise<LibraryPage<WatchedMovieRow>> {
-  try {
-    const supabase = await createClient();
-    const from = (page - 1) * LIBRARY_PAGE_SIZE;
-    const { data, error, count } = await supabase
-      .from("user_movie_state")
-      .select("movie_id, watched_at, rating", { count: "exact" })
-      .eq("user_id", userId)
-      .not("watched_at", "is", null)
-      .order("watched_at", { ascending: false })
-      .order("movie_id", { ascending: true })
-      .range(from, from + LIBRARY_PAGE_SIZE - 1);
-
-    if (error?.code === RANGE_NOT_SATISFIABLE) {
-      const head = await supabase
+  return readCountedPage({
+    page,
+    read: (supabase, from, to) =>
+      supabase
+        .from("user_movie_state")
+        .select("movie_id, watched_at, rating", { count: "exact" })
+        .eq("user_id", userId)
+        .not("watched_at", "is", null)
+        .order("watched_at", { ascending: false })
+        .order("movie_id", { ascending: true })
+        .range(from, to),
+    count: (supabase) =>
+      supabase
         .from("user_movie_state")
         .select("movie_id", { count: "exact", head: true })
         .eq("user_id", userId)
-        .not("watched_at", "is", null);
-      if (head.error || head.count === null) return failed();
-      return { kind: "ok", rows: [], total: head.count };
-    }
-    if (error || count === null) return failed();
-
-    return {
-      kind: "ok",
-      total: count,
-      rows: data.flatMap((row) =>
+        .not("watched_at", "is", null),
+    map: (rows) =>
+      rows.flatMap((row) =>
         row.watched_at === null
           ? []
           : [
@@ -580,9 +572,65 @@ export async function getWatchedMoviesPage(
               },
             ],
       ),
-    };
+  });
+}
+
+/** The server client a counted page read runs its queries on. */
+type ServerClient = Awaited<ReturnType<typeof createClient>>;
+
+/**
+ * One ordered, counted Postgres page of a tab that needs no classification:
+ * Watched movies (spec 0020, AC-16) and every games tab (spec 0027, AC-6).
+ * The one home of the page slice, the past the end recount and the failure
+ * paths, so both tabs settle a stale page link the same way.
+ *
+ * A page past the end comes back empty with the real total, read again as a
+ * count alone (`RANGE_NOT_SATISFIABLE`), so the page can redirect to the last
+ * page. Every failure is logged once and is `failed`, never an empty page,
+ * which would tell the user their list is gone.
+ *
+ * @param query.read The page query, given the inclusive row range.
+ * @param query.count The same filters as `read`, as a head count.
+ * @param query.map The page's rows, as the tab hands them on.
+ */
+export async function readCountedPage<Raw, Row>({
+  page,
+  read,
+  count,
+  map,
+}: {
+  page: number;
+  read: (
+    supabase: ServerClient,
+    from: number,
+    to: number,
+  ) => PromiseLike<{
+    data: Raw[] | null;
+    error: { code: string } | null;
+    count: number | null;
+  }>;
+  count: (
+    supabase: ServerClient,
+  ) => PromiseLike<{ error: unknown; count: number | null }>;
+  map: (rows: Raw[]) => Row[];
+}): Promise<LibraryPage<Row>> {
+  try {
+    const supabase = await createClient();
+    const from = (page - 1) * LIBRARY_PAGE_SIZE;
+    const result = await read(supabase, from, from + LIBRARY_PAGE_SIZE - 1);
+
+    if (result.error?.code === RANGE_NOT_SATISFIABLE) {
+      const head = await count(supabase);
+      if (head.error || head.count === null) return listReadFailed();
+      return { kind: "ok", rows: [], total: head.count };
+    }
+    if (result.error || result.data === null || result.count === null) {
+      return listReadFailed();
+    }
+
+    return { kind: "ok", total: result.count, rows: map(result.data) };
   } catch {
-    return failed();
+    return listReadFailed();
   }
 }
 
@@ -612,7 +660,11 @@ export async function getLibraryMovieTitles(
   };
 }
 
-function failed(): { kind: "failed" } {
+/**
+ * A failed library read, logged once with its outcome class only (spec
+ * 0020, AC-17). Shared with the games tabs (spec 0027, AC-7).
+ */
+export function listReadFailed(): { kind: "failed" } {
   logTrackingEvent(TRACKING_EVENT.listRead, "db_error");
   return { kind: "failed" };
 }

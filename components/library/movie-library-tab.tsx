@@ -16,12 +16,12 @@ import { LIBRARY_COPY } from "@/lib/tracking/messages";
 
 import { LibraryGrid } from "./library-grid";
 import {
+  CatalogFailed,
   EmptyPanel,
   ListFailed,
   pageHref,
   settleTab,
   TabNotes,
-  TmdbFailed,
 } from "./library-panels";
 import type { LibraryList, LibraryMovieItem } from "./types";
 
@@ -94,7 +94,9 @@ export async function watchedMoviesTab({
     result.rows.map((row) => row.tmdbId),
   );
   if (titles.kind === "failed") {
-    return <TmdbFailed href={pageHref("watched", "movie", page)} />;
+    return (
+      <CatalogFailed source="TMDB" href={pageHref("watched", "movie", page)} />
+    );
   }
 
   const items = result.rows.map((row): LibraryMovieItem => {

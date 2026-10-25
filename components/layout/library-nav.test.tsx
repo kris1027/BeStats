@@ -112,4 +112,21 @@ describe("LibraryNav", () => {
       ).not.toBeInTheDocument();
     },
   );
+
+  // covers: spec 0027, AC-4
+  it("carries type=game on a games tab while the games library is on", () => {
+    vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "on");
+    pathname = "/upcoming";
+    search = "type=game";
+    render(<LibraryNav variant="sheet" />);
+
+    expect(
+      screen.getAllByRole("link").map((link) => link.getAttribute("href")),
+    ).toEqual([
+      "/watchlist?type=game",
+      "/upcoming?type=game",
+      "/watched?type=game",
+    ]);
+    vi.unstubAllEnvs();
+  });
 });

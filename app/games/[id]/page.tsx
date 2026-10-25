@@ -8,6 +8,7 @@ import { RetryLink } from "@/components/retry-link";
 import { StatePanel } from "@/components/state-panel";
 import { GameTrackingSlot } from "@/components/tracking/game-tracking-slot";
 import { parseGameId } from "@/lib/catalog/ids";
+import { gameHref } from "@/lib/catalog/media-type";
 import { truncateAtWord } from "@/lib/format";
 
 import { loadGame } from "./load-game";
@@ -93,7 +94,7 @@ async function GameDetail({
           variant="error"
           title="Couldn't reach IGDB"
           description="IGDB didn't respond. Try again in a moment."
-          action={<RetryLink href={`/games/${id}`} />}
+          action={<RetryLink href={gameHref(id)} />}
         />
       </div>
     );

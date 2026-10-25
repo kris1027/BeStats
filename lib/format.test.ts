@@ -4,6 +4,7 @@ import {
   formatAirDate,
   formatAirSpan,
   formatEpisodeCount,
+  formatMonthYear,
   formatPersonalScore,
   formatReleaseDate,
   formatRuntime,
@@ -292,5 +293,20 @@ describe("formatUsdCompact", () => {
     [950, "$950"],
   ])("formats %d as %s", (amount, expected) => {
     expect(formatUsdCompact(amount)).toBe(expected);
+  });
+});
+
+/** covers: spec 0027, AC-9 */
+describe("formatMonthYear", () => {
+  it("prints the short month and the year", () => {
+    expect(formatMonthYear("2026-10-24T09:00:00+00:00")).toBe("Oct 2026");
+  });
+
+  it("uses the UTC month, whatever the offset written", () => {
+    expect(formatMonthYear("2026-11-01T01:00:00+02:00")).toBe("Oct 2026");
+  });
+
+  it("returns null for a value that is not a date", () => {
+    expect(formatMonthYear("not a date")).toBeNull();
   });
 });

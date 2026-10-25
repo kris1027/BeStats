@@ -8,6 +8,7 @@ import { StatePanel } from "@/components/state-panel";
 import { ButtonLink } from "@/components/ui/button";
 import {
   CATALOG_PATHS,
+  type LibraryType,
   type MediaType,
   typedHref,
 } from "@/lib/catalog/media-type";
@@ -16,7 +17,11 @@ import {
   type LibraryTab,
   libraryLastPage,
 } from "@/lib/tracking/library-lists";
-import { LIBRARY_COPY, LIBRARY_NOTES } from "@/lib/tracking/messages";
+import {
+  LIBRARY_COPY,
+  LIBRARY_LIST_FAILED,
+  LIBRARY_NOTES,
+} from "@/lib/tracking/messages";
 
 import type { LibraryList } from "./types";
 
@@ -32,7 +37,7 @@ import type { LibraryList } from "./types";
  */
 export function pageHref(
   list: LibraryList,
-  type: MediaType,
+  type: LibraryType,
   page: number,
 ): string {
   return typedHref(`/${list}`, type, { page });
@@ -76,7 +81,7 @@ export function settleTab<Card>(
   if (tab.kind === "tmdb_failed") {
     return {
       kind: "panel",
-      panel: <TmdbFailed href={pageHref(list, type, page)} />,
+      panel: <CatalogFailed source="TMDB" href={pageHref(list, type, page)} />,
     };
   }
   const lastPage = libraryLastPage(tab.total);
@@ -121,12 +126,17 @@ export function TabNotes({
   );
 }
 
+/**
+ * A tab with nothing on it. A show or movie tab offers its catalog; a games
+ * tab is text only, because there is no games browse page until G6 (spec
+ * 0027, AC-14).
+ */
 export function EmptyPanel({
   list,
   type,
 }: {
   list: LibraryList;
-  type: MediaType;
+  type: LibraryType;
 }) {
   const copy = LIBRARY_COPY[list][type];
   return (
@@ -136,9 +146,11 @@ export function EmptyPanel({
         title={copy.empty.title}
         description={copy.empty.description}
         action={
-          <ButtonLink size="touch" href={CATALOG_PATHS[type]}>
-            {copy.browse}
-          </ButtonLink>
+          type !== "game" && copy.browse ? (
+            <ButtonLink size="touch" href={CATALOG_PATHS[type]}>
+              {copy.browse}
+            </ButtonLink>
+          ) : undefined
         }
       />
     </div>
@@ -158,7 +170,7 @@ export function NoSuchPage({
   type,
 }: {
   list: LibraryList;
-  type: MediaType | null;
+  type: LibraryType | null;
 }) {
   return (
     <div className="py-12">
@@ -187,29 +199,43 @@ export function ListFailed({
   page,
 }: {
   list: LibraryList;
-  type: MediaType;
+  type: LibraryType;
   page: number;
 }) {
   return (
     <LoadFailed
       title={LIBRARY_COPY[list].failed}
-      description="Your list didn't load. Try again in a moment."
+      description={LIBRARY_LIST_FAILED}
       href={pageHref(list, type, page)}
     />
   );
 }
 
-/** A systemic TMDB failure: a rejected credential or a rate limit (AC-17). */
-export function TmdbFailed({ href }: { href: string }) {
+/** What each catalog supplies, for its failure line. */
+const CATALOG_ITEMS = { TMDB: "titles", IGDB: "games" } as const;
+
+/**
+ * A systemic catalog failure: a rejected credential or a rate limit (spec
+ * 0020, AC-17), from TMDB for shows and movies or IGDB for games (spec 0027,
+ * AC-7). Never the empty state, which would tell the user their list is gone.
+ */
+export function CatalogFailed({
+  source,
+  href,
+}: {
+  source: keyof typeof CATALOG_ITEMS;
+  href: string;
+}) {
   return (
     <LoadFailed
-      title="Couldn't reach TMDB"
-      description="TMDB didn't respond, so the titles couldn't load. Try again in a moment."
+      title={`Couldn't reach ${source}`}
+      description={`${source} didn't respond, so the ${CATALOG_ITEMS[source]} couldn't load. Try again in a moment.`}
       href={href}
     />
   );
 }
 
+/** The error panel every failed library read shows, with Retry. */
 function LoadFailed({
   title,
   description,

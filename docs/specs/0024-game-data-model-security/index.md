@@ -1,7 +1,7 @@
 # 0024. Game data model and security policies: one private row per user and game
 
 **Date**: 2026-10-18
-**Status**: In Progress
+**Status**: Accepted
 
 Scope feature: [G2. Game data model and security policies](../../scope/games.md) · GA tier
 

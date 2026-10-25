@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   EPISODE_TRACKING_MESSAGES,
+  GAME_DATE_LINES,
   GAME_STATUS_LABELS,
   GAME_TRACKING_MESSAGES,
   GAME_UNDO_MESSAGES,
@@ -258,5 +259,44 @@ describe("game copy (spec 0026, AC-2, AC-4, AC-5)", () => {
     expect(GAME_TRACKING_MESSAGES.session_expired).toBe(
       TRACKING_MESSAGES.session_expired,
     );
+  });
+});
+
+/** covers: spec 0027, AC-9, AC-14 */
+describe("the games tabs' copy (spec 0027)", () => {
+  it("pins each empty games tab's text, with no browse button (AC-14)", () => {
+    expect(LIBRARY_COPY.watchlist.game).toEqual({
+      grid: "Games you want to play",
+      empty: {
+        title: "No games to play yet",
+        description: "Games you mark Want to play show up here.",
+      },
+    });
+    expect(LIBRARY_COPY.upcoming.game).toEqual({
+      grid: "Games you're playing",
+      empty: {
+        title: "Nothing in progress",
+        description: "Games you mark Playing show up here.",
+      },
+    });
+    expect(LIBRARY_COPY.watched.game).toEqual({
+      grid: "Games you finished",
+      empty: {
+        title: "No finished games yet",
+        description: "Games you mark Finished show up here.",
+      },
+    });
+  });
+
+  it("keeps a browse button on every show and movie tab", () => {
+    for (const list of ["watchlist", "upcoming", "watched"] as const) {
+      expect(LIBRARY_COPY[list].tv.browse).toBe("Browse shows");
+      expect(LIBRARY_COPY[list].movie.browse).toBe("Browse movies");
+    }
+  });
+
+  it("writes the Started and Finished month lines (AC-9)", () => {
+    expect(GAME_DATE_LINES.started("Feb 2026")).toBe("Started Feb 2026");
+    expect(GAME_DATE_LINES.finished("Oct 2026")).toBe("Finished Oct 2026");
   });
 });

@@ -33,7 +33,6 @@ import { WatchedIcon } from "./tracking-icons";
 import { TRACKING_PILL, TRACKING_PILL_UNAVAILABLE } from "./tracking-pill";
 import {
   type GameControl,
-  gameTrackingToastId,
   settleResultCall,
   showGameTrackingError,
 } from "./tracking-toast";
@@ -114,7 +113,8 @@ function GameStatusControl({
           return;
         }
         showGameTrackingError(result.error, {
-          id: gameTrackingToastId(gameId, control),
+          gameId,
+          control,
           returnPath,
           navigate: router.push,
         });

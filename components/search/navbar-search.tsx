@@ -20,7 +20,8 @@ type Layout = "desktop" | "mobile";
  * under `/shows`, the `type` parameter on `/watchlist`, `/upcoming`,
  * `/watched` and `/search`, read through `WithTypedPage`. A page about
  * neither catalog renders no search at all
- * (prompts/hide-tabs-without-type.md). `usePathname` suspends on a route
+ * (prompts/hide-tabs-without-type.md), and neither does a games tab, since
+ * there is no game search until G7 (spec 0027, AC-4). `usePathname` suspends on a route
  * with a dynamic param at prerender time, so `Navbar` wraps this in Suspense
  * with `NavbarSearchFallback`.
  *

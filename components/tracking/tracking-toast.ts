@@ -211,36 +211,44 @@ export function showShowTrackingError(
 export type GameControl = "status" | "rating";
 
 /**
- * The id of a game's failure toast, one per game and control, so repeated
- * failures replace each other (spec 0026, AC-11). The status control and the
- * Undo hook both build it here, so a failed Undo replaces a failed click.
+ * The game a toast is about and where its session expired Sign in comes
+ * back to: what every game failure and Undo toast needs, from the game page
+ * and the games library grid alike (spec 0026; spec 0027, AC-12).
  */
-export function gameTrackingToastId(
-  gameId: number,
-  control: GameControl,
-): string {
+export type GameToastTarget = {
+  gameId: number;
+  returnPath: string;
+  /** The router push, for the Sign in action. */
+  navigate: (href: string) => void;
+};
+
+/**
+ * The id of a game's failure toast, one per game and control, so repeated
+ * failures replace each other (spec 0026, AC-11). Built only here, so a
+ * failed Undo replaces a failed click on the same control.
+ */
+function gameTrackingToastId(gameId: number, control: GameControl): string {
   return `game-tracking-${gameId}-${control}`;
 }
 
 /**
- * Shows the toast for a failed game write (spec 0026, AC-11). The caller
- * names the toast id with `gameTrackingToastId`.
+ * Shows the toast for a failed game write (spec 0026, AC-11), under the one
+ * id its game and control share.
  *
  * @param error The error class the action returned.
- * @param options.id The toast id.
- * @param options.returnPath The page to come back to after signing in.
- * @param options.navigate The router push, for the Sign in action.
+ * @param target.control The control whose write failed.
  */
 export function showGameTrackingError(
   error: GameTrackingError,
   {
-    id,
+    gameId,
+    control,
     returnPath,
     navigate,
-  }: { id: string; returnPath: string; navigate: (href: string) => void },
+  }: GameToastTarget & { control: GameControl },
 ): void {
   toast(GAME_TRACKING_MESSAGES[error], {
-    id,
+    id: gameTrackingToastId(gameId, control),
     description: undefined,
     action: signInAction(error, returnPath, navigate),
   });

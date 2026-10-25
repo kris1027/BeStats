@@ -1,7 +1,7 @@
 # 0023. IGDB integration module
 
 **Date**: 2026-10-17
-**Status**: In Progress
+**Status**: Accepted
 
 Scope feature: [G1. IGDB integration module](../../scope/games.md#g1-igdb-integration-module) · Beta tier
 

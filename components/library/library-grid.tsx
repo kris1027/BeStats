@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { startTransition, useEffect, useOptimistic, useRef } from "react";
+import { startTransition, useOptimistic, useRef } from "react";
 import { toast } from "sonner";
 
 import {
@@ -29,14 +29,11 @@ import type {
 
 import { LibraryCard } from "./library-card";
 import {
-  cancelLibraryHeadingFocus,
-  focusLibraryHeading,
-} from "./library-heading";
-import {
   type LibraryList,
   type LibraryMovieItem,
   libraryItemKey,
 } from "./types";
+import { useRemovalFocus } from "./use-removal-focus";
 
 /**
  * The movie grid on `/watchlist`, `/upcoming` and `/watched`, and everything
@@ -82,52 +79,13 @@ function LibraryGrid({
     state.filter((item) => libraryItemKey(item) !== key),
   );
 
-  /**
-   * The removal that sent the focus to the heading expecting a remount. If
-   * this grid instead receives a refreshed page without that movie, the page
-   * did not redirect (later pages moved up), so the new heading must not
-   * take the focus on some later visit.
-   */
-  const headingFocusFor = useRef<string | null>(null);
-  useEffect(() => {
-    const key = headingFocusFor.current;
-    if (key === null || items.some((item) => libraryItemKey(item) === key)) {
-      return;
-    }
-    headingFocusFor.current = null;
-    cancelLibraryHeadingFocus(key);
-  }, [items]);
-
-  /**
-   * Focus leaves the card before it disappears: to the nearest following
-   * card's title link, else the nearest preceding one's, else the heading. A
-   * card with no title link (a missing title) takes the focus on its remove
-   * button (AC-16).
-   */
-  function moveFocusFrom(key: string) {
-    const index = visible.findIndex((item) => libraryItemKey(item) === key);
-    const candidates = [
-      ...visible.slice(index + 1),
-      ...visible.slice(0, index).reverse(),
-    ];
-
-    for (const target of candidates) {
-      const card = gridRef.current?.querySelector(
-        `[data-item-key="${libraryItemKey(target)}"]`,
-      );
-      const focusable =
-        card?.querySelector<HTMLElement>("h3 a") ??
-        card?.querySelector<HTMLElement>("button");
-      if (focusable) {
-        focusable.focus();
-        return;
-      }
-    }
-
-    const remountFor = page > 1 ? key : null;
-    headingFocusFor.current = remountFor;
-    focusLibraryHeading({ remountFor });
-  }
+  const { moveFocusFrom, removalFailed } = useRemovalFocus({
+    items,
+    visible,
+    itemKey: libraryItemKey,
+    page,
+    gridRef,
+  });
 
   function onError(error: MovieTrackingError, item: LibraryMovieItem) {
     showTrackingError(error, {
@@ -166,10 +124,7 @@ function LibraryGrid({
       );
       if (!result.ok) {
         const { error } = result;
-        if (headingFocusFor.current === key) {
-          headingFocusFor.current = null;
-        }
-        cancelLibraryHeadingFocus(key);
+        removalFailed(key);
         onError(error, item);
         return;
       }
