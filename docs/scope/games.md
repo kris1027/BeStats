@@ -121,12 +121,12 @@ spec [0027](../specs/0027-games-library-pages/index.md) · code in [components/l
 `/games` becomes the games landing, built on the parallax landing `/shows` and `/movies` use (the carousel rows were retired on 2026-10-18).
 **Done when:** `/games` shows the hero and five sections (Trending, Popular, Recently released in the last 60 days, Coming soon in the next 120 days by hype, Top rated with at least 100 ratings), each streaming and failing on its own with Retry; each See all link opens a paged list page of 24; the proxy accepts the known slugs and 404s anything else; GAMES shows on every page while the flag is on; every games page stays `noindex` until G10.
 - [x] Design it (spec): `/architect games home and list pages`
-- [ ] Build it: `/develop games home and list pages`
-  - [ ] Thin thread: `pageSize` on discover, the registry, proxy and `noindex` metadata, and `/games/top-rated` end to end, AC-2, AC-5, AC-8 to AC-13, AC-18
-  - [ ] Module strands: `artUrl` and the art ladder, `getPopularGames`, the live checks, then the other four list pages, AC-2, AC-4, AC-6, AC-9, AC-10
-  - [ ] The landing: widened `LandingItem` and slots, `/games` on `CatalogLanding`, the hero with `GameTrackingSlot`, AC-1, AC-3, AC-7, AC-8, AC-11, AC-18, AC-19
-  - [ ] Navigation: GAMES everywhere, search hidden on games pages, the logo memory, Browse games buttons, AC-14 to AC-17
-  - [ ] Proof: `/showcase`, 375px and 1280px, keyboard, reduced motion, all checks, AC-20, AC-21
+- [x] Build it: `/develop games home and list pages`
+  - [x] Thin thread: `pageSize` on discover, the registry, proxy and `noindex` metadata, and `/games/top-rated` end to end, AC-2, AC-5, AC-8 to AC-13, AC-18
+  - [x] Module strands: `artUrl` and the art ladder, `getPopularGames`, the live checks, then the other four list pages, AC-2, AC-4, AC-6, AC-9, AC-10
+  - [x] The landing: widened `LandingItem` and slots, `/games` on `CatalogLanding`, the hero with `GameTrackingSlot`, AC-1, AC-3, AC-7, AC-8, AC-11, AC-18, AC-19
+  - [x] Navigation: GAMES everywhere, search hidden on games pages, the logo memory, Browse games buttons, AC-14 to AC-17
+  - [x] Proof: `/showcase`, 375px and 1280px, keyboard, reduced motion, all checks, AC-20, AC-21
 - [ ] Verify it: `/check verify games home and list pages`
 - [ ] Test it: `/test games home and list pages`
 spec [0028](../specs/0028-games-home-list-pages/index.md) · code in `app/games/`, `components/catalog/landing/`, `lib/catalog/`, `lib/igdb/`
