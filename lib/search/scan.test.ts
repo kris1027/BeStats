@@ -271,7 +271,7 @@ describe("toQuickSearchResponse", () => {
       title: "Title 1",
       year: 2020,
       posterUrl: "https://image.tmdb.org/t/p/w92/p.jpg",
-      tmdbRating: 8,
+      rating: 8,
       href: "/shows/1",
     });
   });

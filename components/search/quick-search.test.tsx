@@ -27,7 +27,7 @@ function body(total: number, titles: string[]): QuickSearchResponse {
       title,
       year: index === 0 ? null : 2000 + index,
       posterUrl: null,
-      tmdbRating: index === 0 ? null : 7.25,
+      rating: index === 0 ? null : 7.25,
       href: `/shows/${index + 1}`,
     })),
   };

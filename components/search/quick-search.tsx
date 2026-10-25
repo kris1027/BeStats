@@ -9,6 +9,7 @@ import type * as React from "react";
 import { useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { CATALOG_SOURCES } from "@/lib/catalog/media-type";
 import { QUICK_LIMIT, QUICK_MIN_CHARS } from "@/lib/search/constants";
 import { formatResultCount, mediaNoun } from "@/lib/search/count";
 import type { SearchType } from "@/lib/search/params";
@@ -151,7 +152,7 @@ function QuickSearch({
             onClick={() => navigate(row.href)}
             className="flex cursor-pointer items-center gap-4 rounded-2xl px-3 py-2 select-none data-highlighted:glass-selected data-highlighted:glass-rim"
           >
-            <QuickSearchRow result={row} />
+            <QuickSearchRow result={row} type={type} />
           </Autocomplete.Item>
         )}
       </Autocomplete.List>
@@ -159,7 +160,9 @@ function QuickSearch({
       <Autocomplete.Status className="px-3 text-[15px] text-muted-foreground empty:hidden">
         {empty ? `No ${noun} match “${trimmed}”` : null}
         {view.kind === "error" ? (
-          <span className="block text-foreground">Couldn't reach TMDB</span>
+          <span className="block text-foreground">
+            Couldn't reach {CATALOG_SOURCES[type]}
+          </span>
         ) : null}
       </Autocomplete.Status>
 
@@ -174,8 +177,12 @@ function QuickSearch({
       {empty ? null : (
         <div className="flex items-center justify-between gap-4 border-t border-border px-3 pt-3 pb-1 text-[15px]">
           <span className="text-muted-foreground tabular-nums">
-            {view.kind === "ok"
-              ? formatResultCount(view.data.totalResults, type, "search")
+            {view.kind === "ok" && view.data.totalResults !== null
+              ? formatResultCount(
+                  view.data.totalResults,
+                  type,
+                  type === "game" ? "igdb" : "search",
+                )
               : null}
           </span>
           <Link

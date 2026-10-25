@@ -6,7 +6,7 @@ import { quickSearchRequestSchema, seeAllHref } from "./quick";
 
 describe("quickSearchRequestSchema", () => {
   it("trims the query before it checks the length", () => {
-    const parsed = quickSearchRequestSchema.safeParse({
+    const parsed = quickSearchRequestSchema().safeParse({
       type: "tv",
       q: "  dune  ",
     });
@@ -15,19 +15,21 @@ describe("quickSearchRequestSchema", () => {
 
   it("accepts exactly two characters and exactly 100", () => {
     expect(
-      quickSearchRequestSchema.safeParse({ type: "movie", q: "du" }).success,
+      quickSearchRequestSchema().safeParse({ type: "movie", q: "du" }).success,
     ).toBe(true);
     expect(
-      quickSearchRequestSchema.safeParse({ type: "movie", q: "x".repeat(100) })
-        .success,
+      quickSearchRequestSchema().safeParse({
+        type: "movie",
+        q: "x".repeat(100),
+      }).success,
     ).toBe(true);
   });
 
   it("does not count padding toward the 100 character limit", () => {
     const q = ` ${"x".repeat(100)} `;
-    expect(quickSearchRequestSchema.safeParse({ type: "tv", q }).success).toBe(
-      true,
-    );
+    expect(
+      quickSearchRequestSchema().safeParse({ type: "tv", q }).success,
+    ).toBe(true);
   });
 
   it.each([
@@ -38,7 +40,20 @@ describe("quickSearchRequestSchema", () => {
     [{ type: "tv", q: "   " }],
     [{ type: "tv", q: "x".repeat(101) }],
   ])("refuses %o", (input) => {
-    expect(quickSearchRequestSchema.safeParse(input).success).toBe(false);
+    expect(quickSearchRequestSchema().safeParse(input).success).toBe(false);
+  });
+});
+
+describe("quickSearchRequestSchema for games (spec 0029, AC-17)", () => {
+  it("accepts game only while the games library is on", () => {
+    expect(
+      quickSearchRequestSchema(true).safeParse({ type: "game", q: "zelda" })
+        .success,
+    ).toBe(true);
+    expect(
+      quickSearchRequestSchema(false).safeParse({ type: "game", q: "zelda" })
+        .success,
+    ).toBe(false);
   });
 });
 

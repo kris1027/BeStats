@@ -176,10 +176,11 @@ export function isGamesPath(pathname: string | null): boolean {
 
 /**
  * `mediaTypeForLocation` for the controls that may list games: the navbar
- * tabs, the Library links and the logo (spec 0027, AC-3, AC-4; spec 0028,
- * AC-14, AC-16). It is `game` on `/games` and its list and game pages, and on
- * a library page asking for it, while the games library is on, and otherwise
- * exactly `mediaTypeForLocation`. With the library off a games page has no
+ * tabs, the Library links, the search and the logo (spec 0027, AC-3, AC-4;
+ * spec 0028, AC-14, AC-16; spec 0029, AC-14, AC-15, AC-18). It is `game` on
+ * `/games` and its list and game pages, and on a library page or `/search`
+ * asking for it, while the games library is on, and otherwise exactly
+ * `mediaTypeForLocation`. With the library off a games page has no
  * type, like a page about neither catalog.
  */
 export function libraryTypeForLocation(
@@ -189,7 +190,7 @@ export function libraryTypeForLocation(
 ): LibraryType | null {
   if (isGamesPath(pathname)) return gamesEnabled ? "game" : null;
   if (
-    isLibraryPath(pathname) &&
+    isTypedPath(pathname) &&
     parseLibraryTypeParam(typeParam, gamesEnabled) === "game"
   ) {
     return "game";

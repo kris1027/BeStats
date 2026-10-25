@@ -5,7 +5,6 @@ import Link from "next/link";
 
 import {
   CATALOG_PATHS,
-  isLibraryPath,
   type LibraryType,
   type MediaType,
   type TypedPath,
@@ -27,8 +26,8 @@ import { WithLibraryTypedPage } from "./page-media-type";
  * cannot.
  *
  * On `/watchlist`, `/upcoming`, `/watched` and `/search` the tabs switch the
- * page's own `type` parameter in place (GAMES leads from `/search` to
- * `/games`); everywhere else they lead to `/shows`, `/movies` and `/games`.
+ * page's own `type` parameter in place, GAMES included (spec 0029, AC-14);
+ * everywhere else they lead to `/shows`, `/movies` and `/games`.
  * `WithLibraryTypedPage` reads the page's type, and on those four pages the
  * current query, which `/search` keeps across a switch.
  *
@@ -71,9 +70,9 @@ function MediaTypeTabs({ className }: { className?: string }) {
 }
 
 /**
- * Each tab's link on a typed page: the same page with its own `type`, and,
- * while the games library is on, GAMES switching a library page's `type` in
- * place or leading from `/search` to `/games` (spec 0028, AC-14).
+ * Each tab's link on a typed page: the same page with its own `type`, GAMES
+ * only while the games library is on (spec 0028, AC-14; spec 0029, AC-14).
+ * On `/search` each keeps the query, year and rating `typedHref` allows.
  */
 function typedHrefs(pathname: TypedPath, current?: URLSearchParams): TabHrefs {
   const hrefs = {
@@ -81,12 +80,7 @@ function typedHrefs(pathname: TypedPath, current?: URLSearchParams): TabHrefs {
     movie: typedHref(pathname, "movie", { current }),
   };
   if (!gamesLibraryEnabled()) return hrefs;
-  return {
-    ...hrefs,
-    game: isLibraryPath(pathname)
-      ? typedHref(pathname, "game")
-      : CATALOG_PATHS.game,
-  };
+  return { ...hrefs, game: typedHref(pathname, "game", { current }) };
 }
 
 /**

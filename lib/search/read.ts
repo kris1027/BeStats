@@ -148,7 +148,7 @@ export function toQuickSearchResponse(
       title: result.title,
       year: result.year,
       posterUrl: resizeImageUrl(result.posterUrl, "w92"),
-      tmdbRating: result.tmdbRating,
+      rating: result.tmdbRating,
       href: titleHref(type, result.id),
     })),
   };

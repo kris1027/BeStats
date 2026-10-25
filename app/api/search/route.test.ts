@@ -1,16 +1,26 @@
 import { NextRequest } from "next/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { IgdbError, IgdbValidationError } from "@/lib/igdb/errors";
 import { TmdbError } from "@/lib/tmdb/errors";
 
-/** covers: spec 0010, AC-20 */
+/** covers: spec 0010, AC-20; spec 0029, AC-17 */
 
 const readSearchPage = vi.hoisted(() => vi.fn());
+const searchGames = vi.hoisted(() => vi.fn());
+const games = vi.hoisted(() => ({ library: "on" as "on" | "off" }));
 
 vi.mock("@/lib/search/read", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/search/read")>();
   return { ...actual, readSearchPage };
 });
+vi.mock("@/lib/igdb", async () => {
+  const errors = await import("@/lib/igdb/errors");
+  return { ...errors, searchGames };
+});
+vi.mock("@/lib/env", () => ({
+  getGamesLibrary: vi.fn(() => games.library),
+}));
 
 const { GET } = await import("./route");
 
@@ -35,6 +45,8 @@ const PAGE = {
 
 afterEach(() => {
   readSearchPage.mockReset();
+  searchGames.mockReset();
+  games.library = "on";
 });
 
 describe("GET /api/search", () => {
@@ -56,7 +68,7 @@ describe("GET /api/search", () => {
       title: "Dune 1",
       year: 2024,
       posterUrl: null,
-      tmdbRating: 7.2,
+      rating: 7.2,
       href: "/shows/1",
     });
   });
@@ -126,5 +138,67 @@ describe("GET /api/search", () => {
 
     expect(signedIn.headers.get("set-cookie")).toBeNull();
     expect(await signedIn.json()).toEqual(await signedOut.json());
+  });
+});
+
+describe("GET /api/search for games (spec 0029, AC-17)", () => {
+  const GAMES = {
+    page: 1,
+    hasNextPage: true,
+    totalResults: null,
+    results: Array.from({ length: 8 }, (_, index) => ({
+      id: index + 1,
+      name: `Zelda ${index + 1}`,
+      coverUrl: null,
+      releaseYear: index === 0 ? null : 1998,
+      communityRating: 9.1,
+    })),
+  };
+
+  it("answers five games from search page 1 with IGDB's count or null", async () => {
+    searchGames.mockResolvedValue(GAMES);
+
+    const response = await GET(request("type=game&q=zelda"));
+
+    expect(response.status).toBe(200);
+    expect(searchGames).toHaveBeenCalledWith({ query: "zelda", page: 1 });
+    expect(readSearchPage).not.toHaveBeenCalled();
+    const body = await response.json();
+    expect(body.totalResults).toBeNull();
+    expect(body.results).toHaveLength(5);
+    expect(body.results[0]).toEqual({
+      id: 1,
+      title: "Zelda 1",
+      year: null,
+      posterUrl: null,
+      rating: 9.1,
+      href: "/games/1",
+    });
+  });
+
+  it("answers 400 with the games library off, without asking IGDB", async () => {
+    games.library = "off";
+    const response = await GET(request("type=game&q=zelda"));
+    expect(response.status).toBe(400);
+    expect(searchGames).not.toHaveBeenCalled();
+  });
+
+  it("answers 400, never 500, for a query IGDB's cleaning refuses", async () => {
+    searchGames.mockRejectedValue(
+      new IgdbValidationError("query", "The search query is empty."),
+    );
+    const response = await GET(request("type=game&q=%01%01"));
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "invalid" });
+  });
+
+  it("answers 502 with the kind when IGDB fails", async () => {
+    searchGames.mockRejectedValue(new IgdbError("timeout", "games", "slow"));
+    const response = await GET(request("type=game&q=zelda"));
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({
+      error: "upstream",
+      kind: "timeout",
+    });
   });
 });

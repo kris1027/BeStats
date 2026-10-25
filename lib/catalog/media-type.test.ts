@@ -126,10 +126,14 @@ describe("libraryTypeForLocation", () => {
     }
   });
 
-  it("is never game on /search, a catalog page or with the flag off", () => {
-    expect(libraryTypeForLocation("/search", "game", true)).toBe("tv");
+  it("is game on /search asking for it while the flag is on (spec 0029, AC-18)", () => {
+    expect(libraryTypeForLocation("/search", "game", true)).toBe("game");
+  });
+
+  it("is never game on a catalog page or with the flag off", () => {
     expect(libraryTypeForLocation("/movies", "game", true)).toBe("movie");
     expect(libraryTypeForLocation("/watchlist", "game", false)).toBe("tv");
+    expect(libraryTypeForLocation("/search", "game", false)).toBe("tv");
   });
 
   // spec 0028, AC-14, AC-16

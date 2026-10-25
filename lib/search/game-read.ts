@@ -1,5 +1,6 @@
 import "server-only";
 
+import { gameHref } from "@/lib/catalog/media-type";
 import { sliceGamePage } from "@/lib/catalog-list-read";
 import {
   discoverGames,
@@ -11,9 +12,10 @@ import {
 } from "@/lib/igdb";
 import { IGDB_LIST_PAGE_SIZE } from "@/lib/igdb/constants";
 
-import { GAME_MIN_RATING_COUNT } from "./constants";
+import { GAME_MIN_RATING_COUNT, QUICK_LIMIT } from "./constants";
 import type { SearchMode } from "./mode";
 import type { GameSearchParams } from "./params";
+import type { QuickSearchResponse } from "./quick";
 
 /**
  * One 24 game page of a games search, in the mode the URL decides (spec 0029,
@@ -67,4 +69,26 @@ export async function readGameSearchPage(
     sort: "rating_count_desc",
     requireSortField: false,
   });
+}
+
+/**
+ * The games quick search body from page 1 of a search (spec 0029, AC-16,
+ * AC-17): IGDB's count, or null when it sent none, and the first five games
+ * in IGDB's order. The cover goes as built; the IGDB loader picks the rung
+ * from the row's `sizes`.
+ */
+export function toGameQuickSearchResponse(
+  page: Paged<GameSummary>,
+): QuickSearchResponse {
+  return {
+    totalResults: page.totalResults,
+    results: page.results.slice(0, QUICK_LIMIT).map((game) => ({
+      id: game.id,
+      title: game.name,
+      year: game.releaseYear,
+      posterUrl: game.coverUrl,
+      rating: game.communityRating,
+      href: gameHref(game.id),
+    })),
+  };
 }
