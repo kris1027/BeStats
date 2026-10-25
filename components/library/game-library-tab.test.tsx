@@ -296,6 +296,14 @@ describe("the cards (AC-8 to AC-11)", () => {
     expect(received(1).release).toEqual({ state: "released" });
   });
 
+  it("gives an unreleased game no release pill off Want to play", async () => {
+    getGameLibraryPage.mockResolvedValue(page([row(1)]));
+    withGames(game(1, { releaseDate: null }));
+    await renderSection("upcoming", { type: "game" });
+
+    expect(received(1).release).toEqual({ state: "released" });
+  });
+
   it("gives Playing a Started line and Finished a Finished line", async () => {
     getGameLibraryPage.mockResolvedValue(page([row(1, { rating: 8 })]));
     withGames(game(1));

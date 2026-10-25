@@ -68,7 +68,6 @@ export async function gameLibraryTab({
   return (
     <div className="flex flex-col gap-10">
       <GameLibraryGrid
-        list={list}
         items={items}
         label={`${LIBRARY_COPY[list].game.grid}, page ${page}`}
         page={page}
@@ -85,6 +84,34 @@ export async function gameLibraryTab({
     </div>
   );
 }
+
+/**
+ * What each games tab's card carries (spec 0027, AC-8, AC-9), the one place
+ * a tab decides it, so `GameLibraryCard` only renders its item. Want to play
+ * shows the release pill and never a score, which its rows cannot hold
+ * (spec 0024, AC-2); Playing and Finished show the score and the month of
+ * the date their tab orders by.
+ */
+const GAME_CARDS: Record<
+  LibraryList,
+  {
+    scored: boolean;
+    releasePill: boolean;
+    dateLine: (row: GameLibraryRow) => string | null;
+  }
+> = {
+  watchlist: { scored: false, releasePill: true, dateLine: () => null },
+  upcoming: {
+    scored: true,
+    releasePill: false,
+    dateLine: (row) => monthLine(row.startedAt, GAME_DATE_LINES.started),
+  },
+  watched: {
+    scored: true,
+    releasePill: false,
+    dateLine: (row) => monthLine(row.finishedAt, GAME_DATE_LINES.finished),
+  },
+};
 
 /**
  * A game card's plain data, with its release pill and date line formatted
@@ -111,30 +138,30 @@ function gameItem(
     };
   }
 
+  const card = GAME_CARDS[list];
   return {
     gameId: row.gameId,
     name: game.name,
     coverUrl: game.coverUrl,
     communityRating: game.communityRating,
-    rating: list === "watchlist" ? null : row.rating,
+    rating: card.scored ? row.rating : null,
     hidden: game.hidden,
-    release: isGameReleased(game.releaseDate, today)
-      ? { state: "released" }
-      : {
-          state: "unreleased",
-          date: formatReleaseDate(game.releaseDate, today),
-        },
-    dateLine: dateLine(list, row),
+    release:
+      card.releasePill && !isGameReleased(game.releaseDate, today)
+        ? {
+            state: "unreleased",
+            date: formatReleaseDate(game.releaseDate, today),
+          }
+        : { state: "released" },
+    dateLine: card.dateLine(row),
   };
 }
 
-/** `Started Oct 2026` on Playing, `Finished Oct 2026` on Finished (AC-9). */
-function dateLine(list: LibraryList, row: GameLibraryRow): string | null {
-  if (list === "watchlist") return null;
-  const iso = list === "upcoming" ? row.startedAt : row.finishedAt;
+/** `Started Oct 2026` or `Finished Oct 2026`, or none without the date. */
+function monthLine(
+  iso: string | null,
+  line: (month: string) => string,
+): string | null {
   const month = iso === null ? null : formatMonthYear(iso);
-  if (month === null) return null;
-  return list === "upcoming"
-    ? GAME_DATE_LINES.started(month)
-    : GAME_DATE_LINES.finished(month);
+  return month === null ? null : line(month);
 }

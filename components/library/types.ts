@@ -61,7 +61,7 @@ export type LibraryGameItem = {
    * (spec 0025, AC-7), so the card has no link (AC-10).
    */
   hidden: boolean;
-  /** Only Want to play cares; an unreleased `date: null` is Date TBA. */
+  /** Unreleased only on Want to play; an unreleased `date: null` is Date TBA. */
   release: { state: "released" } | { state: "unreleased"; date: ReleaseDate };
   /** `Started Oct 2026` or `Finished Oct 2026`, already formatted. */
   dateLine: string | null;

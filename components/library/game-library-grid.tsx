@@ -13,7 +13,7 @@ import {
 import { showGameUndo } from "@/components/tracking/use-game-undo";
 
 import { GameLibraryCard } from "./game-library-card";
-import { gameItemKey, type LibraryGameItem, type LibraryList } from "./types";
+import { gameItemKey, type LibraryGameItem } from "./types";
 import { useRemovalFocus } from "./use-removal-focus";
 
 /**
@@ -38,13 +38,11 @@ import { useRemovalFocus } from "./use-removal-focus";
  * @param returnPath The page, for the session expired toast's Sign in action.
  */
 function GameLibraryGrid({
-  list,
   items,
   label,
   page,
   returnPath,
 }: {
-  list: LibraryList;
   items: LibraryGameItem[];
   label: string;
   page: number;
@@ -97,7 +95,6 @@ function GameLibraryGrid({
         return (
           <li key={key} data-item-key={key}>
             <GameLibraryCard
-              list={list}
               item={item}
               onRemove={() => remove(item)}
               priority={index < POSTER_GRID_EAGER.catalog}

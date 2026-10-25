@@ -10,7 +10,7 @@ import { CardRoundButton } from "@/components/tracking/card-round-button";
 import { gameHref } from "@/lib/catalog/media-type";
 
 import { ReleasePill } from "./dated-pill";
-import type { LibraryGameItem, LibraryList } from "./types";
+import type { LibraryGameItem } from "./types";
 
 /**
  * The caption and fallback tile text for a game IGDB no longer has (spec
@@ -28,17 +28,15 @@ const MISSING_GAME = "No longer on IGDB";
  * Started or Finished month under the name. A hidden game keeps its card
  * but loses its link, because its page answers a soft 404 (AC-10). Every card
  * has one remove button, which only reports the tap: `GameLibraryGrid` owns
- * the optimistic hide, the action call and the toast.
- *
- * @param list The tab, which picks the badge and the date line (AC-9).
+ * the optimistic hide, the action call and the toast. Which of these a tab
+ * shows is decided once, on the server, by `gameLibraryTab`: the card shows
+ * the score, release pill and date line its item carries.
  */
 function GameLibraryCard({
-  list,
   item,
   onRemove,
   priority = false,
 }: {
-  list: LibraryList;
   item: LibraryGameItem;
   onRemove: () => void;
   priority?: boolean;
@@ -53,18 +51,15 @@ function GameLibraryCard({
     );
   }
 
-  const unreleased =
-    list === "watchlist" && item.release.state === "unreleased"
-      ? item.release
-      : null;
+  const unreleased = item.release.state === "unreleased" ? item.release : null;
 
   return (
     <PosterCard
       title={item.name}
       posterUrl={item.coverUrl}
       href={item.hidden ? undefined : gameHref(item.gameId)}
-      badge={cardBadge(list, item)}
-      meta={list === "watchlist" ? undefined : (item.dateLine ?? undefined)}
+      badge={cardBadge(item)}
+      meta={item.dateLine ?? undefined}
       controls={
         <>
           {unreleased ? <ReleasePill release={unreleased.date} /> : null}
@@ -77,12 +72,11 @@ function GameLibraryCard({
 }
 
 /**
- * The cyan personal score on Playing and Finished when there is one, else
- * the amber community rating (AC-8, AC-9). A score on a Want to play row
- * cannot exist (spec 0024, AC-2), so it is never looked at there.
+ * The cyan personal score when the item carries one, else the amber
+ * community rating (AC-8, AC-9). A Want to play item never carries a score.
  */
-function cardBadge(list: LibraryList, item: LibraryGameItem): ReactNode {
-  if (list !== "watchlist" && item.rating !== null) {
+function cardBadge(item: LibraryGameItem): ReactNode {
+  if (item.rating !== null) {
     return <PersonalScoreBadge value={item.rating} />;
   }
   return <IgdbRatingBadge value={item.communityRating} />;

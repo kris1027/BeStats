@@ -2,7 +2,7 @@ import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { LibraryGameItem, LibraryList } from "./types";
+import type { LibraryGameItem } from "./types";
 
 /**
  * covers: spec 0027, AC-8 to AC-13
@@ -61,12 +61,11 @@ function item(
 
 const RETURN_PATH = "/upcoming?type=game&page=2";
 
-function grid(list: LibraryList, items: LibraryGameItem[], page = 1) {
+function grid(items: LibraryGameItem[], page = 1) {
   return (
     <>
       <LibraryHeading>Heading</LibraryHeading>
       <GameLibraryGrid
-        list={list}
         items={items}
         label={`Your games, page ${page}`}
         page={page}
@@ -99,7 +98,7 @@ afterEach(() => {
 
 describe("GameLibraryCard through the grid", () => {
   it("links a game to its page with the IGDB community rating on Want to play", () => {
-    render(grid("watchlist", [item(1942, { name: "The Witcher 3" })]));
+    render(grid([item(1942, { name: "The Witcher 3" })]));
 
     expect(screen.getByRole("link", { name: "The Witcher 3" })).toHaveAttribute(
       "href",
@@ -115,7 +114,7 @@ describe("GameLibraryCard through the grid", () => {
 
   it("shows the release pill or Date TBA only on an unreleased Want to play game", () => {
     render(
-      grid("watchlist", [
+      grid([
         item(1, {
           release: {
             state: "unreleased",
@@ -136,7 +135,7 @@ describe("GameLibraryCard through the grid", () => {
 
   it("shows the personal score on Playing when there is one, else the community rating", () => {
     render(
-      grid("upcoming", [
+      grid([
         item(1, { rating: 9, dateLine: "Started Feb 2026" }),
         item(2, { dateLine: "Started Mar 2026" }),
       ]),
@@ -149,39 +148,15 @@ describe("GameLibraryCard through the grid", () => {
   });
 
   it("shows the personal score and the Finished month on a scored Finished game", () => {
-    render(
-      grid("watched", [item(1, { rating: 10, dateLine: "Finished Oct 2026" })]),
-    );
+    render(grid([item(1, { rating: 10, dateLine: "Finished Oct 2026" })]));
 
     expect(screen.getByText("Your score")).toBeInTheDocument();
     expect(screen.queryByText("IGDB community rating")).not.toBeInTheDocument();
     expect(screen.getByText("Finished Oct 2026")).toBeInTheDocument();
   });
 
-  it("ignores a score and a date line on Want to play", () => {
-    render(
-      grid("watchlist", [item(1, { rating: 7, dateLine: "Started Feb 2026" })]),
-    );
-
-    expect(screen.queryByText("Your score")).not.toBeInTheDocument();
-    expect(screen.getByText("IGDB community rating")).toBeInTheDocument();
-    expect(screen.queryByText("Started Feb 2026")).not.toBeInTheDocument();
-  });
-
-  it("never shows a release pill off Want to play", () => {
-    render(
-      grid("upcoming", [
-        item(1, { release: { state: "unreleased", date: null } }),
-      ]),
-    );
-
-    expect(
-      screen.queryByText("Release date to be announced"),
-    ).not.toBeInTheDocument();
-  });
-
   it("gives a hidden game no link but keeps its remove button", () => {
-    render(grid("watched", [item(1, { name: "Hidden Game", hidden: true })]));
+    render(grid([item(1, { name: "Hidden Game", hidden: true })]));
 
     expect(
       screen.getByRole("heading", { name: "Hidden Game" }),
@@ -196,9 +171,7 @@ describe("GameLibraryCard through the grid", () => {
 
   it("shows a missing game as No longer on IGDB, removable, with nothing invented", () => {
     render(
-      grid("watched", [
-        item(1, { name: null, communityRating: null, dateLine: null }),
-      ]),
+      grid([item(1, { name: null, communityRating: null, dateLine: null })]),
     );
 
     expect(screen.getAllByText("No longer on IGDB").length).toBeGreaterThan(0);
@@ -215,7 +188,7 @@ describe("GameLibraryCard through the grid", () => {
 describe("removal (AC-12, AC-13)", () => {
   it("hides the card at once, then shows the Undo toast", async () => {
     const user = userEvent.setup();
-    const view = render(grid("upcoming", [item(1), item(2)]));
+    const view = render(grid([item(1), item(2)]));
 
     await user.click(
       screen.getByRole("button", { name: "Remove Game 1 from your games" }),
@@ -224,7 +197,7 @@ describe("removal (AC-12, AC-13)", () => {
     expect(screen.queryByText("Game 1")).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Game 2" })).toHaveFocus();
 
-    view.rerender(grid("upcoming", [item(2)]));
+    view.rerender(grid([item(2)]));
     await settleNext({ ok: true, undo: UNDO });
 
     expect(toast).toHaveBeenCalledWith(
@@ -236,7 +209,7 @@ describe("removal (AC-12, AC-13)", () => {
 
   it("restores the removal from the toast's Undo", async () => {
     const user = userEvent.setup();
-    render(grid("upcoming", [item(1)]));
+    render(grid([item(1)]));
 
     await user.click(
       screen.getByRole("button", { name: "Remove Game 1 from your games" }),
@@ -257,7 +230,7 @@ describe("removal (AC-12, AC-13)", () => {
 
   it("is a quiet success when another tab removed the game first", async () => {
     const user = userEvent.setup();
-    render(grid("watched", [item(1)]));
+    render(grid([item(1)]));
 
     await user.click(
       screen.getByRole("button", { name: "Remove Game 1 from your games" }),
@@ -269,7 +242,7 @@ describe("removal (AC-12, AC-13)", () => {
 
   it("puts the card back and offers Sign in back to this page when the session expired", async () => {
     const user = userEvent.setup();
-    render(grid("upcoming", [item(1)]));
+    render(grid([item(1)]));
 
     await user.click(
       screen.getByRole("button", { name: "Remove Game 1 from your games" }),
@@ -291,7 +264,7 @@ describe("removal (AC-12, AC-13)", () => {
 
   it("puts the card back in place with the error toast when the write fails", async () => {
     const user = userEvent.setup();
-    render(grid("watched", [item(1), item(2)]));
+    render(grid([item(1), item(2)]));
 
     await user.click(
       screen.getByRole("button", { name: "Remove Game 1 from your games" }),
@@ -308,7 +281,7 @@ describe("removal (AC-12, AC-13)", () => {
 
   it("keeps two removals in a row independent, one toast each", async () => {
     const user = userEvent.setup();
-    const view = render(grid("upcoming", [item(1), item(2), item(3)]));
+    const view = render(grid([item(1), item(2), item(3)]));
 
     await user.click(
       screen.getByRole("button", { name: "Remove Game 1 from your games" }),
@@ -321,7 +294,7 @@ describe("removal (AC-12, AC-13)", () => {
       "Game 3",
     ]);
 
-    view.rerender(grid("upcoming", [item(3)]));
+    view.rerender(grid([item(3)]));
     await settleNext({ ok: true, undo: UNDO });
     await settleNext({ ok: true, undo: UNDO });
 
@@ -333,7 +306,7 @@ describe("removal (AC-12, AC-13)", () => {
 
   it("focuses a linkless neighbour's remove button, then the heading", async () => {
     const user = userEvent.setup();
-    render(grid("watched", [item(1), item(2, { hidden: true })]));
+    render(grid([item(1), item(2, { hidden: true })]));
 
     await user.click(
       screen.getByRole("button", { name: "Remove Game 1 from your games" }),
