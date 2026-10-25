@@ -2,14 +2,8 @@ import "server-only";
 
 import type { LibraryList } from "@/lib/catalog/library-list";
 import { type GameSummary, getGamesByIds, IgdbError } from "@/lib/igdb";
-import { createClient } from "@/lib/supabase/server";
 
-import {
-  LIBRARY_PAGE_SIZE,
-  type LibraryPage,
-  listReadFailed,
-  RANGE_NOT_SATISFIABLE,
-} from "./library-lists";
+import { type LibraryPage, readCountedPage } from "./library-lists";
 import { logTrackingEvent, TRACKING_EVENT } from "./log";
 import type { GameStatus } from "./types";
 
@@ -62,7 +56,7 @@ export type GameLibraryRow = {
  * @param query.userId The verified session's user, never a client value.
  * @param query.page A page already parsed by `parsePageParam`.
  */
-export async function getGameLibraryPage({
+export function getGameLibraryPage({
   userId,
   tab,
   page,
@@ -72,45 +66,34 @@ export async function getGameLibraryPage({
   page: number;
 }): Promise<LibraryPage<GameLibraryRow>> {
   const { status, order } = GAME_LIBRARY_TABS[tab];
-  try {
-    const supabase = await createClient();
-    const from = (page - 1) * LIBRARY_PAGE_SIZE;
-    const { data, error, count } = await supabase
-      .from("user_game_state")
-      .select("game_id, rating, added_at, started_at, finished_at", {
-        count: "exact",
-      })
-      .eq("user_id", userId)
-      .eq("status", status)
-      .order(order, { ascending: false })
-      .order("game_id", { ascending: true })
-      .range(from, from + LIBRARY_PAGE_SIZE - 1);
-
-    if (error?.code === RANGE_NOT_SATISFIABLE) {
-      const head = await supabase
+  return readCountedPage({
+    page,
+    read: (supabase, from, to) =>
+      supabase
+        .from("user_game_state")
+        .select("game_id, rating, added_at, started_at, finished_at", {
+          count: "exact",
+        })
+        .eq("user_id", userId)
+        .eq("status", status)
+        .order(order, { ascending: false })
+        .order("game_id", { ascending: true })
+        .range(from, to),
+    count: (supabase) =>
+      supabase
         .from("user_game_state")
         .select("game_id", { count: "exact", head: true })
         .eq("user_id", userId)
-        .eq("status", status);
-      if (head.error || head.count === null) return listReadFailed();
-      return { kind: "ok", rows: [], total: head.count };
-    }
-    if (error || count === null) return listReadFailed();
-
-    return {
-      kind: "ok",
-      total: count,
-      rows: data.map((row) => ({
+        .eq("status", status),
+    map: (rows) =>
+      rows.map((row) => ({
         gameId: row.game_id,
         rating: row.rating,
         addedAt: row.added_at,
         startedAt: row.started_at,
         finishedAt: row.finished_at,
       })),
-    };
-  } catch {
-    return listReadFailed();
-  }
+  });
 }
 
 /** A page's games, keyed by IGDB id, or a systemic IGDB failure. */
