@@ -3,15 +3,18 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { CatalogListCards } from "@/components/catalog/catalog-list-cards";
+import {
+  ListEmptyPanel,
+  ListErrorPanel,
+} from "@/components/catalog/list-panels";
 import { PaginationLinks } from "@/components/pagination-links";
 import { POSTER_GRID_EAGER, PosterGrid } from "@/components/poster-grid";
-import { RetryLink } from "@/components/retry-link";
 import { PaginationSkeleton, PosterCardSkeleton } from "@/components/skeleton";
 import { StatePanel } from "@/components/state-panel";
 import { ButtonLink } from "@/components/ui/button";
 import { GRID_PAGE_SIZE } from "@/lib/catalog/grid-page";
 import { type CatalogList, listPageHref, listPath } from "@/lib/catalog/lists";
-import { CATALOG_PATHS, CATALOG_SOURCES } from "@/lib/catalog/media-type";
+import { CATALOG_PATHS } from "@/lib/catalog/media-type";
 import { parsePageParam } from "@/lib/catalog/pages";
 import { isCatalogError } from "@/lib/catalog-errors";
 import {
@@ -88,15 +91,9 @@ async function ListGrid({
     result = await readTaggedCatalogGridPage(list, page);
   } catch (error) {
     if (!isCatalogError(error)) throw error;
-    const source = CATALOG_SOURCES[list.mediaType];
     return (
       <div className="py-12">
-        <StatePanel
-          variant="error"
-          title={`Couldn't reach ${source}`}
-          description={`${source} didn't respond. Try again in a moment.`}
-          action={<RetryLink href={pageHref(page)} />}
-        />
+        <ListErrorPanel list={list} href={pageHref(page)} />
       </div>
     );
   }
@@ -104,11 +101,7 @@ async function ListGrid({
   if (page === 1 && result.paged.results.length === 0) {
     return (
       <div className="py-12">
-        <StatePanel
-          variant="empty"
-          title="This list is empty"
-          description={`${CATALOG_SOURCES[list.mediaType]} lists nothing here right now.`}
-        />
+        <ListEmptyPanel list={list} />
       </div>
     );
   }

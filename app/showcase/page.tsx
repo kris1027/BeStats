@@ -21,6 +21,10 @@ import {
   WIDE_CARD_CLASS,
 } from "@/components/catalog/landing/landing-skeletons";
 import { WideCardView } from "@/components/catalog/landing/wide-card";
+import {
+  ListEmptyPanel,
+  ListErrorPanel,
+} from "@/components/catalog/list-panels";
 import { GlassPill } from "@/components/glass-pill";
 import { IconKey } from "@/components/layout/icon-key";
 import { LibraryNavView } from "@/components/layout/library-nav";
@@ -41,7 +45,6 @@ import {
   PersonalScoreBadge,
   TmdbRatingBadge,
 } from "@/components/rating-badges";
-import { RetryLink } from "@/components/retry-link";
 import { PosterCardSkeleton, Skeleton } from "@/components/skeleton";
 import { StatePanel } from "@/components/state-panel";
 import {
@@ -578,19 +581,13 @@ export default function ShowcasePage() {
             <CarouselRowError list={catalogList("game", "popular")} />
           </ShowcaseLanding>
           <ShowcaseLanding title="A games list page that failed">
-            <StatePanel
-              variant="error"
-              title="Couldn't reach IGDB"
-              description="IGDB didn't respond. Try again in a moment."
-              action={<RetryLink href="/games/top-rated" />}
+            <ListErrorPanel
+              list={catalogList("game", "top-rated")}
+              href="/games/top-rated"
             />
           </ShowcaseLanding>
           <ShowcaseLanding title="An empty games list page">
-            <StatePanel
-              variant="empty"
-              title="This list is empty"
-              description="IGDB lists nothing here right now."
-            />
+            <ListEmptyPanel list={catalogList("game", "coming-soon")} />
           </ShowcaseLanding>
         </div>
       </Section>

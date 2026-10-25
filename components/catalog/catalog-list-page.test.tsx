@@ -440,7 +440,7 @@ describe("a games list page", () => {
     await renderGrid(COMING_SOON);
 
     expect(
-      screen.getByText("IGDB lists nothing here right now."),
+      screen.getByText("IGDB lists no upcoming games right now."),
     ).toBeInTheDocument();
   });
 
