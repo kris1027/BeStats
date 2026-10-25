@@ -23,7 +23,9 @@ export type IgdbField =
   | "first_release_date"
   | "rating"
   | "rating_count"
-  | "hypes";
+  | "hypes"
+  | "popularity_type"
+  | "value";
 
 declare const conditionBrand: unique symbol;
 

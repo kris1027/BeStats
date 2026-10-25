@@ -53,7 +53,7 @@ describe("igdbImageLoader", () => {
   // spec 0028, AC-6: art steps down its own ladder, never the cover one.
   it.each([
     [300, "t_screenshot_med"],
-    [569, "t_screenshot_med"],
+    [555, "t_screenshot_med"],
     [800, "t_screenshot_big"],
     [1200, "t_720p"],
     [1600, "t_1080p"],

@@ -14,6 +14,7 @@ import type {
   DiscoverPageSize,
   DiscoverSort,
   GameFilters,
+  PopularGamesKind,
   SearchGamesOptions,
 } from "./types";
 
@@ -70,6 +71,21 @@ export function assertGameId(id: unknown): GameId {
     );
   }
   return id as GameId;
+}
+
+/** A checked popularity list kind. */
+export type ValidPopularKind = Valid<PopularGamesKind>;
+
+/**
+ * `trending` or `popular`, or `IgdbValidationError` (spec 0028, AC-4). Typed
+ * callers cannot pass anything else; the check keeps an untyped one from
+ * reaching a cache key.
+ */
+export function assertPopularKind(kind: unknown): ValidPopularKind {
+  if (kind !== "trending" && kind !== "popular") {
+    throw new IgdbValidationError("kind", "kind must be trending or popular.");
+  }
+  return kind as ValidPopularKind;
 }
 
 /** 0 to 500 positive integers, deduped and sorted (AC-11). */

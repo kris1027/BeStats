@@ -45,14 +45,17 @@ export const IGDB_COVER_LADDER: readonly { size: string; width: number }[] = [
 export const IGDB_ART_SIZE = "t_1080p";
 
 /**
- * IGDB's 16:9 art sizes the loader may pick, narrowest first, with their
- * pixel widths (spec 0028, AC-6). Kept apart from the cover ladder, so an art
- * URL is never matched against cover rungs. `pnpm igdb:live` checks each
- * real width.
+ * IGDB's art sizes the loader may pick, narrowest first, with their pixel
+ * widths (spec 0028, AC-6). Kept apart from the cover ladder, so an art URL
+ * is never matched against cover rungs. The two screenshot sizes are fixed
+ * 16:9 crops (555 and 940 wide, measured live on 2026-10-25); `t_720p` and
+ * `t_1080p` keep the image's own shape at that height, so their width is the
+ * 16:9 width and a narrower image comes back narrower. `pnpm igdb:live`
+ * checks each.
  */
 export const IGDB_ART_LADDER: readonly { size: string; width: number }[] = [
-  { size: "t_screenshot_med", width: 569 },
-  { size: "t_screenshot_big", width: 889 },
+  { size: "t_screenshot_med", width: 555 },
+  { size: "t_screenshot_big", width: 940 },
   { size: "t_720p", width: 1280 },
   { size: IGDB_ART_SIZE, width: 1920 },
 ];
@@ -68,6 +71,17 @@ export const IGDB_VISIBLE_GAME_TYPES = {
   8: "remake",
   9: "remaster",
   10: "expanded_game",
+} as const;
+
+/**
+ * IGDB's own popularity types behind the two popularity lists, by id, with
+ * the name `pnpm igdb:live` checks against `popularity_types` (spec 0028,
+ * AC-2, AC-6). Both have IGDB as their source (121), confirmed live on
+ * 2026-10-25.
+ */
+export const IGDB_POPULARITY_TYPES = {
+  trending: { id: 1, name: "Visits" },
+  popular: { id: 3, name: "Playing" },
 } as const;
 
 /** The Erotic theme, hidden the way adult movies are (games.md). */

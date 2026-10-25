@@ -59,6 +59,12 @@ export type GameSummary = {
   hidden: boolean;
 };
 
+/**
+ * The two popularity lists (spec 0028, AC-2): `trending` is what IGDB
+ * members look at most, `popular` what the most of them are playing.
+ */
+export type PopularGamesKind = "trending" | "popular";
+
 /** `found` is in no promised order; look games up by id. */
 export type BatchResult<T> = { found: T[]; missingIds: number[] };
 

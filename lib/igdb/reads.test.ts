@@ -23,6 +23,7 @@ const inner = {
   fetchDiscoverGames: vi.fn(),
   fetchGameGenres: vi.fn(),
   fetchGamePlatforms: vi.fn(),
+  fetchPopularGames: vi.fn(),
 };
 
 vi.mock("next/cache", () => ({
@@ -40,6 +41,9 @@ vi.mock("./search", () => ({
 vi.mock("./discover", () => ({
   fetchDiscoverGames: (options: unknown) => inner.fetchDiscoverGames(options),
 }));
+vi.mock("./popularity", () => ({
+  fetchPopularGames: (kind: unknown) => inner.fetchPopularGames(kind),
+}));
 vi.mock("./reference", () => ({
   fetchGameGenres: () => inner.fetchGameGenres(),
   fetchGamePlatforms: () => inner.fetchGamePlatforms(),
@@ -51,6 +55,7 @@ const {
   getGameGenres,
   getGamePlatforms,
   getGamesByIds,
+  getPopularGames,
   searchGames,
 } = await import("./reads");
 
@@ -73,6 +78,13 @@ const READS = [
     () => discoverGames({ sort: "rating_desc" }),
     inner.fetchDiscoverGames,
     "minutes",
+  ],
+  // spec 0028, AC-4: both requests settle as one hours entry.
+  [
+    "getPopularGames",
+    () => getPopularGames("trending"),
+    inner.fetchPopularGames,
+    "hours",
   ],
   ["getGameGenres", () => getGameGenres(), inner.fetchGameGenres, "max"],
   [
@@ -124,6 +136,15 @@ describe("validation, outside any cached scope", () => {
     ["getGamesByIds", () => getGamesByIds([1, -2])],
     ["searchGames", () => searchGames({ query: "  " })],
     ["discoverGames", () => discoverGames({ sort: "rating_desc", page: 51 })],
+    [
+      "discoverGames with a page size of 30",
+      () =>
+        discoverGames({
+          sort: "rating_desc",
+          pageSize: 30 as unknown as 24,
+        }),
+    ],
+    ["getPopularGames", () => getPopularGames("hot" as unknown as "trending")],
   ])("%s throws IgdbValidationError and caches nothing", async (_n, call) => {
     await expect(call()).rejects.toBeInstanceOf(IgdbValidationError);
     expect(cacheLife).not.toHaveBeenCalled();

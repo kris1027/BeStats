@@ -90,3 +90,11 @@ export const gameSummarySchema = baseGameSchema.extend({
 
 export type GameDetailRecord = z.infer<typeof gameDetailSchema>;
 export type GameSummaryRecord = z.infer<typeof gameSummarySchema>;
+
+/**
+ * One `popularity_primitives` row: only the game id is read, since the rows
+ * already come in rank order. A row without a positive id is dropped.
+ */
+export const popularityPrimitiveSchema = z.object({
+  game_id: z.number().int().positive(),
+});
