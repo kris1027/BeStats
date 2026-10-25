@@ -1,7 +1,7 @@
 # 0025. Game page (tracer)
 
 **Date**: 2026-10-23
-**Status**: In Progress
+**Status**: Accepted
 
 Scope feature: [G3. Game page (tracer)](../scope/games.md#g3-game-page-tracer) · Beta tier
 

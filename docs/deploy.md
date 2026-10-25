@@ -70,10 +70,11 @@ Set them in the Vercel project, under Settings, Environment Variables. `.env.exa
 | `TMDB_READ_ACCESS_TOKEN` | your TMDB read token (sensitive) | the same token |
 | `NEXT_PUBLIC_SITE_URL` | `https://bestats-sable.vercel.app`, no trailing slash | not set |
 | `NEXT_PUBLIC_AUTH_EMAIL_DELIVERY` | `off` | `off` |
+| `NEXT_PUBLIC_GAMES_LIBRARY` | not set (off) | `on` |
 
 Never add a Supabase service role key, a secret key or a database password to any environment, and never give the TMDB token a `NEXT_PUBLIC_` prefix.
 
-`NEXT_PUBLIC_` values are inlined at build time, so changing one (the email flag, for example) takes a redeploy, not just an edit. You can check the list with `vercel env ls`.
+`NEXT_PUBLIC_` values are inlined at build time, so changing one (the email flag, for example) takes a redeploy, not just an edit. `NEXT_PUBLIC_GAMES_LIBRARY` stays unset in Production until a games browse page or game search (G6 or G7) gives people a way to find games; with it off, `?type=game` on the library pages shows "That page doesn't exist" (spec 0027, AC-1). You can check the list with `vercel env ls`.
 
 **Previews** have no Supabase variables on purpose. They show the catalog, a signed out navbar, `Sign in isn't available on this deployment.` on `/sign-in` and `/sign-up`, and a `robots.txt` that disallows everything. Vercel's deployment protection stays on, so only you (signed in to Vercel) or someone holding the protection bypass token can open one. `vercel curl <path> --deployment <url>` opens a preview with the bypass for a quick check. No preview origin ever goes into the Supabase redirect list.
 

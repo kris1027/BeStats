@@ -27,8 +27,8 @@ _This is the second scope for BeStats. The movie and TV scope lives in [scope.md
 | G1 | IGDB integration module | Foundation | done |
 | G2 | Game data model and security policies | Foundation | done |
 | G3 | Game page (tracer) | Slice G1 | done |
-| G4 | Game status and rating | Slice G1 | in-progress |
-| G5 | Games tab and library pages | Slice G2 | planned |
+| G4 | Game status and rating | Slice G1 | done |
+| G5 | Games tab and library pages | Slice G2 | done |
 | G6 | Games home and list pages | Slice G3 | planned |
 | G7 | Game search and filters | Slice G4 | planned |
 | G8 | Game cards everywhere | Slice G4 | planned |
@@ -82,7 +82,7 @@ The thinnest real `/games/{id}`: hero only (cover, title, release date, platform
 - [x] Test it: `/test game page`
 spec [0025](../specs/0025-game-page/index.md) · code in [app/games/](../../app/games/)
 
-### G4. Game status and rating · in-progress · GA
+### G4. Game status and rating · done · GA
 The segmented control (Want to play · Playing · Finished) and the score on the game page, saved through Server Actions.
 **Done when:** a signed in user can set any status, remove the game by clicking the active option, and rate it 1 to 10 on Playing or Finished; every change survives reload and another session; the release gate disables Playing, Finished and rating before release, also in the Server Action; moving back to Want to play clears the score and Undo restores it; a signed out user is sent to sign in; failed writes never show false success.
 - [x] Design it (spec): `/architect game status and rating`
@@ -99,10 +99,21 @@ spec [0026](../specs/0026-game-status-rating/index.md) · code in [app/games/](.
 
 ## Slice G2: The games library
 
-### G5. Games tab and library pages · needs a decision · GA
+### G5. Games tab and library pages · done · GA
 GAMES joins the navbar tabs, and the three library pages show Want to play, Playing and Finished for games.
-**Done when:** `lib/catalog/media-type.ts` accepts `game` and `typedHref` writes it; the GAMES tab shows; `/watchlist`, `/upcoming` and `/watched` with `?type=game` show the right label, count, sort and pages, with empty states; each tab loads up to 500 games through batched IGDB reads and no page writes when it loads; unreleased games on Want to play show their release badge; an invalid `type` still shows the "That page doesn't exist" panel.
-- [ ] Design it (spec): `/architect games tab and library pages`
+**Done when:** `lib/catalog/media-type.ts` accepts `game` on the library pages only (`LibraryType`) and `typedHref` writes it; with `NEXT_PUBLIC_GAMES_LIBRARY` on, the GAMES tab shows on the three library pages; `/watchlist`, `/upcoming` and `/watched` with `?type=game` show the right label, count, sort and pages, with empty states; each tab reads one counted Postgres page and one IGDB batch for that page's games, and no page writes when it loads; unreleased games on Want to play show their release badge; an invalid `type` still shows the "That page doesn't exist" panel.
+- [x] Design it (spec): `/architect games tab and library pages`
+- [x] Build it: `/develop games tab and library pages`
+  - [x] Thin thread: the flag readers, `LibraryType`, `parseLibraryTypeParam`, `typedHref` overloads and a first Want to play page with real IGDB cards, AC-1, AC-2, AC-5, AC-6
+  - [x] Navbar: `libraryType` on `PageMediaType`, three tabs on library pages, `LibraryNav` carrying `game`, search and logo untouched by games, AC-3, AC-4
+  - [x] Tabs and cards: the three orders and paging, per tab badges, release pill, Started and Finished lines, hidden and missing cards, AC-6, AC-8 to AC-11
+  - [x] Removal and states: `GameLibraryGrid`, `showGameUndo`, focus, empty copy, the IGDB failure panel, AC-7, AC-12 to AC-14
+  - [x] Showcase and checks: `/showcase` states, 375px and 1280px, the Preview variable and `docs/deploy.md`, typecheck, lint, test, build, AC-15 to AC-18
+- [x] Verify it: `/check verify games tab and library pages`
+- [x] Test it: `/test games tab and library pages`
+- [x] Review it (fresh model): `/check review games tab and library pages`
+- [x] Document it: `/document games tab and library pages`
+spec [0027](../specs/0027-games-library-pages/index.md) · code in [components/library/](../../components/library/)
 
 ## Slice G3: Discovery
 
