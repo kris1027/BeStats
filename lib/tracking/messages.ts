@@ -191,13 +191,13 @@ export const UPCOMING_MESSAGES = {
 
 /**
  * What a list page's grid, empty state and notes say (spec 0020, AC-18).
- * `browse` is the empty state's button, absent where there is no catalog to
- * browse yet (the games tabs until G6, spec 0027, AC-14).
+ * `browse` is the empty state's button, leading to the type's landing
+ * (spec 0028, AC-17, for the games tabs).
  */
 type ListCopy = {
   grid: string;
   empty: { title: string; description: string };
-  browse?: string;
+  browse: string;
 };
 
 /**
@@ -233,6 +233,7 @@ export const LIBRARY_COPY: Record<
         title: "No games to play yet",
         description: "Games you mark Want to play show up here.",
       },
+      browse: "Browse games",
     },
     failed: "Couldn't load your watchlist",
   },
@@ -260,6 +261,7 @@ export const LIBRARY_COPY: Record<
         title: "Nothing in progress",
         description: "Games you mark Playing show up here.",
       },
+      browse: "Browse games",
     },
     failed: "Couldn't load your upcoming titles",
   },
@@ -286,6 +288,7 @@ export const LIBRARY_COPY: Record<
         title: "No finished games yet",
         description: "Games you mark Finished show up here.",
       },
+      browse: "Browse games",
     },
     failed: "Couldn't load your watched titles",
   },

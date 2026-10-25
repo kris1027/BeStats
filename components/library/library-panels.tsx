@@ -127,9 +127,9 @@ export function TabNotes({
 }
 
 /**
- * A tab with nothing on it. A show or movie tab offers its catalog; a games
- * tab is text only, because there is no games browse page until G6 (spec
- * 0027, AC-14).
+ * A tab with nothing on it, offering its catalog's landing: `/shows`,
+ * `/movies`, or `/games` for a games tab (spec 0027, AC-14, as amended by
+ * spec 0028, AC-17).
  */
 export function EmptyPanel({
   list,
@@ -146,11 +146,9 @@ export function EmptyPanel({
         title={copy.empty.title}
         description={copy.empty.description}
         action={
-          type !== "game" && copy.browse ? (
-            <ButtonLink size="touch" href={CATALOG_PATHS[type]}>
-              {copy.browse}
-            </ButtonLink>
-          ) : undefined
+          <ButtonLink size="touch" href={CATALOG_PATHS[type]}>
+            {copy.browse}
+          </ButtonLink>
         }
       />
     </div>

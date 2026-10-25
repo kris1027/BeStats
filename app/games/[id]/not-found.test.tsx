@@ -4,13 +4,13 @@ import { describe, expect, it } from "vitest";
 import GameNotFound from "./not-found";
 
 /**
- * covers: spec 0025, AC-7
+ * covers: spec 0025, AC-7, as amended by spec 0028, AC-17
  *
- * The soft 404 for an unknown or hidden game. Its one action goes home,
- * because `/games` does not exist until G6.
+ * The soft 404 for an unknown or hidden game. Its one action leads to the
+ * games landing.
  */
 describe("GameNotFound", () => {
-  it("says the game is missing and offers a way home", () => {
+  it("says the game is missing and offers Browse games", () => {
     render(<GameNotFound />);
 
     expect(screen.getByText("We couldn't find that game")).toBeInTheDocument();
@@ -19,9 +19,9 @@ describe("GameNotFound", () => {
         "IGDB has no game at this address. It may have been removed, or the link may be wrong.",
       ),
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Go to home" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Browse games" })).toHaveAttribute(
       "href",
-      "/",
+      "/games",
     );
   });
 

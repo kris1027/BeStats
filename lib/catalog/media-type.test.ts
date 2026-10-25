@@ -132,6 +132,15 @@ describe("libraryTypeForLocation", () => {
     expect(libraryTypeForLocation("/watchlist", "game", false)).toBe("tv");
   });
 
+  // spec 0028, AC-14, AC-16
+  it("is game on /games and below it while the flag is on, and no type when off", () => {
+    for (const path of ["/games", "/games/trending", "/games/1942"]) {
+      expect(libraryTypeForLocation(path, null, true)).toBe("game");
+      expect(libraryTypeForLocation(path, null, false)).toBeNull();
+    }
+    expect(libraryTypeForLocation("/gamesx", null, true)).toBeNull();
+  });
+
   it("matches mediaTypeForLocation for the catalogs", () => {
     expect(libraryTypeForLocation("/upcoming", "movie", true)).toBe("movie");
     expect(libraryTypeForLocation("/account", null, true)).toBeNull();
