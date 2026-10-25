@@ -24,6 +24,9 @@ vi.mock("@/lib/igdb", async () => ({
 vi.mock("@/lib/tmdb", async () => ({
   TmdbError: (await import("@/lib/tmdb/errors")).TmdbError,
 }));
+vi.mock("@/lib/tracking/episode-state", () => ({
+  requestTodayUtc: () => "2026-10-18",
+}));
 vi.mock("@/lib/catalog-list-read", async (importActual) => ({
   ...(await importActual<typeof import("@/lib/catalog-list-read")>()),
   readTaggedCatalogGridPage: (...args: unknown[]) => read(...args),

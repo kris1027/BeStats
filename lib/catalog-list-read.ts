@@ -33,7 +33,7 @@ import {
   type TvListKind,
   type TvShowSummary,
 } from "@/lib/tmdb";
-import { todayUtc } from "@/lib/tv/air-status";
+import { requestTodayUtc } from "@/lib/tracking/episode-state";
 
 const TV_KINDS: Record<Exclude<TvListSlug, "popular">, TvListKind> = {
   trending: "trending",
@@ -138,7 +138,9 @@ export async function readGameListPage(
 
 /**
  * `readGameListPage` at request time: `connection()` first, so `pnpm build`
- * asks IGDB nothing, then today's UTC day (spec 0028, AC-18).
+ * asks IGDB nothing, then today's UTC day (spec 0028, AC-18), read once per
+ * request through `requestTodayUtc`, so the windows and the Coming soon
+ * dates agree on the day.
  */
 async function readTaggedGamePage(
   list: GameCatalogList,
@@ -147,7 +149,7 @@ async function readTaggedGamePage(
   await connection();
   return {
     mediaType: "game",
-    paged: await readGameListPage(list, page, todayUtc(new Date())),
+    paged: await readGameListPage(list, page, requestTodayUtc()),
   };
 }
 
