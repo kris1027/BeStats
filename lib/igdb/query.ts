@@ -118,14 +118,17 @@ function asCondition(text: string): Condition {
  * The only way to write a `where` condition (AC-5). Every value goes through
  * `int`, `intList` or `finite`, and every field is an `IgdbField`, so a
  * condition holds nothing a caller typed. IGDB's meaning: `= (…)` matches any
- * of the ids, `!= (…)` none of them, and `= null` a missing value or an empty
- * list.
+ * of the ids, `= […]` all of them, `!= (…)` none of them, and `= null` a
+ * missing value or an empty list.
  */
 export const cond = {
   is: (field: IgdbField, value: number) =>
     asCondition(`${field} = ${int(value)}`),
   anyOf: (field: IgdbField, ids: readonly number[]) =>
     asCondition(`${field} = ${intList(ids)}`),
+  /** Every one of the ids, IGDB's `[…]` list (spec 0029, AC-7). */
+  allOf: (field: IgdbField, ids: readonly number[]) =>
+    asCondition(`${field} = [${intList(ids).slice(1, -1)}]`),
   noneOf: (field: IgdbField, ids: readonly number[]) =>
     asCondition(`${field} != ${intList(ids)}`),
   isNull: (field: IgdbField) => asCondition(`${field} = null`),

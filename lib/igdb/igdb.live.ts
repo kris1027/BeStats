@@ -260,24 +260,25 @@ describe.skipIf(!hasCredentials)("IGDB live check (real network)", () => {
     expect((await fetchGame(record.id)).hidden).toBe(false);
   });
 
-  it("matches any of a genre list", async () => {
-    const [shooter, puzzle] = [5, 9];
+  it("matches any of a platform list", async () => {
+    const [switch1, switch2] = [130, 508];
     const page = await fetchDiscoverGames({
-      genreIds: [shooter, puzzle],
+      platformIds: [switch1, switch2],
       sort: "rating_count_desc",
     });
     expect(page.results.length).toBeGreaterThan(0);
     for (const game of page.results) {
       expect(
-        game.genreIds.includes(shooter) || game.genreIds.includes(puzzle),
+        game.platformIds.includes(switch1) ||
+          game.platformIds.includes(switch2),
       ).toBe(true);
     }
-    const onlyShooter = await fetchDiscoverGames({
-      genreIds: [shooter],
+    const onlySwitch2 = await fetchDiscoverGames({
+      platformIds: [switch2],
       sort: "rating_count_desc",
     });
     expect(page.totalResults ?? 0).toBeGreaterThan(
-      onlyShooter.totalResults ?? 0,
+      onlySwitch2.totalResults ?? 0,
     );
   });
 
@@ -396,6 +397,57 @@ describe.skipIf(!hasCredentials)("IGDB live check (real network)", () => {
     });
     console.info(`recently released with hypes: ${page.totalResults}`);
     expect(page.results.length).toBeGreaterThanOrEqual(12);
+  });
+
+  // spec 0029, AC-7, AC-19: a `[]` genre list means all of its ids.
+  it("matches every genre of a two genre filter", async () => {
+    const page = await fetchDiscoverGames({
+      sort: "rating_count_desc",
+      genreIds: [5, 31],
+      pageSize: 24,
+    });
+    expect(page.results.length).toBeGreaterThan(0);
+    for (const game of page.results) {
+      expect(game.genreIds, game.name).toEqual(expect.arrayContaining([5, 31]));
+    }
+    const onlyShooter = await fetchDiscoverGames({
+      sort: "rating_count_desc",
+      genreIds: [5],
+    });
+    expect(page.totalResults ?? 0).toBeLessThan(onlyShooter.totalResults ?? 0);
+  });
+
+  // spec 0029, AC-5, AC-19: with the sort field not required, the unrated
+  // games follow every rated one and are counted.
+  it("puts unrated games after rated ones and counts them", async () => {
+    const options = {
+      sort: "rating_count_desc",
+      platformIds: [508],
+      pageSize: 24,
+    } as const;
+    const rated = await fetchDiscoverGames(options);
+    const all = await fetchDiscoverGames({
+      ...options,
+      requireSortField: false,
+    });
+    const ratedCount = rated.totalResults ?? 0;
+    console.info(
+      `Switch 2: ${ratedCount} rated of ${all.totalResults} games in total`,
+    );
+    expect(all.totalResults ?? 0).toBeGreaterThan(ratedCount);
+    expect(ratedCount).toBeLessThan(24 * 50);
+
+    // The page holding the last rated game and the first unrated one.
+    const page = Math.floor(ratedCount / 24) + 1;
+    const boundary = await fetchDiscoverGames({
+      ...options,
+      requireSortField: false,
+      page,
+    });
+    boundary.results.forEach((game, index) => {
+      const isRated = (page - 1) * 24 + index < ratedCount;
+      expect(game.communityRatingCount !== null, game.name).toBe(isRated);
+    });
   });
 
   it("reads the genre and platform lists", async () => {

@@ -72,11 +72,21 @@ describe("canonicalGameIds (AC-11)", () => {
 });
 
 describe("validateSearchOptions (AC-12b)", () => {
-  it("drops absent options and defaults the page to 1", () => {
+  it("drops absent options and defaults the page to 1 and the size to 20", () => {
     expect(validateSearchOptions({ query: "  witcher  " })).toEqual({
       query: "witcher",
       page: 1,
+      pageSize: 20,
     });
+  });
+
+  it("keeps a page size of 24 and the rating count floor (spec 0029, AC-19)", () => {
+    expect(
+      validateSearchOptions({ query: "a", pageSize: 24, minRatingCount: 10 }),
+    ).toMatchObject({ pageSize: 24, minRatingCount: 10 });
+    expect(validateSearchOptions({ query: "a", pageSize: 20 })).toEqual(
+      validateSearchOptions({ query: "a" }),
+    );
   });
 
   it("returns canonical filter ids and drops an empty list", () => {
@@ -86,7 +96,7 @@ describe("validateSearchOptions (AC-12b)", () => {
         genreIds: [31, 12, 31],
         platformIds: [],
       }),
-    ).toEqual({ query: "a", genreIds: [12, 31], page: 1 });
+    ).toEqual({ query: "a", genreIds: [12, 31], page: 1, pageSize: 20 });
   });
 
   it.each([
@@ -125,6 +135,12 @@ describe("validateSearchOptions (AC-12b)", () => {
       { query: "a", platformIds: Array.from({ length: 21 }, (_, i) => i + 1) },
       "platformIds",
     ],
+    ["a page size of 30", { query: "a", pageSize: 30 }, "pageSize"],
+    [
+      "a negative rating count",
+      { query: "a", minRatingCount: -1 },
+      "minRatingCount",
+    ],
   ])("refuses %s, naming the field", (_, options, field) => {
     expect(
       fieldOf(() =>
@@ -148,7 +164,17 @@ describe("validateDiscoverOptions (AC-12b, AC-13)", () => {
       sort: "hypes_desc",
       page: 1,
       pageSize: 20,
+      requireSortField: true,
     });
+  });
+
+  it("keeps requireSortField false and fills an absent one with true (spec 0029, AC-19)", () => {
+    expect(
+      validateDiscoverOptions({ sort: "hypes_desc", requireSortField: false }),
+    ).toMatchObject({ requireSortField: false });
+    expect(
+      validateDiscoverOptions({ sort: "hypes_desc", requireSortField: true }),
+    ).toEqual(validateDiscoverOptions({ sort: "hypes_desc" }));
   });
 
   it("keeps a page size of 24 and fills an absent one with 20 (spec 0028, AC-5)", () => {
@@ -211,6 +237,11 @@ describe("validateDiscoverOptions (AC-12b, AC-13)", () => {
     ],
     ["page 51", { sort: "rating_desc", page: 51 }, "page"],
     ["a page size of 30", { sort: "rating_desc", pageSize: 30 }, "pageSize"],
+    [
+      "a text requireSortField",
+      { sort: "rating_desc", requireSortField: "false" },
+      "requireSortField",
+    ],
     [
       "a minimum rating of 11",
       { sort: "rating_desc", minRating: 11 },

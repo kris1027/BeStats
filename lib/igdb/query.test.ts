@@ -93,6 +93,7 @@ describe("cond", () => {
   it("writes each condition from a field and checked numbers only", () => {
     expect(cond.is("id", 1942)).toBe("id = 1942");
     expect(cond.anyOf("genres", [5, 9])).toBe("genres = (5,9)");
+    expect(cond.allOf("genres", [5, 9])).toBe("genres = [5,9]");
     expect(cond.noneOf("themes", [42])).toBe("themes != (42)");
     expect(cond.isNull("game_type")).toBe("game_type = null");
     expect(cond.notNull("rating")).toBe("rating != null");
@@ -116,6 +117,8 @@ describe("cond", () => {
   it("refuses a value that is not a checked number", () => {
     expect(() => cond.is("id", 1.5)).toThrow(IgdbValidationError);
     expect(() => cond.anyOf("id", [])).toThrow(IgdbValidationError);
+    expect(() => cond.allOf("genres", [])).toThrow(IgdbValidationError);
+    expect(() => cond.allOf("genres", [1.5])).toThrow(IgdbValidationError);
     expect(() => cond.atLeast("rating", Number.NaN)).toThrow(
       IgdbValidationError,
     );

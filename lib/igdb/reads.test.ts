@@ -173,6 +173,7 @@ describe("validation, outside any cached scope", () => {
       query: "zelda",
       genreIds: [5, 9],
       page: 1,
+      pageSize: 20,
     });
   });
 });
