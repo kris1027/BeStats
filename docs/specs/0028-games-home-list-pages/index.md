@@ -190,7 +190,7 @@ Tracer Bullet: the first slice is one list, end to end, from IGDB to a live page
 - [ ] G8: give game cards on `/games`, the list pages and the hero row the status badge and controls, with one status read per grid.
 - [ ] G9: add the Trailer button to the games hero once the game page has trailers.
 - [ ] G10: drop `noindex`, add canonicals, share cards and the sitemap entries for `/games` and its list pages, and remove `NEXT_PUBLIC_GAMES_LIBRARY`.
-- [ ] Amend spec 0025 (AC-7 button) and spec 0027 (AC-4 logo, AC-14 Browse games) with a pointer to this spec.
+- [x] Amend spec 0025 (AC-7 button) and spec 0027 (AC-4 logo, AC-14 Browse games) with a pointer to this spec.
 - [ ] `lib/igdb/AGENTS.md`: record `getPopularGames`, the art ladder and the `hours` popularity lifetime when this ships (`/sync`).
 
 ## Rationale
