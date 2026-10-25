@@ -1,3 +1,4 @@
+import type { LibraryList } from "@/lib/catalog/library-list";
 import type { LibraryType, MediaType } from "@/lib/catalog/media-type";
 
 import type {
@@ -205,7 +206,7 @@ type ListCopy = {
  * show and movie empty state offers the one catalog its tab lists.
  */
 export const LIBRARY_COPY: Record<
-  "watchlist" | "upcoming" | "watched",
+  LibraryList,
   Record<LibraryType, ListCopy> & { failed: string }
 > = {
   watchlist: {

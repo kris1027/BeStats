@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import type { LibraryList } from "./library-list";
+
 /** The two catalogs: TV shows and movies. */
 export type MediaType = "tv" | "movie";
 
@@ -22,23 +24,25 @@ export const CATALOG_PATHS = {
 } as const satisfies Record<MediaType, string>;
 
 /**
- * The pages whose media type is their `type` parameter rather than their
- * path (feature 22). On each, the navbar tabs switch `type` in place instead
- * of leaving for `/shows` or `/movies`.
+ * The three library pages, one per `LibraryList`, and the only typed pages a
+ * game tab exists on (spec 0027, AC-2).
  */
-export const TYPED_PATHS = [
+const LIBRARY_PATHS = [
   "/watchlist",
   "/upcoming",
   "/watched",
-  "/search",
-] as const;
-
-export type TypedPath = (typeof TYPED_PATHS)[number];
-
-/** The three library pages, the only typed pages a game tab exists on. */
-const LIBRARY_PATHS = ["/watchlist", "/upcoming", "/watched"] as const;
+] as const satisfies readonly `/${LibraryList}`[];
 
 export type LibraryPath = (typeof LIBRARY_PATHS)[number];
+
+/**
+ * The pages whose media type is their `type` parameter rather than their
+ * path (feature 22): the library pages and `/search`. On each, the navbar
+ * tabs switch `type` in place instead of leaving for `/shows` or `/movies`.
+ */
+export const TYPED_PATHS = [...LIBRARY_PATHS, "/search"] as const;
+
+export type TypedPath = (typeof TYPED_PATHS)[number];
 
 /** The `/search` parameters a tab switch keeps; genres and page are dropped. */
 const SEARCH_KEPT = ["q", "year", "rating"] as const;
