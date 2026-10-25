@@ -6,7 +6,6 @@ import { startTransition, useOptimistic, useRef } from "react";
 import { removeGame } from "@/app/games/actions";
 import { POSTER_GRID_EAGER, PosterGrid } from "@/components/poster-grid";
 import {
-  gameTrackingToastId,
   settleResultCall,
   showGameTrackingError,
 } from "@/components/tracking/tracking-toast";
@@ -72,7 +71,8 @@ function GameLibraryGrid({
       if (!result.ok) {
         removalFailed(key);
         showGameTrackingError(result.error, {
-          id: gameTrackingToastId(item.gameId, "status"),
+          gameId: item.gameId,
+          control: "status",
           returnPath,
           navigate: router.push,
         });

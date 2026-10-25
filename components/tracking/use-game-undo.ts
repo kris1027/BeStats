@@ -8,7 +8,7 @@ import { GAME_UNDO_MESSAGES, UNDO_ACTION_LABEL } from "@/lib/tracking/messages";
 import type { GameUndo } from "@/lib/tracking/types";
 
 import {
-  gameTrackingToastId,
+  type GameToastTarget,
   runUndoInToast,
   showGameTrackingError,
   UNDO_TOAST_MS,
@@ -26,9 +26,6 @@ import {
  * so its Undo still works after the grid that showed it is gone.
  *
  * @param options.undo The action's `undo`; nothing shows when it is absent.
- * @param options.returnPath Where the session expired toast's Sign in comes
- * back to.
- * @param options.navigate The router push, for that Sign in action.
  * @param options.restoring Runs inside the Undo's transition, for an
  * optimistic update that shows the old state back at once.
  */
@@ -38,11 +35,8 @@ export function showGameUndo({
   returnPath,
   navigate,
   restoring,
-}: {
-  gameId: number;
+}: GameToastTarget & {
   undo: GameUndo | undefined;
-  returnPath: string;
-  navigate: (href: string) => void;
   restoring?: () => void;
 }): void {
   if (!undo) return;
@@ -68,7 +62,8 @@ export function showGameUndo({
           restoring,
           onError: (error) =>
             showGameTrackingError(error, {
-              id: gameTrackingToastId(gameId, "status"),
+              gameId,
+              control: "status",
               returnPath,
               navigate,
             }),
