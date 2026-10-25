@@ -28,12 +28,13 @@ import { canonicalGameIds, type ValidPopularKind } from "./validation";
 export async function fetchPopularGames(
   kind: ValidPopularKind,
 ): Promise<GameSummary[]> {
-  const type: PopularGamesKind = kind;
+  // The brand blocks indexing by a branded string; the plain kind does not.
+  const plainKind: PopularGamesKind = kind;
   const { data } = await igdbRequest(
     "popularity_primitives",
     buildQuery({
       fields: ["game_id", "value"],
-      where: [cond.is("popularity_type", IGDB_POPULARITY_TYPES[type].id)],
+      where: [cond.is("popularity_type", IGDB_POPULARITY_TYPES[plainKind].id)],
       sort: { field: "value", direction: "desc" },
       limit: IGDB_BATCH_LIMIT,
     }),
