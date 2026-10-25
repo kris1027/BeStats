@@ -41,3 +41,33 @@ export type LibraryMovieItem = {
 export function libraryItemKey(item: Pick<LibraryMovieItem, "tmdbId">) {
   return `movie-${item.tmdbId}`;
 }
+
+/**
+ * One game card on a games tab (spec 0027, API surface): a `user_game_state`
+ * row joined with its IGDB game, when IGDB has it.
+ */
+export type LibraryGameItem = {
+  /** The IGDB id. */
+  gameId: number;
+  /** Null when IGDB no longer has the game (`missingIds`, AC-11). */
+  name: string | null;
+  coverUrl: string | null;
+  /** IGDB's community rating out of 10; the badge with no personal score. */
+  communityRating: number | null;
+  /** The personal score; only a Playing or Finished card shows it. */
+  rating: number | null;
+  /**
+   * True when IGDB's catalog filter hides the game: its page is a soft 404
+   * (spec 0025, AC-7), so the card has no link (AC-10).
+   */
+  hidden: boolean;
+  /** Only Want to play cares; an unreleased `date: null` is Date TBA. */
+  release: { state: "released" } | { state: "unreleased"; date: ReleaseDate };
+  /** `Started Oct 2026` or `Finished Oct 2026`, already formatted. */
+  dateLine: string | null;
+};
+
+/** One key per game card, apart from the movie keys. */
+export function gameItemKey(item: Pick<LibraryGameItem, "gameId">) {
+  return `game-${item.gameId}`;
+}

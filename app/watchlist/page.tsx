@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
+import { LibraryErrorBoundary } from "@/components/library/library-error-boundary";
 import { LibraryHeading } from "@/components/library/library-heading";
 import {
   LibrarySection,
@@ -22,6 +23,7 @@ export const metadata: Metadata = {
  * the session, the `type` and `page` parameters or the user's rows streams in
  * behind the Suspense boundary, inside `LibrarySection`, which calls
  * `requireUser()` itself: the proxy's redirect is only the convenience layer.
+ * A section that throws shows `LibraryErrorBoundary`'s panel under the heading.
  *
  * `LibraryHeading` takes the focus when a removal empties the page (spec
  * 0008, AC-16). Nothing on this page writes when it loads (spec 0020, AC-21).
@@ -33,9 +35,11 @@ export default function WatchlistPage({
     <div className="flex flex-col gap-8">
       <LibraryHeading>Watchlist</LibraryHeading>
 
-      <Suspense fallback={<LibrarySkeleton />}>
-        <LibrarySection list="watchlist" searchParams={searchParams} />
-      </Suspense>
+      <LibraryErrorBoundary list="watchlist">
+        <Suspense fallback={<LibrarySkeleton />}>
+          <LibrarySection list="watchlist" searchParams={searchParams} />
+        </Suspense>
+      </LibraryErrorBoundary>
     </div>
   );
 }
