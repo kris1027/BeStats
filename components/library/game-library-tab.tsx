@@ -133,7 +133,7 @@ function gameItem(
       communityRating: null,
       rating: null,
       hidden: false,
-      release: { state: "released" },
+      unreleased: null,
       dateLine: null,
     };
   }
@@ -146,13 +146,10 @@ function gameItem(
     communityRating: game.communityRating,
     rating: card.scored ? row.rating : null,
     hidden: game.hidden,
-    release:
+    unreleased:
       card.releasePill && !isGameReleased(game.releaseDate, today)
-        ? {
-            state: "unreleased",
-            date: formatReleaseDate(game.releaseDate, today),
-          }
-        : { state: "released" },
+        ? { date: formatReleaseDate(game.releaseDate, today) }
+        : null,
     dateLine: card.dateLine(row),
   };
 }

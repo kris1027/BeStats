@@ -61,8 +61,13 @@ export type LibraryGameItem = {
    * (spec 0025, AC-7), so the card has no link (AC-10).
    */
   hidden: boolean;
-  /** Unreleased only on Want to play; an unreleased `date: null` is Date TBA. */
-  release: { state: "released" } | { state: "unreleased"; date: ReleaseDate };
+  /**
+   * The release pill of a Want to play game that is not out yet, where
+   * `date: null` is Date TBA. Null for no pill: a released game, a Playing or
+   * Finished card, or a game IGDB no longer has, of which nothing is known
+   * (AC-11).
+   */
+  unreleased: { date: ReleaseDate } | null;
   /** `Started Oct 2026` or `Finished Oct 2026`, already formatted. */
   dateLine: string | null;
 };

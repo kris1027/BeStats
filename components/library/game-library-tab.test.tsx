@@ -279,12 +279,11 @@ describe("the cards (AC-8 to AC-11)", () => {
     );
     await renderSection("watchlist", { type: "game" });
 
-    expect(received(1).release).toEqual({ state: "released" });
-    expect(received(2).release).toEqual({
-      state: "unreleased",
+    expect(received(1).unreleased).toBeNull();
+    expect(received(2).unreleased).toEqual({
       date: { shortDate: "Feb 3, 2027", fullDate: "Feb 3, 2027" },
     });
-    expect(received(3).release).toEqual({ state: "unreleased", date: null });
+    expect(received(3).unreleased).toEqual({ date: null });
     expect(received(1).dateLine).toBeNull();
   });
 
@@ -293,7 +292,7 @@ describe("the cards (AC-8 to AC-11)", () => {
     withGames(game(1, { releaseDate: "2026-10-24" }));
     await renderSection("watchlist", { type: "game" });
 
-    expect(received(1).release).toEqual({ state: "released" });
+    expect(received(1).unreleased).toBeNull();
   });
 
   it("gives an unreleased game no release pill off Want to play", async () => {
@@ -301,7 +300,7 @@ describe("the cards (AC-8 to AC-11)", () => {
     withGames(game(1, { releaseDate: null }));
     await renderSection("upcoming", { type: "game" });
 
-    expect(received(1).release).toEqual({ state: "released" });
+    expect(received(1).unreleased).toBeNull();
   });
 
   it("gives Playing a Started line and Finished a Finished line", async () => {
@@ -343,7 +342,7 @@ describe("the cards (AC-8 to AC-11)", () => {
       communityRating: null,
       rating: null,
       hidden: false,
-      release: { state: "released" },
+      unreleased: null,
       dateLine: null,
     });
     expect(received(2).hidden).toBe(true);

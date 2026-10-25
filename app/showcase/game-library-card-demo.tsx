@@ -18,7 +18,7 @@ export function GameLibraryCardDemo({ poster }: { poster: string }) {
     communityRating: 8.4,
     rating: null,
     hidden: false,
-    release: { state: "released" },
+    unreleased: null,
     dateLine: null,
   };
   const cards: { item: LibraryGameItem }[] = [
@@ -28,8 +28,7 @@ export function GameLibraryCardDemo({ poster }: { poster: string }) {
         ...base,
         name: "Want to play, coming soon",
         communityRating: null,
-        release: {
-          state: "unreleased",
+        unreleased: {
           date: { shortDate: "Feb 3, 2027", fullDate: "Feb 3, 2027" },
         },
       },
@@ -40,7 +39,7 @@ export function GameLibraryCardDemo({ poster }: { poster: string }) {
         name: "Want to play, Date TBA",
         coverUrl: null,
         communityRating: null,
-        release: { state: "unreleased", date: null },
+        unreleased: { date: null },
       },
     },
     {

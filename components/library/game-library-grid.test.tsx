@@ -53,7 +53,7 @@ function item(
     communityRating: 8.1,
     rating: null,
     hidden: false,
-    release: { state: "released" },
+    unreleased: null,
     dateLine: null,
     ...overrides,
   };
@@ -116,12 +116,11 @@ describe("GameLibraryCard through the grid", () => {
     render(
       grid([
         item(1, {
-          release: {
-            state: "unreleased",
+          unreleased: {
             date: { shortDate: "Feb 3, 2027", fullDate: "Feb 3, 2027" },
           },
         }),
-        item(2, { release: { state: "unreleased", date: null } }),
+        item(2, { unreleased: { date: null } }),
         item(3),
       ]),
     );

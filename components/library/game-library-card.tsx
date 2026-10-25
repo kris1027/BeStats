@@ -51,8 +51,6 @@ function GameLibraryCard({
     );
   }
 
-  const unreleased = item.release.state === "unreleased" ? item.release : null;
-
   return (
     <PosterCard
       title={item.name}
@@ -62,7 +60,9 @@ function GameLibraryCard({
       meta={item.dateLine ?? undefined}
       controls={
         <>
-          {unreleased ? <ReleasePill release={unreleased.date} /> : null}
+          {item.unreleased ? (
+            <ReleasePill release={item.unreleased.date} />
+          ) : null}
           <RemoveButton name={item.name} onRemove={onRemove} />
         </>
       }

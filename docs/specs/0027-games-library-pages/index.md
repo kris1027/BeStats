@@ -92,7 +92,7 @@ No index beyond the primary key (spec 0024, AC-12). One user's games fit a prima
 | `GameLibraryGrid` (`components/library/game-library-grid.tsx`, client) | client grid | `items: LibraryGameItem[]`, `list`, `page`, `returnPath`, `label` | the cards, removal, Undo toast | calls `removeGame` / `restoreRemovedGame` (spec 0026, session checked there) | the spec 0026 error toasts |
 | `GameLibraryCard` (`components/library/game-library-card.tsx`) | card on `PosterCard` | `LibraryGameItem`, `list`, `onRemove` | the card states of AC-8 to AC-11 | none | none |
 
-`GameLibraryRow` is `{ gameId, rating, addedAt, startedAt, finishedAt }`. `LibraryGameItem` (plain data, in `components/library/types.ts`) is `{ gameId, name: string | null, coverUrl, communityRating, rating, hidden, release: { state: "released" } | { state: "unreleased"; date: ReleaseDate }, dateLine: string | null }`, where `name: null` means missing and an unreleased `date: null` is Date TBA. `gameHref(id)` lives in `lib/catalog/media-type.ts` beside `titleHref`. `showGameUndo` lives in `components/tracking/use-game-undo.ts`.
+`GameLibraryRow` is `{ gameId, rating, addedAt, startedAt, finishedAt }`. `LibraryGameItem` (plain data, in `components/library/types.ts`) is `{ gameId, name: string | null, coverUrl, communityRating, rating, hidden, unreleased: { date: ReleaseDate } | null, dateLine: string | null }`, where `name: null` means missing, `unreleased` is set only on a Want to play game that is not out yet (null on a missing game, of which nothing is known), and its `date: null` is Date TBA. `gameHref(id)` lives in `lib/catalog/media-type.ts` beside `titleHref`. `showGameUndo` lives in `components/tracking/use-game-undo.ts`.
 
 **Value sourcing**:
 
