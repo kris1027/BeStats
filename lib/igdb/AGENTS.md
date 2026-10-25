@@ -7,10 +7,11 @@ scope feature G1. It mirrors `lib/tmdb/` in shape but shares no code with it.
 
 ## What lives where
 
-- `index.ts` is the only entry point a page may import. It exports the six
+- `index.ts` is the only entry point a page may import. It exports the seven
   cached reads (`getGame`, `getGamesByIds`, `searchGames`, `discoverGames`,
-  `getGameGenres`, `getGamePlatforms`), `isIgdbNotFound`, `IgdbError`,
-  `IgdbValidationError` and the types in the spec's design section.
+  `getPopularGames`, `getGameGenres`, `getGamePlatforms`), `isIgdbNotFound`,
+  `IgdbError`, `IgdbValidationError` and the types in the spec's design
+  section, plus `PopularGamesKind` (spec 0028).
   `surface.test.ts` fails on any other export, runtime or type.
 - `reads.ts` holds every `use cache` wrapper and is the only file that imports
   `next/cache`.
@@ -25,7 +26,12 @@ scope feature G1. It mirrors `lib/tmdb/` in shape but shares no code with it.
   holds the catalog rule; `limiter.ts`, `log.ts`, `constants.ts`,
   `schemas.ts`, `normalize.ts`, `types.ts`, `validation.ts`, `errors.ts`,
   `result.ts`, then the reads in `games.ts`, `batch.ts`, `search.ts`,
-  `discover.ts` (both paging through `summary-page.ts`) and `reference.ts`.
+  `discover.ts` (both paging through `summary-page.ts`), `popularity.ts`
+  (Trending and Popular: the `popularity_primitives` ranks, then the batch
+  read, spec 0028) and `reference.ts`.
+- Pure code outside this folder (`lib/catalog/game-lists.ts`,
+  `lib/catalog-list-read.ts`) may import `constants.ts` and `types.ts`
+  directly, since `index.ts` is server only; a page or component never does.
 - Pure files (no `server-only`, so tests and the live check read them):
   `catalog-filter.ts`, `constants.ts`, `errors.ts`, `query.ts`, `types.ts`,
   `validation.ts`. Every other file starts with `import "server-only";`.
@@ -45,8 +51,9 @@ scope feature G1. It mirrors `lib/tmdb/` in shape but shares no code with it.
 - **A failure crosses the cache boundary as a plain `IgdbResult`**, and the
   wrapper rebuilds the `IgdbError`, so `kind` and `isIgdbNotFound` survive.
   Never throw an `IgdbError` out of a cached scope.
-- **Lifetimes**: `hours` for `getGame` and `getGamesByIds`, `minutes` for
-  search and discover, `max` for the reference lists. A failure takes
+- **Lifetimes**: `hours` for `getGame`, `getGamesByIds` and
+  `getPopularGames`, `minutes` for search and discover, `max` for the
+  reference lists. A failure takes
   `failureProfile(kind)`: `seconds` for `timeout`, `rate_limited` and
   `upstream`, `minutes` for the rest.
 - **The token and the limiter live in process memory**, never in a cache entry,
@@ -70,14 +77,18 @@ scope feature G1. It mirrors `lib/tmdb/` in shape but shares no code with it.
   full precision, and always labelled as the community rating on a page.
 - **Every filter is in the query**, so every result meets it and IGDB's
   `X-Count` header is a truthful `totalResults` (null when absent). A page asks
-  for 21 and returns 20 to know `hasNextPage`.
+  for one more than its size and returns the size to know `hasNextPage`.
+  Discover accepts `pageSize` 20 (the default) or `IGDB_LIST_PAGE_SIZE` 24,
+  the games list pages' grid (spec 0028, AC-5); the size is in the cache key.
 - **The module never reads the clock for a filter.** Discover callers pass UTC
   days; only the year bound of a filter reads the current year.
 - **Covers are built at `t_cover_big_2x` (528px), the ceiling, not the size
   every image loads.** `lib/images/igdb-loader.ts` steps a `next/image` width
   down `IGDB_COVER_LADDER` in `constants.ts` and never past the URL's own size
-  (spec 0025, AC-12). It lives outside this folder because it runs in the
-  browser; `lib/images/loader.ts`, the `loaderFile`, sends it every IGDB URL.
+  (spec 0025, AC-12). A game's wide art (`artUrl`, built at `t_1080p`) steps
+  down `IGDB_ART_LADDER` the same way (spec 0028, AC-6). The loader lives
+  outside this folder because it runs in the browser; `lib/images/loader.ts`,
+  the `loaderFile`, sends it every IGDB URL.
 - Adding a field is a three place change: `schemas.ts`, `types.ts`,
   `normalize.ts`, plus the field list in `constants.ts`.
 

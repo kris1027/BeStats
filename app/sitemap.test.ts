@@ -157,6 +157,14 @@ describe("the sitemap on an indexable deployment", () => {
     }
   });
 
+  it("lists no games URL before G10 (spec 0028, AC-13)", async () => {
+    happyReads();
+
+    for (const url of urls(await sitemap())) {
+      expect(url.slice(ORIGIN.length)).not.toMatch(/^\/games(\/|$)/);
+    }
+  });
+
   it("keeps a complete list for days (AC-8)", async () => {
     happyReads();
 

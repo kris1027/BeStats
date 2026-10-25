@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { BrandLink, LAST_MEDIA_TYPE_KEY } from "@/components/layout/brand-link";
 
@@ -16,7 +16,7 @@ function brandHref() {
 }
 
 /**
- * covers: prompts/logo-follows-media-type.md, AC-1 to AC-4
+ * covers: prompts/logo-follows-media-type.md, AC-1 to AC-4; spec 0028, AC-16
  *
  * The logo follows the page's catalog, and on a page about neither catalog
  * the one last viewed, falling back to `/shows` whenever the memory is
@@ -75,6 +75,48 @@ describe("BrandLink", () => {
     pathname.value = "/privacy";
     render(<BrandLink />);
     expect(brandHref()).toBe("/shows");
+  });
+
+  // spec 0028, AC-16
+  describe("on games", () => {
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    it.each([
+      ["/games", ""],
+      ["/games/top-rated", ""],
+      ["/games/1942", ""],
+      ["/watched", "type=game"],
+    ])("links %s?%s to /games and remembers game", (path, query) => {
+      vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "on");
+      pathname.value = path;
+      search.value = query;
+      render(<BrandLink />);
+
+      expect(brandHref()).toBe("/games");
+      expect(window.localStorage.getItem(LAST_MEDIA_TYPE_KEY)).toBe("game");
+    });
+
+    it("sends a remembered game to /games only while the flag is on", () => {
+      window.localStorage.setItem(LAST_MEDIA_TYPE_KEY, "game");
+      pathname.value = "/account";
+
+      vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "on");
+      render(<BrandLink />).unmount();
+      expect(window.localStorage.getItem(LAST_MEDIA_TYPE_KEY)).toBe("game");
+      render(<BrandLink />);
+      expect(brandHref()).toBe("/games");
+    });
+
+    it("reads a stale remembered game as nothing with the flag off", () => {
+      window.localStorage.setItem(LAST_MEDIA_TYPE_KEY, "game");
+      vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "off");
+      pathname.value = "/account";
+      render(<BrandLink />);
+
+      expect(brandHref()).toBe("/shows");
+    });
   });
 
   it("survives storage that throws", () => {

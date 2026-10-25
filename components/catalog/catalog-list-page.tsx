@@ -3,9 +3,12 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { CatalogListCards } from "@/components/catalog/catalog-list-cards";
+import {
+  ListEmptyPanel,
+  ListErrorPanel,
+} from "@/components/catalog/list-panels";
 import { PaginationLinks } from "@/components/pagination-links";
 import { POSTER_GRID_EAGER, PosterGrid } from "@/components/poster-grid";
-import { RetryLink } from "@/components/retry-link";
 import { PaginationSkeleton, PosterCardSkeleton } from "@/components/skeleton";
 import { StatePanel } from "@/components/state-panel";
 import { ButtonLink } from "@/components/ui/button";
@@ -13,20 +16,27 @@ import { GRID_PAGE_SIZE } from "@/lib/catalog/grid-page";
 import { type CatalogList, listPageHref, listPath } from "@/lib/catalog/lists";
 import { CATALOG_PATHS } from "@/lib/catalog/media-type";
 import { parsePageParam } from "@/lib/catalog/pages";
+import { isCatalogError } from "@/lib/catalog-errors";
 import {
+  lastListPage,
+  listHasNextPage,
   readTaggedCatalogGridPage,
   type TaggedCatalogPage,
 } from "@/lib/catalog-list-read";
-import { TmdbError } from "@/lib/tmdb";
+import { requestTodayUtc } from "@/lib/tracking/episode-state";
 
-const LANDING_LABELS = { tv: "Shows", movie: "Movies" } as const;
+const LANDING_LABELS = {
+  tv: "Shows",
+  movie: "Movies",
+  game: "Games",
+} as const satisfies Record<CatalogList["mediaType"], string>;
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 /**
- * One list's See all page, `/shows/{slug}` or `/movies/{slug}` (spec 0021,
- * AC-9, AC-10): a back link to the landing, the list's h1 and note, then the
- * paged grid the landing used to be.
+ * One list's See all page, `/shows/{slug}`, `/movies/{slug}` or `/games/{slug}`
+ * (spec 0021, AC-9, AC-10; spec 0028, AC-9 to AC-11): a back link to the
+ * landing, the list's h1 and note, then the paged grid the landing used to be.
  *
  * The header is static and prerendered; the grid needs the `page` search
  * parameter, so it streams behind a skeleton of the same footprint. No
@@ -81,15 +91,10 @@ async function ListGrid({
   try {
     result = await readTaggedCatalogGridPage(list, page);
   } catch (error) {
-    if (!(error instanceof TmdbError)) throw error;
+    if (!isCatalogError(error)) throw error;
     return (
       <div className="py-12">
-        <StatePanel
-          variant="error"
-          title="Couldn't reach TMDB"
-          description="TMDB didn't respond. Try again in a moment."
-          action={<RetryLink href={pageHref(page)} />}
-        />
+        <ListErrorPanel list={list} href={pageHref(page)} />
       </div>
     );
   }
@@ -97,17 +102,16 @@ async function ListGrid({
   if (page === 1 && result.paged.results.length === 0) {
     return (
       <div className="py-12">
-        <StatePanel
-          variant="empty"
-          title="This list is empty"
-          description="TMDB lists nothing here right now."
-        />
+        <ListEmptyPanel list={list} />
       </div>
     );
   }
 
-  const lastPage = result.paged.totalPages;
-  if (page > lastPage) return <NoSuchPage list={list} />;
+  // A games list with no count knows its end only by an empty page.
+  const lastPage = lastListPage(result);
+  if (result.paged.results.length === 0) return <NoSuchPage list={list} />;
+  if (lastPage !== null && page > lastPage) return <NoSuchPage list={list} />;
+  const hasNextPage = listHasNextPage(result, page);
 
   return (
     <div className="flex flex-col gap-10">
@@ -116,10 +120,20 @@ async function ListGrid({
           result={result}
           returnPath={pageHref(page)}
           eagerCount={POSTER_GRID_EAGER.catalog}
+          releaseDay={
+            list.mediaType === "game" && list.datedCards
+              ? requestTodayUtc()
+              : undefined
+          }
         />
       </PosterGrid>
 
-      <PaginationLinks page={page} lastPage={lastPage} href={pageHref} />
+      <PaginationLinks
+        page={page}
+        lastPage={lastPage}
+        hasNextPage={hasNextPage}
+        href={pageHref}
+      />
     </div>
   );
 }

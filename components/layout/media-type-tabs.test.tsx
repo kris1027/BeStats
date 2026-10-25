@@ -177,18 +177,47 @@ describe("MediaTypeTabs", () => {
       },
     );
 
+    // spec 0028, AC-14: GAMES on every page, leading to /games.
     it.each(["/search", "/shows", "/movies/550"])(
-      "keeps %s to SHOWS and MOVIES",
+      "adds GAMES to /games on %s, unlit",
       (path) => {
         pathname.value = path;
-        search.value = "type=game";
+        search.value = "type=movie";
         render(<MediaTypeTabs />);
 
-        expect(
-          screen.queryByRole("link", { name: "GAMES" }),
-        ).not.toBeInTheDocument();
+        const games = screen.getByRole("link", { name: "GAMES" });
+        expect(games).toHaveAttribute("href", "/games");
+        expect(games).not.toHaveAttribute("aria-current");
       },
     );
+
+    it.each(["/games", "/games/top-rated", "/games/1942"])(
+      "lights GAMES on %s, with the catalogs one click away",
+      (path) => {
+        pathname.value = path;
+        search.value = "";
+        render(<MediaTypeTabs />);
+
+        expect(screen.getByRole("link", { name: "GAMES" })).toHaveAttribute(
+          "aria-current",
+          "page",
+        );
+        expect(screen.getByRole("link", { name: "SHOWS" })).toHaveAttribute(
+          "href",
+          "/shows",
+        );
+      },
+    );
+  });
+
+  it("shows no tabs on /games with the games library off", () => {
+    vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "off");
+    pathname.value = "/games";
+    search.value = "";
+    render(<MediaTypeTabs />);
+
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
+    vi.unstubAllEnvs();
   });
 
   it("never renders GAMES with the games library off", () => {
@@ -250,7 +279,7 @@ describe("MediaTypeTabs", () => {
       );
     });
 
-    it("keeps the fallback to two tabs on /search", async () => {
+    it("gives the /search fallback a GAMES link to /games (spec 0028, AC-14)", async () => {
       vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "on");
       suspendSearch.value = true;
       pathname.value = "/search";
@@ -258,7 +287,11 @@ describe("MediaTypeTabs", () => {
         render(<MediaTypeTabs />);
       });
 
-      expect(screen.getAllByRole("link")).toHaveLength(2);
+      expect(screen.getAllByRole("link")).toHaveLength(3);
+      expect(screen.getByRole("link", { name: "GAMES" })).toHaveAttribute(
+        "href",
+        "/games",
+      );
     });
   });
 });

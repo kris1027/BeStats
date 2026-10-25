@@ -94,6 +94,7 @@ function game(id: number, extra: Record<string, unknown> = {}) {
     id,
     name: `Game ${id}`,
     coverUrl: null,
+    artUrl: null,
     releaseDate: "2020-05-01",
     releaseYear: 2020,
     communityRating: 8.1,
@@ -221,13 +222,18 @@ describe("the reads and the panels (AC-6, AC-7, AC-14)", () => {
     ["watchlist", "No games to play yet"],
     ["upcoming", "Nothing in progress"],
     ["watched", "No finished games yet"],
-  ] as const)("shows the %s empty state as text only", async (list, title) => {
-    await renderSection(list, { type: "game" });
+  ] as const)(
+    "shows the %s empty state with Browse games (spec 0028, AC-17)",
+    async (list, title) => {
+      await renderSection(list, { type: "game" });
 
-    expect(screen.getByText(title)).toBeInTheDocument();
-    expect(screen.queryByRole("link")).not.toBeInTheDocument();
-    expect(getLibraryGames).not.toHaveBeenCalled();
-  });
+      expect(screen.getByText(title)).toBeInTheDocument();
+      expect(
+        screen.getByRole("link", { name: "Browse games" }),
+      ).toHaveAttribute("href", "/games");
+      expect(getLibraryGames).not.toHaveBeenCalled();
+    },
+  );
 
   it("shows the list's failed panel when Postgres fails", async () => {
     getGameLibraryPage.mockResolvedValue({ kind: "failed" });

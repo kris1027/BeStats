@@ -184,16 +184,52 @@ describe("Navbar", () => {
     expect(
       screen.queryByRole("button", { name: "Search" }),
     ).not.toBeInTheDocument();
+    // spec 0028, AC-16: the logo follows a games tab and remembers it.
     expect(screen.getByRole("link", { name: "BeStats" })).toHaveAttribute(
       "href",
-      "/shows",
+      "/games",
     );
-    expect(window.localStorage.getItem("bestats:last-media-type")).toBeNull();
+    expect(window.localStorage.getItem("bestats:last-media-type")).toBe("game");
 
     vi.unstubAllEnvs();
+    window.localStorage.removeItem("bestats:last-media-type");
     pathname.current = "/shows";
     search.current = "type=movie";
   });
+
+  // spec 0028, AC-14 to AC-16
+  it.each(["/games", "/games/coming-soon"])(
+    "lights GAMES on %s, with no search and the logo on /games",
+    (path) => {
+      vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "on");
+      pathname.current = path;
+      search.current = "";
+      render(
+        <Navbar
+          mobileAccountSlot={<ACCOUNT_SLOT />}
+          desktopAccountSlot={<ACCOUNT_SLOT />}
+        />,
+      );
+
+      expect(screen.getByRole("link", { name: "GAMES" })).toHaveAttribute(
+        "aria-current",
+        "page",
+      );
+      expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "Search" }),
+      ).not.toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "BeStats" })).toHaveAttribute(
+        "href",
+        "/games",
+      );
+
+      vi.unstubAllEnvs();
+      window.localStorage.removeItem("bestats:last-media-type");
+      pathname.current = "/shows";
+      search.current = "type=movie";
+    },
+  );
 
   it("takes the type from the type parameter on /search", () => {
     pathname.current = "/search";

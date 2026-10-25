@@ -129,4 +129,21 @@ describe("LibraryNav", () => {
     ]);
     vi.unstubAllEnvs();
   });
+
+  // covers: spec 0028, AC-14
+  it("carries type=game on /games while the games library is on", () => {
+    vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "on");
+    pathname = "/games/top-rated";
+    search = "";
+    render(<LibraryNav variant="sheet" />);
+
+    expect(
+      screen.getAllByRole("link").map((link) => link.getAttribute("href")),
+    ).toEqual([
+      "/watchlist?type=game",
+      "/upcoming?type=game",
+      "/watched?type=game",
+    ]);
+    vi.unstubAllEnvs();
+  });
 });

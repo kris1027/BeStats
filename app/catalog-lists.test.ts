@@ -2,10 +2,14 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { MOVIE_LIST_SLUGS, TV_LIST_SLUGS } from "@/lib/catalog/lists";
+import {
+  GAME_LIST_SLUGS,
+  MOVIE_LIST_SLUGS,
+  TV_LIST_SLUGS,
+} from "@/lib/catalog/lists";
 
 /**
- * covers: spec 0021, the registry invariant
+ * covers: spec 0021, the registry invariant; spec 0028, AC-9
  *
  * A slug is defined once, in `lib/catalog/lists.ts`, and each list has its
  * own static route folder. This keeps the two in step: a folder with no
@@ -22,6 +26,7 @@ function staticRouteFolders(dir: string): string[] {
 describe.each([
   ["app/shows", "tv", TV_LIST_SLUGS],
   ["app/movies", "movie", MOVIE_LIST_SLUGS],
+  ["app/games", "game", GAME_LIST_SLUGS],
 ] as const)("%s", (dir, mediaType, slugs) => {
   it("has one static folder per registry slug, and no other", () => {
     expect(staticRouteFolders(dir)).toEqual([...slugs].sort());
@@ -31,6 +36,9 @@ describe.each([
     const source = readFileSync(join(dir, slug, "page.tsx"), "utf8");
     expect(source).toContain(`catalogList("${mediaType}", "${slug}")`);
     expect(source).toContain("<CatalogListPage");
-    expect(source).toContain("catalogListMetadata(");
+    // spec 0028, AC-13: a games list is `noindex` and never reads `?page`.
+    expect(source).toContain(
+      mediaType === "game" ? "gameListMetadata(LIST)" : "catalogListMetadata(",
+    );
   });
 });

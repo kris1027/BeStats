@@ -3,7 +3,7 @@ import type * as React from "react";
 import { RetryLink } from "@/components/retry-link";
 import { PosterCardSkeleton } from "@/components/skeleton";
 import type { CatalogList } from "@/lib/catalog/lists";
-import { CATALOG_PATHS } from "@/lib/catalog/media-type";
+import { CATALOG_PATHS, CATALOG_SOURCES } from "@/lib/catalog/media-type";
 
 /** How many titles a row holds: the first 12 of TMDB's page 1 (AC-3). */
 const ROW_SIZE = 12;
@@ -14,14 +14,19 @@ const ROW_ITEM_CLASS = "w-[140px] shrink-0 snap-start md:w-[180px]";
 /** The `sizes` of a row card's poster, matching `ROW_ITEM_CLASS` (AC-5). */
 const ROW_POSTER_SIZES = "(min-width: 768px) 180px, 140px";
 
-/** A row whose TMDB read failed: only this row, with Try again (AC-11). */
+/**
+ * A row whose read failed: only this row, with Try again (AC-11). A games
+ * row names IGDB, its source (spec 0028, AC-11).
+ */
 function CarouselRowError({ list }: { list: CatalogList }) {
   return (
     <RowMessage>
       <p className="text-sm font-semibold text-foreground">
         Couldn't load {list.rowTitle}
       </p>
-      <p className="text-sm text-muted-foreground">TMDB didn't respond.</p>
+      <p className="text-sm text-muted-foreground">
+        {CATALOG_SOURCES[list.mediaType]} didn't respond.
+      </p>
       <RetryLink href={CATALOG_PATHS[list.mediaType]} className="mt-1" />
     </RowMessage>
   );

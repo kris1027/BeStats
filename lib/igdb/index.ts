@@ -26,6 +26,7 @@ export {
   getGameGenres,
   getGamePlatforms,
   getGamesByIds,
+  getPopularGames,
   searchGames,
 } from "./reads";
 export type {
@@ -37,5 +38,6 @@ export type {
   GameSummary,
   GameType,
   Paged,
+  PopularGamesKind,
   SearchGamesOptions,
 } from "./types";

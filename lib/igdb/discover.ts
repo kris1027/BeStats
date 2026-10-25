@@ -58,5 +58,6 @@ export async function fetchDiscoverGames(
     where,
     sort,
     page: valid.page,
+    pageSize: valid.pageSize,
   });
 }

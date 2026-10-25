@@ -3,6 +3,7 @@ import { cacheLife } from "next/cache";
 import { fetchGamesByIds } from "./batch";
 import { fetchDiscoverGames } from "./discover";
 import { fetchGame } from "./games";
+import { fetchPopularGames } from "./popularity";
 import { fetchGameGenres, fetchGamePlatforms } from "./reference";
 import { failureProfile, type IgdbResult, toFailure, unwrap } from "./result";
 import { fetchSearchGames } from "./search";
@@ -13,14 +14,17 @@ import type {
   GameRef,
   GameSummary,
   Paged,
+  PopularGamesKind,
   SearchGamesOptions,
 } from "./types";
 import {
   assertGameId,
+  assertPopularKind,
   type CanonicalGameIds,
   canonicalGameIds,
   type GameId,
   type ValidDiscoverOptions,
+  type ValidPopularKind,
   type ValidSearchOptions,
   validateDiscoverOptions,
   validateSearchOptions,
@@ -38,8 +42,9 @@ import {
  * function that returns an `IgdbResult` and unwraps it on this side of the
  * boundary, which keeps `IgdbError` and its `kind` intact.
  *
- * Lifetimes follow how fast each answer changes: `hours` for a game and a
- * batch, so a new release date unlocks Playing within hours; `minutes` for
+ * Lifetimes follow how fast each answer changes: `hours` for a game, a
+ * batch and a popularity list, so a new release date unlocks Playing within
+ * hours and the heaviest read in the app runs a few times a day; `minutes` for
  * search and discover; `max` for the genre and platform lists. A failure takes
  * `failureProfile(kind)`.
  *
@@ -157,6 +162,28 @@ export async function discoverGames(
   options: DiscoverGamesOptions,
 ): Promise<Paged<GameSummary>> {
   return unwrap(await discoverGamesCached(validateDiscoverOptions(options)));
+}
+
+/** One entry per kind: the primitives and their batch, settled together. */
+async function getPopularGamesCached(
+  kind: ValidPopularKind,
+): Promise<IgdbResult<GameSummary[]>> {
+  "use cache";
+  return settle(() => fetchPopularGames(kind), "hours");
+}
+
+/**
+ * A popularity list, Trending (`Visits`) or Popular (`Playing`), as the
+ * visible games in IGDB's rank order, cached for `hours` (spec 0028, AC-4).
+ * A list page slices it, so the count is exact.
+ *
+ * @throws {IgdbValidationError} A kind that is neither, before any request.
+ * @throws {IgdbError} When either of its two requests fails.
+ */
+export async function getPopularGames(
+  kind: PopularGamesKind,
+): Promise<GameSummary[]> {
+  return unwrap(await getPopularGamesCached(assertPopularKind(kind)));
 }
 
 async function getGameGenresCached(): Promise<IgdbResult<GameRef[]>> {

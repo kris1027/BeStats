@@ -1,3 +1,5 @@
+import type { IGDB_DISCOVER_PAGE_SIZES } from "./constants";
+
 /**
  * The app's own game types, the only shapes that leave `index.ts` (spec 0023,
  * AC-15). camelCase, closed unions, and `null` wherever IGDB may know nothing:
@@ -44,6 +46,11 @@ export type GameSummary = {
   id: number;
   name: string;
   coverUrl: string | null;
+  /**
+   * Wide 16:9 art for the games hero and wide cards: an artwork, else a
+   * screenshot, else null (spec 0028, AC-6).
+   */
+  artUrl: string | null;
   releaseDate: string | null;
   releaseYear: number | null;
   communityRating: number | null;
@@ -53,6 +60,12 @@ export type GameSummary = {
   platformIds: number[];
   hidden: boolean;
 };
+
+/**
+ * The two popularity lists (spec 0028, AC-2): `trending` is what IGDB
+ * members look at most, `popular` what the most of them are playing.
+ */
+export type PopularGamesKind = "trending" | "popular";
 
 /** `found` is in no promised order; look games up by id. */
 export type BatchResult<T> = { found: T[]; missingIds: number[] };
@@ -99,4 +112,12 @@ export type DiscoverGamesOptions = GameFilters & {
   minHypes?: number;
   sort: DiscoverSort;
   page?: number;
+  /**
+   * Results per page, 20 or 24 (spec 0028, AC-5). 24 fills a games list
+   * page's grid; the default 20 keeps G7 and the search read unchanged.
+   */
+  pageSize?: DiscoverPageSize;
 };
+
+/** The page sizes discover serves (spec 0028, AC-5). */
+export type DiscoverPageSize = (typeof IGDB_DISCOVER_PAGE_SIZES)[number];

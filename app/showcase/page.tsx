@@ -20,6 +20,11 @@ import {
   UpcomingSkeleton,
   WIDE_CARD_CLASS,
 } from "@/components/catalog/landing/landing-skeletons";
+import { WideCardView } from "@/components/catalog/landing/wide-card";
+import {
+  ListEmptyPanel,
+  ListErrorPanel,
+} from "@/components/catalog/list-panels";
 import { GlassPill } from "@/components/glass-pill";
 import { IconKey } from "@/components/layout/icon-key";
 import { LibraryNavView } from "@/components/layout/library-nav";
@@ -31,7 +36,11 @@ import {
   LegalList,
   LegalSection,
 } from "@/components/legal/legal-document";
-import { DatedPill, DateTbaPill } from "@/components/library/dated-pill";
+import {
+  DatedPill,
+  DateTbaPill,
+  ReleasePill,
+} from "@/components/library/dated-pill";
 import { PosterCard } from "@/components/poster-card";
 import { PosterGrid } from "@/components/poster-grid";
 import {
@@ -519,6 +528,88 @@ export default function ShowcasePage() {
                 />
               </div>
             </div>
+          </ShowcaseLanding>
+        </div>
+      </Section>
+
+      <Section
+        title="Games landing and lists"
+        note="/games and its list pages (spec 0028): a game card shows its cover, name and the IGDB community rating, with no personal badge or controls until G8; on Coming soon it prints the release day. A wide card shows the game's IGDB art, else its cover cropped to fill, else the missing artwork tile. A failed games section names IGDB, and a list page has its own retry and empty panels."
+      >
+        <div className="flex flex-col gap-10">
+          <ShowcaseLanding title="Game cards">
+            <div className="flex flex-wrap items-start gap-4">
+              <div className="w-40 md:w-60">
+                <PosterCard
+                  title="A game with a cover"
+                  posterUrl={LIGHT_POSTER}
+                  href="/games/1942"
+                  badge={<IgdbRatingBadge value={8.7} />}
+                />
+              </div>
+              <div className="w-40 md:w-60">
+                <PosterCard
+                  title="On Coming soon"
+                  posterUrl={LIGHT_POSTER}
+                  href="/games/1942"
+                  badge={<IgdbRatingBadge value={8.7} />}
+                  controls={
+                    <ReleasePill
+                      release={{
+                        shortDate: "Nov 6",
+                        fullDate: "November 6, 2026",
+                      }}
+                    />
+                  }
+                />
+              </div>
+            </div>
+          </ShowcaseLanding>
+          <ShowcaseLanding title="Wide game cards">
+            <div className="flex flex-wrap items-start gap-4">
+              <WideCardView
+                item={{
+                  title: "With IGDB art",
+                  href: "/games/1942",
+                  backdropUrl: LIGHT_POSTER,
+                  posterUrl: null,
+                }}
+                label="Nov 6"
+                badge={<IgdbRatingBadge value={8.7} />}
+              />
+              <WideCardView
+                item={{
+                  title: "No art, cover cropped",
+                  href: "/games/1942",
+                  backdropUrl: null,
+                  posterUrl: LIGHT_POSTER,
+                }}
+                label="Jan 8, 2027"
+                badge={<IgdbRatingBadge value={null} />}
+              />
+              <WideCardView
+                item={{
+                  title: "No art and no cover",
+                  href: "/games/1942",
+                  backdropUrl: null,
+                  posterUrl: null,
+                }}
+                label="Feb 3"
+                badge={<IgdbRatingBadge value={7.2} />}
+              />
+            </div>
+          </ShowcaseLanding>
+          <ShowcaseLanding title="A failed games section">
+            <CarouselRowError list={catalogList("game", "popular")} />
+          </ShowcaseLanding>
+          <ShowcaseLanding title="A games list page that failed">
+            <ListErrorPanel
+              list={catalogList("game", "top-rated")}
+              href="/games/top-rated"
+            />
+          </ShowcaseLanding>
+          <ShowcaseLanding title="An empty games list page">
+            <ListEmptyPanel list={catalogList("game", "coming-soon")} />
           </ShowcaseLanding>
         </div>
       </Section>

@@ -46,6 +46,15 @@ const coverSchema = z
   .nullish()
   .catch(null);
 
+/**
+ * Artworks or screenshots, each `{ image_id }`. An entry of another shape is
+ * dropped, and an absent or odd list reads as none (spec 0028, AC-6).
+ */
+const imageListSchema = z
+  .array(z.object({ image_id: z.string().nullish() }).nullish().catch(null))
+  .nullish()
+  .catch(null);
+
 /** The fields every game record shares. `id` and `name` are required. */
 const baseGameSchema = z.object({
   id: z.number().int().positive(),
@@ -67,12 +76,25 @@ export const gameDetailSchema = baseGameSchema.extend({
   themes: looseArray,
 });
 
-/** Batch, search and discover: platforms, genres and themes as ids. */
+/**
+ * Batch, search and discover: platforms, genres and themes as ids, plus the
+ * art a wide card shows.
+ */
 export const gameSummarySchema = baseGameSchema.extend({
   platforms: looseArray,
   genres: looseArray,
   themes: looseArray,
+  artworks: imageListSchema,
+  screenshots: imageListSchema,
 });
 
 export type GameDetailRecord = z.infer<typeof gameDetailSchema>;
 export type GameSummaryRecord = z.infer<typeof gameSummarySchema>;
+
+/**
+ * One `popularity_primitives` row: only the game id is read, since the rows
+ * already come in rank order. A row without a positive id is dropped.
+ */
+export const popularityPrimitiveSchema = z.object({
+  game_id: z.number().int().positive(),
+});

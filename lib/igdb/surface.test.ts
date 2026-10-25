@@ -24,6 +24,7 @@ describe("lib/igdb/index.ts", () => {
         "getGameGenres",
         "getGamePlatforms",
         "getGamesByIds",
+        "getPopularGames",
         "isIgdbNotFound",
         "searchGames",
       ].sort(),
@@ -47,7 +48,7 @@ function exportedTypeNames(source: string): string[] {
 }
 
 describe("lib/igdb/index.ts types", () => {
-  it("exports exactly the types in spec 0023's design section", () => {
+  it("exports exactly the types in spec 0023's design section, plus spec 0028's", () => {
     const source = readFileSync(join("lib", "igdb", "index.ts"), "utf8");
     expect(exportedTypeNames(source)).toEqual(
       [
@@ -60,6 +61,7 @@ describe("lib/igdb/index.ts types", () => {
         "GameType",
         "IgdbErrorKind",
         "Paged",
+        "PopularGamesKind",
         "SearchGamesOptions",
       ].sort(),
     );

@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 /**
  * covers: prompts/landing-card-controls.md, decisions 1 and 2;
- * prompts/landing-review-fixes.md, decisions 3 and 7
+ * prompts/landing-review-fixes.md, decisions 3 and 7; spec 0028, AC-7, AC-8
  *
  * `LandingControls` picks the slot for the card's media type, hands it the
  * section's ids so it shares the badge's read, and sends a session expired
@@ -26,8 +26,17 @@ vi.mock("@/components/tracking/movie-tracking-slot", () => ({
 vi.mock("@/components/tracking/show-tracking-slot", () => ({
   ShowTrackingSlot: () => null,
 }));
+vi.mock("@/components/tracking/game-tracking-slot", () => ({
+  GameTrackingSlot: () => null,
+}));
 
-const { LandingControls, LandingTracking } = await import("./landing-badge");
+const { LandingBadge, LandingControls, LandingTracking } = await import(
+  "./landing-badge"
+);
+const { GameTrackingSlot } = await import(
+  "@/components/tracking/game-tracking-slot"
+);
+const { IgdbRatingBadge } = await import("@/components/rating-badges");
 const { MovieTrackingSlot } = await import(
   "@/components/tracking/movie-tracking-slot"
 );
@@ -46,12 +55,13 @@ const BASE = {
   href: "/movies/1",
   posterUrl: null,
   backdropUrl: null,
-  tmdbRating: 8,
+  rating: { source: "tmdb" as const, value: 8 },
   year: 2026,
   genreIds: [],
 };
 
-function slot(element: React.ReactElement) {
+function slot(element: React.ReactElement | null) {
+  if (element === null) throw new Error("expected an element");
   const { children } = element.props as { children: React.ReactElement };
   return children;
 }
@@ -95,6 +105,43 @@ describe("LandingControls", () => {
       name: "Dune",
       gridShowIds: [7],
       returnPath: "/shows",
+    });
+  });
+});
+
+// spec 0028, AC-7, AC-8: a game card has IGDB's rating, no session read
+// and no controls; the hero gets the game page's own status control.
+describe("a game", () => {
+  const GAME = {
+    ...BASE,
+    rating: { source: "igdb" as const, value: 8.4 },
+    mediaType: "game" as const,
+    id: 1942,
+    href: "/games/1942",
+    releaseDate: "2015-05-19",
+  };
+
+  it("badges with IGDB's community rating, outside any Suspense", () => {
+    const badge = LandingBadge({ item: GAME, ids: [1942] });
+    expect(badge.type).not.toBe(Symbol.for("react.suspense"));
+    const inner = (badge.type as (props: object) => React.ReactElement)(
+      badge.props as object,
+    );
+    expect(inner.type).toBe(IgdbRatingBadge);
+    expect(inner.props).toEqual({ value: 8.4 });
+  });
+
+  it("has no controls", () => {
+    expect(LandingControls({ item: GAME, ids: [1942] })).toBeNull();
+  });
+
+  it("gets the game status control in the hero", () => {
+    const child = slot(LandingTracking({ item: GAME }));
+    expect(child.type).toBe(GameTrackingSlot);
+    expect(child.props).toEqual({
+      gameId: 1942,
+      name: "Dune",
+      releaseDate: "2015-05-19",
     });
   });
 });

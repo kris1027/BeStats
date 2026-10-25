@@ -17,10 +17,18 @@ import type { CatalogList } from "@/lib/catalog/lists";
  */
 const read = vi.fn();
 
+vi.mock("@/lib/igdb", async () => ({
+  IgdbError: (await import("@/lib/igdb/errors")).IgdbError,
+  getGameGenres: async () => [],
+}));
 vi.mock("@/lib/tmdb", async () => ({
   TmdbError: (await import("@/lib/tmdb/errors")).TmdbError,
 }));
-vi.mock("@/lib/catalog-list-read", () => ({
+vi.mock("@/lib/tracking/episode-state", () => ({
+  requestTodayUtc: () => "2026-10-18",
+}));
+vi.mock("@/lib/catalog-list-read", async (importActual) => ({
+  ...(await importActual<typeof import("@/lib/catalog-list-read")>()),
   readTaggedCatalogGridPage: (...args: unknown[]) => read(...args),
 }));
 vi.mock("@/components/catalog/list-cards", () => ({
@@ -38,6 +46,18 @@ vi.mock("@/components/catalog/list-cards", () => ({
       {props.show.name}
     </span>
   ),
+  GameListCard: (props: {
+    game: { name: string };
+    priority: boolean;
+    releaseDay?: string;
+  }) => (
+    <span
+      data-priority={String(props.priority)}
+      data-release-day={props.releaseDay ?? "none"}
+    >
+      {props.game.name}
+    </span>
+  ),
   MovieListCard: (props: {
     movie: { title: string };
     priority: boolean;
@@ -50,6 +70,7 @@ vi.mock("@/components/catalog/list-cards", () => ({
 }));
 
 const { TmdbError } = await import("@/lib/tmdb/errors");
+const { IgdbError, IgdbValidationError } = await import("@/lib/igdb/errors");
 const { catalogList } = await import("@/lib/catalog/lists");
 const { CatalogListPage } = await import("./catalog-list-page");
 
@@ -346,5 +367,123 @@ describe("the list page states (AC-10)", () => {
     const grid = container.querySelector('[aria-hidden="true"]');
     expect(grid?.querySelectorAll("li")).toHaveLength(24);
     expect(screen.queryByRole("list")).not.toBeInTheDocument();
+  });
+});
+
+/** covers: spec 0028, AC-9 to AC-11 */
+describe("a games list page", () => {
+  const COMING_SOON = catalogList("game", "coming-soon");
+
+  function games(count: number) {
+    return Array.from({ length: count }, (_, index) => ({
+      id: index + 1,
+      name: `Game ${index + 1}`,
+    }));
+  }
+
+  function gamePage(
+    count: number,
+    totalResults: number | null,
+    hasNextPage = false,
+  ) {
+    return {
+      mediaType: "game",
+      paged: { page: 1, results: games(count), hasNextPage, totalResults },
+    };
+  }
+
+  it("links back to Games above its h1 and note", () => {
+    const header = pageTree(COMING_SOON).find(
+      (child) => child?.type === "header",
+    );
+    if (!header) throw new Error("the list page has no header");
+    render(header);
+
+    expect(screen.getByRole("link", { name: "Games" })).toHaveAttribute(
+      "href",
+      "/games",
+    );
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Games coming soon" }),
+    ).toBeInTheDocument();
+  });
+
+  it("counts pages from IGDB's count, 24 a page", async () => {
+    read.mockResolvedValue(gamePage(24, 50));
+    await renderGrid(COMING_SOON);
+
+    expect(screen.getAllByRole("listitem")).toHaveLength(24);
+    expect(screen.getByText("Page 1 of 3")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Next/ })).toHaveAttribute(
+      "href",
+      "/games/coming-soon?page=2",
+    );
+  });
+
+  it("dates Coming soon's cards with the request's day, and no other list's", async () => {
+    read.mockResolvedValue(gamePage(2, 2));
+    await renderGrid(COMING_SOON);
+    expect(screen.getByText("Game 1")).toHaveAttribute(
+      "data-release-day",
+      "2026-10-18",
+    );
+    document.body.innerHTML = "";
+
+    await renderGrid(catalogList("game", "top-rated"));
+    expect(screen.getByText("Game 1")).toHaveAttribute(
+      "data-release-day",
+      "none",
+    );
+  });
+
+  it("caps the count at IGDB's 50 pages", async () => {
+    read.mockResolvedValue(gamePage(24, 5000));
+    await renderGrid(COMING_SOON);
+
+    expect(screen.getByText("Page 1 of 50")).toBeInTheDocument();
+  });
+
+  it("says only Page N with no count, and offers Next while IGDB has more", async () => {
+    read.mockResolvedValue(gamePage(24, null, true));
+    await renderGrid(COMING_SOON);
+
+    expect(screen.getByText("Page 1")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Next/ })).toBeInTheDocument();
+  });
+
+  it("shows no such page past the last page", async () => {
+    read.mockResolvedValue(gamePage(0, 30));
+    await renderGrid(COMING_SOON, { page: "3" });
+
+    expect(
+      screen.getByText("There are no upcoming games at this page number."),
+    ).toBeInTheDocument();
+  });
+
+  it("shows the empty panel for an empty page 1", async () => {
+    read.mockResolvedValue(gamePage(0, 0));
+    await renderGrid(COMING_SOON);
+
+    expect(
+      screen.getByText("IGDB lists no upcoming games right now."),
+    ).toBeInTheDocument();
+  });
+
+  it("answers an IGDB failure with its retry panel", async () => {
+    read.mockRejectedValue(new IgdbError("timeout", "games", "slow"));
+    await renderGrid(COMING_SOON, { page: "2" });
+
+    expect(screen.getByText("Couldn't reach IGDB")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Try again/ })).toHaveAttribute(
+      "href",
+      "/games/coming-soon?page=2",
+    );
+  });
+
+  it("rethrows a validation error, which is a bug", async () => {
+    read.mockRejectedValue(new IgdbValidationError("page", "bad"));
+    await expect(renderGrid(COMING_SOON)).rejects.toBeInstanceOf(
+      IgdbValidationError,
+    );
   });
 });

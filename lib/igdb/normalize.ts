@@ -1,6 +1,7 @@
 import "server-only";
 import { isCatalogVisible } from "./catalog-filter";
 import {
+  IGDB_ART_SIZE,
   IGDB_COVER_SIZE,
   IGDB_IMAGE_BASE,
   IGDB_VISIBLE_GAME_TYPES,
@@ -27,6 +28,36 @@ import type { Game, GameRef, GameSummary, GameType } from "./types";
 export function coverUrl(imageId: string | null | undefined): string | null {
   const id = imageId?.trim();
   return id ? `${IGDB_IMAGE_BASE}/${IGDB_COVER_SIZE}/${id}.jpg` : null;
+}
+
+/** Artworks or screenshots as `schemas.ts` leaves them. */
+type ImageList =
+  | readonly ({ image_id?: string | null } | null | undefined)[]
+  | null
+  | undefined;
+
+/**
+ * The wide art of a game (spec 0028, AC-6): the artwork with the lowest
+ * `image_id`, else the screenshot with the lowest, built at `t_1080p`, the
+ * ceiling the loader steps down from. IGDB promises no array order, so the
+ * lowest id in string order is what keeps the pick the same on every read.
+ */
+export function artUrl(record: {
+  artworks?: ImageList;
+  screenshots?: ImageList;
+}): string | null {
+  const id =
+    lowestImageId(record.artworks) ?? lowestImageId(record.screenshots);
+  return id === null ? null : `${IGDB_IMAGE_BASE}/${IGDB_ART_SIZE}/${id}.jpg`;
+}
+
+function lowestImageId(images: ImageList): string | null {
+  let lowest: string | null = null;
+  for (const image of images ?? []) {
+    const id = image?.image_id?.trim();
+    if (id && (lowest === null || id < lowest)) lowest = id;
+  }
+  return lowest;
 }
 
 /**
@@ -141,6 +172,7 @@ export function normalizeSummary(record: GameSummaryRecord): GameSummary {
     id: record.id,
     name: record.name,
     coverUrl: coverUrl(record.cover?.image_id),
+    artUrl: artUrl(record),
     ...releaseDay(record.first_release_date),
     communityRating: communityRating(record.rating),
     communityRatingCount: positiveOrNull(record.rating_count),

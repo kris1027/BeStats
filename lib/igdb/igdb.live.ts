@@ -2,23 +2,31 @@ import { describe, expect, it } from "vitest";
 import { catalogWhereClause, isCatalogVisible } from "./catalog-filter";
 import { igdbRequest } from "./client";
 import {
+  IGDB_ART_LADDER,
   IGDB_COVER_LADDER,
   IGDB_EROTIC_THEME_ID,
   IGDB_IMAGE_BASE,
+  IGDB_POPULARITY_TYPES,
   IGDB_SUMMARY_FIELDS,
   IGDB_VISIBLE_GAME_TYPES,
 } from "./constants";
 import { fetchDiscoverGames as fetchValidDiscoverGames } from "./discover";
 import { getIgdbCredentials } from "./env";
 import { fetchGame as fetchValidGame } from "./games";
+import { fetchPopularGames as fetchValidPopularGames } from "./popularity";
 import { buildQuery, type Condition, cond } from "./query";
 import { fetchGameGenres, fetchGamePlatforms } from "./reference";
 import { recordsSchema } from "./schemas";
 import { fetchSearchGames as fetchValidSearchGames } from "./search";
 import { getIgdbToken } from "./token";
-import type { DiscoverGamesOptions, SearchGamesOptions } from "./types";
+import type {
+  DiscoverGamesOptions,
+  PopularGamesKind,
+  SearchGamesOptions,
+} from "./types";
 import {
   assertGameId,
+  assertPopularKind,
   validateDiscoverOptions,
   validateSearchOptions,
 } from "./validation";
@@ -31,6 +39,10 @@ const fetchSearchGames = async (options: SearchGamesOptions) =>
 /** The inner read, given the input `reads.ts` would check first. */
 const fetchDiscoverGames = async (options: DiscoverGamesOptions) =>
   fetchValidDiscoverGames(validateDiscoverOptions(options));
+
+/** The inner read, given the input `reads.ts` would check first. */
+const fetchPopularGames = async (kind: PopularGamesKind) =>
+  fetchValidPopularGames(assertPopularKind(kind));
 
 /**
  * LIVE CHECK. This file talks to the real Twitch and IGDB APIs.
@@ -318,6 +330,74 @@ describe.skipIf(!hasCredentials)("IGDB live check (real network)", () => {
     }
   });
 
+  // spec 0028, AC-6: the art ladder's widths are IGDB's real ones.
+  it("serves every art ladder rung at its stated width", async () => {
+    const [game] = (
+      await fetchDiscoverGames({ sort: "rating_count_desc", pageSize: 24 })
+    ).results.filter((result) => result.artUrl !== null);
+    expect(game, "a well known game with art").toBeDefined();
+    const file = (game.artUrl as string).split("/").at(-1);
+    for (const { size, width } of IGDB_ART_LADDER) {
+      const response = await fetch(`${IGDB_IMAGE_BASE}/${size}/${file}`);
+      expect(response.status, size).toBe(200);
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      const real = jpegSize(bytes);
+      if (size.startsWith("t_screenshot")) {
+        // A fixed 16:9 crop: always exactly this wide.
+        expect(real?.width, size).toBe(width);
+      } else {
+        // Fit to a height, 9/16 of the 16:9 width; never wider than that.
+        expect(real?.height, size).toBe((width * 9) / 16);
+        expect(real?.width ?? Infinity, size).toBeLessThanOrEqual(width);
+      }
+    }
+  });
+
+  // spec 0028, AC-2, AC-6: the pinned popularity types are IGDB's own.
+  it("matches the pinned popularity type ids to their names and source", async () => {
+    const { data } = await igdbRequest(
+      "popularity_types",
+      buildQuery({ fields: ["name", "popularity_source"], limit: 500 }),
+      recordsSchema,
+    );
+    const types = data as {
+      id: number;
+      name: string;
+      popularity_source: number;
+    }[];
+    for (const { id, name } of Object.values(IGDB_POPULARITY_TYPES)) {
+      const type = types.find((entry) => entry.id === id);
+      expect(type?.name).toBe(name);
+      expect(type?.popularity_source, `${name} comes from IGDB`).toBe(121);
+    }
+  });
+
+  it("reads both popularity lists as visible games in rank order", async () => {
+    for (const kind of ["trending", "popular"] as const) {
+      const games = await fetchPopularGames(kind);
+      expect(games.length, kind).toBeGreaterThan(24);
+      expect(games.every((game) => !game.hidden)).toBe(true);
+      expect(new Set(games.map((game) => game.id)).size).toBe(games.length);
+      console.info(`${kind}: ${games.length} visible games`);
+    }
+  });
+
+  // spec 0028, AC-2: Recently released keeps its hype floor only while the
+  // window holds at least 12 games; fewer means the spec switches the sort.
+  it("finds at least 12 hyped games released in the last 60 days", async () => {
+    const day = (offset: number) =>
+      new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10);
+    const page = await fetchDiscoverGames({
+      sort: "hypes_desc",
+      minHypes: 1,
+      releasedFrom: day(-59),
+      releasedTo: day(0),
+      pageSize: 24,
+    });
+    console.info(`recently released with hypes: ${page.totalResults}`);
+    expect(page.results.length).toBeGreaterThanOrEqual(12);
+  });
+
   it("reads the genre and platform lists", async () => {
     const genres = await fetchGameGenres();
     const platforms = await fetchGamePlatforms();
@@ -333,11 +413,16 @@ describe.skipIf(hasCredentials)("IGDB live check", () => {
   });
 });
 
-/**
- * A JPEG's pixel width, read from its first start of frame marker, or null.
- * Enough to confirm a cover size without an image library.
- */
+/** A JPEG's pixel width, or null. Enough to confirm a cover size. */
 function jpegWidth(bytes: Uint8Array): number | null {
+  return jpegSize(bytes)?.width ?? null;
+}
+
+/**
+ * A JPEG's pixel size, read from its first start of frame marker, or null,
+ * without an image library.
+ */
+function jpegSize(bytes: Uint8Array): { width: number; height: number } | null {
   let offset = 2;
   while (offset + 9 < bytes.length) {
     if (bytes[offset] !== 0xff) return null;
@@ -349,7 +434,12 @@ function jpegWidth(bytes: Uint8Array): number | null {
       marker !== 0xc4 &&
       marker !== 0xc8 &&
       marker !== 0xcc;
-    if (isFrame) return (bytes[offset + 7] << 8) | bytes[offset + 8];
+    if (isFrame) {
+      return {
+        height: (bytes[offset + 5] << 8) | bytes[offset + 6],
+        width: (bytes[offset + 7] << 8) | bytes[offset + 8],
+      };
+    }
     offset += 2 + length;
   }
   return null;

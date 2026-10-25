@@ -4,7 +4,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { isPrivatePath } from "@/lib/auth/private-paths";
 import { parseGameId, parseSeasonNumber, parseTmdbId } from "@/lib/catalog/ids";
 import { isCatalogListSlug } from "@/lib/catalog/lists";
-import type { MediaType } from "@/lib/catalog/media-type";
+import type { LibraryType } from "@/lib/catalog/media-type";
 import { getPublicEnv, publicEnvProblems } from "@/lib/env";
 import { sessionCookieOptions } from "@/lib/supabase/cookie-options";
 
@@ -167,15 +167,15 @@ function signInRedirect(request: NextRequest): NextResponse {
  * its page uses, one per captured segment. Deeper or other paths already
  * match no route, so they are not listed.
  *
- * `listMediaType` marks the two paths that also hold a catalog's list pages
- * (`/shows/top-rated`, spec 0021, AC-13): a segment naming one of that media
- * type's lists passes before the id parser judges it. Any other non numeric
- * segment is still a 404.
+ * `listMediaType` marks the three paths that also hold a catalog's list
+ * pages (`/shows/top-rated`, spec 0021, AC-13; `/games/coming-soon`, spec
+ * 0028, AC-12): a segment naming one of that media type's lists passes before
+ * the id parser judges it. Any other non numeric segment is still a 404.
  */
 const CATALOG_PATHS: {
   pattern: RegExp;
   parsers: ((segment: string) => number | null)[];
-  listMediaType?: MediaType;
+  listMediaType?: LibraryType;
 }[] = [
   {
     pattern: /^\/movies\/([^/]+)$/,
@@ -191,10 +191,11 @@ const CATALOG_PATHS: {
     pattern: /^\/shows\/([^/]+)\/season\/([^/]+)$/,
     parsers: [parseTmdbId, parseSeasonNumber],
   },
-  // spec 0025, AC-6. No list pages live under `/games/` yet, so no slug passes.
+  // spec 0025, AC-6; spec 0028, AC-12 for the list slugs.
   {
     pattern: /^\/games\/([^/]+)$/,
     parsers: [parseGameId],
+    listMediaType: "game",
   },
 ];
 

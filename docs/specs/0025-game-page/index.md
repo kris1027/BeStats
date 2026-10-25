@@ -2,6 +2,7 @@
 
 **Date**: 2026-10-23
 **Status**: Accepted
+**Amended**: 2026-10-25. The not found panel's button (AC-7) is now `Browse games`, linking to `/games`, not `Go to home` to `/`; see [spec 0028](../0028-games-home-list-pages/index.md), AC-17.
 
 Scope feature: [G3. Game page (tracer)](../scope/games.md#g3-game-page-tracer) · Beta tier
 

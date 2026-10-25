@@ -16,12 +16,26 @@ export type LibraryType = MediaType | "game";
 
 /**
  * Each catalog's browse page, which also types every title page below it
- * (feature 22). The one place these two paths are written as a pair.
+ * (feature 22). The one place these paths are written together. `/games`
+ * joined in spec 0028; the record is keyed by `LibraryType`, while
+ * `MediaType` stays `tv | movie`.
  */
 export const CATALOG_PATHS = {
   tv: "/shows",
   movie: "/movies",
-} as const satisfies Record<MediaType, string>;
+  game: "/games",
+} as const satisfies Record<LibraryType, string>;
+
+/**
+ * The catalog each media type's titles come from, named in every error and
+ * empty copy that blames it (spec 0028, AC-11). The one place a type is
+ * paired with its source, so a games state never says TMDB.
+ */
+export const CATALOG_SOURCES = {
+  tv: "TMDB",
+  movie: "TMDB",
+  game: "IGDB",
+} as const satisfies Record<LibraryType, string>;
 
 /**
  * The three library pages, one per `LibraryList`, and the only typed pages a
@@ -147,17 +161,29 @@ export function mediaTypeForLocation(
   return null;
 }
 
+/** True on `/games` and every path under it (spec 0028, AC-14). */
+export function isGamesPath(pathname: string | null): boolean {
+  if (pathname === null) return false;
+  return (
+    pathname === CATALOG_PATHS.game ||
+    pathname.startsWith(`${CATALOG_PATHS.game}/`)
+  );
+}
+
 /**
  * `mediaTypeForLocation` for the controls that may list games: the navbar
- * tabs and the Library links (spec 0027, AC-3, AC-4). It is `game` only on a
- * library page asking for it while the games library is on, and otherwise
- * exactly `mediaTypeForLocation`.
+ * tabs, the Library links and the logo (spec 0027, AC-3, AC-4; spec 0028,
+ * AC-14, AC-16). It is `game` on `/games` and its list and game pages, and on
+ * a library page asking for it, while the games library is on, and otherwise
+ * exactly `mediaTypeForLocation`. With the library off a games page has no
+ * type, like a page about neither catalog.
  */
 export function libraryTypeForLocation(
   pathname: string | null,
   typeParam: string | null,
   gamesEnabled: boolean,
 ): LibraryType | null {
+  if (isGamesPath(pathname)) return gamesEnabled ? "game" : null;
   if (
     isLibraryPath(pathname) &&
     parseLibraryTypeParam(typeParam, gamesEnabled) === "game"

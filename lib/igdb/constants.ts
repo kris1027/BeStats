@@ -38,6 +38,29 @@ export const IGDB_COVER_LADDER: readonly { size: string; width: number }[] = [
 ];
 
 /**
+ * The art size the module builds, artwork or screenshot alike: the ceiling
+ * the loader steps down from for the games hero and the wide cards (spec
+ * 0028, AC-6). 1920px, so the full width hero is sharp.
+ */
+export const IGDB_ART_SIZE = "t_1080p";
+
+/**
+ * IGDB's art sizes the loader may pick, narrowest first, with their pixel
+ * widths (spec 0028, AC-6). Kept apart from the cover ladder, so an art URL
+ * is never matched against cover rungs. The two screenshot sizes are fixed
+ * 16:9 crops (555 and 940 wide, measured live on 2026-10-25); `t_720p` and
+ * `t_1080p` keep the image's own shape at that height, so their width is the
+ * 16:9 width and a narrower image comes back narrower. `pnpm igdb:live`
+ * checks each.
+ */
+export const IGDB_ART_LADDER: readonly { size: string; width: number }[] = [
+  { size: "t_screenshot_med", width: 555 },
+  { size: "t_screenshot_big", width: 940 },
+  { size: "t_720p", width: 1280 },
+  { size: IGDB_ART_SIZE, width: 1920 },
+];
+
+/**
  * The game types the catalog shows, by IGDB id (games.md, settled filter).
  * Every other id (DLC 1, expansion 2, bundle 3, mod 5, episode 6, season 7,
  * port 11, fork 12, pack 13, update 14) is hidden and normalizes to `other`.
@@ -48,6 +71,17 @@ export const IGDB_VISIBLE_GAME_TYPES = {
   8: "remake",
   9: "remaster",
   10: "expanded_game",
+} as const;
+
+/**
+ * IGDB's own popularity types behind the two popularity lists, by id, with
+ * the name `pnpm igdb:live` checks against `popularity_types` (spec 0028,
+ * AC-2, AC-6). Both have IGDB as their source (121), confirmed live on
+ * 2026-10-25.
+ */
+export const IGDB_POPULARITY_TYPES = {
+  trending: { id: 1, name: "Visits" },
+  popular: { id: 3, name: "Playing" },
 } as const;
 
 /** The Erotic theme, hidden the way adult movies are (games.md). */
@@ -92,6 +126,18 @@ export const IGDB_BATCH_LIMIT = 500;
 /** Results per page of a search or discover read (AC-12). */
 export const IGDB_PAGE_SIZE = 20;
 
+/**
+ * Games on one games list page, and the page size every games list discover
+ * asks for: the grid fills every row at 24 (spec 0028, AC-5).
+ */
+export const IGDB_LIST_PAGE_SIZE = 24;
+
+/** The page sizes discover accepts: the default and the list page's. */
+export const IGDB_DISCOVER_PAGE_SIZES = [
+  IGDB_PAGE_SIZE,
+  IGDB_LIST_PAGE_SIZE,
+] as const;
+
 /** The last page a caller may ask for; a later one throws (AC-12b). */
 export const IGDB_MAX_PAGE = 50;
 
@@ -125,11 +171,14 @@ export const IGDB_GAME_FIELDS = [
 
 /**
  * The `fields` clause of a batch, search or discover read. Genres, platforms
- * and themes stay ids; their names come from the reference lists.
+ * and themes stay ids; their names come from the reference lists. Artworks
+ * and screenshots give a card its wide art (spec 0028, AC-6).
  */
 export const IGDB_SUMMARY_FIELDS = [
   "name",
   "cover.image_id",
+  "artworks.image_id",
+  "screenshots.image_id",
   "first_release_date",
   "rating",
   "rating_count",

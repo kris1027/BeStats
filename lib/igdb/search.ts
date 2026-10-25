@@ -1,4 +1,5 @@
 import "server-only";
+import { IGDB_PAGE_SIZE } from "./constants";
 import { cond } from "./query";
 import { readSummaryPage, sharedConditions } from "./summary-page";
 import type { GameSummary, Paged } from "./types";
@@ -35,5 +36,10 @@ export async function fetchSearchGames(
       ]),
     );
   }
-  return readSummaryPage({ search: valid.query, where, page: valid.page });
+  return readSummaryPage({
+    search: valid.query,
+    where,
+    page: valid.page,
+    pageSize: IGDB_PAGE_SIZE,
+  });
 }

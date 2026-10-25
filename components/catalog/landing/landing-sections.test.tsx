@@ -16,6 +16,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const read = vi.fn();
 
 vi.mock("next/server", () => ({ connection: async () => {} }));
+vi.mock("@/lib/igdb", async () => ({
+  IgdbError: (await import("@/lib/igdb/errors")).IgdbError,
+  getGameGenres: async () => [],
+}));
 vi.mock("@/lib/tmdb", async () => ({
   TmdbError: (await import("@/lib/tmdb/errors")).TmdbError,
 }));
@@ -49,6 +53,7 @@ vi.mock("./landing-badge", () => ({
 }));
 
 const { TmdbError } = await import("@/lib/tmdb/errors");
+const { IgdbError } = await import("@/lib/igdb/errors");
 const { landingSlots } = await import("@/lib/catalog/landing");
 const { TrendingItems } = await import("./trending-pin");
 const { PopularItems } = await import("./popular-grid");
@@ -483,5 +488,103 @@ describe("the sidebar count (decision 12)", () => {
     read.mockRejectedValue(new TmdbError("upstream", "/x", "503", 503));
 
     expect(await NowBlurb({ list: TV.now })).toBeNull();
+  });
+});
+
+/** covers: spec 0028, AC-3, AC-8, AC-9, AC-11 */
+describe("the games landing sections", () => {
+  const GAMES = landingSlots("game");
+
+  function games(count: number, extra: Record<string, unknown> = {}) {
+    return Array.from({ length: count }, (_, index) => ({
+      id: index + 1,
+      name: `Game ${index + 1}`,
+      coverUrl: `https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co${index + 1}.jpg`,
+      artUrl: `https://images.igdb.com/igdb/image/upload/t_1080p/ar${index + 1}.jpg`,
+      releaseDate: "2026-11-06",
+      releaseYear: 2026,
+      communityRating: 8.2,
+      communityRatingCount: 300,
+      genreIds: [],
+      platformIds: [],
+      hidden: false,
+      ...extra,
+    }));
+  }
+
+  function gamePage(results: unknown[]) {
+    return {
+      mediaType: "game",
+      paged: {
+        results,
+        page: 1,
+        hasNextPage: false,
+        totalResults: results.length,
+      },
+    };
+  }
+
+  it("draws each section's count from the 24 game page", async () => {
+    read.mockResolvedValue(gamePage(games(24)));
+
+    const { container } = render(await TopRatedItems({ list: GAMES.top }));
+
+    expect(titles(container)).toHaveLength(8);
+    expect(screen.getByRole("link", { name: "Game 1" })).toHaveAttribute(
+      "href",
+      "/games/1",
+    );
+  });
+
+  it("puts a game's art on its wide card and its UTC release day under it", async () => {
+    read.mockResolvedValue(
+      gamePage([
+        ...games(1),
+        ...games(1, { id: 2, name: "Later", releaseDate: "2027-01-08" }),
+      ]),
+    );
+
+    const { container } = render(await UpcomingItems({ list: GAMES.upcoming }));
+
+    expect(
+      decodeURIComponent(
+        container.querySelector("img")?.getAttribute("src") ?? "",
+      ),
+    ).toContain("t_1080p/ar1.jpg");
+    expect(screen.getByText("Nov 6")).toBeInTheDocument();
+    expect(screen.getByText("Jan 8, 2027")).toBeInTheDocument();
+  });
+
+  it("falls back to the cover on a wide card with no art", async () => {
+    read.mockResolvedValue(gamePage(games(1, { artUrl: null })));
+
+    const { container } = render(await UpcomingItems({ list: GAMES.upcoming }));
+
+    expect(container.querySelector("img")?.getAttribute("src")).toContain(
+      "co1.jpg",
+    );
+  });
+
+  it("counts the anticipated games in the sidebar line", async () => {
+    read.mockResolvedValue(gamePage(games(24)));
+
+    render((await NowBlurb({ list: GAMES.now })) as React.ReactElement);
+
+    expect(
+      screen.getByText("The 12 most anticipated games of the last 60 days."),
+    ).toBeInTheDocument();
+  });
+
+  it("names IGDB when a section's read fails, and offers Try again", async () => {
+    read.mockRejectedValue(new IgdbError("timeout", "games", "slow"));
+
+    render(await PopularItems({ list: GAMES.popular }));
+
+    expect(screen.getByText("Couldn't load Popular")).toBeInTheDocument();
+    expect(screen.getByText("IGDB didn't respond.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Try again/ })).toHaveAttribute(
+      "href",
+      "/games",
+    );
   });
 });

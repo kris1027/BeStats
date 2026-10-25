@@ -147,7 +147,17 @@ describe("validateDiscoverOptions (AC-12b, AC-13)", () => {
     expect(validateDiscoverOptions({ sort: "hypes_desc" })).toEqual({
       sort: "hypes_desc",
       page: 1,
+      pageSize: 20,
     });
+  });
+
+  it("keeps a page size of 24 and fills an absent one with 20 (spec 0028, AC-5)", () => {
+    expect(
+      validateDiscoverOptions({ sort: "hypes_desc", pageSize: 24 }),
+    ).toMatchObject({ pageSize: 24 });
+    expect(
+      validateDiscoverOptions({ sort: "hypes_desc", pageSize: 20 }),
+    ).toEqual(validateDiscoverOptions({ sort: "hypes_desc" }));
   });
 
   it("accepts a one day window, from equal to to", () => {
@@ -200,6 +210,7 @@ describe("validateDiscoverOptions (AC-12b, AC-13)", () => {
       "releasedFrom",
     ],
     ["page 51", { sort: "rating_desc", page: 51 }, "page"],
+    ["a page size of 30", { sort: "rating_desc", pageSize: 30 }, "pageSize"],
     [
       "a minimum rating of 11",
       { sort: "rating_desc", minRating: 11 },

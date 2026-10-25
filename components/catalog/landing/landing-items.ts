@@ -1,28 +1,37 @@
 import { connection } from "next/server";
 
 import type { CatalogList } from "@/lib/catalog/lists";
-import { type MediaType, titleHref } from "@/lib/catalog/media-type";
+import {
+  gameHref,
+  type LibraryType,
+  titleHref,
+} from "@/lib/catalog/media-type";
+import { isCatalogError } from "@/lib/catalog-errors";
 import {
   readTaggedCatalogList,
   type TaggedCatalogPage,
 } from "@/lib/catalog-list-read";
-import { TmdbError } from "@/lib/tmdb";
 
 /**
  * One title as every landing section draws it, whichever media type it is
  * (prompts/home-parallax-landing.md). The sections render posters, wide
  * cards and list rows from this alone, so none of them branches on the type
- * except to pick the status badge.
+ * except to pick the status badge. A game joins in spec 0028: its cover is
+ * the poster, its IGDB art the backdrop, and its rating is IGDB's.
  */
 export type LandingItem = {
-  mediaType: MediaType;
+  mediaType: LibraryType;
   id: number;
   title: string;
   href: string;
   posterUrl: string | null;
   backdropUrl: string | null;
-  tmdbRating: number | null;
-  /** A movie's release date, for the card's release gate; null for TV. */
+  /** The community rating, always shown as its own catalog's (AGENTS.md §9). */
+  rating: { source: "tmdb" | "igdb"; value: number | null };
+  /**
+   * A movie's or game's release date, for the card's release gate and the
+   * Coming soon date; null for TV.
+   */
   releaseDate: string | null;
   /** A show's first air year, the TV Upcoming card's label (decision 12). */
   year: number | null;
@@ -37,9 +46,12 @@ export type LandingItem = {
  * for the Upcoming rows, whose rows 3 and 4 come from page 2
  * (prompts/home-parallax-landing.md, decision 13, amended 2026-10-18).
  *
- * @returns The page, or null when TMDB failed: the section shows its own
- * Try again and the rest of the landing renders (decision 16). Anything other
- * than a `TmdbError` is a bug and is rethrown.
+ * A games list reads the same 24 game page its list page shows, so See all
+ * costs nothing more either (spec 0028, AC-3).
+ *
+ * @returns The page, or null when TMDB or IGDB failed: the section shows its
+ * own Try again and the rest of the landing renders (decision 16). Anything
+ * else, an `IgdbValidationError` included, is a bug and is rethrown.
  */
 export async function readLandingList(
   list: CatalogList,
@@ -49,15 +61,15 @@ export async function readLandingList(
   try {
     return await readTaggedCatalogList(list, page);
   } catch (error) {
-    if (!(error instanceof TmdbError)) throw error;
+    if (!isCatalogError(error)) throw error;
     return null;
   }
 }
 
 /**
  * The titles from `start` up to `end`, as `LandingItem`s. The one place a
- * TV result and a movie result are told apart, so every section draws both
- * catalogs from the same shape; the `href` comes from `titleHref`, the one
+ * TV, movie and game result are told apart, so every section draws all
+ * three from the same shape; the `href` comes from `titleHref`, the one
  * title URL builder (prompts/landing-review-fixes.md, decision 1).
  */
 export function landingItems(
@@ -73,10 +85,24 @@ export function landingItems(
       href: titleHref("tv", show.id),
       posterUrl: show.posterUrl,
       backdropUrl: show.backdropUrl,
-      tmdbRating: show.tmdbRating,
+      rating: { source: "tmdb", value: show.tmdbRating },
       releaseDate: null,
       year: show.firstAirYear,
       genreIds: show.genreIds,
+    }));
+  }
+  if (page.mediaType === "game") {
+    return page.paged.results.slice(start, end).map((game) => ({
+      mediaType: "game",
+      id: game.id,
+      title: game.name,
+      href: gameHref(game.id),
+      posterUrl: game.coverUrl,
+      backdropUrl: game.artUrl,
+      rating: { source: "igdb", value: game.communityRating },
+      releaseDate: game.releaseDate,
+      year: game.releaseYear,
+      genreIds: game.genreIds,
     }));
   }
   return page.paged.results.slice(start, end).map((movie) => ({
@@ -86,7 +112,7 @@ export function landingItems(
     href: titleHref("movie", movie.id),
     posterUrl: movie.posterUrl,
     backdropUrl: movie.backdropUrl,
-    tmdbRating: movie.tmdbRating,
+    rating: { source: "tmdb", value: movie.tmdbRating },
     releaseDate: movie.releaseDate,
     year: movie.releaseYear,
     genreIds: movie.genreIds,

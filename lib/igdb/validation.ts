@@ -1,16 +1,20 @@
 import {
   IGDB_BATCH_LIMIT,
+  IGDB_DISCOVER_PAGE_SIZES,
   IGDB_MAX_FILTER_IDS,
   IGDB_MAX_PAGE,
   IGDB_MIN_YEAR,
+  IGDB_PAGE_SIZE,
   IGDB_YEARS_AHEAD,
 } from "./constants";
 import { IgdbValidationError } from "./errors";
 import { cleanSearchText } from "./query";
 import type {
   DiscoverGamesOptions,
+  DiscoverPageSize,
   DiscoverSort,
   GameFilters,
+  PopularGamesKind,
   SearchGamesOptions,
 } from "./types";
 
@@ -69,6 +73,21 @@ export function assertGameId(id: unknown): GameId {
   return id as GameId;
 }
 
+/** A checked popularity list kind. */
+export type ValidPopularKind = Valid<PopularGamesKind>;
+
+/**
+ * `trending` or `popular`, or `IgdbValidationError` (spec 0028, AC-4). Typed
+ * callers cannot pass anything else; the check keeps an untyped one from
+ * reaching a cache key.
+ */
+export function assertPopularKind(kind: unknown): ValidPopularKind {
+  if (kind !== "trending" && kind !== "popular") {
+    throw new IgdbValidationError("kind", "kind must be trending or popular.");
+  }
+  return kind as ValidPopularKind;
+}
+
 /** 0 to 500 positive integers, deduped and sorted (AC-11). */
 export function canonicalGameIds(ids: readonly unknown[]): CanonicalGameIds {
   if (!Array.isArray(ids) || !ids.every(isPositiveInt)) {
@@ -114,6 +133,21 @@ function page(value: unknown): number {
     );
   }
   return value;
+}
+
+/**
+ * 20 or 24, filled with 20 when absent so both spellings share one cache
+ * entry (spec 0028, AC-5).
+ */
+function pageSize(value: unknown): DiscoverPageSize {
+  if (value === undefined) return IGDB_PAGE_SIZE;
+  if (!(IGDB_DISCOVER_PAGE_SIZES as readonly unknown[]).includes(value)) {
+    throw new IgdbValidationError(
+      "pageSize",
+      `pageSize must be one of ${IGDB_DISCOVER_PAGE_SIZES.join(", ")}.`,
+    );
+  }
+  return value as DiscoverPageSize;
 }
 
 function minRating(value: unknown): number | undefined {
@@ -220,12 +254,13 @@ export function validateSearchOptions(
 
 /** The validated discover options, canonical like the search options. */
 export type ValidDiscoverOptions = Valid<
-  DiscoverGamesOptions & { page: number }
+  DiscoverGamesOptions & { page: number; pageSize: DiscoverPageSize }
 >;
 
 /**
  * Checks and canonicalizes discover options, as `validateSearchOptions` does,
- * plus a known `sort` and a date window whose start is not after its end.
+ * plus a known `sort`, a date window whose start is not after its end, and a
+ * page size of 20 or 24, filled with 20.
  *
  * @throws {IgdbValidationError} Naming the first bad field.
  */
@@ -254,5 +289,6 @@ export function validateDiscoverOptions(
     minHypes: nonNegative("minHypes", options.minHypes),
     sort: options.sort,
     page: page(options.page),
+    pageSize: pageSize(options.pageSize),
   });
 }

@@ -264,13 +264,14 @@ describe("game copy (spec 0026, AC-2, AC-4, AC-5)", () => {
 
 /** covers: spec 0027, AC-9, AC-14 */
 describe("the games tabs' copy (spec 0027)", () => {
-  it("pins each empty games tab's text, with no browse button (AC-14)", () => {
+  it("pins each empty games tab's text and its Browse games button (AC-14; spec 0028, AC-17)", () => {
     expect(LIBRARY_COPY.watchlist.game).toEqual({
       grid: "Games you want to play",
       empty: {
         title: "No games to play yet",
         description: "Games you mark Want to play show up here.",
       },
+      browse: "Browse games",
     });
     expect(LIBRARY_COPY.upcoming.game).toEqual({
       grid: "Games you're playing",
@@ -278,6 +279,7 @@ describe("the games tabs' copy (spec 0027)", () => {
         title: "Nothing in progress",
         description: "Games you mark Playing show up here.",
       },
+      browse: "Browse games",
     });
     expect(LIBRARY_COPY.watched.game).toEqual({
       grid: "Games you finished",
@@ -285,6 +287,7 @@ describe("the games tabs' copy (spec 0027)", () => {
         title: "No finished games yet",
         description: "Games you mark Finished show up here.",
       },
+      browse: "Browse games",
     });
   });
 

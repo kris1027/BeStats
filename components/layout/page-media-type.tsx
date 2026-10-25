@@ -16,10 +16,11 @@ import { gamesLibraryEnabled } from "@/lib/env";
  * page's media type, null on a page about neither catalog, and on a typed
  * page its current query.
  *
- * `type` is the catalog, for the search and the logo; `libraryType` is what
- * the tabs and the Library links light, which on a games tab of a library
- * page is `game` while `type` is null (spec 0027, AC-4): there is no game
- * search until G7, and the logo never remembers `game`.
+ * `type` is the catalog, for the search; `libraryType` is what the tabs, the
+ * Library links and the logo follow, which on a games tab of a library page
+ * and on `/games` and below it is `game` while `type` is null (spec 0027,
+ * AC-4; spec 0028, AC-14 to AC-16): there is no game search until G7, so the
+ * search renders nothing there.
  */
 type PageMediaType =
   | {
@@ -68,8 +69,13 @@ function WithPageMediaType({
     );
   }
 
-  const type = mediaTypeForLocation(pathname, null);
-  return children({ pathname, type, libraryType: type, params: null });
+  // Only the pathname is read here, so `/games` keeps its prerendered shell.
+  return children({
+    pathname,
+    type: mediaTypeForLocation(pathname, null),
+    libraryType: libraryTypeForLocation(pathname, null, gamesLibraryEnabled()),
+    params: null,
+  });
 }
 
 /** A page that has a media type, as `WithTypedPage` hands it on. */

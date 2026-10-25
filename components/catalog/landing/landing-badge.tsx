@@ -1,7 +1,8 @@
 import type * as React from "react";
 import { Suspense } from "react";
 
-import { TmdbRatingBadge } from "@/components/rating-badges";
+import { IgdbRatingBadge, TmdbRatingBadge } from "@/components/rating-badges";
+import { GameTrackingSlot } from "@/components/tracking/game-tracking-slot";
 import {
   MovieCardBadge,
   MovieCardControls,
@@ -12,7 +13,7 @@ import {
   ShowCardControls,
 } from "@/components/tracking/show-card-slots";
 import { ShowTrackingSlot } from "@/components/tracking/show-tracking-slot";
-import { CATALOG_PATHS, type MediaType } from "@/lib/catalog/media-type";
+import { CATALOG_PATHS, type LibraryType } from "@/lib/catalog/media-type";
 
 import type { LandingItem } from "./landing-items";
 
@@ -22,17 +23,16 @@ type Ids = readonly number[];
  * Each media type's personal slots, the one place the landing branches on a
  * title's type to pick a component (prompts/landing-review-fixes.md,
  * decision 7). Every entry takes a `LandingItem`, so the cards and the hero
- * never name a show or movie slot themselves.
+ * never name a show, movie or game slot themselves. A game has no card badge
+ * or controls until G8, so those are null (spec 0028, AC-8).
  */
 const LANDING_SLOTS: Record<
-  MediaType,
+  LibraryType,
   {
-    badge: (item: LandingItem, ids: Ids) => React.ReactNode;
-    controls: (
-      item: LandingItem,
-      ids: Ids,
-      releasePill: boolean,
-    ) => React.ReactNode;
+    badge: ((item: LandingItem, ids: Ids) => React.ReactNode) | null;
+    controls:
+      | ((item: LandingItem, ids: Ids, releasePill: boolean) => React.ReactNode)
+      | null;
     tracking: (item: LandingItem) => React.ReactNode;
   }
 > = {
@@ -40,7 +40,7 @@ const LANDING_SLOTS: Record<
     badge: (item, ids) => (
       <ShowCardBadge
         showId={item.id}
-        tmdbRating={item.tmdbRating}
+        tmdbRating={item.rating.value}
         gridShowIds={ids}
       />
     ),
@@ -61,7 +61,7 @@ const LANDING_SLOTS: Record<
       <MovieCardBadge
         movieId={item.id}
         releaseDate={item.releaseDate}
-        tmdbRating={item.tmdbRating}
+        tmdbRating={item.rating.value}
         gridMovieIds={ids}
       />
     ),
@@ -83,21 +83,44 @@ const LANDING_SLOTS: Record<
       />
     ),
   },
+  game: {
+    badge: null,
+    controls: null,
+    tracking: (item) => (
+      <GameTrackingSlot
+        gameId={item.id}
+        name={item.title}
+        releaseDate={item.releaseDate}
+      />
+    ),
+  },
 };
+
+/**
+ * A title's community rating, labelled with the catalog it came from: TMDB's
+ * for a show or movie, IGDB's for a game (spec 0028; AGENTS.md section 9).
+ */
+function CommunityRatingBadge({ rating }: { rating: LandingItem["rating"] }) {
+  return rating.source === "igdb" ? (
+    <IgdbRatingBadge value={rating.value} />
+  ) : (
+    <TmdbRatingBadge value={rating.value} />
+  );
+}
 
 /**
  * A landing card's badge (prompts/home-parallax-landing.md, decision 5): the
  * TMDB rating at once, swapped for the personal state the title's library
  * page gives it once the session read arrives, as on every catalog card
  * (prompts/catalog-card-status.md). `ids` is the whole section, so its badges
- * share one read.
+ * share one read. A game shows only IGDB's rating, with no session read and
+ * no Suspense, until G8 gives game cards a status (spec 0028, AC-8).
  */
 function LandingBadge({ item, ids }: { item: LandingItem; ids: Ids }) {
-  return (
-    <Suspense fallback={<TmdbRatingBadge value={item.tmdbRating} />}>
-      {LANDING_SLOTS[item.mediaType].badge(item, ids)}
-    </Suspense>
-  );
+  const badge = LANDING_SLOTS[item.mediaType].badge;
+  const rating = <CommunityRatingBadge rating={item.rating} />;
+  if (badge === null) return rating;
+  return <Suspense fallback={rating}>{badge(item, ids)}</Suspense>;
 }
 
 /**
@@ -107,7 +130,8 @@ function LandingBadge({ item, ids }: { item: LandingItem; ids: Ids }) {
  * on the session, and the same `ids` as the badge, so both share one read.
  * A visitor gets nothing, as everywhere else. The return path is the landing
  * the card sits on. `releasePill` is false on a card that already prints a
- * movie's date (prompts/landing-review-fixes.md, decision 3).
+ * movie's date (prompts/landing-review-fixes.md, decision 3). A game card
+ * has no controls yet, so nothing at all (spec 0028, AC-8).
  */
 function LandingControls({
   item,
@@ -118,17 +142,18 @@ function LandingControls({
   ids: Ids;
   releasePill?: boolean;
 }) {
+  const controls = LANDING_SLOTS[item.mediaType].controls;
+  if (controls === null) return null;
   return (
-    <Suspense fallback={null}>
-      {LANDING_SLOTS[item.mediaType].controls(item, ids, releasePill)}
-    </Suspense>
+    <Suspense fallback={null}>{controls(item, ids, releasePill)}</Suspense>
   );
 }
 
 /**
  * The hero's tracking control (decision 4): the title page's own slot, which
  * handles a signed out visitor and the release gate, in a Suspense with no
- * fallback so the hero never waits on the session.
+ * fallback so the hero never waits on the session. A game gets the game
+ * page's status control, with its release gate (spec 0028, AC-7).
  */
 function LandingTracking({ item }: { item: LandingItem }) {
   return (
@@ -138,4 +163,4 @@ function LandingTracking({ item }: { item: LandingItem }) {
   );
 }
 
-export { LandingBadge, LandingControls, LandingTracking };
+export { CommunityRatingBadge, LandingBadge, LandingControls, LandingTracking };

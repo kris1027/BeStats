@@ -1,5 +1,5 @@
 import { type CatalogList, catalogList } from "./lists";
-import type { MediaType } from "./media-type";
+import type { LibraryType } from "./media-type";
 
 /**
  * Which list fills each part of a catalog landing, and the words only the
@@ -39,9 +39,29 @@ const MOVIE_SLOTS: LandingSlots = {
   top: catalogList("movie", "top-rated"),
 };
 
+/**
+ * The games landing (spec 0028, AC-1, AC-9): Recently released takes the
+ * sticky sidebar under its `New releases` label, and Coming soon the counter
+ * moving rows.
+ */
+const GAME_SLOTS: LandingSlots = {
+  trending: catalogList("game", "trending"),
+  popular: catalogList("game", "popular"),
+  now: catalogList("game", "recently-released"),
+  nowLabel: "New releases",
+  upcoming: catalogList("game", "coming-soon"),
+  top: catalogList("game", "top-rated"),
+};
+
+const SLOTS: Record<LibraryType, LandingSlots> = {
+  tv: TV_SLOTS,
+  movie: MOVIE_SLOTS,
+  game: GAME_SLOTS,
+};
+
 /** One media type's landing slots. */
-export function landingSlots(mediaType: MediaType): LandingSlots {
-  return mediaType === "tv" ? TV_SLOTS : MOVIE_SLOTS;
+export function landingSlots(mediaType: LibraryType): LandingSlots {
+  return SLOTS[mediaType];
 }
 
 /**
@@ -68,8 +88,13 @@ export const LANDING_COUNTS = {
  */
 export function nowBlurb(list: CatalogList, count: number): string | null {
   if (count === 0) return null;
-  if (list.mediaType === "tv") {
-    return `${count} ${count === 1 ? "show" : "shows"} airing today.`;
+  switch (list.mediaType) {
+    case "tv":
+      return `${count} ${count === 1 ? "show" : "shows"} airing today.`;
+    case "movie":
+      return `${count} ${count === 1 ? "film" : "films"} in cinemas this week.`;
+    case "game":
+      // spec 0028, AC-9: its own branch, never the movie line.
+      return `The ${count} most anticipated ${count === 1 ? "game" : "games"} of the last 60 days.`;
   }
-  return `${count} ${count === 1 ? "film" : "films"} in cinemas this week.`;
 }
