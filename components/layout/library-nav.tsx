@@ -3,9 +3,9 @@
 import { cn } from "cn";
 import Link from "next/link";
 
-import { type MediaType, typedHref } from "@/lib/catalog/media-type";
+import { type LibraryType, typedHref } from "@/lib/catalog/media-type";
 
-import { WithTypedPage } from "./page-media-type";
+import { WithLibraryTypedPage } from "./page-media-type";
 
 /**
  * The signed in library links: the pill in the desktop navbar and the list in
@@ -20,8 +20,10 @@ import { WithTypedPage } from "./page-media-type";
  * Upcoming sits between the two (spec 0014, AC-1).
  *
  * Each link carries the media type of the page being viewed, so the navbar
- * tab chosen on `/movies` is still lit on `/watchlist` (feature 22), read
- * through `WithTypedPage`; the fallback links to the default type. On a
+ * tab chosen on `/movies` is still lit on `/watchlist` (feature 22), and on a
+ * games tab they carry `type=game`, so moving between the three pages keeps
+ * you on games (spec 0027, AC-4). It is read through `WithLibraryTypedPage`;
+ * the fallback links to the default type. On a
  * page about neither catalog it renders nothing, like the media tabs and the
  * search (prompts/hide-tabs-without-type.md).
  *
@@ -41,15 +43,19 @@ type Variant = "bar" | "sheet";
 
 function LibraryNav({ variant }: { variant: Variant }) {
   return (
-    <WithTypedPage
+    <WithLibraryTypedPage
       fallback={(pathname) => (
         <LibraryNavView variant={variant} pathname={pathname} type="tv" />
       )}
     >
-      {({ pathname, type }) => (
-        <LibraryNavView variant={variant} pathname={pathname} type={type} />
+      {({ pathname, libraryType }) => (
+        <LibraryNavView
+          variant={variant}
+          pathname={pathname}
+          type={libraryType}
+        />
       )}
-    </WithTypedPage>
+    </WithLibraryTypedPage>
   );
 }
 
@@ -61,7 +67,7 @@ function LibraryNavView({
 }: {
   variant: Variant;
   pathname: string;
-  type: MediaType;
+  type: LibraryType;
 }) {
   return (
     <nav

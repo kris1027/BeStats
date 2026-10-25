@@ -1,14 +1,22 @@
-import { render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { act, render, screen } from "@testing-library/react";
+import { use } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { MediaTypeTabs } from "@/components/layout/media-type-tabs";
 
 const pathname = vi.hoisted(() => ({ value: "/shows" }));
 const search = vi.hoisted(() => ({ value: "" }));
+// While set, reading the query suspends forever, so the Suspense fallback the
+// prerendered shell would hold is what renders.
+const suspendSearch = vi.hoisted(() => ({ value: false }));
+const never = new Promise<never>(() => {});
 
 vi.mock("next/navigation", () => ({
   usePathname: () => pathname.value,
-  useSearchParams: () => new URLSearchParams(search.value),
+  useSearchParams: () => {
+    if (suspendSearch.value) use(never);
+    return new URLSearchParams(search.value);
+  },
 }));
 
 /**
@@ -135,4 +143,122 @@ describe("MediaTypeTabs", () => {
       ).not.toBeInTheDocument();
     },
   );
+
+  // covers: spec 0027, AC-3
+  describe("with the games library on", () => {
+    beforeEach(() => {
+      vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "on");
+    });
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    it.each(["/watchlist", "/upcoming", "/watched"])(
+      "adds GAMES on %s and lights it on a games tab",
+      (path) => {
+        pathname.value = path;
+        search.value = "type=game&page=2";
+        render(<MediaTypeTabs />);
+
+        expect(
+          screen.getAllByRole("link").map((link) => link.textContent),
+        ).toEqual(["SHOWS", "MOVIES", "GAMES"]);
+        expect(screen.getByRole("link", { name: "GAMES" })).toHaveAttribute(
+          "href",
+          `${path}?type=game`,
+        );
+        expect(screen.getByRole("link", { name: "GAMES" })).toHaveAttribute(
+          "aria-current",
+          "page",
+        );
+        expect(screen.getByRole("link", { name: "SHOWS" })).not.toHaveAttribute(
+          "aria-current",
+        );
+      },
+    );
+
+    it.each(["/search", "/shows", "/movies/550"])(
+      "keeps %s to SHOWS and MOVIES",
+      (path) => {
+        pathname.value = path;
+        search.value = "type=game";
+        render(<MediaTypeTabs />);
+
+        expect(
+          screen.queryByRole("link", { name: "GAMES" }),
+        ).not.toBeInTheDocument();
+      },
+    );
+  });
+
+  it("never renders GAMES with the games library off", () => {
+    vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "off");
+    pathname.value = "/watchlist";
+    search.value = "type=game";
+    render(<MediaTypeTabs />);
+
+    expect(
+      screen.queryByRole("link", { name: "GAMES" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "SHOWS" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    vi.unstubAllEnvs();
+  });
+
+  /** covers: spec 0027, AC-1, AC-3 */
+  describe("the games tab edges", () => {
+    afterEach(() => {
+      vi.unstubAllEnvs();
+      suspendSearch.value = false;
+    });
+
+    it("reads an invalid flag as off, still rendering the two tabs", () => {
+      vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "maybe");
+      pathname.value = "/watched";
+      search.value = "type=game";
+      render(<MediaTypeTabs />);
+
+      expect(
+        screen.queryByRole("link", { name: "GAMES" }),
+      ).not.toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "SHOWS" })).toHaveAttribute(
+        "aria-current",
+        "page",
+      );
+    });
+
+    it("renders all three tabs with none lit before ?type is known", async () => {
+      vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "on");
+      suspendSearch.value = true;
+      pathname.value = "/upcoming";
+      await act(async () => {
+        render(<MediaTypeTabs />);
+      });
+
+      const tabs = screen.getAllByRole("link");
+      expect(tabs.map((tab) => tab.textContent)).toEqual([
+        "SHOWS",
+        "MOVIES",
+        "GAMES",
+      ]);
+      for (const tab of tabs) expect(tab).not.toHaveAttribute("aria-current");
+      expect(screen.getByRole("link", { name: "GAMES" })).toHaveAttribute(
+        "href",
+        "/upcoming?type=game",
+      );
+    });
+
+    it("keeps the fallback to two tabs on /search", async () => {
+      vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "on");
+      suspendSearch.value = true;
+      pathname.value = "/search";
+      await act(async () => {
+        render(<MediaTypeTabs />);
+      });
+
+      expect(screen.getAllByRole("link")).toHaveLength(2);
+    });
+  });
 });

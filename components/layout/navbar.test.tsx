@@ -5,11 +5,12 @@ import { describe, expect, it, vi } from "vitest";
 import { Navbar } from "@/components/layout/navbar";
 
 const pathname = vi.hoisted(() => ({ current: "/shows" }));
+const search = vi.hoisted(() => ({ current: "type=movie" }));
 
 vi.mock("next/navigation", () => ({
   usePathname: () => pathname.current,
   useRouter: () => ({ push: vi.fn() }),
-  useSearchParams: () => new URLSearchParams("type=movie"),
+  useSearchParams: () => new URLSearchParams(search.current),
 }));
 
 /**
@@ -159,6 +160,40 @@ describe("Navbar", () => {
       pathname.current = "/shows";
     },
   );
+
+  // covers: spec 0027, AC-3, AC-4. A games tab has the GAMES tab lit, no
+  // search (there is no game search until G7), and a logo that never
+  // remembers `game`.
+  it("lights GAMES and shows no search on a games tab", () => {
+    vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "on");
+    window.localStorage.removeItem("bestats:last-media-type");
+    pathname.current = "/watched";
+    search.current = "type=game";
+    render(
+      <Navbar
+        mobileAccountSlot={<ACCOUNT_SLOT />}
+        desktopAccountSlot={<ACCOUNT_SLOT />}
+      />,
+    );
+
+    expect(screen.getByRole("link", { name: "GAMES" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Search" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "BeStats" })).toHaveAttribute(
+      "href",
+      "/shows",
+    );
+    expect(window.localStorage.getItem("bestats:last-media-type")).toBeNull();
+
+    vi.unstubAllEnvs();
+    pathname.current = "/shows";
+    search.current = "type=movie";
+  });
 
   it("takes the type from the type parameter on /search", () => {
     pathname.current = "/search";

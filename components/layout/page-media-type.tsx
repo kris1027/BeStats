@@ -3,24 +3,42 @@ import { type ReactNode, Suspense } from "react";
 
 import {
   isTypedPath,
+  type LibraryType,
+  libraryTypeForLocation,
   type MediaType,
   mediaTypeForLocation,
   type TypedPath,
 } from "@/lib/catalog/media-type";
+import { gamesLibraryEnabled } from "@/lib/env";
 
 /**
  * Where the visitor is, as the navbar's type aware controls need it: the
  * page's media type, null on a page about neither catalog, and on a typed
  * page its current query.
+ *
+ * `type` is the catalog, for the search and the logo; `libraryType` is what
+ * the tabs and the Library links light, which on a games tab of a library
+ * page is `game` while `type` is null (spec 0027, AC-4): there is no game
+ * search until G7, and the logo never remembers `game`.
  */
 type PageMediaType =
-  | { pathname: TypedPath; type: MediaType | null; params: URLSearchParams }
-  | { pathname: string; type: MediaType | null; params: null };
+  | {
+      pathname: TypedPath;
+      type: MediaType | null;
+      libraryType: LibraryType | null;
+      params: URLSearchParams;
+    }
+  | {
+      pathname: string;
+      type: MediaType | null;
+      libraryType: LibraryType | null;
+      params: null;
+    };
 
 /**
- * The media type of the page being viewed, for `BrandLink` and, through
- * `WithTypedPage`, `MediaTypeTabs`, `LibraryNav` and `NavbarSearch`
- * (feature 22). It holds the one rule they share: only on
+ * The media type of the page being viewed, for `BrandLink`, through
+ * `WithTypedPage` for `NavbarSearch`, and through `WithLibraryTypedPage` for
+ * `MediaTypeTabs` and `LibraryNav` (feature 22; spec 0027). It holds the one rule they share: only on
  * a typed page is `useSearchParams` read, and only inside its own Suspense
  * boundary, because reading it anywhere else would pull `/shows`, `/movies`
  * and the title pages out of their prerendered shells (`AGENTS.md`, Commands
@@ -50,11 +68,8 @@ function WithPageMediaType({
     );
   }
 
-  return children({
-    pathname,
-    type: mediaTypeForLocation(pathname, null),
-    params: null,
-  });
+  const type = mediaTypeForLocation(pathname, null);
+  return children({ pathname, type, libraryType: type, params: null });
 }
 
 /** A page that has a media type, as `WithTypedPage` hands it on. */
@@ -62,9 +77,9 @@ type TypedPageMediaType = PageMediaType & { type: MediaType };
 
 /**
  * `WithPageMediaType` for a control that exists only on a page with a type:
- * the tabs, the search and the Library links render nothing on a page about
- * neither catalog (prompts/hide-tabs-without-type.md). The logo keeps
- * `WithPageMediaType`, because it still renders there.
+ * the search renders nothing on a page about neither catalog
+ * (prompts/hide-tabs-without-type.md), nor on a games tab (spec 0027, AC-4).
+ * The logo keeps `WithPageMediaType`, because it still renders there.
  */
 function WithTypedPage({
   children,
@@ -82,7 +97,36 @@ function WithTypedPage({
   );
 }
 
-/** On a typed page the type is the page's own `type` parameter. */
+/** A page that has a library type, as `WithLibraryTypedPage` hands it on. */
+type LibraryTypedPageMediaType = PageMediaType & { libraryType: LibraryType };
+
+/**
+ * `WithTypedPage` for the tabs and the Library links, which also exist on a
+ * games tab and light `game` there (spec 0027, AC-3, AC-4). They render
+ * nothing on a page about neither catalog.
+ */
+function WithLibraryTypedPage({
+  children,
+  fallback,
+}: {
+  children: (page: LibraryTypedPageMediaType) => ReactNode;
+  fallback: (pathname: TypedPath) => ReactNode;
+}) {
+  return (
+    <WithPageMediaType fallback={fallback}>
+      {(page) =>
+        page.libraryType === null
+          ? null
+          : children({ ...page, libraryType: page.libraryType })
+      }
+    </WithPageMediaType>
+  );
+}
+
+/**
+ * On a typed page the type is the page's own `type` parameter. A games tab
+ * has a library type and no catalog type.
+ */
 function TypedPageMediaType({
   pathname,
   children,
@@ -91,11 +135,24 @@ function TypedPageMediaType({
   children: (page: PageMediaType) => ReactNode;
 }) {
   const params = useSearchParams();
+  const typeParam = params.get("type");
+  const libraryType = libraryTypeForLocation(
+    pathname,
+    typeParam,
+    gamesLibraryEnabled(),
+  );
   return children({
     pathname,
-    type: mediaTypeForLocation(pathname, params.get("type")),
+    type:
+      libraryType === "game" ? null : mediaTypeForLocation(pathname, typeParam),
+    libraryType,
     params,
   });
 }
 
-export { type PageMediaType, WithPageMediaType, WithTypedPage };
+export {
+  type PageMediaType,
+  WithLibraryTypedPage,
+  WithPageMediaType,
+  WithTypedPage,
+};
