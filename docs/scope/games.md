@@ -127,8 +127,8 @@ spec [0027](../specs/0027-games-library-pages/index.md) · code in [components/l
   - [x] The landing: widened `LandingItem` and slots, `/games` on `CatalogLanding`, the hero with `GameTrackingSlot`, AC-1, AC-3, AC-7, AC-8, AC-11, AC-18, AC-19
   - [x] Navigation: GAMES everywhere, search hidden on games pages, the logo memory, Browse games buttons, AC-14 to AC-17
   - [x] Proof: `/showcase`, 375px and 1280px, keyboard, reduced motion, all checks, AC-20, AC-21
-- [ ] Verify it: `/check verify games home and list pages`
-- [ ] Test it: `/test games home and list pages`
+- [x] Verify it: `/check verify games home and list pages`
+- [x] Test it: `/test games home and list pages`
 spec [0028](../specs/0028-games-home-list-pages/index.md) · code in `app/games/`, `components/catalog/landing/`, `lib/catalog/`, `lib/igdb/`
 
 ## Slice G4: Search and cards
