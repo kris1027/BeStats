@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { startTransition, useEffect, useOptimistic, useRef } from "react";
+import { startTransition, useOptimistic, useRef } from "react";
 
 import { removeGame } from "@/app/games/actions";
 import { POSTER_GRID_EAGER, PosterGrid } from "@/components/poster-grid";
@@ -13,11 +13,8 @@ import {
 import { showGameUndo } from "@/components/tracking/use-game-undo";
 
 import { GameLibraryCard } from "./game-library-card";
-import {
-  cancelLibraryHeadingFocus,
-  focusLibraryHeading,
-} from "./library-heading";
 import { gameItemKey, type LibraryGameItem, type LibraryList } from "./types";
+import { useRemovalFocus } from "./use-removal-focus";
 
 /**
  * The game grid on the games tabs of `/watchlist`, `/upcoming` and
@@ -59,51 +56,13 @@ function GameLibraryGrid({
     state.filter((item) => gameItemKey(item) !== key),
   );
 
-  /**
-   * The removal that sent the focus to the heading expecting a remount. If
-   * this grid instead receives a refreshed page without that game, the page
-   * did not redirect, so the new heading must not take the focus later.
-   */
-  const headingFocusFor = useRef<string | null>(null);
-  useEffect(() => {
-    const key = headingFocusFor.current;
-    if (key === null || items.some((item) => gameItemKey(item) === key)) {
-      return;
-    }
-    headingFocusFor.current = null;
-    cancelLibraryHeadingFocus(key);
-  }, [items]);
-
-  /**
-   * Focus leaves the card before it disappears: to the nearest following
-   * card's name link, else the nearest preceding one's, else the heading. A
-   * card with no link (a hidden or missing game) takes the focus on its
-   * remove button (AC-13).
-   */
-  function moveFocusFrom(key: string) {
-    const index = visible.findIndex((item) => gameItemKey(item) === key);
-    const candidates = [
-      ...visible.slice(index + 1),
-      ...visible.slice(0, index).reverse(),
-    ];
-
-    for (const target of candidates) {
-      const card = gridRef.current?.querySelector(
-        `[data-item-key="${gameItemKey(target)}"]`,
-      );
-      const focusable =
-        card?.querySelector<HTMLElement>("h3 a") ??
-        card?.querySelector<HTMLElement>("button");
-      if (focusable) {
-        focusable.focus();
-        return;
-      }
-    }
-
-    const remountFor = page > 1 ? key : null;
-    headingFocusFor.current = remountFor;
-    focusLibraryHeading({ remountFor });
-  }
+  const { moveFocusFrom, removalFailed } = useRemovalFocus({
+    items,
+    visible,
+    itemKey: gameItemKey,
+    page,
+    gridRef,
+  });
 
   function remove(item: LibraryGameItem) {
     const key = gameItemKey(item);
@@ -113,10 +72,7 @@ function GameLibraryGrid({
       hide(key);
       const result = await settleResultCall(() => removeGame(item.gameId));
       if (!result.ok) {
-        if (headingFocusFor.current === key) {
-          headingFocusFor.current = null;
-        }
-        cancelLibraryHeadingFocus(key);
+        removalFailed(key);
         showGameTrackingError(result.error, {
           id: gameTrackingToastId(item.gameId, "status"),
           returnPath,
