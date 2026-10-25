@@ -1,7 +1,6 @@
 import { connection } from "next/server";
 
 import {
-  GAME_LIST_PAGE_SIZE,
   gameListOptions,
   isPopularGameList,
   POPULAR_GAME_LISTS,
@@ -22,7 +21,7 @@ import {
   getPopularGames,
   type Paged as IgdbPaged,
 } from "@/lib/igdb";
-import { IGDB_MAX_PAGE } from "@/lib/igdb/constants";
+import { IGDB_LIST_PAGE_SIZE, IGDB_MAX_PAGE } from "@/lib/igdb/constants";
 import {
   discoverMovies,
   discoverTvShows,
@@ -123,11 +122,11 @@ export async function readGameListPage(
 ): Promise<IgdbPaged<GameSummary>> {
   if (isPopularGameList(list.slug)) {
     const games = await getPopularGames(POPULAR_GAME_LISTS[list.slug]);
-    const start = (page - 1) * GAME_LIST_PAGE_SIZE;
+    const start = (page - 1) * IGDB_LIST_PAGE_SIZE;
     return {
       page,
-      results: games.slice(start, start + GAME_LIST_PAGE_SIZE),
-      hasNextPage: start + GAME_LIST_PAGE_SIZE < games.length,
+      results: games.slice(start, start + IGDB_LIST_PAGE_SIZE),
+      hasNextPage: start + IGDB_LIST_PAGE_SIZE < games.length,
       totalResults: games.length,
     };
   }
@@ -162,7 +161,7 @@ export function lastListPage(result: TaggedCatalogPage): number | null {
   if (result.mediaType !== "game") return result.paged.totalPages;
   const { totalResults } = result.paged;
   if (totalResults === null) return null;
-  return Math.min(IGDB_MAX_PAGE, Math.ceil(totalResults / GAME_LIST_PAGE_SIZE));
+  return Math.min(IGDB_MAX_PAGE, Math.ceil(totalResults / IGDB_LIST_PAGE_SIZE));
 }
 
 /**

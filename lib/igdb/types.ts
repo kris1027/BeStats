@@ -1,3 +1,5 @@
+import type { IGDB_DISCOVER_PAGE_SIZES } from "./constants";
+
 /**
  * The app's own game types, the only shapes that leave `index.ts` (spec 0023,
  * AC-15). camelCase, closed unions, and `null` wherever IGDB may know nothing:
@@ -118,4 +120,4 @@ export type DiscoverGamesOptions = GameFilters & {
 };
 
 /** The page sizes discover serves (spec 0028, AC-5). */
-export type DiscoverPageSize = 20 | 24;
+export type DiscoverPageSize = (typeof IGDB_DISCOVER_PAGE_SIZES)[number];

@@ -1,3 +1,4 @@
+import { IGDB_LIST_PAGE_SIZE } from "@/lib/igdb/constants";
 import type { DiscoverGamesOptions, PopularGamesKind } from "@/lib/igdb/types";
 
 import type { GameListSlug } from "./lists";
@@ -18,9 +19,6 @@ export const POPULAR_GAME_LISTS = {
 
 export type PopularGameListSlug = keyof typeof POPULAR_GAME_LISTS;
 export type DiscoverGameListSlug = Exclude<GameListSlug, PopularGameListSlug>;
-
-/** Games on one list page, and the page size every games discover asks for. */
-export const GAME_LIST_PAGE_SIZE = 24;
 
 /** Recently released reaches back this many days before today, inclusive. */
 const RECENT_DAYS_BACK = 59;
@@ -65,7 +63,7 @@ export function gameListOptions(
         minHypes: 1,
         releasedFrom: shiftUtcDay(today, -RECENT_DAYS_BACK),
         releasedTo: today,
-        pageSize: GAME_LIST_PAGE_SIZE,
+        pageSize: IGDB_LIST_PAGE_SIZE,
       };
     case "coming-soon":
       return {
@@ -73,13 +71,13 @@ export function gameListOptions(
         minHypes: 1,
         releasedFrom: shiftUtcDay(today, 1),
         releasedTo: shiftUtcDay(today, COMING_SOON_DAYS),
-        pageSize: GAME_LIST_PAGE_SIZE,
+        pageSize: IGDB_LIST_PAGE_SIZE,
       };
     case "top-rated":
       return {
         sort: "rating_desc",
         minRatingCount: TOP_RATED_MIN_RATINGS,
-        pageSize: GAME_LIST_PAGE_SIZE,
+        pageSize: IGDB_LIST_PAGE_SIZE,
       };
   }
 }

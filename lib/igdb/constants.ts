@@ -127,10 +127,16 @@ export const IGDB_BATCH_LIMIT = 500;
 export const IGDB_PAGE_SIZE = 20;
 
 /**
- * The page sizes discover accepts: the default, and 24 for a games list page,
- * whose grid fills every row at 24 (spec 0028, AC-5).
+ * Games on one games list page, and the page size every games list discover
+ * asks for: the grid fills every row at 24 (spec 0028, AC-5).
  */
-export const IGDB_DISCOVER_PAGE_SIZES = [IGDB_PAGE_SIZE, 24] as const;
+export const IGDB_LIST_PAGE_SIZE = 24;
+
+/** The page sizes discover accepts: the default and the list page's. */
+export const IGDB_DISCOVER_PAGE_SIZES = [
+  IGDB_PAGE_SIZE,
+  IGDB_LIST_PAGE_SIZE,
+] as const;
 
 /** The last page a caller may ask for; a later one throws (AC-12b). */
 export const IGDB_MAX_PAGE = 50;
