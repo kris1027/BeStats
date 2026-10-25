@@ -34,9 +34,9 @@ const LANDING_LABELS = {
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 /**
- * One list's See all page, `/shows/{slug}`, `/movies/{slug}` or
- * `/games/{slug}` (spec 0021, AC-9, AC-10; spec 0028, AC-9 to AC-11): a back link to the landing, the list's h1 and note, then the
- * paged grid the landing used to be.
+ * One list's See all page, `/shows/{slug}`, `/movies/{slug}` or `/games/{slug}`
+ * (spec 0021, AC-9, AC-10; spec 0028, AC-9 to AC-11): a back link to the
+ * landing, the list's h1 and note, then the paged grid the landing used to be.
  *
  * The header is static and prerendered; the grid needs the `page` search
  * parameter, so it streams behind a skeleton of the same footprint. No

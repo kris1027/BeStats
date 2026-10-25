@@ -232,9 +232,8 @@ export function catalogList(mediaType: LibraryType, slug: string): CatalogList {
 
 /**
  * A list's page: `/shows/{slug}`, `/movies/{slug}` or `/games/{slug}` (spec
- * 0021, AC-9; spec 0028, AC-9). Takes
- * the registry entry, not a media type and slug, so a caller cannot pair a
- * slug with the wrong catalog.
+ * 0021, AC-9; spec 0028, AC-9). Takes the registry entry, not a media type and
+ * slug, so a caller cannot pair a slug with the wrong catalog.
  */
 export function listPath(list: CatalogList): string {
   return `${CATALOG_PATHS[list.mediaType]}/${list.slug}`;

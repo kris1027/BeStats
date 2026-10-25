@@ -10,9 +10,9 @@ import type { LibraryType } from "@/lib/catalog/media-type";
 
 /**
  * A catalog landing, `/shows`, `/movies` or `/games` (prompts/home-parallax-
- * landing.md, superseding the rows of spec 0021; spec 0028, AC-1): the hero, then Trending, Popular, Now
- * playing (Airing today), Upcoming (On the air) and Top rated, each with its
- * own layout and motion.
+ * landing.md, superseding the rows of spec 0021; spec 0028, AC-1): the hero,
+ * then Trending, Popular, Now playing (Airing today), Upcoming (On the air) and
+ * Top rated, each with its own layout and motion.
  *
  * The h1 is for the outline and assistive technology only; the hero's title
  * is the visible headline. Every heading, label and See all link is in the

@@ -7,8 +7,9 @@ import type { TaggedCatalogPage } from "@/lib/catalog-list-read";
 
 /**
  * One `<li>` and full card per title of a list page, the one place a tagged
- * page becomes show, movie or game cards (spec 0021, AC-4; spec 0028, AC-8). A landing row and a
- * list page grid both render through it and differ only in the props.
+ * page becomes show, movie or game cards (spec 0021, AC-4; spec 0028, AC-8). A
+ * landing row and a list page grid both render through it and differ only in
+ * the props.
  *
  * `ids` is every id the caller renders, so all the cards' slots share one
  * read (prompts/catalog-card-status.md).

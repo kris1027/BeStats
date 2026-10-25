@@ -28,8 +28,9 @@ import { WithLibraryTypedPage } from "./page-media-type";
  *
  * On `/watchlist`, `/upcoming`, `/watched` and `/search` the tabs switch the
  * page's own `type` parameter in place (GAMES leads from `/search` to
- * `/games`); everywhere else they lead to `/shows`, `/movies` and `/games`. `WithLibraryTypedPage` reads the page's type, and on those
- * four pages the current query, which `/search` keeps across a switch.
+ * `/games`); everywhere else they lead to `/shows`, `/movies` and `/games`.
+ * `WithLibraryTypedPage` reads the page's type, and on those four pages the
+ * current query, which `/search` keeps across a switch.
  *
  * On a page about neither catalog (`/account`, `/privacy`, the auth pages)
  * there is nothing to switch, so it renders nothing

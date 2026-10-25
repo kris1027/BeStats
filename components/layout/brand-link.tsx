@@ -23,12 +23,13 @@ const BRAND_CLASS =
 
 /**
  * The BeStats wordmark, linking to the landing of the catalog being viewed
- * (prompts/logo-follows-media-type.md): `/movies` on a movie page, `/shows`
- * on a TV page, and `/games` on a games page or games tab (spec 0028,
- * AC-16). On a page about neither catalog it links to the one last viewed, kept in `localStorage` because a cookie the server read would
- * pull every route out of its prerendered shell. It is a per browser
- * convenience only: nothing else reads it, and it never lights a tab, since
- * selection comes from the URL (`components/AGENTS.md`).
+ * (prompts/logo-follows-media-type.md): `/movies` on a movie page, `/shows` on
+ * a TV page, and `/games` on a games page or games tab (spec 0028, AC-16). On a
+ * page about neither catalog it links to the one last viewed, kept in
+ * `localStorage` because a cookie the server read would pull every route out of
+ * its prerendered shell. It is a per browser convenience only: nothing else
+ * reads it, and it never lights a tab, since selection comes from the URL
+ * (`components/AGENTS.md`).
  */
 function BrandLink() {
   return (
