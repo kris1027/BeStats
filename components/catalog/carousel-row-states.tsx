@@ -3,7 +3,7 @@ import type * as React from "react";
 import { RetryLink } from "@/components/retry-link";
 import { PosterCardSkeleton } from "@/components/skeleton";
 import type { CatalogList } from "@/lib/catalog/lists";
-import { CATALOG_PATHS } from "@/lib/catalog/media-type";
+import { CATALOG_PATHS, CATALOG_SOURCES } from "@/lib/catalog/media-type";
 
 /** How many titles a row holds: the first 12 of TMDB's page 1 (AC-3). */
 const ROW_SIZE = 12;
@@ -25,7 +25,7 @@ function CarouselRowError({ list }: { list: CatalogList }) {
         Couldn't load {list.rowTitle}
       </p>
       <p className="text-sm text-muted-foreground">
-        {list.mediaType === "game" ? "IGDB" : "TMDB"} didn't respond.
+        {CATALOG_SOURCES[list.mediaType]} didn't respond.
       </p>
       <RetryLink href={CATALOG_PATHS[list.mediaType]} className="mt-1" />
     </RowMessage>

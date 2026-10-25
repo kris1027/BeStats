@@ -6,12 +6,11 @@ import {
   type LibraryType,
   titleHref,
 } from "@/lib/catalog/media-type";
+import { isCatalogError } from "@/lib/catalog-errors";
 import {
   readTaggedCatalogList,
   type TaggedCatalogPage,
 } from "@/lib/catalog-list-read";
-import { IgdbError } from "@/lib/igdb";
-import { TmdbError } from "@/lib/tmdb";
 
 /**
  * One title as every landing section draws it, whichever media type it is
@@ -62,9 +61,7 @@ export async function readLandingList(
   try {
     return await readTaggedCatalogList(list, page);
   } catch (error) {
-    if (!(error instanceof TmdbError) && !(error instanceof IgdbError)) {
-      throw error;
-    }
+    if (!isCatalogError(error)) throw error;
     return null;
   }
 }

@@ -27,6 +27,17 @@ export const CATALOG_PATHS = {
 } as const satisfies Record<LibraryType, string>;
 
 /**
+ * The catalog each media type's titles come from, named in every error and
+ * empty copy that blames it (spec 0028, AC-11). The one place a type is
+ * paired with its source, so a games state never says TMDB.
+ */
+export const CATALOG_SOURCES = {
+  tv: "TMDB",
+  movie: "TMDB",
+  game: "IGDB",
+} as const satisfies Record<LibraryType, string>;
+
+/**
  * The three library pages, one per `LibraryList`, and the only typed pages a
  * game tab exists on (spec 0027, AC-2).
  */

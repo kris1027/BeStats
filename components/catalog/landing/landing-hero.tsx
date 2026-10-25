@@ -7,13 +7,9 @@ import { TrailerSlot } from "@/components/catalog/title-extras";
 import { GlassPill } from "@/components/glass-pill";
 import type { CatalogList } from "@/lib/catalog/lists";
 import type { LibraryType } from "@/lib/catalog/media-type";
-import { getGameGenres, IgdbError } from "@/lib/igdb";
-import {
-  getMovieGenres,
-  getTvGenres,
-  resizeImageUrl,
-  TmdbError,
-} from "@/lib/tmdb";
+import { isCatalogError } from "@/lib/catalog-errors";
+import { getGameGenres } from "@/lib/igdb";
+import { getMovieGenres, getTvGenres, resizeImageUrl } from "@/lib/tmdb";
 import { ArtFallback } from "./art-fallback";
 import { CommunityRatingBadge, LandingTracking } from "./landing-badge";
 import {
@@ -168,9 +164,7 @@ async function genreNames(item: LandingItem): Promise<string[]> {
   try {
     genres = await GENRE_LISTS[item.mediaType]();
   } catch (error) {
-    if (!(error instanceof TmdbError) && !(error instanceof IgdbError)) {
-      throw error;
-    }
+    if (!isCatalogError(error)) throw error;
     return [];
   }
   const names = new Map(genres.map((genre) => [genre.id, genre.name]));

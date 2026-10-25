@@ -11,34 +11,21 @@ import { StatePanel } from "@/components/state-panel";
 import { ButtonLink } from "@/components/ui/button";
 import { GRID_PAGE_SIZE } from "@/lib/catalog/grid-page";
 import { type CatalogList, listPageHref, listPath } from "@/lib/catalog/lists";
-import { CATALOG_PATHS } from "@/lib/catalog/media-type";
+import { CATALOG_PATHS, CATALOG_SOURCES } from "@/lib/catalog/media-type";
 import { parsePageParam } from "@/lib/catalog/pages";
+import { isCatalogError } from "@/lib/catalog-errors";
 import {
   lastListPage,
   readTaggedCatalogGridPage,
   type TaggedCatalogPage,
 } from "@/lib/catalog-list-read";
-import { IgdbError } from "@/lib/igdb";
 import { IGDB_MAX_PAGE } from "@/lib/igdb/constants";
-import { TmdbError } from "@/lib/tmdb";
 
 const LANDING_LABELS = {
   tv: "Shows",
   movie: "Movies",
   game: "Games",
 } as const satisfies Record<CatalogList["mediaType"], string>;
-
-/** The catalog a list's titles come from, named in its error and empty copy. */
-const SOURCE_NAMES = {
-  tv: "TMDB",
-  movie: "TMDB",
-  game: "IGDB",
-} as const satisfies Record<CatalogList["mediaType"], string>;
-
-/** A failure of the list's own catalog, which the retry panel answers. */
-function isCatalogError(error: unknown): boolean {
-  return error instanceof TmdbError || error instanceof IgdbError;
-}
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -101,7 +88,7 @@ async function ListGrid({
     result = await readTaggedCatalogGridPage(list, page);
   } catch (error) {
     if (!isCatalogError(error)) throw error;
-    const source = SOURCE_NAMES[list.mediaType];
+    const source = CATALOG_SOURCES[list.mediaType];
     return (
       <div className="py-12">
         <StatePanel
@@ -120,7 +107,7 @@ async function ListGrid({
         <StatePanel
           variant="empty"
           title="This list is empty"
-          description={`${SOURCE_NAMES[list.mediaType]} lists nothing here right now.`}
+          description={`${CATALOG_SOURCES[list.mediaType]} lists nothing here right now.`}
         />
       </div>
     );
