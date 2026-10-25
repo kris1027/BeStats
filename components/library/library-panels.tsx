@@ -81,7 +81,7 @@ export function settleTab<Card>(
   if (tab.kind === "tmdb_failed") {
     return {
       kind: "panel",
-      panel: <TmdbFailed href={pageHref(list, type, page)} />,
+      panel: <CatalogFailed source="TMDB" href={pageHref(list, type, page)} />,
     };
   }
   const lastPage = libraryLastPage(tab.total);
@@ -211,6 +211,9 @@ export function ListFailed({
   );
 }
 
+/** What each catalog supplies, for its failure line. */
+const CATALOG_ITEMS = { TMDB: "titles", IGDB: "games" } as const;
+
 /**
  * A systemic catalog failure: a rejected credential or a rate limit (spec
  * 0020, AC-17), from TMDB for shows and movies or IGDB for games (spec 0027,
@@ -220,22 +223,16 @@ export function CatalogFailed({
   source,
   href,
 }: {
-  source: "TMDB" | "IGDB";
+  source: keyof typeof CATALOG_ITEMS;
   href: string;
 }) {
-  const what = source === "TMDB" ? "titles" : "games";
   return (
     <LoadFailed
       title={`Couldn't reach ${source}`}
-      description={`${source} didn't respond, so the ${what} couldn't load. Try again in a moment.`}
+      description={`${source} didn't respond, so the ${CATALOG_ITEMS[source]} couldn't load. Try again in a moment.`}
       href={href}
     />
   );
-}
-
-/** A systemic TMDB failure (spec 0020, AC-17). */
-export function TmdbFailed({ href }: { href: string }) {
-  return <CatalogFailed source="TMDB" href={href} />;
 }
 
 /** The error panel every failed library read shows, with Retry. */
