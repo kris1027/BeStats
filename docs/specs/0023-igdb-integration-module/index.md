@@ -2,6 +2,7 @@
 
 **Date**: 2026-10-17
 **Status**: Accepted
+**Amended**: 2026-10-25 by [spec 0029](../0029-game-search-filters/index.md), AC-19. AC-12: several genres now match all of them (`genres = [ids]`), platforms still any; `searchGames` takes `minRatingCount` and `pageSize` 20 or 24. AC-13: `discoverGames` takes `requireSortField` (default `true`).
 
 Scope feature: [G1. IGDB integration module](../../scope/games.md#g1-igdb-integration-module) · Beta tier
 

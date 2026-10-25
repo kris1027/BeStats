@@ -3,6 +3,7 @@
 **Date**: 2026-10-24
 **Status**: Accepted (amended 2026-10-25 after code review: `LibraryErrorBoundary` written in, the card decisions moved to the tab, the shared focus hook and counted page read)
 **Amended**: 2026-10-25 by [spec 0028](../0028-games-home-list-pages/index.md). AC-4: on a games tab the logo links to `/games` and remembers `game`, accepted only while the games flag is on (0028, AC-16). AC-14: each empty games tab gains a `Browse games` button linking to `/games` (0028, AC-17).
+**Amended**: 2026-10-25 by [spec 0029](../0029-game-search-filters/index.md). AC-2: `typedHref("/search", "game")` now compiles. AC-4: the navbar search shows on a games tab and searches games.
 
 Scope feature: [G5. Games tab and library pages](../../scope/games.md) · GA tier
 
