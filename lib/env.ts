@@ -152,3 +152,50 @@ export function getAuthEmailDelivery(): AuthEmailDelivery {
     "Invalid public environment configuration. NEXT_PUBLIC_AUTH_EMAIL_DELIVERY must be on or off.",
   );
 }
+
+/** Whether the games library tab is switched on for this deployment. */
+export type GamesLibrary = "on" | "off";
+
+/** The raw flag, or null for a value that is neither `on` nor `off`. */
+function readGamesLibrary(): GamesLibrary | null {
+  const value = process.env.NEXT_PUBLIC_GAMES_LIBRARY;
+
+  if (value === undefined || value === "" || value === "off") return "off";
+  if (value === "on") return "on";
+  return null;
+}
+
+/**
+ * Reads `NEXT_PUBLIC_GAMES_LIBRARY`, the switch for the GAMES tab on the
+ * library pages (spec 0027, AC-1). Production leaves it unset until a games
+ * browse page or game search gives people a way to find games, so unset or
+ * empty means `off`.
+ *
+ * Only `LibrarySection` calls this, so a misconfigured deploy shows the
+ * library error boundary there instead of guessing (AC-5). Written like
+ * `getAuthEmailDelivery()`, apart from `getPublicEnv()`, so a build with no
+ * Supabase values still works. Read as a literal `process.env` access, so
+ * Next.js inlines it at build time and a change needs a redeploy.
+ *
+ * @returns `on` or `off`.
+ * @throws If the variable holds anything else. The message names the variable
+ * and never its value.
+ */
+export function getGamesLibrary(): GamesLibrary {
+  const value = readGamesLibrary();
+  if (value !== null) return value;
+
+  throw new Error(
+    "Invalid public environment configuration. NEXT_PUBLIC_GAMES_LIBRARY must be on or off.",
+  );
+}
+
+/**
+ * The same flag for the navbar, which renders on every page (spec 0027,
+ * AC-1, AC-3). An invalid value counts as off and never throws, so a bad
+ * value cannot take a page outside the library down: the `publicEnvProblems()`
+ * and `getPublicEnv()` split.
+ */
+export function gamesLibraryEnabled(): boolean {
+  return readGamesLibrary() === "on";
+}
