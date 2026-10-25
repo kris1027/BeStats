@@ -13,7 +13,7 @@ import {
   ShowCardControls,
 } from "@/components/tracking/show-card-slots";
 import { ShowTrackingSlot } from "@/components/tracking/show-tracking-slot";
-import { CATALOG_PATHS, type MediaType } from "@/lib/catalog/media-type";
+import { CATALOG_PATHS, type LibraryType } from "@/lib/catalog/media-type";
 
 import type { LandingItem } from "./landing-items";
 
@@ -23,17 +23,16 @@ type Ids = readonly number[];
  * Each media type's personal slots, the one place the landing branches on a
  * title's type to pick a component (prompts/landing-review-fixes.md,
  * decision 7). Every entry takes a `LandingItem`, so the cards and the hero
- * never name a show or movie slot themselves.
+ * never name a show, movie or game slot themselves. A game has no card badge
+ * or controls until G8, so those are null (spec 0028, AC-8).
  */
 const LANDING_SLOTS: Record<
-  MediaType,
+  LibraryType,
   {
-    badge: (item: LandingItem, ids: Ids) => React.ReactNode;
-    controls: (
-      item: LandingItem,
-      ids: Ids,
-      releasePill: boolean,
-    ) => React.ReactNode;
+    badge: ((item: LandingItem, ids: Ids) => React.ReactNode) | null;
+    controls:
+      | ((item: LandingItem, ids: Ids, releasePill: boolean) => React.ReactNode)
+      | null;
     tracking: (item: LandingItem) => React.ReactNode;
   }
 > = {
@@ -84,6 +83,17 @@ const LANDING_SLOTS: Record<
       />
     ),
   },
+  game: {
+    badge: null,
+    controls: null,
+    tracking: (item) => (
+      <GameTrackingSlot
+        gameId={item.id}
+        name={item.title}
+        releaseDate={item.releaseDate}
+      />
+    ),
+  },
 };
 
 /**
@@ -107,14 +117,10 @@ function CommunityRatingBadge({ rating }: { rating: LandingItem["rating"] }) {
  * no Suspense, until G8 gives game cards a status (spec 0028, AC-8).
  */
 function LandingBadge({ item, ids }: { item: LandingItem; ids: Ids }) {
-  if (item.mediaType === "game") {
-    return <CommunityRatingBadge rating={item.rating} />;
-  }
-  return (
-    <Suspense fallback={<CommunityRatingBadge rating={item.rating} />}>
-      {LANDING_SLOTS[item.mediaType].badge(item, ids)}
-    </Suspense>
-  );
+  const badge = LANDING_SLOTS[item.mediaType].badge;
+  const rating = <CommunityRatingBadge rating={item.rating} />;
+  if (badge === null) return rating;
+  return <Suspense fallback={rating}>{badge(item, ids)}</Suspense>;
 }
 
 /**
@@ -136,11 +142,10 @@ function LandingControls({
   ids: Ids;
   releasePill?: boolean;
 }) {
-  if (item.mediaType === "game") return null;
+  const controls = LANDING_SLOTS[item.mediaType].controls;
+  if (controls === null) return null;
   return (
-    <Suspense fallback={null}>
-      {LANDING_SLOTS[item.mediaType].controls(item, ids, releasePill)}
-    </Suspense>
+    <Suspense fallback={null}>{controls(item, ids, releasePill)}</Suspense>
   );
 }
 
@@ -153,15 +158,7 @@ function LandingControls({
 function LandingTracking({ item }: { item: LandingItem }) {
   return (
     <Suspense fallback={null}>
-      {item.mediaType === "game" ? (
-        <GameTrackingSlot
-          gameId={item.id}
-          name={item.title}
-          releaseDate={item.releaseDate}
-        />
-      ) : (
-        LANDING_SLOTS[item.mediaType].tracking(item)
-      )}
+      {LANDING_SLOTS[item.mediaType].tracking(item)}
     </Suspense>
   );
 }

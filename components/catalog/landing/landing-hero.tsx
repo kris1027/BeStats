@@ -9,7 +9,12 @@ import type { CatalogList } from "@/lib/catalog/lists";
 import type { LibraryType } from "@/lib/catalog/media-type";
 import { isCatalogError } from "@/lib/catalog-errors";
 import { getGameGenres } from "@/lib/igdb";
-import { getMovieGenres, getTvGenres, resizeImageUrl } from "@/lib/tmdb";
+import {
+  type Genre,
+  getMovieGenres,
+  getTvGenres,
+  resizeImageUrl,
+} from "@/lib/tmdb";
 import { ArtFallback } from "./art-fallback";
 import { CommunityRatingBadge, LandingTracking } from "./landing-badge";
 import {
@@ -143,12 +148,10 @@ function HeroArtwork({ item }: { item: LandingItem }) {
 
 /**
  * Each media type's cached genre list, read by the hero's genre line. A game
- * reads IGDB's genres (spec 0028, AC-7); both shapes are `{ id, name }`.
+ * reads IGDB's genres (spec 0028, AC-7), whose `GameRef` has TMDB's
+ * `Genre` shape, `{ id, name }`.
  */
-const GENRE_LISTS: Record<
-  LibraryType,
-  () => Promise<{ id: number; name: string }[]>
-> = {
+const GENRE_LISTS: Record<LibraryType, () => Promise<Genre[]>> = {
   tv: getTvGenres,
   movie: getMovieGenres,
   game: getGameGenres,
@@ -160,7 +163,7 @@ const GENRE_LISTS: Record<
  * rather than failing the hero.
  */
 async function genreNames(item: LandingItem): Promise<string[]> {
-  let genres: { id: number; name: string }[];
+  let genres: Genre[];
   try {
     genres = await GENRE_LISTS[item.mediaType]();
   } catch (error) {
