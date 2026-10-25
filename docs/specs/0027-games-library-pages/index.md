@@ -1,7 +1,7 @@
 # 0027. Games tab and library pages: Want to play, Playing and Finished on the three library routes
 
 **Date**: 2026-10-24
-**Status**: Accepted
+**Status**: Accepted (amended 2026-10-25 after code review: `LibraryErrorBoundary` written in, the card decisions moved to the tab, the shared focus hook and counted page read)
 
 Scope feature: [G5. Games tab and library pages](../../scope/games.md) · GA tier
 
@@ -89,8 +89,9 @@ No index beyond the primary key (spec 0024, AC-12). One user's games fit a prima
 | `getGameLibraryPage({ userId, tab, page })` (`lib/tracking/game-library.ts`, `server-only`) | Supabase read | verified `userId`, `LibraryList`, parsed page | `{ kind: "ok", rows: GameLibraryRow[], total }` or `{ kind: "failed" }` | the request's session client under RLS | `failed` on any Postgres or network error |
 | `getLibraryGames(ids)` (same file) | IGDB read | at most 24 ids | `{ kind: "ok", games: Map<number, GameSummary>, missingIds }` or `{ kind: "failed" }` | none (public catalog) | `failed` on an `IgdbError`; any other error throws |
 | `gameLibraryTab({ tab, userId, page, today })` (`components/library/game-library-tab.tsx`) | Server Component | the above | grid, empty panel, or a failure panel; redirect past the end | `requireUser()` already ran in `LibrarySection` | the panels of AC-7 |
-| `GameLibraryGrid` (`components/library/game-library-grid.tsx`, client) | client grid | `items: LibraryGameItem[]`, `list`, `page`, `returnPath`, `label` | the cards, removal, Undo toast | calls `removeGame` / `restoreRemovedGame` (spec 0026, session checked there) | the spec 0026 error toasts |
-| `GameLibraryCard` (`components/library/game-library-card.tsx`) | card on `PosterCard` | `LibraryGameItem`, `list`, `onRemove` | the card states of AC-8 to AC-11 | none | none |
+| `GameLibraryGrid` (`components/library/game-library-grid.tsx`, client) | client grid | `items: LibraryGameItem[]`, `page`, `returnPath`, `label` | the cards, removal, Undo toast | calls `removeGame` / `restoreRemovedGame` (spec 0026, session checked there) | the spec 0026 error toasts |
+| `GameLibraryCard` (`components/library/game-library-card.tsx`) | card on `PosterCard` | `LibraryGameItem`, `onRemove`; which score, pill and date line a tab shows is decided once in `gameLibraryTab` (`GAME_CARDS`) | the card states of AC-8 to AC-11 | none | none |
+| `LibraryErrorBoundary` (`components/library/library-error-boundary.tsx`, client, `catchError`) | error boundary around each library page's streamed section | `list` | the `LIBRARY_COPY[list].failed` panel with a Try again that refetches the section | none | catches what a section throws (an invalid flag value, AC-5, or any unsettled read on any tab, shows and movies included); lets `redirect()` through |
 
 `GameLibraryRow` is `{ gameId, rating, addedAt, startedAt, finishedAt }`. `LibraryGameItem` (plain data, in `components/library/types.ts`) is `{ gameId, name: string | null, coverUrl, communityRating, rating, hidden, unreleased: { date: ReleaseDate } | null, dateLine: string | null }`, where `name: null` means missing, `unreleased` is set only on a Want to play game that is not out yet (null on a missing game, of which nothing is known), and its `date: null` is Date TBA. `gameHref(id)` lives in `lib/catalog/media-type.ts` beside `titleHref`. `showGameUndo` lives in `components/tracking/use-game-undo.ts`.
 
@@ -148,7 +149,7 @@ Tracer Bullet: first one thin real thread from the flag through the tab, the rea
 3. **All three tabs.** Add `GAME_LIBRARY_TABS` with the three orders, paging past the end, the `PGRST103` count read and the `game_id` tie break, with tests on the reader, satisfies **AC-6**.
 4. **Cards.** Build `GameLibraryCard` with the per tab badges, `ReleasePill` on unreleased Want to play, `formatMonthYear` and the Started / Finished lines, `gameHref`, the hidden (no link) and missing states, and the `LibraryGameItem` mapping, satisfies **AC-8**, **AC-9**, **AC-10**, **AC-11**.
 5. **Removal and Undo.** Build `GameLibraryGrid` with `useOptimistic`, `removeGame`, the Undo toast through spec 0026's toast (factor the toast out of `useGameUndo` into a plain function both callers share, since a grid holds many games), the error toasts and the focus rules, satisfies **AC-12**, **AC-13**.
-6. **States and copy.** Add the game entries to `LIBRARY_COPY` (with `browse` optional and the text only empty panel), the "Couldn't reach IGDB" panel (`CatalogFailed` over the shared `LoadFailed`), and the logging, satisfies **AC-7**, **AC-14**.
+6. **States and copy.** Add the game entries to `LIBRARY_COPY` (with `browse` optional and the text only empty panel), the "Couldn't reach IGDB" panel (`CatalogFailed` over the shared `LoadFailed`), `LibraryErrorBoundary` around each page's section (the boundary AC-5 relies on, none existed before), and the logging, satisfies **AC-5**, **AC-7**, **AC-14**.
 7. **Showcase, sizes and checks.** Add the `/showcase` card states, check 375px and 1280px and keyboard use in the running app (`next-dev-loop`), confirm no write on load, set the Vercel Preview variable and the `docs/deploy.md` line, then run `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm test:db` and `pnpm build`, satisfies **AC-15**, **AC-16**, **AC-17**, **AC-18**, **AC-1**.
 
 ## Consequences
@@ -167,7 +168,8 @@ Tracer Bullet: first one thin real thread from the flag through the tab, the rea
 - On a games tab the navbar search placeholder flashes once while `?type` resolves.
 - IGDB data on a card (name, cover, hidden) comes from the `hours` cached batch, so a change at IGDB can take a few hours to show.
 - The flag is inlined at build time: a browser still running an older bundle can show GAMES while the server answers "doesn't exist" until it reloads.
-- A second client grid (games) sits beside the movie grid and shares only its helpers, so a removal fix may need making in both.
+- A second client grid (games) sits beside the movie grid. They share the focus order after a removal (`use-removal-focus.ts`) and the counted page read (`readCountedPage`), but each keeps its own `useOptimistic` removal, so a fix there may need making in both.
+- `LibraryErrorBoundary` wraps the show and movie tabs too, so a throw there now shows the list's failed panel with Try again instead of the default error page.
 
 **Neutral**:
 - No migration, so no `supabase db push` for this feature.
