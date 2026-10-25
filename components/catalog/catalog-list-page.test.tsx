@@ -25,8 +25,7 @@ vi.mock("@/lib/tmdb", async () => ({
   TmdbError: (await import("@/lib/tmdb/errors")).TmdbError,
 }));
 vi.mock("@/lib/catalog-list-read", async (importActual) => ({
-  lastListPage: (await importActual<typeof import("@/lib/catalog-list-read")>())
-    .lastListPage,
+  ...(await importActual<typeof import("@/lib/catalog-list-read")>()),
   readTaggedCatalogGridPage: (...args: unknown[]) => read(...args),
 }));
 vi.mock("@/components/catalog/list-cards", () => ({

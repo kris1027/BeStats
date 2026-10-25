@@ -16,10 +16,10 @@ import { parsePageParam } from "@/lib/catalog/pages";
 import { isCatalogError } from "@/lib/catalog-errors";
 import {
   lastListPage,
+  listHasNextPage,
   readTaggedCatalogGridPage,
   type TaggedCatalogPage,
 } from "@/lib/catalog-list-read";
-import { IGDB_MAX_PAGE } from "@/lib/igdb/constants";
 
 const LANDING_LABELS = {
   tv: "Shows",
@@ -117,11 +117,7 @@ async function ListGrid({
   const lastPage = lastListPage(result);
   if (result.paged.results.length === 0) return <NoSuchPage list={list} />;
   if (lastPage !== null && page > lastPage) return <NoSuchPage list={list} />;
-  const hasNextPage =
-    lastPage === null &&
-    result.mediaType === "game" &&
-    result.paged.hasNextPage &&
-    page < IGDB_MAX_PAGE;
+  const hasNextPage = listHasNextPage(result, page);
 
   return (
     <div className="flex flex-col gap-10">

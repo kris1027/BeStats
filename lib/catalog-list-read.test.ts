@@ -26,6 +26,7 @@ vi.mock("next/server", () => ({ connection: async () => {} }));
 const { catalogList } = await import("@/lib/catalog/lists");
 const {
   lastListPage,
+  listHasNextPage,
   readCatalogList,
   readGameListPage,
   readTaggedCatalogGridPage,
@@ -194,5 +195,35 @@ describe("lastListPage (spec 0028, AC-10)", () => {
     expect(lastListPage(game(48))).toBe(2);
     expect(lastListPage(game(100_000))).toBe(50);
     expect(lastListPage(game(null))).toBeNull();
+  });
+});
+
+describe("listHasNextPage (spec 0028, AC-10)", () => {
+  const game = (totalResults: number | null, hasNextPage: boolean) => ({
+    mediaType: "game" as const,
+    paged: { page: 1, results: [], hasNextPage, totalResults },
+  });
+
+  it("offers Next on a games list with no count while IGDB has more", () => {
+    expect(listHasNextPage(game(null, true), 1)).toBe(true);
+    expect(listHasNextPage(game(null, false), 1)).toBe(false);
+  });
+
+  it("never offers Next from page 50", () => {
+    expect(listHasNextPage(game(null, true), 49)).toBe(true);
+    expect(listHasNextPage(game(null, true), 50)).toBe(false);
+  });
+
+  it("leaves Next to the pager when the last page is known", () => {
+    expect(listHasNextPage(game(100, true), 1)).toBe(false);
+    expect(
+      listHasNextPage(
+        {
+          mediaType: "tv",
+          paged: { page: 1, results: [], totalPages: 3, totalResults: 60 },
+        },
+        1,
+      ),
+    ).toBe(false);
   });
 });

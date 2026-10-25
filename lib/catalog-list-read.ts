@@ -166,6 +166,24 @@ export function lastListPage(result: TaggedCatalogPage): number | null {
 }
 
 /**
+ * Whether the pager offers Next on a list whose last page is unknown (spec
+ * 0028, AC-10): only a games list with no count, only while IGDB says there
+ * is more, and never past IGDB's page 50. A list with a known last page
+ * leaves Next to `PaginationLinks`, which counts to it.
+ */
+export function listHasNextPage(
+  result: TaggedCatalogPage,
+  page: number,
+): boolean {
+  return (
+    lastListPage(result) === null &&
+    result.mediaType === "game" &&
+    result.paged.hasNextPage &&
+    page < IGDB_MAX_PAGE
+  );
+}
+
+/**
  * `readCatalogList` with its result tagged, so a component rendering any list
  * picks the show or movie card by narrowing on `mediaType` rather than by a
  * cast. The very same call underneath, so it shares the cache entry. The
