@@ -1,4 +1,4 @@
-import type { MediaType } from "@/lib/catalog/media-type";
+import type { LibraryType, MediaType } from "@/lib/catalog/media-type";
 
 import type {
   EpisodeTrackingError,
@@ -188,21 +188,25 @@ export const UPCOMING_MESSAGES = {
   releaseTba: "Release date to be announced",
 } as const;
 
-/** What a list page's grid, empty state and notes say (spec 0020, AC-18). */
+/**
+ * What a list page's grid, empty state and notes say (spec 0020, AC-18).
+ * `browse` is the empty state's button, absent where there is no catalog to
+ * browse yet (the games tabs until G6, spec 0027, AC-14).
+ */
 type ListCopy = {
   grid: string;
   empty: { title: string; description: string };
-  browse: string;
+  browse?: string;
 };
 
 /**
  * Every piece of copy that differs between the three library pages and their
- * two tabs (spec 0020, AC-12, AC-15, AC-18; feature 22). Each empty state
- * offers the one catalog its tab lists.
+ * tabs (spec 0020, AC-12, AC-15, AC-18; feature 22; spec 0027, AC-14). Each
+ * show and movie empty state offers the one catalog its tab lists.
  */
 export const LIBRARY_COPY: Record<
   "watchlist" | "upcoming" | "watched",
-  Record<MediaType, ListCopy> & { failed: string }
+  Record<LibraryType, ListCopy> & { failed: string }
 > = {
   watchlist: {
     tv: {
@@ -221,6 +225,13 @@ export const LIBRARY_COPY: Record<
         description: "Planned movies that are already out show up here.",
       },
       browse: "Browse movies",
+    },
+    game: {
+      grid: "Games you want to play",
+      empty: {
+        title: "No games to play yet",
+        description: "Games you mark Want to play show up here.",
+      },
     },
     failed: "Couldn't load your watchlist",
   },
@@ -242,6 +253,13 @@ export const LIBRARY_COPY: Record<
       },
       browse: "Browse movies",
     },
+    game: {
+      grid: "Games you're playing",
+      empty: {
+        title: "Nothing in progress",
+        description: "Games you mark Playing show up here.",
+      },
+    },
     failed: "Couldn't load your upcoming titles",
   },
   watched: {
@@ -261,9 +279,22 @@ export const LIBRARY_COPY: Record<
       },
       browse: "Browse movies",
     },
+    game: {
+      grid: "Games you finished",
+      empty: {
+        title: "No finished games yet",
+        description: "Games you mark Finished show up here.",
+      },
+    },
     failed: "Couldn't load your watched titles",
   },
 };
+
+/** The month line under a Playing or Finished game card (spec 0027, AC-9). */
+export const GAME_DATE_LINES = {
+  started: (month: string) => `Started ${month}`,
+  finished: (month: string) => `Finished ${month}`,
+} as const;
 
 /** "1 show", "4 movies". */
 function titles(n: number, type: MediaType): string {

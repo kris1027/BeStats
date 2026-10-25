@@ -202,6 +202,26 @@ export function formatAirDate(date: string | null): string | null {
   return utc === null ? null : AIR_DATE_FORMAT.format(utc);
 }
 
+const MONTH_YEAR_FORMAT = new Intl.DateTimeFormat("en", {
+  month: "short",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+/**
+ * The month a game was started or finished, as its library card prints it:
+ * `Oct 2026` (spec 0027, AC-9). The UTC calendar month, formatted on the
+ * server, so the server and the browser never disagree; near midnight it can
+ * be a month off for someone far from UTC, an accepted tradeoff.
+ *
+ * @param iso A Postgres `timestamptz` as PostgREST returns it.
+ * @returns The month and year, or null for a value that is not a date.
+ */
+export function formatMonthYear(iso: string): string | null {
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? null : MONTH_YEAR_FORMAT.format(date);
+}
+
 const SHORT_DATE_FORMAT = new Intl.DateTimeFormat("en-US", {
   month: "short",
   day: "numeric",

@@ -150,7 +150,7 @@ const EPISODE_PAGE_SIZE = 1000;
  * needs the total to redirect to the last page, so it is read again as a
  * count alone.
  */
-const RANGE_NOT_SATISFIABLE = "PGRST103";
+export const RANGE_NOT_SATISFIABLE = "PGRST103";
 
 /** The 0 based slice of a 1 based page. */
 function pageSlice<T>(items: readonly T[], page: number): T[] {
@@ -290,7 +290,7 @@ export async function getShowLibraryTab(
       .order("last_activity_at", { ascending: false })
       .order("show_id", { ascending: true })
       .limit(LIBRARY_CLASSIFY_LIMIT + 1);
-    if (error) return failed();
+    if (error) return listReadFailed();
 
     // A view's columns are all nullable to the type generator; the view
     // itself never yields a null id or `tracked_at`.
@@ -316,12 +316,12 @@ export async function getShowLibraryTab(
       userId,
       rows.map((row) => row.id),
     );
-    if (read === null) return failed();
+    if (read === null) return listReadFailed();
     watched = read;
   } catch {
     // A network failure inside supabase-js. The error is dropped on purpose,
     // as in the actions: its message can carry request details.
-    return failed();
+    return listReadFailed();
   }
 
   return classifyTab({
@@ -468,7 +468,7 @@ export async function getMovieLibraryTab(
       .order("watchlisted_at", { ascending: false })
       .order("movie_id", { ascending: true })
       .limit(LIBRARY_CLASSIFY_LIMIT + 1);
-    if (error) return failed();
+    if (error) return listReadFailed();
 
     // A planned row always has a plan time (a check constraint).
     ({ rows, capped } = capRows(
@@ -477,7 +477,7 @@ export async function getMovieLibraryTab(
       ),
     ));
   } catch {
-    return failed();
+    return listReadFailed();
   }
 
   // The rows are already in plan order, so a stable sort on the date alone
@@ -561,10 +561,10 @@ export async function getWatchedMoviesPage(
         .select("movie_id", { count: "exact", head: true })
         .eq("user_id", userId)
         .not("watched_at", "is", null);
-      if (head.error || head.count === null) return failed();
+      if (head.error || head.count === null) return listReadFailed();
       return { kind: "ok", rows: [], total: head.count };
     }
-    if (error || count === null) return failed();
+    if (error || count === null) return listReadFailed();
 
     return {
       kind: "ok",
@@ -582,7 +582,7 @@ export async function getWatchedMoviesPage(
       ),
     };
   } catch {
-    return failed();
+    return listReadFailed();
   }
 }
 
@@ -612,7 +612,11 @@ export async function getLibraryMovieTitles(
   };
 }
 
-function failed(): { kind: "failed" } {
+/**
+ * A failed library read, logged once with its outcome class only (spec
+ * 0020, AC-17). Shared with the games tabs (spec 0027, AC-7).
+ */
+export function listReadFailed(): { kind: "failed" } {
   logTrackingEvent(TRACKING_EVENT.listRead, "db_error");
   return { kind: "failed" };
 }
