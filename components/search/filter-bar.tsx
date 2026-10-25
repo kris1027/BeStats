@@ -476,13 +476,6 @@ function PlatformPicker({
   const filterBox = useRef<HTMLInputElement>(null);
 
   if (platforms === null) return <UnavailablePicker label="Platforms" />;
-  const needle = filter.trim().toLowerCase();
-  const shown = needle
-    ? platforms.filter((platform) =>
-        platform.name.toLowerCase().includes(needle),
-      )
-    : platforms;
-  const full = selected.length >= IGDB_MAX_FILTER_IDS;
 
   return (
     <Popover>
@@ -492,43 +485,83 @@ function PlatformPicker({
         initialFocus={filterBox}
         className="w-[min(26rem,calc(100vw-2rem))]"
       >
-        <fieldset className="flex flex-col gap-3">
-          <legend className="mb-3 text-xs font-semibold tracking-[0.1em] text-muted-foreground">
-            ON ANY OF
-          </legend>
-          <input
-            ref={filterBox}
-            type="search"
-            value={filter}
-            onChange={(event) => setFilter(event.target.value)}
-            placeholder="Filter platforms"
-            aria-label="Filter platforms"
-            className={cn(
-              CONTROL,
-              "w-full px-4 text-base placeholder:text-muted-foreground focus-visible:outline-none md:text-sm",
-            )}
-          />
-          {shown.length === 0 ? (
-            <p className="px-2 py-3 text-sm text-muted-foreground">
-              No platforms match
-            </p>
-          ) : (
-            <div className="grid max-h-[min(22rem,50vh)] grid-cols-1 gap-y-1 overflow-y-auto sm:grid-cols-2 sm:gap-x-4">
-              {shown.map((platform) => (
-                <CheckboxRow
-                  key={platform.id}
-                  entry={platform}
-                  checked={selected.includes(platform.id)}
-                  full={full}
-                  onToggle={onToggle}
-                />
-              ))}
-            </div>
-          )}
-          {full ? <CapHint max={IGDB_MAX_FILTER_IDS} /> : null}
-        </fieldset>
+        <PlatformList
+          platforms={platforms}
+          selected={selected}
+          filter={filter}
+          onFilter={setFilter}
+          onToggle={onToggle}
+          filterBox={filterBox}
+        />
       </PopoverContent>
     </Popover>
+  );
+}
+
+/**
+ * The inside of the platforms popover: the legend, the filter box and the
+ * rows the filter leaves, or `No platforms match`. Apart from the popover so
+ * `/showcase` can show it open (spec 0029, AC-21).
+ */
+function PlatformList({
+  platforms,
+  selected,
+  filter,
+  onFilter,
+  onToggle,
+  filterBox,
+}: {
+  platforms: CatalogRef[];
+  selected: number[];
+  filter: string;
+  onFilter: (filter: string) => void;
+  onToggle: (id: number) => void;
+  filterBox?: React.Ref<HTMLInputElement>;
+}) {
+  const needle = filter.trim().toLowerCase();
+  const shown = needle
+    ? platforms.filter((platform) =>
+        platform.name.toLowerCase().includes(needle),
+      )
+    : platforms;
+  const full = selected.length >= IGDB_MAX_FILTER_IDS;
+
+  return (
+    <fieldset className="flex flex-col gap-3">
+      <legend className="mb-3 text-xs font-semibold tracking-[0.1em] text-muted-foreground">
+        ON ANY OF
+      </legend>
+      <input
+        ref={filterBox}
+        type="search"
+        value={filter}
+        onChange={(event) => onFilter(event.target.value)}
+        placeholder="Filter platforms"
+        aria-label="Filter platforms"
+        className={cn(
+          CONTROL,
+          "w-full px-4 text-base placeholder:text-muted-foreground focus-visible:outline-none md:text-sm",
+        )}
+      />
+      {shown.length === 0 ? (
+        <p className="px-2 py-3 text-sm text-muted-foreground">
+          No platforms match
+        </p>
+      ) : (
+        <div className="grid max-h-[min(22rem,50vh)] grid-cols-1 gap-y-1 overflow-y-auto sm:grid-cols-2 sm:gap-x-4">
+          {shown.map((platform) => (
+            <CheckboxRow
+              key={platform.id}
+              entry={platform}
+              checked={selected.includes(platform.id)}
+              full={full}
+              onToggle={onToggle}
+            />
+          ))}
+        </div>
+      )}
+      {full ? <CapHint max={IGDB_MAX_FILTER_IDS} /> : null}
+    </fieldset>
   );
 }
 
@@ -573,4 +606,4 @@ function SelectControl({
   );
 }
 
-export { FilterBar, PlatformPicker };
+export { FilterBar, PlatformList, PlatformPicker };

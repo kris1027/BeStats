@@ -134,9 +134,9 @@ describe("the show routes read no request scoped value (spec 0009, AC-18; spec 0
 });
 
 /**
- * covers: spec 0010, AC-20, AC-22
+ * covers: spec 0010, AC-20, AC-22; spec 0029, AC-20
  *
- * Search is public. The page, the Route Handler and every search piece reach
+ * Search is public, games included. The page, the Route Handler and every search piece reach
  * for no request API and no Supabase client, and declare no cache scope of
  * their own; the only session read is each movie card's bookmark, inside its
  * own Suspense boundary, exactly as on `/movies`.
@@ -154,6 +154,24 @@ describe("search reads no request scoped value (spec 0010, AC-22)", () => {
     expect(files).toContain(join("app/api/search/route.ts"));
     expect(files).toContain(join("components/search/search-results.tsx"));
     expect(files).toContain(join("lib/search/scan.ts"));
+    // spec 0029, AC-20: the games branch is held to the same rule.
+    expect(files).toContain(join("lib/search/game-read.ts"));
+  });
+
+  it("reads IGDB only through the module's entry point (spec 0029, AC-20)", () => {
+    for (const path of files) {
+      const source = readFileSync(path, "utf8");
+      const deep = [...source.matchAll(/from "@\/lib\/igdb\/([\w-]+)"/g)].map(
+        (match) => match[1],
+      );
+      // Only the pure helpers outside the module may be read directly.
+      for (const file of deep) {
+        expect(
+          ["constants", "query", "errors"],
+          `${path} imports ${file}`,
+        ).toContain(file);
+      }
+    }
   });
 
   it.each(files)("%s reaches for none of them", (path) => {
