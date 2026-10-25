@@ -110,7 +110,11 @@ export function titleHref(type: MediaType, id: number): string {
   return `${CATALOG_PATHS[type]}/${id}`;
 }
 
-/** A game's own page, `/games/{id}`, beside `titleHref` (spec 0027). */
+/**
+ * A game's own page, `/games/{id}`, beside `titleHref` (spec 0027). The one
+ * builder of a game page URL: the library cards, the game page's Retry link
+ * and its tracking slot's return path all use it.
+ */
 export function gameHref(id: number): string {
   return `/games/${id}`;
 }

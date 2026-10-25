@@ -1,5 +1,6 @@
 import { RetryLink } from "@/components/retry-link";
 import { gameReleaseNote, isGameReleased } from "@/lib/catalog/game-page";
+import { gameHref } from "@/lib/catalog/media-type";
 import { requestTodayUtc } from "@/lib/tracking/episode-state";
 import { getGameTracking } from "@/lib/tracking/game-state";
 import { TRACKING_READ_FAILED } from "@/lib/tracking/messages";
@@ -35,7 +36,7 @@ async function GameTrackingSlot({
   releaseDate: string | null;
 }) {
   const result = await getGameTracking(gameId);
-  const returnPath = `/games/${gameId}`;
+  const returnPath = gameHref(gameId);
 
   if (result.kind === "signed_out") return null;
 
