@@ -16,13 +16,26 @@ const tmdb = vi.hoisted(() => ({
 
 vi.mock("@/lib/tmdb", () => tmdb);
 
+const igdb = vi.hoisted(() => ({
+  discoverGames: vi.fn(),
+  getPopularGames: vi.fn(),
+}));
+vi.mock("@/lib/igdb", () => igdb);
+vi.mock("next/server", () => ({ connection: async () => {} }));
+
 const { catalogList } = await import("@/lib/catalog/lists");
-const { readCatalogList, readTaggedCatalogGridPage } = await import(
-  "./catalog-list-read"
-);
+const {
+  lastListPage,
+  readCatalogList,
+  readGameListPage,
+  readTaggedCatalogGridPage,
+  readTaggedCatalogList,
+} = await import("./catalog-list-read");
 
 afterEach(() => {
   for (const fn of Object.values(tmdb)) fn.mockReset();
+  for (const fn of Object.values(igdb)) fn.mockReset();
+  vi.useRealTimers();
 });
 
 describe("readCatalogList", () => {
@@ -88,7 +101,98 @@ describe("readTaggedCatalogGridPage", () => {
     expect(result.results.map((show) => show.id)).toEqual(
       Array.from({ length: 24 }, (_, index) => 25 + index),
     );
-    expect(result.totalPages).toBe(25);
+    expect("totalPages" in result && result.totalPages).toBe(25);
     expect(mediaType).toBe("tv");
+  });
+});
+
+/** covers: spec 0028, AC-2 to AC-4, AC-10 */
+describe("readGameListPage", () => {
+  const ranked = (count: number) =>
+    Array.from({ length: count }, (_, index) => ({ id: index + 1 }));
+
+  it("slices a popularity list by 24, with the exact count", async () => {
+    igdb.getPopularGames.mockResolvedValue(ranked(50));
+
+    const paged = await readGameListPage(
+      catalogList("game", "trending"),
+      2,
+      "2026-10-25",
+    );
+
+    expect(igdb.getPopularGames).toHaveBeenCalledWith("trending");
+    expect(paged.results.map((game) => game.id)).toEqual(
+      Array.from({ length: 24 }, (_, index) => 25 + index),
+    );
+    expect(paged).toMatchObject({ hasNextPage: true, totalResults: 50 });
+  });
+
+  it("reads Popular from the Playing list, and ends on the last slice", async () => {
+    igdb.getPopularGames.mockResolvedValue(ranked(50));
+
+    const paged = await readGameListPage(
+      catalogList("game", "popular"),
+      3,
+      "2026-10-25",
+    );
+
+    expect(igdb.getPopularGames).toHaveBeenCalledWith("popular");
+    expect(paged.results.map((game) => game.id)).toEqual([49, 50]);
+    expect(paged.hasNextPage).toBe(false);
+  });
+
+  it("reads a discover list with its day's options and the page", async () => {
+    await readGameListPage(catalogList("game", "coming-soon"), 2, "2026-10-25");
+
+    expect(igdb.discoverGames).toHaveBeenCalledWith({
+      sort: "hypes_desc",
+      minHypes: 1,
+      releasedFrom: "2026-10-26",
+      releasedTo: "2027-02-22",
+      pageSize: 24,
+      page: 2,
+    });
+  });
+
+  it("answers past page 50 empty, without asking IGDB", async () => {
+    const paged = await readGameListPage(
+      catalogList("game", "top-rated"),
+      51,
+      "2026-10-25",
+    );
+
+    expect(paged.results).toEqual([]);
+    expect(igdb.discoverGames).not.toHaveBeenCalled();
+  });
+
+  it("reads today in UTC for the landing and the list page alike", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-25T23:30:00-05:00"));
+    igdb.discoverGames.mockResolvedValue({ results: [] });
+
+    await readTaggedCatalogList(catalogList("game", "recently-released"), 1);
+    await readTaggedCatalogGridPage(
+      catalogList("game", "recently-released"),
+      1,
+    );
+
+    expect(igdb.discoverGames.mock.calls).toEqual([
+      [expect.objectContaining({ releasedTo: "2026-10-26", page: 1 })],
+      [expect.objectContaining({ releasedTo: "2026-10-26", page: 1 })],
+    ]);
+  });
+});
+
+describe("lastListPage (spec 0028, AC-10)", () => {
+  const game = (totalResults: number | null) => ({
+    mediaType: "game" as const,
+    paged: { page: 1, results: [], hasNextPage: false, totalResults },
+  });
+
+  it("counts a games list's pages by 24, capped at 50, or null", () => {
+    expect(lastListPage(game(49))).toBe(3);
+    expect(lastListPage(game(48))).toBe(2);
+    expect(lastListPage(game(100_000))).toBe(50);
+    expect(lastListPage(game(null))).toBeNull();
   });
 });

@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 
 import { PosterCard } from "@/components/poster-card";
-import { TmdbRatingBadge } from "@/components/rating-badges";
+import { IgdbRatingBadge, TmdbRatingBadge } from "@/components/rating-badges";
 import {
   MovieCardBadge,
   MovieCardControls,
@@ -11,6 +11,8 @@ import {
   ShowCardControls,
   ShowCardMeta,
 } from "@/components/tracking/show-card-slots";
+import { gameHref } from "@/lib/catalog/media-type";
+import type { GameSummary } from "@/lib/igdb";
 import type { MovieSummary, TvShowSummary } from "@/lib/tmdb";
 
 type ListCardProps = {
@@ -126,4 +128,26 @@ function MovieListCard({
   );
 }
 
-export { MovieListCard, ShowListCard };
+/**
+ * A game's card on a games list page (spec 0028, AC-8): the cover, the name
+ * and IGDB's community rating, linking to the game page. No personal badge
+ * and no controls yet, so no session read and no Suspense; G8 adds them.
+ */
+function GameListCard({
+  game,
+  priority,
+  sizes,
+}: Omit<ListCardProps, "returnPath"> & { game: GameSummary }) {
+  return (
+    <PosterCard
+      title={game.name}
+      posterUrl={game.coverUrl}
+      href={gameHref(game.id)}
+      badge={<IgdbRatingBadge value={game.communityRating} />}
+      priority={priority}
+      sizes={sizes}
+    />
+  );
+}
+
+export { GameListCard, MovieListCard, ShowListCard };

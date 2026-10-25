@@ -1,7 +1,14 @@
 import type { Metadata } from "next";
-import { type CatalogList, listPageHref } from "@/lib/catalog/lists";
+import {
+  type GameCatalogList,
+  listPageHref,
+  type TmdbCatalogList,
+} from "@/lib/catalog/lists";
 import { parsePageParam } from "@/lib/catalog/pages";
-import { readTaggedCatalogGridPage } from "@/lib/catalog-list-read";
+import {
+  lastListPage,
+  readTaggedCatalogGridPage,
+} from "@/lib/catalog-list-read";
 import { landingMetadata } from "@/lib/seo/metadata";
 import { TmdbError } from "@/lib/tmdb";
 
@@ -58,15 +65,38 @@ export async function landingPageMetadata({
  * (spec 0022, AC-21).
  */
 export async function catalogListMetadata(
-  list: CatalogList,
+  list: TmdbCatalogList,
   searchParams: Promise<Record<string, string | string[] | undefined>>,
 ): Promise<Metadata> {
   return landingPageMetadata({
     pageParam: (await searchParams).page,
-    discover: async ({ page }) =>
-      (await readTaggedCatalogGridPage(list, page)).paged,
+    discover: async ({ page }) => ({
+      totalPages:
+        lastListPage(await readTaggedCatalogGridPage(list, page)) ?? 0,
+    }),
     title: list.heading,
     description: list.note,
     pageHref: (page) => listPageHref(list, page),
   });
+}
+
+/**
+ * A games page's metadata (spec 0028, AC-13): its title and description, and
+ * `noindex` with no canonical and no share card of its own, until G10 opens
+ * games to search engines. Static: it reads neither `?page` nor IGDB, so it
+ * costs no request and holds for every page of a list.
+ */
+export function gamesMetadata({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}): Metadata {
+  return landingMetadata({ title, description, path: null });
+}
+
+/** `gamesMetadata` for one games list page: its h1 and its note. */
+export function gameListMetadata(list: GameCatalogList): Metadata {
+  return gamesMetadata({ title: list.heading, description: list.note });
 }

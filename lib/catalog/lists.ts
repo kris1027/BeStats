@@ -1,4 +1,4 @@
-import { CATALOG_PATHS, type MediaType } from "./media-type";
+import { CATALOG_PATHS, type LibraryType, type MediaType } from "./media-type";
 
 /**
  * The TV lists a landing row and its list page show, in row order (spec 0021,
@@ -22,8 +22,21 @@ export const MOVIE_LIST_SLUGS = [
   "top-rated",
 ] as const;
 
+/**
+ * The games twin, under `app/games/` (spec 0028, AC-2, AC-9). Its lists come
+ * from IGDB, not TMDB, through `readGameListPage`.
+ */
+export const GAME_LIST_SLUGS = [
+  "trending",
+  "popular",
+  "recently-released",
+  "coming-soon",
+  "top-rated",
+] as const;
+
 export type TvListSlug = (typeof TV_LIST_SLUGS)[number];
 export type MovieListSlug = (typeof MOVIE_LIST_SLUGS)[number];
+export type GameListSlug = (typeof GAME_LIST_SLUGS)[number];
 
 /** The words every list shows, wherever it is rendered (spec 0021, AC-1, AC-9). */
 type ListText = {
@@ -42,7 +55,13 @@ export type MovieCatalogList = ListText & {
   mediaType: "movie";
   slug: MovieListSlug;
 };
-export type CatalogList = TvCatalogList | MovieCatalogList;
+export type GameCatalogList = ListText & {
+  mediaType: "game";
+  slug: GameListSlug;
+};
+/** A TMDB list: the shows and movies the sitemap and TMDB reads take. */
+export type TmdbCatalogList = TvCatalogList | MovieCatalogList;
+export type CatalogList = TmdbCatalogList | GameCatalogList;
 
 /**
  * Every list, once (spec 0021, the registry). The routes, the proxy, the
@@ -131,13 +150,59 @@ export const CATALOG_LISTS: readonly CatalogList[] = [
     note: "Ordered by TMDB community rating.",
     pageNoun: "top rated movies",
   },
+  {
+    mediaType: "game",
+    slug: "trending",
+    rowTitle: "Trending now",
+    heading: "Trending games",
+    note: "The games people are looking at most on IGDB right now.",
+    pageNoun: "trending games",
+  },
+  {
+    mediaType: "game",
+    slug: "popular",
+    rowTitle: "Popular",
+    heading: "Popular games",
+    note: "The games the most IGDB members are playing right now.",
+    pageNoun: "popular games",
+  },
+  {
+    mediaType: "game",
+    slug: "recently-released",
+    rowTitle: "Recently released",
+    heading: "Recently released games",
+    note: "Released in the last 60 days, most anticipated first, per IGDB.",
+    pageNoun: "recently released games",
+  },
+  {
+    mediaType: "game",
+    slug: "coming-soon",
+    rowTitle: "Coming soon",
+    heading: "Games coming soon",
+    note: "Releasing in the next 120 days, most anticipated first, per IGDB.",
+    pageNoun: "upcoming games",
+  },
+  {
+    mediaType: "game",
+    slug: "top-rated",
+    rowTitle: "Top rated",
+    heading: "Top rated games",
+    note: "Ordered by IGDB community rating, among games with at least 100 ratings.",
+    pageNoun: "top rated games",
+  },
 ];
 
-/** One media type's lists, in row order (spec 0021, AC-1). */
+/**
+ * One media type's lists, in row order (spec 0021, AC-1). The `MediaType`
+ * overload never returns a game list, which is what keeps the sitemap, which
+ * asks for `tv` and `movie`, free of `/games` URLs until G10 (spec 0028,
+ * AC-13).
+ */
 export function catalogListsFor(mediaType: "tv"): TvCatalogList[];
 export function catalogListsFor(mediaType: "movie"): MovieCatalogList[];
-export function catalogListsFor(mediaType: MediaType): CatalogList[];
-export function catalogListsFor(mediaType: MediaType): CatalogList[] {
+export function catalogListsFor(mediaType: "game"): GameCatalogList[];
+export function catalogListsFor(mediaType: MediaType): TmdbCatalogList[];
+export function catalogListsFor(mediaType: LibraryType): CatalogList[] {
   return CATALOG_LISTS.filter((list) => list.mediaType === mediaType);
 }
 
@@ -150,7 +215,11 @@ export function catalogList(
   mediaType: "movie",
   slug: MovieListSlug,
 ): MovieCatalogList;
-export function catalogList(mediaType: MediaType, slug: string): CatalogList {
+export function catalogList(
+  mediaType: "game",
+  slug: GameListSlug,
+): GameCatalogList;
+export function catalogList(mediaType: LibraryType, slug: string): CatalogList {
   const list = CATALOG_LISTS.find(
     (entry) => entry.mediaType === mediaType && entry.slug === slug,
   );
@@ -159,7 +228,8 @@ export function catalogList(mediaType: MediaType, slug: string): CatalogList {
 }
 
 /**
- * A list's page: `/shows/{slug}` or `/movies/{slug}` (spec 0021, AC-9). Takes
+ * A list's page: `/shows/{slug}`, `/movies/{slug}` or `/games/{slug}` (spec
+ * 0021, AC-9; spec 0028, AC-9). Takes
  * the registry entry, not a media type and slug, so a caller cannot pair a
  * slug with the wrong catalog.
  */
@@ -180,11 +250,11 @@ export function listPageHref(list: CatalogList, page: number): string {
 /**
  * True for a path segment that names one of this media type's lists, matched
  * exactly and case sensitively, so `/shows/Popular` and `/shows/upcoming`
- * stay 404s (spec 0021, AC-13). The proxy checks it before the numeric id
- * parser.
+ * stay 404s (spec 0021, AC-13; spec 0028, AC-12). The proxy checks it before
+ * the numeric id parser.
  */
 export function isCatalogListSlug(
-  mediaType: MediaType,
+  mediaType: LibraryType,
   segment: string,
 ): boolean {
   return CATALOG_LISTS.some(

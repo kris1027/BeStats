@@ -101,7 +101,7 @@ const TABS = [
  */
 function MediaTypeTabsView({
   selected,
-  hrefs = CATALOG_PATHS,
+  hrefs = { tv: CATALOG_PATHS.tv, movie: CATALOG_PATHS.movie },
   className,
 }: {
   selected: LibraryType | null;

@@ -39,6 +39,23 @@ describe("landingSlots (AC-1)", () => {
     ]);
     expect(slots.nowLabel).toBe("On TV today");
   });
+
+  // spec 0028, AC-1, AC-9
+  it("maps the games landing's slots, New releases in the sidebar", () => {
+    const slots = landingSlots("game");
+    expect(
+      [slots.trending, slots.popular, slots.now, slots.upcoming, slots.top].map(
+        (list) => `${list.mediaType}/${list.slug}`,
+      ),
+    ).toEqual([
+      "game/trending",
+      "game/popular",
+      "game/recently-released",
+      "game/coming-soon",
+      "game/top-rated",
+    ]);
+    expect(slots.nowLabel).toBe("New releases");
+  });
 });
 
 describe("LANDING_COUNTS (AC-2)", () => {
@@ -66,6 +83,18 @@ describe("nowBlurb (decision 12)", () => {
     const list = landingSlots("tv").now;
     expect(nowBlurb(list, 7)).toBe("7 shows airing today.");
     expect(nowBlurb(list, 1)).toBe("1 show airing today.");
+  });
+
+  // spec 0028, AC-9
+  it("counts games for the games landing, never with the movie line", () => {
+    const list = landingSlots("game").now;
+    expect(nowBlurb(list, 12)).toBe(
+      "The 12 most anticipated games of the last 60 days.",
+    );
+    expect(nowBlurb(list, 1)).toBe(
+      "The 1 most anticipated game of the last 60 days.",
+    );
+    expect(nowBlurb(list, 0)).toBeNull();
   });
 
   it("says nothing when nothing is rendered", () => {

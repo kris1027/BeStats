@@ -212,6 +212,12 @@ describe("the proxy's catalog id rule", () => {
     "/games/5.0",
     "/games/2147483648",
     "/games/1.jpg",
+    // spec 0028, AC-12: only the five slugs, exactly as written.
+    "/games/Trending",
+    "/games/coming_soon",
+    "/games/trending.jpg",
+    "/games/now-playing",
+    "/games/top%2Drated",
   ])("answers %s with a 404 rewrite", async (path) => {
     const response = await run(path);
 
@@ -280,8 +286,14 @@ describe("the proxy's catalog id rule", () => {
     "/movies/now-playing",
     "/movies/upcoming",
     "/movies/top-rated",
-    // spec 0025, AC-6: `/games` and deeper paths match no route, so the
-    // plain 404 answers them, not this rule.
+    // spec 0028, AC-12: the five games list pages.
+    "/games/trending",
+    "/games/popular",
+    "/games/recently-released",
+    "/games/coming-soon",
+    "/games/top-rated",
+    // spec 0025, AC-6: deeper paths match no route, so the plain 404
+    // answers them, not this rule; `/games` is the landing (spec 0028).
     "/games/1942",
     "/games/2147483647",
     "/games",

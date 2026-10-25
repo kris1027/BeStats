@@ -16,12 +16,15 @@ export type LibraryType = MediaType | "game";
 
 /**
  * Each catalog's browse page, which also types every title page below it
- * (feature 22). The one place these two paths are written as a pair.
+ * (feature 22). The one place these paths are written together. `/games`
+ * joined in spec 0028; the record is keyed by `LibraryType`, while
+ * `MediaType` stays `tv | movie`.
  */
 export const CATALOG_PATHS = {
   tv: "/shows",
   movie: "/movies",
-} as const satisfies Record<MediaType, string>;
+  game: "/games",
+} as const satisfies Record<LibraryType, string>;
 
 /**
  * The three library pages, one per `LibraryList`, and the only typed pages a

@@ -14,18 +14,37 @@ import { type CatalogList, listPageHref, listPath } from "@/lib/catalog/lists";
 import { CATALOG_PATHS } from "@/lib/catalog/media-type";
 import { parsePageParam } from "@/lib/catalog/pages";
 import {
+  lastListPage,
   readTaggedCatalogGridPage,
   type TaggedCatalogPage,
 } from "@/lib/catalog-list-read";
+import { IgdbError } from "@/lib/igdb";
+import { IGDB_MAX_PAGE } from "@/lib/igdb/constants";
 import { TmdbError } from "@/lib/tmdb";
 
-const LANDING_LABELS = { tv: "Shows", movie: "Movies" } as const;
+const LANDING_LABELS = {
+  tv: "Shows",
+  movie: "Movies",
+  game: "Games",
+} as const satisfies Record<CatalogList["mediaType"], string>;
+
+/** The catalog a list's titles come from, named in its error and empty copy. */
+const SOURCE_NAMES = {
+  tv: "TMDB",
+  movie: "TMDB",
+  game: "IGDB",
+} as const satisfies Record<CatalogList["mediaType"], string>;
+
+/** A failure of the list's own catalog, which the retry panel answers. */
+function isCatalogError(error: unknown): boolean {
+  return error instanceof TmdbError || error instanceof IgdbError;
+}
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 /**
- * One list's See all page, `/shows/{slug}` or `/movies/{slug}` (spec 0021,
- * AC-9, AC-10): a back link to the landing, the list's h1 and note, then the
+ * One list's See all page, `/shows/{slug}`, `/movies/{slug}` or
+ * `/games/{slug}` (spec 0021, AC-9, AC-10; spec 0028, AC-9 to AC-11): a back link to the landing, the list's h1 and note, then the
  * paged grid the landing used to be.
  *
  * The header is static and prerendered; the grid needs the `page` search
@@ -81,13 +100,14 @@ async function ListGrid({
   try {
     result = await readTaggedCatalogGridPage(list, page);
   } catch (error) {
-    if (!(error instanceof TmdbError)) throw error;
+    if (!isCatalogError(error)) throw error;
+    const source = SOURCE_NAMES[list.mediaType];
     return (
       <div className="py-12">
         <StatePanel
           variant="error"
-          title="Couldn't reach TMDB"
-          description="TMDB didn't respond. Try again in a moment."
+          title={`Couldn't reach ${source}`}
+          description={`${source} didn't respond. Try again in a moment.`}
           action={<RetryLink href={pageHref(page)} />}
         />
       </div>
@@ -100,14 +120,21 @@ async function ListGrid({
         <StatePanel
           variant="empty"
           title="This list is empty"
-          description="TMDB lists nothing here right now."
+          description={`${SOURCE_NAMES[list.mediaType]} lists nothing here right now.`}
         />
       </div>
     );
   }
 
-  const lastPage = result.paged.totalPages;
-  if (page > lastPage) return <NoSuchPage list={list} />;
+  // A games list with no count knows its end only by an empty page.
+  const lastPage = lastListPage(result);
+  if (result.paged.results.length === 0) return <NoSuchPage list={list} />;
+  if (lastPage !== null && page > lastPage) return <NoSuchPage list={list} />;
+  const hasNextPage =
+    lastPage === null &&
+    result.mediaType === "game" &&
+    result.paged.hasNextPage &&
+    page < IGDB_MAX_PAGE;
 
   return (
     <div className="flex flex-col gap-10">
@@ -119,7 +146,12 @@ async function ListGrid({
         />
       </PosterGrid>
 
-      <PaginationLinks page={page} lastPage={lastPage} href={pageHref} />
+      <PaginationLinks
+        page={page}
+        lastPage={lastPage}
+        hasNextPage={hasNextPage}
+        href={pageHref}
+      />
     </div>
   );
 }

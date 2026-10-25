@@ -15,16 +15,22 @@ import { ButtonLink } from "@/components/ui/button";
  *
  * @param href Builds the URL for a page number. Page 1 should map to the bare
  * path, so there is one URL per page.
+ * @param lastPage The last page, or null when the list has no count (an IGDB
+ * list without one, spec 0028, AC-10): the line then reads `Page N` and Next
+ * shows only when `hasNextPage` says so.
  */
 function PaginationLinks({
   page,
   lastPage,
+  hasNextPage = false,
   href,
 }: {
   page: number;
-  lastPage: number;
+  lastPage: number | null;
+  hasNextPage?: boolean;
   href: (page: number) => string;
 }) {
+  const hasNext = lastPage === null ? hasNextPage : page < lastPage;
   return (
     <nav
       aria-label="Pagination"
@@ -43,10 +49,10 @@ function PaginationLinks({
       ) : null}
 
       <p className="text-sm text-muted-foreground tabular-nums">
-        Page {page} of {lastPage}
+        {lastPage === null ? `Page ${page}` : `Page ${page} of ${lastPage}`}
       </p>
 
-      {page < lastPage ? (
+      {hasNext ? (
         <ButtonLink
           href={href(page + 1)}
           size="touch"

@@ -1,9 +1,13 @@
-import { MovieListCard, ShowListCard } from "@/components/catalog/list-cards";
+import {
+  GameListCard,
+  MovieListCard,
+  ShowListCard,
+} from "@/components/catalog/list-cards";
 import type { TaggedCatalogPage } from "@/lib/catalog-list-read";
 
 /**
  * One `<li>` and full card per title of a list page, the one place a tagged
- * page becomes show or movie cards (spec 0021, AC-4). A landing row and a
+ * page becomes show, movie or game cards (spec 0021, AC-4; spec 0028, AC-8). A landing row and a
  * list page grid both render through it and differ only in the props.
  *
  * `ids` is every id the caller renders, so all the cards' slots share one
@@ -39,6 +43,13 @@ function CatalogListCards({
           priority={index < eagerCount}
           sizes={sizes}
         />
+      </li>
+    ));
+  }
+  if (result.mediaType === "game") {
+    return result.paged.results.slice(0, limit).map((game, index) => (
+      <li key={game.id} className={itemClassName}>
+        <GameListCard game={game} priority={index < eagerCount} sizes={sizes} />
       </li>
     ));
   }

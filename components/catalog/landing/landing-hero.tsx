@@ -5,18 +5,17 @@ import { Suspense } from "react";
 
 import { TrailerSlot } from "@/components/catalog/title-extras";
 import { GlassPill } from "@/components/glass-pill";
-import { TmdbRatingBadge } from "@/components/rating-badges";
 import type { CatalogList } from "@/lib/catalog/lists";
-import type { MediaType } from "@/lib/catalog/media-type";
+import type { LibraryType } from "@/lib/catalog/media-type";
+import { getGameGenres, IgdbError } from "@/lib/igdb";
 import {
-  type Genre,
   getMovieGenres,
   getTvGenres,
   resizeImageUrl,
   TmdbError,
 } from "@/lib/tmdb";
 import { ArtFallback } from "./art-fallback";
-import { LandingTracking } from "./landing-badge";
+import { CommunityRatingBadge, LandingTracking } from "./landing-badge";
 import {
   type LandingItem,
   landingItems,
@@ -85,7 +84,7 @@ async function LandingHeroContent({ list }: { list: CatalogList }) {
           <GlassPill className="font-semibold text-foreground">
             #1 Trending
           </GlassPill>
-          <TmdbRatingBadge value={item.tmdbRating} />
+          <CommunityRatingBadge rating={item.rating} />
           {genres.length > 0 ? <span>{genres.join(", ")}</span> : null}
         </div>
         <h2
@@ -97,11 +96,14 @@ async function LandingHeroContent({ list }: { list: CatalogList }) {
           </Link>
         </h2>
         <div className="mt-2 flex flex-wrap items-center gap-3 md:mt-4">
-          <TrailerSlot
-            mediaType={item.mediaType}
-            id={item.id}
-            title={item.title}
-          />
+          {/* A game has no trailer until G9 (spec 0028, AC-7). */}
+          {item.mediaType === "game" ? null : (
+            <TrailerSlot
+              mediaType={item.mediaType}
+              id={item.id}
+              title={item.title}
+            />
+          )}
           <LandingTracking item={item} />
         </div>
       </div>
@@ -143,23 +145,32 @@ function HeroArtwork({ item }: { item: LandingItem }) {
   );
 }
 
-/** Each media type's cached genre list, read by the hero's genre line. */
-const GENRE_LISTS: Record<MediaType, () => Promise<Genre[]>> = {
+/**
+ * Each media type's cached genre list, read by the hero's genre line. A game
+ * reads IGDB's genres (spec 0028, AC-7); both shapes are `{ id, name }`.
+ */
+const GENRE_LISTS: Record<
+  LibraryType,
+  () => Promise<{ id: number; name: string }[]>
+> = {
   tv: getTvGenres,
   movie: getMovieGenres,
+  game: getGameGenres,
 };
 
 /**
  * The featured title's genre names, from the cached genre list its media
- * type has. A failed genre read leaves the genres out rather than failing
- * the hero.
+ * type has. A failed genre read, TMDB's or IGDB's, leaves the genres out
+ * rather than failing the hero.
  */
 async function genreNames(item: LandingItem): Promise<string[]> {
-  let genres: Genre[];
+  let genres: { id: number; name: string }[];
   try {
     genres = await GENRE_LISTS[item.mediaType]();
   } catch (error) {
-    if (!(error instanceof TmdbError)) throw error;
+    if (!(error instanceof TmdbError) && !(error instanceof IgdbError)) {
+      throw error;
+    }
     return [];
   }
   const names = new Map(genres.map((genre) => [genre.id, genre.name]));

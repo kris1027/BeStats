@@ -13,8 +13,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const read = vi.fn();
 const movieGenres = vi.fn();
 const tvGenres = vi.fn();
+const gameGenres = vi.fn();
 
 vi.mock("next/server", () => ({ connection: async () => {} }));
+vi.mock("@/lib/igdb", async () => ({
+  IgdbError: (await import("@/lib/igdb/errors")).IgdbError,
+  getGameGenres: () => gameGenres(),
+}));
 vi.mock("@/lib/tmdb", async () => ({
   TmdbError: (await import("@/lib/tmdb/errors")).TmdbError,
   getMovieGenres: () => movieGenres(),
@@ -42,6 +47,11 @@ vi.mock("@/components/tracking/movie-tracking-slot", () => ({
     <span data-testid="tracking">{`movie/${movieId}`}</span>
   ),
 }));
+vi.mock("@/components/tracking/game-tracking-slot", () => ({
+  GameTrackingSlot: ({ gameId }: { gameId: number }) => (
+    <span data-testid="tracking">{`game/${gameId}`}</span>
+  ),
+}));
 vi.mock("@/components/tracking/show-tracking-slot", () => ({
   ShowTrackingSlot: ({ showId }: { showId: number }) => (
     <span data-testid="tracking">{`tv/${showId}`}</span>
@@ -49,6 +59,7 @@ vi.mock("@/components/tracking/show-tracking-slot", () => ({
 }));
 
 const { TmdbError } = await import("@/lib/tmdb/errors");
+const { IgdbError } = await import("@/lib/igdb/errors");
 const { landingSlots } = await import("@/lib/catalog/landing");
 const { LandingHeroContent } = await import("./landing-hero");
 
@@ -81,6 +92,7 @@ afterEach(() => {
   read.mockReset();
   movieGenres.mockReset();
   tvGenres.mockReset();
+  gameGenres.mockReset();
 });
 
 describe("LandingHeroContent (AC-3)", () => {
@@ -177,5 +189,73 @@ describe("LandingHeroContent's failure states (AC-6)", () => {
     expect(
       await LandingHeroContent({ list: landingSlots("movie").trending }),
     ).toBeNull();
+  });
+});
+
+/** covers: spec 0028, AC-7 */
+describe("the games hero", () => {
+  const GAME = {
+    id: 1942,
+    name: "The Witcher 3: Wild Hunt",
+    coverUrl:
+      "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co1.jpg",
+    artUrl: "https://images.igdb.com/igdb/image/upload/t_1080p/ar1.jpg",
+    releaseDate: "2015-05-19",
+    releaseYear: 2015,
+    communityRating: 9.3,
+    communityRatingCount: 4000,
+    genreIds: [12, 31],
+    platformIds: [],
+    hidden: false,
+  };
+
+  function gamePage(results: unknown[]) {
+    return {
+      mediaType: "game",
+      paged: { results, page: 1, hasNextPage: false, totalResults: 1 },
+    };
+  }
+
+  it("features the game over its art, with IGDB's rating, genres and the status control", async () => {
+    read.mockResolvedValue(gamePage([GAME]));
+    gameGenres.mockResolvedValue([
+      { id: 12, name: "Role-playing (RPG)" },
+      { id: 31, name: "Adventure" },
+    ]);
+
+    const { container } = render(
+      await LandingHeroContent({ list: landingSlots("game").trending }),
+    );
+
+    expect(screen.getByRole("link", { name: GAME.name })).toHaveAttribute(
+      "href",
+      "/games/1942",
+    );
+    expect(screen.getByText("IGDB community rating")).toBeInTheDocument();
+    expect(screen.getByText("9.3")).toBeInTheDocument();
+    expect(
+      screen.getByText("Role-playing (RPG), Adventure"),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("trailer")).not.toBeInTheDocument();
+    expect(screen.getByTestId("tracking")).toHaveTextContent("game/1942");
+    expect(
+      decodeURIComponent(
+        container.querySelector("img")?.getAttribute("src") ?? "",
+      ),
+    ).toContain("t_1080p/ar1.jpg");
+  });
+
+  it("falls back to the cover, and leaves genres out when IGDB fails them", async () => {
+    read.mockResolvedValue(gamePage([{ ...GAME, artUrl: null }]));
+    gameGenres.mockRejectedValue(new IgdbError("upstream", "genres", "503"));
+
+    const { container } = render(
+      await LandingHeroContent({ list: landingSlots("game").trending }),
+    );
+
+    expect(container.querySelector("img")?.getAttribute("src")).toContain(
+      "co1.jpg",
+    );
+    expect(screen.queryByText(/Adventure/)).not.toBeInTheDocument();
   });
 });

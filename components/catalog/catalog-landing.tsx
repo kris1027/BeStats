@@ -6,11 +6,11 @@ import { TopRatedList } from "@/components/catalog/landing/top-rated-list";
 import { TrendingPin } from "@/components/catalog/landing/trending-pin";
 import { UpcomingRows } from "@/components/catalog/landing/upcoming-rows";
 import { landingSlots } from "@/lib/catalog/landing";
-import type { MediaType } from "@/lib/catalog/media-type";
+import type { LibraryType } from "@/lib/catalog/media-type";
 
 /**
- * A catalog landing, `/shows` or `/movies` (prompts/home-parallax-landing.md,
- * superseding the rows of spec 0021): the hero, then Trending, Popular, Now
+ * A catalog landing, `/shows`, `/movies` or `/games` (prompts/home-parallax-
+ * landing.md, superseding the rows of spec 0021; spec 0028, AC-1): the hero, then Trending, Popular, Now
  * playing (Airing today), Upcoming (On the air) and Top rated, each with its
  * own layout and motion.
  *
@@ -24,7 +24,7 @@ function CatalogLanding({
   mediaType,
 }: {
   heading: string;
-  mediaType: MediaType;
+  mediaType: LibraryType;
 }) {
   const slots = landingSlots(mediaType);
 

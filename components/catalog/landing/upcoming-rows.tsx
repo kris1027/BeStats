@@ -108,9 +108,9 @@ function toRows(items: readonly LandingItem[], size: number): LandingItem[][] {
 }
 
 /**
- * The card's date: a movie's release day in UTC, with the year only outside
- * this one, or a show's first air year, since a TV list result carries no
- * next air date (decision 12).
+ * The card's date: a movie's or game's release day in UTC, with the year only
+ * outside this one, or a show's first air year, since a TV list result
+ * carries no next air date (decision 12; spec 0028, AC-8).
  */
 function dateLabel(item: LandingItem, today: string): string | null {
   if (item.mediaType === "tv") {

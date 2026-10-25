@@ -41,7 +41,7 @@ describe("the list registry", () => {
 
   it("names every list once", () => {
     const keys = CATALOG_LISTS.map((list) => `${list.mediaType}/${list.slug}`);
-    expect(new Set(keys).size).toBe(10);
+    expect(new Set(keys).size).toBe(15);
   });
 
   it("finds an entry by media type and slug", () => {
