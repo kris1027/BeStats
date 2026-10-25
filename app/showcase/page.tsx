@@ -36,7 +36,11 @@ import {
   LegalList,
   LegalSection,
 } from "@/components/legal/legal-document";
-import { DatedPill, DateTbaPill } from "@/components/library/dated-pill";
+import {
+  DatedPill,
+  DateTbaPill,
+  ReleasePill,
+} from "@/components/library/dated-pill";
 import { PosterCard } from "@/components/poster-card";
 import { PosterGrid } from "@/components/poster-grid";
 import {
@@ -530,17 +534,35 @@ export default function ShowcasePage() {
 
       <Section
         title="Games landing and lists"
-        note="/games and its list pages (spec 0028): a game card shows its cover, name and the IGDB community rating, with no personal badge or controls until G8. A wide card shows the game's IGDB art, else its cover cropped to fill, else the missing artwork tile. A failed games section names IGDB, and a list page has its own retry and empty panels."
+        note="/games and its list pages (spec 0028): a game card shows its cover, name and the IGDB community rating, with no personal badge or controls until G8; on Coming soon it prints the release day. A wide card shows the game's IGDB art, else its cover cropped to fill, else the missing artwork tile. A failed games section names IGDB, and a list page has its own retry and empty panels."
       >
         <div className="flex flex-col gap-10">
-          <ShowcaseLanding title="A game card">
-            <div className="w-40 md:w-60">
-              <PosterCard
-                title="A game with a cover"
-                posterUrl={LIGHT_POSTER}
-                href="/games/1942"
-                badge={<IgdbRatingBadge value={8.7} />}
-              />
+          <ShowcaseLanding title="Game cards">
+            <div className="flex flex-wrap items-start gap-4">
+              <div className="w-40 md:w-60">
+                <PosterCard
+                  title="A game with a cover"
+                  posterUrl={LIGHT_POSTER}
+                  href="/games/1942"
+                  badge={<IgdbRatingBadge value={8.7} />}
+                />
+              </div>
+              <div className="w-40 md:w-60">
+                <PosterCard
+                  title="On Coming soon"
+                  posterUrl={LIGHT_POSTER}
+                  href="/games/1942"
+                  badge={<IgdbRatingBadge value={8.7} />}
+                  controls={
+                    <ReleasePill
+                      release={{
+                        shortDate: "Nov 6",
+                        fullDate: "November 6, 2026",
+                      }}
+                    />
+                  }
+                />
+              </div>
             </div>
           </ShowcaseLanding>
           <ShowcaseLanding title="Wide game cards">

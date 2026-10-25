@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 /**
- * covers: spec 0021, AC-4, AC-5
+ * covers: spec 0021, AC-4, AC-5; spec 0028, AC-8
  *
  * A list card is the full grid card: the personal badge, the TV meta line and
  * the controls, each handed the row's ids and the page's return path. The
@@ -68,7 +68,9 @@ vi.mock("@/components/tracking/movie-card-slots", () => ({
   ),
 }));
 
-const { MovieListCard, ShowListCard } = await import("./list-cards");
+const { GameListCard, MovieListCard, ShowListCard } = await import(
+  "./list-cards"
+);
 const { ROW_POSTER_SIZES } = await import("./carousel-row-states");
 const { POSTER_SIZES } = await import("@/components/poster-card");
 
@@ -86,6 +88,14 @@ const MOVIE = {
   releaseDate: "2027-03-01",
   tmdbRating: 8.4,
 } as Parameters<typeof MovieListCard>[0]["movie"];
+
+const GAME = {
+  id: 1942,
+  name: "The Witcher 3",
+  coverUrl: null,
+  communityRating: 9.3,
+  releaseDate: "2026-11-06",
+} as Parameters<typeof GameListCard>[0]["game"];
 
 afterEach(() => {
   document.body.innerHTML = "";
@@ -241,5 +251,46 @@ describe("MovieListCard (AC-4)", () => {
     );
 
     expect(screen.queryByTestId("meta")).not.toBeInTheDocument();
+  });
+});
+
+describe("GameListCard (spec 0028, AC-8)", () => {
+  it("links the card to the game page with IGDB's rating", () => {
+    render(<GameListCard game={GAME} priority={false} />);
+
+    expect(screen.getByRole("link", { name: "The Witcher 3" })).toHaveAttribute(
+      "href",
+      "/games/1942",
+    );
+    expect(screen.getByText("9.3")).toBeInTheDocument();
+  });
+
+  it("prints no date unless the list dates its cards", () => {
+    render(<GameListCard game={GAME} priority={false} />);
+
+    expect(
+      document.querySelector('[data-slot="release-date"]'),
+    ).not.toBeInTheDocument();
+  });
+
+  it("prints the release day, with the year only outside this one", () => {
+    const { unmount } = render(
+      <GameListCard game={GAME} priority={false} releaseDay="2026-10-25" />,
+    );
+    expect(
+      document.querySelector('[data-slot="release-date"]'),
+    ).toHaveTextContent("Nov 6");
+    unmount();
+
+    render(
+      <GameListCard
+        game={{ ...GAME, releaseDate: "2027-01-08" }}
+        priority={false}
+        releaseDay="2026-10-25"
+      />,
+    );
+    expect(
+      document.querySelector('[data-slot="release-date"]'),
+    ).toHaveTextContent("Jan 8, 2027");
   });
 });

@@ -15,6 +15,8 @@ import type { TaggedCatalogPage } from "@/lib/catalog-list-read";
  *
  * @param limit How many titles to render; all of them when left out.
  * @param eagerCount How many leading posters load eagerly (AC-7).
+ * @param releaseDay The request's UTC day, set on a games list whose cards
+ * print their release date (spec 0028, AC-8).
  */
 function CatalogListCards({
   result,
@@ -23,6 +25,7 @@ function CatalogListCards({
   limit,
   sizes,
   itemClassName,
+  releaseDay,
 }: {
   result: TaggedCatalogPage;
   returnPath: string;
@@ -30,6 +33,7 @@ function CatalogListCards({
   limit?: number;
   sizes?: string;
   itemClassName?: string;
+  releaseDay?: string;
 }) {
   if (result.mediaType === "tv") {
     const shows = result.paged.results.slice(0, limit);
@@ -49,7 +53,12 @@ function CatalogListCards({
   if (result.mediaType === "game") {
     return result.paged.results.slice(0, limit).map((game, index) => (
       <li key={game.id} className={itemClassName}>
-        <GameListCard game={game} priority={index < eagerCount} sizes={sizes} />
+        <GameListCard
+          game={game}
+          priority={index < eagerCount}
+          sizes={sizes}
+          releaseDay={releaseDay}
+        />
       </li>
     ));
   }

@@ -23,6 +23,7 @@ import {
   readTaggedCatalogGridPage,
   type TaggedCatalogPage,
 } from "@/lib/catalog-list-read";
+import { requestTodayUtc } from "@/lib/tracking/episode-state";
 
 const LANDING_LABELS = {
   tv: "Shows",
@@ -119,6 +120,11 @@ async function ListGrid({
           result={result}
           returnPath={pageHref(page)}
           eagerCount={POSTER_GRID_EAGER.catalog}
+          releaseDay={
+            list.mediaType === "game" && list.datedCards
+              ? requestTodayUtc()
+              : undefined
+          }
         />
       </PosterGrid>
 

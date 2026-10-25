@@ -58,6 +58,8 @@ export type MovieCatalogList = ListText & {
 export type GameCatalogList = ListText & {
   mediaType: "game";
   slug: GameListSlug;
+  /** The cards print each game's release day: Coming soon (spec 0028, AC-8). */
+  datedCards?: true;
 };
 /** A TMDB list: the shows and movies the sitemap and TMDB reads take. */
 export type TmdbCatalogList = TvCatalogList | MovieCatalogList;
@@ -181,6 +183,7 @@ export const CATALOG_LISTS: readonly CatalogList[] = [
     heading: "Games coming soon",
     note: "Releasing in the next 120 days, most anticipated first, per IGDB.",
     pageNoun: "upcoming games",
+    datedCards: true,
   },
   {
     mediaType: "game",

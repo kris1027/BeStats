@@ -46,8 +46,17 @@ vi.mock("@/components/catalog/list-cards", () => ({
       {props.show.name}
     </span>
   ),
-  GameListCard: (props: { game: { name: string }; priority: boolean }) => (
-    <span data-priority={String(props.priority)}>{props.game.name}</span>
+  GameListCard: (props: {
+    game: { name: string };
+    priority: boolean;
+    releaseDay?: string;
+  }) => (
+    <span
+      data-priority={String(props.priority)}
+      data-release-day={props.releaseDay ?? "none"}
+    >
+      {props.game.name}
+    </span>
   ),
   MovieListCard: (props: {
     movie: { title: string };
@@ -408,6 +417,22 @@ describe("a games list page", () => {
     expect(screen.getByRole("link", { name: /Next/ })).toHaveAttribute(
       "href",
       "/games/coming-soon?page=2",
+    );
+  });
+
+  it("dates Coming soon's cards with the request's day, and no other list's", async () => {
+    read.mockResolvedValue(gamePage(2, 2));
+    await renderGrid(COMING_SOON);
+    expect(screen.getByText("Game 1")).toHaveAttribute(
+      "data-release-day",
+      "2026-10-18",
+    );
+    document.body.innerHTML = "";
+
+    await renderGrid(catalogList("game", "top-rated"));
+    expect(screen.getByText("Game 1")).toHaveAttribute(
+      "data-release-day",
+      "none",
     );
   });
 

@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 
+import { ReleasePill } from "@/components/library/dated-pill";
 import { PosterCard } from "@/components/poster-card";
 import { IgdbRatingBadge, TmdbRatingBadge } from "@/components/rating-badges";
 import {
@@ -12,6 +13,7 @@ import {
   ShowCardMeta,
 } from "@/components/tracking/show-card-slots";
 import { gameHref } from "@/lib/catalog/media-type";
+import { formatReleaseDate } from "@/lib/format";
 import type { GameSummary } from "@/lib/igdb";
 import type { MovieSummary, TvShowSummary } from "@/lib/tmdb";
 
@@ -132,18 +134,34 @@ function MovieListCard({
  * A game's card on a games list page (spec 0028, AC-8): the cover, the name
  * and IGDB's community rating, linking to the game page. No personal badge
  * and no controls yet, so no session read and no Suspense; G8 adds them.
+ * On Coming soon the bottom row prints the release day, the pill an
+ * Upcoming movie card has.
+ *
+ * @param releaseDay The request's UTC day, for the date's year rule; left
+ * out on a list whose cards print no date.
  */
 function GameListCard({
   game,
   priority,
   sizes,
-}: Omit<ListCardProps, "returnPath"> & { game: GameSummary }) {
+  releaseDay,
+}: Omit<ListCardProps, "returnPath"> & {
+  game: GameSummary;
+  releaseDay?: string;
+}) {
   return (
     <PosterCard
       title={game.name}
       posterUrl={game.coverUrl}
       href={gameHref(game.id)}
       badge={<IgdbRatingBadge value={game.communityRating} />}
+      controls={
+        releaseDay === undefined ? undefined : (
+          <ReleasePill
+            release={formatReleaseDate(game.releaseDate, releaseDay)}
+          />
+        )
+      }
       priority={priority}
       sizes={sizes}
     />
