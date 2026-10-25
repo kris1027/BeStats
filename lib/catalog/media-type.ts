@@ -4,6 +4,15 @@ import { z } from "zod";
 export type MediaType = "tv" | "movie";
 
 /**
+ * What a library page can list: the two catalogs, and games (spec 0027,
+ * AC-2). Games reach only `/watchlist`, `/upcoming` and `/watched` until a
+ * games browse page or game search exists, so `MediaType` stays narrow and
+ * the compiler keeps `game` away from `/search`, the catalog pages, the title
+ * pages and the proxy.
+ */
+export type LibraryType = MediaType | "game";
+
+/**
  * Each catalog's browse page, which also types every title page below it
  * (feature 22). The one place these two paths are written as a pair.
  */
@@ -26,6 +35,11 @@ export const TYPED_PATHS = [
 
 export type TypedPath = (typeof TYPED_PATHS)[number];
 
+/** The three library pages, the only typed pages a game tab exists on. */
+const LIBRARY_PATHS = ["/watchlist", "/upcoming", "/watched"] as const;
+
+export type LibraryPath = (typeof LIBRARY_PATHS)[number];
+
 /** The `/search` parameters a tab switch keeps; genres and page are dropped. */
 const SEARCH_KEPT = ["q", "year", "rating"] as const;
 
@@ -34,6 +48,13 @@ const typeSchema = z.enum(["tv", "movie"]);
 /** True for a page whose media type comes from its `type` parameter. */
 export function isTypedPath(pathname: string | null): pathname is TypedPath {
   return (TYPED_PATHS as readonly (string | null)[]).includes(pathname);
+}
+
+/** True for `/watchlist`, `/upcoming` and `/watched` (spec 0027, AC-2). */
+export function isLibraryPath(
+  pathname: string | null,
+): pathname is LibraryPath {
+  return (LIBRARY_PATHS as readonly (string | null)[]).includes(pathname);
 }
 
 /**
@@ -64,12 +85,34 @@ export function parseMediaTypeParam(
 }
 
 /**
+ * The library pages' `type` parameter (spec 0027, AC-2): `parseMediaTypeParam`
+ * plus `game`, which only counts while the games library is switched on. With
+ * it off, `?type=game` is null like any unknown value, so the page shows its
+ * "doesn't exist" panel.
+ *
+ * @param gamesEnabled `getGamesLibrary() === "on"` on the server,
+ * `gamesLibraryEnabled()` in the navbar.
+ */
+export function parseLibraryTypeParam(
+  value: string | string[] | null | undefined,
+  gamesEnabled: boolean,
+): LibraryType | null {
+  if (value === "game") return gamesEnabled ? "game" : null;
+  return parseMediaTypeParam(value);
+}
+
+/**
  * A title's own page: `/shows/{id}` or `/movies/{id}`, under its catalog's
  * browse path (feature 22). The one builder of a title page URL, shared by
  * search results and the title pages' Retry and return links.
  */
 export function titleHref(type: MediaType, id: number): string {
   return `${CATALOG_PATHS[type]}/${id}`;
+}
+
+/** A game's own page, `/games/{id}`, beside `titleHref` (spec 0027). */
+export function gameHref(id: number): string {
+  return `/games/${id}`;
 }
 
 /**
@@ -97,8 +140,32 @@ export function mediaTypeForLocation(
 }
 
 /**
+ * `mediaTypeForLocation` for the controls that may list games: the navbar
+ * tabs and the Library links (spec 0027, AC-3, AC-4). It is `game` only on a
+ * library page asking for it while the games library is on, and otherwise
+ * exactly `mediaTypeForLocation`.
+ */
+export function libraryTypeForLocation(
+  pathname: string | null,
+  typeParam: string | null,
+  gamesEnabled: boolean,
+): LibraryType | null {
+  if (
+    isLibraryPath(pathname) &&
+    parseLibraryTypeParam(typeParam, gamesEnabled) === "game"
+  ) {
+    return "game";
+  }
+  return mediaTypeForLocation(pathname, typeParam);
+}
+
+type TypedHrefOptions = { current?: URLSearchParams; page?: number };
+
+/**
  * A typed page's URL for one type. `type` is always written, so a copied link
- * says which tab it opens, as `/search` already does.
+ * says which tab it opens, as `/search` already does. A library page also
+ * takes `game`; any other typed page only a catalog, so
+ * `typedHref("/search", "game")` does not compile (spec 0027, AC-2).
  *
  * @param options.current The current query, from which `/search` keeps its
  * query, year and rating: genre ids differ between the two catalogs, and the
@@ -107,9 +174,19 @@ export function mediaTypeForLocation(
  * has one URL, as on `/movies`.
  */
 export function typedHref(
+  path: LibraryPath,
+  type: LibraryType,
+  options?: TypedHrefOptions,
+): string;
+export function typedHref(
   path: TypedPath,
   type: MediaType,
-  options: { current?: URLSearchParams; page?: number } = {},
+  options?: TypedHrefOptions,
+): string;
+export function typedHref(
+  path: TypedPath,
+  type: LibraryType,
+  options: TypedHrefOptions = {},
 ): string {
   const query = new URLSearchParams({ type });
   if (path === "/search" && options.current) {

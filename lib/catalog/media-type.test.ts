@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  gameHref,
+  isLibraryPath,
   isTypedPath,
+  libraryTypeForLocation,
   mediaTypeForLocation,
+  parseLibraryTypeParam,
   parseMediaTypeParam,
   titleHref,
   typedHref,
@@ -90,5 +94,70 @@ describe("titleHref", () => {
   it("opens a movie on its movie page and a show on its show page", () => {
     expect(titleHref("movie", 438631)).toBe("/movies/438631");
     expect(titleHref("tv", 1396)).toBe("/shows/1396");
+  });
+});
+
+/** covers: spec 0027, AC-2 to AC-4 */
+describe("parseLibraryTypeParam", () => {
+  it("accepts game only while the games library is on", () => {
+    expect(parseLibraryTypeParam("game", true)).toBe("game");
+    expect(parseLibraryTypeParam("game", false)).toBeNull();
+  });
+
+  it("reads everything else as parseMediaTypeParam does", () => {
+    for (const enabled of [true, false]) {
+      expect(parseLibraryTypeParam(undefined, enabled)).toBe("tv");
+      expect(parseLibraryTypeParam("movie", enabled)).toBe("movie");
+      expect(parseLibraryTypeParam("", enabled)).toBeNull();
+      expect(parseLibraryTypeParam(["game", "game"], enabled)).toBeNull();
+      expect(parseLibraryTypeParam("GAME", enabled)).toBeNull();
+    }
+  });
+
+  it("never lets game into the catalog parser", () => {
+    expect(parseMediaTypeParam("game")).toBeNull();
+  });
+});
+
+describe("libraryTypeForLocation", () => {
+  it("is game on a library page asking for it while the flag is on", () => {
+    for (const path of ["/watchlist", "/upcoming", "/watched"]) {
+      expect(libraryTypeForLocation(path, "game", true)).toBe("game");
+    }
+  });
+
+  it("is never game on /search, a catalog page or with the flag off", () => {
+    expect(libraryTypeForLocation("/search", "game", true)).toBe("tv");
+    expect(libraryTypeForLocation("/movies", "game", true)).toBe("movie");
+    expect(libraryTypeForLocation("/watchlist", "game", false)).toBe("tv");
+  });
+
+  it("matches mediaTypeForLocation for the catalogs", () => {
+    expect(libraryTypeForLocation("/upcoming", "movie", true)).toBe("movie");
+    expect(libraryTypeForLocation("/account", null, true)).toBeNull();
+  });
+});
+
+describe("the library paths", () => {
+  it("are the three library pages and not /search", () => {
+    expect(isLibraryPath("/watchlist")).toBe(true);
+    expect(isLibraryPath("/upcoming")).toBe(true);
+    expect(isLibraryPath("/watched")).toBe(true);
+    expect(isLibraryPath("/search")).toBe(false);
+    expect(isLibraryPath(null)).toBe(false);
+  });
+
+  it("take game in typedHref, and /search does not compile with it", () => {
+    expect(typedHref("/watched", "game", { page: 2 })).toBe(
+      "/watched?type=game&page=2",
+    );
+    // @ts-expect-error: /search has no games tab until G7.
+    typedHref("/search", "game");
+  });
+});
+
+describe("gameHref", () => {
+  it("opens a game on its game page", () => {
+    expect(gameHref(1942)).toBe("/games/1942");
   });
 });
