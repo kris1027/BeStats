@@ -2,13 +2,17 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { emptySearchParams, type SearchParams } from "@/lib/search/params";
-import type { Genre } from "@/lib/tmdb/types";
+import {
+  type CatalogRef,
+  emptySearchParams,
+  type GameSearchParams,
+  type SearchParams,
+} from "@/lib/search/params";
 
 import { FilterBar } from "./filter-bar";
 import { MobileSearchOverlay } from "./mobile-search-overlay";
 
-/** covers: spec 0010, AC-6, AC-8, AC-9, AC-19, AC-24 */
+/** covers: spec 0010, AC-6, AC-8, AC-9, AC-19, AC-24; spec 0029, AC-9 to AC-11 */
 
 const replace = vi.fn();
 const push = vi.fn();
@@ -21,7 +25,7 @@ afterEach(() => {
   push.mockClear();
 });
 
-const GENRES: { tv: Genre[] | null; movie: Genre[] | null } = {
+const GENRES: Record<"tv" | "movie" | "game", CatalogRef[] | null> = {
   tv: [
     { id: 18, name: "Drama" },
     { id: 10766, name: "Soap" },
@@ -30,7 +34,18 @@ const GENRES: { tv: Genre[] | null; movie: Genre[] | null } = {
     { id: 18, name: "Drama" },
     { id: 28, name: "Action" },
   ],
+  game: Array.from({ length: 25 }, (_, index) => ({
+    id: index + 1,
+    name: `Game genre ${index + 1}`,
+  })),
 };
+
+const PLATFORMS: CatalogRef[] = [
+  { id: 6, name: "PC (Microsoft Windows)" },
+  { id: 130, name: "Nintendo Switch" },
+  { id: 508, name: "Nintendo Switch 2" },
+  { id: 167, name: "PlayStation 5" },
+];
 
 function bar(overrides: Partial<SearchParams> = {}, genres = GENRES) {
   return (
@@ -157,7 +172,7 @@ describe("FilterBar", () => {
   });
 
   it("disables only the genre control when TMDB's genre list failed", () => {
-    render(bar({}, { tv: null, movie: GENRES.movie }));
+    render(bar({}, { ...GENRES, tv: null }));
 
     expect(screen.getByRole("button", { name: "Genres" })).toBeDisabled();
     expect(screen.getByText("Genres unavailable")).toBeInTheDocument();
@@ -185,6 +200,126 @@ describe("FilterBar", () => {
     expect(replace).toHaveBeenCalledWith("/search?type=movie", {
       scroll: false,
     });
+  });
+});
+
+function gameBar(
+  overrides: Partial<GameSearchParams> = {},
+  platforms: CatalogRef[] | null = PLATFORMS,
+) {
+  return (
+    <FilterBar
+      initial={{ ...emptySearchParams("game"), ...overrides }}
+      genres={GENRES}
+      platforms={platforms}
+      currentYear={2026}
+    />
+  );
+}
+
+describe("FilterBar for games (spec 0029)", () => {
+  it("labels the rating as IGDB's and offers years down to 1950 (AC-9)", () => {
+    render(gameBar({ rating: 7 }));
+    const years = screen.getByRole("combobox", { name: "Year" });
+    expect([...years.querySelectorAll("option")].at(-1)?.text).toBe("1950");
+    const ratings = screen.getByRole("combobox", {
+      name: "Minimum IGDB rating",
+    });
+    expect(ratings.querySelector("option")?.text).toBe("Any IGDB rating");
+    expect(
+      screen.getByText("Only games with at least 10 IGDB ratings"),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("searchbox", { name: "Title" })).toHaveAttribute(
+      "placeholder",
+      "Search games by title",
+    );
+  });
+
+  it("sends selected platforms as hidden inputs and counts them on the trigger (AC-10)", () => {
+    const { container } = render(gameBar({ platformIds: [130, 508] }));
+    expect(
+      [
+        ...container.querySelectorAll('input[type="hidden"][name="platform"]'),
+      ].map((input) => (input as HTMLInputElement).value),
+    ).toEqual(["130", "508"]);
+    expect(
+      screen.getByRole("button", { name: "Platforms · 2" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Clear filters" }),
+    ).toBeInTheDocument();
+  });
+
+  it("filters platforms by name, keeping hidden ones checked (AC-10)", async () => {
+    const user = userEvent.setup();
+    render(gameBar({ platformIds: [6] }));
+
+    await user.click(screen.getByRole("button", { name: "Platforms · 1" }));
+    const filter = await screen.findByRole("searchbox", {
+      name: "Filter platforms",
+    });
+    await waitFor(() => expect(filter).toHaveFocus());
+    expect(screen.getByText("ON ANY OF")).toBeInTheDocument();
+
+    await user.type(filter, "SWITCH");
+    expect(screen.getAllByRole("checkbox")).toHaveLength(2);
+    expect(
+      screen.queryByRole("checkbox", { name: "PC (Microsoft Windows)" }),
+    ).not.toBeInTheDocument();
+
+    await user.clear(filter);
+    await user.type(filter, "zzz");
+    expect(screen.getByText("No platforms match")).toBeInTheDocument();
+
+    await user.clear(filter);
+    expect(
+      screen.getByRole("checkbox", { name: "PC (Microsoft Windows)" }),
+    ).toBeChecked();
+  });
+
+  it("applies several quick toggles as one navigation after a pause (AC-9)", async () => {
+    const user = userEvent.setup();
+    render(gameBar());
+
+    await user.click(screen.getByRole("button", { name: "Platforms" }));
+    await user.click(
+      await screen.findByRole("checkbox", { name: "Nintendo Switch" }),
+    );
+    await user.click(screen.getByRole("checkbox", { name: "PlayStation 5" }));
+    await user.click(screen.getByRole("checkbox", { name: "Nintendo Switch" }));
+
+    expect(
+      screen.getByRole("checkbox", { name: "PlayStation 5" }),
+    ).toBeChecked();
+    expect(replace).not.toHaveBeenCalled();
+    await waitFor(() =>
+      expect(replace).toHaveBeenCalledWith("/search?type=game&platform=167", {
+        scroll: false,
+      }),
+    );
+    expect(replace).toHaveBeenCalledTimes(1);
+  });
+
+  it("stops at 20 genres, disabling the rest (AC-10)", async () => {
+    const user = userEvent.setup();
+    const twenty = Array.from({ length: 20 }, (_, index) => index + 1);
+    render(gameBar({ genreIds: twenty }));
+
+    await user.click(screen.getByRole("button", { name: "Genres · 20" }));
+    expect(
+      await screen.findByRole("checkbox", { name: "Game genre 21" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("checkbox", { name: "Game genre 1" }),
+    ).toBeEnabled();
+    expect(screen.getByText("Up to 20")).toBeInTheDocument();
+  });
+
+  it("disables only Platforms when IGDB's platform list failed (AC-11)", () => {
+    render(gameBar({}, null));
+    expect(screen.getByRole("button", { name: "Platforms" })).toBeDisabled();
+    expect(screen.getByText("Platforms unavailable")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Genres" })).toBeEnabled();
   });
 });
 

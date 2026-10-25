@@ -8,11 +8,23 @@ import type { SearchParams } from "./params";
  * - `search`: a query and at most a year, which search accepts upstream.
  * - `filtered_search`: a query with a genre or a rating. Search ignores both,
  *   so the server checks every result itself (AC-13).
+ *
+ * A games search never filters locally: IGDB applies every filter beside the
+ * query, so it is `search` whenever `q` is set (spec 0029, AC-3).
  */
 export type SearchMode = "browse" | "discover" | "search" | "filtered_search";
 
 /** The mode is a pure function of the parsed URL, never of client state. */
 export function searchMode(params: SearchParams): SearchMode {
+  if (params.type === "game") {
+    if (params.q !== null) return "search";
+    const anyFilter =
+      params.genreIds.length > 0 ||
+      params.platformIds.length > 0 ||
+      params.year !== null ||
+      params.rating !== null;
+    return anyFilter ? "discover" : "browse";
+  }
   const localFilters = params.genreIds.length > 0 || params.rating !== null;
   if (params.q === null) {
     return localFilters || params.year !== null ? "discover" : "browse";

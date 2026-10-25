@@ -1,18 +1,29 @@
 import { Skeleton } from "@/components/skeleton";
-import { parseMediaTypeParam } from "@/lib/catalog/media-type";
-import { emptySearchParams, parseSearchParams } from "@/lib/search/params";
-import { type Genre, getMovieGenres, getTvGenres, TmdbError } from "@/lib/tmdb";
+import { parseLibraryTypeParam } from "@/lib/catalog/media-type";
+import { getGamesLibrary } from "@/lib/env";
+import { getGameGenres, getGamePlatforms, IgdbError } from "@/lib/igdb";
+import {
+  type CatalogRef,
+  emptySearchParams,
+  parseSearchParams,
+} from "@/lib/search/params";
+import { getMovieGenres, getTvGenres, TmdbError } from "@/lib/tmdb";
 
 import { FilterBar } from "./filter-bar";
 
 type RawParams = Record<string, string | string[] | undefined>;
 
-/** A genre list, or null when TMDB could not supply it (AC-19). */
-async function settleGenres(read: () => Promise<Genre[]>) {
+/**
+ * A genre or platform list, or null when its catalog could not supply it
+ * (AC-19; spec 0029, AC-11).
+ */
+async function settleList(read: () => Promise<CatalogRef[]>) {
   try {
     return await read();
   } catch (error) {
-    if (!(error instanceof TmdbError)) throw error;
+    if (!(error instanceof TmdbError || error instanceof IgdbError)) {
+      throw error;
+    }
     return null;
   }
 }
@@ -22,27 +33,53 @@ async function settleGenres(read: () => Promise<Genre[]>) {
  *
  * It reads the cached genre lists, of which the bar shows the one for the
  * navbar tab's type (feature 22), and the current UTC year, at request time,
- * for the year options. A genre list that fails leaves only the genre control
- * disabled. An invalid URL fills the bar with the valid type and nothing
- * else; the results panel below says what was wrong.
+ * for the year options. A list that fails leaves only its control disabled.
+ * An invalid URL fills the bar with the valid type and nothing else; the
+ * results panel below says what was wrong.
+ *
+ * A games search reads IGDB's genres and platforms instead of TMDB's genres,
+ * and the games flag is read only for a raw `type=game` (spec 0029, AC-1).
  */
 async function SearchFilters({ raw }: { raw: RawParams }) {
-  const [tv, movie] = await Promise.all([
-    settleGenres(getTvGenres),
-    settleGenres(getMovieGenres),
-  ]);
   const currentYear = new Date().getUTCFullYear();
-  const type = parseMediaTypeParam(raw.type) ?? "tv";
+  const gamesEnabled = raw.type === "game" && getGamesLibrary() === "on";
+  const type = parseLibraryTypeParam(raw.type, gamesEnabled) ?? "tv";
+
+  if (type === "game") {
+    const [genres, platforms] = await Promise.all([
+      settleList(getGameGenres),
+      settleList(getGamePlatforms),
+    ]);
+    const parsed = parseSearchParams(
+      raw,
+      { genres: genres ?? [], platforms: platforms ?? [] },
+      currentYear,
+      true,
+    );
+    return (
+      <FilterBar
+        initial={parsed.ok ? parsed.params : emptySearchParams(type)}
+        genres={{ tv: null, movie: null, game: genres }}
+        platforms={platforms}
+        currentYear={currentYear}
+      />
+    );
+  }
+
+  const [tv, movie] = await Promise.all([
+    settleList(getTvGenres),
+    settleList(getMovieGenres),
+  ]);
   const parsed = parseSearchParams(
     raw,
-    (type === "movie" ? movie : tv) ?? [],
+    { genres: (type === "movie" ? movie : tv) ?? [] },
     currentYear,
   );
 
   return (
     <FilterBar
       initial={parsed.ok ? parsed.params : emptySearchParams(type)}
-      genres={{ tv, movie }}
+      genres={{ tv, movie, game: null }}
       currentYear={currentYear}
     />
   );

@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 
+import { GameListCard } from "@/components/catalog/list-cards";
 import { PaginationLinks } from "@/components/pagination-links";
 import { PosterCard } from "@/components/poster-card";
 import { POSTER_GRID_EAGER, PosterGrid } from "@/components/poster-grid";
@@ -23,18 +24,34 @@ import {
 import { ButtonLink } from "@/components/ui/button";
 import { GRID_PAGE_SIZE } from "@/lib/catalog/grid-page";
 import {
-  parseMediaTypeParam,
+  CATALOG_SOURCES,
+  type LibraryType,
+  parseLibraryTypeParam,
   titleHref,
   typedHref,
 } from "@/lib/catalog/media-type";
+import { gameHasNextPage, lastGamePage } from "@/lib/catalog-list-read";
+import { getGamesLibrary } from "@/lib/env";
+import {
+  type GameRef,
+  type GameSummary,
+  getGameGenres,
+  getGamePlatforms,
+  IgdbError,
+  type Paged as IgdbPaged,
+} from "@/lib/igdb";
+import { IGDB_MAX_PAGE } from "@/lib/igdb/constants";
 import { formatRange, mediaNoun } from "@/lib/search/count";
+import { readGameSearchPage } from "@/lib/search/game-read";
 import { searchMode } from "@/lib/search/mode";
 import {
+  type GameSearchParams,
   parseSearchParams,
   type SearchParamName,
   type SearchParams,
   type SearchType,
   searchHref,
+  type TmdbSearchParams,
 } from "@/lib/search/params";
 import {
   readSearchGridPage,
@@ -63,12 +80,18 @@ type RawParams = Record<string, string | string[] | undefined>;
  * heading and the filter bar above stay usable (AC-19). No session is read,
  * except by each card's bookmark in its own boundary (AC-16, AC-22; spec
  * 0013, AC-18).
+ *
+ * `type=game` counts only while the games library is on, and the flag is read
+ * only for that raw value, so an invalid flag can never take a show or movie
+ * search down (spec 0029, AC-1). A games search has its own branch.
  */
 async function SearchResults({ raw }: { raw: RawParams }) {
-  const type = parseMediaTypeParam(raw.type);
+  const gamesEnabled = raw.type === "game" && getGamesLibrary() === "on";
+  const type = parseLibraryTypeParam(raw.type, gamesEnabled);
   if (type === null) return <InvalidFilter param="type" type={null} />;
 
   const retryHref = rawHref(raw);
+  if (type === "game") return GameResults({ raw, retryHref });
 
   // Both this and the filter bar read the same cached genre list, so they
   // agree within one render (AC-19).
@@ -79,14 +102,21 @@ async function SearchResults({ raw }: { raw: RawParams }) {
     if (!(error instanceof TmdbError)) throw error;
     // Without the list a genre id cannot be checked, so only a URL that has
     // one needs it.
-    if (raw.genre !== undefined) return <TmdbFailure retryHref={retryHref} />;
+    if (raw.genre !== undefined) {
+      return <CatalogFailure type={type} retryHref={retryHref} />;
+    }
   }
 
   // Read at request time, after the URL, so the year range is never baked
   // into a prerendered shell.
-  const parsed = parseSearchParams(raw, genres, new Date().getUTCFullYear());
+  const parsed = parseSearchParams(
+    raw,
+    { genres },
+    new Date().getUTCFullYear(),
+  );
   if (!parsed.ok) return <InvalidFilter param={parsed.param} type={type} />;
-  const params = parsed.params;
+  // The raw type was not `game`, so neither is the parsed one.
+  const params = parsed.params as TmdbSearchParams;
 
   try {
     const mode = searchMode(params);
@@ -103,8 +133,127 @@ async function SearchResults({ raw }: { raw: RawParams }) {
     );
   } catch (error) {
     if (!(error instanceof TmdbError)) throw error;
-    return <TmdbFailure retryHref={retryHref} />;
+    return <CatalogFailure type={type} retryHref={retryHref} />;
   }
+}
+
+/** A reference list, or null when IGDB could not supply it (spec 0029, AC-11). */
+async function settleGameList(read: () => Promise<GameRef[]>) {
+  try {
+    return await read();
+  } catch (error) {
+    if (!(error instanceof IgdbError)) throw error;
+    return null;
+  }
+}
+
+/**
+ * The games half of `/search` (spec 0029, AC-2 to AC-8, AC-11 to AC-13).
+ *
+ * The URL is parsed against IGDB's cached genre and platform lists before
+ * any result request. A list that failed only matters when the URL names an
+ * id from it, which then cannot be checked. A page above IGDB's 50 is
+ * answered before any request. Every filter goes to IGDB, so the count is
+ * IGDB's own, or left out when it sent none.
+ */
+async function GameResults({
+  raw,
+  retryHref,
+}: {
+  raw: RawParams;
+  retryHref: string;
+}) {
+  const [genres, platforms] = await Promise.all([
+    settleGameList(getGameGenres),
+    settleGameList(getGamePlatforms),
+  ]);
+  if (
+    (genres === null && raw.genre !== undefined) ||
+    (platforms === null && raw.platform !== undefined)
+  ) {
+    return <CatalogFailure type="game" retryHref={retryHref} />;
+  }
+
+  const parsed = parseSearchParams(
+    raw,
+    { genres: genres ?? [], platforms: platforms ?? [] },
+    new Date().getUTCFullYear(),
+    true,
+  );
+  if (!parsed.ok) return <InvalidFilter param={parsed.param} type="game" />;
+  // The raw type was `game`, so the parsed one is too.
+  const params = parsed.params as GameSearchParams;
+  if (params.page > IGDB_MAX_PAGE) return <NoSuchPage params={params} />;
+
+  const mode = searchMode(params);
+  if (mode === "filtered_search")
+    throw new Error("Games never filter locally.");
+
+  let paged: IgdbPaged<GameSummary>;
+  try {
+    paged = await readGameSearchPage(mode, params);
+  } catch (error) {
+    if (!(error instanceof IgdbError)) throw error;
+    return <CatalogFailure type="game" retryHref={retryHref} />;
+  }
+
+  const lastPage = lastGamePage(paged);
+  if (paged.results.length === 0) {
+    if (params.page > 1) return <NoSuchPage params={params} />;
+    return mode === "browse" ? (
+      <NoPopularGames />
+    ) : (
+      <NoMatches params={params} />
+    );
+  }
+  if (lastPage !== null && params.page > lastPage) {
+    return <NoSuchPage params={params} />;
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      {mode === "browse" ? (
+        <ResultCount kind="browse" type="game" />
+      ) : paged.totalResults !== null ? (
+        <ResultCount
+          kind="exact"
+          type="game"
+          total={paged.totalResults}
+          endpoint="igdb"
+        />
+      ) : null}
+      <PosterGrid aria-label="Search results">
+        {paged.results.map((game, index) => (
+          <li key={game.id}>
+            <GameListCard
+              game={game}
+              meta={game.releaseYear ?? undefined}
+              priority={index < POSTER_GRID_EAGER.catalog}
+            />
+          </li>
+        ))}
+      </PosterGrid>
+      <PaginationLinks
+        page={params.page}
+        lastPage={lastPage}
+        hasNextPage={gameHasNextPage(paged, params.page)}
+        href={(number) => searchHref(params, { page: number })}
+      />
+    </div>
+  );
+}
+
+/** Browse with IGDB's Popular list empty: nothing to clear (spec 0029, AC-4). */
+function NoPopularGames() {
+  return (
+    <div className="py-12">
+      <StatePanel
+        variant="empty"
+        title="No popular games right now"
+        description="IGDB lists no popular games at the moment."
+      />
+    </div>
+  );
 }
 
 /**
@@ -117,7 +266,7 @@ function PagedResults({
   endpoint,
   browse,
 }: {
-  params: SearchParams;
+  params: TmdbSearchParams;
   page: SearchPage;
   endpoint: "search" | "discover";
   browse: boolean;
@@ -153,7 +302,7 @@ function PagedResults({
 }
 
 /** A query with a genre or rating: the page scan and its cursor (AC-13 to AC-15). */
-async function FilteredResults({ params }: { params: SearchParams }) {
+async function FilteredResults({ params }: { params: TmdbSearchParams }) {
   const scan = await scanFilteredSearch(params);
   if (scan.kind === "no_such_page") return <NoSuchPage params={params} />;
   if (scan.totalResults === 0) return <NoMatches params={params} />;
@@ -202,7 +351,7 @@ function ResultGrid({
   params,
   results,
 }: {
-  params: SearchParams;
+  params: TmdbSearchParams;
   results: SearchResult[];
 }) {
   const returnPath = searchHref(params);
@@ -318,11 +467,15 @@ function ShowResultCard({
   );
 }
 
-/** The two empty answers of AC-15: a query alone, or any filter. */
+/**
+ * The two empty answers of AC-15: a query alone, or any filter. A games
+ * search names platforms too (spec 0029, AC-13).
+ */
 function NoMatches({ params }: { params: SearchParams }) {
   const noun = mediaNoun(params.type);
   const filtered =
     params.genreIds.length > 0 ||
+    params.platformIds.length > 0 ||
     params.year !== null ||
     params.rating !== null;
   return (
@@ -336,7 +489,9 @@ function NoMatches({ params }: { params: SearchParams }) {
         }
         description={
           filtered
-            ? "Try fewer genres, another year or a lower rating."
+            ? params.type === "game"
+              ? "Try fewer genres or platforms, another year or a lower rating."
+              : "Try fewer genres, another year or a lower rating."
             : "Check the spelling, or try a shorter title."
         }
         action={<ClearFilters type={params.type} />}
@@ -383,14 +538,24 @@ function NoSuchPage({ params }: { params: SearchParams }) {
   );
 }
 
-/** TMDB timed out, rate limited or failed (AC-19). */
-function TmdbFailure({ retryHref }: { retryHref: string }) {
+/**
+ * The catalog timed out, rate limited or failed, named through
+ * `CATALOG_SOURCES` so a games search blames IGDB (AC-19; spec 0029, AC-13).
+ */
+function CatalogFailure({
+  type,
+  retryHref,
+}: {
+  type: LibraryType;
+  retryHref: string;
+}) {
+  const source = CATALOG_SOURCES[type];
   return (
     <div className="py-12">
       <StatePanel
         variant="error"
-        title="Couldn't reach TMDB"
-        description="TMDB didn't respond. Try again in a moment."
+        title={`Couldn't reach ${source}`}
+        description={`${source} didn't respond. Try again in a moment.`}
         action={<RetryLink href={retryHref} />}
       />
     </div>

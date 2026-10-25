@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { MovieSummary, Paged, TvShowSummary } from "@/lib/tmdb/types";
 
-import { emptySearchParams, type SearchParams } from "./params";
+import { emptySearchParams, type TmdbSearchParams } from "./params";
 
 /** covers: spec 0010, AC-11, AC-12, AC-13, AC-16, AC-20; spec 0022, AC-21 */
 
@@ -54,7 +54,7 @@ function paged<T>(results: T[]): Paged<T> {
   return { page: 2, results, totalPages: 7, totalResults: 133 };
 }
 
-function params(overrides: Partial<SearchParams> = {}): SearchParams {
+function params(overrides: Partial<TmdbSearchParams> = {}): TmdbSearchParams {
   return { ...emptySearchParams("tv"), ...overrides };
 }
 

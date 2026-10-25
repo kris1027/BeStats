@@ -3,7 +3,7 @@ import "server-only";
 import { lastReachablePage, TMDB_PAGE_SIZE } from "@/lib/catalog/pages";
 
 import { MIN_VOTE_COUNT, SCAN_MAX_PAGES, SCAN_TARGET } from "./constants";
-import type { SearchParams } from "./params";
+import type { SearchParams, TmdbSearchParams } from "./params";
 import { readSearchPage, type SearchPage, type SearchResult } from "./read";
 
 /**
@@ -70,7 +70,7 @@ type ReadPage = (page: number) => Promise<SearchPage>;
  * @throws {TmdbError} When a page the scan needs cannot be read.
  */
 export async function scanFilteredSearch(
-  params: SearchParams,
+  params: TmdbSearchParams,
   readPage: ReadPage = (page) =>
     readSearchPage(params.type, params.q ?? "", {
       year: params.year ?? undefined,

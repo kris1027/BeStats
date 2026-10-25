@@ -1,16 +1,17 @@
 import { z } from "zod";
 
+import { IGDB_MIN_YEAR } from "@/lib/igdb/constants";
+
 import type { LibraryList } from "./library-list";
 
 /** The two catalogs: TV shows and movies. */
 export type MediaType = "tv" | "movie";
 
 /**
- * What a library page can list: the two catalogs, and games (spec 0027,
- * AC-2). Games reach only `/watchlist`, `/upcoming` and `/watched` until a
- * games browse page or game search exists, so `MediaType` stays narrow and
- * the compiler keeps `game` away from `/search`, the catalog pages, the title
- * pages and the proxy.
+ * What a library page or `/search` can list: the two catalogs, and games
+ * (spec 0027, AC-2; spec 0029, AC-1). `MediaType` stays narrow, so the
+ * compiler keeps `game` away from the TMDB reads, the title pages and the
+ * proxy.
  */
 export type LibraryType = MediaType | "game";
 
@@ -58,7 +59,10 @@ export const TYPED_PATHS = [...LIBRARY_PATHS, "/search"] as const;
 
 export type TypedPath = (typeof TYPED_PATHS)[number];
 
-/** The `/search` parameters a tab switch keeps; genres and page are dropped. */
+/**
+ * The `/search` parameters a tab switch keeps; genres, platforms and page are
+ * dropped (spec 0029, AC-14).
+ */
 const SEARCH_KEPT = ["q", "year", "rating"] as const;
 
 const typeSchema = z.enum(["tv", "movie"]);
@@ -197,26 +201,17 @@ type TypedHrefOptions = { current?: URLSearchParams; page?: number };
 
 /**
  * A typed page's URL for one type. `type` is always written, so a copied link
- * says which tab it opens, as `/search` already does. A library page also
- * takes `game`; any other typed page only a catalog, so
- * `typedHref("/search", "game")` does not compile (spec 0027, AC-2).
+ * says which tab it opens, as `/search` already does. Every typed page takes
+ * `game` (spec 0027, AC-2; spec 0029, AC-1).
  *
  * @param options.current The current query, from which `/search` keeps its
- * query, year and rating: genre ids differ between the two catalogs, and the
- * page starts again from 1.
+ * query, year and rating: genre and platform ids differ between catalogs, and
+ * the page starts again from 1. A year before 1950 is dropped on a switch to
+ * games, which has none, so a switch never lands on an invalid filter
+ * (spec 0029, AC-14).
  * @param options.page The page to open, written only from page 2, so page 1
  * has one URL, as on `/movies`.
  */
-export function typedHref(
-  path: LibraryPath,
-  type: LibraryType,
-  options?: TypedHrefOptions,
-): string;
-export function typedHref(
-  path: TypedPath,
-  type: MediaType,
-  options?: TypedHrefOptions,
-): string;
 export function typedHref(
   path: TypedPath,
   type: LibraryType,
@@ -226,7 +221,11 @@ export function typedHref(
   if (path === "/search" && options.current) {
     for (const name of SEARCH_KEPT) {
       const value = options.current.get(name);
-      if (value) query.set(name, value);
+      if (!value) continue;
+      if (name === "year" && type === "game" && Number(value) < IGDB_MIN_YEAR) {
+        continue;
+      }
+      query.set(name, value);
     }
   }
   if (options.page !== undefined && options.page > 1) {

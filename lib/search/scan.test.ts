@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { TmdbError } from "@/lib/tmdb/errors";
 
-import { emptySearchParams, type SearchParams } from "./params";
+import { emptySearchParams, type TmdbSearchParams } from "./params";
 import type { SearchPage, SearchResult } from "./read";
 import { toQuickSearchResponse } from "./read";
 import { matchesFilters, scanFilteredSearch } from "./scan";
@@ -26,7 +26,7 @@ function result(
   };
 }
 
-function params(overrides: Partial<SearchParams> = {}): SearchParams {
+function params(overrides: Partial<TmdbSearchParams> = {}): TmdbSearchParams {
   return {
     ...emptySearchParams("movie"),
     q: "dune",
