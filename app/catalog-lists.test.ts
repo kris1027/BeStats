@@ -36,9 +36,7 @@ describe.each([
     const source = readFileSync(join(dir, slug, "page.tsx"), "utf8");
     expect(source).toContain(`catalogList("${mediaType}", "${slug}")`);
     expect(source).toContain("<CatalogListPage");
-    // spec 0028, AC-13: a games list is `noindex` and never reads `?page`.
-    expect(source).toContain(
-      mediaType === "game" ? "gameListMetadata(LIST)" : "catalogListMetadata(",
-    );
+    // spec 0032, AC-5: games lists share the TMDB lists' metadata flow.
+    expect(source).toContain("catalogListMetadata(");
   });
 });

@@ -2,12 +2,16 @@ import type { Metadata } from "next";
 
 import { CatalogListPage } from "@/components/catalog/catalog-list-page";
 import { catalogList } from "@/lib/catalog/lists";
-import { gameListMetadata } from "@/lib/landing-metadata";
+import { catalogListMetadata } from "@/lib/landing-metadata";
 
 const LIST = catalogList("game", "top-rated");
 
-/** The list's title and note, `noindex` until G10 (spec 0028, AC-13). */
-export const metadata: Metadata = gameListMetadata(LIST);
+/** The list's title, note and canonical (spec 0032, AC-5). */
+export async function generateMetadata({
+  searchParams,
+}: PageProps<"/games/top-rated">): Promise<Metadata> {
+  return catalogListMetadata(LIST, searchParams);
+}
 
 /** One games list, paged by 24 (spec 0028, AC-9). */
 export default function TopRatedGamesPage({

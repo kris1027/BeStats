@@ -4,8 +4,8 @@ import { CatalogLanding } from "@/components/catalog/catalog-landing";
 import { gamesMetadata } from "@/lib/landing-metadata";
 
 /**
- * The games landing's metadata (spec 0028, AC-13): `noindex`, with no
- * canonical or share card of its own, until G10 opens games to search.
+ * The games landing's metadata (spec 0032, AC-4): its title and description,
+ * the canonical `/games` and the site card, like `/movies` and `/shows`.
  */
 export const metadata: Metadata = gamesMetadata({
   title: "Games",
