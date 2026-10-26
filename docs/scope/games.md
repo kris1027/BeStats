@@ -30,7 +30,7 @@ _This is the second scope for BeStats. The movie and TV scope lives in [scope.md
 | G4 | Game status and rating | Slice G1 | done |
 | G5 | Games tab and library pages | Slice G2 | done |
 | G6 | Games home and list pages | Slice G3 | done |
-| G7 | Game search and filters | Slice G4 | in-progress |
+| G7 | Game search and filters | Slice G4 | done |
 | G8 | Game cards everywhere | Slice G4 | planned |
 | G9 | Richer game page | Slice G5 | planned |
 | G10 | Games launch | Slice G6 | planned |
@@ -133,7 +133,7 @@ spec [0028](../specs/0028-games-home-list-pages/index.md) · code in `app/games/
 
 ## Slice G4: Search and cards
 
-### G7. Game search and filters · in-progress
+### G7. Game search and filters · done
 Games in `/search?type=game` with a title query and filters for genre, release year, minimum IGDB rating and platform.
 **Done when:** every shown result meets every selected filter; filters live in shareable URL parameters and survive opening a game and coming back; pagination works and counts stay truthful (omitted or marked partial when unknown); loading, empty and failure states have a retry path.
 - [x] Design it (spec): `/architect game search and filters`

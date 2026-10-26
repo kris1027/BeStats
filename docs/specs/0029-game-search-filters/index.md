@@ -1,7 +1,7 @@
 # 0029. Game search and filters: games on /search and in the navbar quick search
 
 **Date**: 2026-10-25
-**Status**: In Progress
+**Status**: Accepted
 
 Scope feature: [G7. Game search and filters](../../scope/games.md) · Beta tier
 
