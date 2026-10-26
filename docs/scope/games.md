@@ -156,8 +156,8 @@ Game cards match the movie card: IGDB rating badge, your score when set, release
   - [x] Started and unreleased cards: the status chip, the release pill and its switch, AC-6, AC-7
   - [x] Every other grid: list pages, the landing slots (badge, controls, year meta) on every section card, AC-1, AC-8, AC-10, AC-13, AC-14
   - [x] Library tabs and proof: `LibraryGameItem.status`, the green bookmark and the chip, icon key labels, `/showcase`, 375px and 1280px, keyboard, all checks, AC-11, AC-12, AC-13, AC-15
-- [ ] Verify it: `/check verify game cards everywhere`
-- [ ] Test it: `/test game cards everywhere`
+- [x] Verify it: `/check verify game cards everywhere`
+- [x] Test it: `/test game cards everywhere`
 spec [0030](../specs/0030-game-cards-everywhere/index.md) · code in `components/tracking/`, `components/catalog/`, `components/library/`, `lib/tracking/`, `lib/catalog/`
 
 ## Slice G5: Richer game page
