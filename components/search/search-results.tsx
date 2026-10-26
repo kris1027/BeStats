@@ -31,7 +31,6 @@ import {
   typedHref,
 } from "@/lib/catalog/media-type";
 import { gameHasNextPage, lastGamePage } from "@/lib/catalog-list-read";
-import { getGamesLibrary } from "@/lib/env";
 import {
   type GameRef,
   type GameSummary,
@@ -43,6 +42,7 @@ import {
 import { SEARCH_CATALOGS } from "@/lib/search/catalogs";
 import { formatRange, mediaNoun } from "@/lib/search/count";
 import { readGameSearchPage } from "@/lib/search/game-read";
+import { gameSearchEnabled } from "@/lib/search/games-flag";
 import { searchMode } from "@/lib/search/mode";
 import {
   type GameSearchParams,
@@ -86,7 +86,7 @@ type RawParams = Record<string, string | string[] | undefined>;
  * search down (spec 0029, AC-1). A games search has its own branch.
  */
 async function SearchResults({ raw }: { raw: RawParams }) {
-  const gamesEnabled = raw.type === "game" && getGamesLibrary() === "on";
+  const gamesEnabled = gameSearchEnabled(raw.type);
   const type = parseLibraryTypeParam(raw.type, gamesEnabled);
   if (type === null) return <InvalidFilter param="type" type={null} />;
 

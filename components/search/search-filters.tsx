@@ -1,7 +1,7 @@
 import { Skeleton } from "@/components/skeleton";
 import { parseLibraryTypeParam } from "@/lib/catalog/media-type";
-import { getGamesLibrary } from "@/lib/env";
 import { getGameGenres, getGamePlatforms, IgdbError } from "@/lib/igdb";
+import { gameSearchEnabled } from "@/lib/search/games-flag";
 import {
   type CatalogRef,
   emptySearchParams,
@@ -42,7 +42,7 @@ async function settleList(read: () => Promise<CatalogRef[]>) {
  */
 async function SearchFilters({ raw }: { raw: RawParams }) {
   const currentYear = new Date().getUTCFullYear();
-  const gamesEnabled = raw.type === "game" && getGamesLibrary() === "on";
+  const gamesEnabled = gameSearchEnabled(raw.type);
   const type = parseLibraryTypeParam(raw.type, gamesEnabled) ?? "tv";
 
   if (type === "game") {

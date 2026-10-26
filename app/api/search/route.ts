@@ -1,8 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-import { getGamesLibrary } from "@/lib/env";
 import { IgdbError, IgdbValidationError, searchGames } from "@/lib/igdb";
 import { toGameQuickSearchResponse } from "@/lib/search/game-read";
+import { gameSearchEnabled } from "@/lib/search/games-flag";
 import { quickSearchRequestSchema } from "@/lib/search/quick";
 import { readSearchPage, toQuickSearchResponse } from "@/lib/search/read";
 import { TmdbError } from "@/lib/tmdb";
@@ -34,9 +34,9 @@ const SUCCESS_CACHE = "public, s-maxage=300, stale-while-revalidate=600";
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const rawType = searchParams.get("type");
-  const parsed = quickSearchRequestSchema(
-    rawType === "game" && getGamesLibrary() === "on",
-  ).safeParse({ type: rawType, q: searchParams.get("q") });
+  const parsed = quickSearchRequestSchema(gameSearchEnabled(rawType)).safeParse(
+    { type: rawType, q: searchParams.get("q") },
+  );
   if (!parsed.success) return invalid();
 
   const { type, q } = parsed.data;
