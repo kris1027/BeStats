@@ -178,6 +178,6 @@ The build is ordered as a Tracer Bullet. The first task alone puts real new IGDB
 
 ## Follow-up
 
-- [ ] `/scope`: G9's row says "screenshots, trailer, similar games". Note that the trailer is a hero button, and that the backdrop deferred item is now resolved by this spec.
+- [x] `/scope`: G9's row says "screenshots, trailer, similar games". Note that the trailer is a hero button, and that the backdrop deferred item is now resolved by this spec. (Done on the G9 branch: `docs/scope/games.md` names the backdrop and Trailer button in the hero and drops the deferred item.)
 - [ ] `/sync`: `lib/igdb/AGENTS.md`, the "Adding a field" convention and the `IGDB_DATE_FORMAT` pin. In the root `AGENTS.md`, the game page facts.
 - [ ] G10: `VideoGame` JSON-LD can use the new developer, publisher, screenshot and trailer fields.

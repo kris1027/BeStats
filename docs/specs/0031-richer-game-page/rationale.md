@@ -49,3 +49,9 @@ Smaller calls made in this spec, each with its runner up:
 - **Facts**: the scope's five, plus Series and Game engine, which the engineer chose. Plural labels switch on count only where a single value is the norm (Franchise, Game engine).
 - **Release dates**: one line per platform, the earliest across regions (the same global rule as the hero's first release date), at IGDB's stated precision, built from `date_format` rather than IGDB's `human` string so the format matches the rest of the app. TBD reads `TBA`, because IGDB states it; this is not an invented value.
 - **Skeleton with a backdrop**: most games with a page worth visiting have art, so a backdrop footprint shifts the layout least on average.
+
+Added during the build and kept, though no criterion asked for them:
+
+- **The dialog image's alt is `Screenshot {n} of {total}`**, while the thumbnails stay `alt=""` behind their named buttons. The dialog holds one image and nothing else names it, so a screen reader landing on it hears what it is, not only the live region's count.
+- **Focus moves to the other arrow when Previous or Next turns disabled**, so a keyboard user at either end is never left on a disabled button, where focus would drop to the dialog.
+- **`IgdbField` admits `date` and `date_format`**, which only `igdb.live.ts` writes into a body, so the live check can ask IGDB for real quarter and TBD entries (AC-14).
