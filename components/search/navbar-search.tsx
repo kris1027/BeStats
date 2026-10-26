@@ -34,7 +34,7 @@ type Layout = "desktop" | "mobile";
 function NavbarSearch({ layout }: { layout: Layout }) {
   return (
     <WithLibraryTypedPage
-      fallback={() => <NavbarSearchFallback layout={layout} type="tv" />}
+      fallback={() => <NavbarSearchFallback layout={layout} />}
     >
       {({ pathname, libraryType }) => (
         <NavbarSearchFor
