@@ -38,6 +38,9 @@ export const CATALOG_SOURCES = {
   game: "IGDB",
 } as const satisfies Record<LibraryType, string>;
 
+/** A catalog name as `CATALOG_SOURCES` spells it, for props that blame one. */
+export type CatalogSource = (typeof CATALOG_SOURCES)[LibraryType];
+
 /**
  * The three library pages, one per `LibraryList`, and the only typed pages a
  * game tab exists on (spec 0027, AC-2).

@@ -48,7 +48,7 @@ function exportedTypeNames(source: string): string[] {
 }
 
 describe("lib/igdb/index.ts types", () => {
-  it("exports exactly the types in spec 0023's design section, plus spec 0028's", () => {
+  it("exports exactly the types in spec 0023's design section, plus spec 0028's and 0031's", () => {
     const source = readFileSync(join("lib", "igdb", "index.ts"), "utf8");
     expect(exportedTypeNames(source)).toEqual(
       [
@@ -57,10 +57,13 @@ describe("lib/igdb/index.ts types", () => {
         "DiscoverSort",
         "Game",
         "GameRef",
+        "GameReleaseDate",
         "GameSummary",
         "GameType",
+        "GameVideo",
         "IgdbErrorKind",
         "Paged",
+        "PlatformRelease",
         "PopularGamesKind",
         "SearchGamesOptions",
       ].sort(),

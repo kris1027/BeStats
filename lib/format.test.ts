@@ -4,6 +4,7 @@ import {
   formatAirDate,
   formatAirSpan,
   formatEpisodeCount,
+  formatGameReleaseDate,
   formatMonthYear,
   formatPersonalScore,
   formatReleaseDate,
@@ -308,5 +309,21 @@ describe("formatMonthYear", () => {
 
   it("returns null for a value that is not a date", () => {
     expect(formatMonthYear("not a date")).toBeNull();
+  });
+});
+
+describe("formatGameReleaseDate · covers spec 0031 AC-10", () => {
+  it.each([
+    [{ precision: "day", date: "2020-03-20" }, "Mar 20, 2020"],
+    [{ precision: "day", date: "2015-05-01" }, "May 1, 2015"],
+    [{ precision: "month", date: "2020-03-31" }, "Mar 2020"],
+    [{ precision: "year", date: "2027-12-31" }, "2027"],
+    [{ precision: "quarter", year: 2027, quarter: 1 }, "Q1 2027"],
+    [{ precision: "day", date: "2026-12-31" }, "Dec 31, 2026"],
+    [{ precision: "month", date: "1998-01-15" }, "Jan 1998"],
+    [{ precision: "quarter", year: 2026, quarter: 4 }, "Q4 2026"],
+    [{ precision: "tba" }, "TBA"],
+  ] as const)("formats %o as %s", (release, text) => {
+    expect(formatGameReleaseDate(release)).toBe(text);
   });
 });

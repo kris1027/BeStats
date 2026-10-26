@@ -5,11 +5,10 @@ import { DetailHeroSkeleton } from "@/components/catalog/detail-skeletons";
 import { GameDetailSkeleton } from "@/components/game/game-detail-skeleton";
 
 /**
- * covers: spec 0025, AC-9
+ * covers: spec 0025, AC-9; spec 0031, AC-12
  *
- * A game has no backdrop and no tagline, so its skeleton reserves neither and
- * nothing jumps when the hero streams in. The movie and show skeletons keep
- * both, since the new props default on.
+ * A game has no tagline, so its skeleton reserves none. Since spec 0031 most
+ * games have art, so it reserves the backdrop and the Overview, as movies do.
  */
 const skeletons = (container: HTMLElement) =>
   container.querySelectorAll('[data-slot="skeleton"]');
@@ -27,12 +26,13 @@ describe("GameDetailSkeleton", () => {
     );
   });
 
-  it("draws no backdrop band and no tagline line", () => {
+  it("draws the backdrop band and no tagline line", () => {
     const game = render(<GameDetailSkeleton />).container;
+    const hero = game.querySelector(":scope > div > div") as HTMLElement;
     const withBoth = render(<DetailHeroSkeleton metaRows={2} />).container;
 
-    expect(backdrop(game)).toBeNull();
-    expect(skeletons(game)).toHaveLength(skeletons(withBoth).length - 2);
+    expect(backdrop(game)).not.toBeNull();
+    expect(skeletons(hero)).toHaveLength(skeletons(withBoth).length - 1);
   });
 
   it("hides every placeholder from assistive technology", () => {

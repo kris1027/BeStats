@@ -4,7 +4,9 @@ import { igdbRequest } from "./client";
 import {
   IGDB_ART_LADDER,
   IGDB_COVER_LADDER,
+  IGDB_DATE_FORMAT,
   IGDB_EROTIC_THEME_ID,
+  IGDB_GAME_FIELDS,
   IGDB_IMAGE_BASE,
   IGDB_POPULARITY_TYPES,
   IGDB_SUMMARY_FIELDS,
@@ -13,10 +15,11 @@ import {
 import { fetchDiscoverGames as fetchValidDiscoverGames } from "./discover";
 import { getIgdbCredentials } from "./env";
 import { fetchGame as fetchValidGame } from "./games";
+import { platformReleases } from "./normalize";
 import { fetchPopularGames as fetchValidPopularGames } from "./popularity";
 import { buildQuery, type Condition, cond } from "./query";
 import { fetchGameGenres, fetchGamePlatforms } from "./reference";
-import { recordsSchema } from "./schemas";
+import { gameDetailSchema, recordsSchema } from "./schemas";
 import { fetchSearchGames as fetchValidSearchGames } from "./search";
 import { getIgdbToken } from "./token";
 import type {
@@ -159,6 +162,119 @@ describe.skipIf(!hasCredentials)("IGDB live check (real network)", () => {
     expect(game.communityRating).toBeGreaterThan(5);
     expect(game.platforms.length).toBeGreaterThan(0);
     expect(game.genres.length).toBeGreaterThan(0);
+  });
+
+  it("reads every field spec 0031 added, in the shapes it parses (AC-14)", async () => {
+    const { data } = await games(
+      buildQuery({
+        fields: IGDB_GAME_FIELDS,
+        where: [cond.is("id", KNOWN_GAME_ID)],
+        limit: 1,
+      }),
+    );
+    const record = gameDetailSchema.parse(data[0]);
+    expect(record.storyline).toBeTruthy();
+    for (const list of [
+      record.artworks,
+      record.screenshots,
+      record.videos,
+      record.similar_games,
+      record.involved_companies,
+      record.game_modes,
+      record.player_perspectives,
+      record.franchises,
+      record.collections,
+      record.game_engines,
+      record.release_dates,
+    ]) {
+      expect(list?.length).toBeGreaterThan(0);
+    }
+    for (const entry of record.involved_companies as {
+      company: { name: string };
+      developer: unknown;
+      publisher: unknown;
+    }[]) {
+      expect(typeof entry.developer).toBe("boolean");
+      expect(typeof entry.publisher).toBe("boolean");
+      expect(entry.company.name).toBeTruthy();
+    }
+    for (const video of record.videos as { video_id: string }[]) {
+      expect(video.video_id).toMatch(/^[A-Za-z0-9_-]{6,20}$/);
+    }
+    for (const date of record.release_dates as {
+      date_format: number;
+      platform: { id: number; name: string };
+    }[]) {
+      expect(Object.keys(IGDB_DATE_FORMAT).map(Number)).toContain(
+        date.date_format,
+      );
+      expect(date.platform.name).toBeTruthy();
+    }
+
+    const game = await fetchGame(KNOWN_GAME_ID);
+    expect(game.trailer).not.toBeNull();
+    expect(game.developers).toContain("CD Projekt RED");
+    expect(game.platformReleases.length).toBeGreaterThan(0);
+  });
+
+  it("matches the pinned date_format ids to IGDB's date_formats (AC-14)", async () => {
+    const { data } = await igdbRequest(
+      "date_formats",
+      buildQuery({
+        fields: ["format"],
+        sort: { field: "id", direction: "asc" },
+        limit: 50,
+      }),
+      recordsSchema,
+    );
+    const formats = Object.fromEntries(
+      (data as { id: number; format: string }[]).map((row) => [
+        row.id,
+        row.format,
+      ]),
+    );
+    expect(formats).toMatchObject({
+      0: "YYYYMMDD",
+      1: "YYYYMM",
+      2: "YYYY",
+      3: "YYYYQ1",
+      4: "YYYYQ2",
+      5: "YYYYQ3",
+      6: "YYYYQ4",
+      7: "TBD",
+    });
+    expect(Object.keys(IGDB_DATE_FORMAT).map(Number)).toEqual([
+      0, 1, 2, 3, 4, 5, 6, 7,
+    ]);
+  });
+
+  it("puts a quarter entry's UTC timestamp inside its stated quarter (AC-14)", async () => {
+    for (const formatId of [3, 4, 5, 6]) {
+      const { data } = await igdbRequest(
+        "release_dates",
+        buildQuery({
+          fields: ["date", "date_format", "y", "platform.name"],
+          where: [cond.is("date_format", formatId), cond.notNull("date")],
+          sort: { field: "id", direction: "desc" },
+          limit: 1,
+        }),
+        recordsSchema,
+      );
+      const row = data[0] as { date: number; y: number } | undefined;
+      if (row === undefined) continue;
+      const day = new Date(row.date * 1000);
+      const quarter = formatId - 2;
+      expect(day.getUTCFullYear()).toBe(row.y);
+      expect(Math.floor(day.getUTCMonth() / 3) + 1).toBe(quarter);
+      const [release] = platformReleases([
+        { ...row, platform: { id: 1, name: "Live" } },
+      ]);
+      expect(release?.release).toEqual({
+        precision: "quarter",
+        year: row.y,
+        quarter,
+      });
+    }
   });
 
   it("matches the pinned game type ids to their names, and reports new ones", async () => {

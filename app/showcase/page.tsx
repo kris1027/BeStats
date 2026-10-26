@@ -25,6 +25,9 @@ import {
   ListEmptyPanel,
   ListErrorPanel,
 } from "@/components/catalog/list-panels";
+import { GameFacts } from "@/components/game/game-facts";
+import { GameOverview } from "@/components/game/game-overview";
+import { ScreenshotGallery } from "@/components/game/screenshot-gallery";
 import { GlassPill } from "@/components/glass-pill";
 import { IconKey } from "@/components/layout/icon-key";
 import { LibraryNavView } from "@/components/layout/library-nav";
@@ -101,6 +104,56 @@ const LIGHT_POSTER =
   encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="300"><rect width="200" height="300" fill="#C8B89A"/></svg>',
   );
+
+/**
+ * Flat 16:9 stand ins for IGDB screenshots, so the showcase needs no network.
+ * Shades of SVG's default fill, so no colour value lives outside globals.css.
+ */
+const SCREENSHOTS = [0.2, 0.4, 0.6, 0.8, 1].map(
+  (opacity) =>
+    "data:image/svg+xml;utf8," +
+    encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080"><rect width="1920" height="1080" opacity="${opacity}"/></svg>`,
+    ),
+);
+
+/** Every Facts entry, with a quarter date and a TBA, for the showcase (AC-16). */
+const GAME_FACTS: React.ComponentProps<typeof GameFacts> = {
+  gameModes: [
+    { id: 1, name: "Single player" },
+    { id: 2, name: "Multiplayer" },
+  ],
+  playerPerspectives: [{ id: 2, name: "Third person" }],
+  themes: [{ id: 1, name: "Action" }],
+  franchises: [{ id: 452, name: "The Witcher" }],
+  series: [{ id: 62, name: "The Witcher" }],
+  gameEngines: [
+    { id: 24, name: "REDengine" },
+    { id: 25, name: "REDengine 3" },
+  ],
+  platformReleases: [
+    {
+      platformId: 6,
+      platform: "PC (Microsoft Windows)",
+      release: { precision: "day", date: "2015-05-19" },
+    },
+    {
+      platformId: 508,
+      platform: "Nintendo Switch 2",
+      release: { precision: "quarter", year: 2027, quarter: 1 },
+    },
+    {
+      platformId: 169,
+      platform: "Xbox Series X|S",
+      release: { precision: "month", date: "2027-06-01" },
+    },
+    {
+      platformId: 900,
+      platform: "PlayStation 6",
+      release: { precision: "tba" },
+    },
+  ],
+};
 
 function Section({
   title,
@@ -463,6 +516,33 @@ export default function ShowcasePage() {
         note="The games tabs of /watchlist, /upcoming and /watched (spec 0027, spec 0030): Want to play shows the IGDB community rating, the green bookmark that removes it and, before release, its date or Date TBA; Playing and Finished show the status chip and the X, and your score when there is one, else the community rating, with the month under the name. A game IGDB hides keeps its card but has no link, and a game IGDB no longer has keeps only its removal."
       >
         <GameLibraryCardDemo poster={LIGHT_POSTER} />
+      </Section>
+
+      <Section
+        title="Game page sections"
+        note="Under the game hero (spec 0031): the Overview with IGDB's storyline under Story and the company lines, the same Overview with no storyline, the Screenshots row whose thumbnails open one dialog (Previous, Next, the arrow keys, focus back on the thumbnail), and Facts with a quarter date and IGDB's own TBA sorted last. Every part is left out when IGDB has nothing."
+      >
+        <div className="flex flex-col gap-10">
+          <GameOverview
+            summary="A story driven open world RPG set in a dark fantasy universe."
+            storyline={
+              "The witcher Geralt searches for Ciri.\n\nThe Wild Hunt is close behind."
+            }
+            developers={["CD Projekt RED"]}
+            publishers={["CD Projekt", "WB Games"]}
+          />
+          <GameOverview
+            summary="A summary with no storyline below it."
+            storyline={null}
+            developers={["A studio"]}
+            publishers={[]}
+          />
+          <ScreenshotGallery
+            name="A showcase game"
+            screenshotUrls={SCREENSHOTS}
+          />
+          <GameFacts {...GAME_FACTS} />
+        </div>
       </Section>
 
       <Section

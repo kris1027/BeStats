@@ -1,13 +1,18 @@
-import { type ReactElement, Suspense } from "react";
+import { createElement, Fragment, type ReactElement, Suspense } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { GameDetailSkeleton } from "@/components/game/game-detail-skeleton";
+import { GameFacts } from "@/components/game/game-facts";
 import { GameHero } from "@/components/game/game-hero";
+import { GameMoreLikeThisSection } from "@/components/game/game-more-like-this";
+import { GameOverview } from "@/components/game/game-overview";
+import { ScreenshotGallery } from "@/components/game/screenshot-gallery";
 import { GameTrackingSlot } from "@/components/tracking/game-tracking-slot";
 
 /**
- * covers: spec 0025, AC-1, AC-6, AC-7, AC-8, AC-9, AC-10
+ * covers: spec 0025, AC-1, AC-6, AC-7, AC-8, AC-9, AC-10; spec 0031, AC-1,
+ * AC-11
  *
  * Until G10 every game page outcome is `noindex`, with no canonical or share
  * card. `loadGame` is replaced, so the metadata and the streamed body branch
@@ -139,13 +144,30 @@ describe("the streamed body", () => {
     platforms: [{ id: 6, name: "PC (Microsoft Windows)" }],
     communityRating: 9.3,
     communityRatingCount: 5501,
+    storyline: null,
+    artUrl: "https://images.igdb.com/igdb/image/upload/t_1080p/ar1.jpg",
+    screenshotUrls: [],
+    trailer: { key: "dQw4w9WgXcQ", name: "Launch Trailer" },
+    similarGameIds: [1887],
+    developers: ["CD Projekt RED"],
+    publishers: [],
+    gameModes: [],
+    playerPerspectives: [],
+    themes: [],
+    franchises: [],
+    series: [],
+    gameEngines: [],
+    platformReleases: [],
   };
+
+  /** The article's children: the hero first, then the sections in order. */
+  const sectionsOf = (article: Element) => article.props.children as Element[];
 
   it("hands the found game's facts to the hero and nothing it does not show (AC-1)", async () => {
     loadGame.mockResolvedValue({ kind: "found", game: FOUND });
 
     const article = await bodyFor("1942");
-    const hero = article.props.children as Element;
+    const hero = sectionsOf(article)[0];
 
     expect(loadGame).toHaveBeenCalledWith(1942);
     expect(hero.type).toBe(GameHero);
@@ -159,14 +181,49 @@ describe("the streamed body", () => {
       platforms: FOUND.platforms,
       communityRating: FOUND.communityRating,
       communityRatingCount: FOUND.communityRatingCount,
+      artUrl: FOUND.artUrl,
+      trailer: FOUND.trailer,
     });
+  });
+
+  it("orders the sections under the hero as spec 0031 lists them (AC-1)", async () => {
+    loadGame.mockResolvedValue({ kind: "found", game: FOUND });
+
+    const types = sectionsOf(await bodyFor("1942")).map((child) => child.type);
+
+    expect(types).toEqual([
+      GameHero,
+      GameOverview,
+      ScreenshotGallery,
+      GameMoreLikeThisSection,
+      GameFacts,
+    ]);
+  });
+
+  it("renders the hero alone for a game IGDB has nothing more on (AC-1, AC-11)", async () => {
+    const BARE = {
+      ...FOUND,
+      summary: null,
+      artUrl: null,
+      trailer: null,
+      similarGameIds: [],
+      developers: [],
+    };
+    loadGame.mockResolvedValue({ kind: "found", game: BARE });
+
+    const [hero, ...sections] = sectionsOf(await bodyFor("94975"));
+
+    expect(hero.props).toMatchObject({ artUrl: null, trailer: null });
+    expect(
+      renderToStaticMarkup(createElement(Fragment, null, ...sections)),
+    ).toBe("");
   });
 
   it("puts the status control in the hero's tracking slot, in its own null fallback boundary (spec 0026, AC-1)", async () => {
     loadGame.mockResolvedValue({ kind: "found", game: FOUND });
 
     const article = await bodyFor("1942");
-    const hero = article.props.children as Element;
+    const hero = sectionsOf(article)[0];
     const tracking = hero.props.tracking as Element;
     const slot = tracking.props.children as Element;
 

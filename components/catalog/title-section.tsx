@@ -1,4 +1,5 @@
 import { RetryLink } from "@/components/retry-link";
+import type { CatalogSource } from "@/lib/catalog/media-type";
 
 /**
  * The h2 look every title page section shares: Overview, Seasons, Where to
@@ -16,18 +17,22 @@ export const SECTION_HEADING_CLASS =
  *
  * @param what What failed to load, as it reads after "Couldn't load".
  * @param href The title page, which the Retry reloads in full.
+ * @param source The catalog that failed: TMDB, or IGDB on a game page
+ * (spec 0031, AC-8).
  */
 export function SectionErrorLine({
   what,
   href,
+  source = "TMDB",
 }: {
   what: string;
   href: string;
+  source?: CatalogSource;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
       <p className="text-[15px] text-muted-foreground">
-        Couldn't load {what} from TMDB.
+        Couldn't load {what} from {source}.
       </p>
       <RetryLink href={href} />
     </div>

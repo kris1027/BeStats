@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { GameHero } from "@/components/game/game-hero";
 
 /**
- * covers: spec 0025, AC-1 to AC-5
+ * covers: spec 0025, AC-1 to AC-5; spec 0031, AC-3, AC-4
  *
  * The first page built from IGDB data, so every missing value is asserted:
  * absent means absent or stated, never `TBA`, a zero or today's date.
@@ -26,6 +26,8 @@ const FULL = {
   ],
   communityRating: 7.946,
   communityRatingCount: 1234,
+  artUrl: null,
+  trailer: null,
 };
 
 const EMPTY = {
@@ -37,6 +39,8 @@ const EMPTY = {
   platforms: [],
   communityRating: null,
   communityRatingCount: null,
+  artUrl: null,
+  trailer: null,
 };
 
 describe("GameHero", () => {
@@ -148,5 +152,30 @@ describe("GameHero", () => {
     const images = container.querySelectorAll("img");
     expect(images).toHaveLength(1);
     expect(images[0]).toHaveAttribute("alt", "");
+  });
+
+  it("draws the game's art as the backdrop when it has some (spec 0031, AC-3)", () => {
+    const art = "https://images.igdb.com/igdb/image/upload/t_1080p/ar1.jpg";
+    const { container } = render(<GameHero {...FULL} artUrl={art} />);
+
+    const backdrop = container.querySelector('[data-slot="detail-backdrop"]');
+    expect(backdrop).not.toBeNull();
+    expect(backdrop?.querySelector("img")?.getAttribute("src")).toContain(
+      "images.igdb.com",
+    );
+  });
+
+  it("offers the Trailer button only when the game has a trailer (spec 0031, AC-4)", () => {
+    const { rerender } = render(<GameHero {...FULL} />);
+    expect(screen.queryByRole("button", { name: "Trailer" })).toBeNull();
+
+    rerender(
+      <GameHero
+        {...FULL}
+        trailer={{ key: "dQw4w9WgXcQ", name: "Launch Trailer" }}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Trailer" })).toBeInTheDocument();
+    expect(document.querySelector("iframe")).toBeNull();
   });
 });
