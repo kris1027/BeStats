@@ -4,7 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { GameSummary, Paged } from "@/lib/igdb";
 
 /**
- * covers: spec 0029, AC-1, AC-2, AC-4, AC-5, AC-8, AC-11, AC-12, AC-13
+ * covers: spec 0029, AC-1, AC-2, AC-4, AC-5, AC-8, AC-11, AC-12, AC-13;
+ * spec 0030, AC-1
  *
  * The games branch of `SearchResults`, as `/search` renders it. The flag,
  * IGDB's reference lists and the one results read are the boundaries and are
@@ -55,6 +56,11 @@ vi.mock("@/components/tracking/show-card-slots", () => ({
   ShowCardBadge: () => null,
   ShowCardControls: () => null,
   ShowCardMeta: () => null,
+}));
+const gameControls = vi.fn((_props: Record<string, unknown>) => null);
+vi.mock("@/components/tracking/game-card-slots", () => ({
+  GameCardBadge: () => null,
+  GameCardControls: (props: Record<string, unknown>) => gameControls(props),
 }));
 
 const { SearchResults } = await import("./search-results");
@@ -111,6 +117,21 @@ afterEach(() => {
 });
 
 describe("SearchResults for games", () => {
+  it("hands every card's slots the page's ids and the search URL, so one read serves the grid (spec 0030, AC-1)", async () => {
+    readGameSearchPage.mockResolvedValue(paged([game(1), game(2)], 2));
+
+    await renderResults({ type: "game", q: "zelda" });
+
+    expect(gameControls).toHaveBeenCalledTimes(2);
+    for (const [props] of gameControls.mock.calls) {
+      expect(props).toMatchObject({
+        gridGameIds: [1, 2],
+        returnPath: "/search?type=game&q=zelda",
+        releasePill: true,
+      });
+    }
+  });
+
   it("shows IGDB's count, one card per game with its year and a link to the game page (AC-8, AC-12)", async () => {
     readGameSearchPage.mockResolvedValue(
       paged([game(1, { name: "Zelda" }), game(2)], 1234),
