@@ -15,7 +15,7 @@ import {
   IgdbRatingBadge,
   PersonalScoreBadge,
 } from "@/components/rating-badges";
-import { gameCardStatus } from "@/lib/catalog/game-page";
+import { type GameCardStatus, gameCardStatus } from "@/lib/catalog/game-page";
 import { formatReleaseDate } from "@/lib/format";
 import { requestTodayUtc } from "@/lib/tracking/episode-state";
 import { getGameGridStates } from "@/lib/tracking/game-state";
@@ -33,12 +33,25 @@ type GameCardProps = {
   gridGameIds: readonly number[];
 };
 
-/** The card's status, or undefined for a visitor or a failed read. */
-async function readStatus({ gameId, releaseDate, gridGameIds }: GameCardProps) {
+/**
+ * What the grid read says about this card. `unknown` is a visitor or a failed
+ * read, which get the plain catalog card (AC-9); `known` carries the stored
+ * status, where null is a game the user has no row for.
+ */
+type CardRead =
+  | { kind: "unknown" }
+  | { kind: "known"; card: GameCardStatus | null };
+
+async function readCard({
+  gameId,
+  releaseDate,
+  gridGameIds,
+}: GameCardProps): Promise<CardRead> {
   const result = await getGameGridStates(idsKey(gridGameIds));
-  if (result.kind !== "ok") return undefined;
+  if (result.kind !== "ok") return { kind: "unknown" };
   return {
-    status: gameCardStatus(
+    kind: "known",
+    card: gameCardStatus(
       result.state.get(gameId),
       releaseDate,
       requestTodayUtc(),
@@ -57,9 +70,13 @@ async function GameCardBadge({
   communityRating,
   ...props
 }: GameCardProps & { communityRating: number | null }) {
-  const status = (await readStatus(props))?.status;
-  if (isStartedGame(status) && status.rating !== null) {
-    return <PersonalScoreBadge value={status.rating} />;
+  const read = await readCard(props);
+  if (
+    read.kind === "known" &&
+    isStartedGame(read.card) &&
+    read.card.rating !== null
+  ) {
+    return <PersonalScoreBadge value={read.card.rating} />;
   }
   return <IgdbRatingBadge value={communityRating} />;
 }
@@ -85,17 +102,17 @@ async function GameCardControls({
   returnPath: string;
   releasePill?: boolean;
 }) {
-  const read = await readStatus(props);
-  if (read === undefined) return null;
-  const { status } = read;
+  const read = await readCard(props);
+  if (read.kind === "unknown") return null;
+  const { card } = read;
 
-  if (isStartedGame(status)) {
-    return <GameStatusChip status={status.status} />;
+  if (isStartedGame(card)) {
+    return <GameStatusChip status={card.status} />;
   }
 
   return (
     <>
-      {releasePill && status?.unreleased && (
+      {releasePill && card?.unreleased && (
         <ReleasePill
           release={formatReleaseDate(props.releaseDate, requestTodayUtc())}
         />
@@ -103,7 +120,7 @@ async function GameCardControls({
       <GameCardBookmarkButton
         gameId={props.gameId}
         name={name}
-        inList={status !== null}
+        inList={card !== null}
         returnPath={returnPath}
       />
     </>
