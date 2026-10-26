@@ -21,8 +21,8 @@ describe("IconKey", () => {
     ).toEqual([
       "TMDB rating",
       "Your score",
-      "Plan",
-      "Planned",
+      "Plan / Want to play",
+      "Planned / Want to play",
       "Mark watched",
       "Watched",
       "Next episode",
