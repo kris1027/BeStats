@@ -1,4 +1,4 @@
-import { type ReactElement, Suspense } from "react";
+import { createElement, Fragment, type ReactElement, Suspense } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -11,7 +11,8 @@ import { ScreenshotGallery } from "@/components/game/screenshot-gallery";
 import { GameTrackingSlot } from "@/components/tracking/game-tracking-slot";
 
 /**
- * covers: spec 0025, AC-1, AC-6, AC-7, AC-8, AC-9, AC-10; spec 0031, AC-1
+ * covers: spec 0025, AC-1, AC-6, AC-7, AC-8, AC-9, AC-10; spec 0031, AC-1,
+ * AC-11
  *
  * Until G10 every game page outcome is `noindex`, with no canonical or share
  * card. `loadGame` is replaced, so the metadata and the streamed body branch
@@ -197,6 +198,25 @@ describe("the streamed body", () => {
       GameMoreLikeThisSection,
       GameFacts,
     ]);
+  });
+
+  it("renders the hero alone for a game IGDB has nothing more on (AC-1, AC-11)", async () => {
+    const BARE = {
+      ...FOUND,
+      summary: null,
+      artUrl: null,
+      trailer: null,
+      similarGameIds: [],
+      developers: [],
+    };
+    loadGame.mockResolvedValue({ kind: "found", game: BARE });
+
+    const [hero, ...sections] = sectionsOf(await bodyFor("94975"));
+
+    expect(hero.props).toMatchObject({ artUrl: null, trailer: null });
+    expect(
+      renderToStaticMarkup(createElement(Fragment, null, ...sections)),
+    ).toBe("");
   });
 
   it("puts the status control in the hero's tracking slot, in its own null fallback boundary (spec 0026, AC-1)", async () => {
