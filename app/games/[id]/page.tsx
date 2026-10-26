@@ -3,7 +3,11 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { GameDetailSkeleton } from "@/components/game/game-detail-skeleton";
+import { GameFacts } from "@/components/game/game-facts";
 import { GameHero } from "@/components/game/game-hero";
+import { GameMoreLikeThisSection } from "@/components/game/game-more-like-this";
+import { GameOverview } from "@/components/game/game-overview";
+import { ScreenshotGallery } from "@/components/game/screenshot-gallery";
 import { RetryLink } from "@/components/retry-link";
 import { StatePanel } from "@/components/state-panel";
 import { GameTrackingSlot } from "@/components/tracking/game-tracking-slot";
@@ -63,8 +67,12 @@ export async function generateMetadata({
  *
  * Nothing here reads a cookie, a header, the session or the visitor's region
  * (AC-9). The status control reads the session in its own Suspense boundary
- * through the hero's `tracking` slot (spec 0026, AC-1), and G9 adds the
- * sections under the hero.
+ * through the hero's `tracking` slot (spec 0026, AC-1).
+ *
+ * Spec 0031 adds the backdrop and Trailer button to the hero, then Overview,
+ * Screenshots, More like this and Facts, in that order (AC-1). All but More
+ * like this come from the one `getGame` read; that section streams its own
+ * batch read in its own boundary (AC-8).
  */
 export default function GamePage({ params }: PageProps<"/games/[id]">) {
   return (
@@ -113,6 +121,8 @@ async function GameDetail({
         platforms={game.platforms}
         communityRating={game.communityRating}
         communityRatingCount={game.communityRatingCount}
+        artUrl={game.artUrl}
+        trailer={game.trailer}
         tracking={
           <Suspense fallback={null}>
             <GameTrackingSlot
@@ -123,6 +133,21 @@ async function GameDetail({
           </Suspense>
         }
       />
+      <GameOverview
+        summary={game.summary}
+        storyline={game.storyline}
+        developers={game.developers}
+        publishers={game.publishers}
+      />
+      <ScreenshotGallery
+        name={game.name}
+        screenshotUrls={game.screenshotUrls}
+      />
+      <GameMoreLikeThisSection
+        gameId={id}
+        similarGameIds={game.similarGameIds}
+      />
+      <GameFacts game={game} />
     </article>
   );
 }

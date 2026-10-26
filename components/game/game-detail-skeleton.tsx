@@ -1,10 +1,14 @@
-import { DetailHeroSkeleton } from "@/components/catalog/detail-skeletons";
+import {
+  DetailHeroSkeleton,
+  OverviewSkeleton,
+} from "@/components/catalog/detail-skeletons";
 
 /**
- * The game page while IGDB answers (spec 0025, AC-9): the hero skeleton with
- * no backdrop and no tagline, the layout `GameHero` always renders, so nothing
- * jumps when the game streams in. Two meta rows, for the chips and the
- * platforms line.
+ * The game page while IGDB answers (spec 0025, AC-9; spec 0031, AC-12): the
+ * hero skeleton with a backdrop, since most games have art, and no tagline,
+ * which games never have, then the Overview. A game with no art moves up
+ * when it streams in, the tradeoff movies accept. Two meta rows, for the
+ * chips and the platforms line.
  */
 function GameDetailSkeleton() {
   return (
@@ -16,7 +20,8 @@ function GameDetailSkeleton() {
       <p role="status" className="sr-only">
         Loading game details
       </p>
-      <DetailHeroSkeleton backdrop={false} tagline={false} metaRows={2} />
+      <DetailHeroSkeleton tagline={false} metaRows={2} />
+      <OverviewSkeleton />
     </div>
   );
 }

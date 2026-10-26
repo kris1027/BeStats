@@ -3,6 +3,7 @@ import type * as React from "react";
 
 import { DetailHero, IgdbRatingBlock } from "@/components/catalog/detail-hero";
 import { GenreChips, MetaLine } from "@/components/catalog/detail-hero-meta";
+import { TrailerButton } from "@/components/catalog/trailer-button";
 import { formatAirDate } from "@/lib/format";
 import type { Game, GameType } from "@/lib/igdb";
 
@@ -22,6 +23,8 @@ type GameHeroProps = {
   | "platforms"
   | "communityRating"
   | "communityRatingCount"
+  | "artUrl"
+  | "trailer"
 >;
 
 /**
@@ -37,9 +40,10 @@ const RELEASE_KIND_LABELS: Partial<Record<GameType, string>> = {
 };
 
 /**
- * The top of a game page (spec 0025, AC-1): the shared `DetailHero` in its no
- * backdrop layout, because G3 reads no IGDB artwork, and with no tagline,
- * because games have none.
+ * The top of a game page (spec 0025, AC-1): the shared `DetailHero` with no
+ * tagline, because games have none. The backdrop is the game's wide art, and
+ * a game with none keeps the no backdrop layout; the Trailer button shows
+ * only when IGDB has a usable trailer (spec 0031, AC-3, AC-4).
  *
  * The meta row and the platforms line both go in the `meta` slot, so they sit
  * above the IGDB rating as the AC orders them. Every missing value is left
@@ -54,6 +58,8 @@ function GameHero({
   platforms,
   communityRating,
   communityRatingCount,
+  artUrl,
+  trailer,
   tracking,
 }: GameHeroProps) {
   const meta = [
@@ -66,13 +72,22 @@ function GameHero({
       title={name}
       tagline={null}
       posterUrl={coverUrl}
-      backdropUrl={null}
+      backdropUrl={artUrl}
       fallbackIcon={Gamepad2Icon}
       meta={<GameMeta meta={meta} genres={genres} platforms={platforms} />}
       rating={
         <IgdbRatingBlock value={communityRating} count={communityRatingCount} />
       }
       tracking={tracking}
+      actions={
+        trailer === null ? undefined : (
+          <TrailerButton
+            videoKey={trailer.key}
+            videoName={trailer.name}
+            title={name}
+          />
+        )
+      }
     />
   );
 }
