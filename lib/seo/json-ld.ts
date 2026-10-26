@@ -35,6 +35,22 @@ export type ShowJsonLdInput = {
   numberOfEpisodes: number;
 };
 
+/**
+ * As `MovieJsonLdInput`, for a game's normalized `Game` (spec 0032, AC-3).
+ * Structural for the same reason: `lib/seo/` imports nothing from `lib/igdb`.
+ */
+export type GameJsonLdInput = {
+  id: number;
+  name: string;
+  coverUrl: string | null;
+  releaseDate: string | null;
+  summary: string | null;
+  genres: { name: string }[];
+  platforms: { name: string }[];
+  developers: string[];
+  publishers: string[];
+};
+
 type JsonLd = Record<string, unknown>;
 
 /**
@@ -85,6 +101,41 @@ export function showJsonLd(show: ShowJsonLdInput): JsonLd {
     numberOfSeasons: show.numberOfSeasons,
     numberOfEpisodes: show.numberOfEpisodes,
   });
+}
+
+/**
+ * A schema.org `VideoGame` for a found game page (spec 0032, AC-3), under the
+ * same omission rule as `movieJsonLd`.
+ *
+ * `image` is the portrait cover, as a movie's is its poster. `author` and
+ * `publisher` are the companies the page itself shows (spec 0031, AC-5), so
+ * nothing is claimed that a visitor cannot see. IGDB's community rating is
+ * left out like every other rating (`lib/seo/AGENTS.md`, Rules), and so is
+ * the trailer, since a `VideoObject` needs a thumbnail and upload date IGDB
+ * does not give.
+ */
+export function gameJsonLd(game: GameJsonLdInput): JsonLd {
+  return withoutEmpty({
+    "@context": "https://schema.org",
+    "@type": "VideoGame",
+    name: game.name,
+    url: absoluteUrl(`/games/${game.id}`),
+    image: game.coverUrl,
+    datePublished: game.releaseDate,
+    description: game.summary,
+    genre: game.genres.map(({ name }) => name),
+    gamePlatform: game.platforms.map(({ name }) => name),
+    author: organizations(game.developers),
+    publisher: organizations(game.publishers),
+  });
+}
+
+/** Company names as schema.org organizations, blank names dropped. */
+function organizations(names: string[]): JsonLd[] {
+  return names
+    .map((name) => name.trim())
+    .filter((name) => name !== "")
+    .map((name) => ({ "@type": "Organization", name }));
 }
 
 /**

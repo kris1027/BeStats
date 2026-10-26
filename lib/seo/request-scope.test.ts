@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 /**
- * covers: spec 0016, AC-24
+ * covers: spec 0016, AC-24; spec 0032, AC-14
  *
  * Nothing user specific may reach a share card, the sitemap or robots.txt,
  * and reading request state would also cost the public pages their
@@ -27,6 +27,7 @@ const REQUEST_STATE = [
   "lib/supabase",
   "getOptionalUser",
   "requireUser",
+  "getVisitorRegion",
 ];
 
 describe("the SEO surface reads no request state", () => {
@@ -36,10 +37,12 @@ describe("the SEO surface reads no request state", () => {
     expect(found).toEqual([]);
   });
 
-  it("keeps lib/seo free of server-only and the TMDB module", () => {
+  it("keeps lib/seo free of server-only and the TMDB and IGDB modules", () => {
     for (const path of SEO_FILES.filter((p) => p.startsWith("lib/seo"))) {
       const source = readFileSync(path, "utf8");
-      expect(source).not.toMatch(/"server-only"|from "@\/lib\/tmdb"/);
+      expect(source).not.toMatch(
+        /"server-only"|from "@\/lib\/(tmdb|igdb)"|import "@\/lib\/igdb/,
+      );
     }
   });
 });

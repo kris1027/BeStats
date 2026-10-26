@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
+import { JsonLd } from "@/components/catalog/json-ld";
 import { GameDetailSkeleton } from "@/components/game/game-detail-skeleton";
 import { GameFacts } from "@/components/game/game-facts";
 import { GameHero } from "@/components/game/game-hero";
@@ -14,6 +15,8 @@ import { GameTrackingSlot } from "@/components/tracking/game-tracking-slot";
 import { parseGameId } from "@/lib/catalog/ids";
 import { gameHref } from "@/lib/catalog/media-type";
 import { truncateAtWord } from "@/lib/format";
+import { gameJsonLd } from "@/lib/seo/json-ld";
+import { catalogMetadata } from "@/lib/seo/metadata";
 
 import { loadGame } from "./load-game";
 
@@ -28,13 +31,17 @@ const NOT_FOUND_METADATA: Metadata = {
 
 /**
  * The tab title and description, from the same `loadGame` the body uses
- * (spec 0025, AC-10).
+ * (spec 0025, AC-10), plus the canonical and share card of spec 0032, AC-1.
  *
- * Every branch is `noindex` until G10 turns indexing on for games, so no
- * canonical, share card or JSON-LD yet. The not found branch sets it itself
- * because the status is already 200 when the body decides (a soft 404,
- * AC-7), and the failed branch has it so an IGDB outage never gets a retry
- * panel indexed (AC-8).
+ * Only a found, visible game is indexable. The not found branch sets
+ * `noindex` itself because the status is already 200 when the body decides
+ * (a soft 404, spec 0025, AC-7), and the failed branch has it so an IGDB
+ * outage never gets a retry panel indexed (AC-8; spec 0032, AC-2). The
+ * canonical is built from the id alone, so a query string never reaches it.
+ *
+ * The share image prefers the wide art, then a screenshot, then the cover,
+ * because a share card is 1200 by 630 and a portrait cover crops badly; the
+ * movie page's backdrop first rule (spec 0032, rationale).
  */
 export async function generateMetadata({
   params,
@@ -48,13 +55,16 @@ export async function generateMetadata({
     return { title: "Game", robots: { index: false } };
   }
 
-  const { name, releaseYear, summary } = result.game;
-  return {
+  const { name, releaseYear, summary, artUrl, screenshotUrls, coverUrl } =
+    result.game;
+  return catalogMetadata({
     title: releaseYear === null ? name : `${name} (${releaseYear})`,
     description:
       summary === null ? undefined : truncateAtWord(summary, DESCRIPTION_LIMIT),
-    robots: { index: false },
-  };
+    path: gameHref(id),
+    image: artUrl ?? screenshotUrls[0] ?? coverUrl,
+    ogType: "website",
+  });
 }
 
 /**
@@ -68,6 +78,9 @@ export async function generateMetadata({
  * Nothing here reads a cookie, a header, the session or the visitor's region
  * (AC-9). The status control reads the session in its own Suspense boundary
  * through the hero's `tracking` slot (spec 0026, AC-1).
+ *
+ * The found branch, and only it, carries the `VideoGame` JSON-LD (spec 0032,
+ * AC-3), so a missing, hidden or failed game never describes itself.
  *
  * Spec 0031 adds the backdrop and Trailer button to the hero, then Overview,
  * Screenshots, More like this and Facts, in that order (AC-1). All but More
@@ -112,6 +125,7 @@ async function GameDetail({
 
   return (
     <article className="flex flex-col gap-10 md:gap-14">
+      <JsonLd data={gameJsonLd(game)} />
       <GameHero
         name={game.name}
         coverUrl={game.coverUrl}
