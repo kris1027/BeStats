@@ -104,12 +104,12 @@ Give games the same shape movie cards have: one cached grid read, a pure card st
 
 Tracer Bullet: one real thread on one grid first, then the other grids, then the library.
 
-1. Thin thread: `gameIdsKey`, `getGameGridStates`, `gameCardStatus`, `GameCardBadge`, `GameCardControls` with `GameCardBookmarkButton` (disabled while pending, every `undo` to `showGameUndo`), wired into `GameListCard` on `/search?type=game` only, where `GameResults` passes `paged.results` ids itself and `returnPath = searchHref(params)`; unit tests for the read and the pure status, satisfies **AC-1**, **AC-2**, **AC-3**, **AC-4**, **AC-5**, **AC-9**
-2. The started and unreleased cases: `GameStatusChip`, the release pill branch and the `releasePill` switch, satisfies **AC-6**, **AC-7**
-3. Every other grid: `GameListCard` on the five list pages through `CatalogListCards` (pass `gridGameIds`, `returnPath`, and keep `releaseDay` on coming soon so the slot skips its pill), the `game` entry in `LANDING_SLOTS` (badge, controls, `meta`), which also lights the `WideCard` and `TopRatedList` rows, and the `meta` field read by `LandingPoster`; update `landing-badge.test.tsx` (it asserts games have no slots) and the games cases in `landing-sections.test.tsx`, satisfies **AC-1**, **AC-8**, **AC-10**, **AC-13**, **AC-14**
-4. Library tabs: `LibraryGameItem.status` set in `gameLibraryTab`; Want to play gets the green bookmark remove button, Playing and Finished get the chip left of the X; update the accessible names `game-library-grid.test.tsx` and `game-library-tab.test.tsx` assert, satisfies **AC-11**
-5. Icon key labels and `/showcase` states, satisfies **AC-12**, **AC-15**
-6. Proof: build (the `/games`, `/games/{slug}` and `/search` shells still prerender), typecheck, lint, tests, 375px (chip plus X fits two columns) and 1280px, keyboard, signed out and signed in, satisfies **AC-13**, **AC-15**
+1. [x] Thin thread: `gameIdsKey`, `getGameGridStates`, `gameCardStatus`, `GameCardBadge`, `GameCardControls` with `GameCardBookmarkButton` (disabled while pending, every `undo` to `showGameUndo`), wired into `GameListCard` on `/search?type=game` only, where `GameResults` passes `paged.results` ids itself and `returnPath = searchHref(params)`; unit tests for the read and the pure status, satisfies **AC-1**, **AC-2**, **AC-3**, **AC-4**, **AC-5**, **AC-9**
+2. [x] The started and unreleased cases: `GameStatusChip`, the release pill branch and the `releasePill` switch, satisfies **AC-6**, **AC-7**
+3. [x] Every other grid: `GameListCard` on the five list pages through `CatalogListCards` (pass `gridGameIds`, `returnPath`, and keep `releaseDay` on coming soon so the slot skips its pill), the `game` entry in `LANDING_SLOTS` (badge, controls, `meta`), which also lights the `WideCard` and `TopRatedList` rows, and the `meta` field read by `LandingPoster`; update `landing-badge.test.tsx` (it asserts games have no slots) and the games cases in `landing-sections.test.tsx`, satisfies **AC-1**, **AC-8**, **AC-10**, **AC-13**, **AC-14**
+4. [x] Library tabs: `LibraryGameItem.status` set in `gameLibraryTab`; Want to play gets the green bookmark remove button, Playing and Finished get the chip left of the X; update the accessible names `game-library-grid.test.tsx` and `game-library-tab.test.tsx` assert, satisfies **AC-11**
+5. [x] Icon key labels and `/showcase` states, satisfies **AC-12**, **AC-15**
+6. [x] Proof: build (the `/games`, `/games/{slug}` and `/search` shells still prerender), typecheck, lint, tests, 375px (chip plus X fits two columns) and 1280px, keyboard, signed out and signed in, satisfies **AC-13**, **AC-15**
 
 ## Consequences
 

@@ -151,11 +151,11 @@ spec [0029](../specs/0029-game-search-filters/index.md) · code in `app/search/`
 Game cards match the movie card: IGDB rating badge, your score when set, release year, and a status chip with a small control.
 **Done when:** home rows, list pages, `/search` and the library pages all use the full game card; each grid reads the signed in user's statuses once, like `getMovieGridStates`; a card's status always matches its library page; the release gate applies on the card too.
 - [x] Design it (spec): `/architect game cards everywhere`
-- [ ] Build it: `/develop game cards everywhere`
-  - [ ] Thin thread: the grid read, `gameCardStatus`, the badge and controls slots and the Want to play bookmark with its Undo on `/search?type=game`, AC-1 to AC-5, AC-9
-  - [ ] Started and unreleased cards: the status chip, the release pill and its switch, AC-6, AC-7
-  - [ ] Every other grid: list pages, the landing slots (badge, controls, year meta) on every section card, AC-1, AC-8, AC-10, AC-13, AC-14
-  - [ ] Library tabs and proof: `LibraryGameItem.status`, the green bookmark and the chip, icon key labels, `/showcase`, 375px and 1280px, keyboard, all checks, AC-11, AC-12, AC-13, AC-15
+- [x] Build it: `/develop game cards everywhere`
+  - [x] Thin thread: the grid read, `gameCardStatus`, the badge and controls slots and the Want to play bookmark with its Undo on `/search?type=game`, AC-1 to AC-5, AC-9
+  - [x] Started and unreleased cards: the status chip, the release pill and its switch, AC-6, AC-7
+  - [x] Every other grid: list pages, the landing slots (badge, controls, year meta) on every section card, AC-1, AC-8, AC-10, AC-13, AC-14
+  - [x] Library tabs and proof: `LibraryGameItem.status`, the green bookmark and the chip, icon key labels, `/showcase`, 375px and 1280px, keyboard, all checks, AC-11, AC-12, AC-13, AC-15
 - [ ] Verify it: `/check verify game cards everywhere`
 - [ ] Test it: `/test game cards everywhere`
 spec [0030](../specs/0030-game-cards-everywhere/index.md) · code in `components/tracking/`, `components/catalog/`, `components/library/`, `lib/tracking/`, `lib/catalog/`
