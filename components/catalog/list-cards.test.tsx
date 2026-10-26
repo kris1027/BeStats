@@ -2,7 +2,8 @@ import { render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 /**
- * covers: spec 0021, AC-4, AC-5; spec 0028, AC-8
+ * covers: spec 0021, AC-4, AC-5; spec 0028, AC-8; spec 0030, AC-1, AC-7,
+ * AC-10
  *
  * A list card is the full grid card: the personal badge, the TV meta line and
  * the controls, each handed the row's ids and the page's return path. The
@@ -67,6 +68,32 @@ vi.mock("@/components/tracking/movie-card-slots", () => ({
     </span>
   ),
 }));
+vi.mock("@/components/tracking/game-card-slots", () => ({
+  GameCardBadge: (props: {
+    gameId: number;
+    communityRating: number | null;
+    gridGameIds: number[];
+  }) => (
+    <span data-testid="badge" data-ids={props.gridGameIds.join(",")}>
+      badge {props.gameId} {props.communityRating}
+    </span>
+  ),
+  GameCardControls: (props: {
+    name: string;
+    gridGameIds: number[];
+    returnPath: string;
+    releasePill?: boolean;
+  }) => (
+    <span
+      data-testid="controls"
+      data-ids={props.gridGameIds.join(",")}
+      data-return={props.returnPath}
+      data-release-pill={String(props.releasePill)}
+    >
+      controls {props.name}
+    </span>
+  ),
+}));
 
 const { GameListCard, MovieListCard, ShowListCard } = await import(
   "./list-cards"
@@ -95,6 +122,7 @@ const GAME = {
   coverUrl: null,
   communityRating: 9.3,
   releaseDate: "2026-11-06",
+  releaseYear: 2026,
 } as Parameters<typeof GameListCard>[0]["game"];
 
 afterEach(() => {
@@ -254,38 +282,72 @@ describe("MovieListCard (AC-4)", () => {
   });
 });
 
-describe("GameListCard (spec 0028, AC-8)", () => {
-  it("links the card to the game page with IGDB's rating", () => {
-    render(<GameListCard game={GAME} priority={false} />);
+describe("GameListCard (spec 0028, AC-8; spec 0030)", () => {
+  const props = {
+    game: GAME,
+    gridGameIds: [1942, 7346],
+    returnPath: "/games/popular",
+    priority: false,
+  };
+
+  it("links the card to the game page and hands the slots the grid's ids", () => {
+    render(<GameListCard {...props} />);
 
     expect(screen.getByRole("link", { name: "The Witcher 3" })).toHaveAttribute(
       "href",
       "/games/1942",
     );
-    expect(screen.getByText("9.3")).toBeInTheDocument();
+    expect(screen.getByTestId("badge")).toHaveAttribute(
+      "data-ids",
+      "1942,7346",
+    );
+    expect(screen.getByTestId("badge")).toHaveTextContent("badge 1942 9.3");
+    expect(screen.getByTestId("controls")).toHaveAttribute(
+      "data-return",
+      "/games/popular",
+    );
   });
 
-  it("prints no date unless the list dates its cards", () => {
-    render(<GameListCard game={GAME} priority={false} />);
+  it("shows the release year as its meta line, and none without one (AC-10)", () => {
+    const { unmount } = render(<GameListCard {...props} />);
+    expect(screen.getByText(String(GAME.releaseYear))).toBeInTheDocument();
+    unmount();
+
+    const { container } = render(
+      <GameListCard {...props} game={{ ...GAME, releaseYear: null }} />,
+    );
+    expect(container.querySelector("p")).toBeNull();
+  });
+
+  it("prints no date unless the list dates its cards, leaving the pill to the slot", () => {
+    render(<GameListCard {...props} />);
 
     expect(
       document.querySelector('[data-slot="release-date"]'),
     ).not.toBeInTheDocument();
+    expect(screen.getByTestId("controls")).toHaveAttribute(
+      "data-release-pill",
+      "true",
+    );
   });
 
-  it("prints the release day, with the year only outside this one", () => {
+  it("prints the release day, with the year only outside this one, and the slot skips its pill (AC-7)", () => {
     const { unmount } = render(
-      <GameListCard game={GAME} priority={false} releaseDay="2026-10-25" />,
+      <GameListCard {...props} releaseDay="2026-10-25" />,
     );
     expect(
       document.querySelector('[data-slot="release-date"]'),
     ).toHaveTextContent("Nov 6");
+    expect(screen.getByTestId("controls")).toHaveAttribute(
+      "data-release-pill",
+      "false",
+    );
     unmount();
 
     render(
       <GameListCard
+        {...props}
         game={{ ...GAME, releaseDate: "2027-01-08" }}
-        priority={false}
         releaseDay="2026-10-25"
       />,
     );

@@ -52,10 +52,14 @@ function CatalogListCards({
     ));
   }
   if (result.mediaType === "game") {
-    return result.paged.results.slice(0, limit).map((game, index) => (
+    const games = result.paged.results.slice(0, limit);
+    const ids = games.map((game) => game.id);
+    return games.map((game, index) => (
       <li key={game.id} className={itemClassName}>
         <GameListCard
           game={game}
+          gridGameIds={ids}
+          returnPath={returnPath}
           priority={index < eagerCount}
           sizes={sizes}
           releaseDay={releaseDay}

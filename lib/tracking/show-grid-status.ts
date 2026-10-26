@@ -40,7 +40,7 @@ export type ShowCardStatus =
  * badge, meta line and controls share one pass. Never inside `use cache`
  * (`AGENTS.md` section 11).
  *
- * @param idsKey The grid's show ids, from `showIdsKey`.
+ * @param idsKey The grid's show ids, from `idsKey`.
  */
 export const getShowGridStatus = cache(
   async (

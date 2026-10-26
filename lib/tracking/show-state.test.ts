@@ -49,7 +49,6 @@ const {
   getShowTracking,
   getTrackedShows,
   getWatchedEpisodeIds,
-  showIdsKey,
   WATCHED_IDS_PAGE_SIZE,
 } = await import("./show-state");
 
@@ -82,21 +81,6 @@ function expectAnonymousLog(event: string) {
     expect(String(line)).not.toMatch(/user-a|example\.test|1396/);
   }
 }
-
-describe("showIdsKey", () => {
-  it("gives the same key for the same ids in any order, with repeats dropped", () => {
-    expect(showIdsKey([1399, 1396, 1399])).toBe("1396,1399");
-    expect(showIdsKey([1396, 1399])).toBe(showIdsKey([1399, 1396]));
-  });
-
-  it("sorts by number, not as text", () => {
-    expect(showIdsKey([100, 9, 20])).toBe("9,20,100");
-  });
-
-  it("is empty for no ids", () => {
-    expect(showIdsKey([])).toBe("");
-  });
-});
 
 describe("getShowTracking (spec 0020, AC-1, AC-2)", () => {
   it("is signed out, with no session read, when the public env is missing", async () => {

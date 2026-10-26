@@ -176,6 +176,8 @@ async function GameResults({
   }
 
   const lastPage = lastGamePage(paged);
+  const ids = paged.results.map((game) => game.id);
+  const returnPath = searchHref(params);
   if (paged.results.length === 0) {
     if (params.page > 1) return <NoSuchPage params={params} />;
     return mode === "browse" ? (
@@ -205,7 +207,8 @@ async function GameResults({
           <li key={game.id}>
             <GameListCard
               game={game}
-              meta={game.releaseYear ?? undefined}
+              gridGameIds={ids}
+              returnPath={returnPath}
               priority={index < POSTER_GRID_EAGER.catalog}
             />
           </li>

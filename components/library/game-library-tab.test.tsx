@@ -1,10 +1,10 @@
 import { render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { LibraryGameItem } from "./types";
+import type { LibraryGameItem, LibraryList } from "./types";
 
 /**
- * covers: spec 0027, AC-5 to AC-11, AC-14
+ * covers: spec 0027, AC-5 to AC-11, AC-14; spec 0030, AC-11
  *
  * The games tabs through `LibrarySection`, as the page renders them. The
  * session, the flag, the Postgres page and the IGDB batch are the
@@ -22,10 +22,25 @@ vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/tmdb", () => ({ TmdbError: class extends Error {} }));
 vi.mock("@/lib/igdb", () => ({ IgdbError: class extends Error {} }));
-vi.mock("@/lib/tracking/game-library", () => ({
-  getGameLibraryPage: (...args: unknown[]) => getGameLibraryPage(...args),
-  getLibraryGames: (...args: unknown[]) => getLibraryGames(...args),
-}));
+vi.mock("@/lib/tracking/game-library", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@/lib/tracking/game-library")>();
+  return {
+    ...actual,
+    // The real query filters on the tab's status, so a fixture row with no
+    // status of its own is given that one.
+    getGameLibraryPage: async (args: { tab: LibraryList }) => {
+      const result = await getGameLibraryPage(args);
+      if (result?.kind !== "ok") return result;
+      const status = actual.GAME_LIBRARY_TABS[args.tab].status;
+      return {
+        ...result,
+        rows: result.rows.map((row: object) => ({ status, ...row })),
+      };
+    },
+    getLibraryGames: (...args: unknown[]) => getLibraryGames(...args),
+  };
+});
 vi.mock("@/lib/tracking/library-lists", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/tracking/library-lists")>()),
   getShowLibraryTab: (...args: unknown[]) => getShowLibraryTab(...args),
@@ -314,6 +329,7 @@ describe("the cards (AC-8 to AC-11)", () => {
     withGames(game(1));
     const playing = await renderSection("upcoming", { type: "game" });
     expect(received(1)).toMatchObject({
+      status: "playing",
       dateLine: "Started Feb 2026",
       rating: 8,
     });
@@ -324,12 +340,21 @@ describe("the cards (AC-8 to AC-11)", () => {
     expect(received(1).dateLine).toBe("Finished Mar 2026");
   });
 
+  it("takes the card's status from the stored row, not the tab (AC-8)", async () => {
+    getGameLibraryPage.mockResolvedValue(page([row(1, { status: "playing" })]));
+    withGames(game(1));
+    await renderSection("watchlist", { type: "game" });
+
+    expect(received(1).status).toBe("playing");
+  });
+
   it("ignores a score on a Want to play row", async () => {
     getGameLibraryPage.mockResolvedValue(page([row(1, { rating: 7 })]));
     withGames(game(1));
     await renderSection("watchlist", { type: "game" });
 
     expect(received(1).rating).toBeNull();
+    expect(received(1).status).toBe("want_to_play");
   });
 
   it("passes hidden through, and invents nothing for a missing game", async () => {
@@ -344,6 +369,7 @@ describe("the cards (AC-8 to AC-11)", () => {
     expect(received(1)).toEqual({
       gameId: 1,
       name: null,
+      status: "finished",
       coverUrl: null,
       communityRating: null,
       rating: null,
@@ -352,6 +378,7 @@ describe("the cards (AC-8 to AC-11)", () => {
       dateLine: null,
     });
     expect(received(2).hidden).toBe(true);
+    expect(received(2).status).toBe("finished");
     expect(
       screen.getAllByRole("listitem").map((item) => item.dataset.testid),
     ).toEqual(["game-1", "game-2"]);

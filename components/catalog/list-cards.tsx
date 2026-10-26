@@ -4,6 +4,10 @@ import { ReleasePill } from "@/components/library/dated-pill";
 import { PosterCard } from "@/components/poster-card";
 import { IgdbRatingBadge, TmdbRatingBadge } from "@/components/rating-badges";
 import {
+  GameCardBadge,
+  GameCardControls,
+} from "@/components/tracking/game-card-slots";
+import {
   MovieCardBadge,
   MovieCardControls,
 } from "@/components/tracking/movie-card-slots";
@@ -131,41 +135,64 @@ function MovieListCard({
 }
 
 /**
- * A game's card on a games list page (spec 0028, AC-8): the cover, the name
- * and IGDB's community rating, linking to the game page. No personal badge
- * and no controls yet, so no session read and no Suspense; G8 adds them.
- * On Coming soon the bottom row prints the release day, the pill an
- * Upcoming movie card has.
+ * A game's card on a games list page and on `/search?type=game` (spec 0028,
+ * AC-8; spec 0030, AC-1): the cover, the name, the release year as the meta
+ * line (AC-10), and the personal badge and controls, each in its own
+ * Suspense boundary so the card never waits on the session. On Coming soon
+ * the bottom row also prints the release day for everyone, so the personal
+ * slot leaves out its own release pill (AC-7).
  *
+ * @param gridGameIds Every id of the page the card sits in, so the slots
+ * share one read.
  * @param releaseDay The request's UTC day, for the date's year rule; left
  * out on a list whose cards print no date.
- * @param meta The line under the name, the release year on `/search`
- * (spec 0029, AC-12); left out on a list.
  */
 function GameListCard({
   game,
+  gridGameIds,
+  returnPath,
   priority,
   sizes,
   releaseDay,
-  meta,
-}: Omit<ListCardProps, "returnPath"> & {
+}: ListCardProps & {
   game: GameSummary;
+  gridGameIds: readonly number[];
   releaseDay?: string;
-  meta?: number;
 }) {
   return (
     <PosterCard
       title={game.name}
       posterUrl={game.coverUrl}
       href={gameHref(game.id)}
-      meta={meta}
-      badge={<IgdbRatingBadge value={game.communityRating} />}
-      controls={
-        releaseDay === undefined ? undefined : (
-          <ReleasePill
-            release={formatReleaseDate(game.releaseDate, releaseDay)}
+      meta={game.releaseYear ?? undefined}
+      badge={
+        <Suspense fallback={<IgdbRatingBadge value={game.communityRating} />}>
+          <GameCardBadge
+            gameId={game.id}
+            releaseDate={game.releaseDate}
+            communityRating={game.communityRating}
+            gridGameIds={gridGameIds}
           />
-        )
+        </Suspense>
+      }
+      controls={
+        <>
+          {releaseDay === undefined ? null : (
+            <ReleasePill
+              release={formatReleaseDate(game.releaseDate, releaseDay)}
+            />
+          )}
+          <Suspense fallback={null}>
+            <GameCardControls
+              gameId={game.id}
+              name={game.name}
+              releaseDate={game.releaseDate}
+              gridGameIds={gridGameIds}
+              returnPath={returnPath}
+              releasePill={releaseDay === undefined}
+            />
+          </Suspense>
+        </>
       }
       priority={priority}
       sizes={sizes}

@@ -2,6 +2,10 @@ import type * as React from "react";
 import { Suspense } from "react";
 
 import { IgdbRatingBadge, TmdbRatingBadge } from "@/components/rating-badges";
+import {
+  GameCardBadge,
+  GameCardControls,
+} from "@/components/tracking/game-card-slots";
 import { GameTrackingSlot } from "@/components/tracking/game-tracking-slot";
 import {
   MovieCardBadge,
@@ -23,17 +27,21 @@ type Ids = readonly number[];
  * Each media type's personal slots, the one place the landing branches on a
  * title's type to pick a component (prompts/landing-review-fixes.md,
  * decision 7). Every entry takes a `LandingItem`, so the cards and the hero
- * never name a show, movie or game slot themselves. A game has no card badge
- * or controls until G8, so those are null (spec 0028, AC-8).
+ * never name a show, movie or game slot themselves. `meta` is the line under
+ * a poster card's name: only a game prints one, its release year (spec 0030,
+ * AC-10).
  */
 const LANDING_SLOTS: Record<
   LibraryType,
   {
-    badge: ((item: LandingItem, ids: Ids) => React.ReactNode) | null;
-    controls:
-      | ((item: LandingItem, ids: Ids, releasePill: boolean) => React.ReactNode)
-      | null;
+    badge: (item: LandingItem, ids: Ids) => React.ReactNode;
+    controls: (
+      item: LandingItem,
+      ids: Ids,
+      releasePill: boolean,
+    ) => React.ReactNode;
     tracking: (item: LandingItem) => React.ReactNode;
+    meta: ((item: LandingItem) => React.ReactNode) | null;
   }
 > = {
   tv: {
@@ -55,6 +63,7 @@ const LANDING_SLOTS: Record<
     tracking: (item) => (
       <ShowTrackingSlot showId={item.id} showName={item.title} />
     ),
+    meta: null,
   },
   movie: {
     badge: (item, ids) => (
@@ -82,10 +91,27 @@ const LANDING_SLOTS: Record<
         releaseDate={item.releaseDate}
       />
     ),
+    meta: null,
   },
   game: {
-    badge: null,
-    controls: null,
+    badge: (item, ids) => (
+      <GameCardBadge
+        gameId={item.id}
+        releaseDate={item.releaseDate}
+        communityRating={item.rating.value}
+        gridGameIds={ids}
+      />
+    ),
+    controls: (item, ids, releasePill) => (
+      <GameCardControls
+        gameId={item.id}
+        name={item.title}
+        releaseDate={item.releaseDate}
+        gridGameIds={ids}
+        returnPath={CATALOG_PATHS.game}
+        releasePill={releasePill}
+      />
+    ),
     tracking: (item) => (
       <GameTrackingSlot
         gameId={item.id}
@@ -93,6 +119,7 @@ const LANDING_SLOTS: Record<
         releaseDate={item.releaseDate}
       />
     ),
+    meta: (item) => item.year ?? undefined,
   },
 };
 
@@ -113,14 +140,14 @@ function CommunityRatingBadge({ rating }: { rating: LandingItem["rating"] }) {
  * TMDB rating at once, swapped for the personal state the title's library
  * page gives it once the session read arrives, as on every catalog card
  * (prompts/catalog-card-status.md). `ids` is the whole section, so its badges
- * share one read. A game shows only IGDB's rating, with no session read and
- * no Suspense, until G8 gives game cards a status (spec 0028, AC-8).
+ * share one read. A game falls back to IGDB's rating (spec 0030, AC-2).
  */
 function LandingBadge({ item, ids }: { item: LandingItem; ids: Ids }) {
-  const badge = LANDING_SLOTS[item.mediaType].badge;
-  const rating = <CommunityRatingBadge rating={item.rating} />;
-  if (badge === null) return rating;
-  return <Suspense fallback={rating}>{badge(item, ids)}</Suspense>;
+  return (
+    <Suspense fallback={<CommunityRatingBadge rating={item.rating} />}>
+      {LANDING_SLOTS[item.mediaType].badge(item, ids)}
+    </Suspense>
+  );
 }
 
 /**
@@ -130,8 +157,8 @@ function LandingBadge({ item, ids }: { item: LandingItem; ids: Ids }) {
  * on the session, and the same `ids` as the badge, so both share one read.
  * A visitor gets nothing, as everywhere else. The return path is the landing
  * the card sits on. `releasePill` is false on a card that already prints a
- * movie's date (prompts/landing-review-fixes.md, decision 3). A game card
- * has no controls yet, so nothing at all (spec 0028, AC-8).
+ * movie's or game's date (prompts/landing-review-fixes.md, decision 3; spec
+ * 0030, AC-7).
  */
 function LandingControls({
   item,
@@ -142,10 +169,10 @@ function LandingControls({
   ids: Ids;
   releasePill?: boolean;
 }) {
-  const controls = LANDING_SLOTS[item.mediaType].controls;
-  if (controls === null) return null;
   return (
-    <Suspense fallback={null}>{controls(item, ids, releasePill)}</Suspense>
+    <Suspense fallback={null}>
+      {LANDING_SLOTS[item.mediaType].controls(item, ids, releasePill)}
+    </Suspense>
   );
 }
 
@@ -163,4 +190,18 @@ function LandingTracking({ item }: { item: LandingItem }) {
   );
 }
 
-export { CommunityRatingBadge, LandingBadge, LandingControls, LandingTracking };
+/**
+ * A landing poster card's meta line: a game's release year, as on every
+ * other game card, and nothing for a show or movie (spec 0030, AC-10).
+ */
+function landingMeta(item: LandingItem): React.ReactNode {
+  return LANDING_SLOTS[item.mediaType].meta?.(item);
+}
+
+export {
+  CommunityRatingBadge,
+  LandingBadge,
+  LandingControls,
+  LandingTracking,
+  landingMeta,
+};

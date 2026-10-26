@@ -7,7 +7,10 @@ import {
   PersonalScoreBadge,
 } from "@/components/rating-badges";
 import { CardRoundButton } from "@/components/tracking/card-round-button";
+import { GameStatusChip } from "@/components/tracking/game-status-chip";
+import { PlannedIcon } from "@/components/tracking/tracking-icons";
 import { gameHref } from "@/lib/catalog/media-type";
+import { isStartedGame } from "@/lib/tracking/types";
 
 import { ReleasePill } from "./dated-pill";
 import type { LibraryGameItem } from "./types";
@@ -28,7 +31,9 @@ const MISSING_GAME = "No longer on IGDB";
  * Started or Finished month under the name. A hidden game keeps its card
  * but loses its link, because its page answers a soft 404 (AC-10). Every card
  * has one remove button, which only reports the tap: `GameLibraryGrid` owns
- * the optimistic hide, the action call and the toast. Which of these a tab
+ * the optimistic hide, the action call and the toast. On Want to play it is
+ * the green bookmark the catalog cards press, and on Playing and Finished
+ * the X, after the read only status chip (spec 0030, AC-11). Which of these a tab
  * shows is decided once, on the server, by `gameLibraryTab`: the card shows
  * the score, release pill and date line its item carries.
  */
@@ -46,7 +51,9 @@ function GameLibraryCard({
       <PosterCard
         title={MISSING_GAME}
         posterUrl={null}
-        controls={<RemoveButton name={null} onRemove={onRemove} />}
+        controls={
+          <RemoveButton name={null} onRemove={onRemove} className="ml-auto" />
+        }
       />
     );
   }
@@ -63,7 +70,20 @@ function GameLibraryCard({
           {item.unreleased ? (
             <ReleasePill release={item.unreleased.date} />
           ) : null}
-          <RemoveButton name={item.name} onRemove={onRemove} />
+          {isStartedGame(item) ? (
+            <>
+              <GameStatusChip status={item.status} />
+              <RemoveButton name={item.name} onRemove={onRemove} />
+            </>
+          ) : (
+            <CardRoundButton
+              label={`Remove ${item.name} from Want to play`}
+              onClick={onRemove}
+              className="ml-auto"
+            >
+              <PlannedIcon className="size-4" />
+            </CardRoundButton>
+          )}
         </>
       }
       priority={priority}
@@ -82,18 +102,25 @@ function cardBadge(item: LibraryGameItem): ReactNode {
   return <IgdbRatingBadge value={item.communityRating} />;
 }
 
+/**
+ * The X. It sets no margin of its own: after a status chip, which already
+ * pushes the row right, it needs none, and the missing game card, where it
+ * stands alone, passes `ml-auto`.
+ */
 function RemoveButton({
   name,
   onRemove,
+  className,
 }: {
   name: string | null;
   onRemove: () => void;
+  className?: string;
 }) {
   return (
     <CardRoundButton
       label={`Remove ${name ?? "missing game"} from your games`}
       onClick={onRemove}
-      className="ml-auto"
+      className={className}
     >
       <XIcon className="size-4" aria-hidden="true" />
     </CardRoundButton>

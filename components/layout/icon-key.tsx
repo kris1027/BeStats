@@ -26,8 +26,8 @@ const ENTRIES: ReadonlyArray<{ label: string; icon: React.ReactNode }> = [
       <StarIcon className="size-4 fill-score-personal text-score-personal" />
     ),
   },
-  { label: "Plan", icon: <PlanIcon className="size-4" /> },
-  { label: "Planned", icon: <PlannedIcon className="size-4" /> },
+  { label: "Plan / Want to play", icon: <PlanIcon className="size-4" /> },
+  { label: "Planned / Want to play", icon: <PlannedIcon className="size-4" /> },
   {
     label: "Mark watched",
     icon: <WatchedIcon filled={false} className="size-4" />,

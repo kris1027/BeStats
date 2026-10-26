@@ -7,6 +7,7 @@ import { publicEnvProblems } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import { todayUtc } from "@/lib/tv/air-status";
 
+import { parseIdsKey } from "./ids-key";
 import { logTrackingEvent, TRACKING_EVENT } from "./log";
 import type { EpisodeTrackingState, TrackingRead } from "./types";
 
@@ -24,7 +25,7 @@ import type { EpisodeTrackingState, TrackingRead } from "./types";
  * counted (AC-25). No row for an id means the empty state.
  *
  * @param showId The show, already confirmed by `loadSeason`.
- * @param idsKey The whole season's episode ids, from `episodeIdsKey`.
+ * @param idsKey The whole season's episode ids, from `idsKey`.
  */
 export const getSeasonEpisodeTracking = cache(
   async (
@@ -36,7 +37,7 @@ export const getSeasonEpisodeTracking = cache(
     const user = await getOptionalUser();
     if (!user) return { kind: "signed_out" };
 
-    const ids = idsKey === "" ? [] : idsKey.split(",").map(Number);
+    const ids = parseIdsKey(idsKey);
     if (ids.length === 0) return { kind: "ok", state: {} };
 
     const supabase = await createClient();
@@ -62,17 +63,6 @@ export const getSeasonEpisodeTracking = cache(
     return { kind: "ok", state };
   },
 );
-
-/**
- * The cache key `getSeasonEpisodeTracking` expects: the same ids in any order
- * give the same key. Built once per page from the whole season, never from a
- * single row, or each row would make its own query.
- *
- * @param ids The season's episode ids.
- */
-export function episodeIdsKey(ids: readonly number[]): string {
-  return [...new Set(ids)].sort((a, b) => a - b).join(",");
-}
 
 /**
  * Today in UTC, read once per request so the header and every row agree on

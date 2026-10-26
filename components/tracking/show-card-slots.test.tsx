@@ -10,9 +10,6 @@ const getShowGridStatus = vi.fn();
 vi.mock("@/lib/tracking/show-grid-status", () => ({
   getShowGridStatus: (...args: unknown[]) => getShowGridStatus(...args),
 }));
-vi.mock("@/lib/tracking/show-state", () => ({
-  showIdsKey: (ids: number[]) => [...ids].sort((a, b) => a - b).join(","),
-}));
 vi.mock("@/lib/tracking/episode-state", () => ({
   requestTodayUtc: () => "2026-10-10",
 }));

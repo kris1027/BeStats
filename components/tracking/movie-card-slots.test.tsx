@@ -13,7 +13,6 @@ import type { MovieTrackingState } from "@/lib/tracking/types";
 const getMovieGridStates = vi.fn();
 vi.mock("@/lib/tracking/movie-state", () => ({
   getMovieGridStates: (...args: unknown[]) => getMovieGridStates(...args),
-  movieIdsKey: (ids: number[]) => [...ids].sort((a, b) => a - b).join(","),
 }));
 vi.mock("@/lib/tracking/episode-state", () => ({
   requestTodayUtc: () => "2026-10-10",

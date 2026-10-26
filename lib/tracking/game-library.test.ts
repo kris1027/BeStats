@@ -58,6 +58,7 @@ afterEach(() => {
 
 const ROW = {
   game_id: 1942,
+  status: "finished",
   rating: 9,
   added_at: "2026-01-01T10:00:00+00:00",
   started_at: "2026-02-01T10:00:00+00:00",
@@ -82,6 +83,7 @@ describe("getGameLibraryPage", () => {
         rows: [
           {
             gameId: 1942,
+            status: "finished",
             rating: 9,
             addedAt: ROW.added_at,
             startedAt: ROW.started_at,
@@ -95,7 +97,7 @@ describe("getGameLibraryPage", () => {
         {
           method: "select",
           args: [
-            "game_id, rating, added_at, started_at, finished_at",
+            "game_id, status, rating, added_at, started_at, finished_at",
             { count: "exact" },
           ],
         },

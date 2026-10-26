@@ -7,6 +7,7 @@
 export type { LibraryList } from "@/lib/catalog/library-list";
 
 import type { ReleaseDate } from "@/lib/format";
+import type { GameStatus } from "@/lib/tracking/types";
 
 export type { ReleaseDate };
 
@@ -51,6 +52,12 @@ export type LibraryGameItem = {
   gameId: number;
   /** Null when IGDB no longer has the game (`missingIds`, AC-11). */
   name: string | null;
+  /**
+   * The stored status the tab lists, which picks the card's button: the
+   * green bookmark on Want to play, the chip and the X on Playing and
+   * Finished (spec 0030, AC-11).
+   */
+  status: GameStatus;
   coverUrl: string | null;
   /** IGDB's community rating out of 10; the badge with no personal score. */
   communityRating: number | null;

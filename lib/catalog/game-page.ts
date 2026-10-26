@@ -1,4 +1,8 @@
 import { isMovieReleased, movieReleaseNote } from "@/lib/catalog/movie-page";
+import type {
+  GameTrackingState,
+  StartedGameStatus,
+} from "@/lib/tracking/types";
 
 /**
  * Whether a game can be Playing, Finished or scored yet (`AGENTS.md`
@@ -31,3 +35,34 @@ export function isGameReleased(
 export function gameReleaseNote(releaseDate: string | null): string {
   return movieReleaseNote(releaseDate);
 }
+
+/**
+ * What a game card shows of its stored row (spec 0030, AC-2, AC-6, AC-7),
+ * read straight from the status, so a card always names the library tab the
+ * game is on (AC-8): no row is no status, Want to play carries whether the
+ * game is still to come (for the release pill), and Playing or Finished
+ * carry the score for the badge.
+ *
+ * @param state The stored state, or undefined when the user has no row.
+ * @param releaseDate The IGDB release date already on the card.
+ * @param today `requestTodayUtc()`, read once per request.
+ */
+export function gameCardStatus(
+  state: GameTrackingState | undefined,
+  releaseDate: string | null,
+  today: string,
+): GameCardStatus | null {
+  if (state === undefined || state.status === null) return null;
+  if (state.status === "want_to_play") {
+    return {
+      status: "want_to_play",
+      unreleased: !isGameReleased(releaseDate, today),
+    };
+  }
+  return { status: state.status, rating: state.rating };
+}
+
+/** A game card's stored state, from `gameCardStatus`. */
+export type GameCardStatus =
+  | { status: "want_to_play"; unreleased: boolean }
+  | { status: StartedGameStatus; rating: number | null };

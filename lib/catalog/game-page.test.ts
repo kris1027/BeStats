@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { gameReleaseNote, isGameReleased } from "./game-page";
+import { gameCardStatus, gameReleaseNote, isGameReleased } from "./game-page";
 import { isMovieReleased, movieReleaseNote } from "./movie-page";
 
 /**
@@ -40,5 +40,51 @@ describe("gameReleaseNote", () => {
 
   it("reads exactly like the movie line", () => {
     expect(gameReleaseNote("2027-01-02")).toBe(movieReleaseNote("2027-01-02"));
+  });
+});
+
+// spec 0030, AC-2, AC-6, AC-7, AC-8: the card reads the stored status as it
+// is, and only Want to play asks the release gate.
+describe("gameCardStatus", () => {
+  it("is null with no row or no status", () => {
+    expect(gameCardStatus(undefined, today, today)).toBeNull();
+    expect(
+      gameCardStatus({ status: null, rating: null }, today, today),
+    ).toBeNull();
+  });
+
+  it("marks a Want to play game unreleased before its UTC day, or with no date (AC-7)", () => {
+    const wanted = { status: "want_to_play" as const, rating: null };
+    expect(gameCardStatus(wanted, "2026-10-25", today)).toEqual({
+      status: "want_to_play",
+      unreleased: true,
+    });
+    expect(gameCardStatus(wanted, null, today)).toEqual({
+      status: "want_to_play",
+      unreleased: true,
+    });
+    expect(gameCardStatus(wanted, today, today)).toEqual({
+      status: "want_to_play",
+      unreleased: false,
+    });
+  });
+
+  it("never carries a score on Want to play, even if one were stored (AC-2)", () => {
+    expect(
+      gameCardStatus(
+        { status: "want_to_play", rating: 7 },
+        "2015-05-19",
+        today,
+      ),
+    ).toEqual({ status: "want_to_play", unreleased: false });
+  });
+
+  it("carries the score of a started game, whatever its release date (AC-2, AC-6)", () => {
+    expect(
+      gameCardStatus({ status: "playing", rating: 8 }, null, today),
+    ).toEqual({ status: "playing", rating: 8 });
+    expect(
+      gameCardStatus({ status: "finished", rating: null }, today, today),
+    ).toEqual({ status: "finished", rating: null });
   });
 });

@@ -1,9 +1,12 @@
 import "server-only";
 
+import { cache } from "react";
+
 import { getOptionalUser } from "@/lib/auth/user";
 import { publicEnvProblems } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 
+import { parseIdsKey } from "./ids-key";
 import { logTrackingEvent, TRACKING_EVENT } from "./log";
 import {
   EMPTY_GAME_TRACKING,
@@ -18,7 +21,8 @@ import {
  * Read per request and never inside `use cache`: the row belongs to one
  * person, and a shared entry would hand it to the next visitor (`AGENTS.md`
  * section 11). Only the game page's tracking slot calls it, inside its own
- * Suspense boundary, so the page shell stays prerendered. It checks
+ * Suspense boundary, so the page shell stays prerendered. A grid of cards
+ * reads through `getGameGridStates` instead. It checks
  * `publicEnvProblems()` first, as `getMovieTracking` does, so a clone with no
  * Supabase configuration still serves the page with no control.
  *
@@ -48,3 +52,55 @@ export async function getGameTracking(
 
   return { kind: "ok", state: { status: data.status, rating: data.rating } };
 }
+
+/**
+ * The signed in user's status and score for every game on a grid, in one
+ * query for the whole grid (spec 0030, AC-1): a landing section, a list page
+ * or a results page. A game with no row is absent from the map.
+ *
+ * The movie grid read's shape (`getMovieGridStates`): the argument is a
+ * sorted id string, because React `cache()` compares arguments by identity
+ * and only a primitive lets every badge and control on the grid share one
+ * read per request. Per request and never inside `use cache`, for the reason
+ * `getGameTracking` gives (`AGENTS.md` section 11). A failure is logged once
+ * here, so the cards can quietly fall back to the catalog card (AC-9).
+ * An empty grid has nothing to look up, so it answers before the session
+ * read (spec 0030, surface table).
+ *
+ * @param idsKey The grid's game ids, from `idsKey`.
+ */
+export const getGameGridStates = cache(
+  async (
+    idsKey: string,
+  ): Promise<TrackingRead<Map<number, GameTrackingState>>> => {
+    const ids = parseIdsKey(idsKey);
+    if (ids.length === 0) return { kind: "ok", state: new Map() };
+
+    if (publicEnvProblems()) return { kind: "signed_out" };
+
+    const user = await getOptionalUser();
+    if (!user) return { kind: "signed_out" };
+
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("user_game_state")
+      .select("game_id, status, rating")
+      .eq("user_id", user.id)
+      .in("game_id", ids);
+
+    if (error) {
+      logTrackingEvent(TRACKING_EVENT.gameRead, "db_error");
+      return { kind: "failed" };
+    }
+
+    return {
+      kind: "ok",
+      state: new Map(
+        data.map((row) => [
+          row.game_id,
+          { status: row.status, rating: row.rating },
+        ]),
+      ),
+    };
+  },
+);

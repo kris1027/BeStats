@@ -1,11 +1,11 @@
 import { RetryLink } from "@/components/retry-link";
 import { getShowEpisodes, type ShowEpisodes, TmdbError } from "@/lib/tmdb";
 import { requestTodayUtc } from "@/lib/tracking/episode-state";
+import { idsKey } from "@/lib/tracking/ids-key";
 import { SHOW_PROGRESS_MESSAGES } from "@/lib/tracking/messages";
 import {
   getShowTracking,
   getWatchedEpisodeIds,
-  showIdsKey,
 } from "@/lib/tracking/show-state";
 import { type ShowProgress, showProgress } from "@/lib/tv/progress";
 
@@ -32,7 +32,7 @@ import { type ShowProgress, showProgress } from "@/lib/tv/progress";
 async function ShowProgressSlot({ showId }: { showId: number }) {
   const [tracking, watched] = await Promise.all([
     getShowTracking(showId),
-    getWatchedEpisodeIds(showIdsKey([showId])),
+    getWatchedEpisodeIds(idsKey([showId])),
   ]);
   if (tracking.kind === "signed_out" || watched.kind === "signed_out") {
     return null;

@@ -74,6 +74,7 @@ import { catalogList, listPath } from "@/lib/catalog/lists";
 import { TMDB_HOME_URL } from "@/lib/legal/operator";
 
 import { CardRoundButtonDemo } from "./card-round-button-demo";
+import { GameCardDemo } from "./game-card-demo";
 import { GameLibraryCardDemo } from "./game-library-card-demo";
 import { GameSearchDemo } from "./game-search-demo";
 
@@ -451,8 +452,15 @@ export default function ShowcasePage() {
       </Section>
 
       <Section
+        title="Game card"
+        note="A game on /games, the /games lists and /search (spec 0030): the release year under the name; a visitor gets no bottom row; a signed in user gets the Want to play bookmark (green when pressed, with the release date or Date TBA while a wanted game is not out), or a read only Playing or Finished chip on a game they started. Your score replaces the IGDB rating only on a scored Playing or Finished game. The bookmark here toggles locally."
+      >
+        <GameCardDemo poster={LIGHT_POSTER} />
+      </Section>
+
+      <Section
         title="Game library card"
-        note="The games tabs of /watchlist, /upcoming and /watched (spec 0027): Want to play shows the IGDB community rating and, before release, its date or Date TBA; Playing and Finished show your score when there is one, else the community rating, with the month under the name. A game IGDB hides keeps its card but has no link, and a game IGDB no longer has keeps only its removal."
+        note="The games tabs of /watchlist, /upcoming and /watched (spec 0027, spec 0030): Want to play shows the IGDB community rating, the green bookmark that removes it and, before release, its date or Date TBA; Playing and Finished show the status chip and the X, and your score when there is one, else the community rating, with the month under the name. A game IGDB hides keeps its card but has no link, and a game IGDB no longer has keeps only its removal."
       >
         <GameLibraryCardDemo poster={LIGHT_POSTER} />
       </Section>

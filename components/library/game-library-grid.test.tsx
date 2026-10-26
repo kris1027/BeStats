@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { LibraryGameItem } from "./types";
 
 /**
- * covers: spec 0027, AC-8 to AC-13
+ * covers: spec 0027, AC-8 to AC-13; spec 0030, AC-11
  *
  * `removeGame`, `restoreRemovedGame`, the router and Sonner are the
  * boundaries. Each action returns a promise the test settles by hand, so a
@@ -49,6 +49,7 @@ function item(
   return {
     gameId,
     name: `Game ${gameId}`,
+    status: "playing",
     coverUrl: null,
     communityRating: 8.1,
     rating: null,
@@ -97,8 +98,10 @@ afterEach(() => {
 });
 
 describe("GameLibraryCard through the grid", () => {
-  it("links a game to its page with the IGDB community rating on Want to play", () => {
-    render(grid([item(1942, { name: "The Witcher 3" })]));
+  it("links a game to its page with the IGDB community rating and the green bookmark on Want to play", () => {
+    render(
+      grid([item(1942, { name: "The Witcher 3", status: "want_to_play" })]),
+    );
 
     expect(screen.getByRole("link", { name: "The Witcher 3" })).toHaveAttribute(
       "href",
@@ -107,9 +110,44 @@ describe("GameLibraryCard through the grid", () => {
     expect(screen.getByText("IGDB community rating")).toBeInTheDocument();
     expect(
       screen.getByRole("button", {
-        name: "Remove The Witcher 3 from your games",
+        name: "Remove The Witcher 3 from Want to play",
       }),
     ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /from your games/ }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Playing")).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["playing", "Playing"],
+    ["finished", "Finished"],
+  ] as const)(
+    "shows the read only %s chip beside the X (spec 0030, AC-11)",
+    (status, label) => {
+      render(grid([item(1, { status })]));
+
+      expect(screen.getByText(label)).toBeInTheDocument();
+      expect(screen.getAllByRole("button")).toHaveLength(1);
+      expect(
+        screen.getByRole("button", { name: "Remove Game 1 from your games" }),
+      ).toBeInTheDocument();
+    },
+  );
+
+  it("removes a Want to play game through the bookmark, with the same Undo", async () => {
+    const user = userEvent.setup();
+    render(grid([item(1, { status: "want_to_play" })]));
+
+    await user.click(
+      screen.getByRole("button", { name: "Remove Game 1 from Want to play" }),
+    );
+    expect(removeGame).toHaveBeenCalledWith(1);
+    await settleNext({ ok: true, undo: UNDO });
+    expect(toast).toHaveBeenCalledWith(
+      "Removed from your games.",
+      expect.objectContaining({ id: "game-undo-1" }),
+    );
   });
 
   it("shows the release pill or Date TBA only on an unreleased Want to play game", () => {
@@ -155,7 +193,17 @@ describe("GameLibraryCard through the grid", () => {
   });
 
   it("gives a hidden game no link but keeps its remove button", () => {
-    render(grid([item(1, { name: "Hidden Game", hidden: true })]));
+    render(
+      grid([
+        item(1, { name: "Hidden Game", hidden: true }),
+        item(2, { name: "Hidden Wish", hidden: true, status: "want_to_play" }),
+      ]),
+    );
+    expect(
+      screen.getByRole("button", {
+        name: "Remove Hidden Wish from Want to play",
+      }),
+    ).toBeInTheDocument();
 
     expect(
       screen.getByRole("heading", { name: "Hidden Game" }),
@@ -170,7 +218,14 @@ describe("GameLibraryCard through the grid", () => {
 
   it("shows a missing game as No longer on IGDB, removable, with nothing invented", () => {
     render(
-      grid([item(1, { name: null, communityRating: null, dateLine: null })]),
+      grid([
+        item(1, {
+          name: null,
+          communityRating: null,
+          dateLine: null,
+          status: "want_to_play",
+        }),
+      ]),
     );
 
     expect(screen.getAllByText("No longer on IGDB").length).toBeGreaterThan(0);

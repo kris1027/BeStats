@@ -125,10 +125,12 @@ function gameItem(
   game: GameSummary | undefined,
   today: string,
 ): LibraryGameItem {
+  const { status } = row;
   if (game === undefined) {
     return {
       gameId: row.gameId,
       name: null,
+      status,
       coverUrl: null,
       communityRating: null,
       rating: null,
@@ -142,6 +144,7 @@ function gameItem(
   return {
     gameId: row.gameId,
     name: game.name,
+    status,
     coverUrl: game.coverUrl,
     communityRating: game.communityRating,
     rating: card.scored ? row.rating : null,
