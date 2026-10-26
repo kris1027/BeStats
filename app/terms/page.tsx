@@ -12,6 +12,7 @@ import {
 import {
   COMPLAINT_RESPONSE_DAYS,
   DELETION_DAYS,
+  IGDB_ATTRIBUTION,
   MINIMUM_AGE,
   OPERATOR_COUNTRY,
 } from "@/lib/legal/operator";
@@ -31,8 +32,9 @@ export const metadata: Metadata = catalogMetadata({
  * `/terms` (spec 0017, AC-6, AC-7, AC-9 to AC-12).
  *
  * Fully static, like `/privacy`. Operator facts come from
- * `lib/legal/operator.ts` and the TMDB notice from `TMDB_ATTRIBUTION`, so
- * neither is restated here. The text follows the spec's Terms of Service facts
+ * `lib/legal/operator.ts`, the TMDB notice from `TMDB_ATTRIBUTION` and the
+ * IGDB credit from `IGDB_ATTRIBUTION` (spec 0032, AC-9), so none is restated
+ * here. The text follows the spec's Terms of Service facts
  * table and promises nothing the app does not do.
  */
 export default function TermsPage() {
@@ -87,7 +89,7 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="Catalog data and TMDB">
+      <LegalSection title="Catalog data, TMDB and IGDB">
         <p>
           Titles, images and details come from TMDB. We can&rsquo;t guarantee
           that they are accurate or complete.
@@ -95,6 +97,14 @@ export default function TermsPage() {
         <p>{TMDB_ATTRIBUTION}</p>
         <p>
           TMDB community ratings belong to TMDB. Your own ratings are yours.
+        </p>
+        <p>
+          Game details and images come from IGDB. We can&rsquo;t guarantee that
+          they are accurate or complete.
+        </p>
+        <p>{IGDB_ATTRIBUTION}</p>
+        <p>
+          IGDB community ratings belong to IGDB. Your own ratings are yours.
         </p>
       </LegalSection>
 

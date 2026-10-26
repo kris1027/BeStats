@@ -3,6 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import type * as React from "react";
 import {
+  IGDB_ATTRIBUTION,
+  IGDB_HOME_URL,
   OPERATOR_GITHUB_URL,
   OPERATOR_HANDLE,
   TMDB_HOME_URL,
@@ -14,7 +16,8 @@ import { IconKey } from "./icon-key";
 /**
  * The quiet footer under every route: the icon key to the card marks
  * (`IconKey`), then TMDB's logo and the notice its API terms require, then
- * the two legal pages and the credit line (spec 0017, AC-1 to AC-5). The
+ * IGDB's logo and credit (spec 0032, AC-8, AC-10), then the two legal pages
+ * and the credit line (spec 0017, AC-1 to AC-5). The
  * credit names the operator by handle, linked to their GitHub profile, the
  * same way the legal pages do.
  *
@@ -61,6 +64,28 @@ export function SiteFooter() {
           <p className="max-w-[60ch] text-xs text-muted-foreground">
             {TMDB_ATTRIBUTION}
           </p>
+          <a
+            href={IGDB_HOME_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-11 w-fit items-center gap-2 rounded-sm text-xs text-muted-foreground hover:text-foreground md:min-h-9"
+          >
+            {/*
+             * IGDB's press kit SVG, byte for byte (`./igdb-logo.test.ts`),
+             * white on transparent for the one dark palette. Sized like
+             * TMDB's logo, never taller; the size attributes are its viewBox
+             * (114 × 55).
+             */}
+            <Image
+              src="/igdb-logo.svg"
+              alt="IGDB"
+              width={114}
+              height={55}
+              unoptimized
+              className="h-3 w-auto md:h-3.5"
+            />
+            <span>{IGDB_ATTRIBUTION}</span>
+          </a>
         </div>
 
         {/*

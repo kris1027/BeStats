@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   CONTACT_EMAIL,
+  IGDB_ATTRIBUTION,
   IGDB_HOME_URL,
   JUSTWATCH_ATTRIBUTION,
   OPERATOR_COUNTRY,
@@ -14,7 +15,7 @@ import {
 } from "./operator";
 
 /**
- * covers: spec 0017, AC-3, AC-6, AC-10
+ * covers: spec 0017, AC-3, AC-6, AC-10; spec 0032, AC-8
  *
  * The legal facts and TMDB's notice each have one home, so a later edit that
  * pastes a copy somewhere else would publish two versions that drift apart.
@@ -54,6 +55,12 @@ describe("one home for each legal fact", () => {
     // A fragment, so a reworded copy of the sentence is caught too.
     expect(filesContaining("otherwise approved by TMDB")).toEqual([
       "lib/tmdb/constants.ts",
+    ]);
+  });
+
+  it("writes IGDB's credit only in lib/legal/operator.ts (spec 0032, AC-8)", () => {
+    expect(filesContaining(IGDB_ATTRIBUTION)).toEqual([
+      "lib/legal/operator.ts",
     ]);
   });
 
