@@ -50,7 +50,7 @@ const coverSchema = z
  * Artworks or screenshots, each `{ image_id }`. An entry of another shape is
  * dropped, and an absent or odd list reads as none (spec 0028, AC-6).
  */
-export const imageListSchema = z
+const imageListSchema = z
   .array(z.object({ image_id: z.string().nullish() }).nullish().catch(null))
   .nullish()
   .catch(null);
