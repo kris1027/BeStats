@@ -33,7 +33,7 @@ _This is the second scope for BeStats. The movie and TV scope lives in [scope.md
 | G7 | Game search and filters | Slice G4 | done |
 | G8 | Game cards everywhere | Slice G4 | done |
 | G9 | Richer game page | Slice G5 | done |
-| G10 | Games launch | Slice G6 | planned |
+| G10 | Games launch | Slice G6 | in-progress |
 
 ## Foundations
 
@@ -178,10 +178,21 @@ spec [0031](../specs/0031-richer-game-page/index.md) · code in `components/game
 
 ## Slice G6: Launch
 
-### G10. Games launch · needs a decision · GA
+### G10. Games launch · in-progress · GA
 Turn games on for search engines and production, with the credits IGDB asks for.
 **Done when:** game pages and list pages are in the sitemap with `VideoGame` JSON-LD and share cards; an `IGDB_ATTRIBUTION` sits next to `TMDB_ATTRIBUTION` in the footer and on `/terms` with `LEGAL_LAST_UPDATED` bumped; IGDB's current terms are checked again and the result recorded; the `IGDB_*` variables are set in Vercel and the change is deployed through [docs/deploy.md](../deploy.md).
-- [ ] Design it (spec): `/architect games launch`
+- [x] Design it (spec): `/architect games launch`
+- [ ] Build it: `/develop games launch`
+  - [ ] Terms check in a browser, recorded in the spec's rationale, plus the logo search, AC-10, AC-11
+  - [ ] Thin thread: an indexable game page (canonical, share card, `VideoGame` JSON-LD) and its ids in the sitemap with failure isolation, AC-1 to AC-3, AC-6, AC-7, AC-14
+  - [ ] `/games` and the five list pages indexed and in the sitemap, AC-4 to AC-6
+  - [ ] IGDB credit in the footer and on `/terms`, `LEGAL_LAST_UPDATED` bumped, AC-8 to AC-10
+  - [ ] Flag removed, Preview credentials and the deploy docs, then the production launch checks, AC-12, AC-13, AC-15
+- [ ] Verify it: `/check verify games launch`
+- [ ] Test it: `/test games launch`
+- [ ] Review it (fresh model): `/check review games launch`
+- [ ] Document it: `/document games launch`
+spec [0032](../specs/0032-games-launch/index.md) · code in `app/games/`, `app/sitemap.ts`, `lib/seo/`, `lib/legal/`, `components/layout/site-footer.tsx`, `app/terms/`
 
 ## Deferred
 Out of scope for the current build pass, kept so the plan stays honest.
