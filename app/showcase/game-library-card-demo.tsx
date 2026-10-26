@@ -14,6 +14,7 @@ export function GameLibraryCardDemo({ poster }: { poster: string }) {
   const base: LibraryGameItem = {
     gameId: 1,
     name: "",
+    status: "want_to_play",
     coverUrl: poster,
     communityRating: 8.4,
     rating: null,
@@ -46,6 +47,7 @@ export function GameLibraryCardDemo({ poster }: { poster: string }) {
       item: {
         ...base,
         name: "Playing, scored",
+        status: "playing",
         rating: 9,
         dateLine: "Started Feb 2026",
       },
@@ -54,6 +56,7 @@ export function GameLibraryCardDemo({ poster }: { poster: string }) {
       item: {
         ...base,
         name: "Playing, not scored",
+        status: "playing",
         dateLine: "Started Oct 2026",
       },
     },
@@ -61,6 +64,7 @@ export function GameLibraryCardDemo({ poster }: { poster: string }) {
       item: {
         ...base,
         name: "Finished, scored",
+        status: "finished",
         rating: 7,
         dateLine: "Finished Mar 2026",
       },
@@ -69,6 +73,7 @@ export function GameLibraryCardDemo({ poster }: { poster: string }) {
       item: {
         ...base,
         name: "Hidden by IGDB, no link",
+        status: "finished",
         hidden: true,
         dateLine: "Finished Jan 2025",
       },
