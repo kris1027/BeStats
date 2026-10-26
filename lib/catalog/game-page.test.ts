@@ -69,6 +69,16 @@ describe("gameCardStatus", () => {
     });
   });
 
+  it("never carries a score on Want to play, even if one were stored (AC-2)", () => {
+    expect(
+      gameCardStatus(
+        { status: "want_to_play", rating: 7 },
+        "2015-05-19",
+        today,
+      ),
+    ).toEqual({ status: "want_to_play", unreleased: false });
+  });
+
   it("carries the score of a started game, whatever its release date (AC-2, AC-6)", () => {
     expect(
       gameCardStatus({ status: "playing", rating: 8 }, null, today),

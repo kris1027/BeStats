@@ -112,6 +112,14 @@ describe("GameCardBadge and GameCardControls", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("never badges a Want to play game with a score, even if one were stored (AC-2)", async () => {
+    grid({ status: "want_to_play", rating: 7 });
+    await renderCard();
+    expect(screen.getByText("IGDB community rating")).toBeInTheDocument();
+    expect(screen.queryByText("Your score")).not.toBeInTheDocument();
+    expect(bookmark()).toHaveAttribute("aria-pressed", "true");
+  });
+
   it("keeps IGDB's rating on an unscored Finished game (AC-2, AC-6)", async () => {
     grid({ status: "finished", rating: null });
     await renderCard();

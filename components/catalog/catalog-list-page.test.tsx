@@ -48,12 +48,16 @@ vi.mock("@/components/catalog/list-cards", () => ({
   ),
   GameListCard: (props: {
     game: { name: string };
+    gridGameIds: number[];
     priority: boolean;
+    returnPath: string;
     releaseDay?: string;
   }) => (
     <span
       data-priority={String(props.priority)}
       data-release-day={props.releaseDay ?? "none"}
+      data-return={props.returnPath}
+      data-ids={props.gridGameIds.join(",")}
     >
       {props.game.name}
     </span>
@@ -406,6 +410,20 @@ describe("a games list page", () => {
     expect(
       screen.getByRole("heading", { level: 1, name: "Games coming soon" }),
     ).toBeInTheDocument();
+  });
+
+  // spec 0030, AC-1: a list page's cards share one read of the page's own
+  // ids, and a session expired toast returns to the page they sit on.
+  it("gives every game card the whole page's ids and the page URL to return to (spec 0030, AC-1)", async () => {
+    read.mockResolvedValue(gamePage(3, 30));
+
+    await renderGrid(catalogList("game", "popular"), { page: "2" });
+
+    for (const name of ["Game 1", "Game 2", "Game 3"]) {
+      const card = screen.getByText(name);
+      expect(card).toHaveAttribute("data-ids", "1,2,3");
+      expect(card).toHaveAttribute("data-return", "/games/popular?page=2");
+    }
   });
 
   it("counts pages from IGDB's count, 24 a page", async () => {

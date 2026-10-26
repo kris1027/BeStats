@@ -160,4 +160,8 @@ describe("gameIdsKey", () => {
     expect(gameIdsKey([3, 1, 2, 1])).toBe("1,2,3");
     expect(gameIdsKey([])).toBe("");
   });
+
+  it("sorts by number, not as text, so 9 comes before 10", () => {
+    expect(gameIdsKey([100, 10, 9])).toBe("9,10,100");
+  });
 });
