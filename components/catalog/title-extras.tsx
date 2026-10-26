@@ -10,6 +10,7 @@ import {
 import { CarouselScroller } from "@/components/catalog/carousel-scroller";
 import { CatalogListCards } from "@/components/catalog/catalog-list-cards";
 import { type MediaType, titleHref } from "@/lib/catalog/media-type";
+import type { TaggedCatalogPage } from "@/lib/catalog-list-read";
 import { getVisitorRegion } from "@/lib/region";
 import {
   getMovieExtras,
@@ -199,11 +200,31 @@ async function MoreLikeThisContent(props: TitleRef) {
   if (extras.recommendations.paged.results.length === 0) return null;
 
   return (
+    <MoreLikeThisRow
+      result={extras.recommendations}
+      returnPath={titleHref(props.mediaType, props.id)}
+    />
+  );
+}
+
+/**
+ * The filled row, shared with the game page (spec 0031, AC-8) so a game's
+ * similar games and a title's recommendations keep one card size, cap and
+ * eager count.
+ */
+function MoreLikeThisRow({
+  result,
+  returnPath,
+}: {
+  result: TaggedCatalogPage;
+  returnPath: string;
+}) {
+  return (
     <MoreLikeThisFrame>
       <ul className="flex gap-3 md:gap-4">
         <CatalogListCards
-          result={extras.recommendations}
-          returnPath={titleHref(props.mediaType, props.id)}
+          result={result}
+          returnPath={returnPath}
           eagerCount={0}
           limit={ROW_SIZE}
           sizes={ROW_POSTER_SIZES}
@@ -241,6 +262,7 @@ export {
   AgeRatingSlotContent,
   MoreLikeThisContent,
   MoreLikeThisFrame,
+  MoreLikeThisRow,
   MoreLikeThisSection,
   TrailerSlot,
   TrailerSlotContent,
