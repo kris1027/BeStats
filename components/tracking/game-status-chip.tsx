@@ -1,5 +1,6 @@
 import { GlassPill } from "@/components/glass-pill";
 import { GAME_STATUS_LABELS } from "@/lib/tracking/messages";
+import type { StartedGameStatus } from "@/lib/tracking/types";
 
 /**
  * The read only Playing or Finished chip in a game card's bottom row (spec
@@ -9,7 +10,7 @@ import { GAME_STATUS_LABELS } from "@/lib/tracking/messages";
  *
  * @param status The stored status of a started game.
  */
-function GameStatusChip({ status }: { status: "playing" | "finished" }) {
+function GameStatusChip({ status }: { status: StartedGameStatus }) {
   return (
     <GlassPill data-slot="game-status" className="ml-auto">
       {GAME_STATUS_LABELS[status]}

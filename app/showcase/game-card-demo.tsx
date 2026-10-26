@@ -13,6 +13,7 @@ import { CardRoundButton } from "@/components/tracking/card-round-button";
 import { GameStatusChip } from "@/components/tracking/game-status-chip";
 import { PlanIcon, PlannedIcon } from "@/components/tracking/tracking-icons";
 import type { ReleaseDate } from "@/lib/format";
+import type { StartedGameStatus } from "@/lib/tracking/types";
 
 type DemoCard = {
   name: string;
@@ -21,7 +22,7 @@ type DemoCard = {
     | { kind: "bookmark"; pressed: boolean; release?: ReleaseDate }
     | {
         kind: "started";
-        status: "playing" | "finished";
+        status: StartedGameStatus;
         rating: number | null;
       };
   year: number | null;

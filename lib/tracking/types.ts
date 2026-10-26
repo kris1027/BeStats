@@ -178,6 +178,31 @@ export type UntrackShowResult =
 export type GameStatus = Database["public"]["Enums"]["game_status"];
 
 /**
+ * A game that has been started: the statuses that may hold a score and that
+ * a card shows as the read only chip rather than the Want to play bookmark
+ * (`AGENTS.md` "Games", spec 0030, AC-2, AC-6, AC-11).
+ */
+export type StartedGameStatus = Exclude<GameStatus, "want_to_play">;
+
+/**
+ * Whether a game card's or library item's status is a started one. A guard
+ * on the whole item, so a card status union narrows to its scored variant.
+ * Null or undefined, a game with no row or no read, is not started.
+ *
+ * @param item Anything carrying a stored game status.
+ */
+export function isStartedGame<T extends { status: GameStatus | null }>(
+  item: T | null | undefined,
+): item is T & { status: StartedGameStatus } {
+  return (
+    item !== null &&
+    item !== undefined &&
+    item.status !== null &&
+    item.status !== "want_to_play"
+  );
+}
+
+/**
  * Every status, from the generated enum in its SQL order, which is also the
  * pill order (spec 0026, AC-2). The Zod schema and the control both read it,
  * so a status added in SQL reaches them with `pnpm db:types` alone.

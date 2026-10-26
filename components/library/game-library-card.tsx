@@ -10,6 +10,7 @@ import { CardRoundButton } from "@/components/tracking/card-round-button";
 import { GameStatusChip } from "@/components/tracking/game-status-chip";
 import { PlannedIcon } from "@/components/tracking/tracking-icons";
 import { gameHref } from "@/lib/catalog/media-type";
+import { isStartedGame } from "@/lib/tracking/types";
 
 import { ReleasePill } from "./dated-pill";
 import type { LibraryGameItem } from "./types";
@@ -67,7 +68,12 @@ function GameLibraryCard({
           {item.unreleased ? (
             <ReleasePill release={item.unreleased.date} />
           ) : null}
-          {item.status === "want_to_play" ? (
+          {isStartedGame(item) ? (
+            <>
+              <GameStatusChip status={item.status} />
+              <RemoveButton name={item.name} onRemove={onRemove} className="" />
+            </>
+          ) : (
             <CardRoundButton
               label={`Remove ${item.name} from Want to play`}
               onClick={onRemove}
@@ -75,11 +81,6 @@ function GameLibraryCard({
             >
               <PlannedIcon className="size-4" />
             </CardRoundButton>
-          ) : (
-            <>
-              <GameStatusChip status={item.status} />
-              <RemoveButton name={item.name} onRemove={onRemove} className="" />
-            </>
           )}
         </>
       }

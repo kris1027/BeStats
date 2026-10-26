@@ -1,5 +1,8 @@
 import { isMovieReleased, movieReleaseNote } from "@/lib/catalog/movie-page";
-import type { GameTrackingState } from "@/lib/tracking/types";
+import type {
+  GameTrackingState,
+  StartedGameStatus,
+} from "@/lib/tracking/types";
 
 /**
  * Whether a game can be Playing, Finished or scored yet (`AGENTS.md`
@@ -62,4 +65,4 @@ export function gameCardStatus(
 /** A game card's stored state, from `gameCardStatus`. */
 export type GameCardStatus =
   | { status: "want_to_play"; unreleased: boolean }
-  | { status: "playing" | "finished"; rating: number | null };
+  | { status: StartedGameStatus; rating: number | null };

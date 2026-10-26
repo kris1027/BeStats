@@ -20,6 +20,7 @@ import { formatReleaseDate } from "@/lib/format";
 import { requestTodayUtc } from "@/lib/tracking/episode-state";
 import { getGameGridStates } from "@/lib/tracking/game-state";
 import { idsKey } from "@/lib/tracking/ids-key";
+import { isStartedGame } from "@/lib/tracking/types";
 
 import { GameCardBookmarkButton } from "./game-card-bookmark-button";
 import { GameStatusChip } from "./game-status-chip";
@@ -57,12 +58,7 @@ async function GameCardBadge({
   ...props
 }: GameCardProps & { communityRating: number | null }) {
   const status = (await readStatus(props))?.status;
-  if (
-    status !== undefined &&
-    status !== null &&
-    status.status !== "want_to_play" &&
-    status.rating !== null
-  ) {
+  if (isStartedGame(status) && status.rating !== null) {
     return <PersonalScoreBadge value={status.rating} />;
   }
   return <IgdbRatingBadge value={communityRating} />;
@@ -93,7 +89,7 @@ async function GameCardControls({
   if (read === undefined) return null;
   const { status } = read;
 
-  if (status !== null && status.status !== "want_to_play") {
+  if (isStartedGame(status)) {
     return <GameStatusChip status={status.status} />;
   }
 
