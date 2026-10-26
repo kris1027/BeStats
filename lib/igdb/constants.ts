@@ -177,7 +177,48 @@ export const IGDB_GAME_FIELDS = [
   "version_parent",
   "rating",
   "rating_count",
+  "storyline",
+  "artworks.image_id",
+  "screenshots.image_id",
+  "videos.id",
+  "videos.name",
+  "videos.video_id",
+  "similar_games",
+  "involved_companies.company.id",
+  "involved_companies.company.name",
+  "involved_companies.developer",
+  "involved_companies.publisher",
+  "game_modes.name",
+  "player_perspectives.name",
+  "franchise.name",
+  "franchises.name",
+  "collections.name",
+  "game_engines.name",
+  "release_dates.date",
+  "release_dates.date_format",
+  "release_dates.platform.id",
+  "release_dates.platform.name",
 ] as const;
+
+/**
+ * IGDB's `date_format` ids on a release date, by id (spec 0031, AC-10). An id
+ * outside this map, or none, drops the entry rather than reading it as a full
+ * day. `pnpm igdb:live` checks them against IGDB's `date_formats` endpoint
+ * (AC-14).
+ */
+export const IGDB_DATE_FORMAT = {
+  0: "day",
+  1: "month",
+  2: "year",
+  3: "q1",
+  4: "q2",
+  5: "q3",
+  6: "q4",
+  7: "tbd",
+} as const;
+
+/** The most screenshots a game page shows (spec 0031, AC-6). */
+export const IGDB_MAX_SCREENSHOTS = 12;
 
 /**
  * The `fields` clause of a batch, search or discover read. Genres, platforms

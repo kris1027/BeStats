@@ -1,11 +1,95 @@
 [
   {
     "id": 1942,
+    "artworks": [
+      {
+        "id": 303975,
+        "image_id": "ar6ijr"
+      },
+      {
+        "id": 168458,
+        "image_id": "ar3lze"
+      },
+      {
+        "id": 168459,
+        "image_id": "ar3lzf"
+      },
+      {
+        "id": 168463,
+        "image_id": "ar3lzj"
+      },
+      {
+        "id": 168460,
+        "image_id": "ar3lzg"
+      },
+      {
+        "id": 168465,
+        "image_id": "ar3lzl"
+      },
+      {
+        "id": 168461,
+        "image_id": "ar3lzh"
+      },
+      {
+        "id": 168464,
+        "image_id": "ar3lzk"
+      },
+      {
+        "id": 168457,
+        "image_id": "ar3lzd"
+      },
+      {
+        "id": 168455,
+        "image_id": "ar3lzb"
+      },
+      {
+        "id": 168466,
+        "image_id": "ar3lzm"
+      },
+      {
+        "id": 168456,
+        "image_id": "ar3lzc"
+      },
+      {
+        "id": 168467,
+        "image_id": "ar3lzn"
+      },
+      {
+        "id": 168462,
+        "image_id": "ar3lzi"
+      },
+      {
+        "id": 168533,
+        "image_id": "ar3m1h"
+      },
+      {
+        "id": 168532,
+        "image_id": "ar3m1g"
+      }
+    ],
     "cover": {
       "id": 480513,
       "image_id": "coaarl"
     },
     "first_release_date": 1431993600,
+    "franchises": [
+      {
+        "id": 452,
+        "name": "The Witcher"
+      }
+    ],
+    "game_engines": [
+      {
+        "id": 24,
+        "name": "REDengine"
+      }
+    ],
+    "game_modes": [
+      {
+        "id": 1,
+        "name": "Single player"
+      }
+    ],
     "genres": [
       {
         "id": 12,
@@ -14,6 +98,71 @@
       {
         "id": 31,
         "name": "Adventure"
+      }
+    ],
+    "involved_companies": [
+      {
+        "id": 17436,
+        "company": {
+          "id": 50,
+          "name": "WB Games"
+        },
+        "developer": false,
+        "publisher": true
+      },
+      {
+        "id": 17769,
+        "company": {
+          "id": 3119,
+          "name": "cdp.pl"
+        },
+        "developer": false,
+        "publisher": true
+      },
+      {
+        "id": 17771,
+        "company": {
+          "id": 1217,
+          "name": "Spike Chunsoft"
+        },
+        "developer": false,
+        "publisher": true
+      },
+      {
+        "id": 17768,
+        "company": {
+          "id": 248,
+          "name": "Bandai Namco Entertainment"
+        },
+        "developer": false,
+        "publisher": true
+      },
+      {
+        "id": 64293,
+        "company": {
+          "id": 5696,
+          "name": "D3T Limited"
+        },
+        "developer": false,
+        "publisher": false
+      },
+      {
+        "id": 196544,
+        "company": {
+          "id": 946,
+          "name": "Saber Interactive"
+        },
+        "developer": false,
+        "publisher": false
+      },
+      {
+        "id": 418547,
+        "company": {
+          "id": 908,
+          "name": "CD Projekt RED"
+        },
+        "developer": true,
+        "publisher": false
       }
     ],
     "name": "The Witcher 3: Wild Hunt",
@@ -47,9 +196,134 @@
         "name": "Nintendo Switch"
       }
     ],
-    "rating": 93.77371445859636,
-    "rating_count": 5498,
+    "player_perspectives": [
+      {
+        "id": 2,
+        "name": "Third person"
+      }
+    ],
+    "rating": 93.77367293830875,
+    "rating_count": 5504,
+    "release_dates": [
+      {
+        "id": 974208,
+        "date": 1431993600,
+        "platform": {
+          "id": 48,
+          "name": "PlayStation 4"
+        },
+        "date_format": 0
+      },
+      {
+        "id": 974209,
+        "date": 1670976000,
+        "platform": {
+          "id": 167,
+          "name": "PlayStation 5"
+        },
+        "date_format": 0
+      },
+      {
+        "id": 974210,
+        "date": 1431993600,
+        "platform": {
+          "id": 49,
+          "name": "Xbox One"
+        },
+        "date_format": 0
+      },
+      {
+        "id": 974211,
+        "date": 1670976000,
+        "platform": {
+          "id": 169,
+          "name": "Xbox Series X|S"
+        },
+        "date_format": 0
+      },
+      {
+        "id": 974206,
+        "date": 1611792000,
+        "platform": {
+          "id": 130,
+          "name": "Nintendo Switch"
+        },
+        "date_format": 0
+      },
+      {
+        "id": 974207,
+        "date": 1431993600,
+        "platform": {
+          "id": 6,
+          "name": "PC (Microsoft Windows)"
+        },
+        "date_format": 0
+      },
+      {
+        "id": 974212,
+        "date": 1790640000,
+        "platform": {
+          "id": 508,
+          "name": "Nintendo Switch 2"
+        },
+        "date_format": 0
+      }
+    ],
+    "screenshots": [
+      {
+        "id": 1377966,
+        "image_id": "sctj8u"
+      },
+      {
+        "id": 21107,
+        "image_id": "farvemmmxav0bgt6wx7t"
+      },
+      {
+        "id": 9743,
+        "image_id": "em1y2ugcwy2myuhvb9db"
+      },
+      {
+        "id": 9744,
+        "image_id": "usxccsncekxg0wd1v6ee"
+      },
+      {
+        "id": 853179,
+        "image_id": "sciabf"
+      },
+      {
+        "id": 1377965,
+        "image_id": "sctj8t"
+      },
+      {
+        "id": 853177,
+        "image_id": "sciabd"
+      },
+      {
+        "id": 853181,
+        "image_id": "sciabh"
+      },
+      {
+        "id": 853178,
+        "image_id": "sciabe"
+      },
+      {
+        "id": 9745,
+        "image_id": "z5t0yuhyiiui1ickwhgj"
+      },
+      {
+        "id": 9742,
+        "image_id": "mnljdjtrh44x4snmierh"
+      },
+      {
+        "id": 853180,
+        "image_id": "sciabg"
+      }
+    ],
+    "similar_games": [
+      119133, 1887, 3025, 9112, 27421, 6142, 5503, 25076, 27384, 7346
+    ],
     "slug": "the-witcher-3-wild-hunt",
+    "storyline": "The Witcher 3: Wild Hunt concludes the story of the witcher Geralt of Rivia, the series' protagonist, whose story to date has been covered in the previous installments. Geralt's new mission comes in dark times as the mysterious and otherworldly army known as the Wild Hunt invades the Northern Kingdoms, leaving only blood soaked earth and fiery ruin in its wake; and it seems the Witcher is the key to stopping their cataclysmic rampage.",
     "summary": "The Witcher 3: Wild Hunt is an open-world action role-playing game developed by CD Projekt Red.\n\nSet in a dark fantasy world, the game follows Geralt of Rivia, a monster hunter searching for his adopted daughter, Ciri, while navigating political conflicts and supernatural threats. Gameplay features exploration, combat, character progression, and branching narratives shaped by player choices. Widely acclaimed for its writing, world-building, and depth, it is considered one of the most influential RPGs of its generation.",
     "themes": [
       {
@@ -63,6 +337,99 @@
       {
         "id": 38,
         "name": "Open world"
+      }
+    ],
+    "videos": [
+      {
+        "id": 9648,
+        "name": "Developer Diary: Creating the Sound",
+        "video_id": "yowv6_rspoM"
+      },
+      {
+        "id": 5993,
+        "name": "TV Spot",
+        "video_id": "xQGam9OHSUo"
+      },
+      {
+        "id": 5990,
+        "name": "Opening Cinematic: The Trail",
+        "video_id": "QrwGXAcE6ZA"
+      },
+      {
+        "id": 5992,
+        "name": "Recap",
+        "video_id": "bcEAsOC_8L0"
+      },
+      {
+        "id": 5987,
+        "name": "The Begining trailer",
+        "video_id": "5nLipy-Z4yo"
+      },
+      {
+        "id": 5995,
+        "name": "A Night to Remember Trailer",
+        "video_id": "8ZLfJjlZKvc"
+      },
+      {
+        "id": 5994,
+        "name": "Rage & Steel Trailer",
+        "video_id": "p14dHAwLOmo"
+      },
+      {
+        "id": 5991,
+        "name": "Elder Blood Trailer",
+        "video_id": "6f8TbvsZ5Mk"
+      },
+      {
+        "id": 5989,
+        "name": "Downwarren Gameplay Video",
+        "video_id": "_IBAovRNCuA"
+      },
+      {
+        "id": 5988,
+        "name": "Killing Monsters Cinematic Trailer",
+        "video_id": "FP7no968jVU"
+      },
+      {
+        "id": 5996,
+        "name": "Debut Gameplay Trailer",
+        "video_id": "sb81f-ejNSI"
+      },
+      {
+        "id": 150458,
+        "name": "Trailer",
+        "video_id": "TWOkT7l0yWQ"
+      },
+      {
+        "id": 15748,
+        "name": "10th Anniversary Video",
+        "video_id": "ZpiczsigQto"
+      },
+      {
+        "id": 120257,
+        "name": "Gameplay Demo",
+        "video_id": "gRmKKjQu9Tw"
+      },
+      {
+        "id": 141704,
+        "name": "VGX 2013 Trailer",
+        "video_id": "MqQ3LeBgGDM"
+      },
+      {
+        "id": 141210,
+        "name": "Cinematic Trailer",
+        "video_id": "c0i88t0Kacs"
+      },
+      {
+        "id": 141211,
+        "name": "Launch Trailer",
+        "video_id": "1-l29HlKkXU"
+      }
+    ],
+    "collections": [
+      {
+        "id": 62,
+        "name": "The Witcher"
       }
     ],
     "game_type": 0

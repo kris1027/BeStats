@@ -56,6 +56,26 @@ describe("fetchGame", () => {
       name: expect.any(String),
     });
     expect(game?.summary).toBeTruthy();
+    // The fields spec 0031 added, from the same one request (AC-2).
+    expect(game?.storyline).toBeTruthy();
+    expect(game?.artUrl).toMatch(/\/t_1080p\/.+\.jpg$/);
+    expect(game?.screenshotUrls).toHaveLength(12);
+    expect(game?.trailer).toEqual({
+      key: "5nLipy-Z4yo",
+      name: "The Begining trailer",
+    });
+    expect(game?.similarGameIds).toEqual(witcher.similar_games);
+    expect(game?.developers.length).toBeGreaterThan(0);
+    expect(game?.publishers).toContain("WB Games");
+    expect(game?.gameModes).toEqual([{ id: 1, name: "Single player" }]);
+    expect(game?.franchises).toEqual([{ id: 452, name: "The Witcher" }]);
+    expect(game?.series).toEqual([{ id: 62, name: "The Witcher" }]);
+    expect(game?.gameEngines).toEqual([{ id: 24, name: "REDengine" }]);
+    expect(game?.platformReleases[0]).toEqual({
+      platform: "PC (Microsoft Windows)",
+      release: { precision: "day", date: "2015-05-19" },
+    });
+    expect(game?.platformReleases.at(-1)?.platform).toBe("Nintendo Switch 2");
     expect(Object.keys(game ?? {}).some((key) => key.includes("_"))).toBe(
       false,
     );
@@ -146,6 +166,49 @@ describe("missing stays missing", () => {
       communityRating: null,
       communityRatingCount: null,
       hidden: false,
+      storyline: null,
+      artUrl: null,
+      screenshotUrls: [],
+      trailer: null,
+      similarGameIds: [],
+      developers: [],
+      publishers: [],
+      gameModes: [],
+      playerPerspectives: [],
+      franchises: [],
+      series: [],
+      gameEngines: [],
+      platformReleases: [],
+    });
+  });
+
+  it("keeps the read when every new list holds odd entries (spec 0031, AC-2)", async () => {
+    const { value, error } = await readWith({
+      id: 7,
+      name: "Odd",
+      storyline: 12,
+      artworks: "junk",
+      screenshots: [null, { image_id: 4 }, { image_id: "sc1" }],
+      videos: [{ id: "x" }, "junk"],
+      similar_games: ["a", -1, 9],
+      involved_companies: [{ company: null }, { developer: true }],
+      game_modes: [{ id: 1 }],
+      franchise: "junk",
+      franchises: { id: 1 },
+      release_dates: [{ date_format: "day", platform: 6 }],
+    });
+    expect(error).toBeUndefined();
+    expect(value).toMatchObject({
+      storyline: null,
+      screenshotUrls: [
+        "https://images.igdb.com/igdb/image/upload/t_1080p/sc1.jpg",
+      ],
+      trailer: null,
+      similarGameIds: [9],
+      developers: [],
+      gameModes: [],
+      franchises: [],
+      platformReleases: [],
     });
   });
 

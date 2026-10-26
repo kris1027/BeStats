@@ -39,7 +39,43 @@ export type Game = {
   communityRatingCount: number | null;
   /** True when the game fails the catalog filter (AC-10). */
   hidden: boolean;
+  /** The richer game page's fields (spec 0031). A list with none is `[]`. */
+  storyline: string | null;
+  /** Wide 16:9 art for the hero backdrop, the rule `GameSummary` uses. */
+  artUrl: string | null;
+  /** At most 12, built at `t_1080p`, by `image_id` ascending (AC-6). */
+  screenshotUrls: string[];
+  trailer: GameVideo | null;
+  /** IGDB's `similar_games` in order, deduplicated, without this game. */
+  similarGameIds: number[];
+  developers: string[];
+  publishers: string[];
+  gameModes: GameRef[];
+  playerPerspectives: GameRef[];
+  /** The main `franchise` first, then the other `franchises`. */
+  franchises: GameRef[];
+  /** IGDB's `collections`, shown as Series. */
+  series: GameRef[];
+  gameEngines: GameRef[];
+  /** One per platform, already sorted, TBA last (AC-10). */
+  platformReleases: PlatformRelease[];
 };
+
+/** The trailer a game page offers: a YouTube id and IGDB's name (AC-4). */
+export type GameVideo = { key: string; name: string };
+
+/**
+ * A release date at the precision IGDB states (AC-10). A day, month or year
+ * carries the UTC `YYYY-MM-DD` of IGDB's timestamp; a quarter carries its
+ * year and number; `tba` is IGDB's own TBD.
+ */
+export type GameReleaseDate =
+  | { precision: "day" | "month" | "year"; date: string }
+  | { precision: "quarter"; year: number; quarter: 1 | 2 | 3 | 4 }
+  | { precision: "tba" };
+
+/** One platform's earliest release (AC-10). */
+export type PlatformRelease = { platform: string; release: GameReleaseDate };
 
 /** What a card, a batch, a search and a discover read carry. */
 export type GameSummary = {

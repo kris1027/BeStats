@@ -7,6 +7,8 @@
  * Pure and dependency free, so both Server Components and tests can use them.
  */
 
+import type { GameReleaseDate } from "@/lib/igdb/types";
+
 /**
  * A runtime as `2h 19m`, `45m` under an hour, or `2h` on the hour
  * (spec 0006, AC-3).
@@ -294,4 +296,42 @@ export function parseTmdbDate(date: string | null): Date | null {
   // A value like 2013-02-30 rolls over; that is not the date TMDB wrote.
   if (utc.getUTCMonth() !== month - 1 || utc.getUTCDate() !== day) return null;
   return utc;
+}
+
+/** Fixed English month names, so no `Intl` output differs by Node version. */
+const SHORT_MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+] as const;
+
+/**
+ * A game's release on one platform at the precision IGDB states (spec 0031,
+ * AC-10): `Mar 20, 2020`, `Mar 2020`, `Q1 2027`, `2027`, or `TBA` when IGDB
+ * itself says TBD. Built from the `YYYY-MM-DD` parts by hand, with no `Intl`,
+ * so CI (Node 22) and local (Node 24) print the same text.
+ */
+export function formatGameReleaseDate(release: GameReleaseDate): string {
+  switch (release.precision) {
+    case "tba":
+      return "TBA";
+    case "quarter":
+      return `Q${release.quarter} ${release.year}`;
+    default: {
+      const [year, month, day] = release.date.split("-").map(Number);
+      const monthName = SHORT_MONTHS[month - 1];
+      if (release.precision === "year") return String(year);
+      if (release.precision === "month") return `${monthName} ${year}`;
+      return `${monthName} ${day}, ${year}`;
+    }
+  }
 }

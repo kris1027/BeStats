@@ -35,9 +35,12 @@ export type {
   DiscoverSort,
   Game,
   GameRef,
+  GameReleaseDate,
   GameSummary,
   GameType,
+  GameVideo,
   Paged,
+  PlatformRelease,
   PopularGamesKind,
   SearchGamesOptions,
 } from "./types";
