@@ -31,7 +31,7 @@ _This is the second scope for BeStats. The movie and TV scope lives in [scope.md
 | G5 | Games tab and library pages | Slice G2 | done |
 | G6 | Games home and list pages | Slice G3 | done |
 | G7 | Game search and filters | Slice G4 | done |
-| G8 | Game cards everywhere | Slice G4 | planned |
+| G8 | Game cards everywhere | Slice G4 | in-progress |
 | G9 | Richer game page | Slice G5 | planned |
 | G10 | Games launch | Slice G6 | planned |
 
@@ -147,10 +147,18 @@ Games in `/search?type=game` with a title query and filters for genre, release y
 - [x] Test it: `/test game search and filters`
 spec [0029](../specs/0029-game-search-filters/index.md) · code in `app/search/`, `components/search/`, `lib/search/`, `lib/igdb/`
 
-### G8. Game cards everywhere · needs a decision
+### G8. Game cards everywhere · in-progress
 Game cards match the movie card: IGDB rating badge, your score when set, release year, and a status chip with a small control.
 **Done when:** home rows, list pages, `/search` and the library pages all use the full game card; each grid reads the signed in user's statuses once, like `getMovieGridStates`; a card's status always matches its library page; the release gate applies on the card too.
-- [ ] Design it (spec): `/architect game cards everywhere`
+- [x] Design it (spec): `/architect game cards everywhere`
+- [ ] Build it: `/develop game cards everywhere`
+  - [ ] Thin thread: the grid read, `gameCardStatus`, the badge and controls slots and the Want to play bookmark with its Undo on `/search?type=game`, AC-1 to AC-5, AC-9
+  - [ ] Started and unreleased cards: the status chip, the release pill and its switch, AC-6, AC-7
+  - [ ] Every other grid: list pages, the landing slots (badge, controls, year meta) on every section card, AC-1, AC-8, AC-10, AC-13, AC-14
+  - [ ] Library tabs and proof: `LibraryGameItem.status`, the green bookmark and the chip, icon key labels, `/showcase`, 375px and 1280px, keyboard, all checks, AC-11, AC-12, AC-13, AC-15
+- [ ] Verify it: `/check verify game cards everywhere`
+- [ ] Test it: `/test game cards everywhere`
+spec [0030](../specs/0030-game-cards-everywhere/index.md) · code in `components/tracking/`, `components/catalog/`, `components/library/`, `lib/tracking/`, `lib/catalog/`
 
 ## Slice G5: Richer game page
 
