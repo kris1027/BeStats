@@ -1,4 +1,5 @@
 import { RetryLink } from "@/components/retry-link";
+import type { CatalogSource } from "@/lib/catalog/media-type";
 
 /**
  * The h2 look every title page section shares: Overview, Seasons, Where to
@@ -26,7 +27,7 @@ export function SectionErrorLine({
 }: {
   what: string;
   href: string;
-  source?: "TMDB" | "IGDB";
+  source?: CatalogSource;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2">

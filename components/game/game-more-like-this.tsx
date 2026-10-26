@@ -9,7 +9,7 @@ import {
   MoreLikeThisRow,
 } from "@/components/catalog/title-extras";
 import { SectionErrorLine } from "@/components/catalog/title-section";
-import { gameHref } from "@/lib/catalog/media-type";
+import { CATALOG_SOURCES, gameHref } from "@/lib/catalog/media-type";
 import { type GameSummary, getGamesByIds, IgdbError } from "@/lib/igdb";
 
 type MoreLikeThisProps = { gameId: number; similarGameIds: number[] };
@@ -59,7 +59,7 @@ async function GameMoreLikeThisContent({
         <SectionErrorLine
           what="similar games"
           href={gameHref(gameId)}
-          source="IGDB"
+          source={CATALOG_SOURCES.game}
         />
       </MoreLikeThisFrame>
     );
