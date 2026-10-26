@@ -70,11 +70,12 @@ Set them in the Vercel project, under Settings, Environment Variables. `.env.exa
 | `TMDB_READ_ACCESS_TOKEN` | your TMDB read token (sensitive) | the same token |
 | `NEXT_PUBLIC_SITE_URL` | `https://bestats-sable.vercel.app`, no trailing slash | not set |
 | `NEXT_PUBLIC_AUTH_EMAIL_DELIVERY` | `off` | `off` |
-| `NEXT_PUBLIC_GAMES_LIBRARY` | not set (off) | `on` |
+| `IGDB_CLIENT_ID` | your Twitch app's client id (sensitive) | the same id |
+| `IGDB_CLIENT_SECRET` | your Twitch app's client secret (sensitive) | the same secret |
 
-Never add a Supabase service role key, a secret key or a database password to any environment, and never give the TMDB token a `NEXT_PUBLIC_` prefix.
+Never add a Supabase service role key, a secret key or a database password to any environment, and never give the TMDB token or either IGDB variable a `NEXT_PUBLIC_` prefix (`security-boundary.test.ts` fails if one does). Without the IGDB pair a deployment still builds, but every games read answers "Couldn't reach IGDB" and the sitemap lists no games (spec 0032, AC-7).
 
-`NEXT_PUBLIC_` values are inlined at build time, so changing one (the email flag, for example) takes a redeploy, not just an edit. `NEXT_PUBLIC_GAMES_LIBRARY` stays unset in Production until a games browse page or game search (G6 or G7) gives people a way to find games; with it off, `?type=game` on the library pages shows "That page doesn't exist" (spec 0027, AC-1). You can check the list with `vercel env ls`.
+`NEXT_PUBLIC_` values are inlined at build time, so changing one (the email flag, for example) takes a redeploy, not just an edit. Games have no flag since spec 0032: the GAMES tab shows everywhere, so remove any leftover `NEXT_PUBLIC_GAMES_LIBRARY` from Preview. You can check the list with `vercel env ls`.
 
 **Previews** have no Supabase variables on purpose. They show the catalog, a signed out navbar, `Sign in isn't available on this deployment.` on `/sign-in` and `/sign-up`, and a `robots.txt` that disallows everything. Vercel's deployment protection stays on, so only you (signed in to Vercel) or someone holding the protection bypass token can open one. `vercel curl <path> --deployment <url>` opens a preview with the bypass for a quick check. No preview origin ever goes into the Supabase redirect list.
 
@@ -143,8 +144,8 @@ There are no automatic backups on Free. If losing data would hurt, revisit the p
 
 ## 9. Before and after a release
 
-1. Before: run `pnpm tmdb:live` to confirm TMDB answers with your token.
-2. After the deploy: open `https://bestats-sable.vercel.app/sitemap.xml`. It should list `/movies`, `/shows`, `/privacy`, `/terms` and a few hundred title pages. A sitemap with only the static routes means TMDB failed at build time: redeploy from Vercel.
+1. Before: run `pnpm tmdb:live` and `pnpm igdb:live` to confirm TMDB and IGDB answer with your credentials.
+2. After the deploy: open `https://bestats-sable.vercel.app/sitemap.xml`. It should list `/movies`, `/shows`, `/games`, the fifteen list pages, `/privacy`, `/terms`, then a few hundred movie and show pages and up to 200 game pages. A sitemap with only the static routes means TMDB failed at build time, and one with no `/games/{id}` entries means IGDB did: redeploy from Vercel.
 3. Check `https://bestats-sable.vercel.app/robots.txt` allows crawling and names the sitemap.
 4. Once, submit the sitemap in Google Search Console (add the origin as a URL prefix property, verify it, then Sitemaps, `sitemap.xml`).
 
