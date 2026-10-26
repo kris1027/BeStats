@@ -143,7 +143,7 @@ Games in `/search?type=game` with a title query and filters for genre, release y
   - [x] Filter bar and states: the IGDB genres, `PlatformPicker` with its filter box and the 20 cap, the IGDB rating labels, list failures, the games copy, AC-9 to AC-11, AC-13
   - [x] Navigation and quick search: `Search games` on games pages, GAMES in place on `/search`, the logo, `/api/search` for games and the `rating` rename, AC-14 to AC-18
   - [x] Proof: `/showcase`, request scope tests, the prerendered shell, 375px and 1280px, keyboard, all checks, AC-20, AC-21
-- [ ] Verify it: `/check verify game search and filters`
+- [x] Verify it: `/check verify game search and filters`
 - [ ] Test it: `/test game search and filters`
 spec [0029](../specs/0029-game-search-filters/index.md) · code in `app/search/`, `components/search/`, `lib/search/`, `lib/igdb/`
 
