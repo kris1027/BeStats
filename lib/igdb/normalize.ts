@@ -334,8 +334,9 @@ export function platformReleases(
     byPlatform.set(platform.id, entry);
   }
 
-  return [...byPlatform.values()]
-    .map((entry) => ({
+  return [...byPlatform.entries()]
+    .map(([platformId, entry]) => ({
+      platformId,
       platform: entry.platform,
       timestamp: entry.dated?.timestamp ?? Number.POSITIVE_INFINITY,
       release: entry.dated?.release ?? ({ precision: "tba" } as const),
@@ -346,7 +347,11 @@ export function platformReleases(
       }
       return compareStrings(a.platform.toLowerCase(), b.platform.toLowerCase());
     })
-    .map(({ platform, release }) => ({ platform, release }));
+    .map(({ platformId, platform, release }) => ({
+      platformId,
+      platform,
+      release,
+    }));
 }
 
 /** The catalog filter's verdict on a record read by id (AC-10). */

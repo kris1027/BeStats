@@ -350,7 +350,11 @@ describe("platformReleases (spec 0031, AC-10)", () => {
         { date: at("2020-03-20"), date_format: 0, platform: pc },
       ]),
     ).toEqual([
-      { platform: "PC", release: { precision: "day", date: "2020-03-20" } },
+      {
+        platformId: 6,
+        platform: "PC",
+        release: { precision: "day", date: "2020-03-20" },
+      },
     ]);
   });
 
@@ -367,14 +371,17 @@ describe("platformReleases (spec 0031, AC-10)", () => {
       ]),
     ).toEqual([
       {
+        platformId: 6,
         platform: "PC",
         release: { precision: "quarter", year: 2027, quarter: 1 },
       },
       {
+        platformId: 167,
         platform: "PlayStation 5",
         release: { precision: "year", date: "2027-12-31" },
       },
       {
+        platformId: 7,
         platform: "Switch",
         release: { precision: "month", date: "2028-06-30" },
       },
@@ -388,8 +395,16 @@ describe("platformReleases (spec 0031, AC-10)", () => {
         { date: at("2030-01-01"), date_format: 0, platform: pc },
       ]),
     ).toEqual([
-      { platform: "PC", release: { precision: "day", date: "2030-01-01" } },
-      { platform: "PlayStation 5", release: { precision: "tba" } },
+      {
+        platformId: 6,
+        platform: "PC",
+        release: { precision: "day", date: "2030-01-01" },
+      },
+      {
+        platformId: 167,
+        platform: "PlayStation 5",
+        release: { precision: "tba" },
+      },
     ]);
   });
 
@@ -400,7 +415,11 @@ describe("platformReleases (spec 0031, AC-10)", () => {
         { date: at("2021-01-01"), date_format: 0, platform: pc },
       ]),
     ).toEqual([
-      { platform: "PC", release: { precision: "day", date: "2021-01-01" } },
+      {
+        platformId: 6,
+        platform: "PC",
+        release: { precision: "day", date: "2021-01-01" },
+      },
     ]);
   });
 
@@ -415,6 +434,16 @@ describe("platformReleases (spec 0031, AC-10)", () => {
         "junk",
       ]),
     ).toEqual([]);
+  });
+
+  it("keeps two platforms IGDB names alike apart by id", () => {
+    const day = at("2020-01-01");
+    expect(
+      platformReleases([
+        { date: day, date_format: 0, platform: { id: 1, name: "Arcade" } },
+        { date: day, date_format: 0, platform: { id: 2, name: "Arcade" } },
+      ]).map((entry) => entry.platformId),
+    ).toEqual([1, 2]);
   });
 
   it("breaks a tie by platform name ignoring case", () => {
@@ -484,7 +513,11 @@ describe("platformReleases (spec 0031, AC-10)", () => {
         { date: at("2019-06-01"), date_format: 1, platform: pc },
       ]),
     ).toEqual([
-      { platform: "PC", release: { precision: "month", date: "2019-06-01" } },
+      {
+        platformId: 6,
+        platform: "PC",
+        release: { precision: "month", date: "2019-06-01" },
+      },
     ]);
   });
 });

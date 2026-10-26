@@ -72,6 +72,7 @@ describe("fetchGame", () => {
     expect(game?.series).toEqual([{ id: 62, name: "The Witcher" }]);
     expect(game?.gameEngines).toEqual([{ id: 24, name: "REDengine" }]);
     expect(game?.platformReleases[0]).toEqual({
+      platformId: 6,
       platform: "PC (Microsoft Windows)",
       release: { precision: "day", date: "2015-05-19" },
     });

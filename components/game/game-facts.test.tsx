@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import type * as React from "react";
 import { describe, expect, it } from "vitest";
 
 import { GameFacts } from "./game-facts";
@@ -21,34 +22,38 @@ const NONE = {
 
 const value = (label: string) => screen.getByText(label).nextSibling;
 
+const ALL: React.ComponentProps<typeof GameFacts> = {
+  gameModes: [
+    { id: 1, name: "Single player" },
+    { id: 2, name: "Multiplayer" },
+  ],
+  playerPerspectives: [{ id: 2, name: "Third person" }],
+  themes: [{ id: 1, name: "Action" }],
+  franchises: [{ id: 452, name: "The Witcher" }],
+  series: [{ id: 62, name: "The Witcher" }],
+  gameEngines: [{ id: 24, name: "REDengine" }],
+  platformReleases: [
+    {
+      platformId: 6,
+      platform: "PC",
+      release: { precision: "day", date: "2015-05-19" },
+    },
+    {
+      platformId: 508,
+      platform: "Switch 2",
+      release: { precision: "quarter", year: 2027, quarter: 1 },
+    },
+    {
+      platformId: 900,
+      platform: "PlayStation 6",
+      release: { precision: "tba" },
+    },
+  ],
+};
+
 describe("GameFacts", () => {
   it("lists every fact in order, joined in IGDB's order", () => {
-    render(
-      <GameFacts
-        game={{
-          gameModes: [
-            { id: 1, name: "Single player" },
-            { id: 2, name: "Multiplayer" },
-          ],
-          playerPerspectives: [{ id: 2, name: "Third person" }],
-          themes: [{ id: 1, name: "Action" }],
-          franchises: [{ id: 452, name: "The Witcher" }],
-          series: [{ id: 62, name: "The Witcher" }],
-          gameEngines: [{ id: 24, name: "REDengine" }],
-          platformReleases: [
-            {
-              platform: "PC",
-              release: { precision: "day", date: "2015-05-19" },
-            },
-            {
-              platform: "Switch 2",
-              release: { precision: "quarter", year: 2027, quarter: 1 },
-            },
-            { platform: "PlayStation 6", release: { precision: "tba" } },
-          ],
-        }}
-      />,
-    );
+    render(<GameFacts {...ALL} />);
 
     const labels = [...document.querySelectorAll("dt")].map(
       (dt) => dt.textContent,
@@ -76,17 +81,15 @@ describe("GameFacts", () => {
   it("uses the plural label for more than one franchise or engine", () => {
     render(
       <GameFacts
-        game={{
-          ...NONE,
-          franchises: [
-            { id: 1, name: "A" },
-            { id: 2, name: "B" },
-          ],
-          gameEngines: [
-            { id: 1, name: "X" },
-            { id: 2, name: "Y" },
-          ],
-        }}
+        {...NONE}
+        franchises={[
+          { id: 1, name: "A" },
+          { id: 2, name: "B" },
+        ]}
+        gameEngines={[
+          { id: 1, name: "X" },
+          { id: 2, name: "Y" },
+        ]}
       />,
     );
 
@@ -95,7 +98,7 @@ describe("GameFacts", () => {
   });
 
   it("leaves the panel out with no facts", () => {
-    const { container } = render(<GameFacts game={NONE} />);
+    const { container } = render(<GameFacts {...NONE} />);
 
     expect(container).toBeEmptyDOMElement();
   });

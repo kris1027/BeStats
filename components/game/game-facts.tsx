@@ -20,14 +20,16 @@ function label(refs: GameRef[], singular: string, plural: string): string {
  * One line per platform, `{platform}: {date}`, already sorted by the module
  * with TBA last (AC-10). No cap: a game lists a handful of platforms.
  */
-function releaseDatesFact(game: Pick<Game, "platformReleases">): Fact | null {
-  if (game.platformReleases.length === 0) return null;
+function releaseDatesFact(
+  platformReleases: Game["platformReleases"],
+): Fact | null {
+  if (platformReleases.length === 0) return null;
   return {
     label: "Release dates",
     value: (
       <ul className="flex flex-col gap-1">
-        {game.platformReleases.map(({ platform, release }) => (
-          <li key={platform}>
+        {platformReleases.map(({ platformId, platform, release }) => (
+          <li key={platformId}>
             {platform}: {formatGameReleaseDate(release)}
           </li>
         ))}
@@ -42,35 +44,39 @@ function releaseDatesFact(game: Pick<Game, "platformReleases">): Fact | null {
  * out with none (AC-11).
  */
 function GameFacts({
-  game,
-}: {
-  game: Pick<
-    Game,
-    | "gameModes"
-    | "playerPerspectives"
-    | "themes"
-    | "franchises"
-    | "series"
-    | "gameEngines"
-    | "platformReleases"
-  >;
-}) {
+  gameModes,
+  playerPerspectives,
+  themes,
+  franchises,
+  series,
+  gameEngines,
+  platformReleases,
+}: Pick<
+  Game,
+  | "gameModes"
+  | "playerPerspectives"
+  | "themes"
+  | "franchises"
+  | "series"
+  | "gameEngines"
+  | "platformReleases"
+>) {
   return (
     <FactsPanel
       facts={[
-        textFact("Game modes", names(game.gameModes)),
-        textFact("Player perspectives", names(game.playerPerspectives)),
-        textFact("Themes", names(game.themes)),
+        textFact("Game modes", names(gameModes)),
+        textFact("Player perspectives", names(playerPerspectives)),
+        textFact("Themes", names(themes)),
         textFact(
-          label(game.franchises, "Franchise", "Franchises"),
-          names(game.franchises),
+          label(franchises, "Franchise", "Franchises"),
+          names(franchises),
         ),
-        textFact("Series", names(game.series)),
+        textFact("Series", names(series)),
         textFact(
-          label(game.gameEngines, "Game engine", "Game engines"),
-          names(game.gameEngines),
+          label(gameEngines, "Game engine", "Game engines"),
+          names(gameEngines),
         ),
-        releaseDatesFact(game),
+        releaseDatesFact(platformReleases),
       ]}
     />
   );

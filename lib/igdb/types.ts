@@ -74,8 +74,15 @@ export type GameReleaseDate =
   | { precision: "quarter"; year: number; quarter: 1 | 2 | 3 | 4 }
   | { precision: "tba" };
 
-/** One platform's earliest release (AC-10). */
-export type PlatformRelease = { platform: string; release: GameReleaseDate };
+/**
+ * One platform's earliest release (AC-10). `platformId` is the grouping key,
+ * kept so two platforms IGDB names alike still render as two entries.
+ */
+export type PlatformRelease = {
+  platformId: number;
+  platform: string;
+  release: GameReleaseDate;
+};
 
 /** What a card, a batch, a search and a discover read carry. */
 export type GameSummary = {

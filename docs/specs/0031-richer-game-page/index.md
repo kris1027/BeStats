@@ -78,7 +78,7 @@ Reasoning and options: see [rationale.md](rationale.md).
 | `franchises` | `GameRef[]` | `franchise` then `franchises`, deduplicated by id |
 | `platformReleases` | `PlatformRelease[]`, already sorted (AC-10) | `release_dates` |
 
-`PlatformRelease` is `{ platform: string; release: GameReleaseDate }`, and `GameReleaseDate` is one of:
+`PlatformRelease` is `{ platformId: number; platform: string; release: GameReleaseDate }` (`platformId` is the grouping key and the list key, so two platforms IGDB names alike stay apart), and `GameReleaseDate` is one of:
 - `{ precision: "day" | "month" | "year"; date: string }` (a `YYYY-MM-DD` UTC day)
 - `{ precision: "quarter"; year: number; quarter: 1 | 2 | 3 | 4 }`
 - `{ precision: "tba" }`

@@ -147,7 +147,15 @@ async function GameDetail({
         gameId={id}
         similarGameIds={game.similarGameIds}
       />
-      <GameFacts game={game} />
+      <GameFacts
+        gameModes={game.gameModes}
+        playerPerspectives={game.playerPerspectives}
+        themes={game.themes}
+        franchises={game.franchises}
+        series={game.series}
+        gameEngines={game.gameEngines}
+        platformReleases={game.platformReleases}
+      />
     </article>
   );
 }

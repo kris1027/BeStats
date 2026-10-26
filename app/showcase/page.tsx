@@ -117,6 +117,44 @@ const SCREENSHOTS = [0.2, 0.4, 0.6, 0.8, 1].map(
     ),
 );
 
+/** Every Facts entry, with a quarter date and a TBA, for the showcase (AC-16). */
+const GAME_FACTS: React.ComponentProps<typeof GameFacts> = {
+  gameModes: [
+    { id: 1, name: "Single player" },
+    { id: 2, name: "Multiplayer" },
+  ],
+  playerPerspectives: [{ id: 2, name: "Third person" }],
+  themes: [{ id: 1, name: "Action" }],
+  franchises: [{ id: 452, name: "The Witcher" }],
+  series: [{ id: 62, name: "The Witcher" }],
+  gameEngines: [
+    { id: 24, name: "REDengine" },
+    { id: 25, name: "REDengine 3" },
+  ],
+  platformReleases: [
+    {
+      platformId: 6,
+      platform: "PC (Microsoft Windows)",
+      release: { precision: "day", date: "2015-05-19" },
+    },
+    {
+      platformId: 508,
+      platform: "Nintendo Switch 2",
+      release: { precision: "quarter", year: 2027, quarter: 1 },
+    },
+    {
+      platformId: 169,
+      platform: "Xbox Series X|S",
+      release: { precision: "month", date: "2027-06-01" },
+    },
+    {
+      platformId: 900,
+      platform: "PlayStation 6",
+      release: { precision: "tba" },
+    },
+  ],
+};
+
 function Section({
   title,
   note,
@@ -503,37 +541,7 @@ export default function ShowcasePage() {
             name="A showcase game"
             screenshotUrls={SCREENSHOTS}
           />
-          <GameFacts
-            game={{
-              gameModes: [
-                { id: 1, name: "Single player" },
-                { id: 2, name: "Multiplayer" },
-              ],
-              playerPerspectives: [{ id: 2, name: "Third person" }],
-              themes: [{ id: 1, name: "Action" }],
-              franchises: [{ id: 452, name: "The Witcher" }],
-              series: [{ id: 62, name: "The Witcher" }],
-              gameEngines: [
-                { id: 24, name: "REDengine" },
-                { id: 25, name: "REDengine 3" },
-              ],
-              platformReleases: [
-                {
-                  platform: "PC (Microsoft Windows)",
-                  release: { precision: "day", date: "2015-05-19" },
-                },
-                {
-                  platform: "Nintendo Switch 2",
-                  release: { precision: "quarter", year: 2027, quarter: 1 },
-                },
-                {
-                  platform: "Xbox Series X|S",
-                  release: { precision: "month", date: "2027-06-01" },
-                },
-                { platform: "PlayStation 6", release: { precision: "tba" } },
-              ],
-            }}
-          />
+          <GameFacts {...GAME_FACTS} />
         </div>
       </Section>
 
