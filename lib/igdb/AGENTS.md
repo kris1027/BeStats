@@ -78,8 +78,16 @@ scope feature G1. It mirrors `lib/tmdb/` in shape but shares no code with it.
 - **Every filter is in the query**, so every result meets it and IGDB's
   `X-Count` header is a truthful `totalResults` (null when absent). A page asks
   for one more than its size and returns the size to know `hasNextPage`.
-  Discover accepts `pageSize` 20 (the default) or `IGDB_LIST_PAGE_SIZE` 24,
-  the games list pages' grid (spec 0028, AC-5); the size is in the cache key.
+  Discover and search accept `pageSize` 20 (the default) or
+  `IGDB_LIST_PAGE_SIZE` 24, the games grid (spec 0028, AC-5; spec 0029,
+  AC-19); the size is in the cache key.
+- **Several genres mean all of, several platforms any of** (`cond.allOf`
+  writes `genres = [ids]`, `cond.anyOf` writes `platforms = (ids)`, spec 0029,
+  AC-7). `minRatingCount` is a shared `GameFilters` field, written once in
+  `sharedConditions`, so search and discover both take it. Discover adds
+  `{sort field} != null` unless `requireSortField: false`; game search's
+  discover mode turns it off, so unrated games follow rated ones and are
+  counted.
 - **The module never reads the clock for a filter.** Discover callers pass UTC
   days; only the year bound of a filter reads the current year.
 - **Covers are built at `t_cover_big_2x` (528px), the ceiling, not the size
