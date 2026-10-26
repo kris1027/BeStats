@@ -6,7 +6,7 @@ Build locally with `VERCEL_ENV=production NEXT_PUBLIC_SITE_URL=https://bestats.e
 ## UI / manual
 - [ ] Open `/games/1942` → `<link rel="canonical" href="…/games/1942">`, no `<meta name="robots">`, `og:image` is the game's `t_1080p` art, title `The Witcher 3: Wild Hunt (2015) · BeStats` → AC-1
 - [ ] Open a game with no art but screenshots, then one with only a cover → `og:image` is the first screenshot, then the cover → AC-1 (Value sourcing: share image)
-- [ ] Open `/games/999999999` and a hidden game (a DLC id) → `noindex`, no canonical, no `og:*`, no `application/ld+json` → AC-2
+- [ ] Open `/games/999999999` and a hidden game (a DLC id) → `noindex`, no canonical, no `og:url`, no `application/ld+json`, and any `og:*` or `twitter:*` field is the site default, never the game's → AC-2
 - [ ] With IGDB credentials removed, open `/games/1942` → retry panel, `noindex`, no JSON-LD → AC-2
 - [ ] View source of `/games/1942` → one `VideoGame` script with `name`, `url`, `image` (the cover), `datePublished`, `description`, `genre`, `gamePlatform`, `author` and `publisher` as `Organization`s, no `rating` anywhere → AC-3 (Value sourcing: `image`, `datePublished`, `genre`, `gamePlatform`, `author`, `publisher`)
 - [ ] Open `/games` → canonical `…/games`, site card `og:image`, no `noindex` → AC-4
