@@ -61,7 +61,7 @@ export function artUrl(record: {
 }): string | null {
   const id =
     lowestImageId(record.artworks) ?? lowestImageId(record.screenshots);
-  return id === null ? null : `${IGDB_IMAGE_BASE}/${IGDB_ART_SIZE}/${id}.jpg`;
+  return id === null ? null : artImageUrl(id);
 }
 
 /**
@@ -76,9 +76,25 @@ export function screenshotUrls(images: ImageList): string[] {
     if (id) unique.add(id);
   }
   return [...unique]
-    .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+    .sort(compareStrings)
     .slice(0, IGDB_MAX_SCREENSHOTS)
-    .map((id) => `${IGDB_IMAGE_BASE}/${IGDB_ART_SIZE}/${id}.jpg`);
+    .map(artImageUrl);
+}
+
+/**
+ * One wide image at `t_1080p`, the ceiling the loader steps down from, so the
+ * backdrop and the screenshots can never drift to different sizes.
+ */
+function artImageUrl(imageId: string): string {
+  return `${IGDB_IMAGE_BASE}/${IGDB_ART_SIZE}/${imageId}.jpg`;
+}
+
+/**
+ * Plain code unit order, not `localeCompare`: the screenshot ids and the
+ * release date tie break must sort the same on every server, whatever its ICU.
+ */
+function compareStrings(a: string, b: string): number {
+  return a < b ? -1 : a > b ? 1 : 0;
 }
 
 function lowestImageId(images: ImageList): string | null {
@@ -234,6 +250,18 @@ function similarIds(
 
 type DatedRelease = { timestamp: number; release: GameReleaseDate };
 
+type DateFormat = (typeof IGDB_DATE_FORMAT)[keyof typeof IGDB_DATE_FORMAT];
+
+/** IGDB's quarter formats as the quarter they name (AC-10). */
+const QUARTER = { q1: 1, q2: 2, q3: 3, q4: 4 } as const;
+
+/** The format an id names, or undefined for an id IGDB may add later. */
+function dateFormat(formatId: number): DateFormat | undefined {
+  return Object.hasOwn(IGDB_DATE_FORMAT, formatId)
+    ? IGDB_DATE_FORMAT[formatId as keyof typeof IGDB_DATE_FORMAT]
+    : undefined;
+}
+
 /**
  * One release date entry at IGDB's stated precision, or null when it cannot
  * be read (spec 0031, AC-10). An unknown or missing `date_format` drops the
@@ -246,7 +274,7 @@ function readRelease(
   date: number | null | undefined,
 ): DatedRelease | "tba" | null {
   if (formatId === null || formatId === undefined) return null;
-  const format = (IGDB_DATE_FORMAT as Record<number, string>)[formatId];
+  const format = dateFormat(formatId);
   if (format === undefined) return null;
   if (format === "tbd") return "tba";
   const { releaseDate, releaseYear } = releaseDay(date);
@@ -263,10 +291,13 @@ function readRelease(
       release: { precision: format, date: releaseDate },
     };
   }
-  const quarter = Number(format.slice(1)) as 1 | 2 | 3 | 4;
   return {
     timestamp: date,
-    release: { precision: "quarter", year: releaseYear, quarter },
+    release: {
+      precision: "quarter",
+      year: releaseYear,
+      quarter: QUARTER[format],
+    },
   };
 }
 
@@ -313,9 +344,7 @@ export function platformReleases(
       if (a.timestamp !== b.timestamp) {
         return a.timestamp < b.timestamp ? -1 : 1;
       }
-      const left = a.platform.toLowerCase();
-      const right = b.platform.toLowerCase();
-      return left < right ? -1 : left > right ? 1 : 0;
+      return compareStrings(a.platform.toLowerCase(), b.platform.toLowerCase());
     })
     .map(({ platform, release }) => ({ platform, release }));
 }
