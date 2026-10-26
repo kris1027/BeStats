@@ -51,7 +51,9 @@ function GameLibraryCard({
       <PosterCard
         title={MISSING_GAME}
         posterUrl={null}
-        controls={<RemoveButton name={null} onRemove={onRemove} />}
+        controls={
+          <RemoveButton name={null} onRemove={onRemove} className="ml-auto" />
+        }
       />
     );
   }
@@ -71,7 +73,7 @@ function GameLibraryCard({
           {isStartedGame(item) ? (
             <>
               <GameStatusChip status={item.status} />
-              <RemoveButton name={item.name} onRemove={onRemove} className="" />
+              <RemoveButton name={item.name} onRemove={onRemove} />
             </>
           ) : (
             <CardRoundButton
@@ -101,13 +103,14 @@ function cardBadge(item: LibraryGameItem): ReactNode {
 }
 
 /**
- * The X. After a status chip, which already pushes the row right, it takes
- * no `ml-auto` of its own.
+ * The X. It sets no margin of its own: after a status chip, which already
+ * pushes the row right, it needs none, and the missing game card, where it
+ * stands alone, passes `ml-auto`.
  */
 function RemoveButton({
   name,
   onRemove,
-  className = "ml-auto",
+  className,
 }: {
   name: string | null;
   onRemove: () => void;
