@@ -35,9 +35,7 @@ const createClient = vi.fn(async () => ({
 }));
 vi.mock("@/lib/supabase/server", () => ({ createClient }));
 
-const { getGameTracking, getGameGridStates, gameIdsKey } = await import(
-  "./game-state"
-);
+const { getGameTracking, getGameGridStates } = await import("./game-state");
 
 let warn: ReturnType<typeof vi.spyOn>;
 
@@ -111,7 +109,7 @@ describe("getGameGridStates", () => {
       ],
       error: null,
     };
-    const result = await getGameGridStates(gameIdsKey([7346, 1942, 1942]));
+    const result = await getGameGridStates("1942,7346");
     expect(result).toEqual({
       kind: "ok",
       state: new Map([
@@ -152,16 +150,5 @@ describe("getGameGridStates", () => {
     expect(await getGameGridStates("1942,7346")).toEqual({ kind: "failed" });
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn).toHaveBeenCalledWith("game_tracking.read refused db_error");
-  });
-});
-
-describe("gameIdsKey", () => {
-  it("gives one key for the same ids in any order", () => {
-    expect(gameIdsKey([3, 1, 2, 1])).toBe("1,2,3");
-    expect(gameIdsKey([])).toBe("");
-  });
-
-  it("sorts by number, not as text, so 9 comes before 10", () => {
-    expect(gameIdsKey([100, 10, 9])).toBe("9,10,100");
   });
 });

@@ -15,7 +15,7 @@ import { parseSeasonNumber, parseTmdbId } from "@/lib/catalog/ids";
 import { adjacentSeasons, orderSeasons } from "@/lib/catalog/seasons";
 import { truncateAtWord } from "@/lib/format";
 import { catalogMetadata } from "@/lib/seo/metadata";
-import { episodeIdsKey } from "@/lib/tracking/episode-state";
+import { idsKey } from "@/lib/tracking/ids-key";
 
 import { loadSeason } from "./load-season";
 
@@ -144,7 +144,7 @@ async function SeasonDetail({ params }: { params: SeasonParams }) {
   );
   // One key for the whole season, built once, so the header and every row
   // share one tracking read (spec 0011, AC-18).
-  const idsKey = episodeIdsKey(season.episodes.map((episode) => episode.id));
+  const seasonIdsKey = idsKey(season.episodes.map((episode) => episode.id));
   const episodes = season.episodes.map(({ id, episodeNumber, airDate }) => ({
     id,
     episodeNumber,
@@ -173,7 +173,7 @@ async function SeasonDetail({ params }: { params: SeasonParams }) {
                 showId={id}
                 seasonNumber={seasonNumber}
                 seasonName={season.name}
-                idsKey={idsKey}
+                idsKey={seasonIdsKey}
                 episodes={episodes}
               />
             </Suspense>
@@ -195,7 +195,7 @@ async function SeasonDetail({ params }: { params: SeasonParams }) {
           <EpisodeList
             seasonName={season.name}
             episodes={season.episodes}
-            tracking={{ showId: id, idsKey }}
+            tracking={{ showId: id, idsKey: seasonIdsKey }}
           />
         )}
 

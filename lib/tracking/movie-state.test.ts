@@ -35,9 +35,7 @@ const createClient = vi.fn(async () => ({
 }));
 vi.mock("@/lib/supabase/server", () => ({ createClient }));
 
-const { getMovieTracking, getMovieGridStates, movieIdsKey } = await import(
-  "./movie-state"
-);
+const { getMovieTracking, getMovieGridStates } = await import("./movie-state");
 
 let warn: ReturnType<typeof vi.spyOn>;
 
@@ -118,7 +116,7 @@ describe("getMovieGridStates", () => {
       ],
       error: null,
     };
-    const result = await getMovieGridStates(movieIdsKey([603, 550, 550]));
+    const result = await getMovieGridStates("550,603");
     expect(result).toEqual({
       kind: "ok",
       state: new Map([
@@ -161,12 +159,5 @@ describe("getMovieGridStates", () => {
     response = { data: null, error: { code: "PGRST000", message: "550" } };
     expect(await getMovieGridStates("550,603")).toEqual({ kind: "failed" });
     expect(warn).toHaveBeenCalledWith("movie_tracking.read refused db_error");
-  });
-});
-
-describe("movieIdsKey", () => {
-  it("gives one key for the same ids in any order", () => {
-    expect(movieIdsKey([3, 1, 2, 1])).toBe("1,2,3");
-    expect(movieIdsKey([])).toBe("");
   });
 });

@@ -6,6 +6,7 @@ import { getOptionalUser } from "@/lib/auth/user";
 import { publicEnvProblems } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 
+import { parseIdsKey } from "./ids-key";
 import { logTrackingEvent, TRACKING_EVENT } from "./log";
 import {
   EMPTY_GAME_TRACKING,
@@ -64,7 +65,7 @@ export async function getGameTracking(
  * `getGameTracking` gives (`AGENTS.md` section 11). A failure is logged once
  * here, so the cards can quietly fall back to the catalog card (AC-9).
  *
- * @param idsKey The grid's game ids, from `gameIdsKey`.
+ * @param idsKey The grid's game ids, from `idsKey`.
  */
 export const getGameGridStates = cache(
   async (
@@ -75,7 +76,7 @@ export const getGameGridStates = cache(
     const user = await getOptionalUser();
     if (!user) return { kind: "signed_out" };
 
-    const ids = idsKey === "" ? [] : idsKey.split(",").map(Number);
+    const ids = parseIdsKey(idsKey);
     if (ids.length === 0) return { kind: "ok", state: new Map() };
 
     const supabase = await createClient();
@@ -101,13 +102,3 @@ export const getGameGridStates = cache(
     };
   },
 );
-
-/**
- * The cache key `getGameGridStates` expects: the same ids in any order give
- * the same key, so every card on a grid shares one read.
- *
- * @param ids The game ids on the grid.
- */
-export function gameIdsKey(ids: readonly number[]): string {
-  return [...new Set(ids)].sort((a, b) => a - b).join(",");
-}

@@ -12,7 +12,6 @@ const getWatchedEpisodeIds = vi.fn();
 vi.mock("@/lib/tracking/show-state", () => ({
   getShowTracking: (...args: unknown[]) => getShowStatus(...args),
   getWatchedEpisodeIds: (...args: unknown[]) => getWatchedEpisodeIds(...args),
-  showIdsKey: (ids: number[]) => ids.join(","),
 }));
 const getShowEpisodes = vi.fn();
 vi.mock("@/lib/tmdb", () => ({

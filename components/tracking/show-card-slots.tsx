@@ -11,9 +11,9 @@
 import { UpcomingShowPill } from "@/components/library/show-cards";
 import { CalculatedRatingBadge } from "@/components/rating-badges";
 import { requestTodayUtc } from "@/lib/tracking/episode-state";
+import { idsKey } from "@/lib/tracking/ids-key";
 import { WATCHED_SHOW_LABELS } from "@/lib/tracking/messages";
 import { getShowGridStatus } from "@/lib/tracking/show-grid-status";
-import { showIdsKey } from "@/lib/tracking/show-state";
 
 import { CardRatingBadge } from "./card-rating-badge";
 import { ShowCardBookmarkButton } from "./show-card-bookmark-button";
@@ -29,7 +29,7 @@ type ShowCardProps = {
  * visitor or a failed read.
  */
 async function readTrackedStatuses(gridShowIds: readonly number[]) {
-  const result = await getShowGridStatus(showIdsKey(gridShowIds));
+  const result = await getShowGridStatus(idsKey(gridShowIds));
   return result.kind === "ok" ? result.state : undefined;
 }
 

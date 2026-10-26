@@ -34,8 +34,9 @@ const createClient = vi.fn(async () => ({
 }));
 vi.mock("@/lib/supabase/server", () => ({ createClient }));
 
-const { episodeIdsKey, getSeasonEpisodeTracking, requestTodayUtc } =
-  await import("./episode-state");
+const { getSeasonEpisodeTracking, requestTodayUtc } = await import(
+  "./episode-state"
+);
 
 const SHOW = 1396;
 let warn: ReturnType<typeof vi.spyOn>;
@@ -83,7 +84,7 @@ describe("getSeasonEpisodeTracking", () => {
   });
 
   it("reads the whole season in one query scoped to the session user and show (AC-18)", async () => {
-    await getSeasonEpisodeTracking(SHOW, episodeIdsKey([62087, 62085, 62086]));
+    await getSeasonEpisodeTracking(SHOW, "62085,62086,62087");
     expect(calls.filter((c) => c.method === "from")).toEqual([
       { method: "from", args: ["user_episode_state"] },
     ]);
@@ -137,22 +138,6 @@ describe("getSeasonEpisodeTracking", () => {
     await getSeasonEpisodeTracking(SHOW, "62085");
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn).toHaveBeenCalledWith("episode_tracking.read refused db_error");
-  });
-});
-
-describe("episodeIdsKey", () => {
-  it("gives one key for the same ids in any order, with duplicates dropped", () => {
-    expect(episodeIdsKey([62087, 62085, 62086, 62085])).toBe(
-      "62085,62086,62087",
-    );
-  });
-
-  it("sorts numerically, not as strings", () => {
-    expect(episodeIdsKey([100, 9, 20])).toBe("9,20,100");
-  });
-
-  it("is an empty string for a season with no episodes", () => {
-    expect(episodeIdsKey([])).toBe("");
   });
 });
 

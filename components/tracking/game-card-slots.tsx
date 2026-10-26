@@ -18,7 +18,8 @@ import {
 import { gameCardStatus } from "@/lib/catalog/game-page";
 import { formatReleaseDate } from "@/lib/format";
 import { requestTodayUtc } from "@/lib/tracking/episode-state";
-import { gameIdsKey, getGameGridStates } from "@/lib/tracking/game-state";
+import { getGameGridStates } from "@/lib/tracking/game-state";
+import { idsKey } from "@/lib/tracking/ids-key";
 
 import { GameCardBookmarkButton } from "./game-card-bookmark-button";
 import { GameStatusChip } from "./game-status-chip";
@@ -33,7 +34,7 @@ type GameCardProps = {
 
 /** The card's status, or undefined for a visitor or a failed read. */
 async function readStatus({ gameId, releaseDate, gridGameIds }: GameCardProps) {
-  const result = await getGameGridStates(gameIdsKey(gridGameIds));
+  const result = await getGameGridStates(idsKey(gridGameIds));
   if (result.kind !== "ok") return undefined;
   return {
     status: gameCardStatus(

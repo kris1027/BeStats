@@ -6,6 +6,7 @@ import { getOptionalUser } from "@/lib/auth/user";
 import { publicEnvProblems } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 
+import { parseIdsKey } from "./ids-key";
 import { logTrackingEvent, TRACKING_EVENT } from "./log";
 import type { TrackingRead } from "./types";
 
@@ -63,7 +64,7 @@ export const getShowTracking = cache(
  * Which shows on a grid are tracked, in one query for the whole grid (spec
  * 0020, AC-6), the `getWatchlistedMovieIds` pattern.
  *
- * @param idsKey The grid's show ids, from `showIdsKey`.
+ * @param idsKey The grid's show ids, from `idsKey`.
  */
 export const getTrackedShows = cache(
   async (idsKey: string): Promise<TrackingRead<Set<number>>> => {
@@ -102,7 +103,7 @@ export const getTrackedShows = cache(
  * exact count is reached, as `getShowEpisodeRatings` does, so a long running
  * show never loses rows to the response cap.
  *
- * @param idsKey The show ids, from `showIdsKey`: one for the show hero.
+ * @param idsKey The show ids, from `idsKey`: one for the show hero.
  */
 export const getWatchedEpisodeIds = cache(
   async (idsKey: string): Promise<TrackingRead<Map<number, Set<number>>>> => {
@@ -143,20 +144,6 @@ export const getWatchedEpisodeIds = cache(
     }
   },
 );
-
-/**
- * The cache key the reads above expect: the same ids in any order give the
- * same key, so every card on one page shares one read.
- *
- * @param ids The show ids.
- */
-export function showIdsKey(ids: readonly number[]): string {
-  return [...new Set(ids)].sort((a, b) => a - b).join(",");
-}
-
-function parseIdsKey(idsKey: string): number[] {
-  return idsKey === "" ? [] : idsKey.split(",").map(Number);
-}
 
 function trackingReadFailed(): { kind: "failed" } {
   logTrackingEvent(TRACKING_EVENT.showTrackingRead, "db_error");

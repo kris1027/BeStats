@@ -6,6 +6,7 @@ import { getOptionalUser } from "@/lib/auth/user";
 import { publicEnvProblems } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 
+import { parseIdsKey } from "./ids-key";
 import { logTrackingEvent, TRACKING_EVENT } from "./log";
 import {
   EMPTY_MOVIE_TRACKING,
@@ -79,7 +80,7 @@ export async function getMovieTracking(
  * on the grid share one read per request.
  *
  * @param idsKey The grid's movie ids, sorted and joined with commas. Build it
- * with `movieIdsKey`.
+ * with `idsKey`.
  */
 export const getMovieGridStates = cache(
   async (
@@ -90,7 +91,7 @@ export const getMovieGridStates = cache(
     const user = await getOptionalUser();
     if (!user) return { kind: "signed_out" };
 
-    const ids = idsKey === "" ? [] : idsKey.split(",").map(Number);
+    const ids = parseIdsKey(idsKey);
     if (ids.length === 0) return { kind: "ok", state: new Map() };
 
     const supabase = await createClient();
@@ -120,13 +121,3 @@ export const getMovieGridStates = cache(
     };
   },
 );
-
-/**
- * The cache key `getMovieGridStates` expects: the same ids in any order
- * give the same key.
- *
- * @param ids The movie ids on the grid.
- */
-export function movieIdsKey(ids: readonly number[]): string {
-  return [...new Set(ids)].sort((a, b) => a - b).join(",");
-}

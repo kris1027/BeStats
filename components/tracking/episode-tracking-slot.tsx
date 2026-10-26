@@ -18,7 +18,7 @@ import { EpisodeTrackingControls } from "./episode-tracking-controls";
  * season's `idsKey` (AC-18). Today is read only after the session read, never
  * in a cached scope, so the air status is always today's (AC-3).
  *
- * @param idsKey The whole season's ids, from `episodeIdsKey`; never this
+ * @param idsKey The whole season's ids, from `idsKey`; never this
  * row's own id, or each row would make its own query.
  */
 async function EpisodeTrackingSlot({

@@ -12,7 +12,6 @@ import type { GameTrackingState } from "@/lib/tracking/types";
 const getGameGridStates = vi.fn();
 vi.mock("@/lib/tracking/game-state", () => ({
   getGameGridStates: (...args: unknown[]) => getGameGridStates(...args),
-  gameIdsKey: (ids: number[]) => [...ids].sort((a, b) => a - b).join(","),
 }));
 vi.mock("@/lib/tracking/episode-state", () => ({
   requestTodayUtc: () => "2026-10-26",

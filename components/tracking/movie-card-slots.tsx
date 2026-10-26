@@ -15,7 +15,8 @@ import { PersonalScoreBadge } from "@/components/rating-badges";
 import { movieCardStatus } from "@/lib/catalog/movie-page";
 import { formatReleaseDate } from "@/lib/format";
 import { requestTodayUtc } from "@/lib/tracking/episode-state";
-import { getMovieGridStates, movieIdsKey } from "@/lib/tracking/movie-state";
+import { idsKey } from "@/lib/tracking/ids-key";
+import { getMovieGridStates } from "@/lib/tracking/movie-state";
 
 import { CardBookmarkButton } from "./card-bookmark-button";
 import { CardRatingBadge } from "./card-rating-badge";
@@ -35,7 +36,7 @@ async function readStatus({
   releaseDate,
   gridMovieIds,
 }: MovieCardProps) {
-  const result = await getMovieGridStates(movieIdsKey(gridMovieIds));
+  const result = await getMovieGridStates(idsKey(gridMovieIds));
   if (result.kind !== "ok") return undefined;
   const state = result.state.get(movieId);
   return {
