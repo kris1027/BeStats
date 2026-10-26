@@ -105,12 +105,15 @@ const LIGHT_POSTER =
     '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="300"><rect width="200" height="300" fill="#C8B89A"/></svg>',
   );
 
-/** Flat 16:9 stand ins for IGDB screenshots, so the showcase needs no network. */
+/**
+ * Flat 16:9 stand ins for IGDB screenshots, so the showcase needs no network.
+ * Shades of SVG's default fill, so no colour value lives outside globals.css.
+ */
 const SCREENSHOTS = [0.2, 0.4, 0.6, 0.8, 1].map(
   (opacity) =>
     "data:image/svg+xml;utf8," +
     encodeURIComponent(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080"><rect width="1920" height="1080"/><rect width="1920" height="1080" fill="#C8B89A" opacity="${opacity}"/></svg>`,
+      `<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080"><rect width="1920" height="1080" opacity="${opacity}"/></svg>`,
     ),
 );
 
