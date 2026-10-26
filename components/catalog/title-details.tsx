@@ -10,8 +10,9 @@ import { SECTION_HEADING_CLASS } from "./title-section";
 
 /**
  * The key crew under the overview (spec 0022, AC-15): "Directed by" and
- * "Written by" for a movie, "Created by" for a show. Each line only when it
- * has a name, and nothing at all when none does.
+ * "Written by" for a movie, "Created by" for a show, and "Developed by" and
+ * "Published by" for a game (spec 0031, AC-5). Each line only when it has a
+ * name, and nothing at all when none does.
  */
 function CrewLines({
   lines,
@@ -70,9 +71,10 @@ function AgeRatingChip({ rating, region }: { rating: string; region: Region }) {
 type Fact = { label: string; value: React.ReactNode };
 
 /**
- * The Facts panel at the end of a title page (spec 0022, AC-16): a list of
- * labelled values, each only when TMDB has one. Nothing is shown as Unknown
- * or 0; with no facts at all the panel is left out.
+ * The Facts panel at the end of a title page (spec 0022, AC-16; a game's
+ * since spec 0031, AC-9): a list of labelled values, each only when the
+ * catalog, TMDB or IGDB, has one. Nothing is shown as Unknown or 0; with no
+ * facts at all the panel is left out.
  */
 function FactsPanel({ facts }: { facts: Array<Fact | null> }) {
   const shown = facts.filter((fact): fact is Fact => fact !== null);
