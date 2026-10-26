@@ -240,6 +240,7 @@ export {
   AgeRatingSlot,
   AgeRatingSlotContent,
   MoreLikeThisContent,
+  MoreLikeThisFrame,
   MoreLikeThisSection,
   TrailerSlot,
   TrailerSlotContent,

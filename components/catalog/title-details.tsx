@@ -182,4 +182,14 @@ function NetworkList({ networks }: { networks: Company[] }) {
   );
 }
 
-export { AgeRatingChip, MovieCrew, MovieFacts, ShowCrew, ShowFacts };
+export {
+  AgeRatingChip,
+  CrewLines,
+  type Fact,
+  FactsPanel,
+  MovieCrew,
+  MovieFacts,
+  ShowCrew,
+  ShowFacts,
+  textFact,
+};
