@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { LibraryGameItem } from "./types";
+import type { LibraryGameItem, LibraryList } from "./types";
 
 /**
  * covers: spec 0027, AC-5 to AC-11, AC-14; spec 0030, AC-11
@@ -22,11 +22,25 @@ vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/tmdb", () => ({ TmdbError: class extends Error {} }));
 vi.mock("@/lib/igdb", () => ({ IgdbError: class extends Error {} }));
-vi.mock("@/lib/tracking/game-library", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/lib/tracking/game-library")>()),
-  getGameLibraryPage: (...args: unknown[]) => getGameLibraryPage(...args),
-  getLibraryGames: (...args: unknown[]) => getLibraryGames(...args),
-}));
+vi.mock("@/lib/tracking/game-library", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@/lib/tracking/game-library")>();
+  return {
+    ...actual,
+    // The real query filters on the tab's status, so a fixture row with no
+    // status of its own is given that one.
+    getGameLibraryPage: async (args: { tab: LibraryList }) => {
+      const result = await getGameLibraryPage(args);
+      if (result?.kind !== "ok") return result;
+      const status = actual.GAME_LIBRARY_TABS[args.tab].status;
+      return {
+        ...result,
+        rows: result.rows.map((row: object) => ({ status, ...row })),
+      };
+    },
+    getLibraryGames: (...args: unknown[]) => getLibraryGames(...args),
+  };
+});
 vi.mock("@/lib/tracking/library-lists", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/tracking/library-lists")>()),
   getShowLibraryTab: (...args: unknown[]) => getShowLibraryTab(...args),
@@ -324,6 +338,14 @@ describe("the cards (AC-8 to AC-11)", () => {
     getGameLibraryPage.mockResolvedValue(page([row(1)]));
     await renderSection("watched", { type: "game" });
     expect(received(1).dateLine).toBe("Finished Mar 2026");
+  });
+
+  it("takes the card's status from the stored row, not the tab (AC-8)", async () => {
+    getGameLibraryPage.mockResolvedValue(page([row(1, { status: "playing" })]));
+    withGames(game(1));
+    await renderSection("watchlist", { type: "game" });
+
+    expect(received(1).status).toBe("playing");
   });
 
   it("ignores a score on a Want to play row", async () => {

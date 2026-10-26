@@ -5,7 +5,6 @@ import { isGameReleased } from "@/lib/catalog/game-page";
 import { formatMonthYear, formatReleaseDate } from "@/lib/format";
 import type { GameSummary } from "@/lib/igdb";
 import {
-  GAME_LIBRARY_TABS,
   type GameLibraryRow,
   getGameLibraryPage,
   getLibraryGames,
@@ -126,7 +125,7 @@ function gameItem(
   game: GameSummary | undefined,
   today: string,
 ): LibraryGameItem {
-  const status = GAME_LIBRARY_TABS[list].status;
+  const { status } = row;
   if (game === undefined) {
     return {
       gameId: row.gameId,

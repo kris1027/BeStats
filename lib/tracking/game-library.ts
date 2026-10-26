@@ -41,6 +41,8 @@ export const GAME_LIBRARY_TABS: Record<
 /** One game row on a tab, before IGDB fills in the card. */
 export type GameLibraryRow = {
   gameId: number;
+  /** The stored status, which the card shows (spec 0030, AC-8, AC-11). */
+  status: GameStatus;
   /** The personal score; only Playing and Finished can hold one. */
   rating: number | null;
   addedAt: string;
@@ -71,7 +73,7 @@ export function getGameLibraryPage({
     read: (supabase, from, to) =>
       supabase
         .from("user_game_state")
-        .select("game_id, rating, added_at, started_at, finished_at", {
+        .select("game_id, status, rating, added_at, started_at, finished_at", {
           count: "exact",
         })
         .eq("user_id", userId)
@@ -88,6 +90,7 @@ export function getGameLibraryPage({
     map: (rows) =>
       rows.map((row) => ({
         gameId: row.game_id,
+        status: row.status,
         rating: row.rating,
         addedAt: row.added_at,
         startedAt: row.started_at,
