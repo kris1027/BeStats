@@ -34,9 +34,9 @@ const SUCCESS_CACHE = "public, s-maxage=300, stale-while-revalidate=600";
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const rawType = searchParams.get("type");
-  const parsed = quickSearchRequestSchema(gameSearchEnabled(rawType)).safeParse(
-    { type: rawType, q: searchParams.get("q") },
-  );
+  const parsed = quickSearchRequestSchema({
+    gamesEnabled: gameSearchEnabled(rawType),
+  }).safeParse({ type: rawType, q: searchParams.get("q") });
   if (!parsed.success) return invalid();
 
   const { type, q } = parsed.data;

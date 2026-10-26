@@ -47,12 +47,16 @@ describe("quickSearchRequestSchema", () => {
 describe("quickSearchRequestSchema for games (spec 0029, AC-17)", () => {
   it("accepts game only while the games library is on", () => {
     expect(
-      quickSearchRequestSchema(true).safeParse({ type: "game", q: "zelda" })
-        .success,
+      quickSearchRequestSchema({ gamesEnabled: true }).safeParse({
+        type: "game",
+        q: "zelda",
+      }).success,
     ).toBe(true);
     expect(
-      quickSearchRequestSchema(false).safeParse({ type: "game", q: "zelda" })
-        .success,
+      quickSearchRequestSchema({ gamesEnabled: false }).safeParse({
+        type: "game",
+        q: "zelda",
+      }).success,
     ).toBe(false);
   });
 });

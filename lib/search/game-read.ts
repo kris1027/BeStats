@@ -13,7 +13,7 @@ import {
 import { IGDB_LIST_PAGE_SIZE } from "@/lib/igdb/constants";
 
 import { GAME_MIN_RATING_COUNT, QUICK_LIMIT } from "./constants";
-import type { SearchMode } from "./mode";
+import type { GameSearchMode } from "./mode";
 import type { GameSearchParams } from "./params";
 import type { QuickSearchResponse } from "./quick";
 
@@ -34,7 +34,7 @@ import type { QuickSearchResponse } from "./quick";
  * @throws {IgdbError} When IGDB fails; the results panel catches it.
  */
 export async function readGameSearchPage(
-  mode: Exclude<SearchMode, "filtered_search">,
+  mode: GameSearchMode,
   params: GameSearchParams,
 ): Promise<Paged<GameSummary>> {
   if (mode === "browse") {

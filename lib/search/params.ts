@@ -73,9 +73,19 @@ export type SearchLists = {
   platforms?: readonly CatalogRef[];
 };
 
-export type ParseResult =
-  | { ok: true; params: SearchParams }
+/**
+ * A parse's answer. `P` narrows to `TmdbSearchParams` when games were not
+ * accepted, so a caller never casts what the parser already proved.
+ */
+export type ParseResult<P extends SearchParams = SearchParams> =
+  | { ok: true; params: P }
   | { ok: false; param: SearchParamName };
+
+/**
+ * @param gamesEnabled Whether `type=game` is accepted: `gameSearchEnabled`,
+ * which reads the flag only for a raw `type=game` (spec 0029, AC-1).
+ */
+export type ParseOptions = { gamesEnabled?: boolean };
 
 type RawValue = string | string[] | undefined;
 type RawParams = Record<string, RawValue>;
@@ -148,14 +158,27 @@ function isCleanGameQuery(query: string): boolean {
  * catalog is refused.
  * @param currentYear The current UTC year, read at request time by the caller,
  * so the year range moves on New Year's Day without a deploy.
- * @param gamesEnabled Whether `type=game` is accepted: `getGamesLibrary()`,
- * read by the caller only when the raw `type` is `game` (spec 0029, AC-1).
+ * @param options.gamesEnabled Whether `type=game` is accepted (spec 0029,
+ * AC-1). Without it the result can only be a show or movie search, and the
+ * return type says so.
  */
 export function parseSearchParams(
   raw: RawParams,
   lists: SearchLists,
   currentYear: number,
-  gamesEnabled = false,
+  options?: { gamesEnabled?: false },
+): ParseResult<TmdbSearchParams>;
+export function parseSearchParams(
+  raw: RawParams,
+  lists: SearchLists,
+  currentYear: number,
+  options: ParseOptions,
+): ParseResult;
+export function parseSearchParams(
+  raw: RawParams,
+  lists: SearchLists,
+  currentYear: number,
+  { gamesEnabled = false }: ParseOptions = {},
 ): ParseResult {
   const type = parseLibraryTypeParam(raw.type, gamesEnabled);
   if (type === null) return { ok: false, param: "type" };
@@ -210,18 +233,54 @@ export function parseSearchParams(
   const page = parsePageParam(raw.page);
   if (page === null) return { ok: false, param: "page" };
 
+  const common = {
+    q: q.value,
+    genreIds,
+    year: yearValue,
+    rating: ratingValue,
+    page,
+  };
   return {
     ok: true,
-    params: {
-      type,
-      q: q.value,
-      genreIds,
-      platformIds,
-      year: yearValue,
-      rating: ratingValue,
-      page,
-    } as SearchParams,
+    params:
+      type === "game"
+        ? { ...common, type, platformIds }
+        : { ...common, type, platformIds: [] },
   };
+}
+
+/**
+ * IGDB's genre and platform lists as the games search reads them, each null
+ * when IGDB could not supply it (spec 0029, AC-11).
+ */
+export type GameLists = {
+  genres: CatalogRef[] | null;
+  platforms: CatalogRef[] | null;
+};
+
+/**
+ * `parseSearchParams` for a request already known to be a games search, as
+ * the results and the filter bar both call it (spec 0029, AC-1, AC-2). A
+ * missing list is read as empty, so only a URL that names one of its ids
+ * fails. The result is narrowed rather than cast: a URL whose `type` is not
+ * `game` is refused by name.
+ */
+export function parseGameSearchParams(
+  raw: RawParams,
+  lists: GameLists,
+  currentYear: number,
+): ParseResult<GameSearchParams> {
+  const parsed = parseSearchParams(
+    raw,
+    { genres: lists.genres ?? [], platforms: lists.platforms ?? [] },
+    currentYear,
+    { gamesEnabled: true },
+  );
+  if (!parsed.ok) return parsed;
+  const { params } = parsed;
+  return params.type === "game"
+    ? { ok: true, params }
+    : { ok: false, param: "type" };
 }
 
 /**

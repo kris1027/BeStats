@@ -32,10 +32,7 @@ import {
 } from "@/lib/catalog/media-type";
 import { gameHasNextPage, lastGamePage } from "@/lib/catalog-list-read";
 import {
-  type GameRef,
   type GameSummary,
-  getGameGenres,
-  getGamePlatforms,
   IgdbError,
   type Paged as IgdbPaged,
 } from "@/lib/igdb";
@@ -43,9 +40,10 @@ import { SEARCH_CATALOGS } from "@/lib/search/catalogs";
 import { formatRange, mediaNoun } from "@/lib/search/count";
 import { readGameSearchPage } from "@/lib/search/game-read";
 import { gameSearchEnabled } from "@/lib/search/games-flag";
+import { readGameLists } from "@/lib/search/lists";
 import { searchMode } from "@/lib/search/mode";
 import {
-  type GameSearchParams,
+  parseGameSearchParams,
   parseSearchParams,
   type SearchParamName,
   type SearchParams,
@@ -115,8 +113,7 @@ async function SearchResults({ raw }: { raw: RawParams }) {
     new Date().getUTCFullYear(),
   );
   if (!parsed.ok) return <InvalidFilter param={parsed.param} type={type} />;
-  // The raw type was not `game`, so neither is the parsed one.
-  const params = parsed.params as TmdbSearchParams;
+  const { params } = parsed;
 
   try {
     const mode = searchMode(params);
@@ -137,16 +134,6 @@ async function SearchResults({ raw }: { raw: RawParams }) {
   }
 }
 
-/** A reference list, or null when IGDB could not supply it (spec 0029, AC-11). */
-async function settleGameList(read: () => Promise<GameRef[]>) {
-  try {
-    return await read();
-  } catch (error) {
-    if (!(error instanceof IgdbError)) throw error;
-    return null;
-  }
-}
-
 /**
  * The games half of `/search` (spec 0029, AC-2 to AC-8, AC-11 to AC-13).
  *
@@ -163,32 +150,22 @@ async function GameResults({
   raw: RawParams;
   retryHref: string;
 }) {
-  const [genres, platforms] = await Promise.all([
-    settleGameList(getGameGenres),
-    settleGameList(getGamePlatforms),
-  ]);
+  const lists = await readGameLists();
   if (
-    (genres === null && raw.genre !== undefined) ||
-    (platforms === null && raw.platform !== undefined)
+    (lists.genres === null && raw.genre !== undefined) ||
+    (lists.platforms === null && raw.platform !== undefined)
   ) {
     return <CatalogFailure type="game" retryHref={retryHref} />;
   }
 
-  const parsed = parseSearchParams(
-    raw,
-    { genres: genres ?? [], platforms: platforms ?? [] },
-    new Date().getUTCFullYear(),
-    true,
-  );
+  const parsed = parseGameSearchParams(raw, lists, new Date().getUTCFullYear());
   if (!parsed.ok) return <InvalidFilter param={parsed.param} type="game" />;
-  // The raw type was `game`, so the parsed one is too.
-  const params = parsed.params as GameSearchParams;
-  if (params.page > SEARCH_CATALOGS.game.maxPage)
+  const { params } = parsed;
+  if (params.page > SEARCH_CATALOGS.game.maxPage) {
     return <NoSuchPage params={params} />;
+  }
 
   const mode = searchMode(params);
-  if (mode === "filtered_search")
-    throw new Error("Games never filter locally.");
 
   let paged: IgdbPaged<GameSummary>;
   try {

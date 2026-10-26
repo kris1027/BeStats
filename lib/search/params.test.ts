@@ -8,6 +8,7 @@ import {
   emptySearchParams,
   type GameSearchParams,
   hasAnyFilter,
+  parseGameSearchParams,
   parseSearchParams,
   searchHref,
   type TmdbSearchParams,
@@ -53,7 +54,7 @@ function parseGame(
     { type: "game", ...raw },
     { genres: GAME_GENRES, platforms: PLATFORMS },
     YEAR,
-    gamesEnabled,
+    { gamesEnabled },
   );
 }
 
@@ -312,9 +313,30 @@ describe("parseSearchParams for games (spec 0029)", () => {
         { type: "game", genre: "5" },
         { genres: GAME_GENRES, platforms: [] },
         YEAR,
-        true,
+        { gamesEnabled: true },
       ).ok,
     ).toBe(true);
+  });
+
+  it("narrows a games parse, refusing a URL that is not a games search (AC-1)", () => {
+    const lists = { genres: GAME_GENRES, platforms: PLATFORMS };
+    const parsed = parseGameSearchParams(
+      { type: "game", q: "zelda" },
+      lists,
+      YEAR,
+    );
+    expect(parsed).toEqual({ ok: true, params: gameParams({ q: "zelda" }) });
+    expect(parseGameSearchParams({ type: "tv" }, lists, YEAR)).toEqual({
+      ok: false,
+      param: "type",
+    });
+    expect(
+      parseGameSearchParams(
+        { type: "game", platform: "130" },
+        { genres: GAME_GENRES, platforms: null },
+        YEAR,
+      ),
+    ).toEqual({ ok: false, param: "platform" });
   });
 
   it("writes platforms after the genres and round trips (AC-2)", () => {
