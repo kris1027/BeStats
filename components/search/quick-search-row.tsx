@@ -1,19 +1,41 @@
 import { cn } from "cn";
-import { FilmIcon, StarIcon } from "lucide-react";
+import {
+  FilmIcon,
+  Gamepad2Icon,
+  type LucideIcon,
+  StarIcon,
+} from "lucide-react";
 import Image from "next/image";
 
+import { CATALOG_SOURCES } from "@/lib/catalog/media-type";
+import type { SearchType } from "@/lib/search/params";
 import type { QuickResult } from "@/lib/search/quick";
 
+/** The icon a row with no poster or cover shows, per catalog. */
+const FALLBACK_ICONS = {
+  tv: FilmIcon,
+  movie: FilmIcon,
+  game: Gamepad2Icon,
+} as const satisfies Record<SearchType, LucideIcon>;
+
 /**
- * One result row in the quick search: the poster, the title over its year,
- * and the TMDB rating on the right (spec 0010, AC-2). The poster keeps the
- * 2:3 frame every poster in the app uses.
+ * One result row in the quick search: the poster or cover, the title over its
+ * year, and the community rating on the right (spec 0010, AC-2; spec 0029,
+ * AC-16). Every row keeps the 2:3 frame the poster and game cards use; a
+ * game with no cover shows the game icon.
  *
- * The year and the rating are simply absent when TMDB has neither, never a
- * placeholder. The star is amber because this is always TMDB's community
- * rating (AGENTS.md section 9).
+ * The year and the rating are simply absent when the catalog has neither,
+ * never a placeholder. The star is amber because this is always TMDB's or
+ * IGDB's community rating, named after its source (AGENTS.md section 9).
  */
-function QuickSearchRow({ result }: { result: QuickResult }) {
+function QuickSearchRow({
+  result,
+  type,
+}: {
+  result: QuickResult;
+  type: SearchType;
+}) {
+  const FallbackIcon = FALLBACK_ICONS[type];
   return (
     <>
       <span className="relative aspect-2/3 w-[42px] shrink-0 overflow-hidden rounded-md">
@@ -30,7 +52,7 @@ function QuickSearchRow({ result }: { result: QuickResult }) {
             data-slot="poster-fallback"
             className="plate-solid plate-rim glass-rim glass-plate absolute inset-0 flex items-center justify-center rounded-md"
           >
-            <FilmIcon
+            <FallbackIcon
               className="size-4 text-muted-foreground"
               aria-hidden="true"
             />
@@ -49,14 +71,16 @@ function QuickSearchRow({ result }: { result: QuickResult }) {
         ) : null}
       </span>
 
-      {result.tmdbRating !== null ? (
+      {result.rating !== null ? (
         <span className="flex shrink-0 items-center gap-1.5 text-[15px] text-foreground tabular-nums">
           <StarIcon
             className="size-4 fill-rating-tmdb text-rating-tmdb"
             aria-hidden="true"
           />
-          <span className="sr-only">TMDB rating </span>
-          {result.tmdbRating.toFixed(1)}
+          <span className="sr-only">
+            {CATALOG_SOURCES[type]} community rating{" "}
+          </span>
+          {result.rating.toFixed(1)}
         </span>
       ) : null}
     </>

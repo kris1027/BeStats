@@ -150,6 +150,18 @@ function pageSize(value: unknown): DiscoverPageSize {
   return value as DiscoverPageSize;
 }
 
+/** A boolean, filled with true when absent so both spellings share one entry. */
+function requireSortField(value: unknown): boolean {
+  if (value === undefined) return true;
+  if (typeof value !== "boolean") {
+    throw new IgdbValidationError(
+      "requireSortField",
+      "requireSortField must be a boolean.",
+    );
+  }
+  return value;
+}
+
 function minRating(value: unknown): number | undefined {
   if (value === undefined) return undefined;
   if (
@@ -214,6 +226,7 @@ function filters(options: GameFilters): GameFilters {
     genreIds: filterIds("genreIds", options.genreIds),
     platformIds: filterIds("platformIds", options.platformIds),
     minRating: minRating(options.minRating),
+    minRatingCount: nonNegative("minRatingCount", options.minRatingCount),
   };
 }
 
@@ -232,12 +245,14 @@ function withoutUndefined<T extends object>(value: T): Valid<T> {
 }
 
 /** The validated search options, the query cleaned but not yet escaped. */
-export type ValidSearchOptions = Valid<SearchGamesOptions & { page: number }>;
+export type ValidSearchOptions = Valid<
+  SearchGamesOptions & { page: number; pageSize: DiscoverPageSize }
+>;
 
 /**
  * Checks and canonicalizes search options: the query cleaned (not escaped),
- * ids deduped and sorted, absent options dropped, `page` filled with 1. Equal
- * searches then share one cache entry.
+ * ids deduped and sorted, absent options dropped, `page` filled with 1 and
+ * `pageSize` with 20. Equal searches then share one cache entry.
  *
  * @throws {IgdbValidationError} Naming the first bad field.
  */
@@ -249,18 +264,24 @@ export function validateSearchOptions(
     ...filters(options),
     year: year(options.year),
     page: page(options.page),
+    pageSize: pageSize(options.pageSize),
   });
 }
 
 /** The validated discover options, canonical like the search options. */
 export type ValidDiscoverOptions = Valid<
-  DiscoverGamesOptions & { page: number; pageSize: DiscoverPageSize }
+  DiscoverGamesOptions & {
+    page: number;
+    pageSize: DiscoverPageSize;
+    requireSortField: boolean;
+  }
 >;
 
 /**
  * Checks and canonicalizes discover options, as `validateSearchOptions` does,
- * plus a known `sort`, a date window whose start is not after its end, and a
- * page size of 20 or 24, filled with 20.
+ * plus a known `sort`, a date window whose start is not after its end, a
+ * page size of 20 or 24, filled with 20, and `requireSortField`, filled with
+ * true.
  *
  * @throws {IgdbValidationError} Naming the first bad field.
  */
@@ -285,10 +306,10 @@ export function validateDiscoverOptions(
     ...filters(options),
     releasedFrom,
     releasedTo,
-    minRatingCount: nonNegative("minRatingCount", options.minRatingCount),
     minHypes: nonNegative("minHypes", options.minHypes),
     sort: options.sort,
     page: page(options.page),
     pageSize: pageSize(options.pageSize),
+    requireSortField: requireSortField(options.requireSortField),
   });
 }

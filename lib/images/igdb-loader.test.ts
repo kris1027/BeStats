@@ -5,7 +5,7 @@ import { IGDB_IMAGE_BASE } from "@/lib/igdb/constants";
 import { igdbImageLoader } from "./igdb-loader";
 
 /**
- * covers: spec 0025, AC-12; spec 0028, AC-6
+ * covers: spec 0025, AC-12; spec 0028, AC-6; spec 0029, AC-16
  *
  * A wrong rung is either a heavier cover than the field needs or an upgrade
  * past the size the URL named; neither shows up until someone looks.
@@ -25,6 +25,21 @@ describe("igdbImageLoader", () => {
     const url = igdbImageLoader({ src: at("t_cover_big_2x"), width });
     expect(url.replace("#same-size", "")).toBe(at(size));
   });
+
+  // spec 0029, AC-16: the quick search row's `sizes="42px"` cover. With
+  // Next's default image widths the browser picks 48 at 1x, 96 at 2x and 128
+  // at 3x, and each lands on a real cover rung well under the 2x ceiling.
+  it.each([
+    [48, "t_cover_small"],
+    [96, "t_cover_small_2x"],
+    [128, "t_cover_small_2x"],
+  ])(
+    "serves the 42px quick search cover at width %i from %s",
+    (width, size) => {
+      const url = igdbImageLoader({ src: at("t_cover_big_2x"), width });
+      expect(url).toBe(at(size));
+    },
+  );
 
   it("marks the source's own size so Next sees the width honoured", () => {
     expect(igdbImageLoader({ src: at("t_cover_big_2x"), width: 1000 })).toBe(

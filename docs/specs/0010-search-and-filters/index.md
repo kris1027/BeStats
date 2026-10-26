@@ -2,6 +2,7 @@
 
 **Date**: 2026-09-24
 **Status**: Accepted
+**Amended**: 2026-10-25 by [spec 0029](../0029-game-search-filters/index.md). `/search` also takes `type=game` while the games flag is on, with a repeatable `platform` parameter and its own three modes (AC-7, AC-18); `/api/search` accepts `game`, renames `tmdbRating` to `rating` and may send a null `totalResults` (AC-20).
 
 Scope feature: [11. Search and filters](../../scope/scope.md) · Beta tier
 

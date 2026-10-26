@@ -171,8 +171,10 @@ function readGamesLibrary(): GamesLibrary | null {
  * browse page or game search gives people a way to find games, so unset or
  * empty means `off`.
  *
- * Only `LibrarySection` calls this, so a misconfigured deploy shows the
- * library error boundary there instead of guessing (AC-5). Written like
+ * `LibrarySection` calls this, so a misconfigured deploy shows the library
+ * error boundary there instead of guessing (AC-5). `/search` and
+ * `/api/search` call it too, but only for a raw `type=game`, so a bad value
+ * can never take a show or movie search down (spec 0029, AC-1, AC-17). Written like
  * `getAuthEmailDelivery()`, apart from `getPublicEnv()`, so a build with no
  * Supabase values still works. Read as a literal `process.env` access, so
  * Next.js inlines it at build time and a change needs a redeploy.

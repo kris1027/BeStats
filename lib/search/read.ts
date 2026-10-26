@@ -1,7 +1,7 @@
 import "server-only";
 
 import { readGridPage } from "@/lib/catalog/grid-page";
-import { titleHref } from "@/lib/catalog/media-type";
+import { type MediaType, titleHref } from "@/lib/catalog/media-type";
 import {
   discoverMovies,
   discoverTvShows,
@@ -14,7 +14,7 @@ import {
 } from "@/lib/tmdb";
 import { MIN_VOTE_COUNT, QUICK_LIMIT } from "./constants";
 import type { SearchMode } from "./mode";
-import type { SearchParams, SearchType } from "./params";
+import type { TmdbSearchParams } from "./params";
 import type { QuickSearchResponse } from "./quick";
 
 /**
@@ -73,7 +73,7 @@ export type SearchPage = Paged<SearchResult>;
  * Throws the module's `TmdbError` unchanged.
  */
 export async function readSearchPage(
-  type: SearchType,
+  type: MediaType,
   query: string,
   options: { year?: number; page: number },
 ): Promise<SearchPage> {
@@ -92,7 +92,7 @@ export async function readSearchPage(
  * order. Throws the module's `TmdbError` unchanged.
  */
 export async function readDiscoverPage(
-  params: SearchParams,
+  params: TmdbSearchParams,
 ): Promise<SearchPage> {
   const options = {
     genreIds: params.genreIds,
@@ -120,7 +120,7 @@ export async function readDiscoverPage(
  */
 export function readSearchGridPage(
   mode: Exclude<SearchMode, "filtered_search">,
-  params: SearchParams,
+  params: TmdbSearchParams,
 ): Promise<SearchPage> {
   return readGridPage(params.page, (tmdbPage) =>
     mode === "search"
@@ -138,7 +138,7 @@ export function readSearchGridPage(
  * smallest width.
  */
 export function toQuickSearchResponse(
-  type: SearchType,
+  type: MediaType,
   page: SearchPage,
 ): QuickSearchResponse {
   return {
@@ -148,7 +148,7 @@ export function toQuickSearchResponse(
       title: result.title,
       year: result.year,
       posterUrl: resizeImageUrl(result.posterUrl, "w92"),
-      tmdbRating: result.tmdbRating,
+      rating: result.tmdbRating,
       href: titleHref(type, result.id),
     })),
   };

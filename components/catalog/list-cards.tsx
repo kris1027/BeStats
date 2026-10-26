@@ -139,21 +139,26 @@ function MovieListCard({
  *
  * @param releaseDay The request's UTC day, for the date's year rule; left
  * out on a list whose cards print no date.
+ * @param meta The line under the name, the release year on `/search`
+ * (spec 0029, AC-12); left out on a list.
  */
 function GameListCard({
   game,
   priority,
   sizes,
   releaseDay,
+  meta,
 }: Omit<ListCardProps, "returnPath"> & {
   game: GameSummary;
   releaseDay?: string;
+  meta?: number;
 }) {
   return (
     <PosterCard
       title={game.name}
       posterUrl={game.coverUrl}
       href={gameHref(game.id)}
+      meta={meta}
       badge={<IgdbRatingBadge value={game.communityRating} />}
       controls={
         releaseDay === undefined ? undefined : (

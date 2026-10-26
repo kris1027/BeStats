@@ -178,7 +178,7 @@ describe("MediaTypeTabs", () => {
     );
 
     // spec 0028, AC-14: GAMES on every page, leading to /games.
-    it.each(["/search", "/shows", "/movies/550"])(
+    it.each(["/shows", "/movies/550"])(
       "adds GAMES to /games on %s, unlit",
       (path) => {
         pathname.value = path;
@@ -190,6 +190,33 @@ describe("MediaTypeTabs", () => {
         expect(games).not.toHaveAttribute("aria-current");
       },
     );
+
+    // spec 0029, AC-14: on /search, GAMES switches the type in place.
+    it("switches /search to games in place, keeping what games can take", () => {
+      pathname.value = "/search";
+      search.value = "type=movie&q=dune&year=1940&genre=878";
+      render(<MediaTypeTabs />);
+
+      expect(screen.getByRole("link", { name: "GAMES" })).toHaveAttribute(
+        "href",
+        "/search?type=game&q=dune",
+      );
+    });
+
+    it("lights GAMES on /search?type=game and keeps the query on a switch back", () => {
+      pathname.value = "/search";
+      search.value = "type=game&q=zelda&platform=130";
+      render(<MediaTypeTabs />);
+
+      expect(screen.getByRole("link", { name: "GAMES" })).toHaveAttribute(
+        "aria-current",
+        "page",
+      );
+      expect(screen.getByRole("link", { name: "MOVIES" })).toHaveAttribute(
+        "href",
+        "/search?type=movie&q=zelda",
+      );
+    });
 
     it.each(["/games", "/games/top-rated", "/games/1942"])(
       "lights GAMES on %s, with the catalogs one click away",
@@ -279,7 +306,7 @@ describe("MediaTypeTabs", () => {
       );
     });
 
-    it("gives the /search fallback a GAMES link to /games (spec 0028, AC-14)", async () => {
+    it("gives the /search fallback a GAMES link that stays on /search (spec 0029, AC-14)", async () => {
       vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "on");
       suspendSearch.value = true;
       pathname.value = "/search";
@@ -290,7 +317,7 @@ describe("MediaTypeTabs", () => {
       expect(screen.getAllByRole("link")).toHaveLength(3);
       expect(screen.getByRole("link", { name: "GAMES" })).toHaveAttribute(
         "href",
-        "/games",
+        "/search?type=game",
       );
     });
   });

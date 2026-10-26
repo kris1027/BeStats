@@ -3,8 +3,8 @@
 import { cn } from "cn";
 import { SearchIcon } from "lucide-react";
 
-import { WithTypedPage } from "@/components/layout/page-media-type";
-import type { MediaType } from "@/lib/catalog/media-type";
+import { WithLibraryTypedPage } from "@/components/layout/page-media-type";
+import type { LibraryType } from "@/lib/catalog/media-type";
 import { mediaNoun } from "@/lib/search/count";
 
 import { MobileSearchOverlay } from "./mobile-search-overlay";
@@ -17,30 +17,33 @@ type Layout = "desktop" | "mobile";
  * AC-6).
  *
  * The type follows the page (feature 22): movies under `/movies`, shows
- * under `/shows`, the `type` parameter on `/watchlist`, `/upcoming`,
- * `/watched` and `/search`, read through `WithTypedPage`. A page about
- * neither catalog renders no search at all
- * (prompts/hide-tabs-without-type.md), and neither does a games tab, since
- * there is no game search until G7 (spec 0027, AC-4). `usePathname` suspends on a route
+ * under `/shows`, games under `/games` while the games library is on, and the
+ * `type` parameter on `/watchlist`, `/upcoming`, `/watched` and `/search`,
+ * read through `WithLibraryTypedPage`, the field the tabs follow (spec 0029,
+ * AC-15). A page about neither catalog renders no search at all
+ * (prompts/hide-tabs-without-type.md). `usePathname` suspends on a route
  * with a dynamic param at prerender time, so `Navbar` wraps this in Suspense
- * with `NavbarSearchFallback`.
+ * with `NavbarSearchFallback`, which reads `Search shows` until the type is
+ * known: `/games/{id}` and the typed pages show it once, the flash spec 0027,
+ * AC-4 accepted. `/games` and its list pages are static, so their shell has
+ * `Search games` at once.
  *
  * The field is keyed on the pathname and type, so it starts empty on every
  * page (AC-17).
  */
 function NavbarSearch({ layout }: { layout: Layout }) {
   return (
-    <WithTypedPage
-      fallback={() => <NavbarSearchFallback layout={layout} type="tv" />}
+    <WithLibraryTypedPage
+      fallback={() => <NavbarSearchFallback layout={layout} />}
     >
-      {({ pathname, type }) => (
+      {({ pathname, libraryType }) => (
         <NavbarSearchFor
-          key={`${pathname}:${type}`}
+          key={`${pathname}:${libraryType}`}
           layout={layout}
-          type={type}
+          type={libraryType}
         />
       )}
-    </WithTypedPage>
+    </WithLibraryTypedPage>
   );
 }
 
@@ -49,7 +52,7 @@ function NavbarSearchFor({
   type,
 }: {
   layout: Layout;
-  type: MediaType;
+  type: LibraryType;
 }) {
   if (layout === "mobile") return <MobileSearchOverlay type={type} />;
   return <QuickSearch type={type} className="h-10 w-[22.5rem]" />;
@@ -65,7 +68,7 @@ function NavbarSearchFallback({
   type = "tv",
 }: {
   layout: Layout;
-  type?: MediaType;
+  type?: LibraryType;
 }) {
   if (layout === "mobile") {
     return (

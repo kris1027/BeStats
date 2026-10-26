@@ -7,7 +7,7 @@ import {
   formatTotal,
 } from "./count";
 
-/** covers: spec 0010, AC-3, AC-12, AC-14, AC-24 */
+/** covers: spec 0010, AC-3, AC-12, AC-14, AC-24; spec 0029, AC-8 */
 
 describe("formatResultCount", () => {
   it("uses the singular for one", () => {
@@ -31,6 +31,11 @@ describe("formatResultCount", () => {
 
   it("does not apply the search cap to discover", () => {
     expect(formatResultCount(10_000, "tv", "discover")).toBe("10,000 shows");
+  });
+
+  it("prints IGDB's count exactly, never capped (spec 0029, AC-8)", () => {
+    expect(formatResultCount(1, "game", "igdb")).toBe("1 game");
+    expect(formatResultCount(25_000, "game", "igdb")).toBe("25,000 games");
   });
 });
 

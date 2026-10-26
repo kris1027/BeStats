@@ -4,14 +4,17 @@ import type { Genre } from "@/lib/tmdb/types";
 
 import { searchMode } from "./mode";
 import {
+  type CatalogRef,
   emptySearchParams,
+  type GameSearchParams,
   hasAnyFilter,
+  parseGameSearchParams,
   parseSearchParams,
-  type SearchParams,
   searchHref,
+  type TmdbSearchParams,
 } from "./params";
 
-/** covers: spec 0010, AC-7, AC-18 */
+/** covers: spec 0010, AC-7, AC-18; spec 0029, AC-1 to AC-3 */
 
 const TV_GENRES: Genre[] = [
   { id: 18, name: "Drama" },
@@ -21,11 +24,44 @@ const TV_GENRES: Genre[] = [
 const YEAR = 2026;
 
 function parse(raw: Record<string, string | string[] | undefined>) {
-  return parseSearchParams(raw, TV_GENRES, YEAR);
+  return parseSearchParams(raw, { genres: TV_GENRES }, YEAR);
 }
 
-function params(overrides: Partial<SearchParams> = {}): SearchParams {
+function params(overrides: Partial<TmdbSearchParams> = {}): TmdbSearchParams {
   return { ...emptySearchParams("tv"), ...overrides };
+}
+
+/** Ids 1 to 30, so the 20 id cap can be passed. */
+const GAME_GENRES: CatalogRef[] = Array.from({ length: 30 }, (_, index) => ({
+  id: index + 1,
+  name: `Genre ${index + 1}`,
+}));
+const PLATFORMS: CatalogRef[] = [
+  { id: 6, name: "PC (Microsoft Windows)" },
+  { id: 130, name: "Nintendo Switch" },
+  { id: 508, name: "Nintendo Switch 2" },
+  ...Array.from({ length: 30 }, (_, index) => ({
+    id: 1000 + index,
+    name: `Platform ${index}`,
+  })),
+];
+
+function parseGame(
+  raw: Record<string, string | string[] | undefined>,
+  gamesEnabled = true,
+) {
+  return parseSearchParams(
+    { type: "game", ...raw },
+    { genres: GAME_GENRES, platforms: PLATFORMS },
+    YEAR,
+    { gamesEnabled },
+  );
+}
+
+function gameParams(
+  overrides: Partial<GameSearchParams> = {},
+): GameSearchParams {
+  return { ...emptySearchParams("game"), ...overrides };
 }
 
 describe("parseSearchParams", () => {
@@ -49,6 +85,7 @@ describe("parseSearchParams", () => {
         type: "tv",
         q: "dune",
         genreIds: [18, 35],
+        platformIds: [],
         year: 2024,
         rating: 7,
         page: 3,
@@ -92,6 +129,8 @@ describe("parseSearchParams", () => {
     [{ page: "0" }, "page"],
     [{ page: "501" }, "page"],
     [{ page: ["1", "2"] }, "page"],
+    [{ platform: "6" }, "platform"],
+    [{ type: "movie", platform: "6" }, "platform"],
   ] as const)("refuses %o and names %s", (raw, param) => {
     expect(parse(raw as Record<string, string | string[]>)).toEqual({
       ok: false,
@@ -188,6 +227,142 @@ describe("searchMode", () => {
     [{ q: "dune", genreIds: [18] }, "filtered_search"],
     [{ q: "dune", rating: 7, year: 2021 }, "filtered_search"],
   ] as const)("reads %o as %s", (overrides, mode) => {
-    expect(searchMode(params(overrides as Partial<SearchParams>))).toBe(mode);
+    expect(searchMode(params(overrides as Partial<TmdbSearchParams>))).toBe(
+      mode,
+    );
+  });
+
+  it.each([
+    [{}, "browse"],
+    [{ platformIds: [6] }, "discover"],
+    [{ genreIds: [5] }, "discover"],
+    [{ year: 2020 }, "discover"],
+    [{ rating: 7 }, "discover"],
+    [{ q: "zelda" }, "search"],
+    [{ q: "zelda", genreIds: [5], rating: 7 }, "search"],
+  ] as const)(
+    "reads a games search of %o as %s, never filtered",
+    (overrides, mode) => {
+      expect(
+        searchMode(gameParams(overrides as Partial<GameSearchParams>)),
+      ).toBe(mode);
+    },
+  );
+});
+
+describe("parseSearchParams for games (spec 0029)", () => {
+  it("accepts type=game only while the games library is on (AC-1)", () => {
+    expect(parseGame({}, false)).toEqual({ ok: false, param: "type" });
+    expect(parseGame({})).toEqual({ ok: true, params: gameParams() });
+  });
+
+  it("reads every games parameter, platforms deduplicated and sorted (AC-2)", () => {
+    expect(
+      parseGame({
+        q: " zelda ",
+        genre: ["12", "5", "12"],
+        platform: ["508", "130", "508"],
+        year: "1950",
+        rating: "9",
+        page: "50",
+      }),
+    ).toEqual({
+      ok: true,
+      params: gameParams({
+        q: "zelda",
+        genreIds: [5, 12],
+        platformIds: [130, 508],
+        year: 1950,
+        rating: 9,
+        page: 50,
+      }),
+    });
+  });
+
+  it("counts 20 ids per list after removing repeats", () => {
+    const twenty = Array.from({ length: 20 }, (_, index) => String(index + 1));
+    expect(parseGame({ genre: [...twenty, "1"] }).ok).toBe(true);
+    expect(parseGame({ genre: [...twenty, "21"] })).toEqual({
+      ok: false,
+      param: "genre",
+    });
+    const platforms = Array.from({ length: 21 }, (_, i) => String(1000 + i));
+    expect(parseGame({ platform: platforms })).toEqual({
+      ok: false,
+      param: "platform",
+    });
+  });
+
+  it.each([
+    [{ q: "\u0001" }, "q"],
+    [{ q: "zel\u0001da" }, "q"],
+    [{ genre: "31" }, "genre"],
+    [{ platform: "0" }, "platform"],
+    [{ platform: "7" }, "platform"],
+    [{ year: "1949" }, "year"],
+    [{ year: "2028" }, "year"],
+    [{ rating: "4" }, "rating"],
+    [{ page: "501" }, "page"],
+  ] as const)("refuses %o and names %s", (raw, param) => {
+    expect(parseGame(raw)).toEqual({ ok: false, param });
+  });
+
+  it("parses a URL whose platform list failed to load when it has no platform (AC-11)", () => {
+    expect(
+      parseSearchParams(
+        { type: "game", genre: "5" },
+        { genres: GAME_GENRES, platforms: [] },
+        YEAR,
+        { gamesEnabled: true },
+      ).ok,
+    ).toBe(true);
+  });
+
+  it("narrows a games parse, refusing a URL that is not a games search (AC-1)", () => {
+    const lists = { genres: GAME_GENRES, platforms: PLATFORMS };
+    const parsed = parseGameSearchParams(
+      { type: "game", q: "zelda" },
+      lists,
+      YEAR,
+    );
+    expect(parsed).toEqual({ ok: true, params: gameParams({ q: "zelda" }) });
+    expect(parseGameSearchParams({ type: "tv" }, lists, YEAR)).toEqual({
+      ok: false,
+      param: "type",
+    });
+    expect(
+      parseGameSearchParams(
+        { type: "game", platform: "130" },
+        { genres: GAME_GENRES, platforms: null },
+        YEAR,
+      ),
+    ).toEqual({ ok: false, param: "platform" });
+  });
+
+  it("writes platforms after the genres and round trips (AC-2)", () => {
+    const original = gameParams({
+      q: "mario",
+      genreIds: [8],
+      platformIds: [508, 130],
+      rating: 7,
+    });
+    const href = searchHref(original);
+    expect(href).toBe(
+      "/search?type=game&q=mario&genre=8&platform=130&platform=508&rating=7",
+    );
+    const url = new URL(href, "http://localhost");
+    const raw: Record<string, string | string[]> = {};
+    for (const key of new Set(url.searchParams.keys())) {
+      const values = url.searchParams.getAll(key);
+      raw[key] = values.length > 1 ? values : values[0];
+    }
+    expect(parseGame(raw)).toEqual({
+      ok: true,
+      params: { ...original, platformIds: [130, 508] },
+    });
+  });
+
+  it("counts a platform as a filter", () => {
+    expect(hasAnyFilter(gameParams({ platformIds: [6] }))).toBe(true);
   });
 });

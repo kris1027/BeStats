@@ -87,6 +87,8 @@ export type GameFilters = {
   platformIds?: readonly number[];
   /** On the 0 to 10 scale. */
   minRating?: number;
+  /** At least this many IGDB ratings (spec 0029, AC-19). */
+  minRatingCount?: number;
 };
 
 export type SearchGamesOptions = GameFilters & {
@@ -94,6 +96,8 @@ export type SearchGamesOptions = GameFilters & {
   /** The UTC year of the first release. */
   year?: number;
   page?: number;
+  /** Results per page, 20 (the default) or 24 for `/search` (spec 0029). */
+  pageSize?: DiscoverPageSize;
 };
 
 export type DiscoverSort =
@@ -108,7 +112,6 @@ export type DiscoverGamesOptions = GameFilters & {
   releasedFrom?: string;
   /** A UTC day, `YYYY-MM-DD`, inclusive. */
   releasedTo?: string;
-  minRatingCount?: number;
   minHypes?: number;
   sort: DiscoverSort;
   page?: number;
@@ -117,7 +120,13 @@ export type DiscoverGamesOptions = GameFilters & {
    * page's grid; the default 20 keeps G7 and the search read unchanged.
    */
   pageSize?: DiscoverPageSize;
+  /**
+   * Whether a game needs a value in the sort field, true by default. False
+   * keeps the games with none, after the rest, so the count includes them
+   * (spec 0029, AC-5).
+   */
+  requireSortField?: boolean;
 };
 
-/** The page sizes discover serves (spec 0028, AC-5). */
+/** The page sizes search and discover serve (spec 0028, AC-5; spec 0029). */
 export type DiscoverPageSize = (typeof IGDB_DISCOVER_PAGE_SIZES)[number];

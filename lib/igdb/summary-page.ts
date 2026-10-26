@@ -20,14 +20,16 @@ export function unixDay(day: string): number {
 }
 
 /**
- * The filters search and discover share. Within one id list a game matches on
- * any id; separate filters combine with AND. `minRating` is on the 0 to 10
- * scale against IGDB's 0 to 100 `rating`, and a minimum of 0 is no minimum.
+ * The filters search and discover share. A game must have every genre and be
+ * on any of the platforms (spec 0029, AC-7); separate filters combine with
+ * AND. `minRating` is on the 0 to 10 scale against IGDB's 0 to 100 `rating`,
+ * and a minimum of 0 is no minimum. `minRatingCount` is written here once, so
+ * search and discover cannot drift apart on it (spec 0029, AC-19).
  */
 export function sharedConditions(options: GameFilters): Condition[] {
   const where = [catalogWhereClause()];
   if (options.genreIds?.length) {
-    where.push(cond.anyOf("genres", options.genreIds));
+    where.push(cond.allOf("genres", options.genreIds));
   }
   if (options.platformIds?.length) {
     where.push(cond.anyOf("platforms", options.platformIds));
@@ -37,6 +39,9 @@ export function sharedConditions(options: GameFilters): Condition[] {
     where.push(
       cond.atLeast("rating", Number((options.minRating * 10).toFixed(6))),
     );
+  }
+  if (options.minRatingCount !== undefined) {
+    where.push(cond.atLeast("rating_count", options.minRatingCount));
   }
   return where;
 }

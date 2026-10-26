@@ -31,6 +31,7 @@ const {
   readGameListPage,
   readTaggedCatalogGridPage,
   readTaggedCatalogList,
+  sliceGamePage,
 } = await import("./catalog-list-read");
 
 afterEach(() => {
@@ -225,5 +226,23 @@ describe("listHasNextPage (spec 0028, AC-10)", () => {
         1,
       ),
     ).toBe(false);
+  });
+});
+
+describe("sliceGamePage (spec 0029, AC-4)", () => {
+  const games = Array.from({ length: 50 }, (_, index) => ({
+    id: index + 1,
+  })) as unknown as Parameters<typeof sliceGamePage>[0];
+
+  it("cuts 24 game pages with the whole list's exact count", () => {
+    expect(sliceGamePage(games, 1)).toMatchObject({
+      page: 1,
+      hasNextPage: true,
+      totalResults: 50,
+    });
+    expect(sliceGamePage(games, 2).results[0]).toEqual({ id: 25 });
+    expect(sliceGamePage(games, 3).results).toHaveLength(2);
+    expect(sliceGamePage(games, 3).hasNextPage).toBe(false);
+    expect(sliceGamePage(games, 4).results).toEqual([]);
   });
 });

@@ -35,6 +35,12 @@ export type RatingStep = (typeof RATING_STEPS)[number];
 export const MIN_VOTE_COUNT = 100;
 
 /**
+ * The IGDB rating count floor that comes with a games rating filter, IGDB's
+ * twin of `MIN_VOTE_COUNT` (spec 0029, AC-5, AC-6).
+ */
+export const GAME_MIN_RATING_COUNT = 10;
+
+/**
  * Filtered search stops reading TMDB pages once it has kept this many
  * results, TMDB's own page size (AC-13).
  */

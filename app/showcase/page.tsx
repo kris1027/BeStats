@@ -49,6 +49,7 @@ import {
   PersonalScoreBadge,
   TmdbRatingBadge,
 } from "@/components/rating-badges";
+import { QuickSearchRow } from "@/components/search/quick-search-row";
 import { PosterCardSkeleton, Skeleton } from "@/components/skeleton";
 import { StatePanel } from "@/components/state-panel";
 import {
@@ -74,6 +75,7 @@ import { TMDB_HOME_URL } from "@/lib/legal/operator";
 
 import { CardRoundButtonDemo } from "./card-round-button-demo";
 import { GameLibraryCardDemo } from "./game-library-card-demo";
+import { GameSearchDemo } from "./game-search-demo";
 
 export const metadata: Metadata = {
   title: "Design system",
@@ -611,6 +613,42 @@ export default function ShowcasePage() {
           <ShowcaseLanding title="An empty games list page">
             <ListEmptyPanel list={catalogList("game", "coming-soon")} />
           </ShowcaseLanding>
+        </div>
+      </Section>
+
+      <Section
+        title="Game search"
+        note="/search?type=game (spec 0029): the platform picker open with a filter typed, a ticked platform the filter hides staying ticked, the No platforms match state, and the picker disabled when IGDB's platform list failed. Below, games quick search rows with a cover and without one, rated by IGDB's community rating."
+      >
+        <div className="flex flex-col gap-8">
+          <GameSearchDemo />
+          <div className="glass glass-rim glass-plate-float glass-shadow flex w-full max-w-[28rem] flex-col gap-1 rounded-panel p-2">
+            {[
+              {
+                id: 1,
+                title: "A game with a cover",
+                year: 2017,
+                posterUrl: LIGHT_POSTER,
+                rating: 9.1,
+                href: "/games/1",
+              },
+              {
+                id: 2,
+                title: "A game with no cover or year",
+                year: null,
+                posterUrl: null,
+                rating: null,
+                href: "/games/2",
+              },
+            ].map((result) => (
+              <div
+                key={result.id}
+                className="flex items-center gap-4 px-3 py-2"
+              >
+                <QuickSearchRow result={result} type="game" />
+              </div>
+            ))}
+          </div>
         </div>
       </Section>
 

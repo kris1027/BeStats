@@ -1,4 +1,4 @@
-import { IGDB_MAX_QUERY_LENGTH } from "./constants";
+import { IGDB_CONTROL_CHARACTERS, IGDB_MAX_QUERY_LENGTH } from "./constants";
 import { IgdbValidationError } from "./errors";
 
 /**
@@ -48,10 +48,6 @@ export type ApicalypseQuery = {
   offset?: number;
 };
 
-// Every C0 and C1 control character, newlines and tabs included.
-// biome-ignore lint/suspicious/noControlCharactersInRegex: stripping them is the point.
-const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f-\u009f]/g;
-
 /**
  * Cleans visitor search text, the first four steps of the order AC-5 fixes:
  * trim, reject if empty, strip control characters, check 1 to 100 characters.
@@ -68,7 +64,7 @@ export function cleanSearchText(text: unknown): string {
   if (trimmed.length === 0) {
     throw new IgdbValidationError("query", "The search query is empty.");
   }
-  const stripped = trimmed.replace(CONTROL_CHARACTERS, "");
+  const stripped = trimmed.replace(IGDB_CONTROL_CHARACTERS, "");
   if (stripped.length < 1 || stripped.length > IGDB_MAX_QUERY_LENGTH) {
     throw new IgdbValidationError(
       "query",
@@ -118,14 +114,17 @@ function asCondition(text: string): Condition {
  * The only way to write a `where` condition (AC-5). Every value goes through
  * `int`, `intList` or `finite`, and every field is an `IgdbField`, so a
  * condition holds nothing a caller typed. IGDB's meaning: `= (…)` matches any
- * of the ids, `!= (…)` none of them, and `= null` a missing value or an empty
- * list.
+ * of the ids, `= […]` all of them, `!= (…)` none of them, and `= null` a
+ * missing value or an empty list.
  */
 export const cond = {
   is: (field: IgdbField, value: number) =>
     asCondition(`${field} = ${int(value)}`),
   anyOf: (field: IgdbField, ids: readonly number[]) =>
     asCondition(`${field} = ${intList(ids)}`),
+  /** Every one of the ids, IGDB's `[…]` list (spec 0029, AC-7). */
+  allOf: (field: IgdbField, ids: readonly number[]) =>
+    asCondition(`${field} = [${intList(ids).slice(1, -1)}]`),
   noneOf: (field: IgdbField, ids: readonly number[]) =>
     asCondition(`${field} != ${intList(ids)}`),
   isNull: (field: IgdbField) => asCondition(`${field} = null`),

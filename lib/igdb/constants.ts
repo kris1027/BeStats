@@ -147,6 +147,16 @@ export const IGDB_MAX_FILTER_IDS = 20;
 /** Search text, after trimming and stripping, is 1 to this many characters. */
 export const IGDB_MAX_QUERY_LENGTH = 100;
 
+/**
+ * Every C0 and C1 control character, newlines and tabs included, which
+ * `cleanSearchText` strips (AC-5). It lives here, not in `query.ts`, so
+ * `/search`'s parser refuses the same text without importing the query
+ * builder into the browser (spec 0029, AC-2). Global, so use it with
+ * `replace`, never `test`.
+ */
+// biome-ignore lint/suspicious/noControlCharactersInRegex: stripping them is the point.
+export const IGDB_CONTROL_CHARACTERS = /[\u0000-\u001f\u007f-\u009f]/g;
+
 /** The earliest release year a filter accepts (AC-12b). */
 export const IGDB_MIN_YEAR = 1950;
 

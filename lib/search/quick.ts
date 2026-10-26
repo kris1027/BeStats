@@ -9,27 +9,53 @@ import type { SearchType } from "./params";
  * share one definition of what crosses the wire.
  */
 
-/** Validates the two query parameters the Route Handler accepts. */
-export const quickSearchRequestSchema = z.object({
-  type: z.enum(["tv", "movie"]),
-  q: z.string().trim().min(QUICK_MIN_CHARS).max(MAX_QUERY_LENGTH),
-});
+const query = z.string().trim().min(QUICK_MIN_CHARS).max(MAX_QUERY_LENGTH);
+
+/**
+ * Validates the two query parameters the Route Handler accepts. `game` is
+ * one of the types only while the games library is on (spec 0029, AC-17).
+ *
+ * @param options.gamesEnabled `gameSearchEnabled(rawType)`, which reads the
+ * flag only for a raw `type=game`.
+ */
+export function quickSearchRequestSchema({
+  gamesEnabled = false,
+}: {
+  gamesEnabled?: boolean;
+} = {}) {
+  return z.object({
+    type: z
+      .enum(["tv", "movie", "game"])
+      .refine((type) => gamesEnabled || type !== "game"),
+    q: query,
+  });
+}
 
 /** One row of the quick search panel, already shaped for display. */
 export type QuickResult = {
   id: number;
   title: string;
-  /** Release year for a movie, first air year for a show, null when unknown. */
+  /**
+   * Release year for a movie or a game, first air year for a show, null when
+   * unknown.
+   */
   year: number | null;
+  /** A poster, or for a game its cover. */
   posterUrl: string | null;
-  /** TMDB's community rating, never a personal one. */
-  tmdbRating: number | null;
+  /**
+   * TMDB's or IGDB's community rating, never a personal one (spec 0029,
+   * AC-17 renamed it from `tmdbRating`).
+   */
+  rating: number | null;
   href: string;
 };
 
 export type QuickSearchResponse = {
-  /** TMDB's `total_results` for the search, capped as TMDB caps it. */
-  totalResults: number;
+  /**
+   * TMDB's `total_results`, capped as TMDB caps it, or IGDB's exact count,
+   * null when IGDB sent none (spec 0029, AC-16).
+   */
+  totalResults: number | null;
   results: QuickResult[];
 };
 

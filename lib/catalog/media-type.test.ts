@@ -126,10 +126,14 @@ describe("libraryTypeForLocation", () => {
     }
   });
 
-  it("is never game on /search, a catalog page or with the flag off", () => {
-    expect(libraryTypeForLocation("/search", "game", true)).toBe("tv");
+  it("is game on /search asking for it while the flag is on (spec 0029, AC-18)", () => {
+    expect(libraryTypeForLocation("/search", "game", true)).toBe("game");
+  });
+
+  it("is never game on a catalog page or with the flag off", () => {
     expect(libraryTypeForLocation("/movies", "game", true)).toBe("movie");
     expect(libraryTypeForLocation("/watchlist", "game", false)).toBe("tv");
+    expect(libraryTypeForLocation("/search", "game", false)).toBe("tv");
   });
 
   // spec 0028, AC-14, AC-16
@@ -156,12 +160,28 @@ describe("the library paths", () => {
     expect(isLibraryPath(null)).toBe(false);
   });
 
-  it("take game in typedHref, and /search does not compile with it", () => {
+  it("take game in typedHref, and so does /search (spec 0029, AC-1)", () => {
     expect(typedHref("/watched", "game", { page: 2 })).toBe(
       "/watched?type=game&page=2",
     );
-    // @ts-expect-error: /search has no games tab until G7.
-    typedHref("/search", "game");
+    expect(typedHref("/search", "game")).toBe("/search?type=game");
+  });
+
+  it("drops a year games cannot take on a switch to games (spec 0029, AC-14)", () => {
+    const current = new URLSearchParams(
+      "type=movie&q=dune&year=1940&genre=878&page=3",
+    );
+    expect(typedHref("/search", "game", { current })).toBe(
+      "/search?type=game&q=dune",
+    );
+    expect(typedHref("/search", "movie", { current })).toBe(
+      "/search?type=movie&q=dune&year=1940",
+    );
+    expect(
+      typedHref("/search", "game", {
+        current: new URLSearchParams("type=tv&year=1950&platform=6&rating=7"),
+      }),
+    ).toBe("/search?type=game&year=1950&rating=7");
   });
 });
 

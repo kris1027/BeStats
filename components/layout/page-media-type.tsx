@@ -16,11 +16,11 @@ import { gamesLibraryEnabled } from "@/lib/env";
  * page's media type, null on a page about neither catalog, and on a typed
  * page its current query.
  *
- * `type` is the catalog, for the search; `libraryType` is what the tabs, the
- * Library links and the logo follow, which on a games tab of a library page
- * and on `/games` and below it is `game` while `type` is null (spec 0027,
- * AC-4; spec 0028, AC-14 to AC-16): there is no game search until G7, so the
- * search renders nothing there.
+ * `type` is the TMDB catalog, null on a games page; `libraryType` is what
+ * the tabs, the Library links, the search and the logo follow, which on a
+ * games tab of a library page or `/search`, and on `/games` and below it, is
+ * `game` while `type` is null (spec 0027, AC-4; spec 0028, AC-14 to AC-16;
+ * spec 0029, AC-15).
  */
 type PageMediaType =
   | {
@@ -37,9 +37,9 @@ type PageMediaType =
     };
 
 /**
- * The media type of the page being viewed, for `BrandLink`, through
- * `WithTypedPage` for `NavbarSearch`, and through `WithLibraryTypedPage` for
- * `MediaTypeTabs` and `LibraryNav` (feature 22; spec 0027). It holds the one rule they share: only on
+ * The media type of the page being viewed, for `BrandLink`, and through
+ * `WithLibraryTypedPage` for `MediaTypeTabs`, `LibraryNav` and
+ * `NavbarSearch` (feature 22; spec 0027; spec 0029). It holds the one rule they share: only on
  * a typed page is `useSearchParams` read, and only inside its own Suspense
  * boundary, because reading it anywhere else would pull `/shows`, `/movies`
  * and the title pages out of their prerendered shells (`AGENTS.md`, Commands
@@ -78,38 +78,15 @@ function WithPageMediaType({
   });
 }
 
-/** A page that has a media type, as `WithTypedPage` hands it on. */
-type TypedPageMediaType = PageMediaType & { type: MediaType };
-
-/**
- * `WithPageMediaType` for a control that exists only on a page with a type:
- * the search renders nothing on a page about neither catalog
- * (prompts/hide-tabs-without-type.md), nor on a games tab (spec 0027, AC-4).
- * The logo keeps `WithPageMediaType`, because it still renders there.
- */
-function WithTypedPage({
-  children,
-  fallback,
-}: {
-  children: (page: TypedPageMediaType) => ReactNode;
-  fallback: (pathname: TypedPath) => ReactNode;
-}) {
-  return (
-    <WithPageMediaType fallback={fallback}>
-      {(page) =>
-        page.type === null ? null : children({ ...page, type: page.type })
-      }
-    </WithPageMediaType>
-  );
-}
-
 /** A page that has a library type, as `WithLibraryTypedPage` hands it on. */
 type LibraryTypedPageMediaType = PageMediaType & { libraryType: LibraryType };
 
 /**
- * `WithTypedPage` for the tabs and the Library links, which also exist on a
- * games tab and light `game` there (spec 0027, AC-3, AC-4). They render
- * nothing on a page about neither catalog.
+ * `WithPageMediaType` for the tabs, the Library links and the search, which
+ * also exist on a games page and follow `game` there (spec 0027, AC-3, AC-4;
+ * spec 0029, AC-15). They render nothing on a page about neither catalog
+ * (prompts/hide-tabs-without-type.md); the logo keeps `WithPageMediaType`,
+ * because it still renders there.
  */
 function WithLibraryTypedPage({
   children,
@@ -156,9 +133,4 @@ function TypedPageMediaType({
   });
 }
 
-export {
-  type PageMediaType,
-  WithLibraryTypedPage,
-  WithPageMediaType,
-  WithTypedPage,
-};
+export { type PageMediaType, WithLibraryTypedPage, WithPageMediaType };

@@ -8,8 +8,10 @@ import type { ValidDiscoverOptions } from "./validation";
  * Filtered browsing with an explicit order, which G6's rows and G7's filters
  * only browse need (spec 0023, AC-13).
  *
- * A sort also requires its field, so an undated or unrated game never sorts to
- * the top. The date window is UTC days, both ends inclusive, and the caller
+ * A sort also requires its field by default, so an undated or unrated game
+ * never sorts to the top. Game search's discover mode turns that off
+ * (`requireSortField: false`, spec 0029, AC-5), so its count includes the
+ * games with no value, which IGDB puts after the rest. The date window is UTC days, both ends inclusive, and the caller
  * passes them: this module never reads the clock for a filter. IGDB takes one
  * sort key, so ties can repeat or skip an item across pages; that is accepted.
  */
@@ -46,13 +48,10 @@ export async function fetchDiscoverGames(
       cond.below("first_release_date", unixDay(valid.releasedTo) + DAY_SECONDS),
     );
   }
-  if (valid.minRatingCount !== undefined) {
-    where.push(cond.atLeast("rating_count", valid.minRatingCount));
-  }
   if (valid.minHypes !== undefined) {
     where.push(cond.atLeast("hypes", valid.minHypes));
   }
-  where.push(cond.notNull(sort.field));
+  if (valid.requireSortField) where.push(cond.notNull(sort.field));
 
   return readSummaryPage({
     where,

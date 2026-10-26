@@ -72,6 +72,7 @@ describe("fetchSearchGames", () => {
         platformIds: [130],
         year: 2017,
         minRating: 7.5,
+        minRatingCount: 10,
         page: 3,
       }),
     );
@@ -79,8 +80,18 @@ describe("fetchSearchGames", () => {
     const from = Date.UTC(2017, 0, 1) / 1000;
     const to = Date.UTC(2018, 0, 1) / 1000;
     expect(mock.body()).toContain(
-      `where ${FILTER} & (genres = (12,31)) & (platforms = (130)) & (rating >= 75) & (first_release_date >= ${from} & first_release_date < ${to}); limit 21; offset 40;`,
+      `where ${FILTER} & (genres = [12,31]) & (platforms = (130)) & (rating >= 75) & (rating_count >= 10) & (first_release_date >= ${from} & first_release_date < ${to}); limit 21; offset 40;`,
     );
+  });
+
+  it("asks for 25 and keeps 24 at a page size of 24 (spec 0029, AC-19)", async () => {
+    const mock = installIgdbMock({ igdb: [{ body: rows(25) }] });
+    const { value } = await settle(
+      fetchSearchGames({ query: "game", page: 2, pageSize: 24 }),
+    );
+    expect(mock.body()).toContain("limit 25; offset 24;");
+    expect(value?.results).toHaveLength(24);
+    expect(value?.hasNextPage).toBe(true);
   });
 
   it("asks for 21, returns 20, and knows there is a next page", async () => {
@@ -157,7 +168,22 @@ describe("fetchDiscoverGames", () => {
     const from = Date.UTC(2026, 7, 18) / 1000;
     const toExclusive = Date.UTC(2026, 9, 18) / 1000;
     expect(mock.body()).toContain(
-      `(first_release_date >= ${from}) & (first_release_date < ${toExclusive}) & (rating_count >= 10) & (hypes >= 5)`,
+      `(rating_count >= 10) & (first_release_date >= ${from}) & (first_release_date < ${toExclusive}) & (hypes >= 5)`,
+    );
+  });
+
+  it("leaves out the sort field condition when it is not required (spec 0029, AC-5)", async () => {
+    const mock = installIgdbMock({ igdb: [{ body: [] }] });
+    await settle(
+      fetchDiscoverGames({
+        sort: "rating_count_desc",
+        requireSortField: false,
+        genreIds: [8, 5],
+      }),
+    );
+    expect(mock.body()).not.toContain("rating_count != null");
+    expect(mock.body()).toContain(
+      `where ${FILTER} & (genres = [5,8]); sort rating_count desc; limit 21;`,
     );
   });
 

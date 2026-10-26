@@ -2,6 +2,7 @@
 
 **Date**: 2026-10-25
 **Status**: Accepted
+**Amended**: 2026-10-25 by [spec 0029](../0029-game-search-filters/index.md). AC-14: on `/search` the GAMES tab switches `type` in place. AC-15: the navbar search shows on `/games` and every `/games/*` path and searches games.
 
 Scope feature: [G6. Games home and list pages](../../scope/games.md) · Beta tier
 

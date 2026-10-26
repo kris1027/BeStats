@@ -121,19 +121,59 @@ export async function readGameListPage(
   today: string,
 ): Promise<IgdbPaged<GameSummary>> {
   if (isPopularGameList(list.slug)) {
-    const games = await getPopularGames(POPULAR_GAME_LISTS[list.slug]);
-    const start = (page - 1) * IGDB_LIST_PAGE_SIZE;
-    return {
+    return sliceGamePage(
+      await getPopularGames(POPULAR_GAME_LISTS[list.slug]),
       page,
-      results: games.slice(start, start + IGDB_LIST_PAGE_SIZE),
-      hasNextPage: start + IGDB_LIST_PAGE_SIZE < games.length,
-      totalResults: games.length,
-    };
+    );
   }
   if (page > IGDB_MAX_PAGE) {
     return { page, results: [], hasNextPage: false, totalResults: null };
   }
   return discoverGames({ ...gameListOptions(list.slug, today), page });
+}
+
+/**
+ * One 24 game page cut from a whole list, so its count is the list's exact
+ * length. Shared by the popularity list pages and `/search`'s games browse
+ * mode (spec 0029, AC-4), which read the same cached list.
+ */
+export function sliceGamePage(
+  games: readonly GameSummary[],
+  page: number,
+): IgdbPaged<GameSummary> {
+  const start = (page - 1) * IGDB_LIST_PAGE_SIZE;
+  return {
+    page,
+    results: games.slice(start, start + IGDB_LIST_PAGE_SIZE),
+    hasNextPage: start + IGDB_LIST_PAGE_SIZE < games.length,
+    totalResults: games.length,
+  };
+}
+
+/**
+ * The last 24 game page IGDB serves, or null when it sent no count (spec
+ * 0028, AC-10; spec 0029, AC-8): the count's pages, capped at IGDB's 50.
+ * Shared by the games list pages and `/search`.
+ */
+export function lastGamePage(paged: IgdbPaged<GameSummary>): number | null {
+  if (paged.totalResults === null) return null;
+  return Math.min(
+    IGDB_MAX_PAGE,
+    Math.ceil(paged.totalResults / IGDB_LIST_PAGE_SIZE),
+  );
+}
+
+/**
+ * Whether a pager with no known last page offers Next: only while IGDB says
+ * there is more, and never past its page 50 (spec 0028, AC-10).
+ */
+export function gameHasNextPage(
+  paged: IgdbPaged<GameSummary>,
+  page: number,
+): boolean {
+  return (
+    lastGamePage(paged) === null && paged.hasNextPage && page < IGDB_MAX_PAGE
+  );
 }
 
 /**
@@ -161,9 +201,7 @@ async function readTaggedGamePage(
  */
 export function lastListPage(result: TaggedCatalogPage): number | null {
   if (result.mediaType !== "game") return result.paged.totalPages;
-  const { totalResults } = result.paged;
-  if (totalResults === null) return null;
-  return Math.min(IGDB_MAX_PAGE, Math.ceil(totalResults / IGDB_LIST_PAGE_SIZE));
+  return lastGamePage(result.paged);
 }
 
 /**
@@ -176,12 +214,7 @@ export function listHasNextPage(
   result: TaggedCatalogPage,
   page: number,
 ): boolean {
-  return (
-    lastListPage(result) === null &&
-    result.mediaType === "game" &&
-    result.paged.hasNextPage &&
-    page < IGDB_MAX_PAGE
-  );
+  return result.mediaType === "game" && gameHasNextPage(result.paged, page);
 }
 
 /**
