@@ -30,8 +30,12 @@ scope feature G1. It mirrors `lib/tmdb/` in shape but shares no code with it.
   (Trending and Popular: the `popularity_primitives` ranks, then the batch
   read, spec 0028) and `reference.ts`.
 - Pure code outside this folder (`lib/catalog/game-lists.ts`,
-  `lib/catalog-list-read.ts`) may import `constants.ts` and `types.ts`
-  directly, since `index.ts` is server only; a page or component never does.
+  `lib/catalog/media-type.ts`, `lib/catalog-list-read.ts`, `lib/images/`
+  and `lib/search/`) may import `constants.ts` and `types.ts` directly,
+  since `index.ts` is server only; a page or component never does, and
+  reads search's IGDB limits through `SEARCH_CATALOGS`
+  (`lib/search/catalogs.ts`). Nothing outside imports `query.ts`; a rule it
+  shares, like the control character pattern, moves to `constants.ts`.
 - Pure files (no `server-only`, so tests and the live check read them):
   `catalog-filter.ts`, `constants.ts`, `errors.ts`, `query.ts`, `types.ts`,
   `validation.ts`. Every other file starts with `import "server-only";`.
