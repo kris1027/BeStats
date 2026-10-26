@@ -26,7 +26,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { CATALOG_SOURCES, typedHref } from "@/lib/catalog/media-type";
-import { IGDB_MAX_FILTER_IDS } from "@/lib/igdb/constants";
+import { SEARCH_CATALOGS } from "@/lib/search/catalogs";
 import {
   FILTER_DEBOUNCE_MS,
   GAME_MIN_RATING_COUNT,
@@ -229,7 +229,7 @@ function FilterBar({
         <GenrePicker
           genres={typeGenres}
           selected={values.genreIds}
-          max={isGame ? IGDB_MAX_FILTER_IDS : undefined}
+          max={SEARCH_CATALOGS[values.type].maxFilterIds ?? undefined}
           onToggle={(id) =>
             applyList({ ...current, genreIds: toggled(values.genreIds, id) })
           }
@@ -524,7 +524,8 @@ function PlatformList({
         platform.name.toLowerCase().includes(needle),
       )
     : platforms;
-  const full = selected.length >= IGDB_MAX_FILTER_IDS;
+  const max = SEARCH_CATALOGS.game.maxFilterIds;
+  const full = selected.length >= max;
 
   return (
     <fieldset className="flex flex-col gap-3">
@@ -560,7 +561,7 @@ function PlatformList({
           ))}
         </div>
       )}
-      {full ? <CapHint max={IGDB_MAX_FILTER_IDS} /> : null}
+      {full ? <CapHint max={max} /> : null}
     </fieldset>
   );
 }

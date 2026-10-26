@@ -1,10 +1,22 @@
 import { cn } from "cn";
-import { FilmIcon, Gamepad2Icon, StarIcon } from "lucide-react";
+import {
+  FilmIcon,
+  Gamepad2Icon,
+  type LucideIcon,
+  StarIcon,
+} from "lucide-react";
 import Image from "next/image";
 
 import { CATALOG_SOURCES } from "@/lib/catalog/media-type";
 import type { SearchType } from "@/lib/search/params";
 import type { QuickResult } from "@/lib/search/quick";
+
+/** The icon a row with no poster or cover shows, per catalog. */
+const FALLBACK_ICONS = {
+  tv: FilmIcon,
+  movie: FilmIcon,
+  game: Gamepad2Icon,
+} as const satisfies Record<SearchType, LucideIcon>;
 
 /**
  * One result row in the quick search: the poster or cover, the title over its
@@ -23,7 +35,7 @@ function QuickSearchRow({
   result: QuickResult;
   type: SearchType;
 }) {
-  const FallbackIcon = type === "game" ? Gamepad2Icon : FilmIcon;
+  const FallbackIcon = FALLBACK_ICONS[type];
   return (
     <>
       <span className="relative aspect-2/3 w-[42px] shrink-0 overflow-hidden rounded-md">

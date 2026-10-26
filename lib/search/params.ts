@@ -6,17 +6,12 @@ import {
 import { parsePageParam } from "@/lib/catalog/pages";
 import {
   IGDB_CONTROL_CHARACTERS,
-  IGDB_MAX_FILTER_IDS,
   IGDB_MAX_QUERY_LENGTH,
-  IGDB_MIN_YEAR,
 } from "@/lib/igdb/constants";
 
-import {
-  MAX_QUERY_LENGTH,
-  MIN_YEAR,
-  RATING_STEPS,
-  type RatingStep,
-} from "./constants";
+import { SEARCH_CATALOGS } from "./catalogs";
+
+import { MAX_QUERY_LENGTH, RATING_STEPS, type RatingStep } from "./constants";
 
 /**
  * The three catalogs `/search` covers: the navbar tab's type, so search and
@@ -176,20 +171,13 @@ export function parseSearchParams(
     return { ok: false, param: "q" };
   }
 
-  const genreIds = idList(
-    raw.genre,
-    lists.genres,
-    isGame ? IGDB_MAX_FILTER_IDS : Number.POSITIVE_INFINITY,
-  );
+  const maxIds = SEARCH_CATALOGS[type].maxFilterIds ?? Number.POSITIVE_INFINITY;
+  const genreIds = idList(raw.genre, lists.genres, maxIds);
   if (genreIds === null) return { ok: false, param: "genre" };
 
   let platformIds: number[] = [];
   if (isGame) {
-    const ids = idList(
-      raw.platform,
-      lists.platforms ?? [],
-      IGDB_MAX_FILTER_IDS,
-    );
+    const ids = idList(raw.platform, lists.platforms ?? [], maxIds);
     if (ids === null) return { ok: false, param: "platform" };
     platformIds = ids;
   } else if (raw.platform !== undefined) {
@@ -241,7 +229,7 @@ export function parseSearchParams(
  * (spec 0029, AC-2).
  */
 export function minYear(type: SearchType): number {
-  return type === "game" ? IGDB_MIN_YEAR : MIN_YEAR;
+  return SEARCH_CATALOGS[type].minYear;
 }
 
 /**

@@ -40,7 +40,7 @@ import {
   IgdbError,
   type Paged as IgdbPaged,
 } from "@/lib/igdb";
-import { IGDB_MAX_PAGE } from "@/lib/igdb/constants";
+import { SEARCH_CATALOGS } from "@/lib/search/catalogs";
 import { formatRange, mediaNoun } from "@/lib/search/count";
 import { readGameSearchPage } from "@/lib/search/game-read";
 import { searchMode } from "@/lib/search/mode";
@@ -183,7 +183,8 @@ async function GameResults({
   if (!parsed.ok) return <InvalidFilter param={parsed.param} type="game" />;
   // The raw type was `game`, so the parsed one is too.
   const params = parsed.params as GameSearchParams;
-  if (params.page > IGDB_MAX_PAGE) return <NoSuchPage params={params} />;
+  if (params.page > SEARCH_CATALOGS.game.maxPage)
+    return <NoSuchPage params={params} />;
 
   const mode = searchMode(params);
   if (mode === "filtered_search")
@@ -467,6 +468,13 @@ function ShowResultCard({
   );
 }
 
+/** What to loosen when filters match nothing; games have platforms too. */
+const FILTERED_HINTS = {
+  tv: "Try fewer genres, another year or a lower rating.",
+  movie: "Try fewer genres, another year or a lower rating.",
+  game: "Try fewer genres or platforms, another year or a lower rating.",
+} as const satisfies Record<SearchType, string>;
+
 /**
  * The two empty answers of AC-15: a query alone, or any filter. A games
  * search names platforms too (spec 0029, AC-13).
@@ -489,9 +497,7 @@ function NoMatches({ params }: { params: SearchParams }) {
         }
         description={
           filtered
-            ? params.type === "game"
-              ? "Try fewer genres or platforms, another year or a lower rating."
-              : "Try fewer genres, another year or a lower rating."
+            ? FILTERED_HINTS[params.type]
             : "Check the spelling, or try a shorter title."
         }
         action={<ClearFilters type={params.type} />}

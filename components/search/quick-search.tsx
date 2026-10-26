@@ -10,6 +10,7 @@ import { useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { CATALOG_SOURCES } from "@/lib/catalog/media-type";
+import { SEARCH_CATALOGS } from "@/lib/search/catalogs";
 import { QUICK_LIMIT, QUICK_MIN_CHARS } from "@/lib/search/constants";
 import { formatResultCount, mediaNoun } from "@/lib/search/count";
 import type { SearchType } from "@/lib/search/params";
@@ -181,7 +182,7 @@ function QuickSearch({
               ? formatResultCount(
                   view.data.totalResults,
                   type,
-                  type === "game" ? "igdb" : "search",
+                  SEARCH_CATALOGS[type].quickCountEndpoint,
                 )
               : null}
           </span>
