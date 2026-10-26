@@ -144,7 +144,7 @@ Games in `/search?type=game` with a title query and filters for genre, release y
   - [x] Navigation and quick search: `Search games` on games pages, GAMES in place on `/search`, the logo, `/api/search` for games and the `rating` rename, AC-14 to AC-18
   - [x] Proof: `/showcase`, request scope tests, the prerendered shell, 375px and 1280px, keyboard, all checks, AC-20, AC-21
 - [x] Verify it: `/check verify game search and filters`
-- [ ] Test it: `/test game search and filters`
+- [x] Test it: `/test game search and filters`
 spec [0029](../specs/0029-game-search-filters/index.md) · code in `app/search/`, `components/search/`, `lib/search/`, `lib/igdb/`
 
 ### G8. Game cards everywhere · needs a decision
