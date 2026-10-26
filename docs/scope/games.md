@@ -183,10 +183,10 @@ Turn games on for search engines and production, with the credits IGDB asks for.
 **Done when:** game pages and list pages are in the sitemap with `VideoGame` JSON-LD and share cards; an `IGDB_ATTRIBUTION` sits next to `TMDB_ATTRIBUTION` in the footer and on `/terms` with `LEGAL_LAST_UPDATED` bumped; IGDB's current terms are checked again and the result recorded; the `IGDB_*` variables are set in Vercel and the change is deployed through [docs/deploy.md](../deploy.md).
 - [x] Design it (spec): `/architect games launch`
 - [ ] Build it: `/develop games launch`
-  - [ ] Terms check in a browser, recorded in the spec's rationale, plus the logo search, AC-10, AC-11
-  - [ ] Thin thread: an indexable game page (canonical, share card, `VideoGame` JSON-LD) and its ids in the sitemap with failure isolation, AC-1 to AC-3, AC-6, AC-7, AC-14
-  - [ ] `/games` and the five list pages indexed and in the sitemap, AC-4 to AC-6
-  - [ ] IGDB credit in the footer and on `/terms`, `LEGAL_LAST_UPDATED` bumped, AC-8 to AC-10
+  - [x] Terms check in a browser, recorded in the spec's rationale, plus the logo search, AC-10, AC-11
+  - [x] Thin thread: an indexable game page (canonical, share card, `VideoGame` JSON-LD) and its ids in the sitemap with failure isolation, AC-1 to AC-3, AC-6, AC-7, AC-14
+  - [x] `/games` and the five list pages indexed and in the sitemap, AC-4 to AC-6
+  - [x] IGDB credit in the footer and on `/terms`, `LEGAL_LAST_UPDATED` bumped, AC-8 to AC-10
   - [ ] Flag removed, Preview credentials and the deploy docs, then the production launch checks, AC-12, AC-13, AC-15
 - [ ] Verify it: `/check verify games launch`
 - [ ] Test it: `/test games launch`
