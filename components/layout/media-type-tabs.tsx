@@ -6,18 +6,16 @@ import Link from "next/link";
 import {
   CATALOG_PATHS,
   type LibraryType,
-  type MediaType,
   type TypedPath,
   typedHref,
 } from "@/lib/catalog/media-type";
-import { gamesLibraryEnabled } from "@/lib/env";
 
 import { WithLibraryTypedPage } from "./page-media-type";
 
 /**
  * The SHOWS and MOVIES control in the navbar (spec 0004, AC-14; feature 22),
- * with GAMES beside them on every page while the games library is on (spec
- * 0027, AC-3; spec 0028, AC-14).
+ * with GAMES beside them on every page (spec 0027, AC-3; spec 0028, AC-14;
+ * spec 0032, AC-12).
  *
  * These are links, not toggles. Selection comes from the URL, so a deep link,
  * a browser back button and a server render all agree on which tab is lit;
@@ -70,30 +68,29 @@ function MediaTypeTabs({ className }: { className?: string }) {
 }
 
 /**
- * Each tab's link on a typed page: the same page with its own `type`, GAMES
- * only while the games library is on (spec 0028, AC-14; spec 0029, AC-14).
- * On `/search` each keeps the query, year and rating `typedHref` allows.
+ * Each tab's link on a typed page: the same page with its own `type`
+ * (spec 0028, AC-14; spec 0029, AC-14). On `/search` each keeps the query,
+ * year and rating `typedHref` allows.
  */
 function typedHrefs(pathname: TypedPath, current?: URLSearchParams): TabHrefs {
-  const hrefs = {
+  return {
     tv: typedHref(pathname, "tv", { current }),
     movie: typedHref(pathname, "movie", { current }),
+    game: typedHref(pathname, "game", { current }),
   };
-  if (!gamesLibraryEnabled()) return hrefs;
-  return { ...hrefs, game: typedHref(pathname, "game", { current }) };
 }
 
-/**
- * Each tab's link off the typed pages: the three catalog landings, GAMES
- * only while the games library is on (spec 0028, AC-14).
- */
+/** Each tab's link off the typed pages, the three catalog landings (spec 0028, AC-14). */
 function catalogHrefs(): TabHrefs {
-  const hrefs = { tv: CATALOG_PATHS.tv, movie: CATALOG_PATHS.movie };
-  return gamesLibraryEnabled() ? { ...hrefs, game: CATALOG_PATHS.game } : hrefs;
+  return {
+    tv: CATALOG_PATHS.tv,
+    movie: CATALOG_PATHS.movie,
+    game: CATALOG_PATHS.game,
+  };
 }
 
-/** Where each tab leads; a GAMES tab renders only when it has a link. */
-type TabHrefs = Record<MediaType, string> & { game?: string };
+/** Where each tab leads. */
+type TabHrefs = Record<LibraryType, string>;
 
 const TABS = [
   { type: "tv", label: "SHOWS" },
@@ -106,9 +103,8 @@ const TABS = [
  * which only the prerendered fallback uses: a page about neither catalog
  * renders no tabs at all.
  *
- * @param hrefs Where each tab leads, `/shows`, `/movies` and, with the games
- * library on, `/games` by default. The GAMES tab renders only when `hrefs`
- * gives it a link.
+ * @param hrefs Where each tab leads, `/shows`, `/movies` and `/games` by
+ * default.
  */
 function MediaTypeTabsView({
   selected,
@@ -119,10 +115,7 @@ function MediaTypeTabsView({
   hrefs?: TabHrefs;
   className?: string;
 }) {
-  const tabs = TABS.flatMap((tab) => {
-    const href = hrefs[tab.type];
-    return href === undefined ? [] : [{ ...tab, href }];
-  });
+  const tabs = TABS.map((tab) => ({ ...tab, href: hrefs[tab.type] }));
 
   return (
     <nav

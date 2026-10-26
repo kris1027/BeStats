@@ -4,14 +4,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LibraryErrorBoundary } from "./library-error-boundary";
 
 /**
- * covers: spec 0027, AC-5 (an invalid flag shows the library error boundary)
+ * covers: spec 0027, AC-5
  *
  * The section is replaced by a child that throws, the way `LibrarySection`
- * does on a bad `NEXT_PUBLIC_GAMES_LIBRARY`. React logs every caught error,
- * so the console is silenced for the throwing cases.
+ * does on a read the tabs do not settle. React logs every caught error, so
+ * the console is silenced for the throwing cases.
  */
 function Throws(): never {
-  throw new Error("NEXT_PUBLIC_GAMES_LIBRARY must be on or off");
+  throw new Error("library read exploded");
 }
 
 describe("LibraryErrorBoundary", () => {
@@ -56,8 +56,6 @@ describe("LibraryErrorBoundary", () => {
         <Throws />
       </LibraryErrorBoundary>,
     );
-    expect(
-      screen.queryByText(/NEXT_PUBLIC_GAMES_LIBRARY/),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/library read exploded/)).not.toBeInTheDocument();
   });
 });

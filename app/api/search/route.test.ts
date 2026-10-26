@@ -4,11 +4,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { IgdbError, IgdbValidationError } from "@/lib/igdb/errors";
 import { TmdbError } from "@/lib/tmdb/errors";
 
-/** covers: spec 0010, AC-20; spec 0029, AC-17 */
+/** covers: spec 0010, AC-20; spec 0029, AC-17; spec 0032, AC-12 */
 
 const readSearchPage = vi.hoisted(() => vi.fn());
 const searchGames = vi.hoisted(() => vi.fn());
-const games = vi.hoisted(() => ({ library: "on" as "on" | "off" }));
 
 vi.mock("@/lib/search/read", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/search/read")>();
@@ -18,9 +17,6 @@ vi.mock("@/lib/igdb", async () => {
   const errors = await import("@/lib/igdb/errors");
   return { ...errors, searchGames };
 });
-vi.mock("@/lib/env", () => ({
-  getGamesLibrary: vi.fn(() => games.library),
-}));
 
 const { GET } = await import("./route");
 
@@ -46,7 +42,6 @@ const PAGE = {
 afterEach(() => {
   readSearchPage.mockReset();
   searchGames.mockReset();
-  games.library = "on";
 });
 
 describe("GET /api/search", () => {
@@ -174,13 +169,6 @@ describe("GET /api/search for games (spec 0029, AC-17)", () => {
       rating: 9.1,
       href: "/games/1",
     });
-  });
-
-  it("answers 400 with the games library off, without asking IGDB", async () => {
-    games.library = "off";
-    const response = await GET(request("type=game&q=zelda"));
-    expect(response.status).toBe(400);
-    expect(searchGames).not.toHaveBeenCalled();
   });
 
   it("answers 400, never 500, for a query IGDB's cleaning refuses", async () => {

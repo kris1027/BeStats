@@ -7,18 +7,12 @@ import type { GameSummary, Paged } from "@/lib/igdb";
  * covers: spec 0029, AC-1, AC-2, AC-4, AC-5, AC-8, AC-11, AC-12, AC-13;
  * spec 0030, AC-1
  *
- * The games branch of `SearchResults`, as `/search` renders it. The flag,
- * IGDB's reference lists and the one results read are the boundaries and are
+ * The games branch of `SearchResults`, as `/search` renders it. IGDB's
+ * reference lists and the one results read are the boundaries and are
  * replaced; the URL parser, the mode, the paging rules and every panel stay
  * real, so each test checks what the visitor would see for one URL. The TMDB
  * half and the session slots have their own suites and are stubbed out.
  */
-const getGamesLibrary = vi.fn();
-vi.mock("@/lib/env", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/lib/env")>()),
-  getGamesLibrary: () => getGamesLibrary(),
-}));
-
 class IgdbError extends Error {}
 const getGameGenres = vi.fn();
 const getGamePlatforms = vi.fn();
@@ -107,7 +101,6 @@ async function renderResults(
 }
 
 beforeEach(() => {
-  getGamesLibrary.mockReturnValue("on");
   getGameGenres.mockResolvedValue(GENRES);
   getGamePlatforms.mockResolvedValue(PLATFORMS);
 });
@@ -364,35 +357,5 @@ describe("SearchResults for games", () => {
 
     expect(screen.getByText("No popular games right now")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Clear filters" })).toBeNull();
-  });
-});
-
-describe("SearchResults and the games flag (AC-1)", () => {
-  it("refuses type=game while the games library is off, before any IGDB request", async () => {
-    getGamesLibrary.mockReturnValue("off");
-
-    await renderResults({ type: "game", q: "zelda" });
-
-    expect(screen.getByText("That filter isn't valid")).toBeInTheDocument();
-    expect(screen.getByText(/“type”/)).toBeInTheDocument();
-    expect(getGameGenres).not.toHaveBeenCalled();
-    expect(readGameSearchPage).not.toHaveBeenCalled();
-  });
-
-  it("never reads the flag for a movie search, so an invalid flag cannot break it", async () => {
-    getGamesLibrary.mockImplementation(() => {
-      throw new Error("invalid NEXT_PUBLIC_GAMES_LIBRARY");
-    });
-    getMovieGenres.mockResolvedValue([]);
-    readSearchGridPage.mockResolvedValue({
-      results: [],
-      totalResults: 0,
-      totalPages: 0,
-    });
-
-    await renderResults({ type: "movie", q: "dune" });
-
-    expect(getGamesLibrary).not.toHaveBeenCalled();
-    expect(screen.getByText("No movies match “dune”")).toBeInTheDocument();
   });
 });

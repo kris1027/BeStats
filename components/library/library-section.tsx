@@ -1,7 +1,6 @@
 import { requireUser } from "@/lib/auth/user";
 import { parseLibraryTypeParam } from "@/lib/catalog/media-type";
 import { parsePageParam } from "@/lib/catalog/pages";
-import { getGamesLibrary } from "@/lib/env";
 import { requestTodayUtc } from "@/lib/tracking/episode-state";
 
 import { gameLibraryTab } from "./game-library-tab";
@@ -15,9 +14,7 @@ import type { LibraryList } from "./types";
  * spec 0008 for the shared states). It streams behind the page's Suspense
  * boundary, because it reads the session, the search params and the user's
  * rows. It lists one media type, the navbar tab's `type` parameter
- * (feature 22), or games while `NEXT_PUBLIC_GAMES_LIBRARY` is on (spec 0027,
- * AC-5). An invalid flag value throws here, so a misconfigured deploy shows
- * the library error boundary instead of guessing.
+ * (feature 22), or games (spec 0027, AC-5).
  *
  * The order is deliberate. `requireUser()` first, so a request that got past
  * the proxy still receives no list data. Then the type and page parameters,
@@ -41,7 +38,7 @@ async function LibrarySection({
   const user = await requireUser();
 
   const raw = await searchParams;
-  const type = parseLibraryTypeParam(raw.type, getGamesLibrary() === "on");
+  const type = parseLibraryTypeParam(raw.type);
   const page = parsePageParam(raw.page);
   if (type === null) return <NoSuchPage list={list} type={null} />;
   if (page === null) return <NoSuchPage list={list} type={type} />;

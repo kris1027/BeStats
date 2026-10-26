@@ -164,7 +164,6 @@ describe("Navbar", () => {
   // covers: spec 0027, AC-3; spec 0029, AC-15. A games tab has the GAMES tab
   // lit and searches games.
   it("lights GAMES and searches games on a games tab (spec 0029, AC-15)", () => {
-    vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "on");
     window.localStorage.removeItem("bestats:last-media-type");
     pathname.current = "/watched";
     search.current = "type=game";
@@ -190,7 +189,6 @@ describe("Navbar", () => {
     );
     expect(window.localStorage.getItem("bestats:last-media-type")).toBe("game");
 
-    vi.unstubAllEnvs();
     window.localStorage.removeItem("bestats:last-media-type");
     pathname.current = "/shows";
     search.current = "type=movie";
@@ -200,7 +198,6 @@ describe("Navbar", () => {
   it.each(["/games", "/games/coming-soon"])(
     "lights GAMES on %s, searching games, with the logo on /games",
     (path) => {
-      vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "on");
       pathname.current = path;
       search.current = "";
       render(
@@ -223,7 +220,6 @@ describe("Navbar", () => {
         "/games",
       );
 
-      vi.unstubAllEnvs();
       window.localStorage.removeItem("bestats:last-media-type");
       pathname.current = "/shows";
       search.current = "type=movie";
@@ -232,7 +228,6 @@ describe("Navbar", () => {
 
   // spec 0029, AC-15, AC-18
   it("searches games on /search?type=game, with the logo on /games", () => {
-    vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "on");
     pathname.current = "/search";
     search.current = "type=game&q=zelda";
     render(
@@ -252,30 +247,6 @@ describe("Navbar", () => {
     expect(screen.getByRole("link", { name: "BeStats" })).toHaveAttribute(
       "href",
       "/games",
-    );
-    vi.unstubAllEnvs();
-    window.localStorage.removeItem("bestats:last-media-type");
-    pathname.current = "/shows";
-    search.current = "type=movie";
-  });
-
-  it("lights SHOWS and searches shows on /search?type=game with the flag off", () => {
-    pathname.current = "/search";
-    search.current = "type=game";
-    render(
-      <Navbar
-        mobileAccountSlot={<ACCOUNT_SLOT />}
-        desktopAccountSlot={<ACCOUNT_SLOT />}
-      />,
-    );
-    expect(screen.getByRole("combobox")).toHaveAttribute(
-      "placeholder",
-      "Search shows",
-    );
-    expect(screen.queryByRole("link", { name: "GAMES" })).toBeNull();
-    expect(screen.getByRole("link", { name: "BeStats" })).toHaveAttribute(
-      "href",
-      "/shows",
     );
     window.localStorage.removeItem("bestats:last-media-type");
     pathname.current = "/shows";

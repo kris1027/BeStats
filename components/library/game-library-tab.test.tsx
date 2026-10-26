@@ -7,8 +7,8 @@ import type { LibraryGameItem, LibraryList } from "./types";
  * covers: spec 0027, AC-5 to AC-11, AC-14; spec 0030, AC-11
  *
  * The games tabs through `LibrarySection`, as the page renders them. The
- * session, the flag, the Postgres page and the IGDB batch are the
- * boundaries and are replaced; `libraryLastPage`, the item mapping and the
+ * session, the Postgres page and the IGDB batch are the boundaries and are
+ * replaced; `libraryLastPage`, the item mapping and the
  * date formatting stay real. The client grid has its own suite, so here it
  * is a stub that shows what it was handed. `redirect()` throws, as in Next.
  */
@@ -126,7 +126,6 @@ function page(rows: unknown[], total = rows.length) {
 }
 
 beforeEach(() => {
-  vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "on");
   requireUser.mockResolvedValue({ id: "user-a", email: "a@example.test" });
   getGameLibraryPage.mockResolvedValue(page([]));
   getLibraryGames.mockResolvedValue({
@@ -145,28 +144,9 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.clearAllMocks();
-  vi.unstubAllEnvs();
 });
 
-describe("the flag and the parameters (AC-5)", () => {
-  it("answers ?type=game with the doesn't exist panel while the flag is off", async () => {
-    vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "off");
-    await renderSection("watchlist", { type: "game" });
-
-    expect(screen.getByText("That page doesn't exist")).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: "Back to Watchlist" }),
-    ).toHaveAttribute("href", "/watchlist?type=tv");
-    expect(getGameLibraryPage).not.toHaveBeenCalled();
-  });
-
-  it("throws on an invalid flag, so the error boundary shows", async () => {
-    vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "maybe");
-    await expect(renderSection("watchlist", { type: "game" })).rejects.toThrow(
-      "NEXT_PUBLIC_GAMES_LIBRARY",
-    );
-  });
-
+describe("the parameters (AC-5)", () => {
   it("keeps type=game in a malformed page's Back to page 1 link", async () => {
     await renderSection("watched", { type: "game", page: "x" });
 

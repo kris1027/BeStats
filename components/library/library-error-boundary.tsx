@@ -10,8 +10,8 @@ import type { LibraryList } from "./types";
 
 /**
  * The panel a library page shows when its section throws instead of
- * returning a panel of its own: an invalid `NEXT_PUBLIC_GAMES_LIBRARY` value
- * (spec 0027, AC-5), or any read that fails in a way the tabs do not settle.
+ * returning a panel of its own: any read that fails in a way the tabs do not
+ * settle (spec 0027, AC-5).
  *
  * It wraps only the streamed section, so the heading stays in the static
  * shell and keeps the focus target removals rely on (spec 0008, AC-16). It

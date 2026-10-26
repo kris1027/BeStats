@@ -9,7 +9,6 @@ import {
   mediaTypeForLocation,
   type TypedPath,
 } from "@/lib/catalog/media-type";
-import { gamesLibraryEnabled } from "@/lib/env";
 
 /**
  * Where the visitor is, as the navbar's type aware controls need it: the
@@ -73,7 +72,7 @@ function WithPageMediaType({
   return children({
     pathname,
     type: mediaTypeForLocation(pathname, null),
-    libraryType: libraryTypeForLocation(pathname, null, gamesLibraryEnabled()),
+    libraryType: libraryTypeForLocation(pathname, null),
     params: null,
   });
 }
@@ -119,11 +118,7 @@ function TypedPageMediaType({
 }) {
   const params = useSearchParams();
   const typeParam = params.get("type");
-  const libraryType = libraryTypeForLocation(
-    pathname,
-    typeParam,
-    gamesLibraryEnabled(),
-  );
+  const libraryType = libraryTypeForLocation(pathname, typeParam);
   return children({
     pathname,
     type:

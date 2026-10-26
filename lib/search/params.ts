@@ -15,8 +15,8 @@ import { MAX_QUERY_LENGTH, RATING_STEPS, type RatingStep } from "./constants";
 
 /**
  * The three catalogs `/search` covers: the navbar tab's type, so search and
- * the library pages share one definition (feature 22). `game` only reaches
- * it while the games library is on (spec 0029, AC-1).
+ * the library pages share one definition (feature 22), `game` included
+ * (spec 0029, AC-1).
  */
 export type SearchType = LibraryType;
 
@@ -74,18 +74,13 @@ export type SearchLists = {
 };
 
 /**
- * A parse's answer. `P` narrows to `TmdbSearchParams` when games were not
- * accepted, so a caller never casts what the parser already proved.
+ * A parse's answer. `P` narrows to `TmdbSearchParams` or `GameSearchParams`
+ * through `parseTmdbSearchParams` and `parseGameSearchParams`, so a caller
+ * never casts what the parser already proved.
  */
 export type ParseResult<P extends SearchParams = SearchParams> =
   | { ok: true; params: P }
   | { ok: false; param: SearchParamName };
-
-/**
- * @param gamesEnabled Whether `type=game` is accepted: `gameSearchEnabled`,
- * which reads the flag only for a raw `type=game` (spec 0029, AC-1).
- */
-export type ParseOptions = { gamesEnabled?: boolean };
 
 type RawValue = string | string[] | undefined;
 type RawParams = Record<string, RawValue>;
@@ -158,29 +153,13 @@ function isCleanGameQuery(query: string): boolean {
  * catalog is refused.
  * @param currentYear The current UTC year, read at request time by the caller,
  * so the year range moves on New Year's Day without a deploy.
- * @param options.gamesEnabled Whether `type=game` is accepted (spec 0029,
- * AC-1). Without it the result can only be a show or movie search, and the
- * return type says so.
  */
 export function parseSearchParams(
   raw: RawParams,
   lists: SearchLists,
   currentYear: number,
-  options?: { gamesEnabled?: false },
-): ParseResult<TmdbSearchParams>;
-export function parseSearchParams(
-  raw: RawParams,
-  lists: SearchLists,
-  currentYear: number,
-  options: ParseOptions,
-): ParseResult;
-export function parseSearchParams(
-  raw: RawParams,
-  lists: SearchLists,
-  currentYear: number,
-  { gamesEnabled = false }: ParseOptions = {},
 ): ParseResult {
-  const type = parseLibraryTypeParam(raw.type, gamesEnabled);
+  const type = parseLibraryTypeParam(raw.type);
   if (type === null) return { ok: false, param: "type" };
   const isGame = type === "game";
 
@@ -274,13 +253,30 @@ export function parseGameSearchParams(
     raw,
     { genres: lists.genres ?? [], platforms: lists.platforms ?? [] },
     currentYear,
-    { gamesEnabled: true },
   );
   if (!parsed.ok) return parsed;
   const { params } = parsed;
   return params.type === "game"
     ? { ok: true, params }
     : { ok: false, param: "type" };
+}
+
+/**
+ * `parseSearchParams` for a request already known to be a show or movie
+ * search, the mirror of `parseGameSearchParams`. Narrowed rather than cast:
+ * a URL whose `type` is `game` is refused by name.
+ */
+export function parseTmdbSearchParams(
+  raw: RawParams,
+  lists: SearchLists,
+  currentYear: number,
+): ParseResult<TmdbSearchParams> {
+  const parsed = parseSearchParams(raw, lists, currentYear);
+  if (!parsed.ok) return parsed;
+  const { params } = parsed;
+  return params.type === "game"
+    ? { ok: false, param: "type" }
+    : { ok: true, params };
 }
 
 /**

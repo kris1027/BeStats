@@ -2,7 +2,6 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { IgdbError, IgdbValidationError, searchGames } from "@/lib/igdb";
 import { toGameQuickSearchResponse } from "@/lib/search/game-read";
-import { gameSearchEnabled } from "@/lib/search/games-flag";
 import { quickSearchRequestSchema } from "@/lib/search/quick";
 import { readSearchPage, toQuickSearchResponse } from "@/lib/search/read";
 import { TmdbError } from "@/lib/tmdb";
@@ -26,17 +25,16 @@ const SUCCESS_CACHE = "public, s-maxage=300, stale-while-revalidate=600";
  * cached module read, so a popular query costs one TMDB request per cache
  * lifetime. Errors are never cached.
  *
- * `type=game` is accepted only while the games library is on, and the flag is
- * read only for that raw value; it reads the cached IGDB search page 1 at the
- * default 20 and returns its first five games (spec 0029, AC-17). A query
+ * `type=game` reads the cached IGDB search page 1 at the default 20 and
+ * returns its first five games (spec 0029, AC-17). A query
  * IGDB's cleaning refuses answers 400, never 500.
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
-  const rawType = searchParams.get("type");
-  const parsed = quickSearchRequestSchema({
-    gamesEnabled: gameSearchEnabled(rawType),
-  }).safeParse({ type: rawType, q: searchParams.get("q") });
+  const parsed = quickSearchRequestSchema.safeParse({
+    type: searchParams.get("type"),
+    q: searchParams.get("q"),
+  });
   if (!parsed.success) return invalid();
 
   const { type, q } = parsed.data;

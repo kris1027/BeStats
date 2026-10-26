@@ -39,12 +39,11 @@ import {
 import { SEARCH_CATALOGS } from "@/lib/search/catalogs";
 import { formatRange, mediaNoun } from "@/lib/search/count";
 import { readGameSearchPage } from "@/lib/search/game-read";
-import { gameSearchEnabled } from "@/lib/search/games-flag";
 import { readGameLists } from "@/lib/search/lists";
 import { searchMode } from "@/lib/search/mode";
 import {
   parseGameSearchParams,
-  parseSearchParams,
+  parseTmdbSearchParams,
   type SearchParamName,
   type SearchParams,
   type SearchType,
@@ -79,13 +78,10 @@ type RawParams = Record<string, string | string[] | undefined>;
  * except by each card's bookmark in its own boundary (AC-16, AC-22; spec
  * 0013, AC-18).
  *
- * `type=game` counts only while the games library is on, and the flag is read
- * only for that raw value, so an invalid flag can never take a show or movie
- * search down (spec 0029, AC-1). A games search has its own branch.
+ * A games search has its own branch (spec 0029, AC-1).
  */
 async function SearchResults({ raw }: { raw: RawParams }) {
-  const gamesEnabled = gameSearchEnabled(raw.type);
-  const type = parseLibraryTypeParam(raw.type, gamesEnabled);
+  const type = parseLibraryTypeParam(raw.type);
   if (type === null) return <InvalidFilter param="type" type={null} />;
 
   const retryHref = rawHref(raw);
@@ -107,7 +103,7 @@ async function SearchResults({ raw }: { raw: RawParams }) {
 
   // Read at request time, after the URL, so the year range is never baked
   // into a prerendered shell.
-  const parsed = parseSearchParams(
+  const parsed = parseTmdbSearchParams(
     raw,
     { genres },
     new Date().getUTCFullYear(),

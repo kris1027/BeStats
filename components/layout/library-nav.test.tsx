@@ -114,8 +114,7 @@ describe("LibraryNav", () => {
   );
 
   // covers: spec 0027, AC-4
-  it("carries type=game on a games tab while the games library is on", () => {
-    vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "on");
+  it("carries type=game on a games tab", () => {
     pathname = "/upcoming";
     search = "type=game";
     render(<LibraryNav variant="sheet" />);
@@ -127,12 +126,10 @@ describe("LibraryNav", () => {
       "/upcoming?type=game",
       "/watched?type=game",
     ]);
-    vi.unstubAllEnvs();
   });
 
   // covers: spec 0028, AC-14
-  it("carries type=game on /games while the games library is on", () => {
-    vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "on");
+  it("carries type=game on /games", () => {
     pathname = "/games/top-rated";
     search = "";
     render(<LibraryNav variant="sheet" />);
@@ -144,6 +141,5 @@ describe("LibraryNav", () => {
       "/upcoming?type=game",
       "/watched?type=game",
     ]);
-    vi.unstubAllEnvs();
   });
 });

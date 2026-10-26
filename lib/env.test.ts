@@ -1,9 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
-  gamesLibraryEnabled,
   getAuthEmailDelivery,
-  getGamesLibrary,
   getPublicEnv,
   publicEnvProblems,
 } from "@/lib/env";
@@ -94,41 +92,5 @@ describe("getAuthEmailDelivery", () => {
       "NEXT_PUBLIC_AUTH_EMAIL_DELIVERY",
     );
     expect(() => getAuthEmailDelivery()).not.toThrow("yes-please");
-  });
-});
-
-/**
- * covers: spec 0027, AC-1
- *
- * The games library flag: unset means off, the library throws on a typo,
- * and the navbar reads a typo as off so no page outside the library breaks.
- */
-describe("getGamesLibrary and gamesLibraryEnabled", () => {
-  afterEach(() => {
-    vi.unstubAllEnvs();
-  });
-
-  it.each([undefined, ""])("reads %j as off", (value) => {
-    vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", value);
-    expect(getGamesLibrary()).toBe("off");
-    expect(gamesLibraryEnabled()).toBe(false);
-  });
-
-  it.each(["on", "off"] as const)("returns %s as given", (value) => {
-    vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", value);
-    expect(getGamesLibrary()).toBe(value);
-    expect(gamesLibraryEnabled()).toBe(value === "on");
-  });
-
-  it("throws on anything else in the library, naming only the variable", () => {
-    vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "yes-please");
-
-    expect(() => getGamesLibrary()).toThrow("NEXT_PUBLIC_GAMES_LIBRARY");
-    expect(() => getGamesLibrary()).not.toThrow("yes-please");
-  });
-
-  it("reads anything else as off in the navbar, without throwing", () => {
-    vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "yes-please");
-    expect(gamesLibraryEnabled()).toBe(false);
   });
 });

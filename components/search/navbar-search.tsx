@@ -17,7 +17,7 @@ type Layout = "desktop" | "mobile";
  * AC-6).
  *
  * The type follows the page (feature 22): movies under `/movies`, shows
- * under `/shows`, games under `/games` while the games library is on, and the
+ * under `/shows`, games under `/games`, and the
  * `type` parameter on `/watchlist`, `/upcoming`, `/watched` and `/search`,
  * read through `WithLibraryTypedPage`, the field the tabs follow (spec 0029,
  * AC-15). A page about neither catalog renders no search at all

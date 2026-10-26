@@ -89,7 +89,6 @@ describe("BrandLink", () => {
       ["/games/1942", ""],
       ["/watched", "type=game"],
     ])("links %s?%s to /games and remembers game", (path, query) => {
-      vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "on");
       pathname.value = path;
       search.value = query;
       render(<BrandLink />);
@@ -98,24 +97,14 @@ describe("BrandLink", () => {
       expect(window.localStorage.getItem(LAST_MEDIA_TYPE_KEY)).toBe("game");
     });
 
-    it("sends a remembered game to /games only while the flag is on", () => {
+    it("sends a remembered game to /games", () => {
       window.localStorage.setItem(LAST_MEDIA_TYPE_KEY, "game");
       pathname.value = "/account";
 
-      vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "on");
       render(<BrandLink />).unmount();
       expect(window.localStorage.getItem(LAST_MEDIA_TYPE_KEY)).toBe("game");
       render(<BrandLink />);
       expect(brandHref()).toBe("/games");
-    });
-
-    it("reads a stale remembered game as nothing with the flag off", () => {
-      window.localStorage.setItem(LAST_MEDIA_TYPE_KEY, "game");
-      vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "off");
-      pathname.value = "/account";
-      render(<BrandLink />);
-
-      expect(brandHref()).toBe("/shows");
     });
   });
 
