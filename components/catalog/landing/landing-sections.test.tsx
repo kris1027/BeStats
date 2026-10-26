@@ -50,6 +50,8 @@ vi.mock("./landing-badge", () => ({
       {item.mediaType}:{item.id}
     </span>
   ),
+  landingMeta: (item: { mediaType: string; year: number | null }) =>
+    item.mediaType === "game" ? (item.year ?? undefined) : undefined,
 }));
 
 const { TmdbError } = await import("@/lib/tmdb/errors");
@@ -491,7 +493,7 @@ describe("the sidebar count (decision 12)", () => {
   });
 });
 
-/** covers: spec 0028, AC-3, AC-8, AC-9, AC-11 */
+/** covers: spec 0028, AC-3, AC-8, AC-9, AC-11; spec 0030, AC-1, AC-7, AC-10 */
 describe("the games landing sections", () => {
   const GAMES = landingSlots("game");
 
@@ -553,6 +555,32 @@ describe("the games landing sections", () => {
     ).toContain("t_1080p/ar1.jpg");
     expect(screen.getByText("Nov 6")).toBeInTheDocument();
     expect(screen.getByText("Jan 8, 2027")).toBeInTheDocument();
+  });
+
+  it("gives every game poster its controls with the section's ids, and its year", async () => {
+    read.mockResolvedValue(gamePage(games(24)));
+
+    const { container } = render(await PopularItems({ list: GAMES.popular }));
+
+    const controls = screen.getAllByTestId("controls");
+    expect(controls.length).toBeGreaterThan(0);
+    const ids = controls[0]?.getAttribute("data-ids");
+    for (const control of controls) {
+      expect(control).toHaveAttribute("data-ids", ids ?? "");
+      expect(control.textContent).toMatch(/^game:/);
+    }
+    expect(container.querySelectorAll("p")).not.toHaveLength(0);
+    expect(screen.getAllByText("2026")).toHaveLength(controls.length);
+  });
+
+  it("keeps the slot's release pill off the wide card, which prints the date", async () => {
+    read.mockResolvedValue(gamePage(games(2)));
+
+    render(await UpcomingItems({ list: GAMES.upcoming }));
+
+    for (const control of screen.getAllByTestId("controls")) {
+      expect(control).toHaveAttribute("data-release-pill", "false");
+    }
   });
 
   it("falls back to the cover on a wide card with no art", async () => {

@@ -42,6 +42,10 @@ vi.mock("@/components/tracking/show-card-slots", () => ({
   ShowCardBadge: () => null,
   ShowCardControls: () => null,
 }));
+vi.mock("@/components/tracking/game-card-slots", () => ({
+  GameCardBadge: () => null,
+  GameCardControls: () => null,
+}));
 vi.mock("@/components/tracking/movie-tracking-slot", () => ({
   MovieTrackingSlot: ({ movieId }: { movieId: number }) => (
     <span data-testid="tracking">{`movie/${movieId}`}</span>

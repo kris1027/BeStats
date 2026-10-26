@@ -3,7 +3,8 @@ import { describe, expect, it, vi } from "vitest";
 
 /**
  * covers: prompts/landing-card-controls.md, decisions 1 and 2;
- * prompts/landing-review-fixes.md, decisions 3 and 7; spec 0028, AC-7, AC-8
+ * prompts/landing-review-fixes.md, decisions 3 and 7; spec 0028, AC-7;
+ * spec 0030, AC-1, AC-2, AC-7, AC-10
  *
  * `LandingControls` picks the slot for the card's media type, hands it the
  * section's ids so it shares the badge's read, and sends a session expired
@@ -19,6 +20,10 @@ vi.mock("@/components/tracking/show-card-slots", () => ({
   ShowCardBadge: () => null,
   ShowCardControls: () => null,
 }));
+vi.mock("@/components/tracking/game-card-slots", () => ({
+  GameCardBadge: () => null,
+  GameCardControls: () => null,
+}));
 
 vi.mock("@/components/tracking/movie-tracking-slot", () => ({
   MovieTrackingSlot: () => null,
@@ -30,9 +35,8 @@ vi.mock("@/components/tracking/game-tracking-slot", () => ({
   GameTrackingSlot: () => null,
 }));
 
-const { LandingBadge, LandingControls, LandingTracking } = await import(
-  "./landing-badge"
-);
+const { LandingBadge, LandingControls, LandingTracking, landingMeta } =
+  await import("./landing-badge");
 const { GameTrackingSlot } = await import(
   "@/components/tracking/game-tracking-slot"
 );
@@ -48,6 +52,9 @@ const { MovieCardControls } = await import(
 );
 const { ShowCardControls } = await import(
   "@/components/tracking/show-card-slots"
+);
+const { GameCardBadge, GameCardControls } = await import(
+  "@/components/tracking/game-card-slots"
 );
 
 const BASE = {
@@ -109,8 +116,9 @@ describe("LandingControls", () => {
   });
 });
 
-// spec 0028, AC-7, AC-8: a game card has IGDB's rating, no session read
-// and no controls; the hero gets the game page's own status control.
+// spec 0030, AC-1, AC-2, AC-7, AC-10: a game card gets the game slots, with
+// the section's ids and /games, and IGDB's rating while the read is pending;
+// the hero keeps the game page's own status control (spec 0028, AC-7).
 describe("a game", () => {
   const GAME = {
     ...BASE,
@@ -119,20 +127,51 @@ describe("a game", () => {
     id: 1942,
     href: "/games/1942",
     releaseDate: "2015-05-19",
+    year: 2015,
   };
 
-  it("badges with IGDB's community rating, outside any Suspense", () => {
-    const badge = LandingBadge({ item: GAME, ids: [1942] });
-    expect(badge.type).not.toBe(Symbol.for("react.suspense"));
-    const inner = (badge.type as (props: object) => React.ReactElement)(
-      badge.props as object,
+  it("badges with the game slot, falling back to IGDB's community rating", () => {
+    const badge = LandingBadge({ item: GAME, ids: [1942, 7346] });
+    expect(badge.type).toBe(Symbol.for("react.suspense"));
+    const { fallback, children } = badge.props as {
+      fallback: React.ReactElement;
+      children: React.ReactElement;
+    };
+    const rating = (fallback.type as (props: object) => React.ReactElement)(
+      fallback.props as object,
     );
-    expect(inner.type).toBe(IgdbRatingBadge);
-    expect(inner.props).toEqual({ value: 8.4 });
+    expect(rating.type).toBe(IgdbRatingBadge);
+    expect(rating.props).toEqual({ value: 8.4 });
+    expect(children.type).toBe(GameCardBadge);
+    expect(children.props).toEqual({
+      gameId: 1942,
+      releaseDate: "2015-05-19",
+      communityRating: 8.4,
+      gridGameIds: [1942, 7346],
+    });
   });
 
-  it("has no controls", () => {
-    expect(LandingControls({ item: GAME, ids: [1942] })).toBeNull();
+  it("renders the game controls with /games, passing the release pill switch", () => {
+    const child = slot(
+      LandingControls({ item: GAME, ids: [1942], releasePill: false }),
+    );
+    expect(child.type).toBe(GameCardControls);
+    expect(child.props).toEqual({
+      gameId: 1942,
+      name: "Dune",
+      releaseDate: "2015-05-19",
+      gridGameIds: [1942],
+      returnPath: "/games",
+      releasePill: false,
+    });
+  });
+
+  it("prints the release year as the meta line, and a show or movie none", () => {
+    expect(landingMeta(GAME)).toBe(2015);
+    expect(landingMeta({ ...GAME, year: null })).toBeUndefined();
+    expect(
+      landingMeta({ ...BASE, mediaType: "movie", id: 1, releaseDate: null }),
+    ).toBeUndefined();
   });
 
   it("gets the game status control in the hero", () => {

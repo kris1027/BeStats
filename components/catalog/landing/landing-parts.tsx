@@ -10,7 +10,7 @@ import {
 import { PosterCard } from "@/components/poster-card";
 import { type CatalogList, listPath } from "@/lib/catalog/lists";
 
-import { LandingBadge, LandingControls } from "./landing-badge";
+import { LandingBadge, LandingControls, landingMeta } from "./landing-badge";
 import {
   itemIds,
   type LandingItem,
@@ -128,6 +128,7 @@ function LandingPoster({
         title={item.title}
         posterUrl={item.posterUrl}
         href={item.href}
+        meta={landingMeta(item)}
         badge={<LandingBadge item={item} ids={ids} />}
         controls={<LandingControls item={item} ids={ids} />}
         priority={priority}
