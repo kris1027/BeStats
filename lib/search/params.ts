@@ -4,8 +4,12 @@ import {
   parseLibraryTypeParam,
 } from "@/lib/catalog/media-type";
 import { parsePageParam } from "@/lib/catalog/pages";
-import { IGDB_MAX_FILTER_IDS, IGDB_MIN_YEAR } from "@/lib/igdb/constants";
-import { cleanSearchText } from "@/lib/igdb/query";
+import {
+  IGDB_CONTROL_CHARACTERS,
+  IGDB_MAX_FILTER_IDS,
+  IGDB_MAX_QUERY_LENGTH,
+  IGDB_MIN_YEAR,
+} from "@/lib/igdb/constants";
 
 import {
   MAX_QUERY_LENGTH,
@@ -122,16 +126,16 @@ function idList(
 }
 
 /**
- * A games query as IGDB will search it, or null: one holding a control
- * character, or empty once cleaned, is refused here by the module's own
- * rule, so it never reaches IGDB as a validation error (spec 0029, AC-2).
+ * Whether IGDB would search a games query exactly as written. The text is
+ * already trimmed and not empty, so it only has to hold no control character
+ * and fit IGDB's length, the rule `cleanSearchText` applies; refusing it here
+ * means it never reaches IGDB as a validation error (spec 0029, AC-2).
  */
 function isCleanGameQuery(query: string): boolean {
-  try {
-    return cleanSearchText(query) === query;
-  } catch {
-    return false;
-  }
+  return (
+    query.length <= IGDB_MAX_QUERY_LENGTH &&
+    query.replace(IGDB_CONTROL_CHARACTERS, "") === query
+  );
 }
 
 /**
