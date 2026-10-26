@@ -244,3 +244,85 @@ describe("QuickSearch", () => {
     expect(screen.queryByText("95 shows")).not.toBeInTheDocument();
   });
 });
+
+/**
+ * covers: spec 0029, AC-15, AC-16
+ *
+ * The same component on a games page: it asks for `type=game`, names IGDB in
+ * the rating's screen reader text and in the error, shows the game icon for a
+ * missing cover, and leaves the count out when IGDB sent none.
+ */
+describe("QuickSearch for games", () => {
+  function gameBody(total: number | null, titles: string[]) {
+    const data = body(total ?? 0, titles);
+    return {
+      totalResults: total,
+      results: data.results.map((row) => ({
+        ...row,
+        href: `/games/${row.id}`,
+      })),
+    };
+  }
+
+  it("searches games and lists rows with IGDB's rating and count", async () => {
+    const user = userEvent.setup();
+    script = async (query) =>
+      json(gameBody(1234, [`${query} one`, `${query} two`]));
+    render(<QuickSearch type="game" />);
+
+    expect(screen.getByRole("combobox")).toHaveAttribute(
+      "placeholder",
+      "Search games",
+    );
+    await user.type(screen.getByRole("combobox"), "hollow");
+
+    expect(await screen.findByText("1,234 games")).toBeInTheDocument();
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/search?type=game&q=hollow");
+    const options = screen.getAllByRole("option");
+    expect(options[1]).toHaveTextContent("IGDB community rating");
+    expect(options[1]).toHaveTextContent("7.3");
+    expect(options[0]).not.toHaveTextContent("community rating");
+    expect(screen.getByRole("link", { name: "See all" })).toHaveAttribute(
+      "href",
+      "/search?type=game&q=hollow",
+    );
+  });
+
+  it("leaves the count out when IGDB sent none, and still offers See all", async () => {
+    const user = userEvent.setup();
+    script = async () => json(gameBody(null, ["hollow knight"]));
+    render(<QuickSearch type="game" />);
+
+    await user.type(screen.getByRole("combobox"), "hollow");
+
+    expect(await screen.findByText("hollow knight")).toBeInTheDocument();
+    expect(screen.queryByText(/\d games/)).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "See all" })).toBeInTheDocument();
+  });
+
+  it("says no games match, in the games noun", async () => {
+    const user = userEvent.setup();
+    script = async () => json(gameBody(0, []));
+    render(<QuickSearch type="game" />);
+
+    await user.type(screen.getByRole("combobox"), "zzqq");
+
+    expect(
+      await screen.findByText("No games match “zzqq”"),
+    ).toBeInTheDocument();
+  });
+
+  it("blames IGDB, not TMDB, when the games search fails", async () => {
+    const user = userEvent.setup();
+    script = async () => json({ error: "upstream", kind: "timeout" }, 502);
+    render(<QuickSearch type="game" />);
+
+    await user.type(screen.getByRole("combobox"), "hollow");
+
+    expect(await screen.findByText("Couldn't reach IGDB")).toBeInTheDocument();
+    expect(screen.queryByText("Couldn't reach TMDB")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Try again" }),
+    ).toBeInTheDocument();
+  });
+});
