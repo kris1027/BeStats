@@ -31,7 +31,7 @@ _This is the second scope for BeStats. The movie and TV scope lives in [scope.md
 | G5 | Games tab and library pages | Slice G2 | done |
 | G6 | Games home and list pages | Slice G3 | done |
 | G7 | Game search and filters | Slice G4 | done |
-| G8 | Game cards everywhere | Slice G4 | in-progress |
+| G8 | Game cards everywhere | Slice G4 | done |
 | G9 | Richer game page | Slice G5 | planned |
 | G10 | Games launch | Slice G6 | planned |
 
@@ -147,7 +147,7 @@ Games in `/search?type=game` with a title query and filters for genre, release y
 - [x] Test it: `/test game search and filters`
 spec [0029](../specs/0029-game-search-filters/index.md) · code in `app/search/`, `components/search/`, `lib/search/`, `lib/igdb/`
 
-### G8. Game cards everywhere · in-progress
+### G8. Game cards everywhere · done
 Game cards match the movie card: IGDB rating badge, your score when set, release year, and a status chip with a small control.
 **Done when:** home rows, list pages, `/search` and the library pages all use the full game card; each grid reads the signed in user's statuses once, like `getMovieGridStates`; a card's status always matches its library page; the release gate applies on the card too.
 - [x] Design it (spec): `/architect game cards everywhere`
