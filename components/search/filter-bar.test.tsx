@@ -300,6 +300,43 @@ describe("FilterBar for games (spec 0029)", () => {
     expect(replace).toHaveBeenCalledTimes(1);
   });
 
+  // The text pause and the list pause run on separate timers. Whichever
+  // fires first carries both changes, and the other finds the URL already
+  // applied, so the pair always makes one read.
+  it.each([
+    ["the text pause fires first", "text"],
+    ["the list pause fires first", "list"],
+  ] as const)("makes one navigation when %s (AC-9)", async (_, first) => {
+    const user = userEvent.setup();
+    render(gameBar());
+    const title = screen.getByRole("searchbox", { name: "Title" });
+
+    async function toggle() {
+      await user.click(screen.getByRole("button", { name: /^Platforms/ }));
+      await user.click(
+        await screen.findByRole("checkbox", { name: "Nintendo Switch" }),
+      );
+      await user.keyboard("{Escape}");
+    }
+
+    if (first === "text") {
+      await user.type(title, "zelda");
+      await toggle();
+    } else {
+      await toggle();
+      await user.type(title, "zelda");
+    }
+
+    await waitFor(() =>
+      expect(replace).toHaveBeenCalledWith(
+        "/search?type=game&q=zelda&platform=130",
+        { scroll: false },
+      ),
+    );
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    expect(replace).toHaveBeenCalledTimes(1);
+  });
+
   it("stops at 20 genres, disabling the rest (AC-10)", async () => {
     const user = userEvent.setup();
     const twenty = Array.from({ length: 20 }, (_, index) => index + 1);
