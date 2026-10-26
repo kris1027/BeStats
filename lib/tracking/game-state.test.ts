@@ -143,6 +143,7 @@ describe("getGameGridStates", () => {
       state: new Map(),
     });
     expect(createClient).not.toHaveBeenCalled();
+    expect(getOptionalUser).not.toHaveBeenCalled();
   });
 
   it("reports failed and logs once with no detail on a database error (AC-9)", async () => {

@@ -64,6 +64,8 @@ export async function getGameTracking(
  * read per request. Per request and never inside `use cache`, for the reason
  * `getGameTracking` gives (`AGENTS.md` section 11). A failure is logged once
  * here, so the cards can quietly fall back to the catalog card (AC-9).
+ * An empty grid has nothing to look up, so it answers before the session
+ * read (spec 0030, surface table).
  *
  * @param idsKey The grid's game ids, from `idsKey`.
  */
@@ -71,13 +73,13 @@ export const getGameGridStates = cache(
   async (
     idsKey: string,
   ): Promise<TrackingRead<Map<number, GameTrackingState>>> => {
+    const ids = parseIdsKey(idsKey);
+    if (ids.length === 0) return { kind: "ok", state: new Map() };
+
     if (publicEnvProblems()) return { kind: "signed_out" };
 
     const user = await getOptionalUser();
     if (!user) return { kind: "signed_out" };
-
-    const ids = parseIdsKey(idsKey);
-    if (ids.length === 0) return { kind: "ok", state: new Map() };
 
     const supabase = await createClient();
     const { data, error } = await supabase
