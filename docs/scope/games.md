@@ -32,7 +32,7 @@ _This is the second scope for BeStats. The movie and TV scope lives in [scope.md
 | G6 | Games home and list pages | Slice G3 | done |
 | G7 | Game search and filters | Slice G4 | done |
 | G8 | Game cards everywhere | Slice G4 | done |
-| G9 | Richer game page | Slice G5 | planned |
+| G9 | Richer game page | Slice G5 | done |
 | G10 | Games launch | Slice G6 | planned |
 
 ## Foundations
@@ -162,10 +162,19 @@ spec [0030](../specs/0030-game-cards-everywhere/index.md) · code in `components
 
 ## Slice G5: Richer game page
 
-### G9. Richer game page · needs a decision
-The game page grows its sections in this order: hero, summary, developer and publisher, screenshots, trailer, similar games, Facts.
+### G9. Richer game page · done
+The game page grows its sections in this order: hero (with an art backdrop and the Trailer button), summary, developer and publisher, screenshots, similar games, Facts.
 **Done when:** every section renders from cached IGDB data and is omitted when IGDB has nothing, never invented; the trailer uses the existing `youtube-nocookie` dialog that loads only after a click; similar games use the home row card; Facts lists game modes, themes, player perspectives, franchise and the release date for each platform; the shell stays prerendered.
-- [ ] Design it (spec): `/architect richer game page`
+- [x] Design it (spec): `/architect richer game page`
+- [x] Build it: `/develop richer game page`
+  - [x] Thin thread and screenshots: art backdrop, the screenshot row and its dialog, AC-1, AC-3, AC-6, AC-7, AC-13, AC-15
+  - [x] Overview and trailer: storyline, developer and publisher lines, the hero Trailer button, AC-2, AC-4, AC-5, AC-11
+  - [x] More like this: one cached batch read through the G8 cards, with its own error line, AC-8
+  - [x] Facts and release dates: the lists, per platform dates at IGDB's precision, the live facts check, AC-9, AC-10, AC-14
+  - [x] Types, fixtures, skeleton, showcase and checks, AC-2, AC-12, AC-16
+- [x] Verify it: `/check verify richer game page`
+- [x] Test it: `/test richer game page`
+spec [0031](../specs/0031-richer-game-page/index.md) · code in `components/game/`, `lib/igdb/`, `app/games/[id]/`
 
 ## Slice G6: Launch
 
@@ -179,7 +188,6 @@ Out of scope for the current build pass, kept so the plan stays honest.
 - **Platform you play on, hours played, 100% completion** (from the 2026-10-17 grilling): skipped for the first pass
 - **Dropped or Paused status**: left out, matching the removal of TV holds on 2026-10-10
 - **Where to buy a game**: no store links in this pass
-- **Artwork backdrop on the game hero** (from spec 0025): G3 ships without one; G9 or a later spec decides
 
 ## Legend
 
