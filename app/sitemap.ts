@@ -54,9 +54,10 @@ const LIST_PATHS = [
  * list instead of failing the file (spec 0032, AC-7). `getPopularGames`
  * rebuilds its error outside its own cached scope, so `instanceof` holds
  * here. Any other rejection, a validation error included, is a bug and is
- * rethrown. A complete list lives for days; a partial one for minutes, so the
- * full list returns soon after TMDB or IGDB recovers (`lib/seo/AGENTS.md`, the
- * sitemap cache rule). Only plain id arrays leave this scope (`AGENTS.md`, the
+ * rethrown. A complete list lives for hours, not days, because it holds IGDB
+ * ids and Twitch's terms cap a cached copy at 24 hours (spec 0032, AC-11); a
+ * partial one lives for minutes, so the full list returns soon after TMDB or
+ * IGDB recovers (`lib/seo/AGENTS.md`, the sitemap cache rule). Only plain id arrays leave this scope (`AGENTS.md`, the
  * cached scope rule).
  */
 async function popularTitleIds(): Promise<{
@@ -100,7 +101,7 @@ async function popularTitleIds(): Promise<{
   if (failed) {
     cacheLife("minutes");
   } else {
-    cacheLife("days");
+    cacheLife("hours");
   }
 
   return {

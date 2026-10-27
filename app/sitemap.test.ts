@@ -214,12 +214,12 @@ describe("the sitemap on an indexable deployment", () => {
     }
   });
 
-  it("keeps a complete list for days (AC-8)", async () => {
+  it("keeps a complete list for hours, inside the 24 hour IGDB cap (AC-8, spec 0032 AC-11)", async () => {
     happyReads();
 
     await sitemap();
 
-    expect(cacheLife.mock.calls).toEqual([["days"]]);
+    expect(cacheLife.mock.calls).toEqual([["hours"]]);
   });
 
   it("drops only the pages whose read failed, and keeps it for minutes (AC-8)", async () => {
