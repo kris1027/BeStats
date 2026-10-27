@@ -189,7 +189,7 @@ Turn games on for search engines and production, with the credits IGDB asks for.
   - [x] IGDB credit in the footer and on `/terms`, `LEGAL_LAST_UPDATED` bumped, AC-8 to AC-10
   - [ ] Flag removed, Preview credentials and the deploy docs, then the production launch checks, AC-12, AC-13, AC-15
 - [ ] Verify it: `/check verify games launch`
-- [ ] Test it: `/test games launch`
+- [x] Test it: `/test games launch`
 - [ ] Review it (fresh model): `/check review games launch`
 - [ ] Document it: `/document games launch`
 spec [0032](../specs/0032-games-launch/index.md) · code in `app/games/`, `app/sitemap.ts`, `lib/seo/`, `lib/legal/`, `components/layout/site-footer.tsx`, `app/terms/`
