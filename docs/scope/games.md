@@ -191,7 +191,7 @@ Turn games on for search engines and production, with the credits IGDB asks for.
 - [ ] Verify it: `/check verify games launch`
 - [x] Test it: `/test games launch`
 - [ ] Review it (fresh model): `/check review games launch`
-- [ ] Document it: `/document games launch`
+- [x] Document it: `/document games launch`
 spec [0032](../specs/0032-games-launch/index.md) · code in `app/games/`, `app/sitemap.ts`, `lib/seo/`, `lib/legal/`, `components/layout/site-footer.tsx`, `app/terms/`
 
 ## Deferred
