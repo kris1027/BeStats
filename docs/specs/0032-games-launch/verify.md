@@ -14,9 +14,9 @@ Build locally with `VERCEL_ENV=production NEXT_PUBLIC_SITE_URL=https://bestats.e
 - [x] Open `/sitemap.xml` → `/movies`, `/shows`, `/games`, five movie, five show, five games list pages, `/privacy`, `/terms`, movies, shows, then up to 200 `/games/{id}`; all absolute → AC-6 (Value sourcing: game ids, games list paths)
 - [x] Look at the footer on `/shows` at 1440px and 390px → TMDB logo and notice, then the IGDB logo and "Game data and images from IGDB.com" as one link to igdb.com in a new tab, logo no taller than TMDB's → AC-8, AC-10
 - [x] Open `/terms` → section "Catalog data, TMDB and IGDB" ends with the three IGDB paragraphs in order; Last updated 26 October 2026 → AC-9
-- [ ] With no flag set anywhere: GAMES tab on `/shows`, `/watchlist?type=game` (signed in) shows Want to play, `/search?type=game&q=zelda` returns games, `GET /api/search?type=game&q=zelda` answers 200 → AC-12
+- [x] With no flag set anywhere: GAMES tab on `/shows`, `/watchlist?type=game` (signed in) shows Want to play, `/search?type=game&q=zelda` returns games, `GET /api/search?type=game&q=zelda` answers 200 → AC-12
 - [x] Open a Preview deployment with `vercel curl /games/1942 --deployment <url>` → the game renders (credentials present in Preview) → AC-13
-- [ ] After merge, on production: `/sitemap.xml` lists games; `/games/1942` has canonical, `og:image`, `VideoGame` JSON-LD and no `noindex`; `/games` and `/games/popular` have canonicals; GAMES tab shows; validator.schema.org on `https://bestats-sable.vercel.app/games/1942` finds a `VideoGame` with zero errors → AC-15
+- [x] After merge, on production: `/sitemap.xml` lists games; `/games/1942` has canonical, `og:image`, `VideoGame` JSON-LD and no `noindex`; `/games` and `/games/popular` have canonicals; GAMES tab shows; validator.schema.org on `https://bestats-sable.vercel.app/games/1942` finds a `VideoGame` with zero errors → AC-15
 
 ## Commands
 - [x] `pnpm test` → all green, including `app/sitemap.test.ts`, `lib/seo/sitemap.test.ts`, `lib/seo/json-ld.test.ts`, `lib/landing-metadata.test.ts`, `components/layout/igdb-logo.test.ts`, `security-boundary.test.ts` → AC-1 to AC-12, AC-14

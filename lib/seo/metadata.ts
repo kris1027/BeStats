@@ -7,7 +7,8 @@ export const SITE_NAME = "BeStats";
 
 /**
  * The path Next.js serves the root `app/opengraph-image.tsx` at, the share
- * card a page falls back to when it has no TMDB artwork (spec 0016, AC-10).
+ * card a page falls back to when it has no TMDB or IGDB artwork (spec 0016,
+ * AC-10).
  */
 export const SITE_CARD_PATH = "/opengraph-image";
 
@@ -19,7 +20,7 @@ export type CatalogMetadataInput = {
   description: string | undefined;
   /** The page path, never with a query string except a list page's `?page=N`. */
   path: string;
-  /** An absolute TMDB image URL, or null to use the site card. */
+  /** An absolute TMDB or IGDB image URL, or null to use the site card. */
   image: string | null;
   ogType: OgType;
 };
@@ -28,7 +29,7 @@ type OgType = "website" | "video.movie" | "video.tv_show";
 
 /**
  * The absolute site card URL, or null without a site URL, so a page with no
- * TMDB image and no site URL simply carries no `og:image` (spec 0016, AC-11;
+ * catalog image and no site URL simply carries no `og:image` (spec 0016, AC-11;
  * `lib/seo/AGENTS.md`, Rules).
  */
 export function siteCardUrl(): string | null {
@@ -58,7 +59,7 @@ export function shareMetadata({
   /** The absolute canonical; omitted on pages that have none. */
   url?: string;
   type?: OgType;
-  /** An absolute TMDB image URL, or null for the site card. */
+  /** An absolute TMDB or IGDB image URL, or null for the site card. */
   image?: string | null;
 }): Pick<Metadata, "openGraph" | "twitter"> {
   const shareImage = image ?? siteCardUrl();
