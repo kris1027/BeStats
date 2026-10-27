@@ -8,7 +8,6 @@ import {
   isMediaType,
   type LibraryType,
 } from "@/lib/catalog/media-type";
-import { gamesLibraryEnabled } from "@/lib/env";
 
 import { WithPageMediaType } from "./page-media-type";
 
@@ -72,15 +71,11 @@ function subscribe(onChange: () => void) {
   return () => window.removeEventListener("storage", onChange);
 }
 
-/**
- * The stored type, parsed as a `LibraryType`. A remembered `game` counts only
- * while the games library is on, so a stale value never leads to a hidden
- * tab (spec 0028, AC-16).
- */
+/** The stored type, parsed as a `LibraryType` (spec 0028, AC-16). */
 function readRemembered(): LibraryType | null {
   try {
     const value = window.localStorage.getItem(LAST_MEDIA_TYPE_KEY);
-    if (value === "game") return gamesLibraryEnabled() ? "game" : null;
+    if (value === "game") return "game";
     return isMediaType(value) ? value : null;
   } catch {
     return null;

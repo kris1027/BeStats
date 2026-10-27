@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  type GameJsonLdInput,
+  gameJsonLd,
   jsonLdScript,
   type MovieJsonLdInput,
   movieJsonLd,
@@ -9,7 +11,7 @@ import {
 } from "./json-ld";
 
 /**
- * covers: spec 0016, AC-21, AC-22, AC-23
+ * covers: spec 0016, AC-21, AC-22, AC-23; spec 0032, AC-3
  *
  * Structured data is read by machines that take it at face value, so the
  * omission rule (never a placeholder, never a rating) and the escaping that
@@ -163,6 +165,83 @@ describe("showJsonLd (AC-22)", () => {
       "@type": "TVSeries",
       name: "Breaking Bad",
     });
+  });
+});
+
+const GAME: GameJsonLdInput = {
+  id: 1942,
+  name: "The Witcher 3: Wild Hunt",
+  coverUrl:
+    "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co1wyy.jpg",
+  releaseDate: "2015-05-19",
+  summary: "RPG and sequel to The Witcher 2 (2011).",
+  genres: [{ name: "Role-playing (RPG)" }, { name: "Adventure" }],
+  platforms: [{ name: "PC (Microsoft Windows)" }, { name: "PlayStation 4" }],
+  developers: ["CD Projekt RED"],
+  publishers: ["CD Projekt", "Bandai Namco Entertainment"],
+};
+
+describe("gameJsonLd (spec 0032, AC-3)", () => {
+  it("maps every field from the game", () => {
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", ORIGIN);
+
+    expect(gameJsonLd(GAME)).toEqual({
+      "@context": "https://schema.org",
+      "@type": "VideoGame",
+      name: "The Witcher 3: Wild Hunt",
+      url: `${ORIGIN}/games/1942`,
+      image: GAME.coverUrl,
+      datePublished: "2015-05-19",
+      description: "RPG and sequel to The Witcher 2 (2011).",
+      genre: ["Role-playing (RPG)", "Adventure"],
+      gamePlatform: ["PC (Microsoft Windows)", "PlayStation 4"],
+      author: [{ "@type": "Organization", name: "CD Projekt RED" }],
+      publisher: [
+        { "@type": "Organization", name: "CD Projekt" },
+        { "@type": "Organization", name: "Bandai Namco Entertainment" },
+      ],
+    });
+  });
+
+  it("drops a blank company name", () => {
+    const { author, publisher } = gameJsonLd({
+      ...GAME,
+      developers: ["  ", "CD Projekt RED"],
+      publishers: [""],
+    });
+
+    expect(author).toEqual([
+      { "@type": "Organization", name: "CD Projekt RED" },
+    ]);
+    expect(publisher).toBeUndefined();
+  });
+
+  it("leaves out every field whose source is missing, and the url without a site URL", () => {
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", undefined);
+
+    expect(
+      gameJsonLd({
+        ...GAME,
+        coverUrl: null,
+        releaseDate: null,
+        summary: null,
+        genres: [],
+        platforms: [],
+        developers: [],
+        publishers: [],
+      }),
+    ).toEqual({
+      "@context": "https://schema.org",
+      "@type": "VideoGame",
+      name: "The Witcher 3: Wild Hunt",
+    });
+  });
+
+  it("never carries a rating, even when handed a whole Game", () => {
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", ORIGIN);
+    const game = { ...GAME, communityRating: 9.3, communityRatingCount: 5501 };
+
+    expect(JSON.stringify(gameJsonLd(game))).not.toMatch(/rating|review/i);
   });
 });
 

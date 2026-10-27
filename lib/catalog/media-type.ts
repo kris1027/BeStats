@@ -110,19 +110,14 @@ export function parseMediaTypeParam(
 }
 
 /**
- * The library pages' `type` parameter (spec 0027, AC-2): `parseMediaTypeParam`
- * plus `game`, which only counts while the games library is switched on. With
- * it off, `?type=game` is null like any unknown value, so the page shows its
- * "doesn't exist" panel.
- *
- * @param gamesEnabled `getGamesLibrary() === "on"` on the server,
- * `gamesLibraryEnabled()` in the navbar.
+ * The library pages' and `/search`'s `type` parameter (spec 0027, AC-2):
+ * `parseMediaTypeParam` plus `game`, always accepted since games launched
+ * (spec 0032, AC-12).
  */
 export function parseLibraryTypeParam(
   value: string | string[] | null | undefined,
-  gamesEnabled: boolean,
 ): LibraryType | null {
-  if (value === "game") return gamesEnabled ? "game" : null;
+  if (value === "game") return "game";
   return parseMediaTypeParam(value);
 }
 
@@ -182,20 +177,14 @@ export function isGamesPath(pathname: string | null): boolean {
  * tabs, the Library links, the search and the logo (spec 0027, AC-3, AC-4;
  * spec 0028, AC-14, AC-16; spec 0029, AC-14, AC-15, AC-18). It is `game` on
  * `/games` and its list and game pages, and on a library page or `/search`
- * asking for it, while the games library is on, and otherwise exactly
- * `mediaTypeForLocation`. With the library off a games page has no
- * type, like a page about neither catalog.
+ * asking for it, and otherwise exactly `mediaTypeForLocation`.
  */
 export function libraryTypeForLocation(
   pathname: string | null,
   typeParam: string | null,
-  gamesEnabled: boolean,
 ): LibraryType | null {
-  if (isGamesPath(pathname)) return gamesEnabled ? "game" : null;
-  if (
-    isTypedPath(pathname) &&
-    parseLibraryTypeParam(typeParam, gamesEnabled) === "game"
-  ) {
+  if (isGamesPath(pathname)) return "game";
+  if (isTypedPath(pathname) && parseLibraryTypeParam(typeParam) === "game") {
     return "game";
   }
   return mediaTypeForLocation(pathname, typeParam);

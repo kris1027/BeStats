@@ -86,12 +86,12 @@ const READS = [
     inner.fetchPopularGames,
     "hours",
   ],
-  ["getGameGenres", () => getGameGenres(), inner.fetchGameGenres, "max"],
+  ["getGameGenres", () => getGameGenres(), inner.fetchGameGenres, "hours"],
   [
     "getGamePlatforms",
     () => getGamePlatforms(),
     inner.fetchGamePlatforms,
-    "max",
+    "hours",
   ],
 ] as const;
 

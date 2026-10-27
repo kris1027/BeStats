@@ -1,18 +1,21 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { IgdbError, IgdbValidationError } from "@/lib/igdb/errors";
 import { TmdbError } from "@/lib/tmdb/errors";
 
 /**
- * covers: spec 0016, AC-6, AC-7, AC-8, AC-9; spec 0017, AC-13; spec 0021, AC-16
+ * covers: spec 0016, AC-6, AC-7, AC-8, AC-9; spec 0017, AC-13; spec 0021,
+ * AC-16; spec 0032, AC-6, AC-7
  *
- * The sitemap is the one SEO surface that reads TMDB, so its order, dedupe,
- * independent failure and lifetime choice are pinned against mocked discover
- * reads. `cacheLife` only means something inside Next, so it is recorded
+ * The sitemap is the one SEO surface that reads TMDB and IGDB, so its order,
+ * dedupe, independent failure and lifetime choice are pinned against mocked
+ * discover and Popular reads. `cacheLife` only means something inside Next, so it is recorded
  * rather than run; outside Next the `use cache` directive is an inert string.
  */
 const cacheLife = vi.fn();
 const discoverMovies = vi.fn();
 const discoverTvShows = vi.fn();
+const getPopularGames = vi.fn();
 
 vi.mock("next/cache", () => ({
   cacheLife: (profile: string) => cacheLife(profile),
@@ -26,11 +29,22 @@ vi.mock("@/lib/tmdb", async () => {
   };
 });
 
+vi.mock("@/lib/igdb", async () => {
+  const errors = await import("@/lib/igdb/errors");
+  return {
+    getPopularGames: (kind: unknown) => getPopularGames(kind),
+    IgdbError: errors.IgdbError,
+  };
+});
+
 const { default: sitemap } = await import("./sitemap");
 
 const ORIGIN = "https://bestats.example";
 
-/** The ten list pages at page 1, movies first, in row order (spec 0021, AC-16). */
+/**
+ * The fifteen list pages at page 1, movies, then shows, then games, in row
+ * order (spec 0021, AC-16; spec 0032, AC-6).
+ */
 const LISTS = [
   "/movies/trending",
   "/movies/popular",
@@ -42,12 +56,18 @@ const LISTS = [
   "/shows/airing-today",
   "/shows/on-the-air",
   "/shows/top-rated",
+  "/games/trending",
+  "/games/popular",
+  "/games/recently-released",
+  "/games/coming-soon",
+  "/games/top-rated",
 ].map((path) => `${ORIGIN}${path}`);
 
 /** Everything listed before the titles. */
 const FIXED = [
   `${ORIGIN}/movies`,
   `${ORIGIN}/shows`,
+  `${ORIGIN}/games`,
   ...LISTS,
   `${ORIGIN}/privacy`,
   `${ORIGIN}/terms`,
@@ -63,8 +83,15 @@ function page(ids: number[]) {
   };
 }
 
-/** Page N of movies holds ids N*100+1 and N*100+2; shows the same plus 5000. */
+/** Games 9001 and 9002, in IGDB's Popular rank order. */
+const GAMES = [{ id: 9001 }, { id: 9002 }];
+
+/**
+ * Page N of movies holds ids N*100+1 and N*100+2; shows the same plus 5000;
+ * the Popular games list holds `GAMES`.
+ */
 function happyReads() {
+  getPopularGames.mockResolvedValue(GAMES);
   discoverMovies.mockImplementation(async ({ page: n }: { page: number }) =>
     page([n * 100 + 1, n * 100 + 2]),
   );
@@ -87,23 +114,51 @@ afterEach(() => {
   cacheLife.mockReset();
   discoverMovies.mockReset();
   discoverTvShows.mockReset();
+  getPopularGames.mockReset();
 });
 
 describe("the sitemap on an indexable deployment", () => {
-  it("lists the landings, the list pages, the legal pages, then movies, then shows, in page order (AC-6; spec 0017, AC-13; spec 0021, AC-16)", async () => {
+  it("lists the landings, the list pages, the legal pages, then movies, shows and games, in page order (AC-6; spec 0017, AC-13; spec 0021, AC-16; spec 0032, AC-6)", async () => {
     happyReads();
 
     const listed = urls(await sitemap());
 
-    expect(listed.slice(0, 16)).toEqual([
+    expect(listed.slice(0, 22)).toEqual([
       ...FIXED,
       `${ORIGIN}/movies/101`,
       `${ORIGIN}/movies/102`,
     ]);
-    expect(listed).toHaveLength(14 + 20 + 20);
-    expect(listed[33]).toBe(`${ORIGIN}/movies/1002`);
-    expect(listed[34]).toBe(`${ORIGIN}/shows/5101`);
-    expect(listed.at(-1)).toBe(`${ORIGIN}/shows/6002`);
+    expect(listed).toHaveLength(20 + 20 + 20 + 2);
+    expect(listed[39]).toBe(`${ORIGIN}/movies/1002`);
+    expect(listed[40]).toBe(`${ORIGIN}/shows/5101`);
+    expect(listed[59]).toBe(`${ORIGIN}/shows/6002`);
+    expect(listed.slice(60)).toEqual([
+      `${ORIGIN}/games/9001`,
+      `${ORIGIN}/games/9002`,
+    ]);
+  });
+
+  it("reads the games with the exact Popular call /games/popular makes (spec 0032, AC-6)", async () => {
+    happyReads();
+
+    await sitemap();
+
+    expect(getPopularGames.mock.calls).toEqual([["popular"]]);
+  });
+
+  it("lists at most 200 games, deduplicated in rank order (spec 0032, AC-6)", async () => {
+    happyReads();
+    const ranked = [7, 7, ...Array.from({ length: 300 }, (_, i) => 10_000 + i)];
+    getPopularGames.mockResolvedValue(ranked.map((id) => ({ id })));
+
+    const games = urls(await sitemap()).filter(
+      (url) => url.startsWith(`${ORIGIN}/games/`) && /\/games\/\d+$/.test(url),
+    );
+
+    expect(games).toHaveLength(200);
+    expect(games[0]).toBe(`${ORIGIN}/games/7`);
+    expect(games[1]).toBe(`${ORIGIN}/games/10000`);
+    expect(games.at(-1)).toBe(`${ORIGIN}/games/10198`);
   });
 
   it("reads pages 1 to 10 of each landing's discover call (AC-6)", async () => {
@@ -128,6 +183,7 @@ describe("the sitemap on an indexable deployment", () => {
   });
 
   it("dedupes ids within a media type, keeping the first, but not across types (AC-6)", async () => {
+    getPopularGames.mockResolvedValue([{ id: 2 }]);
     discoverMovies.mockImplementation(async ({ page: n }: { page: number }) =>
       n === 1 ? page([1, 2]) : n === 2 ? page([2, 3]) : page([]),
     );
@@ -141,6 +197,7 @@ describe("the sitemap on an indexable deployment", () => {
       `${ORIGIN}/movies/2`,
       `${ORIGIN}/movies/3`,
       `${ORIGIN}/shows/2`,
+      `${ORIGIN}/games/2`,
     ]);
   });
 
@@ -154,14 +211,6 @@ describe("the sitemap on an indexable deployment", () => {
       expect(path).not.toMatch(
         /^\/(search|showcase|watchlist|watched|upcoming|account|sign-|api\/|auth\/)|\/season\/|\?/,
       );
-    }
-  });
-
-  it("lists no games URL before G10 (spec 0028, AC-13)", async () => {
-    happyReads();
-
-    for (const url of urls(await sitemap())) {
-      expect(url.slice(ORIGIN.length)).not.toMatch(/^\/games(\/|$)/);
     }
   });
 
@@ -190,14 +239,43 @@ describe("the sitemap on an indexable deployment", () => {
 
     const listed = urls(await sitemap());
 
-    expect(listed).toHaveLength(14 + 18 + 18);
+    expect(listed).toHaveLength(20 + 18 + 18 + 2);
     expect(listed).not.toContain(`${ORIGIN}/movies/201`);
     expect(listed).not.toContain(`${ORIGIN}/shows/6001`);
     expect(listed).toContain(`${ORIGIN}/movies/301`);
     expect(cacheLife.mock.calls).toEqual([["minutes"]]);
   });
 
+  it.each([
+    ["unauthorized, as with missing credentials", "unauthorized"],
+    ["rate limited", "rate_limited"],
+  ] as const)(
+    "drops only the game ids when IGDB is %s, and keeps it for minutes (spec 0032, AC-7)",
+    async (_, kind) => {
+      happyReads();
+      getPopularGames.mockRejectedValue(new IgdbError(kind, "games", "failed"));
+
+      const listed = urls(await sitemap());
+
+      expect(listed.slice(0, 20)).toEqual(FIXED);
+      expect(listed).toHaveLength(20 + 20 + 20);
+      expect(listed.at(-1)).toBe(`${ORIGIN}/shows/6002`);
+      expect(listed.filter((url) => /\/games\/\d+$/.test(url))).toEqual([]);
+      expect(cacheLife.mock.calls).toEqual([["minutes"]]);
+    },
+  );
+
+  it("rethrows an IGDB validation error, a bug rather than an outage (spec 0032, AC-7)", async () => {
+    happyReads();
+    getPopularGames.mockRejectedValue(new IgdbValidationError("kind", "bad"));
+
+    await expect(sitemap()).rejects.toBeInstanceOf(IgdbValidationError);
+  });
+
   it("still lists the landings, list pages and legal pages when every read fails (AC-8)", async () => {
+    getPopularGames.mockRejectedValue(
+      new IgdbError("upstream", "games", "failed"),
+    );
     discoverMovies.mockRejectedValue(
       new TmdbError("rate_limited", "/discover", "failed"),
     );
@@ -225,12 +303,13 @@ describe("the sitemap on a deployment that is not indexable (AC-9)", () => {
       "production with no site URL",
       { VERCEL_ENV: "production", NEXT_PUBLIC_SITE_URL: undefined },
     ],
-  ])("is empty on %s and asks TMDB nothing", async (_, env) => {
+  ])("is empty on %s and asks TMDB and IGDB nothing", async (_, env) => {
     for (const [name, value] of Object.entries(env)) vi.stubEnv(name, value);
     happyReads();
 
     expect(await sitemap()).toEqual([]);
     expect(discoverMovies).not.toHaveBeenCalled();
     expect(discoverTvShows).not.toHaveBeenCalled();
+    expect(getPopularGames).not.toHaveBeenCalled();
   });
 });

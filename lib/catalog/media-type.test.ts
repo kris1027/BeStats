@@ -97,21 +97,18 @@ describe("titleHref", () => {
   });
 });
 
-/** covers: spec 0027, AC-2 to AC-4 */
+/** covers: spec 0027, AC-2 to AC-4; spec 0032, AC-12 */
 describe("parseLibraryTypeParam", () => {
-  it("accepts game only while the games library is on", () => {
-    expect(parseLibraryTypeParam("game", true)).toBe("game");
-    expect(parseLibraryTypeParam("game", false)).toBeNull();
+  it("always accepts game", () => {
+    expect(parseLibraryTypeParam("game")).toBe("game");
   });
 
   it("reads everything else as parseMediaTypeParam does", () => {
-    for (const enabled of [true, false]) {
-      expect(parseLibraryTypeParam(undefined, enabled)).toBe("tv");
-      expect(parseLibraryTypeParam("movie", enabled)).toBe("movie");
-      expect(parseLibraryTypeParam("", enabled)).toBeNull();
-      expect(parseLibraryTypeParam(["game", "game"], enabled)).toBeNull();
-      expect(parseLibraryTypeParam("GAME", enabled)).toBeNull();
-    }
+    expect(parseLibraryTypeParam(undefined)).toBe("tv");
+    expect(parseLibraryTypeParam("movie")).toBe("movie");
+    expect(parseLibraryTypeParam("")).toBeNull();
+    expect(parseLibraryTypeParam(["game", "game"])).toBeNull();
+    expect(parseLibraryTypeParam("GAME")).toBeNull();
   });
 
   it("never lets game into the catalog parser", () => {
@@ -120,34 +117,31 @@ describe("parseLibraryTypeParam", () => {
 });
 
 describe("libraryTypeForLocation", () => {
-  it("is game on a library page asking for it while the flag is on", () => {
+  it("is game on a library page asking for it", () => {
     for (const path of ["/watchlist", "/upcoming", "/watched"]) {
-      expect(libraryTypeForLocation(path, "game", true)).toBe("game");
+      expect(libraryTypeForLocation(path, "game")).toBe("game");
     }
   });
 
-  it("is game on /search asking for it while the flag is on (spec 0029, AC-18)", () => {
-    expect(libraryTypeForLocation("/search", "game", true)).toBe("game");
+  it("is game on /search asking for it (spec 0029, AC-18)", () => {
+    expect(libraryTypeForLocation("/search", "game")).toBe("game");
   });
 
-  it("is never game on a catalog page or with the flag off", () => {
-    expect(libraryTypeForLocation("/movies", "game", true)).toBe("movie");
-    expect(libraryTypeForLocation("/watchlist", "game", false)).toBe("tv");
-    expect(libraryTypeForLocation("/search", "game", false)).toBe("tv");
+  it("is never game on a catalog page", () => {
+    expect(libraryTypeForLocation("/movies", "game")).toBe("movie");
   });
 
   // spec 0028, AC-14, AC-16
-  it("is game on /games and below it while the flag is on, and no type when off", () => {
+  it("is game on /games and below it", () => {
     for (const path of ["/games", "/games/trending", "/games/1942"]) {
-      expect(libraryTypeForLocation(path, null, true)).toBe("game");
-      expect(libraryTypeForLocation(path, null, false)).toBeNull();
+      expect(libraryTypeForLocation(path, null)).toBe("game");
     }
-    expect(libraryTypeForLocation("/gamesx", null, true)).toBeNull();
+    expect(libraryTypeForLocation("/gamesx", null)).toBeNull();
   });
 
   it("matches mediaTypeForLocation for the catalogs", () => {
-    expect(libraryTypeForLocation("/upcoming", "movie", true)).toBe("movie");
-    expect(libraryTypeForLocation("/account", null, true)).toBeNull();
+    expect(libraryTypeForLocation("/upcoming", "movie")).toBe("movie");
+    expect(libraryTypeForLocation("/account", null)).toBeNull();
   });
 });
 

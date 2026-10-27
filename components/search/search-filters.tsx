@@ -1,11 +1,10 @@
 import { Skeleton } from "@/components/skeleton";
 import { parseLibraryTypeParam } from "@/lib/catalog/media-type";
-import { gameSearchEnabled } from "@/lib/search/games-flag";
 import { readGameLists, settleList } from "@/lib/search/lists";
 import {
   emptySearchParams,
   parseGameSearchParams,
-  parseSearchParams,
+  parseTmdbSearchParams,
 } from "@/lib/search/params";
 import { getMovieGenres, getTvGenres } from "@/lib/tmdb";
 
@@ -22,13 +21,12 @@ type RawParams = Record<string, string | string[] | undefined>;
  * An invalid URL fills the bar with the valid type and nothing else; the
  * results panel below says what was wrong.
  *
- * A games search reads IGDB's genres and platforms instead of TMDB's genres,
- * and the games flag is read only for a raw `type=game` (spec 0029, AC-1).
+ * A games search reads IGDB's genres and platforms instead of TMDB's genres
+ * (spec 0029, AC-1).
  */
 async function SearchFilters({ raw }: { raw: RawParams }) {
   const currentYear = new Date().getUTCFullYear();
-  const gamesEnabled = gameSearchEnabled(raw.type);
-  const type = parseLibraryTypeParam(raw.type, gamesEnabled) ?? "tv";
+  const type = parseLibraryTypeParam(raw.type) ?? "tv";
 
   if (type === "game") {
     const lists = await readGameLists();
@@ -47,7 +45,7 @@ async function SearchFilters({ raw }: { raw: RawParams }) {
     settleList(getTvGenres),
     settleList(getMovieGenres),
   ]);
-  const parsed = parseSearchParams(
+  const parsed = parseTmdbSearchParams(
     raw,
     { genres: (type === "movie" ? movie : tv) ?? [] },
     currentYear,

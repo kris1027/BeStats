@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { extname, join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -154,5 +155,34 @@ describe("the IGDB credential boundary", () => {
     for (const variable of IGDB_VARIABLES) {
       expect(example).toContain(`${variable}=`);
     }
+  });
+});
+
+/**
+ * Spec 0032 AC-12: the games library flag is gone, so games are simply on.
+ * Any tracked file outside `docs/` that still names it, a test included, is a
+ * leftover branch or a stale instruction. Built from fragments so this file
+ * does not match its own search; `docs/` keeps the history of specs 0027 to
+ * 0032.
+ */
+const GAMES_FLAG = ["NEXT_PUBLIC", "GAMES", "LIBRARY"].join("_");
+
+describe("the removed games flag", () => {
+  it("is named by no tracked file outside docs/", () => {
+    const tracked = execFileSync("git", ["ls-files", "-z"], {
+      encoding: "utf8",
+    })
+      .split("\0")
+      .filter(
+        (path) =>
+          path !== "" &&
+          !path.startsWith("docs/") &&
+          path !== "security-boundary.test.ts" &&
+          statSync(path, { throwIfNoEntry: false })?.isFile(),
+      );
+    const named = tracked.filter((path) =>
+      readFileSync(path, "utf8").includes(GAMES_FLAG),
+    );
+    expect(named).toEqual([]);
   });
 });

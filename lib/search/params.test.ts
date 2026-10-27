@@ -10,6 +10,7 @@ import {
   hasAnyFilter,
   parseGameSearchParams,
   parseSearchParams,
+  parseTmdbSearchParams,
   searchHref,
   type TmdbSearchParams,
 } from "./params";
@@ -46,15 +47,11 @@ const PLATFORMS: CatalogRef[] = [
   })),
 ];
 
-function parseGame(
-  raw: Record<string, string | string[] | undefined>,
-  gamesEnabled = true,
-) {
+function parseGame(raw: Record<string, string | string[] | undefined>) {
   return parseSearchParams(
     { type: "game", ...raw },
     { genres: GAME_GENRES, platforms: PLATFORMS },
     YEAR,
-    { gamesEnabled },
   );
 }
 
@@ -251,8 +248,7 @@ describe("searchMode", () => {
 });
 
 describe("parseSearchParams for games (spec 0029)", () => {
-  it("accepts type=game only while the games library is on (AC-1)", () => {
-    expect(parseGame({}, false)).toEqual({ ok: false, param: "type" });
+  it("always accepts type=game (AC-1; spec 0032, AC-12)", () => {
     expect(parseGame({})).toEqual({ ok: true, params: gameParams() });
   });
 
@@ -313,9 +309,17 @@ describe("parseSearchParams for games (spec 0029)", () => {
         { type: "game", genre: "5" },
         { genres: GAME_GENRES, platforms: [] },
         YEAR,
-        { gamesEnabled: true },
       ).ok,
     ).toBe(true);
+  });
+
+  it("narrows a show or movie parse, refusing a games URL (spec 0032, AC-12)", () => {
+    expect(
+      parseTmdbSearchParams({ type: "tv" }, { genres: TV_GENRES }, YEAR),
+    ).toEqual({ ok: true, params: params() });
+    expect(
+      parseTmdbSearchParams({ type: "game" }, { genres: TV_GENRES }, YEAR),
+    ).toEqual({ ok: false, param: "type" });
   });
 
   it("narrows a games parse, refusing a URL that is not a games search (AC-1)", () => {

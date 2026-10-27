@@ -1,7 +1,8 @@
 import { createElement, Fragment, type ReactElement, Suspense } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { JsonLd } from "@/components/catalog/json-ld";
 import { GameDetailSkeleton } from "@/components/game/game-detail-skeleton";
 import { GameFacts } from "@/components/game/game-facts";
 import { GameHero } from "@/components/game/game-hero";
@@ -9,13 +10,15 @@ import { GameMoreLikeThisSection } from "@/components/game/game-more-like-this";
 import { GameOverview } from "@/components/game/game-overview";
 import { ScreenshotGallery } from "@/components/game/screenshot-gallery";
 import { GameTrackingSlot } from "@/components/tracking/game-tracking-slot";
+import { gameJsonLd } from "@/lib/seo/json-ld";
 
 /**
  * covers: spec 0025, AC-1, AC-6, AC-7, AC-8, AC-9, AC-10; spec 0031, AC-1,
- * AC-11
+ * AC-11; spec 0032, AC-1, AC-2, AC-3
  *
- * Until G10 every game page outcome is `noindex`, with no canonical or share
- * card. `loadGame` is replaced, so the metadata and the streamed body branch
+ * A found game is indexable with a canonical, a share card and `VideoGame`
+ * JSON-LD; every other outcome stays `noindex` with none of them. `loadGame`
+ * is replaced, so the metadata and the streamed body branch
  * on the same fake result, and `notFound` throws a marker the tests catch.
  */
 const loadGame = vi.fn();
@@ -34,10 +37,20 @@ vi.mock("next/navigation", () => ({
 
 const { default: GamePage, generateMetadata } = await import("./page");
 
+const ORIGIN = "https://bestats.example";
+
+const ART = "https://images.igdb.com/igdb/image/upload/t_1080p/ar1.jpg";
+const SHOT = "https://images.igdb.com/igdb/image/upload/t_1080p/sc1.jpg";
+const COVER =
+  "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co1wyy.jpg";
+
 const GAME = {
   name: "The Witcher 3: Wild Hunt",
   releaseYear: 2015,
   summary: "RPG and sequel to The Witcher 2 (2011).",
+  artUrl: ART,
+  screenshotUrls: [SHOT],
+  coverUrl: COVER,
 };
 
 function metadataFor(id: string) {
@@ -61,18 +74,72 @@ async function bodyFor(id: string) {
   return render(detail.props);
 }
 
-afterEach(() => loadGame.mockReset());
+beforeEach(() => vi.stubEnv("NEXT_PUBLIC_SITE_URL", ORIGIN));
 
-describe("a found game's metadata (AC-10)", () => {
-  it("is the name and year, the summary, and noindex with nothing else", async () => {
+afterEach(() => {
+  loadGame.mockReset();
+  vi.unstubAllEnvs();
+});
+
+describe("a found game's metadata (spec 0025, AC-10; spec 0032, AC-1)", () => {
+  it("is indexable, with the name and year, the summary, its canonical and its art", async () => {
     loadGame.mockResolvedValue({ kind: "found", game: GAME });
 
-    expect(await metadataFor("1942")).toEqual({
-      title: "The Witcher 3: Wild Hunt (2015)",
-      description: "RPG and sequel to The Witcher 2 (2011).",
-      robots: { index: false },
+    const metadata = await metadataFor("1942");
+
+    expect(metadata.title).toBe("The Witcher 3: Wild Hunt (2015)");
+    expect(metadata.description).toBe(
+      "RPG and sequel to The Witcher 2 (2011).",
+    );
+    expect(metadata.robots).toBeUndefined();
+    expect(metadata.alternates).toEqual({ canonical: `${ORIGIN}/games/1942` });
+    expect(metadata.openGraph).toMatchObject({
+      url: `${ORIGIN}/games/1942`,
+      type: "website",
+      siteName: "BeStats",
+      images: [ART],
+    });
+    expect(metadata.twitter).toMatchObject({
+      card: "summary_large_image",
+      images: [ART],
     });
     expect(loadGame).toHaveBeenCalledWith(1942);
+  });
+
+  it.each([
+    ["the first screenshot without art", { artUrl: null }, SHOT],
+    [
+      "the cover without art or screenshots",
+      { artUrl: null, screenshotUrls: [] },
+      COVER,
+    ],
+    [
+      "the site card with no image at all",
+      { artUrl: null, screenshotUrls: [], coverUrl: null },
+      `${ORIGIN}/opengraph-image`,
+    ],
+  ])("shares %s", async (_, override, image) => {
+    loadGame.mockResolvedValue({
+      kind: "found",
+      game: { ...GAME, ...override },
+    });
+
+    expect((await metadataFor("1942")).openGraph?.images).toEqual([image]);
+  });
+
+  it("builds the canonical from the id alone, never relative without a site URL", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", undefined);
+    loadGame.mockResolvedValue({
+      kind: "found",
+      game: { ...GAME, artUrl: null, screenshotUrls: [], coverUrl: null },
+    });
+
+    const metadata = await metadataFor("1942");
+
+    expect(metadata.alternates).toBeUndefined();
+    expect(metadata.openGraph?.url).toBeUndefined();
+    expect(metadata.openGraph?.images).toBeUndefined();
+    expect(metadata.robots).toBeUndefined();
   });
 
   it("leaves the year and description out when IGDB has none", async () => {
@@ -99,18 +166,21 @@ describe("a found game's metadata (AC-10)", () => {
   });
 });
 
-describe("a game page with nothing to show (AC-7, AC-8)", () => {
+describe("a game page with nothing to show (AC-7, AC-8; spec 0032, AC-2)", () => {
   it.each([
     ["not found", { kind: "not_found" }, "Game not found"],
     ["a failed IGDB read", { kind: "failed" }, "Game"],
-  ])("is noindex for %s", async (_, result, title) => {
-    loadGame.mockResolvedValue(result);
+  ])(
+    "is noindex with no canonical or share card for %s",
+    async (_, result, title) => {
+      loadGame.mockResolvedValue(result);
 
-    expect(await metadataFor("1942")).toEqual({
-      title,
-      robots: { index: false },
-    });
-  });
+      expect(await metadataFor("1942")).toEqual({
+        title,
+        robots: { index: false },
+      });
+    },
+  );
 
   it("is noindex for a malformed id without asking IGDB (AC-6)", async () => {
     expect(await metadataFor("abc")).toEqual({
@@ -160,8 +230,25 @@ describe("the streamed body", () => {
     platformReleases: [],
   };
 
-  /** The article's children: the hero first, then the sections in order. */
-  const sectionsOf = (article: Element) => article.props.children as Element[];
+  /**
+   * The article's children after its JSON-LD: the hero first, then the
+   * sections in order.
+   */
+  const sectionsOf = (article: Element) =>
+    (article.props.children as Element[]).slice(1);
+
+  it("opens with the game's VideoGame JSON-LD, only in the found branch (spec 0032, AC-3)", async () => {
+    loadGame.mockResolvedValue({ kind: "found", game: FOUND });
+
+    const [script] = (await bodyFor("1942")).props.children as Element[];
+
+    expect(script.type).toBe(JsonLd);
+    expect(script.props.data).toEqual(gameJsonLd(FOUND));
+    expect(script.props.data).toMatchObject({
+      "@type": "VideoGame",
+      url: `${ORIGIN}/games/1942`,
+    });
+  });
 
   it("hands the found game's facts to the hero and nothing it does not show (AC-1)", async () => {
     loadGame.mockResolvedValue({ kind: "found", game: FOUND });
@@ -253,6 +340,7 @@ describe("the streamed body", () => {
 
     const html = renderToStaticMarkup(await bodyFor("1942"));
 
+    expect(html).not.toContain("application/ld+json");
     expect(html).toContain("Couldn&#x27;t reach IGDB");
     expect(html).toContain("IGDB didn&#x27;t respond. Try again in a moment.");
     expect(html).toMatch(/<a href="\/games\/1942"[^>]*>Try again<\/a>/);

@@ -55,9 +55,10 @@ scope feature G1. It mirrors `lib/tmdb/` in shape but shares no code with it.
 - **A failure crosses the cache boundary as a plain `IgdbResult`**, and the
   wrapper rebuilds the `IgdbError`, so `kind` and `isIgdbNotFound` survive.
   Never throw an `IgdbError` out of a cached scope.
-- **Lifetimes**: `hours` for `getGame`, `getGamesByIds` and
-  `getPopularGames`, `minutes` for search and discover, `max` for the
-  reference lists. A failure takes
+- **Lifetimes**: `hours` for `getGame`, `getGamesByIds`,
+  `getPopularGames` and the reference lists, `minutes` for search and
+  discover. Nothing lives longer, because Twitch's terms cap a cached copy at
+  24 hours (spec 0032, AC-11). A failure takes
   `failureProfile(kind)`: `seconds` for `timeout`, `rate_limited` and
   `upstream`, `minutes` for the rest.
 - **The token and the limiter live in process memory**, never in a cache entry,

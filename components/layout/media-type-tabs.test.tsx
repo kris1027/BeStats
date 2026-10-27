@@ -144,15 +144,8 @@ describe("MediaTypeTabs", () => {
     },
   );
 
-  // covers: spec 0027, AC-3
-  describe("with the games library on", () => {
-    beforeEach(() => {
-      vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "on");
-    });
-    afterEach(() => {
-      vi.unstubAllEnvs();
-    });
-
+  // covers: spec 0027, AC-3; spec 0032, AC-12
+  describe("the GAMES tab, always shown", () => {
     it.each(["/watchlist", "/upcoming", "/watched"])(
       "adds GAMES on %s and lights it on a games tab",
       (path) => {
@@ -237,56 +230,13 @@ describe("MediaTypeTabs", () => {
     );
   });
 
-  it("shows no tabs on /games with the games library off", () => {
-    vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "off");
-    pathname.value = "/games";
-    search.value = "";
-    render(<MediaTypeTabs />);
-
-    expect(screen.queryByRole("link")).not.toBeInTheDocument();
-    vi.unstubAllEnvs();
-  });
-
-  it("never renders GAMES with the games library off", () => {
-    vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "off");
-    pathname.value = "/watchlist";
-    search.value = "type=game";
-    render(<MediaTypeTabs />);
-
-    expect(
-      screen.queryByRole("link", { name: "GAMES" }),
-    ).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "SHOWS" })).toHaveAttribute(
-      "aria-current",
-      "page",
-    );
-    vi.unstubAllEnvs();
-  });
-
-  /** covers: spec 0027, AC-1, AC-3 */
+  /** covers: spec 0027, AC-3 */
   describe("the games tab edges", () => {
     afterEach(() => {
-      vi.unstubAllEnvs();
       suspendSearch.value = false;
     });
 
-    it("reads an invalid flag as off, still rendering the two tabs", () => {
-      vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "maybe");
-      pathname.value = "/watched";
-      search.value = "type=game";
-      render(<MediaTypeTabs />);
-
-      expect(
-        screen.queryByRole("link", { name: "GAMES" }),
-      ).not.toBeInTheDocument();
-      expect(screen.getByRole("link", { name: "SHOWS" })).toHaveAttribute(
-        "aria-current",
-        "page",
-      );
-    });
-
     it("renders all three tabs with none lit before ?type is known", async () => {
-      vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "on");
       suspendSearch.value = true;
       pathname.value = "/upcoming";
       await act(async () => {
@@ -307,7 +257,6 @@ describe("MediaTypeTabs", () => {
     });
 
     it("gives the /search fallback a GAMES link that stays on /search (spec 0029, AC-14)", async () => {
-      vi.stubEnv("NEXT_PUBLIC_GAMES_LIBRARY", "on");
       suspendSearch.value = true;
       pathname.value = "/search";
       await act(async () => {

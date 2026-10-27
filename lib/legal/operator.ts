@@ -42,7 +42,7 @@ export const MINIMUM_AGE = 16;
  * whenever the text changes materially. Pages format it in UTC and never read
  * the clock (spec 0017, AC-7).
  */
-export const LEGAL_LAST_UPDATED = "2026-10-23";
+export const LEGAL_LAST_UPDATED = "2026-10-27";
 
 /**
  * Where the production Supabase project stores your data, read from
@@ -74,10 +74,23 @@ export const TMDB_HOME_URL = "https://www.themoviedb.org";
 
 /**
  * IGDB's own site, linked where `/privacy` says game covers load from IGDB's
- * image service (spec 0025). One home, like `TMDB_HOME_URL`. IGDB is not a
- * processor: the server sends it no user data, only the browser loads covers.
+ * image service (spec 0025) and from the footer's IGDB credit (spec 0032,
+ * AC-8). One home, like `TMDB_HOME_URL`. IGDB is not a processor: the server
+ * sends it no user data, only the browser loads covers.
  */
 export const IGDB_HOME_URL = "https://www.igdb.com";
+
+/**
+ * The credit IGDB's terms ask for, shown in the footer on every route and on
+ * `/terms` (spec 0032, AC-8, AC-9). IGDB's FAQ asks for "fair attribution,
+ * i.e. attribution that is visible to your users and located in a static
+ * location", and the Twitch Developer Services Agreement (last modified
+ * 2023-11-01) for "a clear path to the source", which the footer link is.
+ * Both read on 2026-10-26 (spec 0032, rationale, *IGDB terms check*). It
+ * lives here, not in `lib/igdb`, because that entry point is server only and
+ * its export surface is locked.
+ */
+export const IGDB_ATTRIBUTION = "Game data and images from IGDB.com";
 
 /** Days within which an account deletion request is completed. */
 export const DELETION_DAYS = 30;

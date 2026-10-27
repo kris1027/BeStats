@@ -45,7 +45,9 @@ import {
  * Lifetimes follow how fast each answer changes: `hours` for a game, a
  * batch and a popularity list, so a new release date unlocks Playing within
  * hours and the heaviest read in the app runs a few times a day; `minutes` for
- * search and discover; `max` for the genre and platform lists. A failure takes
+ * search and discover; `hours` too for the genre and platform lists, which
+ * barely change but stay inside the Twitch Developer Services Agreement's 24
+ * hour caching clause (spec 0032, AC-11). A failure takes
  * `failureProfile(kind)`.
  *
  * No cached scope reads cookies, headers, search params or any user value. A
@@ -53,14 +55,13 @@ import {
  * never in a cache entry.
  */
 
-type Lifetime = "seconds" | "minutes" | "hours" | "max";
+type Lifetime = "seconds" | "minutes" | "hours";
 
 /** One literal call per profile, since `cacheLife` is typed per literal. */
 function setLifetime(profile: Lifetime): void {
   if (profile === "seconds") cacheLife("seconds");
   else if (profile === "minutes") cacheLife("minutes");
-  else if (profile === "hours") cacheLife("hours");
-  else cacheLife("max");
+  else cacheLife("hours");
 }
 
 /**
@@ -188,20 +189,24 @@ export async function getPopularGames(
 
 async function getGameGenresCached(): Promise<IgdbResult<GameRef[]>> {
   "use cache";
-  return settle(() => fetchGameGenres(), "max");
+  return settle(() => fetchGameGenres(), "hours");
 }
 
-/** IGDB's genres by name, cached for `max`: the list barely ever changes. */
+/**
+ * IGDB's genres by name, cached for `hours` rather than longer: the list
+ * barely changes, but Twitch's terms cap a cached copy at 24 hours
+ * (spec 0032, AC-11).
+ */
 export async function getGameGenres(): Promise<GameRef[]> {
   return unwrap(await getGameGenresCached());
 }
 
 async function getGamePlatformsCached(): Promise<IgdbResult<GameRef[]>> {
   "use cache";
-  return settle(() => fetchGamePlatforms(), "max");
+  return settle(() => fetchGamePlatforms(), "hours");
 }
 
-/** IGDB's platforms by name, cached for `max` like the genres. */
+/** IGDB's platforms by name, cached for `hours` like the genres. */
 export async function getGamePlatforms(): Promise<GameRef[]> {
   return unwrap(await getGamePlatformsCached());
 }

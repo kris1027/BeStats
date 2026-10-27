@@ -12,24 +12,14 @@ import type { SearchType } from "./params";
 const query = z.string().trim().min(QUICK_MIN_CHARS).max(MAX_QUERY_LENGTH);
 
 /**
- * Validates the two query parameters the Route Handler accepts. `game` is
- * one of the types only while the games library is on (spec 0029, AC-17).
- *
- * @param options.gamesEnabled `gameSearchEnabled(rawType)`, which reads the
- * flag only for a raw `type=game`.
+ * Validates the two query parameters the Route Handler accepts, `game`
+ * always among the types since games launched (spec 0029, AC-17; spec 0032,
+ * AC-12).
  */
-export function quickSearchRequestSchema({
-  gamesEnabled = false,
-}: {
-  gamesEnabled?: boolean;
-} = {}) {
-  return z.object({
-    type: z
-      .enum(["tv", "movie", "game"])
-      .refine((type) => gamesEnabled || type !== "game"),
-    q: query,
-  });
-}
+export const quickSearchRequestSchema = z.object({
+  type: z.enum(["tv", "movie", "game"]),
+  q: query,
+});
 
 /** One row of the quick search panel, already shaped for display. */
 export type QuickResult = {

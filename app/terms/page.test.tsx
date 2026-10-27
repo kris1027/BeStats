@@ -7,6 +7,7 @@ import {
   COMPLAINT_RESPONSE_DAYS,
   CONTACT_EMAIL,
   DELETION_DAYS,
+  IGDB_ATTRIBUTION,
   LEGAL_LAST_UPDATED,
   MINIMUM_AGE,
   OPERATOR_COUNTRY,
@@ -24,14 +25,14 @@ vi.mock("@/lib/tmdb", async () => {
 const { default: TermsPage, metadata } = await import("./page");
 
 /**
- * covers: spec 0017, AC-3, AC-7, AC-9, AC-10, AC-12
+ * covers: spec 0017, AC-3, AC-7, AC-9, AC-10, AC-12; spec 0032, AC-9
  */
 const SECTIONS = [
   "About BeStats",
   "Your account",
   "Technical requirements",
   "Acceptable use",
-  "Catalog data and TMDB",
+  "Catalog data, TMDB and IGDB",
   "Availability and changes to the service",
   "Ending your account",
   "Liability",
@@ -73,6 +74,25 @@ describe("/terms", () => {
   it("repeats TMDB's notice from the one constant (AC-3)", () => {
     render(<TermsPage />);
     expect(screen.getByText(TMDB_ATTRIBUTION)).toBeInTheDocument();
+  });
+
+  it("credits IGDB after TMDB in the catalog section, in the spec's order (spec 0032, AC-9)", () => {
+    render(<TermsPage />);
+
+    const section = screen
+      .getByRole("heading", { level: 2, name: "Catalog data, TMDB and IGDB" })
+      .closest("section");
+    const paragraphs = [...(section?.querySelectorAll("p") ?? [])].map(
+      (p) => p.textContent,
+    );
+    expect(paragraphs.slice(-3)).toEqual([
+      "Game details and images come from IGDB. We can’t guarantee that they are accurate or complete.",
+      IGDB_ATTRIBUTION,
+      "IGDB community ratings belong to IGDB. Your own ratings are yours.",
+    ]);
+    expect(paragraphs.indexOf(TMDB_ATTRIBUTION)).toBeLessThan(
+      paragraphs.indexOf(IGDB_ATTRIBUTION),
+    );
   });
 
   it("states the operator facts from the one module (AC-10)", () => {

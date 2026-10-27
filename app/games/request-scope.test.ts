@@ -5,13 +5,15 @@ import { describe, expect, it } from "vitest";
 import { GAME_LIST_SLUGS } from "@/lib/catalog/lists";
 
 /**
- * covers: spec 0028, AC-18, AC-19
+ * covers: spec 0028, AC-18, AC-19; spec 0032, AC-14
  *
  * `/games` and its list pages are public pages served from a prerendered
  * shell. The only session read on them is the hero's `GameTrackingSlot`,
  * inside its own Suspense boundary in `components/`, so no route file may
  * reach for a request API or a Supabase client, and none may opt out of the
  * static shell. `app/games/actions.ts` is a POST handler, not render code.
+ * The visitor's region is request state too, and since spec 0032 these pages
+ * feed search engines, so it stays out of them as well.
  */
 const FORBIDDEN = [
   "cookies(",
@@ -19,6 +21,7 @@ const FORBIDDEN = [
   "draftMode(",
   "@/lib/supabase",
   "@/lib/auth/user",
+  "getVisitorRegion",
 ];
 
 const ACTIONS = join("app/games/actions.ts");

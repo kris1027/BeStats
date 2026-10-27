@@ -1,7 +1,12 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { OPERATOR_GITHUB_URL, OPERATOR_HANDLE } from "@/lib/legal/operator";
+import {
+  IGDB_ATTRIBUTION,
+  IGDB_HOME_URL,
+  OPERATOR_GITHUB_URL,
+  OPERATOR_HANDLE,
+} from "@/lib/legal/operator";
 import { TMDB_ATTRIBUTION } from "@/lib/tmdb/constants";
 
 // The real entry point pulls `server-only` and the cached reads into jsdom.
@@ -15,7 +20,7 @@ vi.mock("@/lib/tmdb", async () => {
 const { SiteFooter } = await import("./site-footer");
 
 /**
- * covers: spec 0017, AC-2, AC-3, AC-4, AC-5
+ * covers: spec 0017, AC-2, AC-3, AC-4, AC-5; spec 0032, AC-8, AC-10
  *
  * The footer is TMDB's attribution on every route, so the exact notice, the
  * logo link and its attributes are pinned here. The row and stack swap at `md`
@@ -49,6 +54,32 @@ describe("SiteFooter", () => {
     expect(link).toHaveAttribute("href", "https://www.themoviedb.org");
     expect(link).toHaveAttribute("target", "_blank");
     expect(link).toHaveAttribute("rel", "noopener noreferrer");
+  });
+
+  it("credits IGDB with its logo and the one constant, linked in a new tab at touch height (spec 0032, AC-8, AC-10)", () => {
+    render(<SiteFooter />);
+
+    const logo = screen.getByRole("img", { name: "IGDB" });
+    expect(logo).toHaveAttribute("src", "/igdb-logo.svg");
+    // No taller than TMDB's logo, which is h-3 and md:h-3.5.
+    expect(logo).toHaveClass("h-3", "md:h-3.5", "w-auto");
+
+    const link = logo.closest("a");
+    expect(link).toHaveTextContent(IGDB_ATTRIBUTION);
+    expect(link).toHaveAttribute("href", IGDB_HOME_URL);
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    expect(link).toHaveClass("min-h-11", "md:min-h-9");
+  });
+
+  it("puts IGDB's credit after TMDB's notice (spec 0032, AC-8)", () => {
+    render(<SiteFooter />);
+
+    const tmdb = screen.getByText(TMDB_ATTRIBUTION);
+    const igdb = screen.getByText(IGDB_ATTRIBUTION);
+    expect(
+      tmdb.compareDocumentPosition(igdb) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it("links both legal pages at touch height (AC-4, AC-5)", () => {
