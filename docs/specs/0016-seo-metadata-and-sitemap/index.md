@@ -2,6 +2,7 @@
 
 **Date**: 2026-10-03
 **Status**: Accepted
+**Amended**: 2026-10-27. Since games joined the sitemap, a complete list lives `hours`, not `days` (AC-8), because it holds IGDB ids; see [spec 0032, AC-7](../0032-games-launch/index.md). A partial list still lives `minutes`.
 
 Scope feature: [17. SEO metadata and sitemap](../../scope/scope.md) · Beta tier
 
