@@ -2,7 +2,7 @@
 
 **Date**: 2026-10-03
 **Status**: Accepted
-**Amended**: 2026-10-27. Since games joined the sitemap, a complete list lives `hours`, not `days` (AC-8), because it holds IGDB ids; see [spec 0032, AC-7](../0032-games-launch/index.md). A partial list still lives `minutes`.
+**Amended**: 2026-10-27. Since games joined the sitemap, a complete list lives `hours`, not `days` (AC-8), because it holds IGDB ids; see [spec 0032, AC-7](../0032-games-launch/index.md). A partial list still lives `minutes`. AC-8, the response table, the value sourcing table and build plan step 6 now say `hours` too.
 
 Scope feature: [17. SEO metadata and sitemap](../../scope/scope.md) · Beta tier
 
@@ -34,7 +34,7 @@ This finishes how BeStats presents itself to search engines and to link previews
 
 - **AC-6**: On an indexable deployment, `/sitemap.xml` is a valid sitemap of absolute URLs, in this order: `/movies`, `/shows`, then `/movies/{id}` for every movie on `discoverMovies({ page })` pages 1 to 10, then `/shows/{id}` for every show on `discoverTvShows({ page })` pages 1 to 10, each in page order then result order. These are the same calls, with the same default options and popularity order, that the `/movies` and `/shows` landings make, so every listed title is linked from a public page. The sitemap relies on the discover module's existing adult exclusion and does no filtering of its own. Ids are deduplicated within each media type (first occurrence wins), so the file holds at most 402 URLs. An empty page, or a page past TMDB's `totalPages`, simply adds no ids. Entries carry no `lastModified`, `changeFrequency` or `priority`.
 - **AC-7**: The sitemap never lists `/search`, a season page, a `?page=` variant, `/showcase`, any private path (`/watchlist`, `/watched`, `/upcoming`, `/account`), any auth path, or any `/api/` or `/auth/` URL.
-- **AC-8**: The 20 TMDB page reads run together through `Promise.allSettled` inside one `use cache` function. A read rejected with a `TmdbError` drops only that page's ids; the file still answers 200 with the landings and every id that did load. Any other rejection is rethrown, as `MoviesPage` does, because it is a bug rather than an outage. After all 20 settle, one `if`/`else` calls `cacheLife` exactly once: `"days"` when all 20 succeeded, `"minutes"` when any failed, so a full list returns soon after TMDB recovers. The sitemap's own entry is what lives a day. The inner discover entries keep their own `minutes` lifetime, so the sitemap reuses a landing's TMDB response only when both run within about an hour.
+- **AC-8**: The 20 TMDB page reads run together through `Promise.allSettled` inside one `use cache` function. A read rejected with a `TmdbError` drops only that page's ids; the file still answers 200 with the landings and every id that did load. Any other rejection is rethrown, as `MoviesPage` does, because it is a bug rather than an outage. After all 20 settle, one `if`/`else` calls `cacheLife` exactly once: `"hours"` when all 20 succeeded, `"minutes"` when any failed, so a full list returns soon after TMDB recovers. The sitemap's own entry is what lives for hours (it was `"days"` until games joined the sitemap; see the amendment above). The inner discover entries keep their own `minutes` lifetime, so the sitemap reuses a landing's TMDB response only when both run within about an hour.
 - **AC-9**: On a deployment that is not indexable, `/sitemap.xml` returns `[]`, which renders as a valid, empty `urlset` (confirmed in the built output), and makes no TMDB request.
 
 *Shared page metadata*
@@ -111,7 +111,7 @@ Reasoning and options: see [rationale.md](rationale.md).
 | Route | Output | Cache | Errors |
 |---|---|---|---|
 | `/robots.txt` | text, AC-4 or AC-5 | prerendered at build | none |
-| `/sitemap.xml` | XML `urlset`, AC-6 to AC-9 | `days`, or `minutes` after any failed read | never non 200; failures shrink the list |
+| `/sitemap.xml` | XML `urlset`, AC-6 to AC-9 | `hours`, or `minutes` after any failed read | never non 200; failures shrink the list |
 | `/opengraph-image` | 1200 by 630 PNG | prerendered at build | none |
 
 **Value sourcing**:
@@ -121,7 +121,7 @@ Reasoning and options: see [rationale.md](rationale.md).
 | any URL field | the site origin | `NEXT_PUBLIC_SITE_URL` through `siteUrl()` |
 | robots, sitemap | indexable or not | `VERCEL_ENV` (set by Vercel per deployment) plus `siteUrl()` |
 | sitemap | movie ids, show ids | `discoverMovies({ page })`, `discoverTvShows({ page })` for pages 1 to 10, default options, the landings' calls |
-| sitemap | cache lifetime | derived: all 20 reads ok → `days`, else `minutes` |
+| sitemap | cache lifetime | derived: all 20 reads ok → `hours`, else `minutes` |
 | movie metadata | title, description | unchanged, `loadMovie` (spec 0006, AC-12) |
 | movie metadata | share image | `movie.backdropUrl` → `movie.posterUrl` → site card |
 | show metadata | share image | `show.backdropUrl` → `show.posterUrl` → site card |
@@ -164,7 +164,7 @@ Tracer Bullet: the first slice proves the pipe from environment to crawler outpu
 3. Add `lib/seo/metadata.ts` (`catalogMetadata()`), `app/opengraph-image.tsx` reading the three tokens from `globals.css`, and the root layout's `metadataBase`, default `openGraph` and `twitter`, satisfies **AC-3**, **AC-10**, **AC-11**, **AC-19**, **AC-20**
 4. Wire the movie page: `catalogMetadata()` in the found branch, `noindex` in the failed branch, and `lib/seo/json-ld.ts` (`movieJsonLd()`, `jsonLdScript()`) rendered in the found body, with unit tests for omission and escaping, satisfies **AC-12**, **AC-15**, **AC-16**, **AC-21**, **AC-23**
 5. Wire the show and season pages the same way, with `showJsonLd()` on the show page only, satisfies **AC-13**, **AC-14**, **AC-15**, **AC-22**
-6. Thicken the sitemap: the 20 discover reads with independent failure, dedupe, ordering and the `days` or `minutes` lifetime inside its `use cache` function, with unit tests on a mocked `lib/tmdb`, satisfies **AC-6**, **AC-7**, **AC-8**
+6. Thicken the sitemap: the 20 discover reads with independent failure, dedupe, ordering and the `hours` or `minutes` lifetime inside its `use cache` function, with unit tests on a mocked `lib/tmdb`, satisfies **AC-6**, **AC-7**, **AC-8**
 7. Convert `/movies` and `/shows` to `generateMetadata` with descriptions and per page canonicals, and add the `/search` description and site card, satisfies **AC-17**, **AC-18**
 8. Proof: `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm build` (route table shows the prerendered shells and the three metadata routes), then in the running app check the heads of every public page type, the not found and failed branches, a private page and an auth page, signed out and signed in, and with `NEXT_PUBLIC_SITE_URL` unset, satisfies **AC-11**, **AC-24**, **AC-25**
 
