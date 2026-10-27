@@ -18,13 +18,15 @@ export const GAME_SITEMAP_LIMIT = 200;
  * Ids are deduplicated within each media type, first occurrence winning,
  * because popularity can shift a title across a page boundary between two
  * reads. A movie, a show and a game may share a number; their paths differ,
- * so all stay. Games are capped at `GAME_SITEMAP_LIMIT` after deduplication. No `lastModified`, `changeFrequency` or `priority`: nothing here knows
- * them truthfully. Every entry is absolute, built from `origin`, never left
+ * so all stay. Games are capped at `GAME_SITEMAP_LIMIT` after deduplication.
+ * No `lastModified`, `changeFrequency` or `priority`: nothing here knows them
+ * truthfully. Every entry is absolute, built from `origin`, never left
  * for `metadataBase` to resolve (`lib/seo/AGENTS.md`, the absolute URL rule).
  *
  * @param origin The site origin from `siteUrl()`.
  * @param listPaths The list pages' bare paths from the registry, movie lists
- * first, then show lists, then games lists, each group in row order; never a `?page=N` variant (AC-16).
+ * first, then show lists, then games lists, each group in row order; never a
+ * `?page=N` variant (AC-16).
  * @param moviePages The ids of each discover page that loaded, in page order.
  * @param showPages As `moviePages`, for TV shows.
  * @param gameIds The ids of IGDB's Popular list in rank order, empty when
@@ -44,14 +46,14 @@ export function sitemapEntries(
     ...listPaths.map((path) => `${origin}${path}`),
     `${origin}/privacy`,
     `${origin}/terms`,
-    ...uniqueIds(moviePages).map((id) => `${origin}/movies/${id}`),
-    ...uniqueIds(showPages).map((id) => `${origin}/shows/${id}`),
-    ...uniqueIds([gameIds])
+    ...uniqueIds(moviePages.flat()).map((id) => `${origin}/movies/${id}`),
+    ...uniqueIds(showPages.flat()).map((id) => `${origin}/shows/${id}`),
+    ...uniqueIds(gameIds)
       .slice(0, GAME_SITEMAP_LIMIT)
       .map((id) => `${origin}/games/${id}`),
   ].map((url) => ({ url }));
 }
 
-function uniqueIds(pages: number[][]): number[] {
-  return [...new Set(pages.flat())];
+function uniqueIds(ids: number[]): number[] {
+  return [...new Set(ids)];
 }

@@ -15,9 +15,9 @@ import { discoverMovies, discoverTvShows, TmdbError } from "@/lib/tmdb";
  * signed out visitor can open from a landing.
  *
  * A deployment that is not indexable answers an empty `urlset` and asks TMDB
- * and IGDB nothing. Prerendered, so the build decides which branch it is, and it reads
- * no request state, so nothing user specific can reach it (`lib/seo/AGENTS.md`,
- * the prerendered routes and request state rules).
+ * and IGDB nothing. Prerendered, so the build decides which branch it is, and
+ * it reads no request state, so nothing user specific can reach it
+ * (`lib/seo/AGENTS.md`, the prerendered routes and request state rules).
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const origin = siteUrl();
@@ -44,20 +44,20 @@ const LIST_PATHS = [
  * entries and every listed title is linked from a public page (spec 0016,
  * AC-6, AC-8; spec 0021, AC-3).
  *
- * The games are IGDB's Popular list, cut to its first 200 by
- * `sitemapEntries`, the exact read
- * `/games/popular` makes (spec 0032, AC-6), so every listed game is linked
- * from a public page too, and that read returns visible games only.
+ * The games are IGDB's Popular list, cut to its first 200 by `sitemapEntries`,
+ * the exact read `/games/popular` makes (spec 0032, AC-6), so every listed
+ * game is linked from a public page too, and that read returns visible games
+ * only.
  *
  * The 21 reads settle independently: a `TmdbError` drops only its own page
  * and an `IgdbError` only the game ids, so an upstream hiccup shrinks the
  * list instead of failing the file (spec 0032, AC-7). `getPopularGames`
  * rebuilds its error outside its own cached scope, so `instanceof` holds
  * here. Any other rejection, a validation error included, is a bug and is
- * rethrown. A complete list lives for days; a
- * partial one for minutes, so the full list returns soon after TMDB recovers
- * (`lib/seo/AGENTS.md`, the sitemap cache rule).
- * Only plain id arrays leave this scope (`AGENTS.md`, the cached scope rule).
+ * rethrown. A complete list lives for days; a partial one for minutes, so the
+ * full list returns soon after TMDB or IGDB recovers (`lib/seo/AGENTS.md`, the
+ * sitemap cache rule). Only plain id arrays leave this scope (`AGENTS.md`, the
+ * cached scope rule).
  */
 async function popularTitleIds(): Promise<{
   moviePages: number[][];
