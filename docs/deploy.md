@@ -106,6 +106,17 @@ Check it with `vercel firewall overview` (one active custom rule).
 
 Checked on 2026-10-04: a burst of 70 requests from one address got 60 answers of `200`, then `429` (`x-vercel-mitigated: deny`), while `/shows` kept answering `200`. With the limit reached, the navbar quick search showed its "Couldn't reach TMDB" error with Try again. A normal typing session sends one request per pause (the field debounces), so it stays far below the limit.
 
+**Vercel Firewall AI Bots ruleset: Deny** (prompts/crawl-budget-cut.md). Set on 2026-10-28, when crawlers pushed Fluid Active CPU past the Hobby limit of 4 hours. It blocks AI crawlers such as ClaudeBot; search engines such as Googlebot are not affected and are steered by `robots.txt` instead. Set it from the CLI:
+
+```sh
+vercel firewall rules update ai-bots --action deny --yes
+vercel firewall publish --yes
+```
+
+Check it with `vercel firewall status` (`AI Bots  Deny`). Checked on 2026-10-28: a ClaudeBot user agent on `/games/2554` gets `403`, and a plain request gets `200`.
+
+Hobby refuses a second rate limit rule ("Rate limiting is not available for this plan") and any `header:` rate limit key, so crawlers cannot be rate limited while `Rate limit api search` exists.
+
 ## 6. Which IP address Supabase counts (AC-18)
 
 Sign ins run in a Server Action on Vercel, so Supabase may count the visitor's address or Vercel's outbound address. If it counts Vercel's, the limit is shared by everyone, and one person sending wrong passwords quickly makes sign in fail for every visitor.

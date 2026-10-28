@@ -7,7 +7,8 @@ How BeStats presents itself to search engines and link previews. Governed by [sp
 - `site.ts`: `siteUrl()` (the http(s) origin from `NEXT_PUBLIC_SITE_URL`, or null), `absoluteUrl()` (that origin plus a path, or null) and `isIndexableDeployment()` (true only with `VERCEL_ENV=production` and a valid site URL).
 - `metadata.ts`: `catalogMetadata()` for every public catalog page, `landingMetadata()` for `/movies`, `/shows`, `/games` and their list pages (called through `lib/landing-metadata.ts`, which sits outside this folder because it catches `TmdbError` and `IgdbError`), `shareMetadata()` for the Open Graph and X fields every page shares, `SITE_NAME` and `siteCardUrl()`.
 - `json-ld.ts`: `movieJsonLd()`, `showJsonLd()`, `gameJsonLd()` (a `VideoGame`, spec 0032) and `jsonLdScript()`. Rendered by `components/catalog/json-ld.tsx`.
-- `sitemap.ts`: `sitemapEntries()`, `DISCOVER_PAGES_PER_TYPE` and `GAME_SITEMAP_LIMIT` (the first 200 of IGDB's Popular list), the pure half of `app/sitemap.ts`.
+- `sitemap.ts`: `sitemapEntries()` and `DISCOVER_PAGES_PER_TYPE`, the pure half of `app/sitemap.ts`.
+- `crawl.ts`: `CRAWL_BUDGET_DISALLOW`, the game detail (`/games/1` to `/games/9`) and season (`/shows/*/season/`) prefixes `app/robots.ts` disallows.
 - `theme-tokens.ts`: `rootTokens()`, which reads colours from the `:root` block of `app/globals.css` for `app/opengraph-image.tsx`.
 - The routes that use them: `app/robots.ts`, `app/sitemap.ts`, `app/opengraph-image.tsx`.
 
@@ -22,7 +23,8 @@ How BeStats presents itself to search engines and link previews. Governed by [sp
 - Leave out any field whose TMDB or IGDB value is null, empty or zero. Never emit a rating of any kind in metadata or JSON-LD.
 - Serialize JSON-LD only through `jsonLdScript()`. It escapes `<`, U+2028 and U+2029, so TMDB or IGDB text cannot close the script tag. Render it only in a page's found branch.
 - `/robots.txt`, `/sitemap.xml` and `/opengraph-image` are prerendered, so `VERCEL_ENV` and `NEXT_PUBLIC_SITE_URL` are read when `pnpm build` runs, not per request. To check the indexable branch locally, build with `VERCEL_ENV=production` and a site URL set.
-- The sitemap reads discover pages with the exact calls `/movies/popular` and `/shows/popular` make (page 1 is also each landing's Popular row), and IGDB's Popular list with the exact read `/games/popular` makes, so they share cache entries and every listed title is linked from a public page. A `TmdbError` drops only its page and an `IgdbError` only the game ids; any other error is rethrown. Its `cacheLife` is chosen once, after all reads settle: `hours` when all succeed (it holds IGDB ids, and Twitch caps a cached copy at 24 hours), `minutes` when any fail.
+- The sitemap reads discover pages with the exact calls `/movies/popular` and `/shows/popular` make (page 1 is also each landing's Popular row), so they share cache entries and every listed title is linked from a public page. A `TmdbError` drops only its page; any other error is rethrown. Its `cacheLife` is chosen once, after all reads settle: `hours` when all succeed, `minutes` when any fail.
+- Crawl budget (prompts/crawl-budget-cut.md): on 2026-10-28 crawlers made 99.5% of requests, Googlebot walked about 7,000 distinct game pages in 90 minutes, and Active CPU passed the Vercel Hobby limit of 4 hours. Each such page renders in a function, because only its skeleton shell is prerendered. So robots.txt disallows `CRAWL_BUDGET_DISALLOW`, the sitemap lists no game detail page (never list a URL robots.txt disallows), and the Vercel Firewall denies AI bots (`docs/deploy.md`, section 5). Widening crawl access again is a decision to revisit with the plan, not a cleanup.
 - `app/opengraph-image.tsx` holds no colour literal (`design-tokens-boundary.test.ts`). It reads tokens from `globals.css` inside a cached scope, and a missing token fails the build.
 
 _Drafted by /sync from the introducing change, worth a quick human pass._
