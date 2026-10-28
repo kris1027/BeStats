@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { GAME_SITEMAP_LIMIT, sitemapEntries } from "./sitemap";
+import { sitemapEntries } from "./sitemap";
 
 /**
- * covers: spec 0016, AC-6; spec 0032, AC-6
+ * covers: spec 0016, AC-6; spec 0032, AC-6; prompts/crawl-budget-cut.md
  *
  * The pure half of the sitemap: the order of every group, the dedupe within a
- * media type and the games cap. `app/sitemap.test.ts` covers the reads.
+ * media type, and no game detail page. `app/sitemap.test.ts` covers the reads.
  */
 const ORIGIN = "https://bestats.example";
 
@@ -15,9 +15,9 @@ function urls(...args: Parameters<typeof sitemapEntries>) {
 }
 
 describe("sitemapEntries", () => {
-  it("puts the three landings, the list pages and the legal pages before the titles, then movies, shows and games", () => {
+  it("puts the three landings, the list pages and the legal pages before the titles, then movies and shows", () => {
     expect(
-      urls(ORIGIN, ["/movies/popular", "/games/popular"], [[1]], [[2]], [3]),
+      urls(ORIGIN, ["/movies/popular", "/games/popular"], [[1]], [[2]]),
     ).toEqual([
       `${ORIGIN}/movies`,
       `${ORIGIN}/shows`,
@@ -28,37 +28,21 @@ describe("sitemapEntries", () => {
       `${ORIGIN}/terms`,
       `${ORIGIN}/movies/1`,
       `${ORIGIN}/shows/2`,
-      `${ORIGIN}/games/3`,
     ]);
   });
 
-  it("dedupes game ids in rank order, then caps them at 200", () => {
-    const ids = [5, 5, 6, ...Array.from({ length: 400 }, (_, i) => 1000 + i)];
-
-    const games = urls(ORIGIN, [], [], [], ids).filter((url) =>
-      url.startsWith(`${ORIGIN}/games/`),
-    );
-
-    expect(GAME_SITEMAP_LIMIT).toBe(200);
-    expect(games).toHaveLength(200);
-    expect(games.slice(0, 3)).toEqual([
-      `${ORIGIN}/games/5`,
-      `${ORIGIN}/games/6`,
-      `${ORIGIN}/games/1000`,
-    ]);
-  });
-
-  it("keeps a game that shares its number with a movie and a show", () => {
-    expect(urls(ORIGIN, [], [[7]], [[7]], [7]).slice(-3)).toEqual([
+  it("keeps a show that shares its number with a movie", () => {
+    expect(urls(ORIGIN, [], [[7, 7]], [[7]]).slice(-2)).toEqual([
       `${ORIGIN}/movies/7`,
       `${ORIGIN}/shows/7`,
-      `${ORIGIN}/games/7`,
     ]);
   });
 
-  it("lists no games at all when their read failed", () => {
+  it("lists no game detail page, which robots.txt disallows", () => {
     expect(
-      urls(ORIGIN, [], [], [], []).filter((url) => /\/games\/\d+$/.test(url)),
+      urls(ORIGIN, ["/games/popular"], [[1]], [[2]]).filter((url) =>
+        /\/games\/\d+$/.test(url),
+      ),
     ).toEqual([]);
   });
 });
