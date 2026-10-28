@@ -284,7 +284,7 @@ Games are a third media type, planned in [docs/scope/games.md](docs/scope/games.
 - **Ratings:** a personal score from 1 to 10, only on Playing or Finished. Moving back to Want to play clears it, with Undo restoring status, score and timestamps; Playing to Finished and back keeps it. IGDB's community rating shows out of 10 and is always labelled as the community rating.
 - **Timestamps:** added, started (the first time a game becomes Playing) and finished (every time it becomes Finished). Want to play sorts by added, Playing by started, Finished by finished.
 - **Not tracked:** platform played on, hours played, 100% completion.
-- **Navigation:** SHOWS | MOVIES | GAMES with `?type=game`; for games `/watchlist` is Want to play, `/upcoming` Playing, `/watched` Finished. The GAMES tab shows on every page (spec 0028; the flag that gated it was removed in G10, spec 0032), and `/games` is the games landing with five paged list pages (`/games/{slug}`). Since G10 game pages, `/games` and its list pages are indexable and in the sitemap (spec 0032).
+- **Navigation:** SHOWS | MOVIES | GAMES with `?type=game`; for games `/watchlist` is Want to play, `/upcoming` Playing, `/watched` Finished. The GAMES tab shows on every page (spec 0028; the flag that gated it was removed in G10, spec 0032), and `/games` is the games landing with five paged list pages (`/games/{slug}`). Since G10 `/games` and its list pages are indexable and in the sitemap (spec 0032); game detail pages keep their `index` meta but robots.txt disallows them and the sitemap leaves them out, as it does season pages, to keep crawlers inside Vercel's Active CPU budget (prompts/crawl-budget-cut.md).
 
 ## Build approach
 

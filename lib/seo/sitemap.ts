@@ -4,21 +4,17 @@ import type { MetadataRoute } from "next";
 export const DISCOVER_PAGES_PER_TYPE = 10;
 
 /**
- * The games the sitemap lists: the top of IGDB's Popular list, the same 200
- * as movies and shows each list (spec 0032, AC-6).
- */
-export const GAME_SITEMAP_LIMIT = 200;
-
-/**
  * The sitemap entries, in the order spec 0016, AC-6 fixes, amended by spec
  * 0017, AC-13, spec 0021, AC-16 and spec 0032, AC-6: the three landings, the
- * list pages at page 1, the two legal pages, then every movie, every show and
- * every game, each in page order then result order.
+ * list pages at page 1, the two legal pages, then every movie and every show,
+ * each in page order then result order. No game detail page: robots.txt keeps
+ * crawlers off them (prompts/crawl-budget-cut.md), and a sitemap listing a
+ * disallowed URL contradicts it.
  *
  * Ids are deduplicated within each media type, first occurrence winning,
  * because popularity can shift a title across a page boundary between two
- * reads. A movie, a show and a game may share a number; their paths differ,
- * so all stay. Games are capped at `GAME_SITEMAP_LIMIT` after deduplication.
+ * reads. A movie and a show may share a number; their paths differ, so both
+ * stay.
  * No `lastModified`, `changeFrequency` or `priority`: nothing here knows them
  * truthfully. Every entry is absolute, built from `origin`, never left
  * for `metadataBase` to resolve (`lib/seo/AGENTS.md`, the absolute URL rule).
@@ -29,15 +25,12 @@ export const GAME_SITEMAP_LIMIT = 200;
  * `?page=N` variant (AC-16).
  * @param moviePages The ids of each discover page that loaded, in page order.
  * @param showPages As `moviePages`, for TV shows.
- * @param gameIds The ids of IGDB's Popular list in rank order, empty when
- * that read failed (AC-7).
  */
 export function sitemapEntries(
   origin: string,
   listPaths: readonly string[],
   moviePages: number[][],
   showPages: number[][],
-  gameIds: number[],
 ): MetadataRoute.Sitemap {
   return [
     `${origin}/movies`,
@@ -48,9 +41,6 @@ export function sitemapEntries(
     `${origin}/terms`,
     ...uniqueIds(moviePages.flat()).map((id) => `${origin}/movies/${id}`),
     ...uniqueIds(showPages.flat()).map((id) => `${origin}/shows/${id}`),
-    ...uniqueIds(gameIds)
-      .slice(0, GAME_SITEMAP_LIMIT)
-      .map((id) => `${origin}/games/${id}`),
   ].map((url) => ({ url }));
 }
 
