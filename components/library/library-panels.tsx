@@ -6,6 +6,7 @@ import { RetryLink } from "@/components/retry-link";
 import { PosterCardSkeleton } from "@/components/skeleton";
 import { StatePanel } from "@/components/state-panel";
 import { ButtonLink } from "@/components/ui/button";
+import { libraryPageName } from "@/lib/catalog/library-list";
 import {
   CATALOG_PATHS,
   type LibraryType,
@@ -20,6 +21,7 @@ import {
 import {
   LIBRARY_COPY,
   LIBRARY_LIST_FAILED,
+  LIBRARY_LIST_FAILED_TITLE,
   LIBRARY_NOTES,
 } from "@/lib/tracking/messages";
 
@@ -42,13 +44,6 @@ export function pageHref(
 ): string {
   return typedHref(`/${list}`, type, { page });
 }
-
-/** The page names a bad `type` panel sends the user back to. */
-const LIST_NAMES = {
-  watchlist: "Watchlist",
-  upcoming: "Upcoming",
-  watched: "Watched",
-} as const;
 
 /** A classified tab that read, with its last page. */
 type SettledTab<Card> = {
@@ -159,7 +154,7 @@ export function EmptyPanel({
  * Shown for a malformed page number or media type, before any read (spec
  * 0008, AC-9; feature 22). Never a silent redirect: the link was wrong, and
  * the panel says which part. A bad page keeps its tab; a bad type leads to
- * the default one.
+ * the default one, named as the shows tab names it.
  *
  * @param type The parsed type, or null when the type itself is the problem.
  */
@@ -177,12 +172,14 @@ export function NoSuchPage({
         title="That page doesn't exist"
         description={
           type === null
-            ? `There is no ${LIST_NAMES[list]} list at this address.`
+            ? `There is no ${libraryPageName(list, "tv")} list at this address.`
             : "There are no titles at this page number."
         }
         action={
           <ButtonLink size="touch" href={pageHref(list, type ?? "tv", 1)}>
-            {type === null ? `Back to ${LIST_NAMES[list]}` : "Back to page 1"}
+            {type === null
+              ? `Back to ${libraryPageName(list, "tv")}`
+              : "Back to page 1"}
           </ButtonLink>
         }
       />
@@ -202,7 +199,7 @@ export function ListFailed({
 }) {
   return (
     <LoadFailed
-      title={LIBRARY_COPY[list].failed}
+      title={LIBRARY_LIST_FAILED_TITLE}
       description={LIBRARY_LIST_FAILED}
       href={pageHref(list, type, page)}
     />

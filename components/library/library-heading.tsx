@@ -1,6 +1,9 @@
 "use client";
 
-import { type ReactNode, useEffect } from "react";
+import { useEffect } from "react";
+
+import { WithPageMediaType } from "@/components/layout/page-media-type";
+import { type LibraryList, libraryPageName } from "@/lib/catalog/library-list";
 
 import { LIBRARY_HEADING_ID } from "./ids";
 
@@ -43,8 +46,15 @@ function cancelLibraryHeadingFocus(key: string) {
  * (`tabIndex={-1}`), because removing the last card on a page moves focus
  * here, including after the redirect that follows emptying a later page
  * (AC-9, AC-16).
+ *
+ * The element is in the static shell, so the focus target always exists, but
+ * its text is the page's name on the current tab (`libraryPageName`), which
+ * needs the `type` parameter: it streams in through `WithPageMediaType`, with
+ * a placeholder bar until then, so no other tab's name flashes. A bad `type`
+ * reads as the shows tab, the tab its panel leads back to
+ * (prompts/library-page-names.md).
  */
-function LibraryHeading({ children }: { children: ReactNode }) {
+function LibraryHeading({ list }: { list: LibraryList }) {
   useEffect(() => {
     if (focusAfterRemountFor === null) return;
     focusAfterRemountFor = null;
@@ -57,8 +67,24 @@ function LibraryHeading({ children }: { children: ReactNode }) {
       tabIndex={-1}
       className="text-3xl leading-tight font-extrabold tracking-[-0.03em] text-foreground md:text-4xl"
     >
-      {children}
+      <WithPageMediaType fallback={() => <HeadingPlaceholder />}>
+        {({ libraryType }) => libraryPageName(list, libraryType ?? "tv")}
+      </WithPageMediaType>
     </h1>
+  );
+}
+
+/**
+ * The heading's stand in, one line tall like the name it replaces. A span,
+ * because an `h1` holds only phrasing content; it wears `Skeleton`'s surface
+ * classes for the same reason.
+ */
+function HeadingPlaceholder() {
+  return (
+    <span
+      aria-hidden="true"
+      className="plate-solid plate-rim glass-rim glass-plate skeleton-pulse inline-block h-[0.8em] w-48 rounded-sm align-middle"
+    />
   );
 }
 

@@ -187,7 +187,7 @@ describe("LIBRARY_COPY (spec 0020, AC-18)", () => {
       description: "Planned movies that are already out show up here.",
     });
     expect(LIBRARY_COPY.upcoming.movie.empty).toEqual({
-      title: "No upcoming movies",
+      title: "Nothing coming soon",
       description: "Planned movies not released yet show up here.",
     });
     expect(LIBRARY_COPY.watched.movie.empty).toEqual({

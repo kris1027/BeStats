@@ -36,7 +36,8 @@ type PageMediaType =
     };
 
 /**
- * The media type of the page being viewed, for `BrandLink`, and through
+ * The media type of the page being viewed, for `BrandLink` and the library
+ * page heading (`LibraryHeading`), and through
  * `WithLibraryTypedPage` for `MediaTypeTabs`, `LibraryNav` and
  * `NavbarSearch` (feature 22; spec 0027; spec 0029). It holds the one rule they share: only on
  * a typed page is `useSearchParams` read, and only inside its own Suspense

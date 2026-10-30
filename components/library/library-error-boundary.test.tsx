@@ -24,7 +24,7 @@ describe("LibraryErrorBoundary", () => {
 
   it("renders its children when nothing throws", () => {
     render(
-      <LibraryErrorBoundary list="watchlist">
+      <LibraryErrorBoundary>
         <p>The grid</p>
       </LibraryErrorBoundary>,
     );
@@ -32,18 +32,14 @@ describe("LibraryErrorBoundary", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
-  it.each([
-    ["watchlist", "Couldn't load your watchlist"],
-    ["upcoming", "Couldn't load your upcoming titles"],
-    ["watched", "Couldn't load your watched titles"],
-  ] as const)("shows the %s failed panel with a retry", (list, title) => {
+  it("shows the failed panel with a retry", () => {
     render(
-      <LibraryErrorBoundary list={list}>
+      <LibraryErrorBoundary>
         <Throws />
       </LibraryErrorBoundary>,
     );
     const panel = screen.getByRole("alert");
-    expect(panel).toHaveTextContent(title);
+    expect(panel).toHaveTextContent("Couldn't load your list");
     expect(panel).toHaveTextContent(
       "Your list didn't load. Try again in a moment.",
     );
@@ -52,7 +48,7 @@ describe("LibraryErrorBoundary", () => {
 
   it("never shows the error's own message", () => {
     render(
-      <LibraryErrorBoundary list="watchlist">
+      <LibraryErrorBoundary>
         <Throws />
       </LibraryErrorBoundary>,
     );

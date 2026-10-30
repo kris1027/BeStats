@@ -34,7 +34,11 @@ vi.mock("@/app/movies/actions", () => ({
   restoreMovieWatched: (...args: unknown[]) => restoreMovieWatched(...args),
 }));
 const push = vi.fn();
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push }),
+  usePathname: () => "/watchlist",
+  useSearchParams: () => new URLSearchParams("type=movie"),
+}));
 const toast = vi.fn();
 const dismiss = vi.fn();
 vi.mock("sonner", () => ({
@@ -65,7 +69,7 @@ function item(
 function grid(list: LibraryList, items: LibraryMovieItem[], page = 1) {
   return (
     <>
-      <LibraryHeading>Heading</LibraryHeading>
+      <LibraryHeading list="watchlist" />
       <LibraryGrid
         list={list}
         items={items}
@@ -399,12 +403,12 @@ describe("LibraryGrid on Upcoming (spec 0020, AC-13)", () => {
     expect(screen.queryByText("TMDB rating")).not.toBeInTheDocument();
 
     await user.click(
-      screen.getByRole("button", { name: "Remove Dune from Upcoming" }),
+      screen.getByRole("button", { name: "Remove Dune from Coming soon" }),
     );
     expect(setMovieWatchlist).toHaveBeenCalledWith(1, false);
     await settleNext({ ok: true });
     expect(toast).toHaveBeenCalledWith(
-      "Removed from Upcoming",
+      "Removed from Coming soon",
       expect.objectContaining({ id: "library-upcoming-1" }),
     );
     act(() => lastUndo()());
@@ -450,7 +454,7 @@ describe("focus after a removal (AC-16)", () => {
     await user.click(
       screen.getByRole("button", { name: "Remove Movie 1 from Watchlist" }),
     );
-    expect(screen.getByRole("heading", { name: "Heading" })).toHaveFocus();
+    expect(screen.getByRole("heading", { name: "Watchlist" })).toHaveFocus();
   });
 
   it("moves to the new heading after emptying a later page remounts it (AC-9)", async () => {
@@ -462,7 +466,7 @@ describe("focus after a removal (AC-16)", () => {
     await settleNext({ ok: true });
 
     remount(view, [item(1)]);
-    expect(screen.getByRole("heading", { name: "Heading" })).toHaveFocus();
+    expect(screen.getByRole("heading", { name: "Watchlist" })).toHaveFocus();
   });
 
   it("leaves a later mount alone after emptying page 1, which never redirects", async () => {
@@ -474,7 +478,9 @@ describe("focus after a removal (AC-16)", () => {
     await settleNext({ ok: true });
 
     remount(view, [item(2)]);
-    expect(screen.getByRole("heading", { name: "Heading" })).not.toHaveFocus();
+    expect(
+      screen.getByRole("heading", { name: "Watchlist" }),
+    ).not.toHaveFocus();
   });
 
   it("leaves a later mount alone when the removal failed", async () => {
@@ -486,7 +492,9 @@ describe("focus after a removal (AC-16)", () => {
     await settleNext({ ok: false, error: "write_failed" });
 
     remount(view, [item(1)]);
-    expect(screen.getByRole("heading", { name: "Heading" })).not.toHaveFocus();
+    expect(
+      screen.getByRole("heading", { name: "Watchlist" }),
+    ).not.toHaveFocus();
   });
 
   it("leaves a later mount alone when later pages moved up instead of a redirect", async () => {
@@ -499,7 +507,9 @@ describe("focus after a removal (AC-16)", () => {
     await settleNext({ ok: true });
 
     remount(view, [item(1)]);
-    expect(screen.getByRole("heading", { name: "Heading" })).not.toHaveFocus();
+    expect(
+      screen.getByRole("heading", { name: "Watchlist" }),
+    ).not.toHaveFocus();
   });
 
   it("keeps the remount focus when a different removal fails", async () => {
@@ -515,7 +525,7 @@ describe("focus after a removal (AC-16)", () => {
     await settleNext({ ok: true });
 
     remount(view, [item(1)]);
-    expect(screen.getByRole("heading", { name: "Heading" })).toHaveFocus();
+    expect(screen.getByRole("heading", { name: "Watchlist" })).toHaveFocus();
   });
 
   it("moves to a missing title's remove button, which has no link", async () => {

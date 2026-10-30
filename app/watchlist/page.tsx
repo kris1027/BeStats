@@ -3,15 +3,17 @@ import { Suspense } from "react";
 
 import { LibraryErrorBoundary } from "@/components/library/library-error-boundary";
 import { LibraryHeading } from "@/components/library/library-heading";
+import { libraryPageMetadata } from "@/components/library/library-metadata";
 import {
   LibrarySection,
   LibrarySkeleton,
 } from "@/components/library/library-section";
 
-export const metadata: Metadata = {
-  title: "Watchlist",
-  robots: { index: false },
-};
+export function generateMetadata({
+  searchParams,
+}: PageProps<"/watchlist">): Promise<Metadata> {
+  return libraryPageMetadata("watchlist", searchParams);
+}
 
 /**
  * The private Watchlist: on the navbar's shows tab the tracked shows with an
@@ -19,7 +21,8 @@ export const metadata: Metadata = {
  * on its movies tab the planned movies already out (spec 0020, AC-9, AC-13;
  * feature 22).
  *
- * The heading and a skeleton grid are the static shell. Everything that reads
+ * The heading and a skeleton grid are the static shell; the heading's text
+ * and the title are the page's name on the tab (`libraryPageName`). Everything that reads
  * the session, the `type` and `page` parameters or the user's rows streams in
  * behind the Suspense boundary, inside `LibrarySection`, which calls
  * `requireUser()` itself: the proxy's redirect is only the convenience layer.
@@ -33,9 +36,9 @@ export default function WatchlistPage({
 }: PageProps<"/watchlist">) {
   return (
     <div className="flex flex-col gap-8">
-      <LibraryHeading>Watchlist</LibraryHeading>
+      <LibraryHeading list="watchlist" />
 
-      <LibraryErrorBoundary list="watchlist">
+      <LibraryErrorBoundary>
         <Suspense fallback={<LibrarySkeleton />}>
           <LibrarySection list="watchlist" searchParams={searchParams} />
         </Suspense>

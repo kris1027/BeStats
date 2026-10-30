@@ -30,7 +30,11 @@ vi.mock("@/app/games/actions", () => ({
   restoreGameStatus: vi.fn(),
 }));
 const push = vi.fn();
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push }),
+  usePathname: () => "/watchlist",
+  useSearchParams: () => new URLSearchParams("type=game"),
+}));
 const toast = vi.fn();
 const dismiss = vi.fn();
 vi.mock("sonner", () => ({
@@ -65,7 +69,7 @@ const RETURN_PATH = "/upcoming?type=game&page=2";
 function grid(items: LibraryGameItem[], page = 1) {
   return (
     <>
-      <LibraryHeading>Heading</LibraryHeading>
+      <LibraryHeading list="watchlist" />
       <GameLibraryGrid
         items={items}
         label={`Your games, page ${page}`}
@@ -372,6 +376,6 @@ describe("removal (AC-12, AC-13)", () => {
     await user.click(
       screen.getByRole("button", { name: "Remove Game 2 from your games" }),
     );
-    expect(screen.getByRole("heading", { name: "Heading" })).toHaveFocus();
+    expect(screen.getByRole("heading", { name: "Want to play" })).toHaveFocus();
   });
 });

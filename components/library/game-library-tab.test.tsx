@@ -234,9 +234,7 @@ describe("the reads and the panels (AC-6, AC-7, AC-14)", () => {
     getGameLibraryPage.mockResolvedValue({ kind: "failed" });
     await renderSection("watchlist", { type: "game" });
 
-    expect(
-      screen.getByText("Couldn't load your watchlist"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Couldn't load your list")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /try again/i })).toHaveAttribute(
       "href",
       "/watchlist?type=game",

@@ -1,4 +1,4 @@
-import type { LibraryList } from "@/lib/catalog/library-list";
+import { type LibraryList, libraryPageName } from "@/lib/catalog/library-list";
 import type { LibraryType, MediaType } from "@/lib/catalog/media-type";
 
 import type {
@@ -59,15 +59,18 @@ export const MOVIE_CLEARED_MESSAGES = {
 } as const;
 
 /**
- * The toasts the two private list pages show after a removal (spec 0008,
- * AC-5, AC-7). Unlike the controls above, a removal does confirm itself with a
- * toast, because the card it changed is gone and the toast is where Undo lives.
+ * The toasts the movie tabs of the library pages show after a removal (spec
+ * 0008, AC-5, AC-7). Unlike the controls above, a removal does confirm itself
+ * with a toast, because the card it changed is gone and the toast is where
+ * Undo lives. Each names the page as the movies tab does.
  */
 export const LIBRARY_MESSAGES = {
-  watchlist: { removed: "Removed from Watchlist" },
-  upcoming: { removed: "Removed from Upcoming" },
+  watchlist: {
+    removed: `Removed from ${libraryPageName("watchlist", "movie")}`,
+  },
+  upcoming: { removed: `Removed from ${libraryPageName("upcoming", "movie")}` },
   watched: {
-    removed: "Removed from Watched",
+    removed: `Removed from ${libraryPageName("watched", "movie")}`,
     scoreRemoved: "Your score was removed too.",
   },
 } as const;
@@ -207,7 +210,7 @@ type ListCopy = {
  */
 export const LIBRARY_COPY: Record<
   LibraryList,
-  Record<LibraryType, ListCopy> & { failed: string }
+  Record<LibraryType, ListCopy>
 > = {
   watchlist: {
     tv: {
@@ -235,7 +238,6 @@ export const LIBRARY_COPY: Record<
       },
       browse: "Browse games",
     },
-    failed: "Couldn't load your watchlist",
   },
   upcoming: {
     tv: {
@@ -250,7 +252,7 @@ export const LIBRARY_COPY: Record<
     movie: {
       grid: "Movies coming up",
       empty: {
-        title: "No upcoming movies",
+        title: "Nothing coming soon",
         description: "Planned movies not released yet show up here.",
       },
       browse: "Browse movies",
@@ -263,7 +265,6 @@ export const LIBRARY_COPY: Record<
       },
       browse: "Browse games",
     },
-    failed: "Couldn't load your upcoming titles",
   },
   watched: {
     tv: {
@@ -290,12 +291,18 @@ export const LIBRARY_COPY: Record<
       },
       browse: "Browse games",
     },
-    failed: "Couldn't load your watched titles",
   },
 };
 
 /**
- * The line under every failed library list, beside `LIBRARY_COPY[list].failed`:
+ * The title of every failed library list. One for all three pages, because
+ * the error boundary that also shows it cannot read the tab, and a page's
+ * name differs per tab (prompts/library-page-names.md).
+ */
+export const LIBRARY_LIST_FAILED_TITLE = "Couldn't load your list";
+
+/**
+ * The line under every failed library list, beside `LIBRARY_LIST_FAILED_TITLE`:
  * a failed read (`ListFailed`) and a section that threw (`LibraryErrorBoundary`,
  * spec 0027, AC-5) read the same.
  */

@@ -4,9 +4,10 @@ import { catchError, type ErrorInfo } from "next/error";
 
 import { StatePanel } from "@/components/state-panel";
 import { Button } from "@/components/ui/button";
-import { LIBRARY_COPY, LIBRARY_LIST_FAILED } from "@/lib/tracking/messages";
-
-import type { LibraryList } from "./types";
+import {
+  LIBRARY_LIST_FAILED,
+  LIBRARY_LIST_FAILED_TITLE,
+} from "@/lib/tracking/messages";
 
 /**
  * The panel a library page shows when its section throws instead of
@@ -24,15 +25,12 @@ import type { LibraryList } from "./types";
  * and its `retry()` fetches the section again from the server, where a plain
  * reset would replay the same error.
  */
-function LibraryErrorFallback(
-  { list }: { list: LibraryList },
-  { retry }: ErrorInfo,
-) {
+function LibraryErrorFallback(_props: object, { retry }: ErrorInfo) {
   return (
     <div className="py-12">
       <StatePanel
         variant="error"
-        title={LIBRARY_COPY[list].failed}
+        title={LIBRARY_LIST_FAILED_TITLE}
         description={LIBRARY_LIST_FAILED}
         action={
           <Button size="touch" onClick={() => retry()}>

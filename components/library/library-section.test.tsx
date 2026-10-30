@@ -204,9 +204,7 @@ describe("failures never look like an empty list (AC-17)", () => {
   it("shows the list panel with Try again on the same page for a failed read", async () => {
     getShowLibraryTab.mockResolvedValue({ kind: "failed" });
     await renderSection("upcoming", { type: "tv", page: "2" });
-    expect(
-      screen.getByText("Couldn't load your upcoming titles"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Couldn't load your list")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Try again" })).toHaveAttribute(
       "href",
       "/upcoming?type=tv&page=2",
@@ -248,7 +246,7 @@ describe("failures never look like an empty list (AC-17)", () => {
     expect(
       screen.getByText("Checked your 500 most recent movies"),
     ).toBeInTheDocument();
-    expect(screen.getByText("No upcoming movies")).toBeInTheDocument();
+    expect(screen.getByText("Nothing coming soon")).toBeInTheDocument();
   });
 
   it("shows the list panel when the watched show ratings fail (spec 0019, AC-10)", async () => {
@@ -257,9 +255,7 @@ describe("failures never look like an empty list (AC-17)", () => {
     );
     getShowRatings.mockResolvedValue({ kind: "failed" });
     await renderSection("watched", { type: "tv" });
-    expect(
-      screen.getByText("Couldn't load your watched titles"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Couldn't load your list")).toBeInTheDocument();
   });
 });
 
@@ -269,7 +265,7 @@ describe("empty states (AC-18)", () => {
     ["upcoming", "tv", "Nothing coming up", "/shows"],
     ["watched", "tv", "No watched shows yet", "/shows"],
     ["watchlist", "movie", "No movies to watch", "/movies"],
-    ["upcoming", "movie", "No upcoming movies", "/movies"],
+    ["upcoming", "movie", "Nothing coming soon", "/movies"],
     ["watched", "movie", "No watched movies yet", "/movies"],
   ] as const)(
     "%s %s says %s and offers its catalog",
