@@ -97,3 +97,10 @@ Give the games tab a fourth library page, **Coming soon** at `/coming-soon?type=
 8. Open `/coming-soon` and `/coming-soon?type=movie`: the "That page doesn't exist" panel.
 9. Sign out and open `/coming-soon?type=game`: redirect to sign-in, then back after signing in.
 10. Repeat steps 3, 4 and 6 at 375px width: no horizontal scroll, every link reachable.
+
+## Amendments after review (2026-10-30)
+
+- **Grid label.** The Coming soon grid reads "Unreleased games you want to play", not "Games coming soon", which is already the heading of the IGDB list page `/games/coming-soon` on the same tab (library-page-names D6).
+- **A bad `type` on `/coming-soon`** leads back to `/coming-soon?type=game`, the one tab that has the page (`defaultLibraryType`), not to the shows page that library-page-names R3 names for the shared routes.
+- **Card remove label.** A Want to play card's remove button names the page it is on, passed down from the tab, not one worked out again from the game's release date. Want to play cards carry no release pill, so the flag says so too (D7).
+- **Nav overflow (D5) is open.** The desktop navbar row already overflows the page between `md` and about 1000px on every tab, on `main` too (measured 1255px wide at 768px on shows). Making the pill scroll inside itself squeezes it to a sliver, so it was not done; the row needs its own layout decision.

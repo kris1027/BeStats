@@ -82,3 +82,8 @@ None new: no route, auth, data or cache change. `generateMetadata` reads only th
 6. On a movie Coming soon page, remove the last card: focus lands on the "Coming soon" heading; the remove button's accessible name said "Remove … from Coming soon".
 7. Open the mobile menu at 390px width: the sheet shows the same names as the pill.
 8. Open `/showcase`: three nav rows, one per media type.
+
+## Amendments after review (2026-10-30)
+
+- The games Coming soon page (prompts/game-coming-soon.md) gave the games tab a library page called Coming soon beside the IGDB list "Games coming soon". To keep D6, the library grid's label is "Unreleased games you want to play".
+- Page copy and names are tables keyed by page and tab (`LIBRARY_PAGE_NAMES`, `LIBRARY_COPY`); a tab without a page reads its default tab's entry, so no function special cases Coming soon.

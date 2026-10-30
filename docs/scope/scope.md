@@ -436,11 +436,11 @@ spec [0022](../specs/0022-card-size-title-pages/index.md) · code in `components
 ## Slice 13: Library page names
 
 ### 26. Library page names per media type · done
-The three library routes stay shared, but each media type names them for what they hold: shows Up next, Upcoming and Watched; movies Watchlist, Coming soon and Watched; games Want to play, Playing and Finished. One pure `libraryPageName` feeds the nav, the page heading and title, the bad `type` panel and the movie card labels and toasts; routes, `?type=` and code identifiers are unchanged. Settled in a grilling session on 2026-10-30.
+The three library routes stay shared, but each media type names them for what they hold: shows Up next, Upcoming and Watched; movies Watchlist, Coming soon and Watched; games Want to play, Playing and Finished, plus Coming soon, the games tab's fourth page for Want to play games not out yet ([prompts/game-coming-soon.md](../../prompts/game-coming-soon.md)). One pure `libraryPageName` feeds the nav, the page heading and title, the bad `type` panel and the movie card labels and toasts; routes, `?type=` and code identifiers are unchanged. Settled in a grilling session on 2026-10-30.
 **Done when:** on every tab the nav, `<h1>` and `<title>` show that tab's names; the three pages keep their prerendered shell; no component writes a page name as a literal; the living docs use the new names.
 - [x] Design it (plan): [prompts/library-page-names.md](../../prompts/library-page-names.md)
 - [x] Build it: `libraryPageName`, the nav, the streamed heading, `generateMetadata` titles, the panels, card labels and toasts, `/showcase` and the docs, checked on all nine tabs in the running app — AC-1 to AC-6
-plan [prompts/library-page-names.md](../../prompts/library-page-names.md) · code in `lib/catalog/library-list.ts`, `components/layout/library-nav.tsx`, `components/library/library-heading.tsx`, `components/library/library-metadata.ts`, `app/watchlist/`, `app/upcoming/`, `app/watched/`
+plan [prompts/library-page-names.md](../../prompts/library-page-names.md) · code in `lib/catalog/library-list.ts`, `components/layout/library-nav.tsx`, `components/library/library-heading.tsx`, `lib/catalog/library-metadata.ts`, `app/watchlist/`, `app/upcoming/`, `app/watched/`
 
 ## Deferred
 Out of scope for the current build pass, kept so the plan stays honest.
