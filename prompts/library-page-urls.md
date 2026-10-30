@@ -99,3 +99,7 @@ Four new private routes. Each goes through the same `LibrarySection`, which call
 7. Open `/playing?type=tv`: the "That page doesn't exist" panel, linking to Playing on games.
 8. Sign out, open `/finished?type=game`: you're sent to sign in, and after signing in you land back on it.
 9. Mark the next episode watched on Up next and use a missing show card's link: both stay on `/up-next?type=tv`.
+
+## Amendment 2026-10-30: focus after a route change
+
+Switching tabs now changes route, and after a client navigation Next keeps the page left behind mounted but hidden (`display: none`), with the same `library-heading` id and show card link ids. `getElementById` could then return the hidden copy, so a removal that empties the page would send the focus nowhere. Every library focus move (`LibraryHeading`, `MarkNextWatchedButton`, `MissingShowCard`) now looks its target up with `shownElementById` in `components/library/card-focus.ts`, which skips hidden copies. Tested in `card-focus.test.tsx`.

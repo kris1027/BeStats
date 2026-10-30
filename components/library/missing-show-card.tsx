@@ -9,7 +9,7 @@ import { useShowTracking } from "@/components/tracking/use-show-tracking";
 import { libraryHref } from "@/lib/catalog/media-type";
 import { MISSING_SHOW_COPY } from "@/lib/tracking/messages";
 
-import { neighbourCardTarget } from "./card-focus";
+import { neighbourCardTarget, shownElementById } from "./card-focus";
 import { SHOW_CARD_LINK_SELECTOR } from "./ids";
 import { MISSING_TITLE } from "./library-card";
 
@@ -23,10 +23,10 @@ const RETURN_PATH = libraryHref("watchlist", "tv");
  */
 function focusNeighbour(cardId: string, fallbackId: string) {
   const target = neighbourCardTarget(
-    document.getElementById(cardId),
+    shownElementById(cardId),
     `${SHOW_CARD_LINK_SELECTOR}, button`,
   );
-  (target ?? document.getElementById(fallbackId))?.focus();
+  (target ?? shownElementById(fallbackId))?.focus();
 }
 
 /**

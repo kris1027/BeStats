@@ -11,6 +11,7 @@ import {
   libraryPathName,
 } from "@/lib/catalog/library-list";
 
+import { shownElementById } from "./card-focus";
 import { LIBRARY_HEADING_ID } from "./ids";
 
 /**
@@ -35,7 +36,7 @@ let focusAfterRemountFor: string | null = null;
  */
 function focusLibraryHeading({ remountFor }: { remountFor: string | null }) {
   focusAfterRemountFor = remountFor;
-  document.getElementById(LIBRARY_HEADING_ID)?.focus();
+  shownElementById(LIBRARY_HEADING_ID)?.focus();
 }
 
 /**
@@ -64,7 +65,7 @@ function LibraryHeading({ path }: { path: LibraryPath }) {
   useEffect(() => {
     if (focusAfterRemountFor === null) return;
     focusAfterRemountFor = null;
-    document.getElementById(LIBRARY_HEADING_ID)?.focus();
+    shownElementById(LIBRARY_HEADING_ID)?.focus();
   }, []);
 
   return (
