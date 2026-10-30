@@ -3,6 +3,7 @@
 import { cn } from "cn";
 import Link from "next/link";
 
+import { type LibraryList, libraryPageName } from "@/lib/catalog/library-list";
 import { type LibraryType, typedHref } from "@/lib/catalog/media-type";
 
 import { WithLibraryTypedPage } from "./page-media-type";
@@ -17,7 +18,10 @@ import { WithLibraryTypedPage } from "./page-media-type";
  * inside `AccountSlot`, which is already request scoped behind its own
  * Suspense boundary, so it costs no route its static shell.
  *
- * Upcoming sits between the two (spec 0014, AC-1).
+ * Upcoming sits between the two (spec 0014, AC-1). Each link is named for
+ * the tab, through `libraryPageName`: Up next, Upcoming and Watched on shows,
+ * Watchlist, Coming soon and Watched on movies, Want to play, Playing and
+ * Finished on games (prompts/library-page-names.md).
  *
  * Each link carries the media type of the page being viewed, so the navbar
  * tab chosen on `/movies` is still lit on `/watchlist` (feature 22), and on a
@@ -33,11 +37,11 @@ import { WithLibraryTypedPage } from "./page-media-type";
  * overlapping); `sheet` is the stacked list inside the mobile menu,
  * with 44px rows for touch.
  */
-const LINKS = [
-  { path: "/watchlist", label: "Watchlist" },
-  { path: "/upcoming", label: "Upcoming" },
-  { path: "/watched", label: "Watched" },
-] as const;
+const LISTS = [
+  "watchlist",
+  "upcoming",
+  "watched",
+] as const satisfies readonly LibraryList[];
 
 type Variant = "bar" | "sheet";
 
@@ -78,14 +82,14 @@ function LibraryNavView({
           : "flex flex-col gap-1"
       }
     >
-      {LINKS.map((link) => {
-        const selected =
-          pathname === link.path || pathname.startsWith(`${link.path}/`);
+      {LISTS.map((list) => {
+        const path = `/${list}` as const;
+        const selected = pathname === path || pathname.startsWith(`${path}/`);
 
         return (
           <Link
-            key={link.path}
-            href={typedHref(link.path, type)}
+            key={path}
+            href={typedHref(path, type)}
             aria-current={selected ? "page" : undefined}
             className={cn(
               "flex items-center rounded-full font-bold transition-[filter,color]",
@@ -97,7 +101,7 @@ function LibraryNavView({
                 : "text-text-link hover:text-foreground",
             )}
           >
-            {link.label}
+            {libraryPageName(list, type)}
           </Link>
         );
       })}

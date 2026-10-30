@@ -17,7 +17,7 @@ vi.mock("next/navigation", () => ({
 const { LibraryNav } = await import("./library-nav");
 
 describe("LibraryNav", () => {
-  it("links Watchlist, Upcoming and Watched, in that order (spec 0014, AC-1)", () => {
+  it("links Up next, Upcoming and Watched on shows, in that order (spec 0014, AC-1)", () => {
     pathname = "/watchlist";
     search = "";
     render(<LibraryNav variant="bar" />);
@@ -28,11 +28,26 @@ describe("LibraryNav", () => {
         .getAllByRole("link")
         .map((link) => [link.textContent, link.getAttribute("href")]),
     ).toEqual([
-      ["Watchlist", "/watchlist?type=tv"],
+      ["Up next", "/watchlist?type=tv"],
       ["Upcoming", "/upcoming?type=tv"],
       ["Watched", "/watched?type=tv"],
     ]);
   });
+
+  it.each([
+    ["movie", ["Watchlist", "Coming soon", "Watched"]],
+    ["game", ["Want to play", "Playing", "Finished"]],
+  ] as const)(
+    "names the links for the %s tab (prompts/library-page-names.md)",
+    (type, names) => {
+      pathname = "/upcoming";
+      search = `type=${type}`;
+      render(<LibraryNav variant="bar" />);
+      expect(
+        screen.getAllByRole("link").map((link) => link.textContent),
+      ).toEqual(names);
+    },
+  );
 
   it.each([
     ["/movies", "", "movie"],
