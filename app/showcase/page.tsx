@@ -411,6 +411,17 @@ export default function ShowcasePage() {
         <IconKey />
       </Section>
 
+      <Section
+        title="Library links"
+        note="The navbar's library pill on each tab (prompts/library-page-names.md): the routes are shared, but each page is named for the tab, through libraryPageName. Shows read Up next, Upcoming and Watched; movies Watchlist, Coming soon and Watched; games Want to play, Playing and Finished."
+      >
+        <div className="flex flex-col items-start gap-3">
+          <LibraryNavView variant="bar" pathname="/watchlist" type="tv" />
+          <LibraryNavView variant="bar" pathname="/upcoming" type="movie" />
+          <LibraryNavView variant="bar" pathname="/watched" type="game" />
+        </div>
+      </Section>
+
       <Section title="Buttons and controls">
         <div className="flex flex-wrap items-center gap-3">
           <Button size="sm">Glass, sm</Button>
@@ -513,7 +524,7 @@ export default function ShowcasePage() {
 
       <Section
         title="Game library card"
-        note="The games tabs of /watchlist, /upcoming and /watched (spec 0027, spec 0030): Want to play shows the IGDB community rating, the green bookmark that removes it and, before release, its date or Date TBA; Playing and Finished show the status chip and the X, and your score when there is one, else the community rating, with the month under the name. A game IGDB hides keeps its card but has no link, and a game IGDB no longer has keeps only its removal."
+        note="The games tabs of /watchlist, /upcoming and /watched, named Want to play, Playing and Finished (spec 0027, spec 0030): Want to play shows the IGDB community rating, the green bookmark that removes it and, before release, its date or Date TBA; Playing and Finished show the status chip and the X, and your score when there is one, else the community rating, with the month under the name. A game IGDB hides keeps its card but has no link, and a game IGDB no longer has keeps only its removal."
       >
         <GameLibraryCardDemo poster={LIGHT_POSTER} />
       </Section>
