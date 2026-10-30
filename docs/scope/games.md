@@ -18,7 +18,7 @@ _This is the second scope for BeStats. The movie and TV scope lives in [scope.md
 - **Ratings:** your own score from 1 to 10, allowed only on Playing or Finished. Moving back to Want to play clears it, with Undo that restores the status, score and timestamps. Moving between Playing and Finished keeps it. IGDB's community rating (out of 100) shows out of 10 and is always labelled as the community rating.
 - **Timestamps:** added, started (the first time a game becomes Playing) and finished (every time it becomes Finished). Want to play sorts by added, Playing by started, Finished by finished, and a Finished card reads "Finished {month year}". A game set straight to Finished has no start date.
 - **Not tracked in this pass:** which platform you play on, hours played, 100% completion.
-- **Navigation:** the navbar becomes SHOWS | MOVIES | GAMES with `?type=game`. The library routes stay; for games `/watchlist` reads Want to play, `/upcoming` reads Playing, `/watched` reads Finished. The GAMES tab stays hidden until G5 ships, and game pages reach the sitemap only in G10, so production never shows half a feature.
+- **Navigation:** the navbar becomes SHOWS | MOVIES | GAMES with `?type=game`. The library routes stay; for games `/watchlist` reads Want to play, `/upcoming` reads Playing, `/watched` reads Finished. Since 2026-10-30 the nav, the page heading and the title use those names too (prompts/library-page-names.md, scope feature 26). The GAMES tab stays hidden until G5 ships, and game pages reach the sitemap only in G10, so production never shows half a feature.
 
 ## At a glance
 
