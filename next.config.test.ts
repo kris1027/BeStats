@@ -74,6 +74,31 @@ describe("next.config", () => {
     expect(redirects?.find((r) => r.source === "/")?.permanent).toBe(false);
   });
 
+  /** covers: prompts/library-page-urls.md, AC-4 */
+  it("sends each moved library page's old URL to its route, temporarily", async () => {
+    const redirects = await nextConfig.redirects?.();
+    const library = (redirects ?? []).filter((r) =>
+      ["/watchlist", "/upcoming", "/watched", "/coming-soon"].includes(
+        r.source,
+      ),
+    );
+
+    expect(library).toEqual(
+      [
+        ["/watchlist", "tv", "/up-next"],
+        ["/upcoming", "movie", "/coming-soon"],
+        ["/watchlist", "game", "/want-to-play"],
+        ["/upcoming", "game", "/playing"],
+        ["/watched", "game", "/finished"],
+      ].map(([source, value, destination]) => ({
+        source,
+        has: [{ type: "query", key: "type", value }],
+        destination,
+        permanent: false,
+      })),
+    );
+  });
+
   /** covers: prompts/close-image-optimizer.md, AC-1, AC-4 */
   it("gives the image optimizer no source it may fetch", () => {
     expect(nextConfig.images?.loader).toBe("custom");
