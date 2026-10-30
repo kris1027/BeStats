@@ -27,7 +27,7 @@ export function GameLibraryCardDemo({ poster }: { poster: string }) {
     {
       item: {
         ...base,
-        name: "Want to play, coming soon",
+        name: "Coming soon, dated",
         communityRating: null,
         unreleased: {
           date: { shortDate: "Feb 3, 2027", fullDate: "Feb 3, 2027" },
@@ -37,7 +37,7 @@ export function GameLibraryCardDemo({ poster }: { poster: string }) {
     {
       item: {
         ...base,
-        name: "Want to play, Date TBA",
+        name: "Coming soon, Date TBA",
         coverUrl: null,
         communityRating: null,
         unreleased: { date: null },

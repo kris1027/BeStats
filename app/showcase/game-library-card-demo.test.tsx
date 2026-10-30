@@ -36,10 +36,10 @@ describe("GameLibraryCardDemo", () => {
     render(<GameLibraryCardDemo poster="https://example.test/poster.jpg" />);
 
     expect(
-      card("Want to play, coming soon").getByText("Releases Feb 3, 2027"),
+      card("Coming soon, dated").getByText("Releases Feb 3, 2027"),
     ).toBeInTheDocument();
     expect(
-      card("Want to play, Date TBA").getByText("Release date to be announced"),
+      card("Coming soon, Date TBA").getByText("Release date to be announced"),
     ).toBeInTheDocument();
   });
 
