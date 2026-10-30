@@ -2,15 +2,18 @@ import { redirect } from "next/navigation";
 
 import { PaginationLinks } from "@/components/pagination-links";
 import { isGameReleased } from "@/lib/catalog/game-page";
+import type { LibraryPageKey } from "@/lib/catalog/library-list";
 import { formatMonthYear, formatReleaseDate } from "@/lib/format";
 import type { GameSummary } from "@/lib/igdb";
 import {
   type GameLibraryRow,
   getGameLibraryPage,
   getLibraryGames,
+  getWantToPlayTab,
+  type WantToPlayPage,
 } from "@/lib/tracking/game-library";
 import { libraryLastPage } from "@/lib/tracking/library-lists";
-import { GAME_DATE_LINES, LIBRARY_COPY } from "@/lib/tracking/messages";
+import { GAME_DATE_LINES, libraryCopy } from "@/lib/tracking/messages";
 
 import { GameLibraryGrid } from "./game-library-grid";
 import {
@@ -18,18 +21,23 @@ import {
   EmptyPanel,
   ListFailed,
   pageHref,
+  TabNotes,
 } from "./library-panels";
-import type { LibraryGameItem, LibraryList } from "./types";
+import type { LibraryGameItem } from "./types";
 
 /**
- * A games tab: Want to play on `/watchlist`, Playing on `/upcoming`,
- * Finished on `/watched` (spec 0027, AC-6 to AC-14).
+ * A games tab: Coming soon on `/coming-soon`, Want to play on `/watchlist`,
+ * Playing on `/upcoming`, Finished on `/watched` (spec 0027, AC-6 to AC-14;
+ * prompts/game-coming-soon.md).
  *
- * One counted Postgres page, a redirect when the page is past the end, then
- * one IGDB batch for that page's games. A failed Postgres read is the list's
- * own failed panel, a systemic IGDB failure "Couldn't reach IGDB"; neither
- * is ever the empty state. `requireUser()` already ran in `LibrarySection`,
- * and nothing here writes (spec 0020, AC-21).
+ * Playing and Finished are one counted Postgres page, a redirect when the
+ * page is past the end, then one IGDB batch for that page's games. Want to
+ * play and Coming soon split the Want to play games by release date, so
+ * they read them all, up to the ceiling, with one IGDB batch
+ * (`getWantToPlayTab`). A failed Postgres read is the list's own failed
+ * panel, a systemic IGDB failure "Couldn't reach IGDB"; neither is ever the
+ * empty state. `requireUser()` already ran in `LibrarySection`, and nothing
+ * here writes (spec 0020, AC-21).
  *
  * @param query.today `requestTodayUtc()`, read once per request, which
  * decides whether a Want to play game is out yet (AC-8).
@@ -40,11 +48,15 @@ export async function gameLibraryTab({
   page,
   today,
 }: {
-  tab: LibraryList;
+  tab: LibraryPageKey;
   userId: string;
   page: number;
   today: string;
 }) {
+  if (list === "watchlist" || list === "coming-soon") {
+    return wantToPlayTab({ tab: list, userId, page, today });
+  }
+
   const result = await getGameLibraryPage({ userId, tab: list, page });
   if (result.kind === "failed") {
     return <ListFailed list={list} type="game" page={page} />;
@@ -61,15 +73,94 @@ export async function gameLibraryTab({
     return <CatalogFailed source="IGDB" href={pageHref(list, "game", page)} />;
   }
 
-  const items = result.rows.map((row) =>
-    gameItem(list, row, games.games.get(row.gameId), today),
+  return (
+    <GamePage
+      list={list}
+      items={result.rows.map((row) =>
+        gameItem(list, row, games.games.get(row.gameId), today),
+      )}
+      page={page}
+      lastPage={lastPage}
+    />
+  );
+}
+
+/**
+ * Want to play or Coming soon: the Want to play games on that side of their
+ * release date (prompts/game-coming-soon.md), with the ceiling's note when
+ * it left older games unchecked.
+ */
+async function wantToPlayTab({
+  tab: list,
+  userId,
+  page,
+  today,
+}: {
+  tab: WantToPlayPage;
+  userId: string;
+  page: number;
+  today: string;
+}) {
+  const result = await getWantToPlayTab({ userId, tab: list, page, today });
+  if (result.kind === "failed") {
+    return <ListFailed list={list} type="game" page={page} />;
+  }
+  if (result.kind === "igdb_failed") {
+    return <CatalogFailed source="IGDB" href={pageHref(list, "game", page)} />;
+  }
+  const lastPage = libraryLastPage(result.total);
+  if (page > lastPage) redirect(pageHref(list, "game", lastPage));
+
+  const notes = (
+    <TabNotes
+      tab={{ capped: result.capped, failedCount: 0 }}
+      type="game"
+      list={list}
+      page={page}
+    />
   );
 
+  if (result.rows.length === 0) {
+    return (
+      <div className="flex flex-col gap-6">
+        {notes}
+        <EmptyPanel list={list} type="game" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      {notes}
+      <GamePage
+        list={list}
+        items={result.rows.map((row) =>
+          gameItem(list, row, result.games.get(row.gameId), today),
+        )}
+        page={page}
+        lastPage={lastPage}
+      />
+    </div>
+  );
+}
+
+/** A games tab's grid and its page links. */
+function GamePage({
+  list,
+  items,
+  page,
+  lastPage,
+}: {
+  list: LibraryPageKey;
+  items: LibraryGameItem[];
+  page: number;
+  lastPage: number;
+}) {
   return (
     <div className="flex flex-col gap-10">
       <GameLibraryGrid
         items={items}
-        label={`${LIBRARY_COPY[list].game.grid}, page ${page}`}
+        label={`${libraryCopy(list, "game").grid}, page ${page}`}
         page={page}
         returnPath={pageHref(list, "game", page)}
       />
@@ -93,13 +184,14 @@ export async function gameLibraryTab({
  * the date their tab orders by.
  */
 const GAME_CARDS: Record<
-  LibraryList,
+  LibraryPageKey,
   {
     scored: boolean;
     releasePill: boolean;
     dateLine: (row: GameLibraryRow) => string | null;
   }
 > = {
+  "coming-soon": { scored: false, releasePill: true, dateLine: () => null },
   watchlist: { scored: false, releasePill: true, dateLine: () => null },
   upcoming: {
     scored: true,
@@ -120,7 +212,7 @@ const GAME_CARDS: Record<
  * or date is invented for it.
  */
 function gameItem(
-  list: LibraryList,
+  list: LibraryPageKey,
   row: GameLibraryRow,
   game: GameSummary | undefined,
   today: string,

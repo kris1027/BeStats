@@ -3,7 +3,7 @@
 import { cn } from "cn";
 import Link from "next/link";
 
-import { type LibraryList, libraryPageName } from "@/lib/catalog/library-list";
+import { libraryPageName, libraryPages } from "@/lib/catalog/library-list";
 import { type LibraryType, typedHref } from "@/lib/catalog/media-type";
 
 import { WithLibraryTypedPage } from "./page-media-type";
@@ -20,12 +20,13 @@ import { WithLibraryTypedPage } from "./page-media-type";
  *
  * Upcoming sits between the two (spec 0014, AC-1). Each link is named for
  * the tab, through `libraryPageName`: Up next, Upcoming and Watched on shows,
- * Watchlist, Coming soon and Watched on movies, Want to play, Playing and
- * Finished on games (prompts/library-page-names.md).
+ * Watchlist, Coming soon and Watched on movies, and four on games, Coming
+ * soon, Want to play, Playing and Finished, in the order `libraryPages`
+ * gives (prompts/library-page-names.md, prompts/game-coming-soon.md).
  *
  * Each link carries the media type of the page being viewed, so the navbar
  * tab chosen on `/movies` is still lit on `/watchlist` (feature 22), and on a
- * games tab they carry `type=game`, so moving between the three pages keeps
+ * games tab they carry `type=game`, so moving between its pages keeps
  * you on games (spec 0027, AC-4). It is read through `WithLibraryTypedPage`;
  * the fallback links to the default type. On a
  * page about neither catalog it renders nothing, like the media tabs and the
@@ -37,12 +38,6 @@ import { WithLibraryTypedPage } from "./page-media-type";
  * overlapping); `sheet` is the stacked list inside the mobile menu,
  * with 44px rows for touch.
  */
-const LISTS = [
-  "watchlist",
-  "upcoming",
-  "watched",
-] as const satisfies readonly LibraryList[];
-
 type Variant = "bar" | "sheet";
 
 function LibraryNav({ variant }: { variant: Variant }) {
@@ -82,7 +77,7 @@ function LibraryNavView({
           : "flex flex-col gap-1"
       }
     >
-      {LISTS.map((list) => {
+      {libraryPages(type).map((list) => {
         const path = `/${list}` as const;
         const selected = pathname === path || pathname.startsWith(`${path}/`);
 

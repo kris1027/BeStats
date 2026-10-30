@@ -56,6 +56,15 @@ describe("typedHref", () => {
     expect(typedHref("/upcoming", "movie")).toBe("/upcoming?type=movie");
   });
 
+  // covers: prompts/game-coming-soon.md, R5
+  it("sends a shows or movies link to Coming soon to that tab's Watchlist", () => {
+    expect(typedHref("/coming-soon", "game", { page: 2 })).toBe(
+      "/coming-soon?type=game&page=2",
+    );
+    expect(typedHref("/coming-soon", "tv")).toBe("/watchlist?type=tv");
+    expect(typedHref("/coming-soon", "movie")).toBe("/watchlist?type=movie");
+  });
+
   it("drops every other parameter of a list page", () => {
     expect(
       typedHref("/watched", "movie", {
@@ -146,7 +155,8 @@ describe("libraryTypeForLocation", () => {
 });
 
 describe("the library paths", () => {
-  it("are the three library pages and not /search", () => {
+  it("are the four library pages and not /search", () => {
+    expect(isLibraryPath("/coming-soon")).toBe(true);
     expect(isLibraryPath("/watchlist")).toBe(true);
     expect(isLibraryPath("/upcoming")).toBe(true);
     expect(isLibraryPath("/watched")).toBe(true);

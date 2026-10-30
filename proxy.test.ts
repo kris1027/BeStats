@@ -127,6 +127,21 @@ describe("the proxy with incomplete auth configuration", () => {
     expect(create).not.toHaveBeenCalled();
   });
 
+  /** covers: prompts/game-coming-soon.md, R5 */
+  it("sends a signed out visit to Coming soon to sign in", async () => {
+    stubNoAuth();
+
+    const { proxy } = await import("./proxy");
+    const response = await proxy(
+      new NextRequest("http://localhost/coming-soon?type=game"),
+    );
+
+    expect(response.status).toBe(307);
+    const location = new URL(response.headers.get("location") ?? "");
+    expect(location.pathname).toBe("/sign-in");
+    expect(location.searchParams.get("next")).toBe("/coming-soon?type=game");
+  });
+
   it("never redirects a Server Action POST to a private path", async () => {
     stubNoAuth();
 

@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { IGDB_MIN_YEAR } from "@/lib/igdb/constants";
 
-import type { LibraryList } from "./library-list";
+import type { LibraryPageKey } from "./library-list";
 
 /** The two catalogs: TV shows and movies. */
 export type MediaType = "tv" | "movie";
@@ -42,14 +42,16 @@ export const CATALOG_SOURCES = {
 export type CatalogSource = (typeof CATALOG_SOURCES)[LibraryType];
 
 /**
- * The three library pages, one per `LibraryList`, and the only typed pages a
- * game tab exists on (spec 0027, AC-2).
+ * The library pages, one per `LibraryPageKey`, and the only typed pages a
+ * game tab exists on (spec 0027, AC-2). `/coming-soon` is the games tab's
+ * alone (prompts/game-coming-soon.md).
  */
 const LIBRARY_PATHS = [
   "/watchlist",
   "/upcoming",
   "/watched",
-] as const satisfies readonly `/${LibraryList}`[];
+  "/coming-soon",
+] as const satisfies readonly `/${LibraryPageKey}`[];
 
 export type LibraryPath = (typeof LIBRARY_PATHS)[number];
 
@@ -75,7 +77,7 @@ export function isTypedPath(pathname: string | null): pathname is TypedPath {
   return (TYPED_PATHS as readonly (string | null)[]).includes(pathname);
 }
 
-/** True for `/watchlist`, `/upcoming` and `/watched` (spec 0027, AC-2). */
+/** True for a library page: `/watchlist`, `/upcoming`, `/watched`, `/coming-soon`. */
 export function isLibraryPath(
   pathname: string | null,
 ): pathname is LibraryPath {
@@ -204,12 +206,19 @@ type TypedHrefOptions = { current?: URLSearchParams; page?: number };
  * (spec 0029, AC-14).
  * @param options.page The page to open, written only from page 2, so page 1
  * has one URL, as on `/movies`.
+ *
+ * Only games have `/coming-soon`, so a shows or movies link to it opens that
+ * tab's first page, `/watchlist`: switching tabs there never lands on a page
+ * that doesn't exist (prompts/game-coming-soon.md).
  */
 export function typedHref(
   path: TypedPath,
   type: LibraryType,
   options: TypedHrefOptions = {},
 ): string {
+  if (path === "/coming-soon" && type !== "game") {
+    return typedHref("/watchlist", type, options);
+  }
   const query = new URLSearchParams({ type });
   if (path === "/search" && options.current) {
     for (const name of SEARCH_KEPT) {

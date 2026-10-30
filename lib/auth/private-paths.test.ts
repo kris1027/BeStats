@@ -49,6 +49,7 @@ describe("isPrivatePath (AC-10)", () => {
         "/watchlist",
         "/upcoming",
         "/watched",
+        "/coming-soon",
       ]),
     );
   });

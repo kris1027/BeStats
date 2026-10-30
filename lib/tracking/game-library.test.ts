@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
- * covers: spec 0027, AC-6, AC-7, AC-15
+ * covers: spec 0027, AC-6, AC-7, AC-15; prompts/game-coming-soon.md, R1 to R3
  *
  * The database and IGDB are the boundaries, so those are replaced. The query
  * builder records what it was asked, so each test asserts the status filter,
@@ -12,7 +12,7 @@ let responses: { data: unknown; error: unknown; count?: number | null }[] = [];
 
 function builder() {
   const chain: Record<string, unknown> = {};
-  for (const method of ["from", "select", "eq", "order", "range"]) {
+  for (const method of ["from", "select", "eq", "order", "range", "limit"]) {
     chain[method] = (...args: unknown[]) => {
       calls.push({ method, args });
       return chain;
@@ -39,9 +39,12 @@ vi.mock("@/lib/igdb", () => ({
   IgdbError: FakeIgdbError,
 }));
 
-const { GAME_LIBRARY_TABS, getGameLibraryPage, getLibraryGames } = await import(
-  "./game-library"
-);
+const {
+  GAME_LIBRARY_TABS,
+  getGameLibraryPage,
+  getLibraryGames,
+  getWantToPlayTab,
+} = await import("./game-library");
 
 let warn: ReturnType<typeof vi.spyOn>;
 
@@ -204,5 +207,136 @@ describe("getLibraryGames", () => {
     getGamesByIds.mockRejectedValueOnce(new TypeError("bad id"));
 
     await expect(getLibraryGames([1942])).rejects.toThrow("bad id");
+  });
+});
+
+describe("getWantToPlayTab", () => {
+  const TODAY = "2026-10-24";
+
+  /** A Want to play row, newest added first in the order given. */
+  function wantRow(gameId: number) {
+    return {
+      game_id: gameId,
+      status: "want_to_play",
+      rating: null,
+      added_at: "2026-01-01T10:00:00+00:00",
+      started_at: null,
+      finished_at: null,
+    };
+  }
+
+  function withReleases(releases: Record<number, string | null>) {
+    getGamesByIds.mockResolvedValue({
+      found: Object.entries(releases).map(([id, releaseDate]) => ({
+        id: Number(id),
+        releaseDate,
+      })),
+      missingIds: [],
+    });
+  }
+
+  const read = (tab: "watchlist" | "coming-soon", page = 1) =>
+    getWantToPlayTab({ userId: "user-a", tab, page, today: TODAY });
+
+  const ids = (result: Awaited<ReturnType<typeof read>>) =>
+    result.kind === "ok" ? result.rows.map((row) => row.gameId) : result;
+
+  it("reads up to 501 of the owner's Want to play games, newest added first", async () => {
+    responses = [{ data: [], error: null }];
+    getGamesByIds.mockResolvedValue({ found: [], missingIds: [] });
+
+    await read("coming-soon");
+
+    expect(calls).toEqual([
+      { method: "from", args: ["user_game_state"] },
+      {
+        method: "select",
+        args: ["game_id, status, rating, added_at, started_at, finished_at"],
+      },
+      { method: "eq", args: ["user_id", "user-a"] },
+      { method: "eq", args: ["status", "want_to_play"] },
+      { method: "order", args: ["added_at", { ascending: false }] },
+      { method: "order", args: ["game_id", { ascending: true }] },
+      { method: "limit", args: [501] },
+    ]);
+  });
+
+  it("puts released games on Want to play and the rest on Coming soon, each once", async () => {
+    const rows = [wantRow(1), wantRow(2), wantRow(3), wantRow(4)];
+    // 1 came out before today, 2 comes out today, 3 later, 4 has no date.
+    const releases = {
+      1: "2020-05-01",
+      2: TODAY,
+      3: "2027-02-03",
+      4: null,
+    };
+
+    responses = [{ data: rows, error: null }];
+    withReleases(releases);
+    expect(ids(await read("watchlist"))).toEqual([1, 2]);
+
+    responses = [{ data: rows, error: null }];
+    withReleases(releases);
+    expect(ids(await read("coming-soon"))).toEqual([3, 4]);
+  });
+
+  it("orders Coming soon soonest first, TBA last, then by the added order", async () => {
+    responses = [
+      {
+        data: [wantRow(1), wantRow(2), wantRow(3), wantRow(4), wantRow(5)],
+        error: null,
+      },
+    ];
+    withReleases({
+      1: null,
+      2: "2027-06-01",
+      3: "2026-11-01",
+      4: "2027-06-01",
+      5: null,
+    });
+
+    expect(ids(await read("coming-soon"))).toEqual([3, 2, 4, 1, 5]);
+  });
+
+  it("keeps a game IGDB no longer has on Want to play, at the end", async () => {
+    responses = [{ data: [wantRow(7), wantRow(1)], error: null }];
+    getGamesByIds.mockResolvedValue({
+      found: [{ id: 1, releaseDate: "2020-01-01" }],
+      missingIds: [7],
+    });
+
+    const result = await read("watchlist");
+    expect(ids(result)).toEqual([1, 7]);
+    expect(result.kind === "ok" && result.games.has(7)).toBe(false);
+  });
+
+  it("pages in memory with an exact total, and says when it was capped", async () => {
+    const rows = Array.from({ length: 501 }, (_, i) => wantRow(i + 1));
+    responses = [{ data: rows, error: null }];
+    withReleases(
+      Object.fromEntries(rows.map((row) => [row.game_id, "2020-01-01"])),
+    );
+
+    const result = await read("watchlist", 2);
+
+    expect(getGamesByIds).toHaveBeenCalledWith(
+      rows.slice(0, 500).map((row) => row.game_id),
+    );
+    expect(result).toMatchObject({ kind: "ok", total: 500, capped: true });
+    expect(ids(result)).toEqual(Array.from({ length: 24 }, (_, i) => i + 25));
+  });
+
+  it("fails on a Postgres error, and reads no games", async () => {
+    responses = [{ data: null, error: { code: "42501" } }];
+
+    expect(await read("watchlist")).toEqual({ kind: "failed" });
+    expect(getGamesByIds).not.toHaveBeenCalled();
+  });
+
+  it("answers a systemic IGDB failure as igdb_failed, never an empty page", async () => {
+    responses = [{ data: [wantRow(1)], error: null }];
+    getGamesByIds.mockRejectedValueOnce(new FakeIgdbError("rate limited"));
+
+    expect(await read("coming-soon")).toEqual({ kind: "igdb_failed" });
   });
 });

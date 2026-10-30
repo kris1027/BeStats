@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 
-import { type LibraryList, libraryPageName } from "@/lib/catalog/library-list";
+import {
+  defaultLibraryType,
+  type LibraryPageKey,
+  libraryPageName,
+} from "@/lib/catalog/library-list";
 import { parseLibraryTypeParam } from "@/lib/catalog/media-type";
 
 /**
@@ -8,12 +12,14 @@ import { parseLibraryTypeParam } from "@/lib/catalog/media-type";
  * never indexed (prompts/library-page-names.md). Reading `searchParams` defers
  * the metadata to request time, which Cache Components allows here because
  * the page's section already streams; the shell stays prerendered. A bad
- * `type` titles the shows tab, as the heading does.
+ * `type` titles the page's default tab, as the heading does.
  */
 export async function libraryPageMetadata(
-  list: LibraryList,
+  list: LibraryPageKey,
   searchParams: Promise<Record<string, string | string[] | undefined>>,
 ): Promise<Metadata> {
-  const type = parseLibraryTypeParam((await searchParams).type) ?? "tv";
+  const type =
+    parseLibraryTypeParam((await searchParams).type) ??
+    defaultLibraryType(list);
   return { title: libraryPageName(list, type), robots: { index: false } };
 }

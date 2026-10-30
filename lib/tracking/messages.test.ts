@@ -8,6 +8,7 @@ import {
   GAME_UNDO_MESSAGES,
   LIBRARY_COPY,
   LIBRARY_NOTES,
+  libraryCopy,
   MARK_NEXT_MESSAGES,
   NEXT_EPISODE_MESSAGES,
   SEASON_MESSAGES,
@@ -210,6 +211,9 @@ describe("LIBRARY_NOTES, labels and the held section (spec 0020, AC-10, AC-12, A
     expect(LIBRARY_NOTES.checked(500, "movie")).toBe(
       "Checked your 500 most recent movies",
     );
+    expect(LIBRARY_NOTES.checked(500, "game")).toBe(
+      "Checked your 500 most recent games",
+    );
   });
 
   it("counts the failed titles in the singular and plural", () => {
@@ -269,7 +273,7 @@ describe("the games tabs' copy (spec 0027)", () => {
       grid: "Games you want to play",
       empty: {
         title: "No games to play yet",
-        description: "Games you mark Want to play show up here.",
+        description: "Released games you mark Want to play show up here.",
       },
       browse: "Browse games",
     });
@@ -289,6 +293,19 @@ describe("the games tabs' copy (spec 0027)", () => {
       },
       browse: "Browse games",
     });
+  });
+
+  // covers: prompts/game-coming-soon.md
+  it("pins the games Coming soon copy", () => {
+    expect(libraryCopy("coming-soon", "game")).toEqual({
+      grid: "Games coming soon",
+      empty: {
+        title: "No unreleased games on your list",
+        description: "Want to play games that aren't out yet show up here.",
+      },
+      browse: "Browse games",
+    });
+    expect(libraryCopy("upcoming", "game")).toBe(LIBRARY_COPY.upcoming.game);
   });
 
   it("keeps a browse button on every show and movie tab", () => {

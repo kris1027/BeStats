@@ -6,7 +6,11 @@ import { RetryLink } from "@/components/retry-link";
 import { PosterCardSkeleton } from "@/components/skeleton";
 import { StatePanel } from "@/components/state-panel";
 import { ButtonLink } from "@/components/ui/button";
-import { libraryPageName } from "@/lib/catalog/library-list";
+import {
+  defaultLibraryType,
+  type LibraryPageKey,
+  libraryPageName,
+} from "@/lib/catalog/library-list";
 import {
   CATALOG_PATHS,
   type LibraryType,
@@ -19,10 +23,10 @@ import {
   libraryLastPage,
 } from "@/lib/tracking/library-lists";
 import {
-  LIBRARY_COPY,
   LIBRARY_LIST_FAILED,
   LIBRARY_LIST_FAILED_TITLE,
   LIBRARY_NOTES,
+  libraryCopy,
 } from "@/lib/tracking/messages";
 
 import type { LibraryList } from "./types";
@@ -38,7 +42,7 @@ import type { LibraryList } from "./types";
  * and `page` from page 2, as on `/movies`.
  */
 export function pageHref(
-  list: LibraryList,
+  list: LibraryPageKey,
   type: LibraryType,
   page: number,
 ): string {
@@ -88,7 +92,8 @@ export function settleTab<Card>(
  * The notes above a classified tab (AC-16, AC-17): the ceiling, when it left
  * older titles unchecked, and the titles whose own TMDB read failed, with a
  * Retry that reloads the route. Both show on every tab of the media type,
- * because each tab classifies the same titles.
+ * because each tab classifies the same titles; for games, on Want to play
+ * and Coming soon, which split the same Want to play games.
  */
 export function TabNotes({
   tab,
@@ -97,8 +102,8 @@ export function TabNotes({
   page,
 }: {
   tab: { capped: boolean; failedCount: number };
-  type: MediaType;
-  list: LibraryList;
+  type: LibraryType;
+  list: LibraryPageKey;
   page: number;
 }) {
   if (!tab.capped && tab.failedCount === 0) return null;
@@ -130,10 +135,10 @@ export function EmptyPanel({
   list,
   type,
 }: {
-  list: LibraryList;
+  list: LibraryPageKey;
   type: LibraryType;
 }) {
-  const copy = LIBRARY_COPY[list][type];
+  const copy = libraryCopy(list, type);
   return (
     <div className="py-12">
       <StatePanel
@@ -154,17 +159,20 @@ export function EmptyPanel({
  * Shown for a malformed page number or media type, before any read (spec
  * 0008, AC-9; feature 22). Never a silent redirect: the link was wrong, and
  * the panel says which part. A bad page keeps its tab; a bad type leads to
- * the default one, named as the shows tab names it.
+ * the page's default tab, shows, or games on Coming soon, named as that tab
+ * names it (prompts/game-coming-soon.md).
  *
- * @param type The parsed type, or null when the type itself is the problem.
+ * @param type The parsed type, or null when the type itself is the problem,
+ * including a tab that doesn't have the page.
  */
 export function NoSuchPage({
   list,
   type,
 }: {
-  list: LibraryList;
+  list: LibraryPageKey;
   type: LibraryType | null;
 }) {
+  const fallback = defaultLibraryType(list);
   return (
     <div className="py-12">
       <StatePanel
@@ -172,13 +180,13 @@ export function NoSuchPage({
         title="That page doesn't exist"
         description={
           type === null
-            ? `There is no ${libraryPageName(list, "tv")} list at this address.`
+            ? `There is no ${libraryPageName(list, fallback)} list at this address.`
             : "There are no titles at this page number."
         }
         action={
-          <ButtonLink size="touch" href={pageHref(list, type ?? "tv", 1)}>
+          <ButtonLink size="touch" href={pageHref(list, type ?? fallback, 1)}>
             {type === null
-              ? `Back to ${libraryPageName(list, "tv")}`
+              ? `Back to ${libraryPageName(list, fallback)}`
               : "Back to page 1"}
           </ButtonLink>
         }
@@ -193,7 +201,7 @@ export function ListFailed({
   type,
   page,
 }: {
-  list: LibraryList;
+  list: LibraryPageKey;
   type: LibraryType;
   page: number;
 }) {

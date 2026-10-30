@@ -9,6 +9,7 @@ import {
 import { CardRoundButton } from "@/components/tracking/card-round-button";
 import { GameStatusChip } from "@/components/tracking/game-status-chip";
 import { PlannedIcon } from "@/components/tracking/tracking-icons";
+import { libraryPageName } from "@/lib/catalog/library-list";
 import { gameHref } from "@/lib/catalog/media-type";
 import { isStartedGame } from "@/lib/tracking/types";
 
@@ -25,8 +26,9 @@ const MISSING_GAME = "No longer on IGDB";
  * One game card on a games tab (spec 0027, AC-8 to AC-12), built on
  * `PosterCard`.
  *
- * Want to play carries the amber IGDB community rating and, while the game
- * is not out, its release pill or Date TBA. Playing and Finished carry the
+ * Want to play and Coming soon carry the amber IGDB community rating, and
+ * Coming soon, where every game is not out yet, its release pill or Date TBA
+ * (prompts/game-coming-soon.md). Playing and Finished carry the
  * cyan personal score when there is one, else the community rating, and the
  * Started or Finished month under the name. A hidden game keeps its card
  * but loses its link, because its page answers a soft 404 (AC-10). Every card
@@ -77,7 +79,7 @@ function GameLibraryCard({
             </>
           ) : (
             <CardRoundButton
-              label={`Remove ${item.name} from Want to play`}
+              label={`Remove ${item.name} from ${libraryPageName(item.unreleased ? "coming-soon" : "watchlist", "game")}`}
               onClick={onRemove}
               className="ml-auto"
             >

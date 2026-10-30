@@ -1,5 +1,9 @@
-import { type LibraryList, libraryPageName } from "@/lib/catalog/library-list";
-import type { LibraryType, MediaType } from "@/lib/catalog/media-type";
+import {
+  type LibraryList,
+  type LibraryPageKey,
+  libraryPageName,
+} from "@/lib/catalog/library-list";
+import type { LibraryType } from "@/lib/catalog/media-type";
 
 import type {
   EpisodeTrackingError,
@@ -234,7 +238,7 @@ export const LIBRARY_COPY: Record<
       grid: "Games you want to play",
       empty: {
         title: "No games to play yet",
-        description: "Games you mark Want to play show up here.",
+        description: "Released games you mark Want to play show up here.",
       },
       browse: "Browse games",
     },
@@ -295,6 +299,29 @@ export const LIBRARY_COPY: Record<
 };
 
 /**
+ * The games Coming soon page's copy, the one page only one tab has
+ * (prompts/game-coming-soon.md).
+ */
+const GAME_COMING_SOON_COPY: ListCopy = {
+  grid: "Games coming soon",
+  empty: {
+    title: "No unreleased games on your list",
+    description: "Want to play games that aren't out yet show up here.",
+  },
+  browse: "Browse games",
+};
+
+/**
+ * A library page's copy on one tab, Coming soon included. A tab without the
+ * page reads the games copy, as its name does (`libraryPageName`).
+ */
+export function libraryCopy(page: LibraryPageKey, type: LibraryType): ListCopy {
+  return page === "coming-soon"
+    ? GAME_COMING_SOON_COPY
+    : LIBRARY_COPY[page][type];
+}
+
+/**
  * The title of every failed library list. One for all three pages, because
  * the error boundary that also shows it cannot read the tab, and a page's
  * name differs per tab (prompts/library-page-names.md).
@@ -315,10 +342,12 @@ export const GAME_DATE_LINES = {
   finished: (month: string) => `Finished ${month}`,
 } as const;
 
-/** "1 show", "4 movies". */
-function titles(n: number, type: MediaType): string {
-  const noun = type === "tv" ? "show" : "movie";
-  return `${n} ${noun}${n === 1 ? "" : "s"}`;
+/** Each tab's noun, for the notes' counts. */
+const TITLE_NOUNS = { tv: "show", movie: "movie", game: "game" } as const;
+
+/** "1 show", "4 movies", "2 games". */
+function titles(n: number, type: LibraryType): string {
+  return `${n} ${TITLE_NOUNS[type]}${n === 1 ? "" : "s"}`;
 }
 
 /**
@@ -326,9 +355,9 @@ function titles(n: number, type: MediaType): string {
  * ceiling, and the titles whose TMDB read failed, which are on no page.
  */
 export const LIBRARY_NOTES = {
-  checked: (limit: number, type: MediaType) =>
-    `Checked your ${limit} most recent ${type === "tv" ? "shows" : "movies"}`,
-  failed: (n: number, type: MediaType) =>
+  checked: (limit: number, type: LibraryType) =>
+    `Checked your ${limit} most recent ${TITLE_NOUNS[type]}s`,
+  failed: (n: number, type: LibraryType) =>
     `${titles(n, type)} couldn't be loaded`,
 } as const;
 
