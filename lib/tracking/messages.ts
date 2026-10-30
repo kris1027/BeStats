@@ -1,4 +1,5 @@
 import {
+  defaultLibraryType,
   type LibraryList,
   type LibraryPageKey,
   libraryPageName,
@@ -196,6 +197,13 @@ export const UPCOMING_MESSAGES = {
   releaseTba: "Release date to be announced",
 } as const;
 
+/** The game page's three status pills, in their order (spec 0026, AC-2). */
+export const GAME_STATUS_LABELS: Record<GameStatus, string> = {
+  want_to_play: "Want to play",
+  playing: "Playing",
+  finished: "Finished",
+};
+
 /**
  * What a list page's grid, empty state and notes say (spec 0020, AC-18).
  * `browse` is the empty state's button, leading to the type's landing
@@ -212,10 +220,8 @@ type ListCopy = {
  * tabs (spec 0020, AC-12, AC-15, AC-18; feature 22; spec 0027, AC-14). Each
  * show and movie empty state offers the one catalog its tab lists.
  */
-export const LIBRARY_COPY: Record<
-  LibraryList,
-  Record<LibraryType, ListCopy>
-> = {
+export const LIBRARY_COPY: Record<LibraryList, Record<LibraryType, ListCopy>> &
+  Record<"coming-soon", { game: ListCopy }> = {
   watchlist: {
     tv: {
       grid: "Shows to watch",
@@ -238,7 +244,7 @@ export const LIBRARY_COPY: Record<
       grid: "Games you want to play",
       empty: {
         title: "No games to play yet",
-        description: "Released games you mark Want to play show up here.",
+        description: `Released games you mark ${GAME_STATUS_LABELS.want_to_play} show up here.`,
       },
       browse: "Browse games",
     },
@@ -296,19 +302,17 @@ export const LIBRARY_COPY: Record<
       browse: "Browse games",
     },
   },
-};
-
-/**
- * The games Coming soon page's copy, the one page only one tab has
- * (prompts/game-coming-soon.md).
- */
-const GAME_COMING_SOON_COPY: ListCopy = {
-  grid: "Games coming soon",
-  empty: {
-    title: "No unreleased games on your list",
-    description: "Want to play games that aren't out yet show up here.",
+  // The one page only one tab has (prompts/game-coming-soon.md).
+  "coming-soon": {
+    game: {
+      grid: "Unreleased games you want to play",
+      empty: {
+        title: "No unreleased games on your list",
+        description: `${GAME_STATUS_LABELS.want_to_play} games that aren't out yet show up here.`,
+      },
+      browse: "Browse games",
+    },
   },
-  browse: "Browse games",
 };
 
 /**
@@ -316,9 +320,8 @@ const GAME_COMING_SOON_COPY: ListCopy = {
  * page reads the games copy, as its name does (`libraryPageName`).
  */
 export function libraryCopy(page: LibraryPageKey, type: LibraryType): ListCopy {
-  return page === "coming-soon"
-    ? GAME_COMING_SOON_COPY
-    : LIBRARY_COPY[page][type];
+  const copy: Partial<Record<LibraryType, ListCopy>> = LIBRARY_COPY[page];
+  return copy[type] ?? libraryCopy(page, defaultLibraryType(page));
 }
 
 /**
@@ -377,13 +380,6 @@ export const MISSING_SHOW_COPY = {
   /** The Stop tracking button's accessible name. */
   stopLabel: "Stop tracking missing title",
 } as const;
-
-/** The game page's three status pills, in their order (spec 0026, AC-2). */
-export const GAME_STATUS_LABELS: Record<GameStatus, string> = {
-  want_to_play: "Want to play",
-  playing: "Playing",
-  finished: "Finished",
-};
 
 /** What a refused game Undo says: change it again on the game page. */
 const GAME_UNDO_EXPIRED = "Couldn't undo. Set the status again on this page.";

@@ -261,7 +261,9 @@ describe("the reads and the panels (AC-6, AC-7, AC-14)", () => {
     await renderSection("coming-soon", { type: "game" });
 
     expect(
-      screen.getByRole("list", { name: "Games coming soon, page 1" }),
+      screen.getByRole("list", {
+        name: "Unreleased games you want to play, page 1",
+      }),
     ).toHaveAttribute("data-return-path", "/coming-soon?type=game");
   });
 

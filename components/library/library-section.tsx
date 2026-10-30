@@ -1,8 +1,5 @@
 import { requireUser } from "@/lib/auth/user";
-import {
-  hasLibraryPage,
-  type LibraryPageKey,
-} from "@/lib/catalog/library-list";
+import { type LibraryPageKey, libraryTab } from "@/lib/catalog/library-list";
 import { parseLibraryTypeParam } from "@/lib/catalog/media-type";
 import { parsePageParam } from "@/lib/catalog/pages";
 import { requestTodayUtc } from "@/lib/tracking/episode-state";
@@ -45,24 +42,21 @@ async function LibrarySection({
   const raw = await searchParams;
   const type = parseLibraryTypeParam(raw.type);
   const page = parsePageParam(raw.page);
-  if (type === null || !hasLibraryPage(list, type)) {
-    return <NoSuchPage list={list} type={null} />;
-  }
-  if (page === null) return <NoSuchPage list={list} type={type} />;
+  const tab = type === null ? null : libraryTab(list, type);
+  if (tab === null) return <NoSuchPage list={list} type={null} />;
+  if (page === null) return <NoSuchPage list={list} type={tab.type} />;
 
   const today = requestTodayUtc();
-  if (type === "game") {
-    return gameLibraryTab({ tab: list, userId: user.id, page, today });
+  if (tab.type === "game") {
+    return gameLibraryTab({ tab: tab.page, userId: user.id, page, today });
   }
-  // Only games have Coming soon, and `hasLibraryPage` turned the rest away.
-  if (list === "coming-soon") return <NoSuchPage list={list} type={null} />;
-  if (type === "tv") {
-    return showLibraryTab({ tab: list, userId: user.id, page, today });
+  if (tab.type === "tv") {
+    return showLibraryTab({ tab: tab.page, userId: user.id, page, today });
   }
-  if (list === "watched") {
+  if (tab.page === "watched") {
     return watchedMoviesTab({ userId: user.id, page });
   }
-  return movieLibraryTab({ tab: list, userId: user.id, page, today });
+  return movieLibraryTab({ tab: tab.page, userId: user.id, page, today });
 }
 
 export { LibrarySection, LibrarySkeleton };

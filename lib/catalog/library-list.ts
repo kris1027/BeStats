@@ -51,12 +51,40 @@ export function hasLibraryPage(page: LibraryPageKey, type: LibraryType) {
 }
 
 /**
+ * A page on a tab that has it, typed so a caller narrowing on `type` also
+ * knows `page`: a shows or movies tab never holds Coming soon, so its page
+ * is a `LibraryList` and needs no second check.
+ */
+export type LibraryTab =
+  | { type: "game"; page: LibraryPageKey }
+  | { type: "tv" | "movie"; page: LibraryList };
+
+/**
+ * The page and tab together, or null when the tab lacks the page, which its
+ * route answers with the "doesn't exist" panel (prompts/game-coming-soon.md).
+ */
+export function libraryTab(
+  page: LibraryPageKey,
+  type: LibraryType,
+): LibraryTab | null {
+  if (type === "game") return { type, page };
+  return page === "coming-soon" ? null : { type, page };
+}
+
+/** The tabs in navbar order, which `defaultLibraryType` searches. */
+const LIBRARY_TYPES = [
+  "tv",
+  "movie",
+  "game",
+] as const satisfies readonly LibraryType[];
+
+/**
  * The tab a page falls back to when its `type` is invalid or names a tab
- * without it: shows, the bare URL's tab, except on Coming soon, which only
- * games have.
+ * without it: the first tab that has the page, so shows, the bare URL's tab,
+ * except on Coming soon, which only games have.
  */
 export function defaultLibraryType(page: LibraryPageKey): LibraryType {
-  return page === "coming-soon" ? "game" : "tv";
+  return LIBRARY_TYPES.find((type) => hasLibraryPage(page, type)) ?? "tv";
 }
 
 /**
@@ -69,6 +97,6 @@ export function libraryPageName(
   page: LibraryPageKey,
   type: LibraryType,
 ): string {
-  if (page === "coming-soon") return LIBRARY_PAGE_NAMES[page].game;
-  return LIBRARY_PAGE_NAMES[page][type];
+  const names: Partial<Record<LibraryType, string>> = LIBRARY_PAGE_NAMES[page];
+  return names[type] ?? libraryPageName(page, defaultLibraryType(page));
 }

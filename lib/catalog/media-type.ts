@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { IGDB_MIN_YEAR } from "@/lib/igdb/constants";
 
-import type { LibraryPageKey } from "./library-list";
+import { hasLibraryPage, type LibraryPageKey } from "./library-list";
 
 /** The two catalogs: TV shows and movies. */
 export type MediaType = "tv" | "movie";
@@ -77,7 +77,15 @@ export function isTypedPath(pathname: string | null): pathname is TypedPath {
   return (TYPED_PATHS as readonly (string | null)[]).includes(pathname);
 }
 
-/** True for a library page: `/watchlist`, `/upcoming`, `/watched`, `/coming-soon`. */
+/** A library path's page key: `/coming-soon` is `coming-soon`. */
+function libraryPageKey(path: LibraryPath): LibraryPageKey {
+  return path.slice(1) as LibraryPageKey;
+}
+
+/**
+ * True for a library page: `/watchlist`, `/upcoming`, `/watched` and
+ * `/coming-soon` (spec 0027, AC-2).
+ */
 export function isLibraryPath(
   pathname: string | null,
 ): pathname is LibraryPath {
@@ -207,8 +215,8 @@ type TypedHrefOptions = { current?: URLSearchParams; page?: number };
  * @param options.page The page to open, written only from page 2, so page 1
  * has one URL, as on `/movies`.
  *
- * Only games have `/coming-soon`, so a shows or movies link to it opens that
- * tab's first page, `/watchlist`: switching tabs there never lands on a page
+ * A library link to a page the tab lacks (only games have `/coming-soon`)
+ * opens that tab's `/watchlist`: switching tabs there never lands on a page
  * that doesn't exist (prompts/game-coming-soon.md).
  */
 export function typedHref(
@@ -216,7 +224,7 @@ export function typedHref(
   type: LibraryType,
   options: TypedHrefOptions = {},
 ): string {
-  if (path === "/coming-soon" && type !== "game") {
+  if (isLibraryPath(path) && !hasLibraryPage(libraryPageKey(path), type)) {
     return typedHref("/watchlist", type, options);
   }
   const query = new URLSearchParams({ type });

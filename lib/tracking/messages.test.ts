@@ -298,7 +298,7 @@ describe("the games tabs' copy (spec 0027)", () => {
   // covers: prompts/game-coming-soon.md
   it("pins the games Coming soon copy", () => {
     expect(libraryCopy("coming-soon", "game")).toEqual({
-      grid: "Games coming soon",
+      grid: "Unreleased games you want to play",
       empty: {
         title: "No unreleased games on your list",
         description: "Want to play games that aren't out yet show up here.",
