@@ -4,7 +4,7 @@ import { GlassPill } from "@/components/glass-pill";
 import { RetryLink } from "@/components/retry-link";
 import { Skeleton } from "@/components/skeleton";
 import { NextEpisodeIcon } from "@/components/tracking/tracking-icons";
-import { typedHref } from "@/lib/catalog/media-type";
+import { libraryHref } from "@/lib/catalog/media-type";
 import { getSeason, TmdbError } from "@/lib/tmdb";
 import {
   MARK_NEXT_MESSAGES,
@@ -98,7 +98,7 @@ async function WatchlistShowControls({
         <span className="px-1 text-sm text-text-secondary">
           {MARK_NEXT_MESSAGES.unavailable}
         </span>
-        <RetryLink href={typedHref("/watchlist", "tv")} className="md:h-9" />
+        <RetryLink href={libraryHref("watchlist", "tv")} className="md:h-9" />
       </div>
     );
   }

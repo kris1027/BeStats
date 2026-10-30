@@ -84,15 +84,24 @@ vi.mock("./missing-show-card", () => ({
 }));
 
 const { LibrarySection } = await import("./library-section");
+const { libraryPath } = await import("@/lib/catalog/library-list");
 
 type List = "watchlist" | "upcoming" | "watched";
 
+/**
+ * Renders a page at its route on the tab `params` asks for, shows when it
+ * names none (prompts/library-page-urls.md).
+ */
 async function renderSection(
   list: List,
   params: Record<string, string | string[] | undefined> = {},
 ) {
+  const type = params.type === "movie" ? "movie" : "tv";
   return render(
-    await LibrarySection({ list, searchParams: Promise.resolve(params) }),
+    await LibrarySection({
+      path: libraryPath(list, type),
+      searchParams: Promise.resolve(params),
+    }),
   );
 }
 
@@ -145,11 +154,43 @@ describe("the session and the parameters come first", () => {
     },
   );
 
+  // covers: prompts/library-page-urls.md, R2
+  it.each([
+    ["/up-next", "movie", "Back to Up next", "/up-next?type=tv"],
+    ["/watchlist", "tv", "Back to Watchlist", "/watchlist?type=movie"],
+    ["/coming-soon", "tv", "Back to Coming soon", "/coming-soon?type=movie"],
+  ] as const)(
+    "answers %s?type=%s, a tab without the page, with a panel and no read",
+    async (path, type, name, href) => {
+      render(
+        await LibrarySection({ path, searchParams: Promise.resolve({ type }) }),
+      );
+      expect(screen.getByText("That page doesn't exist")).toBeInTheDocument();
+      expect(screen.getByRole("link", { name })).toHaveAttribute("href", href);
+      expect(getShowLibraryTab).not.toHaveBeenCalled();
+      expect(getMovieLibraryTab).not.toHaveBeenCalled();
+    },
+  );
+
+  // covers: prompts/library-page-urls.md, decision 3
+  it("lists movies on a bare /watchlist, its default tab", async () => {
+    render(
+      await LibrarySection({
+        path: "/watchlist",
+        searchParams: Promise.resolve({}),
+      }),
+    );
+    expect(getMovieLibraryTab).toHaveBeenCalledWith(
+      expect.objectContaining({ tab: "watchlist" }),
+    );
+    expect(getShowLibraryTab).not.toHaveBeenCalled();
+  });
+
   it("answers a malformed page with a panel that keeps the tab (AC-16)", async () => {
     await renderSection("upcoming", { type: "movie", page: "x" });
     expect(
       screen.getByRole("link", { name: "Back to page 1" }),
-    ).toHaveAttribute("href", "/upcoming?type=movie");
+    ).toHaveAttribute("href", "/coming-soon?type=movie");
     expect(getMovieLibraryTab).not.toHaveBeenCalled();
   });
 });
@@ -397,7 +438,7 @@ describe("movie cards (AC-13)", () => {
     expect(received(2).release).toBeNull();
     expect(
       screen.getByRole("list", { name: "Movies coming up, page 1" }),
-    ).toHaveAttribute("data-return-path", "/upcoming?type=movie");
+    ).toHaveAttribute("data-return-path", "/coming-soon?type=movie");
   });
 
   it("hands a missing Watchlist movie to the grid with no title (AC-17)", async () => {

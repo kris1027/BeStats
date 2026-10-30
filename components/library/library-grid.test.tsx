@@ -69,7 +69,7 @@ function item(
 function grid(list: LibraryList, items: LibraryMovieItem[], page = 1) {
   return (
     <>
-      <LibraryHeading list="watchlist" />
+      <LibraryHeading path="/watchlist" />
       <LibraryGrid
         list={list}
         items={items}

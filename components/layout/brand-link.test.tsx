@@ -37,7 +37,8 @@ describe("BrandLink", () => {
     ["/search", "type=movie&q=alien", "/movies"],
     ["/shows", "", "/shows"],
     ["/shows/1399", "", "/shows"],
-    ["/watchlist", "", "/shows"],
+    ["/up-next", "", "/shows"],
+    ["/watchlist", "", "/movies"],
     ["/upcoming", "type=tv", "/shows"],
   ])("on %s?%s links to %s", (path, query, href) => {
     pathname.value = path;

@@ -23,9 +23,10 @@ import { WithLibraryTypedPage } from "./page-media-type";
  * same fact to assistive technology, which the glass gradient on its own
  * cannot.
  *
- * On `/watchlist`, `/upcoming`, `/watched` and `/search` the tabs switch the
- * page's own `type` parameter in place, GAMES included (spec 0029, AC-14);
- * everywhere else they lead to `/shows`, `/movies` and `/games`.
+ * On `/search` the tabs switch the page's own `type` parameter in place,
+ * GAMES included (spec 0029, AC-14); on a library page each opens the
+ * matching page of its own tab, Playing becoming Upcoming on shows
+ * (prompts/library-page-urls.md); everywhere else they lead to `/shows`, `/movies` and `/games`.
  * `WithLibraryTypedPage` reads the page's type, and on those four pages the
  * current query, which `/search` keeps across a switch.
  *

@@ -1,6 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { LibraryPath } from "@/lib/catalog/library-list";
+
 import type { LibraryGameItem, LibraryList } from "./types";
 
 /**
@@ -91,16 +93,22 @@ vi.mock("./game-library-grid", () => ({
 }));
 
 const { LibrarySection } = await import("./library-section");
+const { libraryPath } = await import("@/lib/catalog/library-list");
 
 type List = "watchlist" | "upcoming" | "watched" | "coming-soon";
 
-async function renderSection(
-  list: List,
-  params: Record<string, string | string[] | undefined> = {},
-) {
+type Params = Record<string, string | string[] | undefined>;
+
+/** Renders a library route as its page does. */
+async function renderRoute(path: LibraryPath, params: Params = {}) {
   return render(
-    await LibrarySection({ list, searchParams: Promise.resolve(params) }),
+    await LibrarySection({ path, searchParams: Promise.resolve(params) }),
   );
+}
+
+/** Renders a games page at its own route (prompts/library-page-urls.md). */
+async function renderSection(list: List, params: Params = {}) {
+  return renderRoute(libraryPath(list, "game"), params);
 }
 
 function received(id: number): LibraryGameItem {
@@ -182,7 +190,7 @@ describe("the parameters (AC-5)", () => {
 
     expect(
       screen.getByRole("link", { name: "Back to page 1" }),
-    ).toHaveAttribute("href", "/watched?type=game");
+    ).toHaveAttribute("href", "/finished?type=game");
     expect(getGameLibraryPage).not.toHaveBeenCalled();
   });
 
@@ -194,22 +202,48 @@ describe("the parameters (AC-5)", () => {
     expect(getGameLibraryPage).not.toHaveBeenCalled();
   });
 
-  it.each([[{}], [{ type: "tv" }], [{ type: "movie" }], [{ type: "book" }]])(
-    "has no Coming soon page for %j",
-    async (params) => {
-      await renderSection("coming-soon", params);
+  // covers: prompts/library-page-urls.md, R2
+  it.each([
+    ["/want-to-play", "Want to play"],
+    ["/playing", "Playing"],
+    ["/finished", "Finished"],
+  ] as const)("has no %s page on shows or movies", async (path, name) => {
+    for (const type of ["tv", "movie", "book"]) {
+      const view = await renderRoute(path, { type });
 
       expect(screen.getByText("That page doesn't exist")).toBeInTheDocument();
       expect(
-        screen.getByRole("link", { name: "Back to Coming soon" }),
-      ).toHaveAttribute("href", "/coming-soon?type=game");
-      expect(getWantToPlayTab).not.toHaveBeenCalled();
-      expect(getShowLibraryTab).not.toHaveBeenCalled();
-    },
-  );
+        screen.getByRole("link", { name: `Back to ${name}` }),
+      ).toHaveAttribute("href", `${path}?type=game`);
+      view.unmount();
+    }
+    expect(getWantToPlayTab).not.toHaveBeenCalled();
+    expect(getGameLibraryPage).not.toHaveBeenCalled();
+    expect(getShowLibraryTab).not.toHaveBeenCalled();
+  });
+
+  // covers: prompts/library-page-urls.md, decision 3
+  it("reads games on a games route with no type", async () => {
+    await renderRoute("/playing", {});
+    expect(getGameLibraryPage).toHaveBeenCalledWith({
+      userId: "user-a",
+      tab: "upcoming",
+      page: 1,
+    });
+  });
+
+  it("has no Coming soon page on shows, and leads to the movies one", async () => {
+    await renderRoute("/coming-soon", { type: "tv" });
+
+    expect(
+      screen.getByRole("link", { name: "Back to Coming soon" }),
+    ).toHaveAttribute("href", "/coming-soon?type=movie");
+    expect(getWantToPlayTab).not.toHaveBeenCalled();
+    expect(getShowLibraryTab).not.toHaveBeenCalled();
+  });
 
   it("leaves the shows tab as it was", async () => {
-    await renderSection("watchlist", {});
+    await renderRoute("/up-next", {});
     expect(getShowLibraryTab).toHaveBeenCalled();
     expect(getGameLibraryPage).not.toHaveBeenCalled();
   });
@@ -301,7 +335,7 @@ describe("the reads and the panels (AC-6, AC-7, AC-14)", () => {
       expect(screen.getByText("Couldn't reach IGDB")).toBeInTheDocument();
       expect(screen.getByRole("link", { name: /try again/i })).toHaveAttribute(
         "href",
-        `/${list}?type=game`,
+        `${libraryPath(list, "game")}?type=game`,
       );
     },
   );
@@ -312,21 +346,21 @@ describe("the reads and the panels (AC-6, AC-7, AC-14)", () => {
 
     expect(
       screen.getByRole("list", { name: "Games you're playing, page 1" }),
-    ).toHaveAttribute("data-return-path", "/upcoming?type=game");
+    ).toHaveAttribute("data-return-path", "/playing?type=game");
   });
 
   it("redirects a page past the end to the last page", async () => {
     getGameLibraryPage.mockResolvedValue(page([], 30));
     await expect(
       renderSection("watched", { type: "game", page: "5" }),
-    ).rejects.toMatchObject({ url: "/watched?type=game&page=2" });
+    ).rejects.toMatchObject({ url: "/finished?type=game&page=2" });
   });
 
   it("redirects an empty tab past page 1 to page 1", async () => {
     getGameLibraryPage.mockResolvedValue(page([], 0));
     await expect(
       renderSection("watched", { type: "game", page: "3" }),
-    ).rejects.toMatchObject({ url: "/watched?type=game" });
+    ).rejects.toMatchObject({ url: "/finished?type=game" });
   });
 
   it.each([
@@ -354,7 +388,7 @@ describe("the reads and the panels (AC-6, AC-7, AC-14)", () => {
     expect(screen.getByText("Couldn't load your list")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /try again/i })).toHaveAttribute(
       "href",
-      "/upcoming?type=game",
+      "/playing?type=game",
     );
   });
 
@@ -372,7 +406,7 @@ describe("the reads and the panels (AC-6, AC-7, AC-14)", () => {
     expect(screen.queryByText("No finished games yet")).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /try again/i })).toHaveAttribute(
       "href",
-      "/watched?type=game",
+      "/finished?type=game",
     );
   });
 });

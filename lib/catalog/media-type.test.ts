@@ -4,8 +4,10 @@ import {
   gameHref,
   isLibraryPath,
   isTypedPath,
+  libraryHref,
   libraryTypeForLocation,
   mediaTypeForLocation,
+  parseLibraryPageType,
   parseLibraryTypeParam,
   parseMediaTypeParam,
   titleHref,
@@ -41,6 +43,7 @@ describe("mediaTypeForLocation", () => {
     ["/watchlist", "movie", "movie"],
     ["/upcoming", null, "tv"],
     ["/watched", "foo", "tv"],
+    ["/watchlist", null, "movie"],
     ["/search", "movie", "movie"],
     ["/account", "movie", null],
     ["/moviesque", null, null],
@@ -50,21 +53,53 @@ describe("mediaTypeForLocation", () => {
   });
 });
 
-describe("typedHref", () => {
-  it("always writes the type", () => {
-    expect(typedHref("/watchlist", "tv")).toBe("/watchlist?type=tv");
-    expect(typedHref("/upcoming", "movie")).toBe("/upcoming?type=movie");
+describe("libraryHref", () => {
+  // covers: prompts/library-page-urls.md, AC-2
+  it("opens each page at its own route on the tab, always writing the type", () => {
+    expect(libraryHref("watchlist", "tv")).toBe("/up-next?type=tv");
+    expect(libraryHref("watchlist", "movie")).toBe("/watchlist?type=movie");
+    expect(libraryHref("watchlist", "game")).toBe("/want-to-play?type=game");
+    expect(libraryHref("upcoming", "movie")).toBe("/coming-soon?type=movie");
+    expect(libraryHref("upcoming", "game")).toBe("/playing?type=game");
+    expect(libraryHref("watched", "game")).toBe("/finished?type=game");
   });
 
   // covers: prompts/game-coming-soon.md, R5
-  it("sends a shows or movies link to Coming soon to that tab's Watchlist", () => {
-    expect(typedHref("/coming-soon", "game", { page: 2 })).toBe(
+  it("sends a shows or movies link to Coming soon to that tab's first page", () => {
+    expect(libraryHref("coming-soon", "game", { page: 2 })).toBe(
       "/coming-soon?type=game&page=2",
     );
-    expect(typedHref("/coming-soon", "tv")).toBe("/watchlist?type=tv");
-    expect(typedHref("/coming-soon", "movie")).toBe("/watchlist?type=movie");
+    expect(libraryHref("coming-soon", "tv")).toBe("/up-next?type=tv");
+    expect(libraryHref("coming-soon", "movie")).toBe("/watchlist?type=movie");
   });
 
+  it("writes a page only from page 2", () => {
+    expect(libraryHref("watchlist", "movie", { page: 1 })).toBe(
+      "/watchlist?type=movie",
+    );
+    expect(libraryHref("watched", "tv", { page: 3 })).toBe(
+      "/watched?type=tv&page=3",
+    );
+  });
+});
+
+describe("parseLibraryPageType", () => {
+  // covers: prompts/library-page-urls.md, decision 3
+  it("reads an absent type as the route's default tab", () => {
+    expect(parseLibraryPageType("/up-next", undefined)).toBe("tv");
+    expect(parseLibraryPageType("/watchlist", undefined)).toBe("movie");
+    expect(parseLibraryPageType("/coming-soon", null)).toBe("movie");
+    expect(parseLibraryPageType("/playing", undefined)).toBe("game");
+  });
+
+  it("keeps a named tab, even one without the page, and refuses the rest", () => {
+    expect(parseLibraryPageType("/playing", "tv")).toBe("tv");
+    expect(parseLibraryPageType("/watched", "game")).toBe("game");
+    expect(parseLibraryPageType("/watched", "")).toBeNull();
+  });
+});
+
+describe("typedHref", () => {
   it("drops every other parameter of a list page", () => {
     expect(
       typedHref("/watched", "movie", {
@@ -73,13 +108,18 @@ describe("typedHref", () => {
     ).toBe("/watched?type=movie");
   });
 
-  it("writes a page only from page 2", () => {
-    expect(typedHref("/watchlist", "movie", { page: 1 })).toBe(
-      "/watchlist?type=movie",
+  // covers: prompts/library-page-urls.md, AC-3
+  it("switches a library route to the matching page of the tab", () => {
+    const from = (type: string) => ({ current: new URLSearchParams({ type }) });
+    expect(typedHref("/playing", "tv", from("game"))).toBe("/upcoming?type=tv");
+    expect(typedHref("/coming-soon", "game", from("movie"))).toBe(
+      "/playing?type=game",
     );
-    expect(typedHref("/watched", "tv", { page: 3 })).toBe(
-      "/watched?type=tv&page=3",
+    expect(typedHref("/coming-soon", "tv", from("game"))).toBe(
+      "/up-next?type=tv",
     );
+    expect(typedHref("/watchlist", "game")).toBe("/want-to-play?type=game");
+    expect(typedHref("/playing", "tv", from("tv"))).toBe("/upcoming?type=tv");
   });
 
   it("keeps a search's query, year and rating, not its genres or page", () => {
@@ -148,6 +188,13 @@ describe("libraryTypeForLocation", () => {
     expect(libraryTypeForLocation("/gamesx", null)).toBeNull();
   });
 
+  // covers: prompts/library-page-urls.md, decision 3
+  it("is the route's default tab on a library route with no type", () => {
+    expect(libraryTypeForLocation("/playing", null)).toBe("game");
+    expect(libraryTypeForLocation("/coming-soon", null)).toBe("movie");
+    expect(libraryTypeForLocation("/up-next", null)).toBe("tv");
+  });
+
   it("matches mediaTypeForLocation for the catalogs", () => {
     expect(libraryTypeForLocation("/upcoming", "movie")).toBe("movie");
     expect(libraryTypeForLocation("/account", null)).toBeNull();
@@ -155,18 +202,27 @@ describe("libraryTypeForLocation", () => {
 });
 
 describe("the library paths", () => {
-  it("are the four library pages and not /search", () => {
-    expect(isLibraryPath("/coming-soon")).toBe(true);
-    expect(isLibraryPath("/watchlist")).toBe(true);
-    expect(isLibraryPath("/upcoming")).toBe(true);
-    expect(isLibraryPath("/watched")).toBe(true);
+  it("are the eight library routes and not /search", () => {
+    for (const path of [
+      "/up-next",
+      "/upcoming",
+      "/watched",
+      "/watchlist",
+      "/coming-soon",
+      "/want-to-play",
+      "/playing",
+      "/finished",
+    ]) {
+      expect(isLibraryPath(path)).toBe(true);
+      expect(isTypedPath(path)).toBe(true);
+    }
     expect(isLibraryPath("/search")).toBe(false);
     expect(isLibraryPath(null)).toBe(false);
   });
 
   it("take game in typedHref, and so does /search (spec 0029, AC-1)", () => {
     expect(typedHref("/watched", "game", { page: 2 })).toBe(
-      "/watched?type=game&page=2",
+      "/finished?type=game&page=2",
     );
     expect(typedHref("/search", "game")).toBe("/search?type=game");
   });

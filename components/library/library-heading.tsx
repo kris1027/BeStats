@@ -6,9 +6,9 @@ import { useEffect } from "react";
 import { WithPageMediaType } from "@/components/layout/page-media-type";
 import { SKELETON_SURFACE } from "@/components/skeleton";
 import {
-  defaultLibraryType,
-  type LibraryPageKey,
-  libraryPageName,
+  defaultLibraryTypeAt,
+  type LibraryPath,
+  libraryPathName,
 } from "@/lib/catalog/library-list";
 
 import { LIBRARY_HEADING_ID } from "./ids";
@@ -48,19 +48,19 @@ function cancelLibraryHeadingFocus(key: string) {
 }
 
 /**
- * The `h1` of `/watchlist`, `/upcoming`, `/watched` and `/coming-soon`. It
+ * The `h1` of every library route (`LIBRARY_PATHS`). It
  * can take focus (`tabIndex={-1}`), because removing the last card on a page
  * moves focus here, including after the redirect that follows emptying a
  * later page (AC-9, AC-16).
  *
  * The element is in the static shell, so the focus target always exists, but
- * its text is the page's name on the current tab (`libraryPageName`), which
+ * its text is the route's name on the current tab (`libraryPathName`), which
  * needs the `type` parameter: it streams in through `WithPageMediaType`, with
  * a placeholder bar until then, so no other tab's name flashes. A bad `type`
- * reads as the page's default tab, the tab its panel leads back to
- * (prompts/library-page-names.md, prompts/game-coming-soon.md).
+ * reads as the route's default tab, the tab its panel leads back to
+ * (prompts/library-page-names.md, prompts/library-page-urls.md).
  */
-function LibraryHeading({ list }: { list: LibraryPageKey }) {
+function LibraryHeading({ path }: { path: LibraryPath }) {
   useEffect(() => {
     if (focusAfterRemountFor === null) return;
     focusAfterRemountFor = null;
@@ -75,7 +75,7 @@ function LibraryHeading({ list }: { list: LibraryPageKey }) {
     >
       <WithPageMediaType fallback={() => <HeadingPlaceholder />}>
         {({ libraryType }) =>
-          libraryPageName(list, libraryType ?? defaultLibraryType(list))
+          libraryPathName(path, libraryType ?? defaultLibraryTypeAt(path))
         }
       </WithPageMediaType>
     </h1>

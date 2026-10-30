@@ -1,6 +1,6 @@
 import { requireUser } from "@/lib/auth/user";
-import { type LibraryPageKey, libraryTab } from "@/lib/catalog/library-list";
-import { parseLibraryTypeParam } from "@/lib/catalog/media-type";
+import { type LibraryPath, libraryTab } from "@/lib/catalog/library-list";
+import { parseLibraryPageType } from "@/lib/catalog/media-type";
 import { parsePageParam } from "@/lib/catalog/pages";
 import { requestTodayUtc } from "@/lib/tracking/episode-state";
 
@@ -14,9 +14,10 @@ import { showLibraryTab } from "./show-library-tab";
  * spec 0008 for the shared states). It streams behind the page's Suspense
  * boundary, because it reads the session, the search params and the user's
  * rows. It lists one media type, the navbar tab's `type` parameter
- * (feature 22), or games (spec 0027, AC-5). Coming soon exists only on the
- * games tab, so any other `type` there is the "doesn't exist" panel
- * (prompts/game-coming-soon.md).
+ * (feature 22), or games (spec 0027, AC-5). The route and the tab together
+ * name the page (`libraryTab`), and a tab with no page at the route, such as
+ * `/playing?type=tv`, is the "doesn't exist" panel
+ * (prompts/game-coming-soon.md, prompts/library-page-urls.md).
  *
  * The order is deliberate. `requireUser()` first, so a request that got past
  * the proxy still receives no list data. Then the type and page parameters,
@@ -31,20 +32,20 @@ import { showLibraryTab } from "./show-library-tab";
  * the user their list is gone.
  */
 async function LibrarySection({
-  list,
+  path,
   searchParams,
 }: {
-  list: LibraryPageKey;
+  path: LibraryPath;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const user = await requireUser();
 
   const raw = await searchParams;
-  const type = parseLibraryTypeParam(raw.type);
+  const type = parseLibraryPageType(path, raw.type);
   const page = parsePageParam(raw.page);
-  const tab = type === null ? null : libraryTab(list, type);
-  if (tab === null) return <NoSuchPage list={list} type={null} />;
-  if (page === null) return <NoSuchPage list={list} type={tab.type} />;
+  const tab = type === null ? null : libraryTab(path, type);
+  if (tab === null) return <NoSuchPage path={path} type={null} />;
+  if (page === null) return <NoSuchPage path={path} type={tab.type} />;
 
   const today = requestTodayUtc();
   if (tab.type === "game") {

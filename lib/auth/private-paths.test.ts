@@ -50,6 +50,10 @@ describe("isPrivatePath (AC-10)", () => {
         "/upcoming",
         "/watched",
         "/coming-soon",
+        "/up-next",
+        "/want-to-play",
+        "/playing",
+        "/finished",
       ]),
     );
   });

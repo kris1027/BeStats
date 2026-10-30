@@ -2,7 +2,14 @@ import { z } from "zod";
 
 import { IGDB_MIN_YEAR } from "@/lib/igdb/constants";
 
-import { hasLibraryPage, type LibraryPageKey } from "./library-list";
+import {
+  defaultLibraryTypeAt,
+  LIBRARY_PATHS,
+  type LibraryPageKey,
+  type LibraryPath,
+  libraryPageAt,
+  libraryPath,
+} from "./library-list";
 
 /** The two catalogs: TV shows and movies. */
 export type MediaType = "tv" | "movie";
@@ -41,28 +48,17 @@ export const CATALOG_SOURCES = {
 /** A catalog name as `CATALOG_SOURCES` spells it, for props that blame one. */
 export type CatalogSource = (typeof CATALOG_SOURCES)[LibraryType];
 
-/**
- * The library pages, one per `LibraryPageKey`, and the only typed pages a
- * game tab exists on (spec 0027, AC-2). `/coming-soon` is the games tab's
- * alone (prompts/game-coming-soon.md).
- */
-const LIBRARY_PATHS = [
-  "/watchlist",
-  "/upcoming",
-  "/watched",
-  "/coming-soon",
-] as const satisfies readonly `/${LibraryPageKey}`[];
-
-export type LibraryPath = (typeof LIBRARY_PATHS)[number];
+export type { LibraryPath };
 
 /**
  * The pages whose media type is their `type` parameter rather than their
- * path (feature 22): the library pages and `/search`. On each, the navbar
- * tabs switch `type` in place instead of leaving for `/shows` or `/movies`.
+ * path (feature 22): the eight library routes (`LIBRARY_PATHS`,
+ * prompts/library-page-urls.md) and `/search`. On each, the navbar tabs
+ * switch the tab in place instead of leaving for `/shows` or `/movies`.
  */
-export const TYPED_PATHS = [...LIBRARY_PATHS, "/search"] as const;
+export const TYPED_PATHS: readonly TypedPath[] = [...LIBRARY_PATHS, "/search"];
 
-export type TypedPath = (typeof TYPED_PATHS)[number];
+export type TypedPath = LibraryPath | "/search";
 
 /**
  * The `/search` parameters a tab switch keeps; genres, platforms and page are
@@ -77,14 +73,9 @@ export function isTypedPath(pathname: string | null): pathname is TypedPath {
   return (TYPED_PATHS as readonly (string | null)[]).includes(pathname);
 }
 
-/** A library path's page key: `/coming-soon` is `coming-soon`. */
-function libraryPageKey(path: LibraryPath): LibraryPageKey {
-  return path.slice(1) as LibraryPageKey;
-}
-
 /**
- * True for a library page: `/watchlist`, `/upcoming`, `/watched` and
- * `/coming-soon` (spec 0027, AC-2).
+ * True for a library route, one of the eight in `LIBRARY_PATHS`
+ * (spec 0027, AC-2; prompts/library-page-urls.md).
  */
 export function isLibraryPath(
   pathname: string | null,
@@ -132,6 +123,30 @@ export function parseLibraryTypeParam(
 }
 
 /**
+ * The tab a library route shows for its `type` parameter: the parameter when
+ * it names a tab, and otherwise the route's default tab, so a bare
+ * `/playing` is games (prompts/library-page-urls.md). A tab without a page
+ * at the route is still that tab; the page itself shows the panel.
+ */
+function libraryPathType(path: LibraryPath, typeParam: string | null) {
+  return parseLibraryPageType(path, typeParam) ?? defaultLibraryTypeAt(path);
+}
+
+/**
+ * A library route's `type` parameter: `parseLibraryTypeParam`, except that an
+ * absent value is the route's default tab rather than shows, so a bare
+ * `/playing` lists games and a bare `/watchlist` movies
+ * (prompts/library-page-urls.md). Null still means the value names no tab.
+ */
+export function parseLibraryPageType(
+  path: LibraryPath,
+  value: string | string[] | null | undefined,
+): LibraryType | null {
+  if (value === undefined || value === null) return defaultLibraryTypeAt(path);
+  return parseLibraryTypeParam(value);
+}
+
+/**
  * A title's own page: `/shows/{id}` or `/movies/{id}`, under its catalog's
  * browse path (feature 22). The one builder of a title page URL, shared by
  * search results and the title pages' Retry and return links.
@@ -169,6 +184,10 @@ export function mediaTypeForLocation(
     const path = CATALOG_PATHS[type];
     if (pathname === path || pathname.startsWith(`${path}/`)) return type;
   }
+  if (isLibraryPath(pathname)) {
+    const type = libraryPathType(pathname, typeParam);
+    return type === "game" ? "tv" : type;
+  }
   if (isTypedPath(pathname)) return parseMediaTypeParam(typeParam) ?? "tv";
   return null;
 }
@@ -194,6 +213,7 @@ export function libraryTypeForLocation(
   typeParam: string | null,
 ): LibraryType | null {
   if (isGamesPath(pathname)) return "game";
+  if (isLibraryPath(pathname)) return libraryPathType(pathname, typeParam);
   if (isTypedPath(pathname) && parseLibraryTypeParam(typeParam) === "game") {
     return "game";
   }
@@ -203,32 +223,37 @@ export function libraryTypeForLocation(
 type TypedHrefOptions = { current?: URLSearchParams; page?: number };
 
 /**
- * A typed page's URL for one type. `type` is always written, so a copied link
- * says which tab it opens, as `/search` already does. Every typed page takes
- * `game` (spec 0027, AC-2; spec 0029, AC-1).
+ * A typed page's URL for one tab. `type` is always written, so a copied link
+ * says which tab it opens. A library route links to the matching page of the
+ * tab, the one `libraryHref` gives (prompts/library-page-urls.md): Playing on
+ * games becomes Upcoming on shows.
  *
- * @param options.current The current query, from which `/search` keeps its
- * query, year and rating: genre and platform ids differ between catalogs, and
- * the page starts again from 1. A year before 1950 is dropped on a switch to
- * games, which has none, so a switch never lands on an invalid filter
- * (spec 0029, AC-14).
+ * @param options.current The current query. On `/search` it keeps the
+ * query, year and rating: genre and platform ids differ between catalogs,
+ * and the page starts again from 1. A year before 1950 is dropped on a
+ * switch to games, which has none, so a switch never lands on an invalid
+ * filter (spec 0029, AC-14). On a library route its `type` says which page
+ * the route is now; a tab without a page there (`/playing?type=tv`) reads
+ * as the route's default tab, so its panel's tabs still lead to Playing's
+ * matches.
  * @param options.page The page to open, written only from page 2, so page 1
  * has one URL, as on `/movies`.
- *
- * A library link to a page the tab lacks (only games have `/coming-soon`)
- * opens that tab's `/watchlist`: switching tabs there never lands on a page
- * that doesn't exist (prompts/game-coming-soon.md).
  */
 export function typedHref(
   path: TypedPath,
   type: LibraryType,
   options: TypedHrefOptions = {},
 ): string {
-  if (isLibraryPath(path) && !hasLibraryPage(libraryPageKey(path), type)) {
-    return typedHref("/watchlist", type, options);
+  if (isLibraryPath(path)) {
+    const from = libraryPathType(path, options.current?.get("type") ?? null);
+    const page =
+      libraryPageAt(path, from) ??
+      libraryPageAt(path, defaultLibraryTypeAt(path)) ??
+      "watchlist";
+    return libraryHref(page, type, { page: options.page });
   }
   const query = new URLSearchParams({ type });
-  if (path === "/search" && options.current) {
+  if (options.current) {
     for (const name of SEARCH_KEPT) {
       const value = options.current.get(name);
       if (!value) continue;
@@ -238,8 +263,28 @@ export function typedHref(
       query.set(name, value);
     }
   }
-  if (options.page !== undefined && options.page > 1) {
-    query.set("page", String(options.page));
-  }
+  return withPage(path, query, options.page);
+}
+
+/**
+ * A library page's URL on one tab (prompts/library-page-urls.md): its route
+ * on that tab, from `libraryPath`, with `type` always written and `page` from
+ * page 2. The one builder of a library link: the navbar, the pager, the
+ * panels and every return and retry path use it.
+ */
+export function libraryHref(
+  page: LibraryPageKey,
+  type: LibraryType,
+  options: { page?: number } = {},
+): string {
+  return withPage(
+    libraryPath(page, type),
+    new URLSearchParams({ type }),
+    options.page,
+  );
+}
+
+function withPage(path: string, query: URLSearchParams, page?: number) {
+  if (page !== undefined && page > 1) query.set("page", String(page));
   return `${path}?${query.toString()}`;
 }

@@ -64,12 +64,12 @@ function item(
   };
 }
 
-const RETURN_PATH = "/upcoming?type=game&page=2";
+const RETURN_PATH = "/playing?type=game&page=2";
 
 function grid(items: LibraryGameItem[], page = 1) {
   return (
     <>
-      <LibraryHeading list="watchlist" />
+      <LibraryHeading path="/want-to-play" />
       <GameLibraryGrid
         items={items}
         list="watchlist"

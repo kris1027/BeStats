@@ -26,8 +26,8 @@ import {
 import type { LibraryGameItem } from "./types";
 
 /**
- * A games tab: Coming soon on `/coming-soon`, Want to play on `/watchlist`,
- * Playing on `/upcoming`, Finished on `/watched` (spec 0027, AC-6 to AC-14;
+ * A games tab: Coming soon on `/coming-soon`, Want to play on `/want-to-play`,
+ * Playing on `/playing`, Finished on `/finished` (spec 0027, AC-6 to AC-14;
  * prompts/game-coming-soon.md).
  *
  * Playing and Finished are one counted Postgres page, a redirect when the

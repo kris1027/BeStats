@@ -6,7 +6,7 @@ import { PosterCard } from "@/components/poster-card";
 import { CardRoundButton } from "@/components/tracking/card-round-button";
 import { PlannedIcon } from "@/components/tracking/tracking-icons";
 import { useShowTracking } from "@/components/tracking/use-show-tracking";
-import { typedHref } from "@/lib/catalog/media-type";
+import { libraryHref } from "@/lib/catalog/media-type";
 import { MISSING_SHOW_COPY } from "@/lib/tracking/messages";
 
 import { neighbourCardTarget } from "./card-focus";
@@ -14,7 +14,7 @@ import { SHOW_CARD_LINK_SELECTOR } from "./ids";
 import { MISSING_TITLE } from "./library-card";
 
 /** The Watchlist shows tab, where every missing show card lives (AC-17). */
-const RETURN_PATH = typedHref("/watchlist", "tv");
+const RETURN_PATH = libraryHref("watchlist", "tv");
 
 /**
  * Moves the focus off a card that is about to leave its grid: to a neighbour's

@@ -18,7 +18,7 @@ const { LibraryNav } = await import("./library-nav");
 
 describe("LibraryNav", () => {
   it("links Up next, Upcoming and Watched on shows, in that order (spec 0014, AC-1)", () => {
-    pathname = "/watchlist";
+    pathname = "/up-next";
     search = "";
     render(<LibraryNav variant="bar" />);
     const nav = screen.getByRole("navigation", { name: "Library" });
@@ -28,7 +28,7 @@ describe("LibraryNav", () => {
         .getAllByRole("link")
         .map((link) => [link.textContent, link.getAttribute("href")]),
     ).toEqual([
-      ["Up next", "/watchlist?type=tv"],
+      ["Up next", "/up-next?type=tv"],
       ["Upcoming", "/upcoming?type=tv"],
       ["Watched", "/watched?type=tv"],
     ]);
@@ -69,12 +69,13 @@ describe("LibraryNav", () => {
     },
   );
 
-  it.each(["/watchlist", "/upcoming", "/watched"])(
+  it.each(["/watchlist", "/coming-soon", "/watched"])(
     "lights only the link for %s as a selected pill with aria-current",
     (current) => {
       pathname = current;
       search = "type=movie";
       render(<LibraryNav variant="sheet" />);
+      expect(screen.getAllByRole("link", { current: "page" })).toHaveLength(1);
       for (const link of screen.getAllByRole("link")) {
         const selected = link.getAttribute("href") === `${current}?type=movie`;
         if (selected) {
@@ -138,9 +139,9 @@ describe("LibraryNav", () => {
       screen.getAllByRole("link").map((link) => link.getAttribute("href")),
     ).toEqual([
       "/coming-soon?type=game",
-      "/watchlist?type=game",
-      "/upcoming?type=game",
-      "/watched?type=game",
+      "/want-to-play?type=game",
+      "/playing?type=game",
+      "/finished?type=game",
     ]);
   });
 
@@ -166,9 +167,26 @@ describe("LibraryNav", () => {
       screen.getAllByRole("link").map((link) => link.getAttribute("href")),
     ).toEqual([
       "/coming-soon?type=game",
-      "/watchlist?type=game",
-      "/upcoming?type=game",
-      "/watched?type=game",
+      "/want-to-play?type=game",
+      "/playing?type=game",
+      "/finished?type=game",
     ]);
   });
+
+  // covers: prompts/library-page-urls.md, decision 6
+  it.each([
+    ["/playing", "Playing"],
+    ["/watchlist", "Watchlist"],
+    ["/up-next", "Up next"],
+  ])(
+    "lights %s on its default tab when the URL has no type",
+    (current, name) => {
+      pathname = current;
+      search = "";
+      render(<LibraryNav variant="bar" />);
+      expect(screen.getByRole("link", { current: "page" })).toHaveTextContent(
+        name,
+      );
+    },
+  );
 });

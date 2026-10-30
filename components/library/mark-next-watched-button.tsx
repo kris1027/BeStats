@@ -12,7 +12,7 @@ import {
   showEpisodeTrackingError,
   UNDO_TOAST_MS,
 } from "@/components/tracking/tracking-toast";
-import { typedHref } from "@/lib/catalog/media-type";
+import { libraryHref } from "@/lib/catalog/media-type";
 import { MARK_NEXT_MESSAGES, UNDO_ACTION_LABEL } from "@/lib/tracking/messages";
 
 import { neighbourCardTarget } from "./card-focus";
@@ -146,7 +146,7 @@ function MarkNextWatchedButton({
   function onError(error: Parameters<typeof showEpisodeTrackingError>[0]) {
     showEpisodeTrackingError(error, {
       id: toastId,
-      returnPath: typedHref("/watchlist", "tv"),
+      returnPath: libraryHref("watchlist", "tv"),
       navigate: router.push,
     });
   }

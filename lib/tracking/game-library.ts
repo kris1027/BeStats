@@ -18,8 +18,8 @@ import { logTrackingEvent, TRACKING_EVENT } from "./log";
 import type { GameStatus } from "./types";
 
 /**
- * The reads behind the games tabs of `/watchlist`, `/upcoming` and
- * `/watched` (spec 0027, AC-6, AC-7).
+ * The reads behind the games pages, `/want-to-play`, `/playing` and
+ * `/finished` (spec 0027, AC-6, AC-7; prompts/library-page-urls.md).
  *
  * A game's status is stored, set by hand (`AGENTS.md`, Games), so unlike the
  * show and movie tabs nothing is classified: each tab is one ordered,
