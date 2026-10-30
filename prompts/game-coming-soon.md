@@ -1,5 +1,7 @@
 # Games Coming soon page
 
+> **Amended 2026-10-30:** the routes in the table below have since moved. Each page now has a route named for it (`/want-to-play`, `/playing`, `/finished`, `/up-next`, and movies' Coming soon at `/coming-soon`); see [library-page-urls.md](library-page-urls.md).
+
 ## Goal
 
 Give the games tab a fourth library page, **Coming soon** at `/coming-soon?type=game`, for Want to play games that are not out yet. Want to play (`/watchlist?type=game`) then lists only released Want to play games. Placement is worked out per request from IGDB's release date, like the movie Watchlist and Coming soon split; nothing new is stored. Settled in a grilling session on 2026-10-30, on the `feat/library-page-names` branch (PR #65), which this work extends.

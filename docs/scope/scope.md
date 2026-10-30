@@ -43,6 +43,7 @@ _2026-10-06: the `design/` artboards were removed. The UI built from them carrie
 | 24 | Home carousels | Slice 11 | done |
 | 25 | Consistent card size and richer title pages | Slice 12 | done |
 | 26 | Library page names per media type | Slice 13 | done |
+| 27 | Library page URLs follow their names | Slice 13 | in-progress |
 
 ## Foundations
 
@@ -441,6 +442,13 @@ The three library routes stay shared, but each media type names them for what th
 - [x] Design it (plan): [prompts/library-page-names.md](../../prompts/library-page-names.md)
 - [x] Build it: `libraryPageName`, the nav, the streamed heading, `generateMetadata` titles, the panels, card labels and toasts, `/showcase` and the docs, checked on all nine tabs in the running app — AC-1 to AC-6
 plan [prompts/library-page-names.md](../../prompts/library-page-names.md) · code in `lib/catalog/library-list.ts`, `components/layout/library-nav.tsx`, `components/library/library-heading.tsx`, `lib/catalog/library-metadata.ts`, `app/watchlist/`, `app/upcoming/`, `app/watched/`
+
+### 27. Library page URLs follow their names · in-progress
+Each library page's URL says its name: shows `/up-next`, `/upcoming`, `/watched`; movies `/watchlist`, `/coming-soon`, `/watched`; games `/coming-soon`, `/want-to-play`, `/playing`, `/finished`. Tabs that name a page alike share its route, and `?type` stays. Switching tabs keeps the matching page, a bare URL opens the route's first tab, and the five old URLs whose page moved redirect temporarily. Settled in a grilling session on 2026-10-30.
+**Done when:** every page opens at its own route with the right heading, title and nav; tab switches keep the matching page; the old URLs answer 307 to the new ones; all eight routes are private and keep their prerendered shell.
+- [x] Design it (plan): [prompts/library-page-urls.md](../../prompts/library-page-urls.md)
+- [x] Build it: `LIBRARY_PAGE_PATHS`, `libraryHref`, the four new routes, the tab switch, the private paths and the redirects, checked in the running app — AC-1 to AC-7
+plan [prompts/library-page-urls.md](../../prompts/library-page-urls.md) · code in `lib/catalog/library-list.ts`, `lib/catalog/media-type.ts`, `next.config.ts`, `app/up-next/`, `app/want-to-play/`, `app/playing/`, `app/finished/`
 
 ## Deferred
 Out of scope for the current build pass, kept so the plan stays honest.
