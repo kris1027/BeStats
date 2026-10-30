@@ -9,7 +9,10 @@ import {
 import { CardRoundButton } from "@/components/tracking/card-round-button";
 import { GameStatusChip } from "@/components/tracking/game-status-chip";
 import { PlannedIcon } from "@/components/tracking/tracking-icons";
-import { libraryPageName } from "@/lib/catalog/library-list";
+import {
+  type LibraryPageKey,
+  libraryPageName,
+} from "@/lib/catalog/library-list";
 import { gameHref } from "@/lib/catalog/media-type";
 import { isStartedGame } from "@/lib/tracking/types";
 
@@ -41,10 +44,13 @@ const MISSING_GAME = "No longer on IGDB";
  */
 function GameLibraryCard({
   item,
+  list,
   onRemove,
   priority = false,
 }: {
   item: LibraryGameItem;
+  /** The page the card is on, which its remove button names. */
+  list: LibraryPageKey;
   onRemove: () => void;
   priority?: boolean;
 }) {
@@ -79,7 +85,7 @@ function GameLibraryCard({
             </>
           ) : (
             <CardRoundButton
-              label={`Remove ${item.name} from ${libraryPageName(item.unreleased ? "coming-soon" : "watchlist", "game")}`}
+              label={`Remove ${item.name} from ${libraryPageName(list, "game")}`}
               onClick={onRemove}
               className="ml-auto"
             >

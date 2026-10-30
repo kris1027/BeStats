@@ -43,6 +43,21 @@ describe("GameLibraryCardDemo", () => {
     ).toBeInTheDocument();
   });
 
+  it("names the page a Want to play card is on in its remove button", () => {
+    render(<GameLibraryCardDemo poster="https://example.test/poster.jpg" />);
+
+    expect(
+      card("Want to play, released").getByRole("button", {
+        name: "Remove Want to play, released from Want to play",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      card("Coming soon, dated").getByRole("button", {
+        name: "Remove Coming soon, dated from Coming soon",
+      }),
+    ).toBeInTheDocument();
+  });
+
   it("shows Playing with and without a score, and a scored Finished game", () => {
     render(<GameLibraryCardDemo poster="https://example.test/poster.jpg" />);
 

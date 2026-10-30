@@ -72,6 +72,7 @@ function grid(items: LibraryGameItem[], page = 1) {
       <LibraryHeading list="watchlist" />
       <GameLibraryGrid
         items={items}
+        list="watchlist"
         label={`Your games, page ${page}`}
         page={page}
         returnPath={RETURN_PATH}
