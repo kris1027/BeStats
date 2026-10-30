@@ -3,6 +3,7 @@
 import { cn } from "cn";
 import Link from "next/link";
 
+import { libraryPageName, libraryPages } from "@/lib/catalog/library-list";
 import { type LibraryType, typedHref } from "@/lib/catalog/media-type";
 
 import { WithLibraryTypedPage } from "./page-media-type";
@@ -17,11 +18,15 @@ import { WithLibraryTypedPage } from "./page-media-type";
  * inside `AccountSlot`, which is already request scoped behind its own
  * Suspense boundary, so it costs no route its static shell.
  *
- * Upcoming sits between the two (spec 0014, AC-1).
+ * Upcoming sits between the two (spec 0014, AC-1). Each link is named for
+ * the tab, through `libraryPageName`: Up next, Upcoming and Watched on shows,
+ * Watchlist, Coming soon and Watched on movies, and four on games, Coming
+ * soon, Want to play, Playing and Finished, in the order `libraryPages`
+ * gives (prompts/library-page-names.md, prompts/game-coming-soon.md).
  *
  * Each link carries the media type of the page being viewed, so the navbar
  * tab chosen on `/movies` is still lit on `/watchlist` (feature 22), and on a
- * games tab they carry `type=game`, so moving between the three pages keeps
+ * games tab they carry `type=game`, so moving between its pages keeps
  * you on games (spec 0027, AC-4). It is read through `WithLibraryTypedPage`;
  * the fallback links to the default type. On a
  * page about neither catalog it renders nothing, like the media tabs and the
@@ -33,12 +38,6 @@ import { WithLibraryTypedPage } from "./page-media-type";
  * overlapping); `sheet` is the stacked list inside the mobile menu,
  * with 44px rows for touch.
  */
-const LINKS = [
-  { path: "/watchlist", label: "Watchlist" },
-  { path: "/upcoming", label: "Upcoming" },
-  { path: "/watched", label: "Watched" },
-] as const;
-
 type Variant = "bar" | "sheet";
 
 function LibraryNav({ variant }: { variant: Variant }) {
@@ -78,14 +77,14 @@ function LibraryNavView({
           : "flex flex-col gap-1"
       }
     >
-      {LINKS.map((link) => {
-        const selected =
-          pathname === link.path || pathname.startsWith(`${link.path}/`);
+      {libraryPages(type).map((list) => {
+        const path = `/${list}` as const;
+        const selected = pathname === path || pathname.startsWith(`${path}/`);
 
         return (
           <Link
-            key={link.path}
-            href={typedHref(link.path, type)}
+            key={path}
+            href={typedHref(path, type)}
             aria-current={selected ? "page" : undefined}
             className={cn(
               "flex items-center rounded-full font-bold transition-[filter,color]",
@@ -97,7 +96,7 @@ function LibraryNavView({
                 : "text-text-link hover:text-foreground",
             )}
           >
-            {link.label}
+            {libraryPageName(list, type)}
           </Link>
         );
       })}

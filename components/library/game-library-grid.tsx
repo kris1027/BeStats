@@ -10,14 +10,15 @@ import {
   showGameTrackingError,
 } from "@/components/tracking/tracking-toast";
 import { showGameUndo } from "@/components/tracking/use-game-undo";
-
+import type { LibraryPageKey } from "@/lib/catalog/library-list";
 import { GameLibraryCard } from "./game-library-card";
+
 import { gameItemKey, type LibraryGameItem } from "./types";
 import { useRemovalFocus } from "./use-removal-focus";
 
 /**
- * The game grid on the games tabs of `/watchlist`, `/upcoming` and
- * `/watched`, and everything a removal does (spec 0027, AC-12, AC-13).
+ * The game grid on the games tabs of `/coming-soon`, `/watchlist`,
+ * `/upcoming` and `/watched`, and everything a removal does (spec 0027, AC-12, AC-13).
  *
  * The movie grid's order exactly (`library-grid.tsx`): a removal hides the
  * card at once through `useOptimistic`, then runs spec 0026's `removeGame`,
@@ -32,17 +33,20 @@ import { useRemovalFocus } from "./use-removal-focus";
  * that found no row (another tab got there first) has no `undo` and shows no
  * toast.
  *
+ * @param list The page the grid is on, which each card's remove button names.
  * @param page The page number. Emptying a page past page 1 redirects, which
  * remounts the page, so the heading has to take the focus again.
  * @param returnPath The page, for the session expired toast's Sign in action.
  */
 function GameLibraryGrid({
   items,
+  list,
   label,
   page,
   returnPath,
 }: {
   items: LibraryGameItem[];
+  list: LibraryPageKey;
   label: string;
   page: number;
   returnPath: string;
@@ -96,6 +100,7 @@ function GameLibraryGrid({
           <li key={key} data-item-key={key}>
             <GameLibraryCard
               item={item}
+              list={list}
               onRemove={() => remove(item)}
               priority={index < POSTER_GRID_EAGER.catalog}
             />

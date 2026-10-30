@@ -36,10 +36,25 @@ describe("GameLibraryCardDemo", () => {
     render(<GameLibraryCardDemo poster="https://example.test/poster.jpg" />);
 
     expect(
-      card("Want to play, coming soon").getByText("Releases Feb 3, 2027"),
+      card("Coming soon, dated").getByText("Releases Feb 3, 2027"),
     ).toBeInTheDocument();
     expect(
-      card("Want to play, Date TBA").getByText("Release date to be announced"),
+      card("Coming soon, Date TBA").getByText("Release date to be announced"),
+    ).toBeInTheDocument();
+  });
+
+  it("names the page a Want to play card is on in its remove button", () => {
+    render(<GameLibraryCardDemo poster="https://example.test/poster.jpg" />);
+
+    expect(
+      card("Want to play, released").getByRole("button", {
+        name: "Remove Want to play, released from Want to play",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      card("Coming soon, dated").getByRole("button", {
+        name: "Remove Coming soon, dated from Coming soon",
+      }),
     ).toBeInTheDocument();
   });
 

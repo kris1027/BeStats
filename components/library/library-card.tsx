@@ -7,6 +7,7 @@ import {
 } from "@/components/rating-badges";
 import { CardRoundButton } from "@/components/tracking/card-round-button";
 import { PlannedIcon, WatchedIcon } from "@/components/tracking/tracking-icons";
+import { libraryPageName } from "@/lib/catalog/library-list";
 
 import { ReleasePill } from "./dated-pill";
 import type { LibraryList, LibraryMovieItem } from "./types";
@@ -120,7 +121,7 @@ function RemoveButton({
 
   return (
     <CardRoundButton
-      label={`Remove ${name} from ${list === "upcoming" ? "Upcoming" : "Watchlist"}`}
+      label={`Remove ${name} from ${libraryPageName(list, "movie")}`}
       onClick={onRemove}
       className="ml-auto"
     >

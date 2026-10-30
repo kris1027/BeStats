@@ -4,7 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { LibraryGameItem, LibraryList } from "./types";
 
 /**
- * covers: spec 0027, AC-5 to AC-11, AC-14; spec 0030, AC-11
+ * covers: spec 0027, AC-5 to AC-11, AC-14; spec 0030, AC-11;
+ * prompts/game-coming-soon.md, R1, R2, R5
  *
  * The games tabs through `LibrarySection`, as the page renders them. The
  * session, the Postgres page and the IGDB batch are the boundaries and are
@@ -16,6 +17,7 @@ const requireUser = vi.fn();
 vi.mock("@/lib/auth/user", () => ({ requireUser: () => requireUser() }));
 
 const getGameLibraryPage = vi.fn();
+const getWantToPlayTab = vi.fn();
 const getLibraryGames = vi.fn();
 const getShowLibraryTab = vi.fn();
 vi.mock("server-only", () => ({}));
@@ -39,6 +41,18 @@ vi.mock("@/lib/tracking/game-library", async (importOriginal) => {
       };
     },
     getLibraryGames: (...args: unknown[]) => getLibraryGames(...args),
+    // Want to play and Coming soon read only Want to play rows.
+    getWantToPlayTab: async (args: unknown) => {
+      const result = await getWantToPlayTab(args);
+      if (result?.kind !== "ok") return result;
+      return {
+        ...result,
+        rows: result.rows.map((row: object) => ({
+          status: "want_to_play",
+          ...row,
+        })),
+      };
+    },
   };
 });
 vi.mock("@/lib/tracking/library-lists", async (importOriginal) => ({
@@ -78,7 +92,7 @@ vi.mock("./game-library-grid", () => ({
 
 const { LibrarySection } = await import("./library-section");
 
-type List = "watchlist" | "upcoming" | "watched";
+type List = "watchlist" | "upcoming" | "watched" | "coming-soon";
 
 async function renderSection(
   list: List,
@@ -125,9 +139,25 @@ function page(rows: unknown[], total = rows.length) {
   return { kind: "ok", rows, total };
 }
 
+/** A Want to play or Coming soon read: its page of rows and their games. */
+function split(
+  rows: { gameId: number }[],
+  games: ReturnType<typeof game>[] = [],
+  extra: { total?: number; capped?: boolean } = {},
+) {
+  return {
+    kind: "ok",
+    rows,
+    games: new Map(games.map((g) => [g.id, g])),
+    total: extra.total ?? rows.length,
+    capped: extra.capped ?? false,
+  };
+}
+
 beforeEach(() => {
   requireUser.mockResolvedValue({ id: "user-a", email: "a@example.test" });
   getGameLibraryPage.mockResolvedValue(page([]));
+  getWantToPlayTab.mockResolvedValue(split([]));
   getLibraryGames.mockResolvedValue({
     kind: "ok",
     games: new Map(),
@@ -164,6 +194,20 @@ describe("the parameters (AC-5)", () => {
     expect(getGameLibraryPage).not.toHaveBeenCalled();
   });
 
+  it.each([[{}], [{ type: "tv" }], [{ type: "movie" }], [{ type: "book" }]])(
+    "has no Coming soon page for %j",
+    async (params) => {
+      await renderSection("coming-soon", params);
+
+      expect(screen.getByText("That page doesn't exist")).toBeInTheDocument();
+      expect(
+        screen.getByRole("link", { name: "Back to Coming soon" }),
+      ).toHaveAttribute("href", "/coming-soon?type=game");
+      expect(getWantToPlayTab).not.toHaveBeenCalled();
+      expect(getShowLibraryTab).not.toHaveBeenCalled();
+    },
+  );
+
   it("leaves the shows tab as it was", async () => {
     await renderSection("watchlist", {});
     expect(getShowLibraryTab).toHaveBeenCalled();
@@ -172,7 +216,7 @@ describe("the parameters (AC-5)", () => {
 });
 
 describe("the reads and the panels (AC-6, AC-7, AC-14)", () => {
-  it.each(["watchlist", "upcoming", "watched"] as const)(
+  it.each(["upcoming", "watched"] as const)(
     "reads the %s games page for the session user and that page's games",
     async (list) => {
       getGameLibraryPage.mockResolvedValue(page([row(1), row(2)], 30));
@@ -187,6 +231,78 @@ describe("the reads and the panels (AC-6, AC-7, AC-14)", () => {
       expect(
         screen.getByRole("navigation", { name: "Pagination" }),
       ).toBeInTheDocument();
+    },
+  );
+
+  it.each(["watchlist", "coming-soon"] as const)(
+    "reads %s from the Want to play split for the session user, with today",
+    async (list) => {
+      getWantToPlayTab.mockResolvedValue(
+        split([row(1), row(2)], [game(1), game(2)], { total: 30 }),
+      );
+      await renderSection(list, { type: "game", page: "1" });
+
+      expect(getWantToPlayTab).toHaveBeenCalledWith({
+        userId: "user-a",
+        tab: list,
+        page: 1,
+        today: "2026-10-24",
+      });
+      expect(getGameLibraryPage).not.toHaveBeenCalled();
+      expect(getLibraryGames).not.toHaveBeenCalled();
+      expect(
+        screen.getByRole("navigation", { name: "Pagination" }),
+      ).toBeInTheDocument();
+    },
+  );
+
+  it("labels Coming soon's grid and keeps type=game in its return path", async () => {
+    getWantToPlayTab.mockResolvedValue(split([row(1)], [game(1)]));
+    await renderSection("coming-soon", { type: "game" });
+
+    expect(
+      screen.getByRole("list", {
+        name: "Unreleased games you want to play, page 1",
+      }),
+    ).toHaveAttribute("data-return-path", "/coming-soon?type=game");
+  });
+
+  it("redirects Coming soon past the end to its last page", async () => {
+    getWantToPlayTab.mockResolvedValue(split([], [], { total: 30 }));
+    await expect(
+      renderSection("coming-soon", { type: "game", page: "5" }),
+    ).rejects.toMatchObject({ url: "/coming-soon?type=game&page=2" });
+  });
+
+  it.each(["watchlist", "coming-soon"] as const)(
+    "says on %s when the ceiling left older games unchecked",
+    async (list) => {
+      getWantToPlayTab.mockResolvedValue(
+        split([row(1)], [game(1)], { capped: true }),
+      );
+      await renderSection(list, { type: "game" });
+
+      expect(
+        screen.getByText("Checked your 500 most recent games"),
+      ).toBeInTheDocument();
+    },
+  );
+
+  it.each(["watchlist", "coming-soon"] as const)(
+    "shows %s's failed panels",
+    async (list) => {
+      getWantToPlayTab.mockResolvedValue({ kind: "failed" });
+      const failed = await renderSection(list, { type: "game" });
+      expect(screen.getByText("Couldn't load your list")).toBeInTheDocument();
+      failed.unmount();
+
+      getWantToPlayTab.mockResolvedValue({ kind: "igdb_failed" });
+      await renderSection(list, { type: "game" });
+      expect(screen.getByText("Couldn't reach IGDB")).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /try again/i })).toHaveAttribute(
+        "href",
+        `/${list}?type=game`,
+      );
     },
   );
 
@@ -215,6 +331,7 @@ describe("the reads and the panels (AC-6, AC-7, AC-14)", () => {
 
   it.each([
     ["watchlist", "No games to play yet"],
+    ["coming-soon", "No unreleased games on your list"],
     ["upcoming", "Nothing in progress"],
     ["watched", "No finished games yet"],
   ] as const)(
@@ -232,14 +349,12 @@ describe("the reads and the panels (AC-6, AC-7, AC-14)", () => {
 
   it("shows the list's failed panel when Postgres fails", async () => {
     getGameLibraryPage.mockResolvedValue({ kind: "failed" });
-    await renderSection("watchlist", { type: "game" });
+    await renderSection("upcoming", { type: "game" });
 
-    expect(
-      screen.getByText("Couldn't load your watchlist"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Couldn't load your list")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /try again/i })).toHaveAttribute(
       "href",
-      "/watchlist?type=game",
+      "/upcoming?type=game",
     );
   });
 
@@ -271,26 +386,30 @@ describe("the cards (AC-8 to AC-11)", () => {
     });
   }
 
-  it("marks an unreleased Want to play game with its date, or Date TBA", async () => {
-    getGameLibraryPage.mockResolvedValue(page([row(1), row(2), row(3)]));
-    withGames(
-      game(1),
-      game(2, { releaseDate: "2027-02-03" }),
-      game(3, { releaseDate: null }),
+  it("marks a Coming soon game with its date, or Date TBA", async () => {
+    getWantToPlayTab.mockResolvedValue(
+      split(
+        [row(2), row(3)],
+        [
+          game(2, { releaseDate: "2027-02-03" }),
+          game(3, { releaseDate: null }),
+        ],
+      ),
     );
-    await renderSection("watchlist", { type: "game" });
+    await renderSection("coming-soon", { type: "game" });
 
-    expect(received(1).unreleased).toBeNull();
     expect(received(2).unreleased).toEqual({
       date: { shortDate: "Feb 3, 2027", fullDate: "Feb 3, 2027" },
     });
     expect(received(3).unreleased).toEqual({ date: null });
-    expect(received(1).dateLine).toBeNull();
+    expect(received(2).dateLine).toBeNull();
+    expect(received(2).status).toBe("want_to_play");
   });
 
-  it("counts the release day itself as released", async () => {
-    getGameLibraryPage.mockResolvedValue(page([row(1)]));
-    withGames(game(1, { releaseDate: "2026-10-24" }));
+  it("gives a released Want to play game no release pill", async () => {
+    getWantToPlayTab.mockResolvedValue(
+      split([row(1)], [game(1, { releaseDate: "2026-10-24" })]),
+    );
     await renderSection("watchlist", { type: "game" });
 
     expect(received(1).unreleased).toBeNull();
@@ -323,19 +442,23 @@ describe("the cards (AC-8 to AC-11)", () => {
   it("takes the card's status from the stored row, not the tab (AC-8)", async () => {
     getGameLibraryPage.mockResolvedValue(page([row(1, { status: "playing" })]));
     withGames(game(1));
-    await renderSection("watchlist", { type: "game" });
+    await renderSection("watched", { type: "game" });
 
     expect(received(1).status).toBe("playing");
   });
 
-  it("ignores a score on a Want to play row", async () => {
-    getGameLibraryPage.mockResolvedValue(page([row(1, { rating: 7 })]));
-    withGames(game(1));
-    await renderSection("watchlist", { type: "game" });
+  it.each(["watchlist", "coming-soon"] as const)(
+    "ignores a score on a %s row",
+    async (list) => {
+      getWantToPlayTab.mockResolvedValue(
+        split([row(1, { rating: 7 })], [game(1, { releaseDate: null })]),
+      );
+      await renderSection(list, { type: "game" });
 
-    expect(received(1).rating).toBeNull();
-    expect(received(1).status).toBe("want_to_play");
-  });
+      expect(received(1).rating).toBeNull();
+      expect(received(1).status).toBe("want_to_play");
+    },
+  );
 
   it("passes hidden through, and invents nothing for a missing game", async () => {
     getGameLibraryPage.mockResolvedValue(page([row(1), row(2)]));

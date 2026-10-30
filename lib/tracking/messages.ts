@@ -1,5 +1,10 @@
-import type { LibraryList } from "@/lib/catalog/library-list";
-import type { LibraryType, MediaType } from "@/lib/catalog/media-type";
+import {
+  defaultLibraryType,
+  type LibraryList,
+  type LibraryPageKey,
+  libraryPageName,
+} from "@/lib/catalog/library-list";
+import type { LibraryType } from "@/lib/catalog/media-type";
 
 import type {
   EpisodeTrackingError,
@@ -59,15 +64,18 @@ export const MOVIE_CLEARED_MESSAGES = {
 } as const;
 
 /**
- * The toasts the two private list pages show after a removal (spec 0008,
- * AC-5, AC-7). Unlike the controls above, a removal does confirm itself with a
- * toast, because the card it changed is gone and the toast is where Undo lives.
+ * The toasts the movie tabs of the library pages show after a removal (spec
+ * 0008, AC-5, AC-7). Unlike the controls above, a removal does confirm itself
+ * with a toast, because the card it changed is gone and the toast is where
+ * Undo lives. Each names the page as the movies tab does.
  */
 export const LIBRARY_MESSAGES = {
-  watchlist: { removed: "Removed from Watchlist" },
-  upcoming: { removed: "Removed from Upcoming" },
+  watchlist: {
+    removed: `Removed from ${libraryPageName("watchlist", "movie")}`,
+  },
+  upcoming: { removed: `Removed from ${libraryPageName("upcoming", "movie")}` },
   watched: {
-    removed: "Removed from Watched",
+    removed: `Removed from ${libraryPageName("watched", "movie")}`,
     scoreRemoved: "Your score was removed too.",
   },
 } as const;
@@ -189,6 +197,13 @@ export const UPCOMING_MESSAGES = {
   releaseTba: "Release date to be announced",
 } as const;
 
+/** The game page's three status pills, in their order (spec 0026, AC-2). */
+export const GAME_STATUS_LABELS: Record<GameStatus, string> = {
+  want_to_play: "Want to play",
+  playing: "Playing",
+  finished: "Finished",
+};
+
 /**
  * What a list page's grid, empty state and notes say (spec 0020, AC-18).
  * `browse` is the empty state's button, leading to the type's landing
@@ -205,10 +220,8 @@ type ListCopy = {
  * tabs (spec 0020, AC-12, AC-15, AC-18; feature 22; spec 0027, AC-14). Each
  * show and movie empty state offers the one catalog its tab lists.
  */
-export const LIBRARY_COPY: Record<
-  LibraryList,
-  Record<LibraryType, ListCopy> & { failed: string }
-> = {
+export const LIBRARY_COPY: Record<LibraryList, Record<LibraryType, ListCopy>> &
+  Record<"coming-soon", { game: ListCopy }> = {
   watchlist: {
     tv: {
       grid: "Shows to watch",
@@ -231,11 +244,10 @@ export const LIBRARY_COPY: Record<
       grid: "Games you want to play",
       empty: {
         title: "No games to play yet",
-        description: "Games you mark Want to play show up here.",
+        description: `Released games you mark ${GAME_STATUS_LABELS.want_to_play} show up here.`,
       },
       browse: "Browse games",
     },
-    failed: "Couldn't load your watchlist",
   },
   upcoming: {
     tv: {
@@ -250,7 +262,7 @@ export const LIBRARY_COPY: Record<
     movie: {
       grid: "Movies coming up",
       empty: {
-        title: "No upcoming movies",
+        title: "Nothing coming soon",
         description: "Planned movies not released yet show up here.",
       },
       browse: "Browse movies",
@@ -263,7 +275,6 @@ export const LIBRARY_COPY: Record<
       },
       browse: "Browse games",
     },
-    failed: "Couldn't load your upcoming titles",
   },
   watched: {
     tv: {
@@ -290,12 +301,38 @@ export const LIBRARY_COPY: Record<
       },
       browse: "Browse games",
     },
-    failed: "Couldn't load your watched titles",
+  },
+  // The one page only one tab has (prompts/game-coming-soon.md).
+  "coming-soon": {
+    game: {
+      grid: "Unreleased games you want to play",
+      empty: {
+        title: "No unreleased games on your list",
+        description: `${GAME_STATUS_LABELS.want_to_play} games that aren't out yet show up here.`,
+      },
+      browse: "Browse games",
+    },
   },
 };
 
 /**
- * The line under every failed library list, beside `LIBRARY_COPY[list].failed`:
+ * A library page's copy on one tab, Coming soon included. A tab without the
+ * page reads the games copy, as its name does (`libraryPageName`).
+ */
+export function libraryCopy(page: LibraryPageKey, type: LibraryType): ListCopy {
+  const copy: Partial<Record<LibraryType, ListCopy>> = LIBRARY_COPY[page];
+  return copy[type] ?? libraryCopy(page, defaultLibraryType(page));
+}
+
+/**
+ * The title of every failed library list. One for all three pages, because
+ * the error boundary that also shows it cannot read the tab, and a page's
+ * name differs per tab (prompts/library-page-names.md).
+ */
+export const LIBRARY_LIST_FAILED_TITLE = "Couldn't load your list";
+
+/**
+ * The line under every failed library list, beside `LIBRARY_LIST_FAILED_TITLE`:
  * a failed read (`ListFailed`) and a section that threw (`LibraryErrorBoundary`,
  * spec 0027, AC-5) read the same.
  */
@@ -308,10 +345,12 @@ export const GAME_DATE_LINES = {
   finished: (month: string) => `Finished ${month}`,
 } as const;
 
-/** "1 show", "4 movies". */
-function titles(n: number, type: MediaType): string {
-  const noun = type === "tv" ? "show" : "movie";
-  return `${n} ${noun}${n === 1 ? "" : "s"}`;
+/** Each tab's noun, for the notes' counts. */
+const TITLE_NOUNS = { tv: "show", movie: "movie", game: "game" } as const;
+
+/** "1 show", "4 movies", "2 games". */
+function titles(n: number, type: LibraryType): string {
+  return `${n} ${TITLE_NOUNS[type]}${n === 1 ? "" : "s"}`;
 }
 
 /**
@@ -319,9 +358,9 @@ function titles(n: number, type: MediaType): string {
  * ceiling, and the titles whose TMDB read failed, which are on no page.
  */
 export const LIBRARY_NOTES = {
-  checked: (limit: number, type: MediaType) =>
-    `Checked your ${limit} most recent ${type === "tv" ? "shows" : "movies"}`,
-  failed: (n: number, type: MediaType) =>
+  checked: (limit: number, type: LibraryType) =>
+    `Checked your ${limit} most recent ${TITLE_NOUNS[type]}s`,
+  failed: (n: number, type: LibraryType) =>
     `${titles(n, type)} couldn't be loaded`,
 } as const;
 
@@ -341,13 +380,6 @@ export const MISSING_SHOW_COPY = {
   /** The Stop tracking button's accessible name. */
   stopLabel: "Stop tracking missing title",
 } as const;
-
-/** The game page's three status pills, in their order (spec 0026, AC-2). */
-export const GAME_STATUS_LABELS: Record<GameStatus, string> = {
-  want_to_play: "Want to play",
-  playing: "Playing",
-  finished: "Finished",
-};
 
 /** What a refused game Undo says: change it again on the game page. */
 const GAME_UNDO_EXPIRED = "Couldn't undo. Set the status again on this page.";

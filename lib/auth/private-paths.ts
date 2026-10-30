@@ -16,6 +16,7 @@ export const PRIVATE_PATH_PREFIXES = [
   "/watchlist",
   "/upcoming",
   "/watched",
+  "/coming-soon",
 ] as const;
 
 /**

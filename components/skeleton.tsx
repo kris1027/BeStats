@@ -12,6 +12,13 @@ import type * as React from "react";
  * The pulse is defined once in `globals.css` and is cut entirely under
  * `prefers-reduced-motion`, not merely slowed.
  */
+/**
+ * The surface every placeholder wears, exported for a stand in that cannot be
+ * a `div`, such as the library heading's span inside its `h1`.
+ */
+const SKELETON_SURFACE =
+  "plate-solid plate-rim glass-rim glass-plate skeleton-pulse";
+
 const SHAPES = {
   poster: "aspect-2/3 w-full rounded-lg",
   pill: "h-7 w-16 rounded-full",
@@ -38,11 +45,7 @@ function Skeleton({
        * content, and the pulse then looks like something is happening rather
        * than something is missing.
        */
-      className={cn(
-        "plate-solid plate-rim glass-rim glass-plate skeleton-pulse",
-        SHAPES[shape],
-        className,
-      )}
+      className={cn(SKELETON_SURFACE, SHAPES[shape], className)}
       {...props}
     />
   );
@@ -86,4 +89,4 @@ function PaginationSkeleton() {
   );
 }
 
-export { PaginationSkeleton, PosterCardSkeleton, Skeleton };
+export { PaginationSkeleton, PosterCardSkeleton, SKELETON_SURFACE, Skeleton };

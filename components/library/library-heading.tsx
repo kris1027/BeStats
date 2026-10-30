@@ -1,6 +1,15 @@
 "use client";
 
-import { type ReactNode, useEffect } from "react";
+import { cn } from "cn";
+import { useEffect } from "react";
+
+import { WithPageMediaType } from "@/components/layout/page-media-type";
+import { SKELETON_SURFACE } from "@/components/skeleton";
+import {
+  defaultLibraryType,
+  type LibraryPageKey,
+  libraryPageName,
+} from "@/lib/catalog/library-list";
 
 import { LIBRARY_HEADING_ID } from "./ids";
 
@@ -39,12 +48,19 @@ function cancelLibraryHeadingFocus(key: string) {
 }
 
 /**
- * The `h1` of `/watchlist`, `/upcoming` and `/watched`. It can take focus
- * (`tabIndex={-1}`), because removing the last card on a page moves focus
- * here, including after the redirect that follows emptying a later page
- * (AC-9, AC-16).
+ * The `h1` of `/watchlist`, `/upcoming`, `/watched` and `/coming-soon`. It
+ * can take focus (`tabIndex={-1}`), because removing the last card on a page
+ * moves focus here, including after the redirect that follows emptying a
+ * later page (AC-9, AC-16).
+ *
+ * The element is in the static shell, so the focus target always exists, but
+ * its text is the page's name on the current tab (`libraryPageName`), which
+ * needs the `type` parameter: it streams in through `WithPageMediaType`, with
+ * a placeholder bar until then, so no other tab's name flashes. A bad `type`
+ * reads as the page's default tab, the tab its panel leads back to
+ * (prompts/library-page-names.md, prompts/game-coming-soon.md).
  */
-function LibraryHeading({ children }: { children: ReactNode }) {
+function LibraryHeading({ list }: { list: LibraryPageKey }) {
   useEffect(() => {
     if (focusAfterRemountFor === null) return;
     focusAfterRemountFor = null;
@@ -57,8 +73,29 @@ function LibraryHeading({ children }: { children: ReactNode }) {
       tabIndex={-1}
       className="text-3xl leading-tight font-extrabold tracking-[-0.03em] text-foreground md:text-4xl"
     >
-      {children}
+      <WithPageMediaType fallback={() => <HeadingPlaceholder />}>
+        {({ libraryType }) =>
+          libraryPageName(list, libraryType ?? defaultLibraryType(list))
+        }
+      </WithPageMediaType>
     </h1>
+  );
+}
+
+/**
+ * The heading's stand in, one line tall like the name it replaces. A span,
+ * because an `h1` holds only phrasing content, so it wears `Skeleton`'s
+ * surface rather than being one.
+ */
+function HeadingPlaceholder() {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        SKELETON_SURFACE,
+        "inline-block h-[0.8em] w-48 rounded-sm align-middle",
+      )}
+    />
   );
 }
 

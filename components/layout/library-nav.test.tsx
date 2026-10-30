@@ -17,7 +17,7 @@ vi.mock("next/navigation", () => ({
 const { LibraryNav } = await import("./library-nav");
 
 describe("LibraryNav", () => {
-  it("links Watchlist, Upcoming and Watched, in that order (spec 0014, AC-1)", () => {
+  it("links Up next, Upcoming and Watched on shows, in that order (spec 0014, AC-1)", () => {
     pathname = "/watchlist";
     search = "";
     render(<LibraryNav variant="bar" />);
@@ -28,11 +28,26 @@ describe("LibraryNav", () => {
         .getAllByRole("link")
         .map((link) => [link.textContent, link.getAttribute("href")]),
     ).toEqual([
-      ["Watchlist", "/watchlist?type=tv"],
+      ["Up next", "/watchlist?type=tv"],
       ["Upcoming", "/upcoming?type=tv"],
       ["Watched", "/watched?type=tv"],
     ]);
   });
+
+  it.each([
+    ["movie", ["Watchlist", "Coming soon", "Watched"]],
+    ["game", ["Coming soon", "Want to play", "Playing", "Finished"]],
+  ] as const)(
+    "names the links for the %s tab (prompts/library-page-names.md)",
+    (type, names) => {
+      pathname = "/upcoming";
+      search = `type=${type}`;
+      render(<LibraryNav variant="bar" />);
+      expect(
+        screen.getAllByRole("link").map((link) => link.textContent),
+      ).toEqual(names);
+    },
+  );
 
   it.each([
     ["/movies", "", "movie"],
@@ -122,10 +137,23 @@ describe("LibraryNav", () => {
     expect(
       screen.getAllByRole("link").map((link) => link.getAttribute("href")),
     ).toEqual([
+      "/coming-soon?type=game",
       "/watchlist?type=game",
       "/upcoming?type=game",
       "/watched?type=game",
     ]);
+  });
+
+  // covers: prompts/game-coming-soon.md, R4
+  it("lights Coming soon on its page", () => {
+    pathname = "/coming-soon";
+    search = "type=game";
+    render(<LibraryNav variant="bar" />);
+
+    expect(screen.getByRole("link", { name: "Coming soon" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
   });
 
   // covers: spec 0028, AC-14
@@ -137,6 +165,7 @@ describe("LibraryNav", () => {
     expect(
       screen.getAllByRole("link").map((link) => link.getAttribute("href")),
     ).toEqual([
+      "/coming-soon?type=game",
       "/watchlist?type=game",
       "/upcoming?type=game",
       "/watched?type=game",

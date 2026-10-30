@@ -7,11 +7,13 @@ import {
   LibrarySection,
   LibrarySkeleton,
 } from "@/components/library/library-section";
+import { libraryPageMetadata } from "@/lib/catalog/library-metadata";
 
-export const metadata: Metadata = {
-  title: "Upcoming",
-  robots: { index: false },
-};
+export function generateMetadata({
+  searchParams,
+}: PageProps<"/upcoming">): Promise<Metadata> {
+  return libraryPageMetadata("upcoming", searchParams);
+}
 
 /**
  * The private Upcoming page: on the navbar's shows tab the tracked shows not
@@ -20,19 +22,21 @@ export const metadata: Metadata = {
  * (spec 0020, AC-11, AC-13, AC-15; feature 22). It has no Up Next section and
  * no Mark watched button.
  *
- * The heading and a skeleton grid are the static shell. Everything that reads
- * the session, the `type` and `page` parameters or the user's rows streams in
- * behind the Suspense boundary, inside `LibrarySection`, which calls
- * `requireUser()` itself: the proxy's redirect is only the convenience layer.
- * A section that throws shows `LibraryErrorBoundary`'s panel under the heading.
+ * The heading and a skeleton grid are the static shell; the heading's text
+ * and the title are the page's name on the tab (`libraryPageName`).
+ * Everything that reads the session, the `type` and `page` parameters or the
+ * user's rows streams in behind the Suspense boundary, inside
+ * `LibrarySection`, which calls `requireUser()` itself: the proxy's redirect
+ * is only the convenience layer. A section that throws shows
+ * `LibraryErrorBoundary`'s panel under the heading.
  * Nothing on this page writes when it loads (AC-21).
  */
 export default function UpcomingPage({ searchParams }: PageProps<"/upcoming">) {
   return (
     <div className="flex flex-col gap-8">
-      <LibraryHeading>Upcoming</LibraryHeading>
+      <LibraryHeading list="upcoming" />
 
-      <LibraryErrorBoundary list="upcoming">
+      <LibraryErrorBoundary>
         <Suspense fallback={<LibrarySkeleton />}>
           <LibrarySection list="upcoming" searchParams={searchParams} />
         </Suspense>
