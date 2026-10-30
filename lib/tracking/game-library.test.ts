@@ -298,6 +298,25 @@ describe("getWantToPlayTab", () => {
     expect(ids(await read("coming-soon"))).toEqual([3, 2, 4, 1, 5]);
   });
 
+  it("places a game IGDB hides by its date like any other", async () => {
+    const rows = [wantRow(1), wantRow(2)];
+    const hidden = {
+      found: [
+        { id: 1, releaseDate: "2020-05-01", hidden: true },
+        { id: 2, releaseDate: "2027-02-03", hidden: true },
+      ],
+      missingIds: [],
+    };
+
+    responses = [{ data: rows, error: null }];
+    getGamesByIds.mockResolvedValue(hidden);
+    expect(ids(await read("watchlist"))).toEqual([1]);
+
+    responses = [{ data: rows, error: null }];
+    getGamesByIds.mockResolvedValue(hidden);
+    expect(ids(await read("coming-soon"))).toEqual([2]);
+  });
+
   it("keeps a game IGDB no longer has on Want to play, at the end", async () => {
     responses = [{ data: [wantRow(7), wantRow(1)], error: null }];
     getGamesByIds.mockResolvedValue({
