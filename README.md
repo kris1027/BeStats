@@ -16,7 +16,7 @@ TMDB supplies movie and TV metadata, IGDB supplies game metadata, and Supabase s
 - **Shows:** mark single episodes or whole seasons watched (only episodes that already aired), rate episodes from 1 to 10, and see season and show ratings calculated from your episode scores. Tracking a show is separate from your history, so stopping it keeps every mark and rating.
 - **Movies:** plan a movie, or mark it watched and rate it from its release day.
 - **Games:** set Want to play, Playing or Finished by hand, and rate a game once you play it.
-- **Library:** three pages with a SHOWS | MOVIES | GAMES tab on each, named for what they hold: Up next, Upcoming and Watched for shows; Watchlist, Coming soon and Watched for movies; Want to play, Playing and Finished for games. Shows and movies land on the right page by themselves, based on what you watched and what has aired; games follow the status you set.
+- **Library:** three pages with a SHOWS | MOVIES | GAMES tab on each, named for what they hold: Up next, Upcoming and Watched for shows; Watchlist, Coming soon and Watched for movies; Coming soon, Want to play, Playing and Finished for games. Shows and movies land on the right page by themselves, based on what you watched and what has aired; games follow the status you set, with Want to play games not out yet on Coming soon.
 
 Every personal rating is kept apart from the TMDB or IGDB community rating, and is labelled that way.
 

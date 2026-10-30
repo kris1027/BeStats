@@ -10,7 +10,7 @@ Each media type gets its own library pages in name. The three private routes kee
 | `/upcoming` | Upcoming | Coming soon | Playing |
 | `/watched` | Watched | Watched | Finished |
 
-Today every tab reads "Watchlist · Upcoming · Watched", which is wrong for games, whose statuses are Want to play, Playing and Finished. Settled in a grilling session on 2026-10-30.
+Today every tab reads "Watchlist · Upcoming · Watched", which is wrong for games, whose statuses are Want to play, Playing and Finished. Settled in a grilling session on 2026-10-30. The games tab later gained a fourth page, Coming soon at `/coming-soon` ([game-coming-soon.md](game-coming-soon.md)).
 
 ## Inspected
 
