@@ -1,8 +1,10 @@
 "use client";
 
+import { cn } from "cn";
 import { useEffect } from "react";
 
 import { WithPageMediaType } from "@/components/layout/page-media-type";
+import { SKELETON_SURFACE } from "@/components/skeleton";
 import {
   defaultLibraryType,
   type LibraryPageKey,
@@ -46,10 +48,10 @@ function cancelLibraryHeadingFocus(key: string) {
 }
 
 /**
- * The `h1` of `/watchlist`, `/upcoming`, `/watched` and `/coming-soon`. It can take focus
- * (`tabIndex={-1}`), because removing the last card on a page moves focus
- * here, including after the redirect that follows emptying a later page
- * (AC-9, AC-16).
+ * The `h1` of `/watchlist`, `/upcoming`, `/watched` and `/coming-soon`. It
+ * can take focus (`tabIndex={-1}`), because removing the last card on a page
+ * moves focus here, including after the redirect that follows emptying a
+ * later page (AC-9, AC-16).
  *
  * The element is in the static shell, so the focus target always exists, but
  * its text is the page's name on the current tab (`libraryPageName`), which
@@ -82,14 +84,17 @@ function LibraryHeading({ list }: { list: LibraryPageKey }) {
 
 /**
  * The heading's stand in, one line tall like the name it replaces. A span,
- * because an `h1` holds only phrasing content; it wears `Skeleton`'s surface
- * classes for the same reason.
+ * because an `h1` holds only phrasing content, so it wears `Skeleton`'s
+ * surface rather than being one.
  */
 function HeadingPlaceholder() {
   return (
     <span
       aria-hidden="true"
-      className="plate-solid plate-rim glass-rim glass-plate skeleton-pulse inline-block h-[0.8em] w-48 rounded-sm align-middle"
+      className={cn(
+        SKELETON_SURFACE,
+        "inline-block h-[0.8em] w-48 rounded-sm align-middle",
+      )}
     />
   );
 }

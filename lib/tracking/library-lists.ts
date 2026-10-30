@@ -152,7 +152,11 @@ const EPISODE_PAGE_SIZE = 1000;
  */
 const RANGE_NOT_SATISFIABLE = "PGRST103";
 
-/** The 0 based slice of a 1 based page. */
+/**
+ * One page of a list classified in memory. The tabs that can't count in SQL
+ * (shows, planned movies, the Want to play split) page this way, so they
+ * share the one slice and stay the same size as the counted pages.
+ */
 export function pageSlice<T>(items: readonly T[], page: number): T[] {
   const from = (page - 1) * LIBRARY_PAGE_SIZE;
   return items.slice(from, from + LIBRARY_PAGE_SIZE);
@@ -379,9 +383,11 @@ function watchedShowOrder(a: PlacedShow, b: PlacedShow): number {
 }
 
 /**
- * Two `YYYY-MM-DD` dates, soonest first, with no date last. Both come from
- * values the classifiers already checked, so the string order is the date
- * order.
+ * Two `YYYY-MM-DD` dates, soonest first, with no date last: a dated release
+ * is more useful at the top than a TBA one (AGENTS.md section 9). Shared by
+ * every page ordered by release or air date, so shows, movies and games put
+ * TBA in the same place. Both come from values the classifiers already
+ * checked, so the string order is the date order.
  */
 export function compareDates(a: string | null, b: string | null): number {
   if (a === b) return 0;

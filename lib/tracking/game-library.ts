@@ -1,7 +1,7 @@
 import "server-only";
 
 import { isGameReleased } from "@/lib/catalog/game-page";
-import type { LibraryList } from "@/lib/catalog/library-list";
+import type { LibraryList, LibraryPageKey } from "@/lib/catalog/library-list";
 import { type GameSummary, getGamesByIds, IgdbError } from "@/lib/igdb";
 import { createClient } from "@/lib/supabase/server";
 
@@ -128,7 +128,10 @@ function toGameRow(row: GameRowRaw): GameLibraryRow {
  * The two pages Want to play games split across: released ones on Want to
  * play (`/watchlist`), the rest on Coming soon (prompts/game-coming-soon.md).
  */
-export type WantToPlayPage = "watchlist" | "coming-soon";
+export type WantToPlayPage = Extract<
+  LibraryPageKey,
+  "watchlist" | "coming-soon"
+>;
 
 /**
  * One page of Want to play or Coming soon, or why there is none: a failed

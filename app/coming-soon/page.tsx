@@ -3,11 +3,11 @@ import { Suspense } from "react";
 
 import { LibraryErrorBoundary } from "@/components/library/library-error-boundary";
 import { LibraryHeading } from "@/components/library/library-heading";
-import { libraryPageMetadata } from "@/components/library/library-metadata";
 import {
   LibrarySection,
   LibrarySkeleton,
 } from "@/components/library/library-section";
+import { libraryPageMetadata } from "@/lib/catalog/library-metadata";
 
 export function generateMetadata({
   searchParams,
