@@ -322,6 +322,22 @@ describe("MobileMenuSheet", () => {
     expect(screen.queryByRole("navigation", { name: "Library" })).toBeNull();
   });
 
+  // covers: prompts/mobile-navigation.md, decision 5
+  it("closes the whole menu on Escape while results show", async () => {
+    const user = userEvent.setup();
+    render(<Sheet />);
+    await openMenu(user);
+    await user.type(screen.getByRole("combobox"), "dune");
+    expect(await screen.findByText("dune (tv)")).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
+    expect(screen.getByRole("button", { name: "Open menu" })).toHaveFocus();
+  });
+
   it("keeps the query when the tab changes during a search", async () => {
     const user = userEvent.setup();
     render(<Sheet />);
