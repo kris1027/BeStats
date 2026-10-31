@@ -185,7 +185,7 @@ function LibraryNavView({
             href={libraryHref(list, type)}
             aria-current={selected ? "page" : undefined}
             className={cn(
-              "hit-area-tab flex h-7 items-center rounded-full px-4 text-sm font-bold transition-[filter,color]",
+              "hit-area-tab flex h-7 shrink-0 items-center rounded-full px-4 text-sm font-bold whitespace-nowrap transition-[filter,color]",
               selected
                 ? "glass-selected-personal glass-rim text-text-on-personal"
                 : "text-text-link hover:text-foreground",

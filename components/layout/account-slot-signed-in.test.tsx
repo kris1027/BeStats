@@ -60,6 +60,22 @@ describe("AccountSlot, signed in on desktop (AC-14)", () => {
   });
 });
 
+// covers: prompts/mobile-navigation.md, decision 10
+describe("AccountSlot, signed in on desktop below xl", () => {
+  it("puts the menu button where the row does not fit, and the row from xl", async () => {
+    render(await AccountSlot({ variant: "desktop" }));
+    const menu = screen.getByRole("button", { name: "Open menu" });
+    expect(menu.closest(".xl\\:hidden")).not.toBeNull();
+    const row = screen
+      .getByRole("navigation", { name: "Library" })
+      .closest(".xl\\:flex");
+    expect(row).toHaveClass("hidden");
+    expect(screen.getByRole("link", { name: "kris1027" })).toHaveClass(
+      "2xl:pr-5",
+    );
+  });
+});
+
 describe("AccountSlot, signed in on mobile (AC-15; prompts/mobile-navigation.md)", () => {
   it("shows only the menu button, with no loose avatar or Sign out", async () => {
     render(await AccountSlot({ variant: "mobile" }));

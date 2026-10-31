@@ -35,7 +35,7 @@ function NavbarSearch() {
         <QuickSearch
           key={`${pathname}:${libraryType}`}
           type={libraryType}
-          className="h-10 w-[22.5rem]"
+          className="h-10 w-full"
         />
       )}
     </WithLibraryTypedPage>
@@ -51,7 +51,7 @@ function NavbarSearchFallback({ type = "tv" }: { type?: LibraryType }) {
   return (
     <div
       aria-hidden="true"
-      className="glass glass-rim glass-plate glass-shadow flex h-10 w-[22.5rem] items-center gap-3 rounded-full pr-2 pl-4"
+      className="glass glass-rim glass-plate glass-shadow flex h-10 w-full items-center gap-3 rounded-full pr-2 pl-4"
     >
       <SearchIcon className="size-4 shrink-0 text-text-secondary" />
       <span className="text-sm text-muted-foreground">

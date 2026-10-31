@@ -66,48 +66,58 @@ async function AccountSlot({ variant }: { variant: "desktop" | "mobile" }) {
   const name = displayName(user.email, profile?.username);
   const letter = avatarLetter(user.email, profile?.username);
 
-  if (variant === "mobile") {
-    return (
-      <MobileMenuSheet
-        library
-        account={<MobileAccountBlock letter={letter} name={name} />}
-      />
-    );
-  }
+  const menu = (
+    <MobileMenuSheet
+      library
+      hiddenFrom={variant === "mobile" ? "md" : "xl"}
+      account={<MobileAccountBlock letter={letter} name={name} />}
+    />
+  );
 
+  if (variant === "mobile") return menu;
+
+  /*
+   * Signed in, the full row (library links, account, Sign out) needs about
+   * 1460px on a games page, so below `xl` the desktop bar keeps the tabs and
+   * the search and puts the same menu button in their place
+   * (prompts/mobile-navigation.md, decision 10).
+   */
   return (
-    <div className="flex flex-1 items-center justify-between gap-4">
-      <LibraryNav variant="bar" />
+    <>
+      <div className="flex flex-1 justify-end xl:hidden">{menu}</div>
+      <div className="hidden min-w-0 flex-1 items-center justify-between gap-4 xl:flex">
+        <LibraryNav variant="bar" />
 
-      {/*
-       * `ml-auto` keeps the account controls at the right edge on a page
-       * about neither catalog, where the library links render nothing and
-       * `justify-between` alone would leave them at the left.
-       */}
-      <div className="ml-auto flex items-center gap-2">
         {/*
-         * Between `md` and `lg` the row has no room for the name beside the
-         * library links and the tabs, so the button shrinks to its avatar and
-         * the name stays as its accessible label.
+         * `ml-auto` keeps the account controls at the right edge on a page
+         * about neither catalog, where the library links render nothing and
+         * `justify-between` alone would leave them at the left.
          */}
-        <ButtonLink
-          size="bar"
-          href="/account"
-          className="gap-2.5 px-1.5 lg:pr-5"
-        >
-          <Avatar letter={letter} className="size-7" />
-          <span className="sr-only max-w-[12ch] truncate lg:not-sr-only">
-            {name}
-          </span>
-        </ButtonLink>
+        <div className="ml-auto flex items-center gap-2">
+          {/*
+           * Between `xl` and `2xl` the row has no room for the name beside the
+           * library links and the tabs, so the button shrinks to its avatar and
+           * the name stays as its accessible label.
+           */}
+          <ButtonLink
+            size="bar"
+            href="/account"
+            className="gap-2.5 px-1.5 2xl:pr-5"
+          >
+            <Avatar letter={letter} className="size-7" />
+            <span className="sr-only max-w-[12ch] truncate 2xl:not-sr-only">
+              {name}
+            </span>
+          </ButtonLink>
 
-        <form action={signOutAction}>
-          <Button type="submit" size="bar">
-            Sign out
-          </Button>
-        </form>
+          <form action={signOutAction}>
+            <Button type="submit" size="bar">
+              Sign out
+            </Button>
+          </form>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
