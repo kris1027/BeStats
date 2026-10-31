@@ -3,6 +3,7 @@
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { cn } from "cn";
 import { MenuIcon, XIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 import type * as React from "react";
 import { useEffect, useState } from "react";
 
@@ -11,7 +12,7 @@ import {
   rememberedLibraryType,
 } from "@/components/layout/brand-link";
 import { LibraryNavView } from "@/components/layout/library-nav";
-import { MEDIA_TABS } from "@/components/layout/media-type-tabs";
+import { MEDIA_TABS, mediaTabHref } from "@/components/layout/media-type-tabs";
 import { QuickSearch } from "@/components/search/quick-search";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -159,10 +160,12 @@ function MobileMenuSheet({
  * search, tabs or rows; there nothing is lit (prompts/mobile-navigation.md,
  * decision 7).
  *
- * The tabs here are a preview, not page selection: tapping one changes which
- * library rows show and which catalog the search reads, and nothing
- * navigates until a row, the wordmark or a result is chosen. The page's lit
- * tab still comes only from the URL, and a row is lit only on its own tab.
+ * Tapping a tab changes the page, as the desktop tab does
+ * (`mediaTabHref`; prompts/mobile-menu-tabs-navigate.md). Signed out the
+ * menu then closes; signed in it stays open on the new tab's rows, which is
+ * why the tab the menu shows is its own state, moved before the page's type
+ * arrives. While searching, a tab only switches which catalog the search
+ * reads, so the query is kept. A row is lit only on its own tab and page.
  *
  * Tapping or typing into the field starts search mode, which gives the
  * results the whole screen: the rows and the account block step aside, the
@@ -187,6 +190,7 @@ function MenuBody({
     () => page.type ?? rememberedLibraryType() ?? "tv",
   );
   const [searching, setSearching] = useState(startSearching);
+  const router = useRouter();
   // Bumped by Cancel, so the field remounts empty rather than keeping a query,
   // and takes focus back, since Cancel itself unmounts.
   const [searchKey, setSearchKey] = useState(0);
@@ -194,6 +198,16 @@ function MenuBody({
   function cancel() {
     setSearching(false);
     setSearchKey((key) => key + 1);
+  }
+
+  function selectTab(type: LibraryType) {
+    setPreview(type);
+    if (searching) return;
+    // Read at the tap, not in render: reading the query while rendering would
+    // take every page's shell out of its prerender (components/AGENTS.md).
+    const current = new URLSearchParams(window.location.search);
+    router.push(mediaTabHref(page.pathname, type, current));
+    if (account === null) onClose();
   }
 
   return (
@@ -222,7 +236,7 @@ function MenuBody({
           ) : null
         }
         belowField={
-          <MenuTabs selected={preview} onSelect={setPreview} className="mt-4" />
+          <MenuTabs selected={preview} onSelect={selectTab} className="mt-4" />
         }
       />
 
@@ -251,9 +265,10 @@ function MenuBody({
 }
 
 /**
- * The menu's tab preview: the shared `ToggleGroup`, single select, stretched
- * to the sheet's width and lit in the navbar tab's cyan. Toggles, not links,
- * because choosing one changes what the menu shows rather than the page.
+ * The menu's tabs: the shared `ToggleGroup`, single select, stretched to the
+ * sheet's width and lit in the navbar tab's cyan. Toggles, not links, because
+ * in search mode a tab changes only the search, and signed in it also keeps
+ * the menu open on the tab it chose.
  */
 function MenuTabs({
   selected,
