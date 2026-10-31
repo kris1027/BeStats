@@ -212,7 +212,7 @@ describe("MobileMenuSheet", () => {
 
   it("changes the page signed in and stays open on the new tab's rows (prompts/mobile-menu-tabs-navigate.md, AC-2)", async () => {
     const user = userEvent.setup();
-    render(<Sheet />);
+    const { rerender } = render(<Sheet />);
     await openMenu(user);
 
     await user.click(screen.getByRole("button", { name: "GAMES" }));
@@ -238,6 +238,31 @@ describe("MobileMenuSheet", () => {
       "href",
       "/games",
     );
+
+    // The page behind arrives at the new URL, and its row lights.
+    pathname.current = "/want-to-play";
+    search.current = "type=game";
+    rerender(<Sheet />);
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Want to play" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+  });
+
+  it("does nothing when the lit tab is pressed (prompts/mobile-menu-tabs-navigate.md, decision 5)", async () => {
+    const user = userEvent.setup();
+    render(<Sheet />);
+    await openMenu(user);
+
+    await user.click(screen.getByRole("button", { name: "SHOWS" }));
+
+    expect(push).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "SHOWS" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
   it("changes the page and closes when signed out (AC-1)", async () => {
