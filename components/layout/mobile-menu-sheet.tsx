@@ -11,8 +11,10 @@ import {
   rememberedLibraryType,
 } from "@/components/layout/brand-link";
 import { LibraryNavView } from "@/components/layout/library-nav";
+import { MEDIA_TABS } from "@/components/layout/media-type-tabs";
 import { QuickSearch } from "@/components/search/quick-search";
 import { Button } from "@/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import type { LibraryType } from "@/lib/catalog/media-type";
 
 import { WithPageMediaType } from "./page-media-type";
@@ -232,16 +234,10 @@ function MenuBody({
   );
 }
 
-const TABS = [
-  { type: "tv", label: "SHOWS" },
-  { type: "movie", label: "MOVIES" },
-  { type: "game", label: "GAMES" },
-] as const satisfies readonly { type: LibraryType; label: string }[];
-
 /**
- * The menu's tab preview, drawn as the navbar's segmented pill stretched to
- * the sheet's width. Toggle buttons with `aria-pressed`, not links, because
- * choosing one changes what the menu shows rather than the page.
+ * The menu's tab preview: the shared `ToggleGroup`, single select, stretched
+ * to the sheet's width and lit in the navbar tab's cyan. Toggles, not links,
+ * because choosing one changes what the menu shows rather than the page.
  */
 function MenuTabs({
   selected,
@@ -253,36 +249,27 @@ function MenuTabs({
   className?: string;
 }) {
   return (
-    // biome-ignore lint/a11y/useSemanticElements: a group of toggles, not a form fieldset.
-    <div
-      role="group"
+    <ToggleGroup
       aria-label="Media type"
-      className={cn(
-        "glass glass-rim glass-plate glass-shadow flex items-center gap-1 rounded-full p-[4.5px]",
-        className,
-      )}
+      variant="personal"
+      value={[selected]}
+      onValueChange={(value) => {
+        // Pressing the lit tab would empty the group; a preview always has one.
+        const tab = MEDIA_TABS.find((candidate) => candidate.type === value[0]);
+        if (tab) onSelect(tab.type);
+      }}
+      className={cn("w-full p-[4.5px]", className)}
     >
-      {TABS.map((tab) => {
-        const isSelected = tab.type === selected;
-
-        return (
-          <button
-            key={tab.type}
-            type="button"
-            aria-pressed={isSelected}
-            onClick={() => onSelect(tab.type)}
-            className={cn(
-              "hit-area-tab flex h-9 flex-1 cursor-pointer items-center justify-center rounded-full text-[13px] font-bold tracking-[0.08em] transition-[filter,color]",
-              isSelected
-                ? "glass-selected-personal glass-rim text-text-on-personal"
-                : "text-text-secondary hover:text-foreground",
-            )}
-          >
-            {tab.label}
-          </button>
-        );
-      })}
-    </div>
+      {MEDIA_TABS.map((tab) => (
+        <ToggleGroupItem
+          key={tab.type}
+          value={tab.type}
+          className="hit-area-tab h-9 flex-1 px-0 text-[13px] font-bold tracking-[0.08em]"
+        >
+          {tab.label}
+        </ToggleGroupItem>
+      ))}
+    </ToggleGroup>
   );
 }
 
