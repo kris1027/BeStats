@@ -53,7 +53,7 @@ function MediaTypeTabs({ className }: { className?: string }) {
       fallback={(pathname) => (
         <MediaTypeTabsView
           selected={null}
-          hrefs={typedHrefs(pathname)}
+          hrefs={tabHrefs(pathname)}
           className={className}
         />
       )}
@@ -65,7 +65,7 @@ function MediaTypeTabs({ className }: { className?: string }) {
           hrefs={
             page.params === null
               ? undefined
-              : typedHrefs(page.pathname, page.params)
+              : tabHrefs(page.pathname, page.params)
           }
           className={className}
         />
@@ -96,15 +96,15 @@ function mediaTabHref(
     : typedHref(pathname, type, { current });
 }
 
-/** Each tab's link on a typed page. */
-function typedHrefs(pathname: TypedPath, current?: URLSearchParams): TabHrefs {
+/**
+ * Each tab's link from `pathname`, or the three catalog landings with no
+ * typed page to stay on.
+ */
+function tabHrefs(
+  pathname: TypedPath | null,
+  current?: URLSearchParams,
+): TabHrefs {
   const href = (type: LibraryType) => mediaTabHref(pathname, type, current);
-  return { tv: href("tv"), movie: href("movie"), game: href("game") };
-}
-
-/** Each tab's link off the typed pages, the three catalog landings. */
-function catalogHrefs(): TabHrefs {
-  const href = (type: LibraryType) => mediaTabHref(null, type);
   return { tv: href("tv"), movie: href("movie"), game: href("game") };
 }
 
@@ -139,7 +139,7 @@ const NAV_PILL_CLASS =
  */
 function MediaTypeTabsView({
   selected,
-  hrefs = catalogHrefs(),
+  hrefs = tabHrefs(null),
   className,
 }: {
   selected: LibraryType | null;
