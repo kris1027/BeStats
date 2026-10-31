@@ -103,3 +103,13 @@ Four new private routes. Each goes through the same `LibrarySection`, which call
 ## Amendment 2026-10-30: focus after a route change
 
 Switching tabs now changes route, and after a client navigation Next keeps the page left behind mounted but hidden (`display: none`), with the same `library-heading` id and show card link ids. `getElementById` could then return the hidden copy, so a removal that empties the page would send the focus nowhere. Every library focus move (`LibraryHeading`, `MarkNextWatchedButton`, `MissingShowCard`) now looks its target up with `shownElementById` in `components/library/card-focus.ts`, which skips hidden copies. Tested in `card-focus.test.tsx`.
+
+## Amendment 2026-10-31: review fixes
+
+A two axis review of the branch led to these changes:
+
+- **Decision 4 as written.** `typedHref` takes only `/search`. A tab switch on a library route is `libraryTabSwitchHref(path, type, current)` in `lib/catalog/media-type.ts`, and the panels' `pageHref` wrapper is gone, so every library link calls `libraryHref` directly.
+- **One fallback.** `shownLibraryPage(path, type)` in `lib/catalog/library-list.ts` is the only place a route on a tab without a page there reads as its default tab's page. `libraryPathName`, `NoSuchPage` and `libraryTabSwitchHref` use it. `shownLibraryType(path, typeParam)` (renamed from the private `libraryPathType`) is the never-null tab for the chrome and the title. `parseLibraryPageType` stays the parser that returns null for an invalid value.
+- **One route body.** The eight route files render `LibraryRoute` from `components/library/library-route.tsx` and keep only their path, metadata and the doc that says what the page holds.
+- **Decision 6, tabs.** Before `?type` is read, the media tabs link as the route's default tab would but light none. On a route two tabs share (`/coming-soon`, `/watched`), lighting the default would flash the wrong tab whenever `type` names the other one. The nav already renders the default tab's links.
+- **Proxy test.** `proxy.test.ts` sends a signed out visit to each new route to sign in.

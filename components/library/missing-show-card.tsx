@@ -13,7 +13,7 @@ import { neighbourCardTarget, shownElementById } from "./card-focus";
 import { SHOW_CARD_LINK_SELECTOR } from "./ids";
 import { MISSING_TITLE } from "./library-card";
 
-/** The Watchlist shows tab, where every missing show card lives (AC-17). */
+/** Up next on the shows tab, where every missing show card lives (AC-17). */
 const RETURN_PATH = libraryHref("watchlist", "tv");
 
 /**
@@ -30,8 +30,7 @@ function focusNeighbour(cardId: string, fallbackId: string) {
 }
 
 /**
- * A show on the Watchlist shows tab that TMDB no longer has (spec 0020,
- * AC-17): the "No longer on TMDB" card, with Stop tracking so the row can be
+ * A show on Up next that TMDB no longer has (spec 0020, AC-17): the "No longer on TMDB" card, with Stop tracking so the row can be
  * cleared, and the Undo every Stop tracking carries. The card hides at once
  * and comes back if the write fails.
  *

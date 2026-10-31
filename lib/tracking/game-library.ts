@@ -126,7 +126,7 @@ function toGameRow(row: GameRowRaw): GameLibraryRow {
 
 /**
  * The two pages Want to play games split across: released ones on Want to
- * play (`/watchlist`), the rest on Coming soon (prompts/game-coming-soon.md).
+ * play (`/want-to-play`), the rest on Coming soon (prompts/game-coming-soon.md).
  */
 export type WantToPlayPage = Extract<
   LibraryPageKey,
