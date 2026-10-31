@@ -16,12 +16,16 @@ import { MobileMenuSheet } from "@/components/layout/mobile-menu-sheet";
  * testing with a mouse.
  */
 const pathname = vi.hoisted(() => ({ current: "/up-next" }));
-const search = vi.hoisted(() => ({ current: "" }));
+const search = vi.hoisted(() => ({ current: "" as string | null }));
 const push = vi.fn();
 vi.mock("next/navigation", () => ({
   usePathname: () => pathname.current,
   useRouter: () => ({ push }),
-  useSearchParams: () => new URLSearchParams(search.current),
+  useSearchParams: () => {
+    // `null` stands for a query not known yet, which suspends, as at prerender.
+    if (search.current === null) throw new Promise(() => {});
+    return new URLSearchParams(search.current);
+  },
 }));
 
 const fetchMock = vi.fn(async (input: string) => {
@@ -437,6 +441,22 @@ describe("MobileMenuSheet", () => {
       "aria-current",
       "page",
     );
+  });
+
+  it("previews the last catalog viewed, lighting nothing, until the query is known", async () => {
+    pathname.current = "/search";
+    search.current = null;
+    window.localStorage.setItem("bestats:last-media-type", "movie");
+    const user = userEvent.setup();
+    render(<Sheet />);
+    await openMenu(user);
+
+    expect(screen.getByRole("button", { name: "MOVIES" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.queryByRole("link", { current: "page" })).toBeNull();
+    window.localStorage.removeItem("bestats:last-media-type");
   });
 
   it("closes when the window widens past md, where the bar has no menu", async () => {

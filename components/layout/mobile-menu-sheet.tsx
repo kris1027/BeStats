@@ -13,8 +13,7 @@ import {
 import { LibraryNavView } from "@/components/layout/library-nav";
 import { QuickSearch } from "@/components/search/quick-search";
 import { Button } from "@/components/ui/button";
-import { defaultLibraryTypeAt } from "@/lib/catalog/library-list";
-import { isLibraryPath, type LibraryType } from "@/lib/catalog/media-type";
+import type { LibraryType } from "@/lib/catalog/media-type";
 
 import { WithPageMediaType } from "./page-media-type";
 
@@ -124,14 +123,10 @@ function MobileMenuSheet({
             body(page)
           ) : (
             <WithPageMediaType
-              fallback={(pathname) =>
-                body({
-                  pathname,
-                  type: isLibraryPath(pathname)
-                    ? defaultLibraryTypeAt(pathname)
-                    : "tv",
-                })
-              }
+              // Before the query is known the page's tab is too: `/search`
+              // may be on movies. Previewing the last catalog viewed, with
+              // nothing lit, guesses without claiming.
+              fallback={(pathname) => body({ pathname, type: null })}
             >
               {(current) =>
                 body({ pathname: current.pathname, type: current.libraryType })
