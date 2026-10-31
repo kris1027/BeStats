@@ -9,8 +9,16 @@ import { LANDING_COUNTS } from "@/lib/catalog/landing";
  * so a section arriving moves nothing.
  */
 
-/** One card's width in the row, mirrored by `TRENDING_SIZES`. */
-export const TRENDING_ITEM_CLASS = "w-[160px] shrink-0 md:w-[260px]";
+/**
+ * One card's width in the row, mirrored by `TRENDING_SIZES`. On a phone the
+ * pinned row fills the screen it holds: the poster is as tall as the height
+ * left after the header, title and bar (about 15rem), never wider than 72vw
+ * so the next card peeks in, and never under 140px on a landscape phone
+ * (prompts/mobile-landing-parallax.md, decision 11). The swipe row of reduced
+ * motion keeps 160px.
+ */
+export const TRENDING_ITEM_CLASS =
+  "w-[160px] shrink-0 max-md:motion-safe:w-[clamp(140px,calc((100svh_-_15rem)*2/3),72vw)] md:w-[260px]";
 
 /** Two columns on a phone, then as many 180px or wider columns as fit. */
 export const POPULAR_GRID_CLASS =

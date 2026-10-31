@@ -12,7 +12,7 @@ import {
 } from "./landing-parts";
 import { TRENDING_ITEM_CLASS, TrendingSkeleton } from "./landing-skeletons";
 
-const TRENDING_SIZES = "(min-width: 768px) 260px, 160px";
+const TRENDING_SIZES = "(min-width: 768px) 260px, 72vw";
 
 /** Posters loaded eagerly: the ones a wide first screen shows (spec 0021, AC-7). */
 const EAGER = 4;
@@ -114,7 +114,7 @@ function RankNumber({ rank }: { rank: number }) {
   return (
     <span
       aria-hidden="true"
-      className="rank-outline relative -mr-3 mb-9 text-[96px] leading-[0.8] font-extrabold tracking-[-0.06em] md:-mr-6 md:text-[180px]"
+      className="rank-outline relative -mr-3 mb-9 text-[96px] leading-[0.8] font-extrabold tracking-[-0.06em] max-md:motion-safe:text-[128px] md:-mr-6 md:text-[180px]"
     >
       {rank}
     </span>
