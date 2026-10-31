@@ -268,6 +268,25 @@ describe("Navbar", () => {
     pathname.current = "/shows";
   });
 
+  // covers: prompts/mobile-navigation.md, decision 11. The search keeps a
+  // width of its own, so the account slot streaming in never resizes it.
+  it("gives the search a width per breakpoint, not what the row leaves", () => {
+    render(
+      <Navbar
+        mobileAccountSlot={<ACCOUNT_SLOT />}
+        desktopAccountSlot={<ACCOUNT_SLOT />}
+      />,
+    );
+    const wrapper = screen.getByRole("combobox").closest(".md\\:w-60");
+    expect(wrapper).toHaveClass(
+      "min-w-40",
+      "lg:w-[22.5rem]",
+      "xl:w-60",
+      "min-[87.5rem]:w-[22.5rem]",
+    );
+    expect(wrapper?.className).not.toMatch(/flex-1/);
+  });
+
   it("scrolls with the page, with no background, border or blur", () => {
     render(
       <Navbar

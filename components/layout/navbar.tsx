@@ -81,12 +81,15 @@ function Navbar({
         {/*
          * `not-empty` keeps the wrapper out of the row when the search renders
          * nothing (a page with no type), so it leaves no extra flex gap
-         * (prompts/hide-tabs-without-type.md, decision 3). The field takes
-         * what the row leaves, up to its 360px, so a crowded row narrows the
-         * search rather than overflowing (prompts/mobile-navigation.md,
-         * decision 10).
+         * (prompts/hide-tabs-without-type.md, decision 3). The field has a
+         * width per breakpoint rather than taking what the row leaves, so the
+         * account slot streaming in beside it never resizes it: 240px where
+         * the row is tight (`md`, and from `xl` where the signed in row
+         * returns) and 360px where it has room. It may still shrink to 160px
+         * rather than overflow (prompts/mobile-navigation.md, decisions 10
+         * and 11).
          */}
-        <div className="hidden min-w-40 md:not-empty:block md:max-w-[22.5rem] md:flex-1">
+        <div className="hidden min-w-40 md:not-empty:block md:w-60 lg:w-[22.5rem] xl:w-60 min-[87.5rem]:w-[22.5rem]">
           <Suspense fallback={<NavbarSearchFallback />}>
             <NavbarSearch />
           </Suspense>
