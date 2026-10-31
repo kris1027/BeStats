@@ -19,7 +19,12 @@ import type { LibraryType } from "@/lib/catalog/media-type";
 
 import { WithPageMediaType } from "./page-media-type";
 
-/** Tailwind's `md` and `xl`, the widths a menu button is hidden from. */
+/**
+ * Tailwind's `md` and `xl`, the widths a menu button is hidden from. Media
+ * queries in JS cannot read the theme, so they are restated here, and
+ * `mobile-menu-sheet.test.tsx` fails if Tailwind's values or an override in
+ * `app/globals.css` stop matching them.
+ */
 const BREAKPOINTS = {
   md: "(width >= 48rem)",
   xl: "(width >= 80rem)",
@@ -29,10 +34,12 @@ const BREAKPOINTS = {
 type MenuPage = { pathname: string; type: LibraryType | null };
 
 /**
- * The mobile menu: the navbar's one control below `md`, a full screen sheet
- * on the sheet plate holding everything the desktop bar shows in a row
- * (prompts/mobile-navigation.md): the search, the SHOWS | MOVIES | GAMES
- * tabs, the library pages and the account block.
+ * The mobile menu: a full screen sheet on the sheet plate holding everything
+ * the desktop bar shows in a row (prompts/mobile-navigation.md): the search,
+ * the SHOWS | MOVIES | GAMES tabs, the library pages and the account block.
+ * It is the navbar's one control below `md`, and signed in it also stands in
+ * for the desktop bar's library links and account controls between `md` and
+ * `xl`, where that row does not fit (decision 10).
  *
  * Every behaviour spec 0004, AC-15 names comes from Base UI's modal Dialog,
  * verified against the installed `@base-ui/react` 1.8.0 rather than assumed:

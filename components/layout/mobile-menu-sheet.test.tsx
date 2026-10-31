@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
+
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -476,6 +479,20 @@ describe("MobileMenuSheet", () => {
       expect(watched).toBe(query);
     },
   );
+
+  // The queries above are Tailwind's `md` and `xl`, restated in JS.
+  it.each([
+    ["md", "48rem"],
+    ["xl", "80rem"],
+  ])("matches Tailwind's %s breakpoint, %s", (name, width) => {
+    const theme = readFileSync(
+      createRequire(import.meta.url).resolve("tailwindcss/theme.css"),
+      "utf8",
+    );
+    const globals = readFileSync("app/globals.css", "utf8");
+    expect(theme).toContain(`--breakpoint-${name}: ${width};`);
+    expect(globals).not.toContain(`--breakpoint-${name}:`);
+  });
 
   it("names the trigger for assistive technology, since it is icon only", () => {
     render(<Sheet />);
