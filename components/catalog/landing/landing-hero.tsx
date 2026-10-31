@@ -33,8 +33,8 @@ import {
  * The landing's hero (prompts/home-parallax-landing.md, decisions 4 and 11):
  * TMDB's number one trending title over its artwork, a full screen at every
  * width (prompts/mobile-landing-parallax.md, decision 12), with its TMDB
- * rating, genres, Trailer and the tracking control. It streams behind a skeleton of
- * the same box, so nothing below it moves when it arrives.
+ * rating, genres, Trailer and the tracking control. It streams behind a
+ * skeleton of the same box, so nothing below it moves when it arrives.
  */
 function LandingHero({ list }: { list: CatalogList }) {
   return (
