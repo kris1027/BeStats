@@ -6,7 +6,7 @@ import Image, { getImageProps } from "next/image";
 const WIDE_ART_MEDIA = "(min-width: 64rem)";
 const WIDE_ART_SIZES = "(min-width: 1600px) 1600px, 100vw";
 const ART_CLASS = "object-cover object-top";
-const EAGER = { loading: "eager", fetchPriority: "high" } as const;
+const LOAD_FIRST = { loading: "eager", fetchPriority: "high" } as const;
 
 /**
  * The hero's artwork, decorative because the h2 names it: the portrait
@@ -37,7 +37,7 @@ function HeroPicture({
         fill
         sizes={backdrop === null ? "100vw" : WIDE_ART_SIZES}
         className={ART_CLASS}
-        {...EAGER}
+        {...LOAD_FIRST}
       />
     );
   }
@@ -54,7 +54,7 @@ function HeroPicture({
     fill: true,
     sizes: "100vw",
     className: ART_CLASS,
-    ...EAGER,
+    ...LOAD_FIRST,
   });
   return (
     <picture>

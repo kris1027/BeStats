@@ -95,6 +95,46 @@ function deckPitch(deck: HTMLElement): number {
   return first.offsetHeight + gap;
 }
 
+/** Where a sticky deck card stops below the viewport's top. */
+function stickTop(card: HTMLElement): number {
+  return Number.parseFloat(window.getComputedStyle(card).top) || 0;
+}
+
+/**
+ * One frame of Popular's deck: each row shrinks and its shade darkens by how
+ * far the rows after it have slid over it (decision 13). Reads every box and
+ * returns the writes, so the caller keeps one layout per frame.
+ */
+function deckWrites(deck: HTMLElement): Array<() => void> {
+  const pitch = deckPitch(deck);
+  if (!(pitch > 0)) return [];
+  const rows: HTMLElement[][] = [];
+  for (const card of deck.querySelectorAll<HTMLElement>("[data-deck-card]")) {
+    const row = Number(card.dataset.deckRow);
+    rows[row] = [...(rows[row] ?? []), card];
+  }
+  const covers = rows.map((row) =>
+    clamp01(
+      1 - (row[0].getBoundingClientRect().top - stickTop(row[0])) / pitch,
+    ),
+  );
+  const writes: Array<() => void> = [];
+  let depth = 0;
+  for (let row = rows.length - 1; row >= 0; row -= 1) {
+    const scale = Math.max(DECK_MIN_SCALE, 1 - DECK_SHRINK * depth);
+    const dim = String(Math.min(DECK_MAX_DIM, DECK_DIM * depth));
+    for (const card of rows[row] ?? []) {
+      const shade = card.querySelector<HTMLElement>("[data-deck-shade]");
+      writes.push(() => {
+        card.style.transform = `scale(${scale})`;
+        if (shade) shade.style.opacity = dim;
+      });
+    }
+    depth += covers[row] ?? 0;
+  }
+  return writes;
+}
+
 /**
  * The landing's motion (prompts/home-parallax-landing.md, decisions 9, 14
  * and 16; prompts/mobile-landing-parallax.md): one idle aware
@@ -176,29 +216,28 @@ function LandingParallax({
       lastViewport = viewport;
       const scroll = window.scrollY;
       const isWide = wide.matches;
-      const power = strength(window.innerWidth, isWide);
+      const motionStrength = strength(window.innerWidth, isWide);
       const visible = (rect: DOMRect) =>
         rect.bottom > -100 && rect.top < viewport + 100;
       const writes: Array<() => void> = [];
-
-      for (const node of all("[data-depth]")) {
-        const depth = Number(node.dataset.depth) * (isWide ? 1 : 0.5);
-        const transform = `translate3d(${-lean.x * depth * 80}px, ${
-          -scroll * depth - lean.y * depth * 40
-        }px, 0)`;
+      const move = (node: HTMLElement, transform: string) =>
         writes.push(() => {
           node.style.transform = transform;
         });
+
+      for (const node of all("[data-depth]")) {
+        const depth = Number(node.dataset.depth) * (isWide ? 1 : 0.5);
+        move(
+          node,
+          `translate3d(${-lean.x * depth * 80}px, ${
+            -scroll * depth - lean.y * depth * 40
+          }px, 0)`,
+        );
       }
 
       if (scroll < viewport * 1.5) {
         for (const node of all("[data-hero-bg]")) {
-          const transform = `translate3d(${-lean.x * 14}px, ${
-            scroll * 0.45
-          }px, 0)`;
-          writes.push(() => {
-            node.style.transform = transform;
-          });
+          move(node, `translate3d(${-lean.x * 14}px, ${scroll * 0.45}px, 0)`);
         }
         for (const node of all("[data-hero-fg]")) {
           const opacity = String(1 - clamp01(scroll / (viewport * 0.55)));
@@ -222,16 +261,10 @@ function LandingParallax({
         const track = section.querySelector<HTMLElement>("[data-pin-track]");
         if (track?.parentElement) {
           const distance = travel(track, track.parentElement);
-          writes.push(() => {
-            track.style.transform = `translate3d(${-progress * distance}px, 0, 0)`;
-          });
+          move(track, `translate3d(${-progress * distance}px, 0, 0)`);
         }
         const bar = section.querySelector<HTMLElement>("[data-pin-bar]");
-        if (bar) {
-          writes.push(() => {
-            bar.style.transform = `scaleX(${progress})`;
-          });
-        }
+        if (bar) move(bar, `scaleX(${progress})`);
       }
 
       for (const node of all("[data-speed]")) {
@@ -241,10 +274,8 @@ function LandingParallax({
         const rect = reference.getBoundingClientRect();
         if (!visible(rect)) continue;
         const offset = rect.top + rect.height / 2 - viewport / 2;
-        const y = -offset * speedOf(node, isWide) * power;
-        writes.push(() => {
-          node.style.transform = `translate3d(0, ${y}px, 0)`;
-        });
+        const y = -offset * speedOf(node, isWide) * motionStrength;
+        move(node, `translate3d(0, ${y}px, 0)`);
       }
 
       for (const row of all("[data-marquee]")) {
@@ -264,50 +295,20 @@ function LandingParallax({
             Number(row.dataset.marquee) *
               (rect.top + rect.height / 2 - viewport / 2) *
               MARQUEE_SPEED *
-              power;
+              motionStrength;
         const clamped = Math.min(0, Math.max(min, x));
-        writes.push(() => {
-          row.style.transform = `translate3d(${clamped}px, 0, 0)`;
-        });
+        move(row, `translate3d(${clamped}px, 0, 0)`);
       }
 
       if (!isWide) {
         for (const deck of all("[data-deck]")) {
-          if (!visible(deck.getBoundingClientRect())) continue;
-          const pitch = deckPitch(deck);
-          if (!(pitch > 0)) continue;
-          const rows: HTMLElement[][] = [];
-          for (const card of deck.querySelectorAll<HTMLElement>(
-            "[data-deck-card]",
-          )) {
-            const row = Number(card.dataset.deckRow);
-            rows[row] = [...(rows[row] ?? []), card];
-          }
-          const covers = rows.map((row) => {
-            const stick =
-              Number.parseFloat(window.getComputedStyle(row[0]).top) || 0;
-            return clamp01(
-              1 - (row[0].getBoundingClientRect().top - stick) / pitch,
-            );
-          });
-          let depth = 0;
-          for (let row = rows.length - 1; row >= 0; row -= 1) {
-            const scale = Math.max(DECK_MIN_SCALE, 1 - DECK_SHRINK * depth);
-            const dim = String(Math.min(DECK_MAX_DIM, DECK_DIM * depth));
-            for (const card of rows[row] ?? []) {
-              const shade =
-                card.querySelector<HTMLElement>("[data-deck-shade]");
-              writes.push(() => {
-                card.style.transform = `scale(${scale})`;
-                if (shade) shade.style.opacity = dim;
-              });
-            }
-            depth += covers[row] ?? 0;
+          if (visible(deck.getBoundingClientRect())) {
+            writes.push(...deckWrites(deck));
           }
         }
       }
 
-      const drift = POSTER_DRIFT * power;
+      const drift = POSTER_DRIFT * motionStrength;
       let index = 0;
       for (const card of all("[data-poster-drift]")) {
         index += 1;
@@ -362,10 +363,10 @@ function LandingParallax({
       const card = target?.closest<HTMLElement>("[data-deck-card]");
       const deck = card?.closest<HTMLElement>("[data-deck]");
       if (!card || !deck) return false;
-      const stick = Number.parseFloat(window.getComputedStyle(card).top) || 0;
       const top = deck.getBoundingClientRect().top + window.scrollY;
       window.scrollTo({
-        top: top + Number(card.dataset.deckRow) * deckPitch(deck) - stick,
+        top:
+          top + Number(card.dataset.deckRow) * deckPitch(deck) - stickTop(card),
         behavior: "instant",
       });
       return true;
