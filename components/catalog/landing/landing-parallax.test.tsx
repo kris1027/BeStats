@@ -4,7 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LARGE, LandingParallax, WIDE } from "./landing-parallax";
 
 /**
- * covers: prompts/home-parallax-landing.md, AC-7 (decisions 9 and 16)
+ * covers: prompts/home-parallax-landing.md, AC-7 (decisions 9 and 16);
+ * prompts/mobile-landing-parallax.md, AC-1, AC-2, AC-5 and AC-6
  *
  * The motion layer writes transforms only when motion is allowed, puts every
  * node back when the visitor asks for reduced motion, and stops its loop on
@@ -45,6 +46,11 @@ beforeEach(() => {
 
 afterEach(() => vi.unstubAllGlobals());
 
+/** The vertical offset a `translate3d(0, Ypx, 0)` writes. */
+function offsetY(node: HTMLElement): number {
+  return Number(/, (-?[\d.e-]+)px, 0\)$/.exec(node.style.transform)?.[1]);
+}
+
 function runFrame() {
   const pending = frames;
   frames = [];
@@ -60,6 +66,11 @@ function setup() {
       <ul data-speed-root="">
         <li data-speed="0.2" data-testid="speed" />
         <li data-speed="0" data-speed-lg="0.2" data-testid="speed-lg" />
+        <li
+          data-speed="0.2"
+          data-speed-narrow="-0.2"
+          data-testid="speed-narrow"
+        />
       </ul>
     </LandingParallax>,
   );
@@ -102,15 +113,79 @@ describe("LandingParallax (AC-7)", () => {
     );
   });
 
-  it("leaves the speed drift off below md", () => {
-    wide = false;
-    const { getByTestId } = setup();
+  it("drifts below md too, scaled to the screen (prompts/mobile-landing-parallax.md, AC-1)", () => {
+    const desktop = setup();
+    runFrame();
+    const full = offsetY(desktop.getByTestId("speed"));
+    desktop.unmount();
 
+    wide = false;
+    vi.stubGlobal("innerWidth", 390);
+    const { getByTestId } = setup();
     runFrame();
 
-    expect(getByTestId("speed").style.transform).toBe("");
-    expect(getByTestId("speed-lg").style.transform).toBe("");
+    expect(full).not.toBe(0);
+    expect(offsetY(getByTestId("speed"))).toBeCloseTo(full * (390 / 1024));
     expect(getByTestId("depth").style.transform).toContain("translate3d");
+  });
+
+  it("keeps full strength from md at any width (prompts/mobile-landing-parallax.md, AC-2)", () => {
+    vi.stubGlobal("innerWidth", 1024);
+    const reference = setup();
+    runFrame();
+    const full = offsetY(reference.getByTestId("speed"));
+    reference.unmount();
+
+    vi.stubGlobal("innerWidth", 768);
+    const { getByTestId } = setup();
+    runFrame();
+
+    expect(offsetY(getByTestId("speed"))).toBeCloseTo(full);
+  });
+
+  it("uses data-speed-narrow only below md (prompts/mobile-landing-parallax.md, decision 8)", () => {
+    const above = setup();
+    runFrame();
+    expect(offsetY(above.getByTestId("speed-narrow"))).toBeCloseTo(
+      offsetY(above.getByTestId("speed")),
+    );
+    above.unmount();
+
+    wide = false;
+    const below = setup();
+    runFrame();
+    expect(offsetY(below.getByTestId("speed-narrow"))).toBeCloseTo(
+      -offsetY(below.getByTestId("speed")),
+    );
+  });
+
+  it("sleeps when nothing moves and wakes on scroll (prompts/mobile-landing-parallax.md, AC-5)", () => {
+    const { unmount } = setup();
+
+    runFrame();
+    expect(frames).toHaveLength(0);
+
+    window.dispatchEvent(new Event("scroll"));
+    expect(frames).toHaveLength(1);
+    window.dispatchEvent(new Event("scroll"));
+    expect(frames).toHaveLength(1);
+
+    runFrame();
+    unmount();
+    window.dispatchEvent(new Event("scroll"));
+    expect(frames).toHaveLength(0);
+  });
+
+  it("ignores the address bar resizing innerHeight mid scroll (prompts/mobile-landing-parallax.md, AC-6)", () => {
+    const { getByTestId } = setup();
+    runFrame();
+    const before = getByTestId("speed").style.transform;
+
+    vi.stubGlobal("innerHeight", window.innerHeight + 80);
+    window.dispatchEvent(new Event("scroll"));
+    runFrame();
+
+    expect(getByTestId("speed").style.transform).toBe(before);
   });
 
   it("writes nothing under reduced motion", () => {

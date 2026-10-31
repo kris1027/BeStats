@@ -10,19 +10,20 @@ import {
 } from "./landing-parts";
 import {
   POPULAR_GRID_CLASS,
-  POPULAR_OFFSETS,
   PopularSkeleton,
+  popularOffsetClass,
 } from "./landing-skeletons";
 
 const POPULAR_SIZES = "(min-width: 768px) 240px, 50vw";
 
-/** Each card's drift speed, cycled with `POPULAR_OFFSETS`. */
+/** Each card's drift speed, cycled with the offsets (`popularOffsetClass`). */
 const SPEEDS = [0.06, -0.08, 0.14, -0.04, 0.1] as const;
 
 /**
  * Popular (prompts/home-parallax-landing.md, decision 3): fourteen posters in a
- * staggered grid, each drifting at its own speed from `md`. A phone gets a
- * plain two column grid with no offsets.
+ * staggered grid, each drifting at its own speed. A phone gets two columns,
+ * the right one lowered, with the drift scaled to the screen
+ * (prompts/mobile-landing-parallax.md, decisions 5 and 7).
  */
 function PopularGrid({ list }: { list: CatalogList }) {
   return (
@@ -51,10 +52,7 @@ async function PopularItems({ list }: { list: CatalogList }) {
   return (
     <ul className={POPULAR_GRID_CLASS}>
       {items.map((item, index) => (
-        <li
-          key={item.id}
-          className={POPULAR_OFFSETS[index % POPULAR_OFFSETS.length]}
-        >
+        <li key={item.id} className={popularOffsetClass(index)}>
           <div
             data-speed={SPEEDS[index % SPEEDS.length]}
             suppressHydrationWarning

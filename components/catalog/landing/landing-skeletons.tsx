@@ -20,13 +20,24 @@ export const POPULAR_GRID_CLASS =
  * The staggered top offsets from `md`, cycled per card (decision 3). Written
  * out in full so Tailwind sees each class.
  */
-export const POPULAR_OFFSETS = [
+const POPULAR_OFFSETS = [
   "md:pt-0",
   "md:pt-15",
   "md:pt-5",
   "md:pt-20",
   "md:pt-10",
 ] as const;
+
+/**
+ * A Popular card's stagger: the five step offsets from `md`, and on a
+ * phone's two columns the right one lowered, the same rhythm in the space
+ * there is (prompts/mobile-landing-parallax.md, decision 7). The skeleton
+ * uses it too, so the grid does not shift when the cards stream in.
+ */
+export function popularOffsetClass(index: number): string {
+  const wide = POPULAR_OFFSETS[index % POPULAR_OFFSETS.length];
+  return index % 2 ? `max-md:pt-8 ${wide}` : wide;
+}
 
 export const NOW_GRID_CLASS = "grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-5";
 
@@ -126,7 +137,7 @@ function PopularSkeleton() {
         <li
           // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders with no identity.
           key={index}
-          className={POPULAR_OFFSETS[index % POPULAR_OFFSETS.length]}
+          className={popularOffsetClass(index)}
         >
           <PosterCardSkeleton />
         </li>
