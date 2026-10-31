@@ -1,8 +1,8 @@
-import { cn } from "cn";
 import { ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
 
 import { signOutAction } from "@/app/(auth)/actions";
+import { Avatar } from "@/components/layout/avatar";
 import { Button, ButtonLink } from "@/components/ui/button";
 
 /**
@@ -60,19 +60,4 @@ function MobileSignIn() {
   );
 }
 
-/** The avatar letter on the brighter selected glass. */
-function Avatar({ letter, className }: { letter: string; className: string }) {
-  return (
-    <span
-      className={cn(
-        "glass-selected glass-rim flex shrink-0 items-center justify-center rounded-full text-sm font-bold text-foreground",
-        className,
-      )}
-      aria-hidden="true"
-    >
-      {letter}
-    </span>
-  );
-}
-
-export { Avatar, MobileAccountBlock, MobileSignIn };
+export { MobileAccountBlock, MobileSignIn };

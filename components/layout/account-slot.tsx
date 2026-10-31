@@ -1,7 +1,7 @@
 import { signOutAction } from "@/app/(auth)/actions";
+import { Avatar } from "@/components/layout/avatar";
 import { LibraryNav } from "@/components/layout/library-nav";
 import {
-  Avatar,
   MobileAccountBlock,
   MobileSignIn,
 } from "@/components/layout/mobile-account-block";
