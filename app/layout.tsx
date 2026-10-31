@@ -89,16 +89,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col antialiased">
         <PageBackground />
         {/*
-         * Each fallback is the signed out button's footprint, so the bar does
-         * not resize when the real control arrives. A skeleton rather than a
+         * Each fallback is the control's footprint, the mobile menu button or
+         * the desktop Sign in button, so the bar does not resize when the real
+         * control arrives. A skeleton rather than a
          * Sign in button, because painting Sign in and then swapping it for an
          * avatar is exactly the wrong-state-first flash AC-13 rules out.
          */}
         <Navbar
           mobileAccountSlot={
-            <Suspense
-              fallback={<Skeleton shape="pill" className="h-11 w-24" />}
-            >
+            <Suspense fallback={<Skeleton shape="pill" className="size-10" />}>
               <AccountSlot variant="mobile" />
             </Suspense>
           }

@@ -10,9 +10,8 @@ import {
 } from "@/lib/search/params";
 
 import { FilterBar } from "./filter-bar";
-import { MobileSearchOverlay } from "./mobile-search-overlay";
 
-/** covers: spec 0010, AC-6, AC-8, AC-9, AC-19, AC-24; spec 0029, AC-9 to AC-11 */
+/** covers: spec 0010, AC-8, AC-9, AC-19, AC-24; spec 0029, AC-9 to AC-11 */
 
 const replace = vi.fn();
 const push = vi.fn();
@@ -357,28 +356,5 @@ describe("FilterBar for games (spec 0029)", () => {
     expect(screen.getByRole("button", { name: "Platforms" })).toBeDisabled();
     expect(screen.getByText("Platforms unavailable")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Genres" })).toBeEnabled();
-  });
-});
-
-describe("MobileSearchOverlay", () => {
-  it("opens a full screen search with the field focused, and returns focus on Escape", async () => {
-    const user = userEvent.setup();
-    render(<MobileSearchOverlay type="movie" />);
-    const trigger = screen.getByRole("button", { name: "Search" });
-
-    await user.click(trigger);
-    const field = await screen.findByRole("combobox", {
-      name: "Search movies",
-    });
-    await waitFor(() => expect(field).toHaveFocus());
-    expect(
-      screen.getByRole("button", { name: "Close search" }),
-    ).toBeInTheDocument();
-
-    await user.keyboard("{Escape}");
-    await waitFor(() =>
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
-    );
-    await waitFor(() => expect(trigger).toHaveFocus());
   });
 });

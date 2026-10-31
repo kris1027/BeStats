@@ -14,11 +14,12 @@ import {
 /**
  * The top navigation, in its signed out form (spec 0004, AC-13).
  *
- * Two layouts that swap at `md`: one row
- * on desktop with the brand, the tabs and Sign in, and two rows on mobile with
- * the brand and Sign in above a centred tab control. They are rendered as one
- * tree with responsive classes rather than two components, so the tab control
- * keeps a single tab stop and a single DOM node at every width.
+ * Two layouts that swap at `md`, both one row: on desktop the brand, the
+ * tabs, the search and the account controls; on mobile only the brand and
+ * the menu button, whose full screen sheet holds the rest
+ * (prompts/mobile-navigation.md). They are rendered as one tree with
+ * responsive classes rather than two components, so the tab control keeps a
+ * single DOM node, hidden below `md`.
  *
  * Transparent and not sticky: no background, border or blur, and it scrolls
  * away with the page. A transparent bar pinned over scrolling content left the
@@ -27,11 +28,10 @@ import {
  * every width, with `hit-area` restoring a 44px tap target on mobile
  * (AGENTS.md section 3).
  *
- * The search sits between the tabs and the account controls on desktop, and
- * as a round icon beside the account control on mobile (spec 0010, AC-1,
- * AC-6). Each reads the pathname, so each has its own Suspense boundary whose
- * fallback is the same control at the same size, for the same reason as the
- * tabs.
+ * The search sits between the tabs and the account controls on desktop
+ * (spec 0010, AC-1); on mobile it is in the menu (AC-6). It reads the
+ * pathname, so it has its own Suspense boundary whose fallback is the same
+ * field at the same size, for the same reason as the tabs.
  *
  * The account controls are passed in rather than rendered here (spec 0005,
  * AC-14). They are the only part of the shell that reads the session, so each
@@ -41,9 +41,8 @@ import {
  *
  * There are two slots, one per layout, because signed in they hold different
  * things (spec 0008, AC-14, AC-15): the desktop row carries the library links,
- * the account button and Sign out, while the mobile bar carries the avatar and
- * the menu button whose sheet holds the rest. Each is hidden by CSS at the
- * other breakpoint.
+ * the account button and Sign out, while the mobile bar carries only the menu
+ * button. Each is hidden by CSS at the other breakpoint.
  */
 function Navbar({
   mobileAccountSlot,
@@ -54,41 +53,30 @@ function Navbar({
 }) {
   return (
     <header className="relative z-20 w-full">
-      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-2 px-4 py-2 md:flex-row md:items-center md:gap-6">
-        <div className="flex items-center justify-between gap-4">
-          {/*
-           * The logo links to the page's catalog (prompts/
-           * logo-follows-media-type.md), so it reads the pathname and needs
-           * the same boundary as the tabs on a dynamic route.
-           */}
-          <Suspense fallback={<BrandLinkView type="tv" />}>
-            <BrandLink />
-          </Suspense>
+      <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-4 px-4 py-2 md:justify-start md:gap-6">
+        {/*
+         * The logo links to the page's catalog (prompts/
+         * logo-follows-media-type.md), so it reads the pathname and needs
+         * the same boundary as the tabs on a dynamic route.
+         */}
+        <Suspense fallback={<BrandLinkView type="tv" />}>
+          <BrandLink />
+        </Suspense>
 
-          <div className="flex items-center gap-2 md:hidden">
-            <Suspense fallback={<NavbarSearchFallback layout="mobile" />}>
-              <NavbarSearch layout="mobile" />
-            </Suspense>
-            {mobileAccountSlot}
-          </div>
-        </div>
+        <div className="md:hidden">{mobileAccountSlot}</div>
 
         {/*
          * The boundary only ever suspends on a route with a dynamic param,
          * where the pathname is unknown at prerender time (spec 0006, AC-11).
          * Its fallback is the same control with nothing lit, so the shell
-         * keeps the tabs and the bar does not change size.
+         * keeps the tabs and the bar does not change size. `not-empty` keeps
+         * the wrapper out of the row on a page with no tabs.
          */}
-        <Suspense
-          fallback={
-            <MediaTypeTabsView
-              selected={null}
-              className="self-center md:self-auto"
-            />
-          }
-        >
-          <MediaTypeTabs className="self-center md:self-auto" />
-        </Suspense>
+        <div className="hidden md:not-empty:flex">
+          <Suspense fallback={<MediaTypeTabsView selected={null} />}>
+            <MediaTypeTabs />
+          </Suspense>
+        </div>
 
         {/*
          * `not-empty` keeps the wrapper out of the row when the search renders
@@ -96,8 +84,8 @@ function Navbar({
          * (prompts/hide-tabs-without-type.md, decision 3).
          */}
         <div className="hidden md:not-empty:block">
-          <Suspense fallback={<NavbarSearchFallback layout="desktop" />}>
-            <NavbarSearch layout="desktop" />
+          <Suspense fallback={<NavbarSearchFallback />}>
+            <NavbarSearch />
           </Suspense>
         </div>
 
