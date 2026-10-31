@@ -164,14 +164,32 @@ export function defaultLibraryTypeAt(path: LibraryPath): LibraryType {
 }
 
 /**
+ * The page and tab a route reads as on a tab: its own page there, or, on a
+ * tab without a page at the route (`/playing?type=tv`), the route's default
+ * tab and its page. One fallback for the heading, the title, the "doesn't
+ * exist" panel's link and a tab switch from that panel, so they all name
+ * the same page (prompts/library-page-urls.md).
+ */
+export function shownLibraryPage(
+  path: LibraryPath,
+  type: LibraryType,
+): { page: LibraryPageKey; type: LibraryType } {
+  const page = libraryPageAt(path, type);
+  if (page !== null) return { page, type };
+  const fallback = defaultLibraryTypeAt(path);
+  // Every route has a page on its default tab; the `??` only satisfies the
+  // compiler, which cannot see that from the table.
+  return { page: libraryPageAt(path, fallback) ?? "watchlist", type: fallback };
+}
+
+/**
  * The name a route reads on a tab: its page's name there, or, on a tab
  * without a page at the route, the name on the route's default tab, as its
  * "doesn't exist" panel and its heading say.
  */
 export function libraryPathName(path: LibraryPath, type: LibraryType): string {
-  const tab =
-    libraryPageAt(path, type) === null ? defaultLibraryTypeAt(path) : type;
-  return libraryPageName(libraryPageAt(path, tab) ?? "watchlist", tab);
+  const shown = shownLibraryPage(path, type);
+  return libraryPageName(shown.page, shown.type);
 }
 
 /**

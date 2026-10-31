@@ -1,5 +1,6 @@
 import { PaginationLinks } from "@/components/pagination-links";
 import { POSTER_GRID_EAGER, PosterGrid } from "@/components/poster-grid";
+import { libraryHref } from "@/lib/catalog/media-type";
 import {
   getShowLibraryTab,
   type LibraryTabQuery,
@@ -9,13 +10,7 @@ import { LIBRARY_COPY } from "@/lib/tracking/messages";
 import { getShowRatings } from "@/lib/tracking/show-ratings";
 
 import { LIBRARY_HEADING_ID } from "./ids";
-import {
-  EmptyPanel,
-  ListFailed,
-  pageHref,
-  settleTab,
-  TabNotes,
-} from "./library-panels";
+import { EmptyPanel, ListFailed, settleTab, TabNotes } from "./library-panels";
 import { MissingShowCard } from "./missing-show-card";
 import { UpcomingShowCard, WatchedShowCard } from "./show-cards";
 import type { LibraryList } from "./types";
@@ -81,7 +76,7 @@ export async function showLibraryTab(query: LibraryTabQuery<LibraryList>) {
         <PaginationLinks
           page={page}
           lastPage={lastPage}
-          href={(target) => pageHref(list, "tv", target)}
+          href={(target) => libraryHref(list, "tv", { page: target })}
         />
       ) : null}
     </div>

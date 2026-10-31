@@ -5,11 +5,13 @@ import {
   isLibraryPath,
   isTypedPath,
   libraryHref,
+  libraryTabSwitchHref,
   libraryTypeForLocation,
   mediaTypeForLocation,
   parseLibraryPageType,
   parseLibraryTypeParam,
   parseMediaTypeParam,
+  shownLibraryType,
   titleHref,
   typedHref,
 } from "./media-type";
@@ -99,29 +101,52 @@ describe("parseLibraryPageType", () => {
   });
 });
 
-describe("typedHref", () => {
+describe("shownLibraryType", () => {
+  // covers: prompts/library-page-urls.md, decision 3
+  it("falls back to the route's default tab, never null", () => {
+    expect(shownLibraryType("/playing", undefined)).toBe("game");
+    expect(shownLibraryType("/watched", "bogus")).toBe("tv");
+    expect(shownLibraryType("/coming-soon", "game")).toBe("game");
+    expect(shownLibraryType("/playing", "tv")).toBe("tv");
+  });
+});
+
+describe("libraryTabSwitchHref", () => {
   it("drops every other parameter of a list page", () => {
     expect(
-      typedHref("/watched", "movie", {
-        current: new URLSearchParams("type=tv&page=4"),
-      }),
+      libraryTabSwitchHref(
+        "/watched",
+        "movie",
+        new URLSearchParams("type=tv&page=4"),
+      ),
     ).toBe("/watched?type=movie");
   });
 
   // covers: prompts/library-page-urls.md, AC-3
   it("switches a library route to the matching page of the tab", () => {
-    const from = (type: string) => ({ current: new URLSearchParams({ type }) });
-    expect(typedHref("/playing", "tv", from("game"))).toBe("/upcoming?type=tv");
-    expect(typedHref("/coming-soon", "game", from("movie"))).toBe(
+    const from = (type: string) => new URLSearchParams({ type });
+    expect(libraryTabSwitchHref("/playing", "tv", from("game"))).toBe(
+      "/upcoming?type=tv",
+    );
+    expect(libraryTabSwitchHref("/coming-soon", "game", from("movie"))).toBe(
       "/playing?type=game",
     );
-    expect(typedHref("/coming-soon", "tv", from("game"))).toBe(
+    expect(libraryTabSwitchHref("/coming-soon", "tv", from("game"))).toBe(
       "/up-next?type=tv",
     );
-    expect(typedHref("/watchlist", "game")).toBe("/want-to-play?type=game");
-    expect(typedHref("/playing", "tv", from("tv"))).toBe("/upcoming?type=tv");
+    expect(libraryTabSwitchHref("/watchlist", "game")).toBe(
+      "/want-to-play?type=game",
+    );
+    expect(libraryTabSwitchHref("/playing", "tv", from("tv"))).toBe(
+      "/upcoming?type=tv",
+    );
+    expect(libraryTabSwitchHref("/watched", "game", from("bogus"))).toBe(
+      "/finished?type=game",
+    );
   });
+});
 
+describe("typedHref", () => {
   it("keeps a search's query, year and rating, not its genres or page", () => {
     expect(
       typedHref("/search", "movie", {
@@ -220,8 +245,8 @@ describe("the library paths", () => {
     expect(isLibraryPath(null)).toBe(false);
   });
 
-  it("take game in typedHref, and so does /search (spec 0029, AC-1)", () => {
-    expect(typedHref("/watched", "game", { page: 2 })).toBe(
+  it("take game in libraryHref, and so does /search (spec 0029, AC-1)", () => {
+    expect(libraryHref("watched", "game", { page: 2 })).toBe(
       "/finished?type=game&page=2",
     );
     expect(typedHref("/search", "game")).toBe("/search?type=game");

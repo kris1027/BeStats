@@ -11,6 +11,7 @@ import {
   libraryPages,
   libraryPath,
   libraryPathName,
+  shownLibraryPage,
 } from "./library-list";
 
 /** covers: prompts/library-page-names.md, AC-1 */
@@ -113,6 +114,21 @@ describe("the library routes", () => {
     expect(libraryPathName("/playing", "tv")).toBe("Playing");
     expect(libraryPathName("/coming-soon", "tv")).toBe("Coming soon");
     expect(libraryPathName("/watchlist", "game")).toBe("Watchlist");
+  });
+
+  it("reads a route on a tab without it as its default tab's page", () => {
+    expect(shownLibraryPage("/coming-soon", "game")).toEqual({
+      page: "coming-soon",
+      type: "game",
+    });
+    expect(shownLibraryPage("/coming-soon", "tv")).toEqual({
+      page: "upcoming",
+      type: "movie",
+    });
+    expect(shownLibraryPage("/playing", "movie")).toEqual({
+      page: "upcoming",
+      type: "game",
+    });
   });
 
   it("redirects exactly the old URLs whose page moved", () => {

@@ -1,11 +1,7 @@
 import type { Metadata } from "next";
 
-import {
-  defaultLibraryTypeAt,
-  type LibraryPath,
-  libraryPathName,
-} from "./library-list";
-import { parseLibraryPageType } from "./media-type";
+import { type LibraryPath, libraryPathName } from "./library-list";
+import { shownLibraryType } from "./media-type";
 
 /**
  * A library page's metadata: its name on the current tab as the title, and
@@ -19,8 +15,6 @@ export async function libraryPageMetadata(
   path: LibraryPath,
   searchParams: Promise<Record<string, string | string[] | undefined>>,
 ): Promise<Metadata> {
-  const type =
-    parseLibraryPageType(path, (await searchParams).type) ??
-    defaultLibraryTypeAt(path);
+  const type = shownLibraryType(path, (await searchParams).type);
   return { title: libraryPathName(path, type), robots: { index: false } };
 }

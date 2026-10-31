@@ -7,8 +7,8 @@ import {
   LIBRARY_PATHS,
   type LibraryPageKey,
   type LibraryPath,
-  libraryPageAt,
   libraryPath,
+  shownLibraryPage,
 } from "./library-list";
 
 /** The two catalogs: TV shows and movies. */
@@ -124,11 +124,16 @@ export function parseLibraryTypeParam(
 
 /**
  * The tab a library route shows for its `type` parameter: the parameter when
- * it names a tab, and otherwise the route's default tab, so a bare
- * `/playing` is games (prompts/library-page-urls.md). A tab without a page
- * at the route is still that tab; the page itself shows the panel.
+ * it names a tab, and otherwise, absent or invalid, the route's default tab,
+ * so a bare `/playing` is games (prompts/library-page-urls.md). Unlike
+ * `parseLibraryPageType` it never returns null, for the chrome around a page
+ * (the tabs, the title) that must name some tab while the page itself shows
+ * the panel. A tab without a page at the route is still that tab.
  */
-function libraryPathType(path: LibraryPath, typeParam: string | null) {
+export function shownLibraryType(
+  path: LibraryPath,
+  typeParam: string | string[] | null | undefined,
+): LibraryType {
   return parseLibraryPageType(path, typeParam) ?? defaultLibraryTypeAt(path);
 }
 
@@ -184,12 +189,21 @@ export function mediaTypeForLocation(
     const path = CATALOG_PATHS[type];
     if (pathname === path || pathname.startsWith(`${path}/`)) return type;
   }
-  if (isLibraryPath(pathname)) {
-    const type = libraryPathType(pathname, typeParam);
+  if (isTypedPath(pathname)) {
+    const type = typedPathType(pathname, typeParam);
     return type === "game" ? "tv" : type;
   }
-  if (isTypedPath(pathname)) return parseMediaTypeParam(typeParam) ?? "tv";
   return null;
+}
+
+/**
+ * The tab a typed page shows, games included: a library route's own
+ * (`shownLibraryType`), or `/search`'s parameter, `tv` when it names none.
+ * The one reading both location helpers share.
+ */
+function typedPathType(path: TypedPath, typeParam: string | null) {
+  if (isLibraryPath(path)) return shownLibraryType(path, typeParam);
+  return parseLibraryTypeParam(typeParam) ?? "tv";
 }
 
 /** True on `/games` and every path under it (spec 0028, AC-14). */
@@ -213,45 +227,30 @@ export function libraryTypeForLocation(
   typeParam: string | null,
 ): LibraryType | null {
   if (isGamesPath(pathname)) return "game";
-  if (isLibraryPath(pathname)) return libraryPathType(pathname, typeParam);
-  if (isTypedPath(pathname) && parseLibraryTypeParam(typeParam) === "game") {
-    return "game";
-  }
+  if (isTypedPath(pathname)) return typedPathType(pathname, typeParam);
   return mediaTypeForLocation(pathname, typeParam);
 }
 
 type TypedHrefOptions = { current?: URLSearchParams; page?: number };
 
 /**
- * A typed page's URL for one tab. `type` is always written, so a copied link
- * says which tab it opens. A library route links to the matching page of the
- * tab, the one `libraryHref` gives (prompts/library-page-urls.md): Playing on
- * games becomes Upcoming on shows.
+ * `/search`'s URL for one tab. `type` is always written, so a copied link
+ * says which tab it opens. A library page's links come from `libraryHref`
+ * and `libraryTabSwitchHref` instead (prompts/library-page-urls.md).
  *
- * @param options.current The current query. On `/search` it keeps the
- * query, year and rating: genre and platform ids differ between catalogs,
- * and the page starts again from 1. A year before 1950 is dropped on a
- * switch to games, which has none, so a switch never lands on an invalid
- * filter (spec 0029, AC-14). On a library route its `type` says which page
- * the route is now; a tab without a page there (`/playing?type=tv`) reads
- * as the route's default tab, so its panel's tabs still lead to Playing's
- * matches.
+ * @param options.current The current query. It keeps the query, year and
+ * rating: genre and platform ids differ between catalogs, and the page
+ * starts again from 1. A year before 1950 is dropped on a switch to games,
+ * which has none, so a switch never lands on an invalid filter (spec 0029,
+ * AC-14).
  * @param options.page The page to open, written only from page 2, so page 1
  * has one URL, as on `/movies`.
  */
 export function typedHref(
-  path: TypedPath,
+  path: "/search",
   type: LibraryType,
   options: TypedHrefOptions = {},
 ): string {
-  if (isLibraryPath(path)) {
-    const from = libraryPathType(path, options.current?.get("type") ?? null);
-    const page =
-      libraryPageAt(path, from) ??
-      libraryPageAt(path, defaultLibraryTypeAt(path)) ??
-      "watchlist";
-    return libraryHref(page, type, { page: options.page });
-  }
   const query = new URLSearchParams({ type });
   if (options.current) {
     for (const name of SEARCH_KEPT) {
@@ -264,6 +263,26 @@ export function typedHref(
     }
   }
   return withPage(path, query, options.page);
+}
+
+/**
+ * Where a navbar tab leads from a library route: the matching page of that
+ * tab, so Playing on games becomes Upcoming on shows, and games' Coming
+ * soon, which no other tab has, becomes their first page (decision 5 of
+ * prompts/library-page-urls.md). Page 1, since the other tab's list is
+ * another length.
+ *
+ * @param current The current query, whose `type` says which page the route
+ * is now. A tab without a page there (`/playing?type=tv`) reads as the
+ * route's default tab, so its panel's tabs still lead to Playing's matches.
+ */
+export function libraryTabSwitchHref(
+  path: LibraryPath,
+  type: LibraryType,
+  current?: URLSearchParams,
+): string {
+  const from = shownLibraryType(path, current?.get("type") ?? null);
+  return libraryHref(shownLibraryPage(path, from).page, type);
 }
 
 /**

@@ -10,8 +10,8 @@ import {
   defaultLibraryTypeAt,
   type LibraryPageKey,
   type LibraryPath,
-  libraryPageAt,
   libraryPathName,
+  shownLibraryPage,
 } from "@/lib/catalog/library-list";
 import {
   CATALOG_PATHS,
@@ -38,19 +38,6 @@ import type { LibraryList } from "./types";
  * page links, the read's settling, the notes, and the empty, failed and
  * loading states. Server Components, with no read of their own.
  */
-
-/**
- * One URL per page and tab: the page's route on the tab, `type` always, as
- * every navbar link writes it, and `page` from page 2, as on `/movies`
- * (prompts/library-page-urls.md).
- */
-export function pageHref(
-  list: LibraryPageKey,
-  type: LibraryType,
-  page: number,
-): string {
-  return libraryHref(list, type, { page });
-}
 
 /** A classified tab that read, with its last page. */
 type SettledTab<Card> = {
@@ -83,11 +70,16 @@ export function settleTab<Card>(
   if (tab.kind === "tmdb_failed") {
     return {
       kind: "panel",
-      panel: <CatalogFailed source="TMDB" href={pageHref(list, type, page)} />,
+      panel: (
+        <CatalogFailed
+          source="TMDB"
+          href={libraryHref(list, type, { page: page })}
+        />
+      ),
     };
   }
   const lastPage = libraryLastPage(tab.total);
-  if (page > lastPage) redirect(pageHref(list, type, lastPage));
+  if (page > lastPage) redirect(libraryHref(list, type, { page: lastPage }));
   return { ...tab, lastPage };
 }
 
@@ -122,7 +114,7 @@ export function TabNotes({
           <p className="text-sm text-text-secondary">
             {LIBRARY_NOTES.failed(tab.failedCount, type)}
           </p>
-          <RetryLink href={pageHref(list, type, page)} />
+          <RetryLink href={libraryHref(list, type, { page: page })} />
         </div>
       ) : null}
     </div>
@@ -177,8 +169,8 @@ export function NoSuchPage({
   type: LibraryType | null;
 }) {
   const fallback = defaultLibraryTypeAt(path);
-  const tab = type ?? fallback;
-  const href = pageHref(libraryPageAt(path, tab) ?? "watchlist", tab, 1);
+  const shown = shownLibraryPage(path, type ?? fallback);
+  const href = libraryHref(shown.page, shown.type);
   return (
     <div className="py-12">
       <StatePanel
@@ -215,7 +207,7 @@ export function ListFailed({
     <LoadFailed
       title={LIBRARY_LIST_FAILED_TITLE}
       description={LIBRARY_LIST_FAILED}
-      href={pageHref(list, type, page)}
+      href={libraryHref(list, type, { page: page })}
     />
   );
 }
