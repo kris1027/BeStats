@@ -62,7 +62,11 @@ function panelView(state: QuickSearchState, trimmed: string): PanelView {
  * clears it, so the field keeps no state across pages (AC-17).
  *
  * `navbar` floats the panel under the field; `overlay` lays it out inline for
- * the mobile full screen dialog (AC-6), which owns the scrolling.
+ * the mobile menu's full screen search (AC-6; prompts/mobile-navigation.md),
+ * which owns the scrolling. The menu also hangs its Cancel button beside the
+ * field and its media tabs between the field and the results, so a type
+ * switch while searching keeps the query: the field's state lives here, and
+ * only `type` changes.
  *
  * It reads no request state and calls only the public `/api/search`, so it
  * costs no route its prerendered shell.
@@ -72,13 +76,22 @@ function QuickSearch({
   variant = "navbar",
   autoFocus = false,
   onNavigate,
+  onFocus,
+  besideField,
+  belowField,
   className,
 }: {
   type: SearchType;
   variant?: "navbar" | "overlay";
   autoFocus?: boolean;
-  /** Called before each navigation, so the mobile overlay can close. */
+  /** Called before each navigation, so the mobile menu can close. */
   onNavigate?: () => void;
+  /** Called when the field takes focus, which starts the menu's search mode. */
+  onFocus?: () => void;
+  /** Overlay only: shown at the end of the field's row. */
+  besideField?: React.ReactNode;
+  /** Overlay only: shown between the field and the results. */
+  belowField?: React.ReactNode;
   className?: string;
 }) {
   const router = useRouter();
@@ -201,6 +214,49 @@ function QuickSearch({
     </div>
   );
 
+  const fieldRow = (
+    <div
+      ref={field}
+      className={cn(
+        "glass glass-rim glass-plate glass-shadow flex h-12 items-center gap-3 rounded-full pr-2 pl-4",
+        inline && "min-w-0 flex-1",
+        className,
+      )}
+    >
+      <SearchIcon
+        className="size-4 shrink-0 text-text-secondary"
+        aria-hidden="true"
+      />
+      <Autocomplete.Input
+        placeholder={`Search ${noun}`}
+        aria-label={`Search ${noun}`}
+        autoFocus={autoFocus}
+        onKeyDown={onKeyDown}
+        onFocus={onFocus}
+        enterKeyHint="search"
+        className="h-full min-w-0 flex-1 bg-transparent text-base text-foreground placeholder:text-muted-foreground focus-visible:outline-none md:text-sm"
+      />
+      {query !== "" ? (
+        <>
+          <Autocomplete.Clear
+            aria-label="Clear search"
+            className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-text-secondary hover:text-foreground md:size-8"
+          >
+            <XIcon className="size-4" aria-hidden="true" />
+          </Autocomplete.Clear>
+          {inline ? null : (
+            <span
+              aria-hidden="true"
+              className="glass glass-rim hidden h-7 items-center rounded-lg px-2 text-[11px] text-text-secondary md:flex"
+            >
+              ESC
+            </span>
+          )}
+        </>
+      ) : null}
+    </div>
+  );
+
   return (
     <Autocomplete.Root
       items={rows}
@@ -222,44 +278,16 @@ function QuickSearch({
         highlighted.current = row ?? null;
       }}
     >
-      <div
-        ref={field}
-        className={cn(
-          "glass glass-rim glass-plate glass-shadow flex h-12 items-center gap-3 rounded-full pr-2 pl-4",
-          className,
-        )}
-      >
-        <SearchIcon
-          className="size-4 shrink-0 text-text-secondary"
-          aria-hidden="true"
-        />
-        <Autocomplete.Input
-          placeholder={`Search ${noun}`}
-          aria-label={`Search ${noun}`}
-          autoFocus={autoFocus}
-          onKeyDown={onKeyDown}
-          enterKeyHint="search"
-          className="h-full min-w-0 flex-1 bg-transparent text-base text-foreground placeholder:text-muted-foreground focus-visible:outline-none md:text-sm"
-        />
-        {query !== "" ? (
-          <>
-            <Autocomplete.Clear
-              aria-label="Clear search"
-              className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-text-secondary hover:text-foreground md:size-8"
-            >
-              <XIcon className="size-4" aria-hidden="true" />
-            </Autocomplete.Clear>
-            {inline ? null : (
-              <span
-                aria-hidden="true"
-                className="glass glass-rim hidden h-7 items-center rounded-lg px-2 text-[11px] text-text-secondary md:flex"
-              >
-                ESC
-              </span>
-            )}
-          </>
-        ) : null}
-      </div>
+      {inline ? (
+        <div className="flex items-center gap-2">
+          {fieldRow}
+          {besideField}
+        </div>
+      ) : (
+        fieldRow
+      )}
+
+      {inline ? belowField : null}
 
       {inline ? (
         panelOpen ? (
