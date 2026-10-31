@@ -3,11 +3,12 @@ import Link from "next/link";
 
 import { signOutAction } from "@/app/(auth)/actions";
 import { Avatar } from "@/components/layout/avatar";
-import { Button, ButtonLink } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 
 /**
  * The menu's account block, signed in: the Account row and a full width
- * Sign out in the destructive red. Exported for `/showcase`.
+ * Sign out in the destructive red. Exported for `/showcase`. Signed out,
+ * the menu draws its own Sign in, as `AccountSlot` passes it no block.
  */
 function MobileAccountBlock({
   letter,
@@ -51,13 +52,4 @@ function MobileAccountBlock({
   );
 }
 
-/** The menu's account block, signed out. Exported for `/showcase`. */
-function MobileSignIn() {
-  return (
-    <ButtonLink size="touch" href="/sign-in" className="h-13 w-full">
-      Sign in
-    </ButtonLink>
-  );
-}
-
-export { MobileAccountBlock, MobileSignIn };
+export { MobileAccountBlock };

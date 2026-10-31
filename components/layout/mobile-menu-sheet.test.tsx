@@ -81,23 +81,16 @@ afterEach(() => {
 });
 
 function Sheet({
-  library = true,
+  signedIn = true,
   hiddenFrom,
 }: {
-  library?: boolean;
+  signedIn?: boolean;
   hiddenFrom?: "md" | "xl";
 }) {
   return (
     <MobileMenuSheet
-      library={library}
       hiddenFrom={hiddenFrom}
-      account={
-        library ? (
-          <a href="/account">Account</a>
-        ) : (
-          <a href="/sign-in">Sign in</a>
-        )
-      }
+      account={signedIn ? <a href="/account">Account</a> : null}
     />
   );
 }
@@ -376,7 +369,7 @@ describe("MobileMenuSheet", () => {
 
   it("shows search and tabs but no rows when signed out", async () => {
     const user = userEvent.setup();
-    render(<Sheet library={false} />);
+    render(<Sheet signedIn={false} />);
     await openMenu(user);
 
     expect(screen.getByRole("combobox")).toBeInTheDocument();

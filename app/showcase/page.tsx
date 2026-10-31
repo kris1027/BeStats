@@ -31,10 +31,7 @@ import { ScreenshotGallery } from "@/components/game/screenshot-gallery";
 import { GlassPill } from "@/components/glass-pill";
 import { IconKey } from "@/components/layout/icon-key";
 import { LibraryNavView } from "@/components/layout/library-nav";
-import {
-  MobileAccountBlock,
-  MobileSignIn,
-} from "@/components/layout/mobile-account-block";
+import { MobileAccountBlock } from "@/components/layout/mobile-account-block";
 import { MobileMenuSheet } from "@/components/layout/mobile-menu-sheet";
 import { PageBackgroundLayers } from "@/components/layout/page-background";
 import {
@@ -802,19 +799,16 @@ export default function ShowcasePage() {
         <div className="flex flex-wrap items-center gap-3">
           <MobileMenuSheet
             triggerLabel="Open menu, signed in on Up next"
-            library
             page={{ pathname: "/up-next", type: "tv" }}
             account={<MobileAccountBlock letter="T" name="tester_one" />}
           />
           <MobileMenuSheet
             triggerLabel="Open menu, signed out on /games"
-            library={false}
             page={{ pathname: "/games", type: "game" }}
-            account={<MobileSignIn />}
+            account={null}
           />
           <MobileMenuSheet
             triggerLabel="Open menu on a page with no type"
-            library
             page={{ pathname: "/account", type: null }}
             account={<MobileAccountBlock letter="T" name="tester_one" />}
           />

@@ -1,10 +1,7 @@
 import { signOutAction } from "@/app/(auth)/actions";
 import { Avatar } from "@/components/layout/avatar";
 import { LibraryNav } from "@/components/layout/library-nav";
-import {
-  MobileAccountBlock,
-  MobileSignIn,
-} from "@/components/layout/mobile-account-block";
+import { MobileAccountBlock } from "@/components/layout/mobile-account-block";
 import { MobileMenuSheet } from "@/components/layout/mobile-menu-sheet";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { avatarLetter, displayName } from "@/lib/auth/identity";
@@ -51,7 +48,7 @@ async function AccountSlot({ variant }: { variant: "desktop" | "mobile" }) {
 
   if (!user) {
     if (variant === "mobile") {
-      return <MobileMenuSheet library={false} account={<MobileSignIn />} />;
+      return <MobileMenuSheet account={null} />;
     }
     return (
       <ButtonLink size="bar" href="/sign-in">
@@ -68,7 +65,6 @@ async function AccountSlot({ variant }: { variant: "desktop" | "mobile" }) {
 
   const menu = (
     <MobileMenuSheet
-      library
       hiddenFrom={variant === "mobile" ? "md" : "xl"}
       account={<MobileAccountBlock letter={letter} name={name} />}
     />

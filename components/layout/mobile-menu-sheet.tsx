@@ -13,7 +13,7 @@ import {
 import { LibraryNavView } from "@/components/layout/library-nav";
 import { MEDIA_TABS } from "@/components/layout/media-type-tabs";
 import { QuickSearch } from "@/components/search/quick-search";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import type { LibraryType } from "@/lib/catalog/media-type";
 
@@ -41,9 +41,10 @@ type MenuPage = { pathname: string; type: LibraryType | null };
  * and hidden from assistive technology. Nothing here reimplements any of it.
  *
  * It is on every page, signed in or out. `AccountSlot`, a Server Component,
- * renders the account block from the verified session and passes it in, and
- * says whether the library rows belong (`library`), so this client piece
- * never decides who is signed in.
+ * renders the signed in account block from the verified session and passes
+ * it in as `account`, or passes null, which shows Sign in and no library
+ * rows. One prop rather than a block and a flag, so rows can never sit over
+ * a Sign in, and this client piece never decides who is signed in.
  *
  * Choosing a link closes the sheet as it navigates, so the next page is not
  * hidden behind it. The dialog is controlled for that one reason: a click that
@@ -62,13 +63,11 @@ type MenuPage = { pathname: string; type: LibraryType | null };
  */
 function MobileMenuSheet({
   account,
-  library,
   page,
   hiddenFrom = "md",
   triggerLabel = "Open menu",
 }: {
-  account: React.ReactNode;
-  library: boolean;
+  account: React.ReactNode | null;
   page?: MenuPage;
   hiddenFrom?: keyof typeof BREAKPOINTS;
   triggerLabel?: string;
@@ -87,12 +86,7 @@ function MobileMenuSheet({
   }, [open, hiddenFrom]);
 
   const body = (current: MenuPage) => (
-    <MenuBody
-      page={current}
-      library={library}
-      account={account}
-      onClose={close}
-    />
+    <MenuBody page={current} account={account} onClose={close} />
   );
 
   return (
@@ -163,13 +157,11 @@ function MobileMenuSheet({
  */
 function MenuBody({
   page,
-  library,
   account,
   onClose,
 }: {
   page: MenuPage;
-  library: boolean;
-  account: React.ReactNode;
+  account: React.ReactNode | null;
   onClose: () => void;
 }) {
   // A page with no tab starts from the catalog viewed last, as the logo does.
@@ -216,7 +208,7 @@ function MenuBody({
         }
       />
 
-      {library && !searching ? (
+      {account !== null && !searching ? (
         <LibraryNavView
           variant="sheet"
           pathname={preview === page.type ? page.pathname : null}
@@ -227,7 +219,13 @@ function MenuBody({
       {searching ? null : (
         <>
           <div className="flex-1" />
-          <div className="flex flex-col gap-3">{account}</div>
+          <div className="flex flex-col gap-3">
+            {account ?? (
+              <ButtonLink size="touch" href="/sign-in" className="h-13 w-full">
+                Sign in
+              </ButtonLink>
+            )}
+          </div>
         </>
       )}
     </>
