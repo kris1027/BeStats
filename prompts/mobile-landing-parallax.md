@@ -41,6 +41,8 @@ Settled with the owner in a grilling session on 2026-10-31 (Q1 to Q12 below). Th
 9. **(Q10) No overlap.** Measured at 360×740 on `/shows` across the whole scroll: the nearest a drifted card came to the next heading was 41px (Airing today to On the air) and 38px to the footer (Top rated), so no padding changes were needed. Checked during implementation; the original plan expected `pb-24`.
 10. **(Q11) Records.** Mark decision 6 of `home-parallax-landing.md` and the "below `md`" lines of `top-rated-parallax-columns.md` superseded on 2026-10-31 by this file. Update the `LandingParallax`, `TrendingPin`, `FRAME_CLASS`, `PopularGrid` and `NowPlayingColumns` JSDoc, the `startMotionLoop` JSDoc and the `components/AGENTS.md` landing line.
 
+11. **Trending fills its pinned screen on a phone (amended 2026-10-31, after owner review).** With the 160px swipe card, the pinned frame held about 400px of content in a 740px screen. Below `md` with motion allowed, the card is `clamp(140px, (100svh - 15rem) * 2/3, 72vw)` wide, so the poster takes the height left after the header, title, gaps and bar, stays narrow enough for the next card to peek in, and stays readable on a landscape phone. The outlined rank grows to 128px to match. `TRENDING_SIZES` becomes `72vw` below `md`. Reduced motion keeps the 160px swipe row. Measured: 360×740 gives a 259px card and 560px of content, 375×667 gives 270px, 390×844 gives 281px, and 740×360 gives 140px, which still fits.
+
 ## Expected files
 
 - `lib/motion/loop.ts`: stable `viewport` passed to `tick`, the opt-in `idle` mode with its wake events, and a `markActive` hook.
