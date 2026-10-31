@@ -19,6 +19,7 @@ const getOwnProfile = vi.fn();
 vi.mock("@/lib/auth/profile", () => ({ getOwnProfile }));
 vi.mock("next/navigation", () => ({
   usePathname: () => "/watched",
+  useRouter: () => ({ push: vi.fn() }),
   useSearchParams: () => new URLSearchParams("type=movie"),
 }));
 
@@ -29,6 +30,14 @@ beforeEach(() => {
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "http://127.0.0.1:54321");
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test");
   vi.stubEnv("NEXT_PUBLIC_SITE_URL", "http://localhost:3000");
+});
+
+// The menu listens for the `md` breakpoint while open; jsdom has no
+// `matchMedia`.
+beforeEach(() => {
+  vi.stubGlobal("matchMedia", (query: string) =>
+    Object.assign(new EventTarget(), { matches: false, media: query }),
+  );
 });
 
 describe("AccountSlot, signed in on desktop (AC-14)", () => {
@@ -51,21 +60,34 @@ describe("AccountSlot, signed in on desktop (AC-14)", () => {
   });
 });
 
-describe("AccountSlot, signed in on mobile (AC-15)", () => {
-  it("shows the avatar link and a menu button, with no loose Sign out", async () => {
-    render(await AccountSlot({ variant: "mobile" }));
-    expect(screen.getByRole("link", { name: "kris1027" })).toHaveAttribute(
-      "href",
-      "/account",
+// covers: prompts/mobile-navigation.md, decision 10
+describe("AccountSlot, signed in on desktop below xl", () => {
+  it("puts the menu button where the row does not fit, and the row from xl", async () => {
+    render(await AccountSlot({ variant: "desktop" }));
+    const menu = screen.getByRole("button", { name: "Open menu" });
+    expect(menu.closest(".xl\\:hidden")).not.toBeNull();
+    const row = screen
+      .getByRole("navigation", { name: "Library" })
+      .closest(".xl\\:flex");
+    expect(row).toHaveClass("hidden");
+    expect(screen.getByRole("link", { name: "kris1027" })).toHaveClass(
+      "2xl:pr-5",
     );
+  });
+});
+
+describe("AccountSlot, signed in on mobile (AC-15; prompts/mobile-navigation.md)", () => {
+  it("shows only the menu button, with no loose avatar or Sign out", async () => {
+    render(await AccountSlot({ variant: "mobile" }));
     expect(
       screen.getByRole("button", { name: "Open menu" }),
     ).toBeInTheDocument();
+    expect(screen.queryByRole("link")).toBeNull();
     expect(screen.queryByRole("button", { name: "Sign out" })).toBeNull();
     expect(screen.queryByRole("navigation", { name: "Library" })).toBeNull();
   });
 
-  it("opens a sheet holding the links, the account row and Sign out", async () => {
+  it("opens a menu holding the rows, the Account row and Sign out", async () => {
     const user = userEvent.setup();
     render(await AccountSlot({ variant: "mobile" }));
     await user.click(screen.getByRole("button", { name: "Open menu" }));
@@ -78,17 +100,15 @@ describe("AccountSlot, signed in on mobile (AC-15)", () => {
       "aria-current",
       "page",
     );
-    // The page behind the modal is hidden from assistive technology, so the
-    // one account link still exposed is the sheet's account row.
-    expect(dialog).toContainElement(
-      screen.getByRole("link", { name: "kris1027" }),
-    );
+    expect(
+      screen.getByRole("link", { name: "Account kris1027" }),
+    ).toHaveAttribute("href", "/account");
     expect(dialog).toContainElement(
       screen.getByRole("button", { name: "Sign out" }),
     );
   });
 
-  it("closes the sheet when a link in it is chosen", async () => {
+  it("closes the menu when a link in it is chosen", async () => {
     const user = userEvent.setup();
     render(await AccountSlot({ variant: "mobile" }));
     await user.click(screen.getByRole("button", { name: "Open menu" }));
@@ -113,7 +133,7 @@ describe("AccountSlot with a username", () => {
   });
 
   it("falls back to the email name when there is no profile", async () => {
-    render(await AccountSlot({ variant: "mobile" }));
+    render(await AccountSlot({ variant: "desktop" }));
     expect(screen.getByRole("link", { name: "kris1027" })).toBeInTheDocument();
   });
 });

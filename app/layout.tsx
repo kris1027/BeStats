@@ -3,10 +3,10 @@ import { Inter } from "next/font/google";
 import { Suspense } from "react";
 
 import { AccountSlot } from "@/components/layout/account-slot";
+import { AccountSlotSkeleton } from "@/components/layout/account-slot-skeleton";
 import { Navbar } from "@/components/layout/navbar";
 import { PageBackground } from "@/components/layout/page-background";
 import { SiteFooter } from "@/components/layout/site-footer";
-import { Skeleton } from "@/components/skeleton";
 import { Toaster } from "@/components/ui/sonner";
 import { SITE_NAME, shareMetadata } from "@/lib/seo/metadata";
 import { siteUrl } from "@/lib/seo/site";
@@ -89,21 +89,18 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col antialiased">
         <PageBackground />
         {/*
-         * Each fallback is the signed out button's footprint, so the bar does
-         * not resize when the real control arrives. A skeleton rather than a
-         * Sign in button, because painting Sign in and then swapping it for an
-         * avatar is exactly the wrong-state-first flash AC-13 rules out.
+         * Each fallback is the footprint of the control that arrives at that
+         * width (`AccountSlotSkeleton`), so the bar does not resize when the
+         * real control streams in.
          */}
         <Navbar
           mobileAccountSlot={
-            <Suspense
-              fallback={<Skeleton shape="pill" className="h-11 w-24" />}
-            >
+            <Suspense fallback={<AccountSlotSkeleton variant="mobile" />}>
               <AccountSlot variant="mobile" />
             </Suspense>
           }
           desktopAccountSlot={
-            <Suspense fallback={<Skeleton shape="pill" className="h-9 w-24" />}>
+            <Suspense fallback={<AccountSlotSkeleton variant="desktop" />}>
               <AccountSlot variant="desktop" />
             </Suspense>
           }

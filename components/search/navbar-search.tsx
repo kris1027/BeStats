@@ -1,20 +1,17 @@
 "use client";
 
-import { cn } from "cn";
 import { SearchIcon } from "lucide-react";
 
 import { WithLibraryTypedPage } from "@/components/layout/page-media-type";
 import type { LibraryType } from "@/lib/catalog/media-type";
 import { mediaNoun } from "@/lib/search/count";
 
-import { MobileSearchOverlay } from "./mobile-search-overlay";
 import { QuickSearch } from "./quick-search";
 
-type Layout = "desktop" | "mobile";
-
 /**
- * The navbar's search, the desktop field or the mobile icon (spec 0010, AC-1,
- * AC-6).
+ * The desktop navbar's search field (spec 0010, AC-1). On mobile the search
+ * lives in the menu sheet, `MobileMenuSheet` (AC-6,
+ * prompts/mobile-navigation.md).
  *
  * The type follows the page (feature 22): movies under `/movies`, shows
  * under `/shows`, games under `/games`, and the
@@ -31,61 +28,30 @@ type Layout = "desktop" | "mobile";
  * The field is keyed on the pathname and type, so it starts empty on every
  * page (AC-17).
  */
-function NavbarSearch({ layout }: { layout: Layout }) {
+function NavbarSearch() {
   return (
-    <WithLibraryTypedPage
-      fallback={() => <NavbarSearchFallback layout={layout} />}
-    >
+    <WithLibraryTypedPage fallback={() => <NavbarSearchFallback />}>
       {({ pathname, libraryType }) => (
-        <NavbarSearchFor
+        <QuickSearch
           key={`${pathname}:${libraryType}`}
-          layout={layout}
           type={libraryType}
+          className="h-10 w-full"
         />
       )}
     </WithLibraryTypedPage>
   );
 }
 
-function NavbarSearchFor({
-  layout,
-  type,
-}: {
-  layout: Layout;
-  type: LibraryType;
-}) {
-  if (layout === "mobile") return <MobileSearchOverlay type={type} />;
-  return <QuickSearch type={type} className="h-10 w-[22.5rem]" />;
-}
-
 /**
- * The prerendered stand in: the same field or icon at the same size, inert
+ * The prerendered stand in: the same field at the same size, inert
  * until the real one mounts a moment later, so the bar never shifts. It is
  * not an input, so nothing typed into it can be lost in the swap.
  */
-function NavbarSearchFallback({
-  layout,
-  type = "tv",
-}: {
-  layout: Layout;
-  type?: LibraryType;
-}) {
-  if (layout === "mobile") {
-    return (
-      <span
-        aria-hidden="true"
-        className="glass glass-rim glass-plate glass-shadow flex size-10 items-center justify-center rounded-full text-foreground"
-      >
-        <SearchIcon className="size-5" />
-      </span>
-    );
-  }
+function NavbarSearchFallback({ type = "tv" }: { type?: LibraryType }) {
   return (
     <div
       aria-hidden="true"
-      className={cn(
-        "glass glass-rim glass-plate glass-shadow flex h-10 w-[22.5rem] items-center gap-3 rounded-full pr-2 pl-4",
-      )}
+      className="glass glass-rim glass-plate glass-shadow flex h-10 w-full items-center gap-3 rounded-full pr-2 pl-4"
     >
       <SearchIcon className="size-4 shrink-0 text-text-secondary" />
       <span className="text-sm text-muted-foreground">

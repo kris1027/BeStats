@@ -104,8 +104,8 @@ describe("Navbar", () => {
     }
   });
 
-  // covers: spec 0010, AC-1, AC-6. The desktop field and the mobile icon are
-  // both in the document; CSS hides one at each width.
+  // covers: spec 0010, AC-1. The mobile search lives in the menu sheet
+  // (prompts/mobile-navigation.md), so the bar holds only the desktop field.
   it("searches the catalog the page is on", () => {
     pathname.current = "/movies/550";
     const { unmount } = render(
@@ -118,7 +118,7 @@ describe("Navbar", () => {
       "placeholder",
       "Search movies",
     );
-    expect(screen.getByRole("button", { name: "Search" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Search" })).toBeNull();
     unmount();
 
     // A typed page searches its `type` parameter, here `movie` (feature 22).
@@ -268,6 +268,25 @@ describe("Navbar", () => {
     pathname.current = "/shows";
   });
 
+  // covers: prompts/mobile-navigation.md, decision 11. The search keeps a
+  // width of its own, so the account slot streaming in never resizes it.
+  it("gives the search a width per breakpoint, not what the row leaves", () => {
+    render(
+      <Navbar
+        mobileAccountSlot={<ACCOUNT_SLOT />}
+        desktopAccountSlot={<ACCOUNT_SLOT />}
+      />,
+    );
+    const wrapper = screen.getByRole("combobox").closest(".md\\:w-60");
+    expect(wrapper).toHaveClass(
+      "min-w-40",
+      "lg:w-[22.5rem]",
+      "xl:w-60",
+      "min-[87.5rem]:w-[22.5rem]",
+    );
+    expect(wrapper?.className).not.toMatch(/flex-1/);
+  });
+
   it("scrolls with the page, with no background, border or blur", () => {
     render(
       <Navbar
@@ -290,13 +309,14 @@ describe("Navbar", () => {
       />,
     );
 
-    // Two 40px rows, an 8px gap and 8px padding on a phone; one row from md.
+    // One 40px row with 8px padding at every width
+    // (prompts/mobile-navigation.md).
     const row = screen.getByRole("banner").firstElementChild;
-    expect(row).toHaveClass("flex-col", "gap-2", "py-2", "md:flex-row");
+    expect(row).toHaveClass("items-center", "py-2");
+    expect(row).not.toHaveClass("flex-col");
     const css = readFileSync("app/globals.css", "utf8");
-    expect(css).toContain(
-      "--navbar-height: calc(2 * 2.5rem + 0.5rem + 2 * 0.5rem);",
-    );
-    expect(css).toContain("--navbar-height: calc(2.5rem + 2 * 0.5rem);");
+    expect(css.match(/--navbar-height:[^;]+;/g)).toEqual([
+      "--navbar-height: calc(2.5rem + 2 * 0.5rem);",
+    ]);
   });
 });

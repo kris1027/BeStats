@@ -27,6 +27,8 @@ const LAYOUT_TREE = [
   "components/layout/navbar.tsx",
   "components/layout/media-type-tabs.tsx",
   "components/layout/mobile-menu-sheet.tsx",
+  "components/layout/mobile-account-block.tsx",
+  "components/layout/account-slot-skeleton.tsx",
   // The page background and its motion, behind every route
   // (prompts/warm-page-background.md).
   "components/layout/page-background.tsx",
@@ -36,12 +38,11 @@ const LAYOUT_TREE = [
   // Rendered inside the account slot rather than the layout, but it sits in
   // the shell on every page, so it is held to the same rule (spec 0008).
   "components/layout/library-nav.tsx",
-  // The navbar search (spec 0010, AC-1, AC-6, AC-22).
+  // The navbar search (spec 0010, AC-1, AC-22), also in the mobile menu (AC-6).
   "components/search/navbar-search.tsx",
   "components/search/quick-search.tsx",
   "components/search/quick-search-row.tsx",
   "components/search/use-quick-search.ts",
-  "components/search/mobile-search-overlay.tsx",
 ];
 
 /**
