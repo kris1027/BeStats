@@ -45,6 +45,14 @@ Settled with the owner in a grilling session on 2026-10-31 (Q1 to Q12 below). Th
 
 12. **The hero fills a phone's screen with the poster (amended 2026-10-31, owner's choice over a stretched backdrop or keeping the band).** Below `lg`, the hero was a 248px 16:9 band with the title under it and about 210px of empty page. Now the hero is `h-svh` (560px minimum) at every width, with the title block at its foot over a bottom shade. Below `lg` the artwork is the portrait poster (`w780`, TMDB's largest poster rung) covering the hero. From `lg` it is the `original` backdrop in its 16:9 box, as before. One `<picture>` built with `getImageProps` in a small Client Component (`landing/hero-picture.tsx`), because the loader is client-only. The browser fetches only one image: measured at 390px, only `w780` was fetched; at 1440px, only `original`. It loads with `loading="eager"` and `fetchPriority="high"` instead of `preload`, which can't choose between two images. With one image missing, the other serves every width. This supersedes decision 4 of [home-hero-backdrop-quality.md](home-hero-backdrop-quality.md).
 
+13. **Popular is a stacked deck on phones (amended 2026-10-31, owner's choice over a tilt-in grid or a coverflow ring).** Below `md` with motion allowed, the drift and the 32px stagger give way to a deck of pairs:
+    - The grid stays two columns. Every card is `sticky` at `top: calc(12svh + row × 10px)`, so a row's two cards stick together and each earlier row peeks 10px above the next. The row comes from an inline `--deck-row` the server writes.
+    - Rows sit `24svh` apart in the flow (`gap-y`), so each new pair slides up over the stack after about half a screen of scroll. The 7 rows make the section about 3.8 screens long, against 2.8 today. The grid is the cards' containing block, so the whole stack scrolls away together when the list ends.
+    - `LandingParallax` reads, for each row, how far the rows below have covered it (`depth`, the sum of each later row's 0 to 1 cover). It shrinks the row's cards from the top edge to `max(0.82, 1 − 0.06 × depth)` and fades a `bg-background` shade over them to `min(0.6, 0.22 × depth)`. The shade is a `pointer-events-none` overlay, so the cards themselves are never made translucent. All transform and opacity: nothing is laid out again.
+    - Focusing a card hidden in the stack scrolls the page to where its row is the front one, the same way the Trending pin does.
+    - The cards' `data-speed` drift is 0 below `md` (`data-speed-narrow="0"`), and the skeleton uses the same grid and sticky classes, so nothing moves when the cards stream in.
+    - From `md`, and under reduced motion at every width, Popular stays the grid it was: the five-step stagger and drift on desktop, the still two-column grid on a reduced-motion phone. Decision 7's phone stagger is dropped.
+
 ## Expected files
 
 - `lib/motion/loop.ts`: stable `viewport` passed to `tick`, the opt-in `idle` mode with its wake events, and a `markActive` hook.
@@ -64,6 +72,7 @@ Settled with the owner in a grilling session on 2026-10-31 (Q1 to Q12 below). Th
 - AC-6: Scroll positions are computed from the `100svh` probe: changing `innerHeight` alone does not move any node.
 - AC-7: Tabbing through Trending and Upcoming at 390px keeps the focused card in view.
 - AC-8: Drifted cards never cover the next section's heading at 360px.
+- AC-9: At 390px, Popular stacks in pairs: each new pair slides over the last, the cards underneath shrink, dim and peek, and the stack leaves together at the end of the list with no horizontal overflow. Tabbing to any Popular card brings it to the front. At 768px and above, and under reduced motion, Popular is unchanged.
 
 ## Security considerations
 
