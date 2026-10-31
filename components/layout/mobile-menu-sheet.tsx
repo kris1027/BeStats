@@ -65,6 +65,8 @@ type MenuPage = { pathname: string; type: LibraryType | null };
  * it over a bar that no longer offers it. Only the crossing closes it:
  * `/showcase` opens it at any width.
  *
+ * @param searching Opens straight into search mode, for `/showcase`, which
+ * otherwise could only show it after a tap.
  * @param page Where the menu stands, for `/showcase`; left out, it is read
  * from the URL when the menu opens.
  */
@@ -72,10 +74,12 @@ function MobileMenuSheet({
   account,
   page,
   hiddenFrom = "md",
+  searching = false,
   triggerLabel = "Open menu",
 }: {
   account: React.ReactNode | null;
   page?: MenuPage;
+  searching?: boolean;
   hiddenFrom?: keyof typeof BREAKPOINTS;
   triggerLabel?: string;
 }) {
@@ -93,7 +97,12 @@ function MobileMenuSheet({
   }, [open, hiddenFrom]);
 
   const body = (current: MenuPage) => (
-    <MenuBody page={current} account={account} onClose={close} />
+    <MenuBody
+      page={current}
+      account={account}
+      startSearching={searching}
+      onClose={close}
+    />
   );
 
   return (
@@ -165,17 +174,19 @@ function MobileMenuSheet({
 function MenuBody({
   page,
   account,
+  startSearching,
   onClose,
 }: {
   page: MenuPage;
   account: React.ReactNode | null;
+  startSearching: boolean;
   onClose: () => void;
 }) {
   // A page with no tab starts from the catalog viewed last, as the logo does.
   const [preview, setPreview] = useState<LibraryType>(
     () => page.type ?? rememberedLibraryType() ?? "tv",
   );
-  const [searching, setSearching] = useState(false);
+  const [searching, setSearching] = useState(startSearching);
   // Bumped by Cancel, so the field remounts empty rather than keeping a query,
   // and takes focus back, since Cancel itself unmounts.
   const [searchKey, setSearchKey] = useState(0);
@@ -200,7 +211,7 @@ function MenuBody({
         key={searchKey}
         type={preview}
         variant="overlay"
-        autoFocus={searchKey > 0}
+        autoFocus={startSearching || searchKey > 0}
         onNavigate={onClose}
         onEngage={() => setSearching(true)}
         besideField={

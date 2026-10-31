@@ -812,6 +812,12 @@ export default function ShowcasePage() {
             page={{ pathname: "/account", type: null }}
             account={<MobileAccountBlock letter="T" name="tester_one" />}
           />
+          <MobileMenuSheet
+            triggerLabel="Open menu in search mode"
+            page={{ pathname: "/up-next", type: "tv" }}
+            searching
+            account={<MobileAccountBlock letter="T" name="tester_one" />}
+          />
 
           <Dialog>
             <DialogTrigger render={<Button size="touch" />}>

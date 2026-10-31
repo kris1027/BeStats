@@ -294,6 +294,15 @@ describe("MobileMenuSheet", () => {
     ).toHaveFocus();
   });
 
+  it("opens straight into search mode when asked, for /showcase", async () => {
+    const user = userEvent.setup();
+    render(<MobileMenuSheet account={null} searching />);
+    await openMenu(user);
+
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox")).toHaveFocus();
+  });
+
   // covers: prompts/mobile-navigation.md, AC-6
   it("lets the keyboard tab past the field to the rows and the account block", async () => {
     const user = userEvent.setup();
