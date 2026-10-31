@@ -1,11 +1,11 @@
-import { render } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { LARGE, LandingParallax, WIDE } from "./landing-parallax";
 
 /**
  * covers: prompts/home-parallax-landing.md, AC-7 (decisions 9 and 16);
- * prompts/mobile-landing-parallax.md, AC-1, AC-2, AC-5 and AC-6
+ * prompts/mobile-landing-parallax.md, AC-1, AC-2, AC-5, AC-6, AC-7 and AC-9
  *
  * The motion layer writes transforms only when motion is allowed, puts every
  * node back when the visitor asks for reduced motion, and stops its loop on
@@ -44,7 +44,27 @@ beforeEach(() => {
   });
 });
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
+
+/** Gives a node the box jsdom cannot lay out. */
+function box(node: HTMLElement, rect: Partial<DOMRect>) {
+  vi.spyOn(node, "getBoundingClientRect").mockReturnValue({
+    top: 0,
+    left: 0,
+    width: 0,
+    height: 0,
+    ...rect,
+  } as DOMRect);
+}
+
+function size(node: HTMLElement, sizes: Record<string, number>) {
+  for (const [key, value] of Object.entries(sizes)) {
+    Object.defineProperty(node, key, { value, configurable: true });
+  }
+}
 
 /** The vertical offset a `translate3d(0, Ypx, 0)` writes. */
 function offsetY(node: HTMLElement): number {
@@ -188,6 +208,83 @@ describe("LandingParallax (AC-7)", () => {
     expect(getByTestId("speed").style.transform).toBe(before);
   });
 
+  it("measures from the 100svh probe, not innerHeight (prompts/mobile-landing-parallax.md, AC-6)", () => {
+    // The probe is the loop's fixed, hidden box; give it a 700px small viewport.
+    vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockImplementation(
+      function (this: HTMLElement) {
+        return this.style.position === "fixed" &&
+          this.style.visibility === "hidden"
+          ? 700
+          : 0;
+      },
+    );
+    const { getByTestId } = setup();
+
+    runFrame();
+
+    // A root at the top: offset -350px from the centre, at speed 0.2.
+    expect(offsetY(getByTestId("speed"))).toBeCloseTo(70);
+  });
+
+  it("scrolls a tabbed-to Trending card into view (prompts/mobile-landing-parallax.md, AC-7)", () => {
+    wide = false;
+    const scrollTo = vi.fn();
+    vi.stubGlobal("scrollTo", scrollTo);
+    const { getByTestId } = render(
+      <LandingParallax>
+        <section data-pin="" data-testid="pin">
+          <div data-testid="frame">
+            <ul data-pin-track="" data-testid="track">
+              <li data-testid="item">
+                <a href="/shows/1">Card</a>
+              </li>
+            </ul>
+          </div>
+        </section>
+      </LandingParallax>,
+    );
+    size(getByTestId("pin"), { offsetHeight: 3000 });
+    size(getByTestId("frame"), { clientWidth: 400 });
+    size(getByTestId("track"), { scrollWidth: 2000 });
+    box(getByTestId("pin"), { top: 500 });
+    box(getByTestId("item"), { left: 1000, width: 200 });
+
+    getByTestId("item").querySelector("a")?.focus();
+
+    // Centre 1100px along a 1600px travel, past half the 400px frame.
+    const progress = (1100 - 200) / 1600;
+    expect(scrollTo).toHaveBeenCalledExactlyOnceWith({
+      top: 500 + progress * (3000 - window.innerHeight),
+      behavior: "instant",
+    });
+  });
+
+  it("holds a focused Upcoming card in view instead of sliding it (AC-7)", () => {
+    wide = false;
+    const { getByTestId } = render(
+      <LandingParallax>
+        <div data-testid="frame">
+          <ul data-marquee="1" data-testid="row">
+            <li data-testid="item">
+              <a href="/shows/1">Card</a>
+            </li>
+          </ul>
+        </div>
+      </LandingParallax>,
+    );
+    size(getByTestId("frame"), { clientWidth: 400 });
+    size(getByTestId("row"), { scrollWidth: 2000 });
+    box(getByTestId("item"), { left: 1000, width: 200 });
+
+    getByTestId("item").querySelector("a")?.focus();
+    runFrame();
+
+    // The card's centre, 1100px along, sits at the frame's centre.
+    expect(getByTestId("row").style.transform).toBe(
+      "translate3d(-900px, 0, 0)",
+    );
+  });
+
   it("shrinks and dims a deck row as the next slides over it (prompts/mobile-landing-parallax.md, AC-9)", () => {
     wide = false;
     const { getByTestId } = render(
@@ -217,6 +314,32 @@ describe("LandingParallax (AC-7)", () => {
     expect(getByTestId("shade-0").style.opacity).toBe("0.11");
     expect(front.style.transform).toBe("scale(1)");
     expect(getByTestId("shade-1").style.opacity).toBe("0");
+  });
+
+  it("brings a tabbed-to deck card to the front (prompts/mobile-landing-parallax.md, AC-9)", () => {
+    wide = false;
+    const scrollTo = vi.fn();
+    vi.stubGlobal("scrollTo", scrollTo);
+    const { getByTestId } = render(
+      <LandingParallax>
+        <ul data-deck="" data-testid="deck">
+          <li data-deck-card="" data-deck-row="0" data-testid="row-0" />
+          <li data-deck-card="" data-deck-row="2" style={{ top: 96 }}>
+            <a href="/shows/1">Card</a>
+          </li>
+        </ul>
+      </LandingParallax>,
+    );
+    size(getByTestId("row-0"), { offsetHeight: 400 });
+    box(getByTestId("deck"), { top: 1000 });
+
+    screen.getByRole("link", { name: "Card" }).focus();
+
+    // Two 400px rows in, less the 96px it sticks at below the top.
+    expect(scrollTo).toHaveBeenCalledExactlyOnceWith({
+      top: 1000 + 2 * 400 - 96,
+      behavior: "instant",
+    });
   });
 
   it("leaves the deck alone from md", () => {
