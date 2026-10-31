@@ -103,6 +103,17 @@ async function openMenu(user: ReturnType<typeof userEvent.setup>) {
   return screen.findByRole("dialog", { name: "Menu" });
 }
 
+/** Tabs forward until `target` has focus, failing rather than looping forever. */
+async function tabTo(
+  user: ReturnType<typeof userEvent.setup>,
+  target: Element,
+) {
+  for (let step = 0; step < 20 && document.activeElement !== target; step++) {
+    await user.tab();
+  }
+  expect(target).toHaveFocus();
+}
+
 function rowNames() {
   return within(screen.getByRole("navigation", { name: "Library" }))
     .getAllByRole("link")
@@ -256,7 +267,7 @@ describe("MobileMenuSheet", () => {
     );
   });
 
-  it("gives search the whole screen on focus, and Cancel brings the menu back", async () => {
+  it("gives search the whole screen on a tap, and Cancel brings the menu back", async () => {
     const user = userEvent.setup();
     render(<Sheet />);
     await openMenu(user);
@@ -277,6 +288,38 @@ describe("MobileMenuSheet", () => {
     expect(screen.getByRole("combobox", { name: "Search shows" })).toHaveValue(
       "",
     );
+    // Cancel unmounts itself, so focus goes back to the field, not the void.
+    expect(
+      screen.getByRole("combobox", { name: "Search shows" }),
+    ).toHaveFocus();
+  });
+
+  // covers: prompts/mobile-navigation.md, AC-6
+  it("lets the keyboard tab past the field to the rows and the account block", async () => {
+    const user = userEvent.setup();
+    render(<Sheet />);
+    await openMenu(user);
+    const field = screen.getByRole("combobox", { name: "Search shows" });
+
+    await tabTo(user, field);
+    expect(screen.queryByRole("button", { name: "Cancel" })).toBeNull();
+
+    const account = screen.getByRole("link", { name: "Account" });
+    await tabTo(user, account);
+    expect(screen.getByRole("navigation", { name: "Library" })).toBeVisible();
+  });
+
+  it("starts search mode when the keyboard types into the field", async () => {
+    const user = userEvent.setup();
+    render(<Sheet />);
+    await openMenu(user);
+    const field = screen.getByRole("combobox", { name: "Search shows" });
+    await tabTo(user, field);
+
+    await user.keyboard("d");
+
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Library" })).toBeNull();
   });
 
   it("keeps the query when the tab changes during a search", async () => {

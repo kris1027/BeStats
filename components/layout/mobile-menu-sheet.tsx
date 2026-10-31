@@ -4,7 +4,7 @@ import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { cn } from "cn";
 import { MenuIcon, XIcon } from "lucide-react";
 import type * as React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   BrandLinkView,
@@ -73,7 +73,6 @@ function MobileMenuSheet({
   triggerLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const popup = useRef<HTMLDivElement>(null);
   const close = () => setOpen(false);
 
   useEffect(() => {
@@ -92,7 +91,6 @@ function MobileMenuSheet({
       library={library}
       account={account}
       onClose={close}
-      popup={popup}
     />
   );
 
@@ -108,7 +106,6 @@ function MobileMenuSheet({
         <DialogPrimitive.Backdrop className="fixed inset-0 z-40 bg-background/60 duration-150 supports-backdrop-filter:backdrop-blur-glass data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
 
         <DialogPrimitive.Popup
-          ref={popup}
           className="glass-plate-sheet fixed inset-0 z-50 flex flex-col gap-4 overflow-y-auto px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] duration-150 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0"
           onClick={(event) => {
             if (
@@ -160,36 +157,36 @@ function MobileMenuSheet({
  * navigates until a row, the wordmark or a result is chosen. The page's lit
  * tab still comes only from the URL, and a row is lit only on its own tab.
  *
- * Focusing the field starts search mode, which gives the results the whole
- * screen: the rows and the account block step aside, the tabs stay under the
- * field so the type can change without retyping, and Cancel clears the field
- * and brings the menu back.
+ * Tapping or typing into the field starts search mode, which gives the
+ * results the whole screen: the rows and the account block step aside, the
+ * tabs stay under the field so the type can change without retyping, and
+ * Cancel clears the field and brings the menu back with focus in the field.
+ * Tabbing onto the field does not start it, so the keyboard still reaches the
+ * rows and the account block past it (AC-6).
  */
 function MenuBody({
   page,
   library,
   account,
   onClose,
-  popup,
 }: {
   page: MenuPage;
   library: boolean;
   account: React.ReactNode;
   onClose: () => void;
-  popup: React.RefObject<HTMLDivElement | null>;
 }) {
   // A page with no tab starts from the catalog viewed last, as the logo does.
   const [preview, setPreview] = useState<LibraryType>(
     () => page.type ?? rememberedLibraryType() ?? "tv",
   );
   const [searching, setSearching] = useState(false);
-  // Bumped by Cancel, so the field remounts empty rather than keeping a query.
+  // Bumped by Cancel, so the field remounts empty rather than keeping a query,
+  // and takes focus back, since Cancel itself unmounts.
   const [searchKey, setSearchKey] = useState(0);
 
   function cancel() {
     setSearching(false);
     setSearchKey((key) => key + 1);
-    popup.current?.focus();
   }
 
   return (
@@ -207,8 +204,9 @@ function MenuBody({
         key={searchKey}
         type={preview}
         variant="overlay"
+        autoFocus={searchKey > 0}
         onNavigate={onClose}
-        onFocus={() => setSearching(true)}
+        onEngage={() => setSearching(true)}
         besideField={
           searching ? (
             <Button size="touch" variant="ghost" onClick={cancel}>

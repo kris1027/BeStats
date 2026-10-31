@@ -76,7 +76,7 @@ function QuickSearch({
   variant = "navbar",
   autoFocus = false,
   onNavigate,
-  onFocus,
+  onEngage,
   besideField,
   belowField,
   className,
@@ -86,8 +86,13 @@ function QuickSearch({
   autoFocus?: boolean;
   /** Called before each navigation, so the mobile menu can close. */
   onNavigate?: () => void;
-  /** Called when the field takes focus, which starts the menu's search mode. */
-  onFocus?: () => void;
+  /**
+   * Called when the field is pressed or typed into, which starts the menu's
+   * search mode. Not on focus alone: a keyboard user tabbing through the
+   * menu passes the field on the way to the library rows and the account
+   * block, which search mode would hide (prompts/mobile-navigation.md, AC-6).
+   */
+  onEngage?: () => void;
   /** Overlay only: shown at the end of the field's row. */
   besideField?: React.ReactNode;
   /** Overlay only: shown between the field and the results. */
@@ -232,7 +237,7 @@ function QuickSearch({
         aria-label={`Search ${noun}`}
         autoFocus={autoFocus}
         onKeyDown={onKeyDown}
-        onFocus={onFocus}
+        onPointerDown={onEngage}
         enterKeyHint="search"
         className="h-full min-w-0 flex-1 bg-transparent text-base text-foreground placeholder:text-muted-foreground focus-visible:outline-none md:text-sm"
       />
@@ -269,6 +274,7 @@ function QuickSearch({
         if (details.reason === "item-press") return;
         setQuery(value);
         setOpen(value.trim().length >= QUICK_MIN_CHARS);
+        if (value !== "") onEngage?.();
       }}
       open={panelOpen}
       onOpenChange={(next) => setOpen(next)}
