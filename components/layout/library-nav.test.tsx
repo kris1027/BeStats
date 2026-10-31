@@ -110,11 +110,13 @@ describe("LibraryNav", () => {
     }
   });
 
-  it("gives the sheet rows a 44px touch target", () => {
+  // covers: prompts/mobile-navigation.md, R5, R8
+  it("gives the sheet rows a 56px touch target with the page's mark", () => {
     pathname = "/movies";
     render(<LibraryNav variant="sheet" />);
     for (const link of screen.getAllByRole("link")) {
-      expect(link).toHaveClass("h-11");
+      expect(link).toHaveClass("h-14");
+      expect(link.querySelector("svg")).not.toBeNull();
     }
   });
   it.each(["/account", "/privacy", "/sign-in"])(
