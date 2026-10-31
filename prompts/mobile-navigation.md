@@ -41,6 +41,7 @@ The design's own colours map onto existing tokens: the selected cyan is `glass-s
 6. **Icons are the project's marks:** Coming soon / Upcoming `CalendarIcon`; Watchlist / Want to play `PlanIcon`; Up next / Playing `NextEpisodeIcon`; Watched / Finished `WatchedIcon filled`. Mapped by page key and type next to the rows, labels still from `libraryPageName`.
 7. **Pages with no media type** (`/account`, `/privacy`, `/terms`, auth pages, `/showcase`, 404): no search, tabs or rows in the menu; only the header (wordmark to the last viewed catalog, as `BrandLink` does) and the account block (prompts/hide-tabs-without-type.md).
 8. **Desktop unchanged**: `NavbarSearch layout="desktop"`, `LibraryNav variant="bar"` and the desktop account slot stay as they are.
+10. **The desktop row fits at every width** (added 2026-10-31 at the owner's request, option "Menu below xl"). Signed in on a library page the full desktop row needs about 1460px on games and 1360px on movies, but it was used from `md` (768px), so it overflowed: Sign out ran past the edge at 1280px and the library links wrapped. Now, between `md` and `xl` the desktop bar keeps the wordmark, the tabs and the search and puts the same menu button in place of the library links, the account button and Sign out; from `xl` the full row shows, with the account name only from `2xl`. The search field takes what the row leaves, from 160px up to its 360px, and the library links never wrap (`whitespace-nowrap`, `shrink-0`). The menu closes when the window crosses the width its button is hidden from (`hiddenFrom`: `md` in the mobile bar, `xl` in the desktop bar). Signed out, the row is unchanged (it fits).
 9. **Motion:** the menu fades in (150ms, as today); the switch into search mode is instant. Both respect `prefers-reduced-motion` through the existing `animate-in` utilities.
 
 ## Assumptions
@@ -71,7 +72,7 @@ The design's own colours map onto existing tokens: the selected cyan is `glass-s
 - R7 Any navigation from the menu closes it.
 - R8 Every touch target is at least 44px.
 - R9 No colour literal outside `globals.css`; no new client boundary in the shell beyond the existing menu file.
-- R10 Desktop renders exactly as before.
+- R10 Desktop renders as before, except decision 10: the menu button below `xl` when signed in, a search that narrows instead of overflowing, and the account name from `2xl`.
 
 ## Security considerations
 
@@ -85,7 +86,8 @@ No new data, reads or writes. The account block is still rendered by the server 
 - AC-4 Tapping GAMES on `/up-next` shows Coming soon, Want to play, Playing, Finished without navigating; tapping Playing opens `/playing?type=game` and closes the menu.
 - AC-5 Focusing search hides rows and account, keeps tabs; typing shows results; switching tab re-runs the same query; Cancel restores the menu.
 - AC-6 Keyboard: Tab cycles inside the menu, Escape closes, focus returns to the menu button.
-- AC-7 Desktop at 1280px is unchanged.
+- AC-7 Desktop at 1280px shows the same controls as before, now without overflow (decision 10).
+- AC-9 Signed in on `/want-to-play?type=game` and `/coming-soon?type=movie`, nothing in the bar runs past the viewport or wraps at 768, 1024, 1279, 1280, 1440 and 1536px; below 1280 the bar shows the menu button, from 1280 the full row.
 - AC-8 `/shows`, `/movies`, `/games` and title pages keep their prerendered shells (build output unchanged).
 
 ## Automated checks
