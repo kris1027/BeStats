@@ -28,6 +28,7 @@ const LAYOUT_TREE = [
   "components/layout/media-type-tabs.tsx",
   "components/layout/mobile-menu-sheet.tsx",
   "components/layout/mobile-account-block.tsx",
+  "components/layout/account-slot-skeleton.tsx",
   // The page background and its motion, behind every route
   // (prompts/warm-page-background.md).
   "components/layout/page-background.tsx",
