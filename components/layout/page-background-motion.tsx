@@ -49,9 +49,8 @@ function PageBackgroundMotion({
       reset() {
         for (const node of all(MOVED)) node.style.transform = "";
       },
-      tick(now, lean) {
+      tick(now, lean, viewport) {
         const time = now / 1000;
-        const viewport = window.innerHeight;
         const scroll = window.scrollY;
         const progress =
           scroll /

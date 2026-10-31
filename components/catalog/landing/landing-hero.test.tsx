@@ -124,10 +124,16 @@ describe("LandingHeroContent (AC-3)", () => {
     ).toBeInTheDocument();
     expect(screen.getByTestId("trailer")).toHaveTextContent("movie/7");
     expect(screen.getByTestId("tracking")).toHaveTextContent("movie/7");
-    // The hero alone asks for TMDB's original (prompts/home-hero-backdrop-quality.md, AC-2).
-    expect(container.querySelector("img")?.getAttribute("src")).toContain(
+    // The hero alone asks for TMDB's original (prompts/home-hero-backdrop-quality.md, AC-2),
+    // from `lg` only; a phone gets the w780 poster (prompts/mobile-landing-parallax.md, decision 12).
+    const wide = container.querySelector("picture source");
+    expect(wide).toHaveAttribute("media", "(min-width: 64rem)");
+    expect(wide?.getAttribute("srcset")).toContain(
       encodeURIComponent("/t/p/original/b.jpg"),
     );
+    expect(
+      container.querySelector("picture img")?.getAttribute("src"),
+    ).toContain(encodeURIComponent("/t/p/w780/p.jpg"));
   });
 
   it("uses the show slots on the TV landing", async () => {
@@ -244,9 +250,14 @@ describe("the games hero", () => {
     expect(screen.getByTestId("tracking")).toHaveTextContent("game/1942");
     expect(
       decodeURIComponent(
-        container.querySelector("img")?.getAttribute("src") ?? "",
+        container.querySelector("picture source")?.getAttribute("srcset") ?? "",
       ),
     ).toContain("t_1080p/ar1.jpg");
+    expect(
+      decodeURIComponent(
+        container.querySelector("picture img")?.getAttribute("src") ?? "",
+      ),
+    ).toContain("co1.jpg");
   });
 
   it("falls back to the cover, and leaves genres out when IGDB fails them", async () => {

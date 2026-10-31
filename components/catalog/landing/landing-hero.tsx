@@ -1,5 +1,4 @@
 import { cn } from "cn";
-import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -16,6 +15,7 @@ import {
   resizeImageUrl,
 } from "@/lib/tmdb";
 import { ArtFallback } from "./art-fallback";
+import { HeroPicture } from "./hero-picture";
 import { CommunityRatingBadge, LandingTracking } from "./landing-badge";
 import {
   type LandingItem,
@@ -31,9 +31,10 @@ import {
 
 /**
  * The landing's hero (prompts/home-parallax-landing.md, decisions 4 and 11):
- * TMDB's number one trending title over its backdrop, with its TMDB rating,
- * genres, Trailer and the tracking control. It streams behind a skeleton of
- * the same box, so nothing below it moves when it arrives.
+ * TMDB's number one trending title over its artwork, a full screen at every
+ * width (prompts/mobile-landing-parallax.md, decision 12), with its TMDB
+ * rating, genres, Trailer and the tracking control. It streams behind a
+ * skeleton of the same box, so nothing below it moves when it arrives.
  */
 function LandingHero({ list }: { list: CatalogList }) {
   return (
@@ -64,18 +65,19 @@ async function LandingHeroContent({ list }: { list: CatalogList }) {
         suppressHydrationWarning
         className={cn(
           HERO_ART_BOX,
-          "mask-b-from-75% lg:mask-l-from-70% min-[1600px]:mask-r-from-90%",
+          "mask-b-from-60% lg:mask-b-from-75% lg:mask-l-from-70% min-[1600px]:mask-r-from-90%",
         )}
       >
         <HeroArtwork item={item} />
         {/*
          * Keeps the title block readable over bright artwork, inside the
-         * mask so it fades out with the image rather than painting a band.
-         * Below `lg` the title sits under the artwork and needs no shade.
+         * mask so it fades out with the image rather than painting a band:
+         * from below on a phone, where the title sits over the poster's
+         * foot, and from the left from `lg`.
          */}
         <div
           aria-hidden="true"
-          className="absolute inset-0 hidden bg-linear-to-r from-background/70 via-background/25 to-transparent lg:block"
+          className="absolute inset-0 bg-linear-to-t from-background/80 via-background/30 via-35% to-transparent to-60% lg:bg-linear-to-r lg:from-background/70 lg:via-background/25 lg:via-50% lg:to-transparent lg:to-100%"
         />
       </div>
       <div aria-hidden="true" className="backdrop-scrim absolute inset-0" />
@@ -122,28 +124,21 @@ async function LandingHeroContent({ list }: { list: CatalogList }) {
 }
 
 /**
- * The backdrop, or the poster cropped to fill when TMDB has no backdrop, or
- * the flat missing image plate (decision 10). Decorative: the h2 names it.
- * The backdrop is TMDB's `original`, the one surface that asks for it: it
- * fills a full width box, which `w1280` can only fill stretched, and the
- * loader still serves a ladder size to a screen that needs no more
- * (prompts/home-hero-backdrop-quality.md, decision 2).
+ * The hero's artwork: the phone's poster and the wide screen's backdrop
+ * (`HeroPicture`), or the flat missing image plate when there is neither
+ * (decision 10). The backdrop is TMDB's `original`, the one surface that asks
+ * for it: it fills a full width box, which `w1280` can only fill stretched,
+ * and the loader still serves a ladder size to a screen that needs no more
+ * (prompts/home-hero-backdrop-quality.md, decision 2). The poster stops at
+ * `w780`, TMDB's largest poster rung.
  */
 function HeroArtwork({ item }: { item: LandingItem }) {
-  const src = resizeImageUrl(item.backdropUrl, "original") ?? item.posterUrl;
-  if (src === null) {
+  const backdrop = resizeImageUrl(item.backdropUrl, "original");
+  const poster = resizeImageUrl(item.posterUrl, "w780");
+  if (backdrop === null && poster === null) {
     return <ArtFallback iconClassName="size-10" />;
   }
-  return (
-    <Image
-      src={src}
-      alt=""
-      fill
-      preload
-      sizes="(min-width: 1600px) 1600px, 100vw"
-      className="object-cover object-top"
-    />
-  );
+  return <HeroPicture backdrop={backdrop} poster={poster} />;
 }
 
 /**

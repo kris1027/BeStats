@@ -16,13 +16,14 @@ import { UpcomingSkeleton } from "./landing-skeletons";
 import { WideCardView } from "./wide-card";
 
 /**
- * A row's frame: out to the column's edges, scrolling natively on a phone
- * and with reduced motion, and clipped from `md` where `LandingParallax`
- * slides it (decisions 6 and 13). `overflow-x: clip` rather than hidden, so
- * focusing a card cannot scroll the frame behind the script's back.
+ * A row's frame: out to the column's edges, scrolling natively with reduced
+ * motion, and otherwise clipped at every width while `LandingParallax`
+ * slides it (decision 13; prompts/mobile-landing-parallax.md, decision 2).
+ * `overflow-x: clip` rather than hidden, so focusing a card cannot scroll
+ * the frame behind the script's back.
  */
 const FRAME_CLASS =
-  "-mx-4 snap-x snap-mandatory scroll-px-4 overflow-x-auto overscroll-x-contain px-4 [scrollbar-width:none] md:motion-safe:snap-none md:motion-safe:overflow-x-clip min-[1600px]:mask-x-from-96% [&::-webkit-scrollbar]:hidden";
+  "-mx-4 snap-x snap-mandatory scroll-px-4 overflow-x-auto overscroll-x-contain px-4 [scrollbar-width:none] motion-safe:snap-none motion-safe:overflow-x-clip min-[1600px]:mask-x-from-96% [&::-webkit-scrollbar]:hidden";
 
 /**
  * Upcoming, or On the air on the TV landing (prompts/home-parallax-

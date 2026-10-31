@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 
 import { type Lean, REDUCED_MOTION, startMotionLoop } from "@/lib/motion/loop";
 
-/** Tailwind's `md` and `lg`, where the motion starts and the columns change. */
+/** Tailwind's `md` and `lg`, where the layouts and the columns change. */
 const WIDE = "(min-width: 48rem)";
 const LARGE = "(min-width: 64rem)";
 const FINE_POINTER = "(pointer: fine)";
@@ -21,6 +21,14 @@ const MARQUEE_SPEED = 0.25;
 /** How far a poster's artwork drifts inside its frame, in pixels. */
 const POSTER_DRIFT = 24;
 
+/**
+ * Below `md` every distance shrinks with the screen, this width giving full
+ * strength and `MIN_STRENGTH` the floor (prompts/mobile-landing-parallax.md,
+ * decision 5).
+ */
+const FULL_STRENGTH_WIDTH = 1024;
+const MIN_STRENGTH = 0.3;
+
 /** Every node this component may move, so a reset can put each one back. */
 const MOVED = [
   "[data-depth]",
@@ -32,9 +40,27 @@ const MOVED = [
   "[data-speed]",
   "[data-marquee]",
   "[data-poster-drift]",
+  "[data-deck-card]",
+  "[data-deck-shade]",
 ].join(",");
 
+/** How much each pair stacked over a deck card shrinks and darkens it. */
+const DECK_SHRINK = 0.06;
+const DECK_MIN_SCALE = 0.82;
+const DECK_DIM = 0.22;
+const DECK_MAX_DIM = 0.6;
+
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
+
+/**
+ * The motion's strength: 1 from `md`, so tablets and desktops move exactly
+ * as they did, and a share of it on a phone, so a drift measured for a
+ * 1440px screen does not throw a 360px card across the page (decision 5).
+ */
+function strength(width: number, isWide: boolean): number {
+  if (isWide) return 1;
+  return Math.min(1, Math.max(MIN_STRENGTH, width / FULL_STRENGTH_WIDTH));
+}
 
 /**
  * How far a sideways row can travel inside its frame: the row's width plus
@@ -59,11 +85,63 @@ function centreAlong(item: HTMLElement, row: HTMLElement): number {
 }
 
 /**
- * The landing's motion (prompts/home-parallax-landing.md, decisions 6, 9,
- * 14 and 16): one `requestAnimationFrame` loop (`startMotionLoop`) that writes transforms to the
- * `data-*` marked nodes the Server Components render. It holds no data and
- * renders nothing of its own, so every card, link and heading stays server
- * HTML that works with this script missing.
+ * The scroll between two deck rows in the flow: a row's height plus the
+ * grid's row gap, which is also how far a row travels before it sticks.
+ */
+function deckPitch(deck: HTMLElement): number {
+  const first = deck.querySelector<HTMLElement>("[data-deck-card]");
+  if (!first) return 0;
+  const gap = Number.parseFloat(window.getComputedStyle(deck).rowGap) || 0;
+  return first.offsetHeight + gap;
+}
+
+/** Where a sticky deck card stops below the viewport's top. */
+function stickTop(card: HTMLElement): number {
+  return Number.parseFloat(window.getComputedStyle(card).top) || 0;
+}
+
+/**
+ * One frame of Popular's deck: each row shrinks and its shade darkens by how
+ * far the rows after it have slid over it (decision 13). Reads every box and
+ * returns the writes, so the caller keeps one layout per frame.
+ */
+function deckWrites(deck: HTMLElement): Array<() => void> {
+  const pitch = deckPitch(deck);
+  if (!(pitch > 0)) return [];
+  const rows: HTMLElement[][] = [];
+  for (const card of deck.querySelectorAll<HTMLElement>("[data-deck-card]")) {
+    const row = Number(card.dataset.deckRow);
+    rows[row] = [...(rows[row] ?? []), card];
+  }
+  const covers = rows.map((row) =>
+    clamp01(
+      1 - (row[0].getBoundingClientRect().top - stickTop(row[0])) / pitch,
+    ),
+  );
+  const writes: Array<() => void> = [];
+  let depth = 0;
+  for (let row = rows.length - 1; row >= 0; row -= 1) {
+    const scale = Math.max(DECK_MIN_SCALE, 1 - DECK_SHRINK * depth);
+    const dim = String(Math.min(DECK_MAX_DIM, DECK_DIM * depth));
+    for (const card of rows[row] ?? []) {
+      const shade = card.querySelector<HTMLElement>("[data-deck-shade]");
+      writes.push(() => {
+        card.style.transform = `scale(${scale})`;
+        if (shade) shade.style.opacity = dim;
+      });
+    }
+    depth += covers[row] ?? 0;
+  }
+  return writes;
+}
+
+/**
+ * The landing's motion (prompts/home-parallax-landing.md, decisions 9, 14
+ * and 16; prompts/mobile-landing-parallax.md): one idle aware
+ * `requestAnimationFrame` loop (`startMotionLoop`) that writes transforms to
+ * the `data-*` marked nodes the Server Components render. It holds no data
+ * and renders nothing of its own, so every card, link and heading stays
+ * server HTML that works with this script missing.
  *
  * - `data-depth`: the background blobs, moved by scroll and, with a mouse,
  *   by the pointer. Half depth below `md`.
@@ -73,20 +151,26 @@ function centreAlong(item: HTMLElement, row: HTMLElement): number {
  *   sideways pan and progress bar.
  * - `data-speed`: a vertical drift against the centre of the viewport,
  *   measured from the nearest `data-speed-root` or the parent. A node whose
- *   column count changes at `lg` also carries `data-speed-lg`, its speed from
- *   there (prompts/top-rated-parallax-columns.md, decision 3).
+ *   column count changes carries its speed for that layout too:
+ *   `data-speed-narrow` below `md` and `data-speed-lg` from `lg`
+ *   (prompts/top-rated-parallax-columns.md, decision 3).
  * - `data-marquee`: a row that slides sideways as it crosses the viewport;
  *   while a card in it has focus, the row holds that card in view instead.
  * - `data-poster-drift`: the artwork drifts inside its frame, through the
  *   `poster-drift` utility's custom properties, so the image `next/image`
  *   renders is never written to.
+ * - `data-deck` with `data-deck-card` and `data-deck-shade`: below `md`, the
+ *   sticky pairs of Popular's deck. Each row shrinks and its shade darkens by
+ *   how far the rows after it have slid over it
+ *   (prompts/mobile-landing-parallax.md, decision 13).
  *
- * The streamed sections can arrive and be moved before React hydrates them,
- * so every node written here carries `suppressHydrationWarning`: the only
- * attribute that differs is the `style` this loop owns.
- * Everything except the blobs and the hero runs only from `md`, where the
- * CSS lays the sections out for it. Reduced motion stops the loop and puts
- * every node back, so the page is a static layout (AC-7).
+ * Everything runs at every width; below `md` the distances shrink with the
+ * screen (`strength`). Each frame reads every box first and writes after,
+ * so a frame lays the page out once. The streamed sections can arrive and be
+ * moved before React hydrates them, so every node written here carries
+ * `suppressHydrationWarning`: the only attribute that differs is the `style`
+ * this loop owns. Reduced motion stops the loop and puts every node back, so
+ * the page is a static layout with native swipe rows (AC-7).
  */
 function LandingParallax({
   className,
@@ -105,6 +189,7 @@ function LandingParallax({
     const wide = window.matchMedia(WIDE);
     const large = window.matchMedia(LARGE);
     const finePointer = window.matchMedia(FINE_POINTER);
+    let lastViewport = window.innerHeight;
 
     const all = <T extends Element = HTMLElement>(selector: string) =>
       root.querySelectorAll<T & HTMLElement>(selector);
@@ -118,36 +203,56 @@ function LandingParallax({
       }
     }
 
-    function tick(_now: number, lean: Lean) {
+    function speedOf(node: HTMLElement, isWide: boolean): number {
+      const own = !isWide
+        ? node.dataset.speedNarrow
+        : large.matches
+          ? node.dataset.speedLg
+          : undefined;
+      return Number(own ?? node.dataset.speed);
+    }
+
+    function tick(_now: number, lean: Lean, viewport: number) {
+      lastViewport = viewport;
       const scroll = window.scrollY;
-      const viewport = window.innerHeight;
       const isWide = wide.matches;
+      const motionStrength = strength(window.innerWidth, isWide);
       const visible = (rect: DOMRect) =>
         rect.bottom > -100 && rect.top < viewport + 100;
+      const writes: Array<() => void> = [];
+      const move = (node: HTMLElement, transform: string) =>
+        writes.push(() => {
+          node.style.transform = transform;
+        });
 
       for (const node of all("[data-depth]")) {
         const depth = Number(node.dataset.depth) * (isWide ? 1 : 0.5);
-        node.style.transform = `translate3d(${-lean.x * depth * 80}px, ${
-          -scroll * depth - lean.y * depth * 40
-        }px, 0)`;
+        move(
+          node,
+          `translate3d(${-lean.x * depth * 80}px, ${
+            -scroll * depth - lean.y * depth * 40
+          }px, 0)`,
+        );
       }
 
       if (scroll < viewport * 1.5) {
         for (const node of all("[data-hero-bg]")) {
-          node.style.transform = `translate3d(${-lean.x * 14}px, ${
-            scroll * 0.45
-          }px, 0)`;
+          move(node, `translate3d(${-lean.x * 14}px, ${scroll * 0.45}px, 0)`);
         }
         for (const node of all("[data-hero-fg]")) {
-          node.style.transform = `translate3d(0, ${-scroll * 0.25}px, 0)`;
-          node.style.opacity = String(1 - clamp01(scroll / (viewport * 0.55)));
+          const opacity = String(1 - clamp01(scroll / (viewport * 0.55)));
+          writes.push(() => {
+            node.style.transform = `translate3d(0, ${-scroll * 0.25}px, 0)`;
+            node.style.opacity = opacity;
+          });
         }
         for (const node of all("[data-hero-cue]")) {
-          node.style.opacity = String(1 - clamp01(scroll / 150));
+          const opacity = String(1 - clamp01(scroll / 150));
+          writes.push(() => {
+            node.style.opacity = opacity;
+          });
         }
       }
-
-      if (!isWide) return;
 
       for (const section of all("[data-pin]")) {
         const rect = section.getBoundingClientRect();
@@ -156,10 +261,10 @@ function LandingParallax({
         const track = section.querySelector<HTMLElement>("[data-pin-track]");
         if (track?.parentElement) {
           const distance = travel(track, track.parentElement);
-          track.style.transform = `translate3d(${-progress * distance}px, 0, 0)`;
+          move(track, `translate3d(${-progress * distance}px, 0, 0)`);
         }
         const bar = section.querySelector<HTMLElement>("[data-pin-bar]");
-        if (bar) bar.style.transform = `scaleX(${progress})`;
+        if (bar) move(bar, `scaleX(${progress})`);
       }
 
       for (const node of all("[data-speed]")) {
@@ -169,12 +274,8 @@ function LandingParallax({
         const rect = reference.getBoundingClientRect();
         if (!visible(rect)) continue;
         const offset = rect.top + rect.height / 2 - viewport / 2;
-        const speed =
-          (large.matches ? node.dataset.speedLg : undefined) ??
-          node.dataset.speed;
-        node.style.transform = `translate3d(0, ${
-          -offset * Number(speed)
-        }px, 0)`;
+        const y = -offset * speedOf(node, isWide) * motionStrength;
+        move(node, `translate3d(0, ${y}px, 0)`);
       }
 
       for (const row of all("[data-marquee]")) {
@@ -193,10 +294,21 @@ function LandingParallax({
           : min / 2 +
             Number(row.dataset.marquee) *
               (rect.top + rect.height / 2 - viewport / 2) *
-              MARQUEE_SPEED;
-        row.style.transform = `translate3d(${Math.min(0, Math.max(min, x))}px, 0, 0)`;
+              MARQUEE_SPEED *
+              motionStrength;
+        const clamped = Math.min(0, Math.max(min, x));
+        move(row, `translate3d(${clamped}px, 0, 0)`);
       }
 
+      if (!isWide) {
+        for (const deck of all("[data-deck]")) {
+          if (visible(deck.getBoundingClientRect())) {
+            writes.push(...deckWrites(deck));
+          }
+        }
+      }
+
+      const drift = POSTER_DRIFT * motionStrength;
       let index = 0;
       for (const card of all("[data-poster-drift]")) {
         index += 1;
@@ -204,15 +316,15 @@ function LandingParallax({
         if (!visible(rect) || rect.height === 0) continue;
         const progress = (rect.top + rect.height / 2 - viewport / 2) / viewport;
         const direction = index % 2 ? -1 : 1;
-        card.style.setProperty(
-          "--poster-drift-y",
-          `${direction * progress * POSTER_DRIFT}px`,
-        );
-        card.style.setProperty(
-          "--poster-drift-scale",
-          String(1 + (2 * POSTER_DRIFT) / rect.height),
-        );
+        const y = `${direction * progress * drift}px`;
+        const scale = String(1 + (2 * drift) / rect.height);
+        writes.push(() => {
+          card.style.setProperty("--poster-drift-y", y);
+          card.style.setProperty("--poster-drift-scale", scale);
+        });
       }
+
+      for (const write of writes) write();
     }
 
     /*
@@ -222,8 +334,9 @@ function LandingParallax({
      * frame keeps the browser from scrolling the frame itself instead.
      */
     function onFocusIn(event: FocusEvent) {
-      if (reduced.matches || !wide.matches) return;
+      if (reduced.matches) return;
       const target = event.target instanceof Element ? event.target : null;
+      if (!wide.matches && bringDeckCardForward(target)) return;
       const track = target?.closest<HTMLElement>("[data-pin-track]");
       const section = track?.closest<HTMLElement>("[data-pin]");
       const item = target?.closest<HTMLElement>("li");
@@ -236,9 +349,27 @@ function LandingParallax({
       );
       const top = section.getBoundingClientRect().top + window.scrollY;
       window.scrollTo({
-        top: top + progress * (section.offsetHeight - window.innerHeight),
+        top: top + progress * (section.offsetHeight - lastViewport),
         behavior: "instant",
       });
+    }
+
+    /*
+     * A deck card tabbed to can sit under the pairs stacked over it. Scroll
+     * the page to the point where its row has just stuck and the rows after
+     * it are still below, so it is the front pair (decision 13).
+     */
+    function bringDeckCardForward(target: Element | null): boolean {
+      const card = target?.closest<HTMLElement>("[data-deck-card]");
+      const deck = card?.closest<HTMLElement>("[data-deck]");
+      if (!card || !deck) return false;
+      const top = deck.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo({
+        top:
+          top + Number(card.dataset.deckRow) * deckPitch(deck) - stickTop(card),
+        behavior: "instant",
+      });
+      return true;
     }
 
     const stop = startMotionLoop({
@@ -246,6 +377,7 @@ function LandingParallax({
       reset,
       restartOn: [wide],
       leans: () => finePointer.matches,
+      idle: { watch: root },
     });
     root.addEventListener("focusin", onFocusIn);
 

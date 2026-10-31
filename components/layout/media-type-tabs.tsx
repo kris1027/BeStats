@@ -6,6 +6,7 @@ import Link from "next/link";
 import {
   CATALOG_PATHS,
   isLibraryPath,
+  isTypedPath,
   type LibraryType,
   libraryTabSwitchHref,
   type TypedPath,
@@ -52,7 +53,7 @@ function MediaTypeTabs({ className }: { className?: string }) {
       fallback={(pathname) => (
         <MediaTypeTabsView
           selected={null}
-          hrefs={typedHrefs(pathname)}
+          hrefs={tabHrefs(pathname)}
           className={className}
         />
       )}
@@ -64,7 +65,7 @@ function MediaTypeTabs({ className }: { className?: string }) {
           hrefs={
             page.params === null
               ? undefined
-              : typedHrefs(page.pathname, page.params)
+              : tabHrefs(page.pathname, page.params)
           }
           className={className}
         />
@@ -74,26 +75,37 @@ function MediaTypeTabs({ className }: { className?: string }) {
 }
 
 /**
- * Each tab's link on a typed page (spec 0028, AC-14; spec 0029, AC-14): on
- * `/search` the same page with its own `type`, keeping the query, year and
- * rating `typedHref` allows, and on a library route the tab's matching page
- * (`libraryTabSwitchHref`).
+ * Where a media tab leads from `pathname`, for the navbar's links and the
+ * mobile menu's tabs alike (prompts/mobile-menu-tabs-navigate.md, decision 1):
+ * on `/search` the same page with its own `type`, keeping the query, year and
+ * rating `typedHref` allows (spec 0029, AC-14); on a library route the tab's
+ * matching page (`libraryTabSwitchHref`); off the typed pages the tab's
+ * catalog landing (spec 0028, AC-14).
+ *
+ * @param current The page's query, which `/search` keeps across a switch and
+ * a library route reads its current page from.
  */
-function typedHrefs(pathname: TypedPath, current?: URLSearchParams): TabHrefs {
-  const href = (type: LibraryType) =>
-    isLibraryPath(pathname)
-      ? libraryTabSwitchHref(pathname, type, current)
-      : typedHref(pathname, type, { current });
-  return { tv: href("tv"), movie: href("movie"), game: href("game") };
+function mediaTabHref(
+  pathname: string | null,
+  type: LibraryType,
+  current?: URLSearchParams,
+): string {
+  if (!isTypedPath(pathname)) return CATALOG_PATHS[type];
+  return isLibraryPath(pathname)
+    ? libraryTabSwitchHref(pathname, type, current)
+    : typedHref(pathname, type, { current });
 }
 
-/** Each tab's link off the typed pages, the three catalog landings (spec 0028, AC-14). */
-function catalogHrefs(): TabHrefs {
-  return {
-    tv: CATALOG_PATHS.tv,
-    movie: CATALOG_PATHS.movie,
-    game: CATALOG_PATHS.game,
-  };
+/**
+ * Each tab's link from `pathname`, or the three catalog landings with no
+ * typed page to stay on.
+ */
+function tabHrefs(
+  pathname: TypedPath | null,
+  current?: URLSearchParams,
+): TabHrefs {
+  const href = (type: LibraryType) => mediaTabHref(pathname, type, current);
+  return { tv: href("tv"), movie: href("movie"), game: href("game") };
 }
 
 /** Where each tab leads. */
@@ -127,7 +139,7 @@ const NAV_PILL_CLASS =
  */
 function MediaTypeTabsView({
   selected,
-  hrefs = catalogHrefs(),
+  hrefs = tabHrefs(null),
   className,
 }: {
   selected: LibraryType | null;
@@ -161,4 +173,10 @@ function MediaTypeTabsView({
   );
 }
 
-export { MEDIA_TABS, MediaTypeTabs, MediaTypeTabsView, NAV_PILL_CLASS };
+export {
+  MEDIA_TABS,
+  MediaTypeTabs,
+  MediaTypeTabsView,
+  mediaTabHref,
+  NAV_PILL_CLASS,
+};

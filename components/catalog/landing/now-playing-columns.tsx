@@ -25,9 +25,17 @@ const NOW_SIZES = "(min-width: 768px) 22vw, 50vw";
 const COLUMN_SPEEDS = [0.12, -0.12, 0.24] as const;
 
 /**
+ * The same drift on a phone's two columns, each the other way from its
+ * neighbour (prompts/mobile-landing-parallax.md, decision 8). The loop reads
+ * it below `md`, where `index % 3` would no longer be a column.
+ */
+const NARROW_COLUMN_SPEEDS = [0.12, -0.12] as const;
+
+/**
  * Now playing, or Airing today on the TV landing (prompts/home-parallax-
  * landing.md, decisions 1 and 12): a sidebar that sticks while three columns
- * of posters drift past it. A phone gets the sidebar above a two column grid.
+ * of posters drift past it. A phone gets the sidebar above two columns that
+ * drift opposite ways.
  */
 function NowPlayingColumns({
   list,
@@ -93,6 +101,9 @@ async function NowItems({ list }: { list: CatalogList }) {
         <li
           key={item.id}
           data-speed={COLUMN_SPEEDS[index % COLUMN_SPEEDS.length]}
+          data-speed-narrow={
+            NARROW_COLUMN_SPEEDS[index % NARROW_COLUMN_SPEEDS.length]
+          }
           suppressHydrationWarning
         >
           <LandingPoster item={item} ids={ids} sizes={NOW_SIZES} />

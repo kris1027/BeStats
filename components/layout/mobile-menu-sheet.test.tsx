@@ -9,7 +9,7 @@ import { MobileMenuSheet } from "@/components/layout/mobile-menu-sheet";
 
 /**
  * covers: spec 0004, AC-15; spec 0010, AC-6; prompts/mobile-navigation.md,
- * AC-2 to AC-6
+ * AC-2 to AC-6; prompts/mobile-menu-tabs-navigate.md, AC-1 to AC-5
  *
  * Tested against the real Base UI Dialog and Autocomplete rather than mocked.
  * Base UI supplies the behaviour, so the thing that can actually break is the
@@ -210,15 +210,15 @@ describe("MobileMenuSheet", () => {
     ).toBeInTheDocument();
   });
 
-  it("previews another tab's rows without navigating, lighting none", async () => {
+  it("changes the page signed in and stays open on the new tab's rows (prompts/mobile-menu-tabs-navigate.md, AC-2)", async () => {
     const user = userEvent.setup();
-    render(<Sheet />);
+    const { rerender } = render(<Sheet />);
     await openMenu(user);
 
     await user.click(screen.getByRole("button", { name: "GAMES" }));
 
+    expect(push).toHaveBeenCalledExactlyOnceWith("/want-to-play?type=game");
     expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(push).not.toHaveBeenCalled();
     expect(rowNames()).toEqual([
       "Coming soon",
       "Want to play",
@@ -229,6 +229,7 @@ describe("MobileMenuSheet", () => {
       "href",
       "/playing?type=game",
     );
+    // Nothing is lit until the new page's type arrives from the URL.
     expect(screen.queryByRole("link", { current: "page" })).toBeNull();
     expect(
       screen.getByRole("combobox", { name: "Search games" }),
@@ -237,6 +238,70 @@ describe("MobileMenuSheet", () => {
       "href",
       "/games",
     );
+
+    // The page behind arrives at the new URL, and its row lights.
+    pathname.current = "/want-to-play";
+    search.current = "type=game";
+    rerender(<Sheet />);
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Want to play" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+  });
+
+  it("does nothing when the lit tab is pressed (prompts/mobile-menu-tabs-navigate.md, decision 5)", async () => {
+    const user = userEvent.setup();
+    render(<Sheet />);
+    await openMenu(user);
+
+    await user.click(screen.getByRole("button", { name: "SHOWS" }));
+
+    expect(push).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "SHOWS" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("changes the page and closes when signed out (AC-1)", async () => {
+    pathname.current = "/shows";
+    const user = userEvent.setup();
+    render(<Sheet signedIn={false} />);
+    await openMenu(user);
+
+    await user.click(screen.getByRole("button", { name: "MOVIES" }));
+
+    expect(push).toHaveBeenCalledExactlyOnceWith("/movies");
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
+  });
+
+  it("keeps the search's query when it changes the search page (AC-3)", async () => {
+    pathname.current = "/search";
+    search.current = "type=tv&q=lost";
+    window.history.replaceState(null, "", "/search?type=tv&q=lost");
+    const user = userEvent.setup();
+    render(<Sheet signedIn={false} />);
+    await openMenu(user);
+
+    await user.click(screen.getByRole("button", { name: "MOVIES" }));
+
+    expect(push).toHaveBeenCalledExactlyOnceWith("/search?type=movie&q=lost");
+    window.history.replaceState(null, "", "/");
+  });
+
+  it("opens the tab's catalog from a page with no type (AC-5)", async () => {
+    pathname.current = "/account";
+    const user = userEvent.setup();
+    render(<Sheet />);
+    await openMenu(user);
+
+    await user.click(screen.getByRole("button", { name: "GAMES" }));
+
+    expect(push).toHaveBeenCalledExactlyOnceWith("/games");
   });
 
   it("starts from the page's tab again when it reopens", async () => {
@@ -363,6 +428,8 @@ describe("MobileMenuSheet", () => {
       "dune",
     );
     expect(await screen.findByText("dune (movie)")).toBeInTheDocument();
+    // A tab in search mode changes only the search (prompts/mobile-menu-tabs-navigate.md, AC-4).
+    expect(push).not.toHaveBeenCalled();
   });
 
   it("closes when a search result is chosen", async () => {

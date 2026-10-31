@@ -22,8 +22,9 @@ const POSTER_SIZES =
 /**
  * Top rated (prompts/top-rated-parallax-columns.md, superseding the list of
  * prompts/home-parallax-landing.md): eight tall posters in staggered columns
- * that drift at their own speeds from `md`, each with a large faint rank
- * behind it. An ordered list, so the rank is announced without reading the
+ * that drift at their own speeds, scaled to the screen on a phone
+ * (prompts/mobile-landing-parallax.md, decision 5), each with a large faint
+ * rank behind it. An ordered list, so the rank is announced without reading the
  * decorative number.
  */
 function TopRatedList({ list }: { list: CatalogList }) {
