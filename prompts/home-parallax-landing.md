@@ -56,6 +56,8 @@ This supersedes the landing half of spec 0021 (`docs/specs/0021-home-carousels`)
    - The blobs move at half depth.
 
    Mouse parallax runs only under `(pointer: fine)`.
+
+   Superseded on 2026-10-31 by prompts/mobile-landing-parallax.md: with motion allowed, phones get the pin, the marquee rows and every drift, scaled to the screen; native swipe rows and plain grids remain the reduced motion layout. The blobs stay at half depth.
 7. **Colours and fonts (Q7).**
    - Existing tokens and Inter only; no JetBrains Mono. Labels use the existing small uppercase label style.
    - The design's `#071116` becomes the existing page background (film strips).

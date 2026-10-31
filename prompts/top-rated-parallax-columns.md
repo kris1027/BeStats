@@ -48,7 +48,9 @@ None of the installed skills applies (no caching, Supabase or data change).
    as one. Speeds are the design's: `[0, 0.12]` for two columns and
    `[0, 0.14, 0.04, 0.18]` for four. The loop learns one attribute,
    `data-speed-lg`, used instead of `data-speed` while `(min-width: 64rem)`
-   matches. Below `md` nothing moves, as today.
+   matches. Below `md` nothing moves, as today. Superseded on 2026-10-31 by
+   prompts/mobile-landing-parallax.md: the columns drift on a phone too, scaled
+   to the screen.
 4. **Rank.** The number sits behind the poster's top left, partly above it
    (the card has top padding for it), in a new `rank-ghost` utility in
    `globals.css`: a faint fill plus a thin outline, both mixed from
@@ -102,7 +104,9 @@ a `page`, `newLandingItems`), `lib/catalog/landing.ts` (`upcomingRows`,
    order in the markup, each card a single link to its title page.
 2. Two columns below `lg`, four from `lg`; odd columns sit lower.
 3. From `md`, columns drift at their speeds and ranks drift against their
-   card; below `md` and under reduced motion nothing moves.
+   card; below `md` and under reduced motion nothing moves. (Superseded on
+   2026-10-31 by prompts/mobile-landing-parallax.md: below `md` they drift at
+   a scaled strength; under reduced motion nothing moves.)
 4. Each card shows its badge, title and bookmark; a visitor sees no
    bookmark; missing artwork shows the fallback tile.
 5. Loading, failed and empty states are unchanged in behaviour, and the
