@@ -2,9 +2,16 @@ import { describe, expect, it } from "vitest";
 
 import {
   defaultLibraryType,
+  defaultLibraryTypeAt,
   hasLibraryPage,
+  LIBRARY_PATHS,
+  legacyLibraryRedirects,
+  libraryPageAt,
   libraryPageName,
   libraryPages,
+  libraryPath,
+  libraryPathName,
+  shownLibraryPage,
 } from "./library-list";
 
 /** covers: prompts/library-page-names.md, AC-1 */
@@ -52,5 +59,85 @@ describe("the games Coming soon page", () => {
   it("falls back to games, where every other page falls back to shows", () => {
     expect(defaultLibraryType("coming-soon")).toBe("game");
     expect(defaultLibraryType("watched")).toBe("tv");
+  });
+});
+
+/** covers: prompts/library-page-urls.md, AC-1 */
+describe("the library routes", () => {
+  const ROUTES = [
+    ["watchlist", "tv", "/up-next"],
+    ["upcoming", "tv", "/upcoming"],
+    ["watched", "tv", "/watched"],
+    ["watchlist", "movie", "/watchlist"],
+    ["upcoming", "movie", "/coming-soon"],
+    ["watched", "movie", "/watched"],
+    ["coming-soon", "game", "/coming-soon"],
+    ["watchlist", "game", "/want-to-play"],
+    ["upcoming", "game", "/playing"],
+    ["watched", "game", "/finished"],
+  ] as const;
+
+  it.each(ROUTES)(
+    "puts %s on the %s tab at %s, and back",
+    (page, type, path) => {
+      expect(libraryPath(page, type)).toBe(path);
+      expect(libraryPageAt(path, type)).toBe(page);
+    },
+  );
+
+  it("are eight routes, each once", () => {
+    expect([...LIBRARY_PATHS].sort()).toEqual(
+      [...new Set(ROUTES.map(([, , path]) => path))].sort(),
+    );
+    expect(LIBRARY_PATHS).toHaveLength(8);
+  });
+
+  it("finds no page where a tab has none", () => {
+    for (const path of LIBRARY_PATHS) {
+      for (const type of ["tv", "movie", "game"] as const) {
+        const owned = ROUTES.some(([, t, p]) => t === type && p === path);
+        expect(libraryPageAt(path, type) !== null).toBe(owned);
+      }
+    }
+  });
+
+  it("falls back to the first tab with a page at the route", () => {
+    expect(defaultLibraryTypeAt("/up-next")).toBe("tv");
+    expect(defaultLibraryTypeAt("/watched")).toBe("tv");
+    expect(defaultLibraryTypeAt("/watchlist")).toBe("movie");
+    expect(defaultLibraryTypeAt("/coming-soon")).toBe("movie");
+    expect(defaultLibraryTypeAt("/finished")).toBe("game");
+  });
+
+  it("names a route on a tab without it as its default tab does", () => {
+    expect(libraryPathName("/playing", "game")).toBe("Playing");
+    expect(libraryPathName("/playing", "tv")).toBe("Playing");
+    expect(libraryPathName("/coming-soon", "tv")).toBe("Coming soon");
+    expect(libraryPathName("/watchlist", "game")).toBe("Watchlist");
+  });
+
+  it("reads a route on a tab without it as its default tab's page", () => {
+    expect(shownLibraryPage("/coming-soon", "game")).toEqual({
+      page: "coming-soon",
+      type: "game",
+    });
+    expect(shownLibraryPage("/coming-soon", "tv")).toEqual({
+      page: "upcoming",
+      type: "movie",
+    });
+    expect(shownLibraryPage("/playing", "movie")).toEqual({
+      page: "upcoming",
+      type: "game",
+    });
+  });
+
+  it("redirects exactly the old URLs whose page moved", () => {
+    expect(legacyLibraryRedirects()).toEqual([
+      { source: "/watchlist", type: "tv", destination: "/up-next" },
+      { source: "/upcoming", type: "movie", destination: "/coming-soon" },
+      { source: "/watchlist", type: "game", destination: "/want-to-play" },
+      { source: "/upcoming", type: "game", destination: "/playing" },
+      { source: "/watched", type: "game", destination: "/finished" },
+    ]);
   });
 });

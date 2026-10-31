@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { PaginationLinks } from "@/components/pagination-links";
 import { isGameReleased } from "@/lib/catalog/game-page";
 import type { LibraryPageKey } from "@/lib/catalog/library-list";
+import { libraryHref } from "@/lib/catalog/media-type";
 import { formatMonthYear, formatReleaseDate } from "@/lib/format";
 import type { GameSummary } from "@/lib/igdb";
 import {
@@ -20,14 +21,13 @@ import {
   CatalogFailed,
   EmptyPanel,
   ListFailed,
-  pageHref,
   TabNotes,
 } from "./library-panels";
 import type { LibraryGameItem } from "./types";
 
 /**
- * A games tab: Coming soon on `/coming-soon`, Want to play on `/watchlist`,
- * Playing on `/upcoming`, Finished on `/watched` (spec 0027, AC-6 to AC-14;
+ * A games tab: Coming soon on `/coming-soon`, Want to play on `/want-to-play`,
+ * Playing on `/playing`, Finished on `/finished` (spec 0027, AC-6 to AC-14;
  * prompts/game-coming-soon.md).
  *
  * Playing and Finished are one counted Postgres page, a redirect when the
@@ -149,13 +149,18 @@ function lastPageOrRedirect(
   page: number,
 ): number {
   const lastPage = libraryLastPage(total);
-  if (page > lastPage) redirect(pageHref(list, "game", lastPage));
+  if (page > lastPage) redirect(libraryHref(list, "game", { page: lastPage }));
   return lastPage;
 }
 
 /** A systemic IGDB failure, never the empty state, with a retry (AC-7). */
 function IgdbFailed({ list, page }: { list: LibraryPageKey; page: number }) {
-  return <CatalogFailed source="IGDB" href={pageHref(list, "game", page)} />;
+  return (
+    <CatalogFailed
+      source="IGDB"
+      href={libraryHref(list, "game", { page: page })}
+    />
+  );
 }
 
 /** A games tab's grid and its page links. */
@@ -177,14 +182,14 @@ function GamePageGrid({
         list={list}
         label={`${libraryCopy(list, "game").grid}, page ${page}`}
         page={page}
-        returnPath={pageHref(list, "game", page)}
+        returnPath={libraryHref(list, "game", { page: page })}
       />
 
       {lastPage > 1 ? (
         <PaginationLinks
           page={page}
           lastPage={lastPage}
-          href={(target) => pageHref(list, "game", target)}
+          href={(target) => libraryHref(list, "game", { page: target })}
         />
       ) : null}
     </div>

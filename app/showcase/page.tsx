@@ -413,11 +413,11 @@ export default function ShowcasePage() {
 
       <Section
         title="Library links"
-        note="The navbar's library pill on each tab (prompts/library-page-names.md): the routes are shared, but each page is named for the tab, through libraryPageName. Shows read Up next, Upcoming and Watched; movies Watchlist, Coming soon and Watched; games Coming soon, Want to play, Playing and Finished (prompts/game-coming-soon.md)."
+        note="The navbar's library pill on each tab (prompts/library-page-names.md): each page is named for the tab, through libraryPageName, and lives at a route with that name, through libraryPath (prompts/library-page-urls.md). Shows read Up next, Upcoming and Watched; movies Watchlist, Coming soon and Watched; games Coming soon, Want to play, Playing and Finished (prompts/game-coming-soon.md)."
       >
         <div className="flex flex-col items-start gap-3">
-          <LibraryNavView variant="bar" pathname="/watchlist" type="tv" />
-          <LibraryNavView variant="bar" pathname="/upcoming" type="movie" />
+          <LibraryNavView variant="bar" pathname="/up-next" type="tv" />
+          <LibraryNavView variant="bar" pathname="/coming-soon" type="movie" />
           <LibraryNavView variant="bar" pathname="/coming-soon" type="game" />
         </div>
       </Section>
@@ -797,7 +797,7 @@ export default function ShowcasePage() {
       >
         <div className="flex flex-wrap items-center gap-3">
           <MobileMenuSheet>
-            <LibraryNavView variant="sheet" pathname="/watchlist" type="tv" />
+            <LibraryNavView variant="sheet" pathname="/up-next" type="tv" />
           </MobileMenuSheet>
 
           <Dialog>

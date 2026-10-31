@@ -1,5 +1,7 @@
 # Library page names per media type
 
+> **Amended 2026-10-30:** the routes in the table below have since moved. Each page now has a route named for it (`/want-to-play`, `/playing`, `/finished`, `/up-next`, and movies' Coming soon at `/coming-soon`); see [library-page-urls.md](library-page-urls.md).
+
 ## Goal
 
 Each media type gets its own library pages in name. The three private routes keep their URLs and `?type=`, but every name a user sees follows the navbar tab:

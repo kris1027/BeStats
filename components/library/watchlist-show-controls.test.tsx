@@ -85,7 +85,7 @@ describe("WatchlistShowControls (AC-9)", () => {
     expect(screen.getByText("Next episode unavailable")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Try again" })).toHaveAttribute(
       "href",
-      "/watchlist?type=tv",
+      "/up-next?type=tv",
     );
     expect(screen.queryByTestId("mark-next")).not.toBeInTheDocument();
     expect(screen.queryByText("S2E3")).not.toBeInTheDocument();

@@ -17,8 +17,8 @@ import { gameItemKey, type LibraryGameItem } from "./types";
 import { useRemovalFocus } from "./use-removal-focus";
 
 /**
- * The game grid on the games tabs of `/coming-soon`, `/watchlist`,
- * `/upcoming` and `/watched`, and everything a removal does (spec 0027, AC-12, AC-13).
+ * The game grid on the games pages, `/coming-soon`, `/want-to-play`,
+ * `/playing` and `/finished`, and everything a removal does (spec 0027, AC-12, AC-13).
  *
  * The movie grid's order exactly (`library-grid.tsx`): a removal hides the
  * card at once through `useOptimistic`, then runs spec 0026's `removeGame`,

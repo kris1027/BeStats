@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 
+import { legacyLibraryRedirects } from "./lib/catalog/library-list";
 import { getAuthEmailDelivery } from "./lib/env";
 
 /**
@@ -34,6 +35,13 @@ const nextConfig: NextConfig = {
    * query string carried over by Next. Permanent on purpose: unlike `/`, a
    * landing with `?page` has no future meaning, so a browser caching the 308
    * forever is what an old bookmark should get.
+   *
+   * An old library URL whose page moved, such as `/watchlist?type=game`, goes
+   * to the page's own route, `/want-to-play` (prompts/library-page-urls.md),
+   * with the query carried over, so `type` and `page` survive. Matched on its
+   * `type` value, which Next anchors, because the other tabs still own those
+   * routes. Temporary, like `/`: a cached 308 could never be taken back if a
+   * route is ever reused.
    */
   async redirects() {
     return [
@@ -50,6 +58,12 @@ const nextConfig: NextConfig = {
         destination: "/movies/popular",
         permanent: true,
       },
+      ...legacyLibraryRedirects().map(({ source, type, destination }) => ({
+        source,
+        has: [{ type: "query" as const, key: "type", value: type }],
+        destination,
+        permanent: false,
+      })),
       ...(getAuthEmailDelivery() === "off"
         ? [
             {

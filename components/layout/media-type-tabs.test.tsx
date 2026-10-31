@@ -90,33 +90,55 @@ describe("MediaTypeTabs", () => {
     ).toBeVisible();
   });
 
-  // covers: feature 22. On a typed page the tabs switch its `type` in place.
-  it.each(["/watchlist", "/upcoming", "/watched"])(
-    "switches the type of %s in place and lights the one in the URL",
-    (path) => {
+  // covers: feature 22; prompts/library-page-urls.md, decision 5 (AC-3). On a
+  // library page each tab opens the matching page of its own.
+  it.each([
+    ["/up-next", "tv", "/up-next", "/watchlist", "/want-to-play"],
+    ["/upcoming", "tv", "/upcoming", "/coming-soon", "/playing"],
+    ["/watched", "tv", "/watched", "/watched", "/finished"],
+    ["/watchlist", "movie", "/up-next", "/watchlist", "/want-to-play"],
+    ["/coming-soon", "movie", "/upcoming", "/coming-soon", "/playing"],
+    ["/watched", "movie", "/watched", "/watched", "/finished"],
+    ["/coming-soon", "game", "/up-next", "/watchlist", "/coming-soon"],
+    ["/want-to-play", "game", "/up-next", "/watchlist", "/want-to-play"],
+    ["/playing", "game", "/upcoming", "/coming-soon", "/playing"],
+    ["/finished", "game", "/watched", "/watched", "/finished"],
+  ])(
+    "switches %s?type=%s to the matching page of each tab",
+    (path, type, tv, movie, game) => {
       pathname.value = path;
-      search.value = "type=movie&page=3";
+      search.value = `type=${type}&page=3`;
       render(<MediaTypeTabs />);
 
       expect(screen.getByRole("link", { name: "SHOWS" })).toHaveAttribute(
         "href",
-        `${path}?type=tv`,
+        `${tv}?type=tv`,
       );
       expect(screen.getByRole("link", { name: "MOVIES" })).toHaveAttribute(
         "href",
-        `${path}?type=movie`,
+        `${movie}?type=movie`,
       );
-      expect(screen.getByRole("link", { name: "MOVIES" })).toHaveAttribute(
+      expect(screen.getByRole("link", { name: "GAMES" })).toHaveAttribute(
+        "href",
+        `${game}?type=game`,
+      );
+      const lit = { tv: "SHOWS", movie: "MOVIES", game: "GAMES" }[type];
+      expect(screen.getByRole("link", { name: lit })).toHaveAttribute(
         "aria-current",
         "page",
       );
     },
   );
 
-  it("lights SHOWS on a typed page with no type, the default", () => {
-    pathname.value = "/watchlist";
+  it.each([
+    ["/up-next", "SHOWS"],
+    ["/watchlist", "MOVIES"],
+    ["/playing", "GAMES"],
+  ])("lights the default tab on %s with no type", (path, tab) => {
+    pathname.value = path;
+    search.value = "";
     render(<MediaTypeTabs />);
-    expect(screen.getByRole("link", { name: "SHOWS" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: tab })).toHaveAttribute(
       "aria-current",
       "page",
     );
@@ -146,7 +168,7 @@ describe("MediaTypeTabs", () => {
 
   // covers: spec 0027, AC-3; spec 0032, AC-12
   describe("the GAMES tab, always shown", () => {
-    it.each(["/watchlist", "/upcoming", "/watched"])(
+    it.each(["/coming-soon", "/want-to-play", "/playing", "/finished"])(
       "adds GAMES on %s and lights it on a games tab",
       (path) => {
         pathname.value = path;
@@ -252,7 +274,7 @@ describe("MediaTypeTabs", () => {
       for (const tab of tabs) expect(tab).not.toHaveAttribute("aria-current");
       expect(screen.getByRole("link", { name: "GAMES" })).toHaveAttribute(
         "href",
-        "/upcoming?type=game",
+        "/playing?type=game",
       );
     });
 

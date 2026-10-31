@@ -66,7 +66,9 @@ describe("the proxy guard (AC-10, AC-17)", () => {
     // A second copy of the prefixes here would drift from the one features 9,
     // 14 and 15 register in.
     expect(PROXY).toContain('from "@/lib/auth/private-paths"');
-    expect(PROXY).not.toMatch(/"\/watchlist"|"\/upcoming"|"\/watched"/);
+    expect(PROXY).not.toMatch(
+      /"\/(watchlist|upcoming|watched|coming-soon|up-next|want-to-play|playing|finished)"/,
+    );
   });
 });
 
@@ -140,6 +142,24 @@ describe("the proxy with incomplete auth configuration", () => {
     const location = new URL(response.headers.get("location") ?? "");
     expect(location.pathname).toBe("/sign-in");
     expect(location.searchParams.get("next")).toBe("/coming-soon?type=game");
+  });
+
+  /** covers: prompts/library-page-urls.md, R5, AC-5 */
+  it.each([
+    "/up-next?type=tv",
+    "/want-to-play?type=game",
+    "/playing?type=game",
+    "/finished?type=game&page=2",
+  ])("sends a signed out visit to the new route %s to sign in", async (url) => {
+    stubNoAuth();
+
+    const { proxy } = await import("./proxy");
+    const response = await proxy(new NextRequest(`http://localhost${url}`));
+
+    expect(response.status).toBe(307);
+    const location = new URL(response.headers.get("location") ?? "");
+    expect(location.pathname).toBe("/sign-in");
+    expect(location.searchParams.get("next")).toBe(url);
   });
 
   it("never redirects a Server Action POST to a private path", async () => {

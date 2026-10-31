@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { LIBRARY_PATHS } from "@/lib/catalog/library-list";
 import { MOVIE_LIST_SLUGS, TV_LIST_SLUGS } from "@/lib/catalog/lists";
 
 /**
@@ -291,9 +292,7 @@ describe("private tracking state never enters a cache scope (spec 0007, AC-19; s
   const files = [
     ...sourceFiles("components/tracking"),
     ...sourceFiles("lib/tracking"),
-    ...sourceFiles("app/watchlist"),
-    ...sourceFiles("app/upcoming"),
-    ...sourceFiles("app/watched"),
+    ...LIBRARY_PATHS.flatMap((path) => sourceFiles(`app${path}`)),
     ...sourceFiles("components/library"),
     ACTIONS,
     SHOW_ACTIONS,
@@ -311,13 +310,13 @@ describe("private tracking state never enters a cache scope (spec 0007, AC-19; s
   });
 
   it("keeps each list page's private read behind its Suspense boundary (spec 0008, AC-12)", () => {
-    for (const path of [
-      "app/watchlist/page.tsx",
-      "app/upcoming/page.tsx",
-      "app/watched/page.tsx",
-    ]) {
-      expect(readFileSync(path, "utf8")).toMatch(
-        /<Suspense fallback=\{<LibrarySkeleton \/>\}>\s*<LibrarySection/,
+    // Every library route renders the one shared body, which holds the boundary.
+    expect(
+      readFileSync("components/library/library-route.tsx", "utf8"),
+    ).toMatch(/<Suspense fallback=\{<LibrarySkeleton \/>\}>\s*<LibrarySection/);
+    for (const path of LIBRARY_PATHS) {
+      expect(readFileSync(`app${path}/page.tsx`, "utf8")).toMatch(
+        new RegExp(`<LibraryRoute path="${path}"`),
       );
     }
   });

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { PaginationLinks } from "@/components/pagination-links";
+import { libraryHref } from "@/lib/catalog/media-type";
 import { formatReleaseDate } from "@/lib/format";
 import {
   getLibraryMovieTitles,
@@ -19,7 +20,6 @@ import {
   CatalogFailed,
   EmptyPanel,
   ListFailed,
-  pageHref,
   settleTab,
   TabNotes,
 } from "./library-panels";
@@ -88,14 +88,18 @@ export async function watchedMoviesTab({
     return <ListFailed list="watched" type="movie" page={page} />;
   }
   const lastPage = libraryLastPage(result.total);
-  if (page > lastPage) redirect(pageHref("watched", "movie", lastPage));
+  if (page > lastPage)
+    redirect(libraryHref("watched", "movie", { page: lastPage }));
 
   const titles = await getLibraryMovieTitles(
     result.rows.map((row) => row.tmdbId),
   );
   if (titles.kind === "failed") {
     return (
-      <CatalogFailed source="TMDB" href={pageHref("watched", "movie", page)} />
+      <CatalogFailed
+        source="TMDB"
+        href={libraryHref("watched", "movie", { page: page })}
+      />
     );
   }
 
@@ -153,14 +157,14 @@ function MovieGridSection({
         items={items}
         label={`${LIBRARY_COPY[list].movie.grid}, page ${page}`}
         page={page}
-        returnPath={pageHref(list, "movie", page)}
+        returnPath={libraryHref(list, "movie", { page: page })}
       />
 
       {lastPage > 1 ? (
         <PaginationLinks
           page={page}
           lastPage={lastPage}
-          href={(target) => pageHref(list, "movie", target)}
+          href={(target) => libraryHref(list, "movie", { page: target })}
         />
       ) : null}
     </div>

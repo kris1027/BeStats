@@ -26,7 +26,7 @@ import {
 import { logTrackingEvent, TRACKING_EVENT } from "./log";
 
 /**
- * The reads behind `/watchlist`, `/upcoming` and `/watched` (spec 0020, API
+ * The reads behind the shows and movies library pages (spec 0020, API
  * surface). Each tab lists one media type, the page's navbar tab (feature
  * 22), with its own count and pages.
  *

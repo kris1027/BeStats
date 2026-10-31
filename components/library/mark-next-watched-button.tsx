@@ -12,10 +12,10 @@ import {
   showEpisodeTrackingError,
   UNDO_TOAST_MS,
 } from "@/components/tracking/tracking-toast";
-import { typedHref } from "@/lib/catalog/media-type";
+import { libraryHref } from "@/lib/catalog/media-type";
 import { MARK_NEXT_MESSAGES, UNDO_ACTION_LABEL } from "@/lib/tracking/messages";
 
-import { neighbourCardTarget } from "./card-focus";
+import { neighbourCardTarget, shownElementById } from "./card-focus";
 import {
   LIBRARY_HEADING_ID,
   SHOW_CARD_LINK_SELECTOR,
@@ -40,7 +40,7 @@ let focusAfterRefresh: {
 } | null = null;
 
 function focusById(id: string) {
-  document.getElementById(id)?.focus();
+  shownElementById(id)?.focus();
 }
 
 /**
@@ -64,7 +64,7 @@ function releaseToastFocus() {
  * rendered.
  */
 function focusTargetIfCardLeaves(showId: number): string {
-  const item = document.getElementById(showCardLinkId(showId))?.closest("li");
+  const item = shownElementById(showCardLinkId(showId))?.closest("li");
   const link = neighbourCardTarget(item, SHOW_CARD_LINK_SELECTOR);
   return link?.id || LIBRARY_HEADING_ID;
 }
@@ -146,7 +146,7 @@ function MarkNextWatchedButton({
   function onError(error: Parameters<typeof showEpisodeTrackingError>[0]) {
     showEpisodeTrackingError(error, {
       id: toastId,
-      returnPath: typedHref("/watchlist", "tv"),
+      returnPath: libraryHref("watchlist", "tv"),
       navigate: router.push,
     });
   }

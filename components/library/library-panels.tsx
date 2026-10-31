@@ -7,15 +7,17 @@ import { PosterCardSkeleton } from "@/components/skeleton";
 import { StatePanel } from "@/components/state-panel";
 import { ButtonLink } from "@/components/ui/button";
 import {
-  defaultLibraryType,
+  defaultLibraryTypeAt,
   type LibraryPageKey,
-  libraryPageName,
+  type LibraryPath,
+  libraryPathName,
+  shownLibraryPage,
 } from "@/lib/catalog/library-list";
 import {
   CATALOG_PATHS,
   type LibraryType,
+  libraryHref,
   type MediaType,
-  typedHref,
 } from "@/lib/catalog/media-type";
 import {
   LIBRARY_CLASSIFY_LIMIT,
@@ -36,18 +38,6 @@ import type { LibraryList } from "./types";
  * page links, the read's settling, the notes, and the empty, failed and
  * loading states. Server Components, with no read of their own.
  */
-
-/**
- * One URL per page and tab: `type` always, as every navbar link writes it,
- * and `page` from page 2, as on `/movies`.
- */
-export function pageHref(
-  list: LibraryPageKey,
-  type: LibraryType,
-  page: number,
-): string {
-  return typedHref(`/${list}`, type, { page });
-}
 
 /** A classified tab that read, with its last page. */
 type SettledTab<Card> = {
@@ -80,11 +70,16 @@ export function settleTab<Card>(
   if (tab.kind === "tmdb_failed") {
     return {
       kind: "panel",
-      panel: <CatalogFailed source="TMDB" href={pageHref(list, type, page)} />,
+      panel: (
+        <CatalogFailed
+          source="TMDB"
+          href={libraryHref(list, type, { page: page })}
+        />
+      ),
     };
   }
   const lastPage = libraryLastPage(tab.total);
-  if (page > lastPage) redirect(pageHref(list, type, lastPage));
+  if (page > lastPage) redirect(libraryHref(list, type, { page: lastPage }));
   return { ...tab, lastPage };
 }
 
@@ -119,7 +114,7 @@ export function TabNotes({
           <p className="text-sm text-text-secondary">
             {LIBRARY_NOTES.failed(tab.failedCount, type)}
           </p>
-          <RetryLink href={pageHref(list, type, page)} />
+          <RetryLink href={libraryHref(list, type, { page: page })} />
         </div>
       ) : null}
     </div>
@@ -158,21 +153,24 @@ export function EmptyPanel({
 /**
  * Shown for a malformed page number or media type, before any read (spec
  * 0008, AC-9; feature 22). Never a silent redirect: the link was wrong, and
- * the panel says which part. A bad page keeps its tab; a bad type leads to
- * the page's default tab, shows, or games on Coming soon, named as that tab
- * names it (prompts/game-coming-soon.md).
+ * the panel says which part. A bad page keeps its tab; a bad type, or a tab
+ * without a page at the route (`/playing?type=tv`), leads to the route's
+ * default tab, named as that tab names it (prompts/game-coming-soon.md,
+ * prompts/library-page-urls.md).
  *
  * @param type The parsed type, or null when the type itself is the problem,
  * including a tab that doesn't have the page.
  */
 export function NoSuchPage({
-  list,
+  path,
   type,
 }: {
-  list: LibraryPageKey;
+  path: LibraryPath;
   type: LibraryType | null;
 }) {
-  const fallback = defaultLibraryType(list);
+  const fallback = defaultLibraryTypeAt(path);
+  const shown = shownLibraryPage(path, type ?? fallback);
+  const href = libraryHref(shown.page, shown.type);
   return (
     <div className="py-12">
       <StatePanel
@@ -180,13 +178,13 @@ export function NoSuchPage({
         title="That page doesn't exist"
         description={
           type === null
-            ? `There is no ${libraryPageName(list, fallback)} list at this address.`
+            ? `There is no ${libraryPathName(path, fallback)} list at this address.`
             : "There are no titles at this page number."
         }
         action={
-          <ButtonLink size="touch" href={pageHref(list, type ?? fallback, 1)}>
+          <ButtonLink size="touch" href={href}>
             {type === null
-              ? `Back to ${libraryPageName(list, fallback)}`
+              ? `Back to ${libraryPathName(path, fallback)}`
               : "Back to page 1"}
           </ButtonLink>
         }
@@ -209,7 +207,7 @@ export function ListFailed({
     <LoadFailed
       title={LIBRARY_LIST_FAILED_TITLE}
       description={LIBRARY_LIST_FAILED}
-      href={pageHref(list, type, page)}
+      href={libraryHref(list, type, { page: page })}
     />
   );
 }

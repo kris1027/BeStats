@@ -36,7 +36,7 @@ import {
 import { useRemovalFocus } from "./use-removal-focus";
 
 /**
- * The movie grid on `/watchlist`, `/upcoming` and `/watched`, and everything
+ * The movie grid on `/watchlist`, `/coming-soon` and `/watched`, and everything
  * a removal does (spec 0008, AC-5 to AC-7, AC-16, AC-18; spec 0020, AC-13).
  *
  * A removal hides the card at once through `useOptimistic`, then runs the

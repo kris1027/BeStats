@@ -3,8 +3,17 @@
 import { cn } from "cn";
 import Link from "next/link";
 
-import { libraryPageName, libraryPages } from "@/lib/catalog/library-list";
-import { type LibraryType, typedHref } from "@/lib/catalog/media-type";
+import {
+  defaultLibraryTypeAt,
+  libraryPageName,
+  libraryPages,
+  libraryPath,
+} from "@/lib/catalog/library-list";
+import {
+  isLibraryPath,
+  type LibraryType,
+  libraryHref,
+} from "@/lib/catalog/media-type";
 
 import { WithLibraryTypedPage } from "./page-media-type";
 
@@ -25,10 +34,12 @@ import { WithLibraryTypedPage } from "./page-media-type";
  * gives (prompts/library-page-names.md, prompts/game-coming-soon.md).
  *
  * Each link carries the media type of the page being viewed, so the navbar
- * tab chosen on `/movies` is still lit on `/watchlist` (feature 22), and on a
+ * tab chosen on `/movies` is still lit on its library pages (feature 22), and on a
  * games tab they carry `type=game`, so moving between its pages keeps
- * you on games (spec 0027, AC-4). It is read through `WithLibraryTypedPage`;
- * the fallback links to the default type. On a
+ * you on games (spec 0027, AC-4). Each link goes to its page's own route on
+ * the tab, `/want-to-play` for Want to play (prompts/library-page-urls.md).
+ * The type is read through `WithLibraryTypedPage`; the fallback links to the
+ * route's default tab, so `/playing` never flashes shows links. On a
  * page about neither catalog it renders nothing, like the media tabs and the
  * search (prompts/hide-tabs-without-type.md).
  *
@@ -44,7 +55,11 @@ function LibraryNav({ variant }: { variant: Variant }) {
   return (
     <WithLibraryTypedPage
       fallback={(pathname) => (
-        <LibraryNavView variant={variant} pathname={pathname} type="tv" />
+        <LibraryNavView
+          variant={variant}
+          pathname={pathname}
+          type={isLibraryPath(pathname) ? defaultLibraryTypeAt(pathname) : "tv"}
+        />
       )}
     >
       {({ pathname, libraryType }) => (
@@ -78,13 +93,13 @@ function LibraryNavView({
       }
     >
       {libraryPages(type).map((list) => {
-        const path = `/${list}` as const;
+        const path = libraryPath(list, type);
         const selected = pathname === path || pathname.startsWith(`${path}/`);
 
         return (
           <Link
             key={path}
-            href={typedHref(path, type)}
+            href={libraryHref(list, type)}
             aria-current={selected ? "page" : undefined}
             className={cn(
               "flex items-center rounded-full font-bold transition-[filter,color]",

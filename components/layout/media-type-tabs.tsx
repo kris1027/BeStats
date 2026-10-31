@@ -5,7 +5,9 @@ import Link from "next/link";
 
 import {
   CATALOG_PATHS,
+  isLibraryPath,
   type LibraryType,
+  libraryTabSwitchHref,
   type TypedPath,
   typedHref,
 } from "@/lib/catalog/media-type";
@@ -23,11 +25,13 @@ import { WithLibraryTypedPage } from "./page-media-type";
  * same fact to assistive technology, which the glass gradient on its own
  * cannot.
  *
- * On `/watchlist`, `/upcoming`, `/watched` and `/search` the tabs switch the
- * page's own `type` parameter in place, GAMES included (spec 0029, AC-14);
- * everywhere else they lead to `/shows`, `/movies` and `/games`.
- * `WithLibraryTypedPage` reads the page's type, and on those four pages the
- * current query, which `/search` keeps across a switch.
+ * On `/search` the tabs switch the page's own `type` parameter in place,
+ * GAMES included (spec 0029, AC-14); on a library page each opens the
+ * matching page of its own tab, Playing becoming Upcoming on shows
+ * (prompts/library-page-urls.md); everywhere else they lead to `/shows`,
+ * `/movies` and `/games`. `WithLibraryTypedPage` reads the page's type, and
+ * on those typed pages the current query, which `/search` keeps across a
+ * switch and a library route reads its current page from.
  *
  * On a page about neither catalog (`/account`, `/privacy`, the auth pages)
  * there is nothing to switch, so it renders nothing
@@ -38,7 +42,9 @@ import { WithLibraryTypedPage } from "./page-media-type";
  * this in a Suspense boundary whose fallback is `MediaTypeTabsView` with
  * nothing lit: the same control at the same footprint. Its own fallback on a
  * typed page, before `?type` is known, likewise renders the tabs that page
- * will have, GAMES included, with none lit.
+ * will have, GAMES included, linking as the route's default tab would, with
+ * none lit: on a route two tabs share (`/coming-soon`, `/watched`) lighting
+ * the default would flash the wrong tab (prompts/library-page-urls.md).
  */
 function MediaTypeTabs({ className }: { className?: string }) {
   return (
@@ -68,16 +74,17 @@ function MediaTypeTabs({ className }: { className?: string }) {
 }
 
 /**
- * Each tab's link on a typed page: the same page with its own `type`
- * (spec 0028, AC-14; spec 0029, AC-14). On `/search` each keeps the query,
- * year and rating `typedHref` allows.
+ * Each tab's link on a typed page (spec 0028, AC-14; spec 0029, AC-14): on
+ * `/search` the same page with its own `type`, keeping the query, year and
+ * rating `typedHref` allows, and on a library route the tab's matching page
+ * (`libraryTabSwitchHref`).
  */
 function typedHrefs(pathname: TypedPath, current?: URLSearchParams): TabHrefs {
-  return {
-    tv: typedHref(pathname, "tv", { current }),
-    movie: typedHref(pathname, "movie", { current }),
-    game: typedHref(pathname, "game", { current }),
-  };
+  const href = (type: LibraryType) =>
+    isLibraryPath(pathname)
+      ? libraryTabSwitchHref(pathname, type, current)
+      : typedHref(pathname, type, { current });
+  return { tv: href("tv"), movie: href("movie"), game: href("game") };
 }
 
 /** Each tab's link off the typed pages, the three catalog landings (spec 0028, AC-14). */
