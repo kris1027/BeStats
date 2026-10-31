@@ -20,7 +20,7 @@ In the mobile menu, tapping SHOWS, MOVIES or GAMES changes the page, as the desk
 
 ## Expected files
 
-- `components/layout/media-type-tabs.tsx`: `mediaTabHref`, which `typedHrefs` and `catalogHrefs` now use.
+- `components/layout/media-type-tabs.tsx`: `mediaTabHref`, which `tabHrefs` (formerly `typedHrefs` and `catalogHrefs`, merged after review) now uses.
 - `components/layout/mobile-menu-sheet.tsx`: `MenuTabs` gets `onSelect` from a `MenuBody` handler that navigates (or not, in search mode) and closes when signed out. JSDoc updated.
 - `components/layout/mobile-menu-sheet.test.tsx`: navigation on a tap, signed out and signed in, plus no navigation in search mode.
 - `prompts/mobile-navigation.md` (decision 4 and AC-4 marked superseded) and `components/AGENTS.md` (the mobile navigation line).

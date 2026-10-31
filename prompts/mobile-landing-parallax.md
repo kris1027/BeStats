@@ -2,7 +2,7 @@
 
 ## Goal
 
-Give phones (below `md`, 768px) the landing's desktop motion on `/shows`, `/movies` and `/games`, scaled down to fit the screen, while desktop stays the same as today. At the same time, fix the two mobile best practice gaps in the loop: the height it reads changes when the address bar moves, and it keeps running every frame when nothing is moving.
+Give phones (below `md`, 768px) the landing's desktop motion on `/shows`, `/movies` and `/games`, scaled down to fit the screen, while desktop's motion stays the same as today (the hero's layout below `lg` changes too, by decision 12). At the same time, fix the two mobile best practice gaps in the loop: the height it reads changes when the address bar moves, and it keeps running every frame when nothing is moving.
 
 Settled with the owner in a grilling session on 2026-10-31 (Q1 to Q12 below). This supersedes decision 6 of [home-parallax-landing.md](home-parallax-landing.md) and the "below `md` nothing moves" lines of [top-rated-parallax-columns.md](top-rated-parallax-columns.md).
 
@@ -41,7 +41,7 @@ Settled with the owner in a grilling session on 2026-10-31 (Q1 to Q12 below). Th
 9. **(Q10) No overlap.** Measured at 360×740 on `/shows` across the whole scroll: the nearest a drifted card came to the next heading was 41px (Airing today to On the air) and 38px to the footer (Top rated), so no padding changes were needed. Checked during implementation; the original plan expected `pb-24`.
 10. **(Q11) Records.** Mark decision 6 of `home-parallax-landing.md` and the "below `md`" lines of `top-rated-parallax-columns.md` superseded on 2026-10-31 by this file. Update the `LandingParallax`, `TrendingPin`, `FRAME_CLASS`, `PopularGrid` and `NowPlayingColumns` JSDoc, the `startMotionLoop` JSDoc and the `components/AGENTS.md` landing line.
 
-11. **Trending fills its pinned screen on a phone (amended 2026-10-31, after owner review).** With the 160px swipe card, the pinned frame held about 400px of content in a 740px screen. Below `md` with motion allowed, the card is `clamp(140px, (100svh - 15rem) * 2/3, 72vw)` wide, so the poster takes the height left after the header, title, gaps and bar, stays narrow enough for the next card to peek in, and stays readable on a landscape phone. The outlined rank grows to 128px to match. `TRENDING_SIZES` becomes `72vw` below `md`. Reduced motion keeps the 160px swipe row. Measured: 360×740 gives a 259px card and 560px of content, 375×667 gives 270px, 390×844 gives 281px, and 740×360 gives 140px, which still fits.
+11. **Trending fills its pinned screen on a phone (amended 2026-10-31, after owner review).** With the 160px swipe card, the pinned frame held about 400px of content in a 740px screen. Below `md` with motion allowed, the card is `clamp(140px, (100svh - 15rem) * 2/3, 72vw)` wide, so the poster takes the height left after the header, title, gaps and bar, stays narrow enough for the next card to peek in, and stays readable on a landscape phone. The outlined rank grows to 128px to match. `TRENDING_SIZES` becomes `72vw` below `md`. Reduced motion keeps the 160px swipe row, so a reduced motion phone fetches a Trending poster about twice the width it shows; `sizes` cannot read the motion setting, and the poster stays small, so that is accepted. Measured: 360×740 gives a 259px card and 560px of content, 375×667 gives 270px, 390×844 gives 281px, and 740×360 gives 140px, which still fits.
 
 12. **The hero fills a phone's screen with the poster (amended 2026-10-31, owner's choice over a stretched backdrop or keeping the band).** Below `lg`, the hero was a 248px 16:9 band with the title under it and about 210px of empty page. Now the hero is `h-svh` (560px minimum) at every width, with the title block at its foot over a bottom shade. Below `lg` the artwork is the portrait poster (`w780`, TMDB's largest poster rung) covering the hero. From `lg` it is the `original` backdrop in its 16:9 box, as before. One `<picture>` built with `getImageProps` in a small Client Component (`landing/hero-picture.tsx`), because the loader is client-only. The browser fetches only one image: measured at 390px, only `w780` was fetched; at 1440px, only `original`. It loads with `loading="eager"` and `fetchPriority="high"` instead of `preload`, which can't choose between two images. With one image missing, the other serves every width. This supersedes decision 4 of [home-hero-backdrop-quality.md](home-hero-backdrop-quality.md).
 
@@ -55,7 +55,7 @@ Settled with the owner in a grilling session on 2026-10-31 (Q1 to Q12 below). Th
 
 ## Expected files
 
-- `lib/motion/loop.ts`: stable `viewport` passed to `tick`, the opt-in `idle` mode with its wake events, and a `markActive` hook.
+- `lib/motion/loop.ts`: stable `viewport` passed to `tick`, and the opt-in `idle` mode (`idle: { watch }`) with its wake events: scroll, resize, mouse move, focus and nodes added under `watch`. A `markActive` hook was planned and dropped, as those events cover every wake.
 - `components/catalog/landing/landing-parallax.tsx`: no `md` gate, `strength`, `data-speed-narrow`, read-then-write tick, and `idle: true`.
 - `components/layout/page-background-motion.tsx`: uses the passed `viewport` (no `idle`).
 - `components/catalog/landing/trending-pin.tsx`, `upcoming-rows.tsx`, `popular-grid.tsx`, `now-playing-columns.tsx`, `top-rated-list.tsx`, `landing-skeletons.tsx`: class changes and the narrow speeds.
@@ -65,7 +65,7 @@ Settled with the owner in a grilling session on 2026-10-31 (Q1 to Q12 below). Th
 ## Requirements and acceptance criteria
 
 - AC-1: At 360 and 390px with motion allowed, the Trending section pins and pans with the bar filling. Upcoming rows slide in opposite directions. Popular, Now playing and Top rated cards drift, and posters drift in their frames.
-- AC-2: At 768 and 1440px, the transforms written at the same scroll positions are the same as on `main` (strength 1, same speeds and pin travel).
+- AC-2: At 768 and 1440px, the transforms written at the same scroll positions are the same as on `main` (strength 1, same speeds and pin travel). The hero's box is not part of this check: from decision 12 it is `h-svh` at every width, so 768 to 1023px gets the full screen poster hero.
 - AC-3: No horizontal page scroll at 360, 390 and 768px on any of the three landings (`documentElement.scrollWidth === innerWidth`).
 - AC-4: Under reduced motion at every width, no node is written, Trending and Upcoming are native swipe rows, and nothing pins.
 - AC-5: With no scroll, pointer or mutation, the landing loop requests no frames after it settles. The background loop still runs.
