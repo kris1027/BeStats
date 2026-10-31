@@ -85,28 +85,37 @@ function LibraryNav({ variant }: { variant: Variant }) {
   );
 }
 
+/** One of the card marks a menu row can wear. */
+type PageMark = "date" | "plan" | "next" | "done";
+
 /**
  * Each page's mark in the mobile menu, the card marks' own icons, so a mark
  * means one thing everywhere (`layout/icon-key.tsx`): the release date for
  * the pages that wait on one, Plan for the lists you mean to start, the next
  * episode for what you are in the middle of, and Watched for what is done.
+ * Laid out like `LIBRARY_PAGE_NAMES` in `lib/catalog/library-list.ts`, so a
+ * page added to one tab is added here in the same shape.
  */
+const PAGE_MARKS = {
+  watchlist: { tv: "next", movie: "plan", game: "plan" },
+  upcoming: { tv: "date", movie: "date", game: "next" },
+  watched: { tv: "done", movie: "done", game: "done" },
+  "coming-soon": { game: "date" },
+} as const satisfies Record<
+  LibraryPageKey,
+  Partial<Record<LibraryType, PageMark>>
+>;
+
+const MARK_ICONS: Record<PageMark, React.ReactNode> = {
+  date: <CalendarIcon className="size-[18px]" />,
+  plan: <PlanIcon className="size-[18px]" />,
+  next: <NextEpisodeIcon className="size-[18px]" />,
+  done: <WatchedIcon filled className="size-[18px]" />,
+};
+
 function pageIcon(page: LibraryPageKey, type: LibraryType): React.ReactNode {
-  const className = "size-[18px]";
-  if (page === "coming-soon") return <CalendarIcon className={className} />;
-  if (page === "watched") return <WatchedIcon filled className={className} />;
-  if (page === "watchlist") {
-    return type === "tv" ? (
-      <NextEpisodeIcon className={className} />
-    ) : (
-      <PlanIcon className={className} />
-    );
-  }
-  return type === "game" ? (
-    <NextEpisodeIcon className={className} />
-  ) : (
-    <CalendarIcon className={className} />
-  );
+  const marks: Partial<Record<LibraryType, PageMark>> = PAGE_MARKS[page];
+  return MARK_ICONS[marks[type] ?? "date"];
 }
 
 /**
