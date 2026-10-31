@@ -376,8 +376,7 @@ function LandingParallax({
       reset,
       restartOn: [wide],
       leans: () => finePointer.matches,
-      idle: true,
-      watch: root,
+      idle: { watch: root },
     });
     root.addEventListener("focusin", onFocusIn);
 

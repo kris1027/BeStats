@@ -41,8 +41,8 @@ function createViewportProbe(): HTMLElement {
  *   only on a resize or a turn, so positions never jump mid scroll
  *   (prompts/mobile-landing-parallax.md, decision 3).
  * - With `idle`, it draws only after a scroll, resize, mouse move, focus
- *   change or a node added under `watch` (a streamed section), and while the
- *   lean is still easing, then sleeps (decision 4). A loop that animates over
+ *   change or a node added under `idle.watch` (a streamed section), and
+ *   while the lean is still easing, then sleeps (decision 4). A loop that animates over
  *   time, like the page background, leaves it off.
  * - The browser pauses it in a hidden tab, as it does every frame callback.
  *
@@ -55,8 +55,7 @@ export function startMotionLoop({
   reset,
   restartOn = [],
   leans = () => true,
-  idle = false,
-  watch,
+  idle,
 }: {
   /** Writes one frame, from the frame time, the eased lean and the viewport. */
   tick: (now: number, lean: Lean, viewport: number) => void;
@@ -64,9 +63,8 @@ export function startMotionLoop({
   reset: () => void;
   restartOn?: readonly MediaQueryList[];
   leans?: () => boolean;
-  idle?: boolean;
-  /** With `idle`, the subtree whose added nodes wake the loop. */
-  watch?: Node;
+  /** Sleep between changes; `watch` is the subtree whose added nodes wake it. */
+  idle?: { watch?: Node };
 }): () => void {
   const reduced = window.matchMedia(REDUCED_MOTION);
   const queries = [reduced, ...restartOn];
@@ -119,8 +117,9 @@ export function startMotionLoop({
     wake();
   }
 
-  const mutations =
-    idle && watch ? new MutationObserver(() => wake()) : undefined;
+  const mutations = idle?.watch
+    ? new MutationObserver(() => wake())
+    : undefined;
 
   measure();
   start();
@@ -132,8 +131,8 @@ export function startMotionLoop({
     window.addEventListener("scroll", wake, { passive: true });
     document.addEventListener("focusin", wake);
   }
-  if (mutations && watch) {
-    mutations.observe(watch, { childList: true, subtree: true });
+  if (mutations && idle?.watch) {
+    mutations.observe(idle.watch, { childList: true, subtree: true });
   }
 
   return () => {
