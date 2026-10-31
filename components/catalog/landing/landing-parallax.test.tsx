@@ -188,6 +188,51 @@ describe("LandingParallax (AC-7)", () => {
     expect(getByTestId("speed").style.transform).toBe(before);
   });
 
+  it("shrinks and dims a deck row as the next slides over it (prompts/mobile-landing-parallax.md, AC-9)", () => {
+    wide = false;
+    const { getByTestId } = render(
+      <LandingParallax>
+        <ul data-deck="">
+          <li data-deck-card="" data-deck-row="0" data-testid="row-0">
+            <span data-deck-shade="" data-testid="shade-0" />
+          </li>
+          <li data-deck-card="" data-deck-row="1" data-testid="row-1">
+            <span data-deck-shade="" data-testid="shade-1" />
+          </li>
+        </ul>
+      </LandingParallax>,
+    );
+    const front = getByTestId("row-1");
+    // Rows 400px apart in the flow; the second has travelled half of that.
+    Object.defineProperty(getByTestId("row-0"), "offsetHeight", {
+      value: 400,
+    });
+    vi.spyOn(front, "getBoundingClientRect").mockReturnValue({
+      top: 200,
+    } as DOMRect);
+
+    runFrame();
+
+    expect(getByTestId("row-0").style.transform).toBe("scale(0.97)");
+    expect(getByTestId("shade-0").style.opacity).toBe("0.11");
+    expect(front.style.transform).toBe("scale(1)");
+    expect(getByTestId("shade-1").style.opacity).toBe("0");
+  });
+
+  it("leaves the deck alone from md", () => {
+    const { getByTestId } = render(
+      <LandingParallax>
+        <ul data-deck="">
+          <li data-deck-card="" data-deck-row="0" data-testid="card" />
+        </ul>
+      </LandingParallax>,
+    );
+
+    runFrame();
+
+    expect(getByTestId("card").style.transform).toBe("");
+  });
+
   it("writes nothing under reduced motion", () => {
     reduced = true;
     const { getByTestId } = setup();

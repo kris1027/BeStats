@@ -40,7 +40,15 @@ const MOVED = [
   "[data-speed]",
   "[data-marquee]",
   "[data-poster-drift]",
+  "[data-deck-card]",
+  "[data-deck-shade]",
 ].join(",");
+
+/** How much each pair stacked over a deck card shrinks and darkens it. */
+const DECK_SHRINK = 0.06;
+const DECK_MIN_SCALE = 0.82;
+const DECK_DIM = 0.22;
+const DECK_MAX_DIM = 0.6;
 
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 
@@ -77,6 +85,17 @@ function centreAlong(item: HTMLElement, row: HTMLElement): number {
 }
 
 /**
+ * The scroll between two deck rows in the flow: a row's height plus the
+ * grid's row gap, which is also how far a row travels before it sticks.
+ */
+function deckPitch(deck: HTMLElement): number {
+  const first = deck.querySelector<HTMLElement>("[data-deck-card]");
+  if (!first) return 0;
+  const gap = Number.parseFloat(window.getComputedStyle(deck).rowGap) || 0;
+  return first.offsetHeight + gap;
+}
+
+/**
  * The landing's motion (prompts/home-parallax-landing.md, decisions 9, 14
  * and 16; prompts/mobile-landing-parallax.md): one idle aware
  * `requestAnimationFrame` loop (`startMotionLoop`) that writes transforms to
@@ -100,6 +119,10 @@ function centreAlong(item: HTMLElement, row: HTMLElement): number {
  * - `data-poster-drift`: the artwork drifts inside its frame, through the
  *   `poster-drift` utility's custom properties, so the image `next/image`
  *   renders is never written to.
+ * - `data-deck` with `data-deck-card` and `data-deck-shade`: below `md`, the
+ *   sticky pairs of Popular's deck. Each row shrinks and its shade darkens by
+ *   how far the rows after it have slid over it
+ *   (prompts/mobile-landing-parallax.md, decision 13).
  *
  * Everything runs at every width; below `md` the distances shrink with the
  * screen (`strength`). Each frame reads every box first and writes after,
@@ -248,6 +271,42 @@ function LandingParallax({
         });
       }
 
+      if (!isWide) {
+        for (const deck of all("[data-deck]")) {
+          if (!visible(deck.getBoundingClientRect())) continue;
+          const pitch = deckPitch(deck);
+          if (!(pitch > 0)) continue;
+          const rows: HTMLElement[][] = [];
+          for (const card of deck.querySelectorAll<HTMLElement>(
+            "[data-deck-card]",
+          )) {
+            const row = Number(card.dataset.deckRow);
+            rows[row] = [...(rows[row] ?? []), card];
+          }
+          const covers = rows.map((row) => {
+            const stick =
+              Number.parseFloat(window.getComputedStyle(row[0]).top) || 0;
+            return clamp01(
+              1 - (row[0].getBoundingClientRect().top - stick) / pitch,
+            );
+          });
+          let depth = 0;
+          for (let row = rows.length - 1; row >= 0; row -= 1) {
+            const scale = Math.max(DECK_MIN_SCALE, 1 - DECK_SHRINK * depth);
+            const dim = String(Math.min(DECK_MAX_DIM, DECK_DIM * depth));
+            for (const card of rows[row] ?? []) {
+              const shade =
+                card.querySelector<HTMLElement>("[data-deck-shade]");
+              writes.push(() => {
+                card.style.transform = `scale(${scale})`;
+                if (shade) shade.style.opacity = dim;
+              });
+            }
+            depth += covers[row] ?? 0;
+          }
+        }
+      }
+
       const drift = POSTER_DRIFT * power;
       let index = 0;
       for (const card of all("[data-poster-drift]")) {
@@ -276,6 +335,7 @@ function LandingParallax({
     function onFocusIn(event: FocusEvent) {
       if (reduced.matches) return;
       const target = event.target instanceof Element ? event.target : null;
+      if (!wide.matches && bringDeckCardForward(target)) return;
       const track = target?.closest<HTMLElement>("[data-pin-track]");
       const section = track?.closest<HTMLElement>("[data-pin]");
       const item = target?.closest<HTMLElement>("li");
@@ -291,6 +351,24 @@ function LandingParallax({
         top: top + progress * (section.offsetHeight - lastViewport),
         behavior: "instant",
       });
+    }
+
+    /*
+     * A deck card tabbed to can sit under the pairs stacked over it. Scroll
+     * the page to the point where its row has just stuck and the rows after
+     * it are still below, so it is the front pair (decision 13).
+     */
+    function bringDeckCardForward(target: Element | null): boolean {
+      const card = target?.closest<HTMLElement>("[data-deck-card]");
+      const deck = card?.closest<HTMLElement>("[data-deck]");
+      if (!card || !deck) return false;
+      const stick = Number.parseFloat(window.getComputedStyle(card).top) || 0;
+      const top = deck.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo({
+        top: top + Number(card.dataset.deckRow) * deckPitch(deck) - stick,
+        behavior: "instant",
+      });
+      return true;
     }
 
     const stop = startMotionLoop({

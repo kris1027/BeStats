@@ -1,3 +1,5 @@
+import type * as React from "react";
+
 import { PosterCardSkeleton, Skeleton } from "@/components/skeleton";
 import { LANDING_COUNTS } from "@/lib/catalog/landing";
 
@@ -20,9 +22,14 @@ import { LANDING_COUNTS } from "@/lib/catalog/landing";
 export const TRENDING_ITEM_CLASS =
   "w-[160px] shrink-0 max-md:motion-safe:w-[clamp(140px,calc((100svh_-_15rem)*2/3),72vw)] md:w-[260px]";
 
-/** Two columns on a phone, then as many 180px or wider columns as fit. */
+/**
+ * Two columns on a phone, then as many 180px or wider columns as fit. On a
+ * phone with motion allowed the rows sit 24svh apart: the scroll each pair of
+ * the deck takes to slide over the last (prompts/mobile-landing-parallax.md,
+ * decision 13).
+ */
 export const POPULAR_GRID_CLASS =
-  "grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] md:gap-x-6 md:gap-y-12";
+  "grid grid-cols-2 gap-x-4 gap-y-8 max-md:motion-safe:gap-y-[24svh] md:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] md:gap-x-6 md:gap-y-12";
 
 /**
  * The staggered top offsets from `md`, cycled per card (decision 3). Written
@@ -37,14 +44,31 @@ const POPULAR_OFFSETS = [
 ] as const;
 
 /**
- * A Popular card's stagger: the five step offsets from `md`, and on a
- * phone's two columns the right one lowered, the same rhythm in the space
- * there is (prompts/mobile-landing-parallax.md, decision 7). The skeleton
- * uses it too, so the grid does not shift when the cards stream in.
+ * A Popular card's place in the deck on a phone with motion allowed: stuck
+ * 12svh down plus 10px per row, so each earlier pair peeks above the next,
+ * and shrinking from its top edge (decision 13). The row is `--deck-row`,
+ * from `popularDeckRow`.
+ */
+const POPULAR_DECK_CLASS =
+  "relative max-md:motion-safe:sticky max-md:motion-safe:top-[calc(12svh_+_var(--deck-row)_*_10px)] max-md:motion-safe:origin-top";
+
+/**
+ * A Popular card's classes: its deck place on a phone and the five step
+ * stagger from `md`. The skeleton uses it too, so the grid does not shift
+ * when the cards stream in.
  */
 export function popularOffsetClass(index: number): string {
-  const wide = POPULAR_OFFSETS[index % POPULAR_OFFSETS.length];
-  return index % 2 ? `max-md:pt-8 ${wide}` : wide;
+  return `${POPULAR_DECK_CLASS} ${POPULAR_OFFSETS[index % POPULAR_OFFSETS.length]}`;
+}
+
+/** A Popular card's deck row: two cards to a row, as the grid lays them. */
+export function popularDeckRow(index: number): number {
+  return Math.floor(index / 2);
+}
+
+/** The `--deck-row` the deck's `top` reads. */
+export function popularDeckStyle(index: number): React.CSSProperties {
+  return { "--deck-row": popularDeckRow(index) } as React.CSSProperties;
 }
 
 export const NOW_GRID_CLASS = "grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-5";
@@ -146,6 +170,7 @@ function PopularSkeleton() {
           // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders with no identity.
           key={index}
           className={popularOffsetClass(index)}
+          style={popularDeckStyle(index)}
         >
           <PosterCardSkeleton />
         </li>
