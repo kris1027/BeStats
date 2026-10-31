@@ -1,28 +1,100 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { MobileMenuSheet } from "@/components/layout/mobile-menu-sheet";
 
 /**
- * The four behaviours AC-15 names, tested against the real Base UI Dialog
- * rather than mocked.
+ * covers: spec 0004, AC-15; spec 0010, AC-6; prompts/mobile-navigation.md,
+ * AC-2 to AC-6
  *
- * These are the tests worth having here: Base UI supplies the behaviour, so
- * the thing that can actually break is the wiring, and the wiring is exactly
- * what a mock would hide. A regression here means a keyboard user is trapped
- * outside an open menu or dumped at the top of the page on close, which is
- * invisible to a type checker and to anyone testing with a mouse.
+ * Tested against the real Base UI Dialog and Autocomplete rather than mocked.
+ * Base UI supplies the behaviour, so the thing that can actually break is the
+ * wiring, and the wiring is exactly what a mock would hide. A regression here
+ * means a keyboard user is trapped outside an open menu or dumped at the top
+ * of the page on close, which is invisible to a type checker and to anyone
+ * testing with a mouse.
  */
-function Sheet() {
-  return (
-    <MobileMenuSheet>
-      <nav aria-label="Library">
-        <a href="/watchlist">Watchlist</a>
-        <a href="/watched">Watched</a>
-      </nav>
-    </MobileMenuSheet>
+const pathname = vi.hoisted(() => ({ current: "/up-next" }));
+const search = vi.hoisted(() => ({ current: "" }));
+const push = vi.fn();
+vi.mock("next/navigation", () => ({
+  usePathname: () => pathname.current,
+  useRouter: () => ({ push }),
+  useSearchParams: () => new URLSearchParams(search.current),
+}));
+
+const fetchMock = vi.fn(async (input: string) => {
+  const url = new URL(input, "http://localhost");
+  const type = url.searchParams.get("type");
+  const query = url.searchParams.get("q");
+  return new Response(
+    JSON.stringify({
+      totalResults: 1,
+      results: [
+        {
+          id: 1,
+          title: `${query} (${type})`,
+          year: 2021,
+          posterUrl: null,
+          rating: null,
+          href: `/movies/1`,
+        },
+      ],
+    }),
   );
+});
+
+/** The `md` query, which jsdom lacks; `widen` fires its change event. */
+let widen: () => void = () => {};
+function stubMatchMedia() {
+  vi.stubGlobal("matchMedia", (query: string) => {
+    const target = new EventTarget();
+    widen = () => {
+      const event = Object.assign(new Event("change"), { matches: true });
+      target.dispatchEvent(event);
+    };
+    return Object.assign(target, { matches: false, media: query });
+  });
+}
+
+beforeEach(() => {
+  pathname.current = "/up-next";
+  search.current = "";
+  vi.stubGlobal("fetch", fetchMock);
+  stubMatchMedia();
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  fetchMock.mockClear();
+  push.mockClear();
+});
+
+function Sheet({ library = true }: { library?: boolean }) {
+  return (
+    <MobileMenuSheet
+      library={library}
+      account={
+        library ? (
+          <a href="/account">Account</a>
+        ) : (
+          <a href="/sign-in">Sign in</a>
+        )
+      }
+    />
+  );
+}
+
+async function openMenu(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole("button", { name: "Open menu" }));
+  return screen.findByRole("dialog", { name: "Menu" });
+}
+
+function rowNames() {
+  return within(screen.getByRole("navigation", { name: "Library" }))
+    .getAllByRole("link")
+    .map((link) => link.textContent);
 }
 
 describe("MobileMenuSheet", () => {
@@ -35,7 +107,6 @@ describe("MobileMenuSheet", () => {
     await user.keyboard("{Enter}");
 
     const dialog = await screen.findByRole("dialog");
-    expect(dialog).toBeInTheDocument();
     await waitFor(() => {
       expect(dialog).toContainElement(document.activeElement as HTMLElement);
     });
@@ -52,22 +123,16 @@ describe("MobileMenuSheet", () => {
 
     const findBehind = () =>
       screen.queryByRole("button", { name: "Behind the sheet" });
-
     expect(findBehind()).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Open menu" }));
-    await screen.findByRole("dialog");
+    await openMenu(user);
 
     /*
      * This is the assertion that carries the focus trap, expressed the way
      * jsdom can actually prove it. While the sheet is open the page behind is
      * not in the accessible tree at all, so nothing there can be reached by
-     * keyboard or read by a screen reader.
-     *
-     * Tab containment itself is deliberately not asserted here: jsdom does not
-     * implement `inert`'s focus semantics, so a Tab loop would be testing
-     * jsdom rather than this component. It was verified in a real browser
-     * instead, along with the scroll lock.
+     * keyboard or read by a screen reader. Tab containment itself is checked
+     * in a real browser, since jsdom does not implement `inert`.
      */
     expect(findBehind()).not.toBeInTheDocument();
 
@@ -82,27 +147,211 @@ describe("MobileMenuSheet", () => {
     const trigger = screen.getByRole("button", { name: "Open menu" });
     await user.click(trigger);
     await screen.findByRole("dialog");
-
     await user.keyboard("{Escape}");
 
-    await waitFor(() => {
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    });
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
     await waitFor(() => expect(trigger).toHaveFocus());
   });
 
   it("closes from its own close button", async () => {
     const user = userEvent.setup();
     render(<Sheet />);
-
-    await user.click(screen.getByRole("button", { name: "Open menu" }));
-    await screen.findByRole("dialog");
+    await openMenu(user);
 
     await user.click(screen.getByRole("button", { name: "Close menu" }));
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
+  });
 
-    await waitFor(() => {
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    });
+  it("holds the search, the tabs, the page's library rows and the account block", async () => {
+    const user = userEvent.setup();
+    render(<Sheet />);
+    const dialog = await openMenu(user);
+
+    expect(
+      within(dialog).getByRole("combobox", { name: "Search shows" }),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("button", { name: "SHOWS" }),
+    ).toHaveAttribute("aria-pressed", "true");
+    expect(rowNames()).toEqual(["Up next", "Upcoming", "Watched"]);
+    expect(screen.getByRole("link", { name: "Up next" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(
+      within(dialog).getByRole("link", { name: "Account" }),
+    ).toBeInTheDocument();
+  });
+
+  it("previews another tab's rows without navigating, lighting none", async () => {
+    const user = userEvent.setup();
+    render(<Sheet />);
+    await openMenu(user);
+
+    await user.click(screen.getByRole("button", { name: "GAMES" }));
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(push).not.toHaveBeenCalled();
+    expect(rowNames()).toEqual([
+      "Coming soon",
+      "Want to play",
+      "Playing",
+      "Finished",
+    ]);
+    expect(screen.getByRole("link", { name: "Playing" })).toHaveAttribute(
+      "href",
+      "/playing?type=game",
+    );
+    expect(screen.queryByRole("link", { current: "page" })).toBeNull();
+    expect(
+      screen.getByRole("combobox", { name: "Search games" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "BeStats" })).toHaveAttribute(
+      "href",
+      "/games",
+    );
+  });
+
+  it("starts from the page's tab again when it reopens", async () => {
+    const user = userEvent.setup();
+    render(<Sheet />);
+    await openMenu(user);
+    await user.click(screen.getByRole("button", { name: "MOVIES" }));
+    await user.keyboard("{Escape}");
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
+
+    await openMenu(user);
+    expect(screen.getByRole("button", { name: "SHOWS" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  });
+
+  it("closes when a row is chosen", async () => {
+    const user = userEvent.setup();
+    render(<Sheet />);
+    await openMenu(user);
+
+    await user.click(screen.getByRole("link", { name: "Watched" }));
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
+  });
+
+  it("gives search the whole screen on focus, and Cancel brings the menu back", async () => {
+    const user = userEvent.setup();
+    render(<Sheet />);
+    await openMenu(user);
+
+    await user.click(screen.getByRole("combobox", { name: "Search shows" }));
+
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Library" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Account" })).toBeNull();
+    // The tabs stay, so the type can change without leaving search.
+    expect(screen.getByRole("button", { name: "MOVIES" })).toBeInTheDocument();
+
+    await user.type(screen.getByRole("combobox"), "dune");
+    expect(await screen.findByText("dune (tv)")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.getByRole("navigation", { name: "Library" })).toBeVisible();
+    expect(screen.getByRole("combobox", { name: "Search shows" })).toHaveValue(
+      "",
+    );
+  });
+
+  it("keeps the query when the tab changes during a search", async () => {
+    const user = userEvent.setup();
+    render(<Sheet />);
+    await openMenu(user);
+
+    await user.type(
+      screen.getByRole("combobox", { name: "Search shows" }),
+      "dune",
+    );
+    expect(await screen.findByText("dune (tv)")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "MOVIES" }));
+    expect(screen.getByRole("combobox", { name: "Search movies" })).toHaveValue(
+      "dune",
+    );
+    expect(await screen.findByText("dune (movie)")).toBeInTheDocument();
+  });
+
+  it("closes when a search result is chosen", async () => {
+    const user = userEvent.setup();
+    render(<Sheet />);
+    await openMenu(user);
+
+    await user.type(screen.getByRole("combobox"), "dune");
+    await user.click(await screen.findByText("dune (tv)"));
+
+    expect(push).toHaveBeenCalledWith("/movies/1");
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
+  });
+
+  it("shows search and tabs but no rows when signed out", async () => {
+    const user = userEvent.setup();
+    render(<Sheet library={false} />);
+    await openMenu(user);
+
+    expect(screen.getByRole("combobox")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "GAMES" })).toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Library" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Sign in" })).toBeInTheDocument();
+  });
+
+  it.each(["/account", "/privacy", "/sign-in"])(
+    "on %s holds only the header and the account block",
+    async (current) => {
+      pathname.current = current;
+      const user = userEvent.setup();
+      render(<Sheet />);
+      await openMenu(user);
+
+      expect(screen.queryByRole("combobox")).toBeNull();
+      expect(screen.queryByRole("group", { name: "Media type" })).toBeNull();
+      expect(screen.queryByRole("navigation", { name: "Library" })).toBeNull();
+      expect(screen.getByRole("link", { name: "BeStats" })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Account" })).toBeInTheDocument();
+    },
+  );
+
+  it("follows the type parameter on a typed page", async () => {
+    pathname.current = "/watched";
+    search.current = "type=movie";
+    const user = userEvent.setup();
+    render(<Sheet />);
+    await openMenu(user);
+
+    expect(screen.getByRole("button", { name: "MOVIES" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("link", { name: "Watched" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+  });
+
+  it("closes when the window widens past md, where the bar has no menu", async () => {
+    const user = userEvent.setup();
+    render(<Sheet />);
+    await openMenu(user);
+
+    act(() => widen());
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
   });
 
   it("names the trigger for assistive technology, since it is icon only", () => {

@@ -1,7 +1,10 @@
-import { cn } from "cn";
-
 import { signOutAction } from "@/app/(auth)/actions";
 import { LibraryNav } from "@/components/layout/library-nav";
+import {
+  Avatar,
+  MobileAccountBlock,
+  MobileSignIn,
+} from "@/components/layout/mobile-account-block";
 import { MobileMenuSheet } from "@/components/layout/mobile-menu-sheet";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { avatarLetter, displayName } from "@/lib/auth/identity";
@@ -25,13 +28,15 @@ import { publicEnvProblems } from "@/lib/env";
  * `app/layout.test.ts` fails if a cookie, header or Supabase client appears
  * anywhere else in that tree.
  *
- * Signed in, the two layouts differ (spec 0008, AC-14, AC-15). The desktop bar
- * shows the library links, the account button and Sign out in a row; below
- * `lg` the account button drops its visible name so the row fits at `md`. The
- * mobile bar keeps only the avatar letter and a menu button; the menu sheet
- * holds the library links, the account row and Sign out. `MobileMenuSheet` is a Client
- * Component, so this Server Component passes the rendered pieces in as
- * children.
+ * The two layouts differ (spec 0008, AC-14, AC-15). Signed in, the desktop
+ * bar shows the library links, the account button and Sign out in a row;
+ * below `lg` the account button drops its visible name so the row fits at
+ * `md`. The mobile bar is only the menu button, signed in or out
+ * (prompts/mobile-navigation.md): the full screen menu holds the search, the
+ * tabs, the library rows when signed in, and the account block this slot
+ * renders, the Account row and Sign out, or Sign in. `MobileMenuSheet` is a
+ * Client Component, so this Server Component passes that block in already
+ * rendered, and the client never decides who is signed in.
  *
  * With no valid auth configuration it renders the signed out state instead of
  * reading the session. This slot is on every page, and the catalog is public,
@@ -45,6 +50,9 @@ async function AccountSlot({ variant }: { variant: "desktop" | "mobile" }) {
   const user = publicEnvProblems() ? null : await getOptionalUser();
 
   if (!user) {
+    if (variant === "mobile") {
+      return <MobileMenuSheet library={false} account={<MobileSignIn />} />;
+    }
     return (
       <ButtonLink size="bar" href="/sign-in">
         Sign in
@@ -60,38 +68,10 @@ async function AccountSlot({ variant }: { variant: "desktop" | "mobile" }) {
 
   if (variant === "mobile") {
     return (
-      <div className="flex items-center gap-2">
-        <ButtonLink
-          href="/account"
-          size="icon-bar"
-          variant="ghost"
-          className="p-0"
-        >
-          <Avatar letter={letter} className="size-8" />
-          <span className="sr-only">{name}</span>
-        </ButtonLink>
-
-        <MobileMenuSheet>
-          <LibraryNav variant="sheet" />
-
-          <div className="flex items-center gap-3">
-            <ButtonLink
-              size="touch"
-              href="/account"
-              className="min-w-0 flex-1 justify-start gap-3 pl-1.5"
-            >
-              <Avatar letter={letter} className="size-8" />
-              <span className="truncate">{name}</span>
-            </ButtonLink>
-
-            <form action={signOutAction}>
-              <Button type="submit" size="touch">
-                Sign out
-              </Button>
-            </form>
-          </div>
-        </MobileMenuSheet>
-      </div>
+      <MobileMenuSheet
+        library
+        account={<MobileAccountBlock letter={letter} name={name} />}
+      />
     );
   }
 
@@ -128,21 +108,6 @@ async function AccountSlot({ variant }: { variant: "desktop" | "mobile" }) {
         </form>
       </div>
     </div>
-  );
-}
-
-/** The avatar letter on the brighter selected glass. */
-function Avatar({ letter, className }: { letter: string; className: string }) {
-  return (
-    <span
-      className={cn(
-        "glass-selected glass-rim flex shrink-0 items-center justify-center rounded-full text-sm font-bold text-foreground",
-        className,
-      )}
-      aria-hidden="true"
-    >
-      {letter}
-    </span>
   );
 }
 

@@ -31,6 +31,10 @@ import { ScreenshotGallery } from "@/components/game/screenshot-gallery";
 import { GlassPill } from "@/components/glass-pill";
 import { IconKey } from "@/components/layout/icon-key";
 import { LibraryNavView } from "@/components/layout/library-nav";
+import {
+  MobileAccountBlock,
+  MobileSignIn,
+} from "@/components/layout/mobile-account-block";
 import { MobileMenuSheet } from "@/components/layout/mobile-menu-sheet";
 import { PageBackgroundLayers } from "@/components/layout/page-background";
 import {
@@ -796,9 +800,24 @@ export default function ShowcasePage() {
         note="Base UI supplies the focus trap, the focus return, Escape, the scroll lock and the inert background. Open one with the keyboard and tab through it."
       >
         <div className="flex flex-wrap items-center gap-3">
-          <MobileMenuSheet>
-            <LibraryNavView variant="sheet" pathname="/up-next" type="tv" />
-          </MobileMenuSheet>
+          <MobileMenuSheet
+            triggerLabel="Open menu, signed in on Up next"
+            library
+            page={{ pathname: "/up-next", type: "tv" }}
+            account={<MobileAccountBlock letter="T" name="tester_one" />}
+          />
+          <MobileMenuSheet
+            triggerLabel="Open menu, signed out on /games"
+            library={false}
+            page={{ pathname: "/games", type: "game" }}
+            account={<MobileSignIn />}
+          />
+          <MobileMenuSheet
+            triggerLabel="Open menu on a page with no type"
+            library
+            page={{ pathname: "/account", type: null }}
+            account={<MobileAccountBlock letter="T" name="tester_one" />}
+          />
 
           <Dialog>
             <DialogTrigger render={<Button size="touch" />}>

@@ -23,6 +23,9 @@ const notFound = vi.hoisted(() =>
 );
 
 vi.mock("next/navigation", () => ({ notFound }));
+// The mobile menu demo renders the real Sign out form; its action is a
+// server module that refuses to load outside a Server Component.
+vi.mock("@/app/(auth)/actions", () => ({ signOutAction: vi.fn() }));
 
 afterEach(() => {
   vi.unstubAllEnvs();
