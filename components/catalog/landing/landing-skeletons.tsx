@@ -92,31 +92,31 @@ export const TOP_CARD_CLASS = "relative pt-14 md:pt-20 lg:pt-23";
  * The hero's box: pulled up behind the transparent navbar and out to the
  * column's edges, the way a title page's backdrop is (`detail-hero.tsx`,
  * prompts/title-backdrop-under-navbar.md). The negative margins are `main`'s
- * padding plus `--navbar-height`. From `lg` it is full height with the title
- * over the artwork; below it the artwork is a band and the title flows under
- * it, because a portrait screen cannot show a 16:9 backdrop at full height
- * without blowing it up (prompts/home-hero-backdrop-quality.md, decision 4).
+ * padding plus `--navbar-height`. A full small viewport at every width, so a
+ * phone opens on the title the way a desktop does
+ * (prompts/mobile-landing-parallax.md, decision 12); `svh`, so the address
+ * bar sliding away does not resize it.
  */
 export const HERO_BOX =
-  "relative -mx-4 -mt-[calc(2rem+var(--navbar-height))] flex flex-col overflow-hidden pb-4 md:-mt-[calc(3rem+var(--navbar-height))] lg:block lg:h-svh lg:min-h-[620px] lg:pb-0";
+  "relative -mx-4 -mt-[calc(2rem+var(--navbar-height))] block h-svh min-h-[560px] overflow-hidden md:-mt-[calc(3rem+var(--navbar-height))] lg:min-h-[620px]";
 
 /**
- * The artwork's box: 16:9 at the hero's width, never taller than the hero,
- * so the backdrop is drawn near its own size rather than covered across a
- * full screen (decision 1). From `lg` it bleeds 16px past each side so the
- * pointer drift never shows an edge. Below `lg` it keeps the title page's
- * minimum, so the band still shows below the two row navbar.
+ * The artwork's box. Below `lg` it covers the hero, which suits the portrait
+ * poster shown there. From `lg` it is 16:9 at the hero's width, never taller
+ * than the hero, so the backdrop is drawn near its own size rather than
+ * covered across a full screen (prompts/home-hero-backdrop-quality.md,
+ * decision 1). It bleeds 16px past each side so the pointer drift never
+ * shows an edge.
  */
 export const HERO_ART_BOX =
-  "relative aspect-video min-h-[calc(var(--navbar-height)+12rem)] w-full lg:absolute lg:-inset-x-4 lg:top-0 lg:max-h-full lg:min-h-0 lg:w-auto";
+  "absolute -inset-x-4 top-0 h-full lg:h-auto lg:aspect-video lg:max-h-full";
 
 /**
- * The title block: under the band below `lg`, held at a two line title's
- * height so the sections below barely move when it streams in, and over the
- * artwork's lower part from `lg`.
+ * The title block, over the artwork's lower part: at the foot of a phone's
+ * screen, above the next section's peek, and higher up from `lg`.
  */
 export const HERO_TEXT_BOX =
-  "relative -mt-8 flex min-h-52 max-w-3xl flex-col gap-4 px-4 md:gap-5 md:px-[5vw] lg:absolute lg:inset-x-[5vw] lg:bottom-[16vh] lg:mt-0 lg:min-h-0 lg:px-0";
+  "absolute inset-x-0 bottom-10 flex max-w-3xl flex-col gap-4 px-4 md:gap-5 md:px-[5vw] lg:inset-x-[5vw] lg:bottom-[16vh] lg:px-0";
 
 /** Four ranked card shapes at the row's card width. */
 function TrendingSkeleton() {
