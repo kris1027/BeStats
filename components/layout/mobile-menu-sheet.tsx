@@ -6,7 +6,10 @@ import { MenuIcon, XIcon } from "lucide-react";
 import type * as React from "react";
 import { useEffect, useRef, useState } from "react";
 
-import { BrandLink, BrandLinkView } from "@/components/layout/brand-link";
+import {
+  BrandLinkView,
+  rememberedLibraryType,
+} from "@/components/layout/brand-link";
 import { LibraryNavView } from "@/components/layout/library-nav";
 import { QuickSearch } from "@/components/search/quick-search";
 import { Button } from "@/components/ui/button";
@@ -146,7 +149,11 @@ function MobileMenuSheet({
 
 /**
  * The sheet's content. It mounts each time the menu opens, so the previewed
- * tab starts from the page's own every time.
+ * tab starts from the page's own every time, or on a page about neither
+ * catalog (`/account`, `/privacy`) from the one viewed last, as the logo
+ * does. The menu is the whole of mobile navigation, so it never hides the
+ * search, tabs or rows; there nothing is lit (prompts/mobile-navigation.md,
+ * decision 7).
  *
  * The tabs here are a preview, not page selection: tapping one changes which
  * library rows show and which catalog the search reads, and nothing
@@ -156,8 +163,7 @@ function MobileMenuSheet({
  * Focusing the field starts search mode, which gives the results the whole
  * screen: the rows and the account block step aside, the tabs stay under the
  * field so the type can change without retyping, and Cancel clears the field
- * and brings the menu back. On a page about neither catalog there is no
- * search, no tabs and no rows (prompts/hide-tabs-without-type.md).
+ * and brings the menu back.
  */
 function MenuBody({
   page,
@@ -172,7 +178,10 @@ function MenuBody({
   onClose: () => void;
   popup: React.RefObject<HTMLDivElement | null>;
 }) {
-  const [preview, setPreview] = useState<LibraryType>(page.type ?? "tv");
+  // A page with no tab starts from the catalog viewed last, as the logo does.
+  const [preview, setPreview] = useState<LibraryType>(
+    () => page.type ?? rememberedLibraryType() ?? "tv",
+  );
   const [searching, setSearching] = useState(false);
   // Bumped by Cancel, so the field remounts empty rather than keeping a query.
   const [searchKey, setSearchKey] = useState(0);
@@ -186,7 +195,7 @@ function MenuBody({
   return (
     <>
       <div className="flex h-12 shrink-0 items-center justify-between gap-4">
-        {page.type === null ? <BrandLink /> : <BrandLinkView type={preview} />}
+        <BrandLinkView type={preview} />
         <DialogPrimitive.Close
           render={<Button size="icon-touch" aria-label="Close menu" />}
         >
@@ -194,31 +203,25 @@ function MenuBody({
         </DialogPrimitive.Close>
       </div>
 
-      {page.type === null ? null : (
-        <QuickSearch
-          key={searchKey}
-          type={preview}
-          variant="overlay"
-          onNavigate={onClose}
-          onFocus={() => setSearching(true)}
-          besideField={
-            searching ? (
-              <Button size="touch" variant="ghost" onClick={cancel}>
-                Cancel
-              </Button>
-            ) : null
-          }
-          belowField={
-            <MenuTabs
-              selected={preview}
-              onSelect={setPreview}
-              className="mt-4"
-            />
-          }
-        />
-      )}
+      <QuickSearch
+        key={searchKey}
+        type={preview}
+        variant="overlay"
+        onNavigate={onClose}
+        onFocus={() => setSearching(true)}
+        besideField={
+          searching ? (
+            <Button size="touch" variant="ghost" onClick={cancel}>
+              Cancel
+            </Button>
+          ) : null
+        }
+        belowField={
+          <MenuTabs selected={preview} onSelect={setPreview} className="mt-4" />
+        }
+      />
 
-      {library && page.type !== null && !searching ? (
+      {library && !searching ? (
         <LibraryNavView
           variant="sheet"
           pathname={preview === page.type ? page.pathname : null}

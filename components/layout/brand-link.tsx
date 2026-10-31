@@ -62,7 +62,11 @@ function TypedBrandLink({ type }: { type: LibraryType }) {
  * so the server and the first client render agree on `/shows`.
  */
 function RememberedBrandLink() {
-  const type = useSyncExternalStore(subscribe, readRemembered, () => null);
+  const type = useSyncExternalStore(
+    subscribe,
+    rememberedLibraryType,
+    () => null,
+  );
   return <BrandLinkView type={type ?? "tv"} />;
 }
 
@@ -71,8 +75,12 @@ function subscribe(onChange: () => void) {
   return () => window.removeEventListener("storage", onChange);
 }
 
-/** The stored type, parsed as a `LibraryType` (spec 0028, AC-16). */
-function readRemembered(): LibraryType | null {
+/**
+ * The stored type, parsed as a `LibraryType` (spec 0028, AC-16). The mobile
+ * menu starts its tab preview from it on a page with no type
+ * (prompts/mobile-navigation.md, decision 7).
+ */
+function rememberedLibraryType(): LibraryType | null {
   try {
     const value = window.localStorage.getItem(LAST_MEDIA_TYPE_KEY);
     if (value === "game") return "game";
@@ -94,4 +102,4 @@ function BrandLinkView({ type }: { type: LibraryType }) {
   );
 }
 
-export { BrandLink, BrandLinkView, LAST_MEDIA_TYPE_KEY };
+export { BrandLink, BrandLinkView, LAST_MEDIA_TYPE_KEY, rememberedLibraryType };

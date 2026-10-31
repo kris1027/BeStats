@@ -322,21 +322,46 @@ describe("MobileMenuSheet", () => {
     expect(screen.getByRole("link", { name: "Sign in" })).toBeInTheDocument();
   });
 
+  // covers: prompts/mobile-navigation.md, decision 7
   it.each(["/account", "/privacy", "/sign-in"])(
-    "on %s holds only the header and the account block",
+    "on %s still holds the search, tabs and rows, from the last catalog viewed",
     async (current) => {
       pathname.current = current;
+      window.localStorage.setItem("bestats:last-media-type", "movie");
       const user = userEvent.setup();
       render(<Sheet />);
       await openMenu(user);
 
-      expect(screen.queryByRole("combobox")).toBeNull();
-      expect(screen.queryByRole("group", { name: "Media type" })).toBeNull();
-      expect(screen.queryByRole("navigation", { name: "Library" })).toBeNull();
-      expect(screen.getByRole("link", { name: "BeStats" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("combobox", { name: "Search movies" }),
+      ).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "MOVIES" })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+      expect(rowNames()).toEqual(["Watchlist", "Coming soon", "Watched"]);
+      expect(screen.queryByRole("link", { current: "page" })).toBeNull();
+      expect(screen.getByRole("link", { name: "BeStats" })).toHaveAttribute(
+        "href",
+        "/movies",
+      );
       expect(screen.getByRole("link", { name: "Account" })).toBeInTheDocument();
+      window.localStorage.removeItem("bestats:last-media-type");
     },
   );
+
+  it("starts on shows on a page with no type when nothing is remembered", async () => {
+    pathname.current = "/account";
+    const user = userEvent.setup();
+    render(<Sheet />);
+    await openMenu(user);
+
+    expect(screen.getByRole("button", { name: "SHOWS" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(rowNames()).toEqual(["Up next", "Upcoming", "Watched"]);
+  });
 
   it("follows the type parameter on a typed page", async () => {
     pathname.current = "/watched";
