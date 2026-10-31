@@ -99,11 +99,23 @@ function catalogHrefs(): TabHrefs {
 /** Where each tab leads. */
 type TabHrefs = Record<LibraryType, string>;
 
-const TABS = [
+/**
+ * The three tabs in their order, shared by the navbar's links and the mobile
+ * menu's preview toggles so the two never disagree on a label or an order.
+ */
+const MEDIA_TABS = [
   { type: "tv", label: "SHOWS" },
   { type: "movie", label: "MOVIES" },
   { type: "game", label: "GAMES" },
 ] as const satisfies readonly { type: LibraryType; label: string }[];
+
+/**
+ * The navbar's glass pill track, which the media tabs and the desktop
+ * library links both sit in. Padded so a 28px item, the padding and the
+ * 1.5px rim come to the bar's 40px (components/AGENTS.md, Conventions).
+ */
+const NAV_PILL_CLASS =
+  "glass glass-rim glass-plate glass-shadow flex items-center gap-1 rounded-full p-[4.5px]";
 
 /**
  * The tabs for a known selection, or with no tab lit when `selected` is null,
@@ -122,16 +134,10 @@ function MediaTypeTabsView({
   hrefs?: TabHrefs;
   className?: string;
 }) {
-  const tabs = TABS.map((tab) => ({ ...tab, href: hrefs[tab.type] }));
+  const tabs = MEDIA_TABS.map((tab) => ({ ...tab, href: hrefs[tab.type] }));
 
   return (
-    <nav
-      aria-label="Media type"
-      className={cn(
-        "glass glass-rim glass-plate glass-shadow flex items-center gap-1 rounded-full p-[4.5px]",
-        className,
-      )}
-    >
+    <nav aria-label="Media type" className={cn(NAV_PILL_CLASS, className)}>
       {tabs.map((tab) => {
         const isSelected = selected === tab.type;
 
@@ -155,4 +161,4 @@ function MediaTypeTabsView({
   );
 }
 
-export { MediaTypeTabs, MediaTypeTabsView };
+export { MEDIA_TABS, MediaTypeTabs, MediaTypeTabsView, NAV_PILL_CLASS };

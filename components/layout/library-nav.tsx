@@ -25,6 +25,7 @@ import {
   libraryHref,
 } from "@/lib/catalog/media-type";
 
+import { NAV_PILL_CLASS } from "./media-type-tabs";
 import { WithLibraryTypedPage } from "./page-media-type";
 
 /**
@@ -171,10 +172,7 @@ function LibraryNavView({
   }
 
   return (
-    <nav
-      aria-label="Library"
-      className="glass glass-rim glass-plate glass-shadow flex items-center gap-1 rounded-full p-[4.5px]"
-    >
+    <nav aria-label="Library" className={NAV_PILL_CLASS}>
       {libraryPages(type).map((list) => {
         const path = libraryPath(list, type);
         const selected = isCurrent(pathname, path);
