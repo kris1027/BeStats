@@ -45,10 +45,15 @@ const fetchMock = vi.fn(async (input: string) => {
   );
 });
 
-/** The `md` query, which jsdom lacks; `widen` fires its change event. */
+/**
+ * The breakpoint query, which jsdom lacks; `widen` fires its change event
+ * and `watched` is the last query asked for.
+ */
 let widen: () => void = () => {};
+let watched = "";
 function stubMatchMedia() {
   vi.stubGlobal("matchMedia", (query: string) => {
+    watched = query;
     const target = new EventTarget();
     widen = () => {
       const event = Object.assign(new Event("change"), { matches: true });
@@ -71,10 +76,17 @@ afterEach(() => {
   push.mockClear();
 });
 
-function Sheet({ library = true }: { library?: boolean }) {
+function Sheet({
+  library = true,
+  hiddenFrom,
+}: {
+  library?: boolean;
+  hiddenFrom?: "md" | "xl";
+}) {
   return (
     <MobileMenuSheet
       library={library}
+      hiddenFrom={hiddenFrom}
       account={
         library ? (
           <a href="/account">Account</a>
@@ -353,6 +365,20 @@ describe("MobileMenuSheet", () => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
     );
   });
+
+  // covers: prompts/mobile-navigation.md, decision 10
+  it.each([
+    [undefined, "(width >= 48rem)"],
+    ["xl", "(width >= 80rem)"],
+  ] as const)(
+    "hidden from %s, it closes as the window crosses %s",
+    async (hiddenFrom, query) => {
+      const user = userEvent.setup();
+      render(<Sheet hiddenFrom={hiddenFrom} />);
+      await openMenu(user);
+      expect(watched).toBe(query);
+    },
+  );
 
   it("names the trigger for assistive technology, since it is icon only", () => {
     render(<Sheet />);

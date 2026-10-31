@@ -15,6 +15,12 @@ import { isLibraryPath, type LibraryType } from "@/lib/catalog/media-type";
 
 import { WithPageMediaType } from "./page-media-type";
 
+/** Tailwind's `md` and `xl`, the widths a menu button is hidden from. */
+const BREAKPOINTS = {
+  md: "(width >= 48rem)",
+  xl: "(width >= 80rem)",
+} as const;
+
 /** Where the menu is opened, as it needs it: the path and the page's tab. */
 type MenuPage = { pathname: string; type: LibraryType | null };
 
@@ -41,9 +47,11 @@ type MenuPage = { pathname: string; type: LibraryType | null };
  * one to the page already open. The sheet shows no title, so `Menu` is kept
  * for screen readers only, which keeps the dialog named.
  *
- * The bar it belongs to is hidden from `md`, so a window widened past it
- * while the menu is open closes the menu rather than leaving it over the
- * desktop bar. Only the crossing closes it: `/showcase` opens it at any width.
+ * Its button is hidden from `hiddenFrom` (`md` in the mobile bar, `xl` in
+ * the desktop bar, which shows the full row from there), so a window
+ * widened past it while the menu is open closes the menu rather than leaving
+ * it over a bar that no longer offers it. Only the crossing closes it:
+ * `/showcase` opens it at any width.
  *
  * @param page Where the menu stands, for `/showcase`; left out, it is read
  * from the URL when the menu opens.
@@ -52,11 +60,13 @@ function MobileMenuSheet({
   account,
   library,
   page,
+  hiddenFrom = "md",
   triggerLabel = "Open menu",
 }: {
   account: React.ReactNode;
   library: boolean;
   page?: MenuPage;
+  hiddenFrom?: keyof typeof BREAKPOINTS;
   triggerLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -65,13 +75,13 @@ function MobileMenuSheet({
 
   useEffect(() => {
     if (!open) return;
-    const desktop = window.matchMedia("(width >= 48rem)");
+    const desktop = window.matchMedia(BREAKPOINTS[hiddenFrom]);
     const onChange = (event: MediaQueryListEvent) => {
       if (event.matches) setOpen(false);
     };
     desktop.addEventListener("change", onChange);
     return () => desktop.removeEventListener("change", onChange);
-  }, [open]);
+  }, [open, hiddenFrom]);
 
   const body = (current: MenuPage) => (
     <MenuBody
