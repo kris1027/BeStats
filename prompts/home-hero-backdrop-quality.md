@@ -39,6 +39,7 @@ The numbers below are for a 1440×900 viewport.
 3. **No scroll zoom.** `scale(...)` is removed from the `[data-hero-bg]` transform. The vertical drift (`scroll * 0.45`) and pointer drift stay, and reduced motion is unchanged.
 4. **Phones and portrait tablets (below `lg`).** The hero is not full height. The backdrop is a 16:9 band at the top, pulled up behind the navbar as now, and the title block flows below it over the faded page. The Scroll cue is hidden there.
    - **Assumption:** this uses `lg`, not `md`, because a 768×1024 portrait tablet has the same problem as a phone.
+   - Superseded on 2026-10-31 by prompts/mobile-landing-parallax.md, decision 12: below `lg` the hero is full height with the portrait poster, and the backdrop shows from `lg` only.
 5. **Scope.** Only the landing hero changes. Applying the same rule to `DetailHero` is a possible follow-up.
 
 ## Expected files
