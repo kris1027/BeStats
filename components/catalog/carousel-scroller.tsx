@@ -9,9 +9,13 @@ import { Button } from "@/components/ui/button";
 /**
  * Firefox restores a button's last `disabled` state on a reload unless it
  * carries `autocomplete="off"`, and React's button type does not list the
- * attribute, so it is spread in rather than written as a prop.
+ * attribute, so it is spread in rather than written as a prop. Typed as the
+ * input attribute, so a misspelt name or value still fails the type check.
  */
-const NO_STATE_RESTORE = { autoComplete: "off" } as Record<string, string>;
+const NO_STATE_RESTORE: Pick<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  "autoComplete"
+> = { autoComplete: "off" };
 
 /** How far one press scrolls, as a share of the row's visible width (AC-6). */
 const SCROLL_STEP = 0.9;
