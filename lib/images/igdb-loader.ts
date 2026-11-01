@@ -5,6 +5,7 @@ import type { ImageLoaderProps } from "next/image";
 import {
   IGDB_ART_LADDER,
   IGDB_COVER_LADDER,
+  IGDB_HERO_COVER_SIZE,
   IGDB_IMAGE_BASE,
 } from "@/lib/igdb/constants";
 
@@ -19,10 +20,23 @@ const SAME_SIZE_FRAGMENT = "#same-size";
 const IMAGE_PATH = /^([^/]+)\/([^/?#]+\.jpg)$/;
 
 /**
- * The two ladders, each matched only against its own sizes, so a cover never
- * steps onto an art rung or the other way round (spec 0028, AC-6).
+ * A game's uploaded cover, `fullCoverUrl` (prompts/detail-backdrop-hero-size.md,
+ * decision 14): the cover ladder with the uploaded file as an unbounded top
+ * rung, so it steps down like any cover and serves the file whole past
+ * `t_cover_big_2x`, the rule the TMDB loader gives `original`.
  */
-const LADDERS = [IGDB_COVER_LADDER, IGDB_ART_LADDER];
+const HERO_COVER_LADDER = [
+  ...IGDB_COVER_LADDER,
+  { size: IGDB_HERO_COVER_SIZE, width: Number.POSITIVE_INFINITY },
+];
+
+/**
+ * The ladders, each matched only against its own sizes, so a cover never
+ * steps onto an art rung or the other way round (spec 0028, AC-6). A cover
+ * size matches the plain cover ladder first, so `t_original` stays the
+ * ceiling only of a URL that named it.
+ */
+const LADDERS = [IGDB_COVER_LADDER, IGDB_ART_LADDER, HERO_COVER_LADDER];
 
 /**
  * Maps a `next/image` width request onto IGDB's own pre-sized covers and art,

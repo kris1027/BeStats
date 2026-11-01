@@ -2,8 +2,10 @@ import "server-only";
 import { isCatalogVisible } from "./catalog-filter";
 import {
   IGDB_ART_SIZE,
+  IGDB_COVER_LADDER,
   IGDB_COVER_SIZE,
   IGDB_DATE_FORMAT,
+  IGDB_HERO_COVER_SIZE,
   IGDB_IMAGE_BASE,
   IGDB_MAX_SCREENSHOTS,
   IGDB_VISIBLE_GAME_TYPES,
@@ -43,25 +45,76 @@ export function coverUrl(imageId: string | null | undefined): string | null {
   return id ? `${IGDB_IMAGE_BASE}/${IGDB_COVER_SIZE}/${id}.jpg` : null;
 }
 
-/** Artworks or screenshots as `schemas.ts` leaves them. */
-type ImageList =
-  | readonly ({ image_id?: string | null } | null | undefined)[]
-  | null
-  | undefined;
+/** The width past which an uploaded cover beats `t_cover_big_2x`. */
+const COVER_CEILING_WIDTH =
+  IGDB_COVER_LADDER[IGDB_COVER_LADDER.length - 1].width;
 
 /**
- * The wide art of a game (spec 0028, AC-6): the artwork with the lowest
- * `image_id`, else the screenshot with the lowest, built at `t_1080p`, the
- * ceiling the loader steps down from. IGDB promises no array order, so the
- * lowest id in string order is what keeps the pick the same on every read.
+ * The uploaded cover, only when IGDB says it is wider than the 528px
+ * `t_cover_big_2x`; a smaller upload would come back smaller, since IGDB's
+ * sized covers upscale it (prompts/detail-backdrop-hero-size.md, decision 14).
+ */
+export function fullCoverUrl(
+  cover: IgdbImage | null | undefined,
+): string | null {
+  const id = cover?.image_id?.trim();
+  if (!id || !cover?.width || cover.width <= COVER_CEILING_WIDTH) return null;
+  return `${IGDB_IMAGE_BASE}/${IGDB_HERO_COVER_SIZE}/${id}.jpg`;
+}
+
+/** A cover, artwork or screenshot as `schemas.ts` leaves it. */
+type IgdbImage = {
+  image_id?: string | null;
+  width?: number | null;
+  height?: number | null;
+};
+
+/** Artworks or screenshots as `schemas.ts` leaves them. */
+type ImageList = readonly (IgdbImage | null | undefined)[] | null | undefined;
+
+/**
+ * The wide art of a game (spec 0028, AC-6): the sharpest of its artworks and
+ * screenshots, built at `t_1080p`, the ceiling the loader steps down from.
+ *
+ * Sharpest is the width an image keeps in the 16:9 box the heroes and wide
+ * cards draw it in, `min(width, height × 16/9)`: IGDB's larger sizes only
+ * upscale, so a 1200px artwork or a 1920×620 strip is soft at full screen
+ * while a true 1920×1080 screenshot is not (prompts/detail-backdrop-hero-size.md,
+ * decision 14). A tie goes to an artwork, then to the lowest `image_id`, since
+ * IGDB promises no array order; with no sizes at all that is the old pick,
+ * the lowest artwork, else the lowest screenshot.
  */
 export function artUrl(record: {
   artworks?: ImageList;
   screenshots?: ImageList;
 }): string | null {
-  const id =
-    lowestImageId(record.artworks) ?? lowestImageId(record.screenshots);
-  return id === null ? null : artImageUrl(id);
+  const candidates = [
+    ...(record.artworks ?? []).map((image) => ({ image, isArtwork: true })),
+    ...(record.screenshots ?? []).map((image) => ({ image, isArtwork: false })),
+  ];
+  let best: ArtCandidate | null = null;
+  for (const { image, isArtwork } of candidates) {
+    const id = image?.image_id?.trim();
+    if (!image || !id) continue;
+    const next = { id, score: boxWidth(image), isArtwork };
+    if (best === null || isSharper(next, best)) best = next;
+  }
+  return best === null ? null : artImageUrl(best.id);
+}
+
+type ArtCandidate = { id: string; score: number; isArtwork: boolean };
+
+/** Higher score, then artwork over screenshot, then the lower `image_id`. */
+function isSharper(a: ArtCandidate, b: ArtCandidate): boolean {
+  if (a.score !== b.score) return a.score > b.score;
+  if (a.isArtwork !== b.isArtwork) return a.isArtwork;
+  return a.id < b.id;
+}
+
+/** The width an image keeps in a 16:9 box, or 0 when its size is unknown. */
+function boxWidth({ width, height }: IgdbImage): number {
+  if (!width || !height) return 0;
+  return Math.min(width, (height * 16) / 9);
 }
 
 /**
@@ -95,15 +148,6 @@ function artImageUrl(imageId: string): string {
  */
 function compareStrings(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
-}
-
-function lowestImageId(images: ImageList): string | null {
-  let lowest: string | null = null;
-  for (const image of images ?? []) {
-    const id = image?.image_id?.trim();
-    if (id && (lowest === null || id < lowest)) lowest = id;
-  }
-  return lowest;
 }
 
 /**
@@ -414,6 +458,7 @@ export function normalizeSummary(record: GameSummaryRecord): GameSummary {
     id: record.id,
     name: record.name,
     coverUrl: coverUrl(record.cover?.image_id),
+    fullCoverUrl: fullCoverUrl(record.cover),
     artUrl: artUrl(record),
     ...releaseDay(record.first_release_date),
     communityRating: communityRating(record.rating),

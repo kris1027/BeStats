@@ -24,8 +24,9 @@ const SAME_SIZE_FRAGMENT = "#same-size";
  *
  * The size `lib/tmdb/images.ts` pinned is the ceiling: a `w500` poster is never
  * upgraded on a dense screen, so no page gets heavier than its field size allows.
- * An `original` source, which only the landing hero asks for
- * (prompts/home-hero-backdrop-quality.md), follows the ladder up to its top
+ * An `original` source, which only the landing hero and the title page
+ * backdrop ask for (prompts/home-hero-backdrop-quality.md,
+ * prompts/detail-backdrop-hero-size.md), follows the ladder up to its top
  * rung and is served whole past it, because no TMDB rung is wider.
  * `quality` is ignored because TMDB has no such parameter. Any URL that is not
  * a TMDB size path on the ladder comes back unchanged, so the loader never

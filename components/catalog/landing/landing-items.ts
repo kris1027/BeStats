@@ -25,6 +25,12 @@ export type LandingItem = {
   title: string;
   href: string;
   posterUrl: string | null;
+  /**
+   * A game's uploaded cover when IGDB has one larger than the card cover, the
+   * hero's full screen phone art in place of `posterUrl`; null or absent
+   * otherwise (prompts/detail-backdrop-hero-size.md, decision 14).
+   */
+  fullPosterUrl?: string | null;
   backdropUrl: string | null;
   /** The community rating, always shown as its own catalog's (AGENTS.md §9). */
   rating: { source: "tmdb" | "igdb"; value: number | null };
@@ -98,6 +104,7 @@ export function landingItems(
       title: game.name,
       href: gameHref(game.id),
       posterUrl: game.coverUrl,
+      fullPosterUrl: game.fullCoverUrl,
       backdropUrl: game.artUrl,
       rating: { source: "igdb", value: game.communityRating },
       releaseDate: game.releaseDate,

@@ -1,7 +1,7 @@
 import { cn } from "cn";
 import Link from "next/link";
 import { Suspense } from "react";
-
+import { HERO_ART_MASK, HeroShade } from "@/components/catalog/hero-frame";
 import { TrailerSlot } from "@/components/catalog/title-extras";
 import { GlassPill } from "@/components/glass-pill";
 import type { CatalogList } from "@/lib/catalog/lists";
@@ -63,22 +63,11 @@ async function LandingHeroContent({ list }: { list: CatalogList }) {
       <div
         data-hero-bg=""
         suppressHydrationWarning
-        className={cn(
-          HERO_ART_BOX,
-          "mask-b-from-60% lg:mask-b-from-75% lg:mask-l-from-70% min-[1600px]:mask-r-from-90%",
-        )}
+        className={cn(HERO_ART_BOX, HERO_ART_MASK)}
       >
         <HeroArtwork item={item} />
-        {/*
-         * Keeps the title block readable over bright artwork, inside the
-         * mask so it fades out with the image rather than painting a band:
-         * from below on a phone, where the title sits over the poster's
-         * foot, and from the left from `lg`.
-         */}
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 bg-linear-to-t from-background/80 via-background/30 via-35% to-transparent to-60% lg:bg-linear-to-r lg:from-background/70 lg:via-background/25 lg:via-50% lg:to-transparent lg:to-100%"
-        />
+        {/* The same shade as the title pages (decision 13). */}
+        <HeroShade />
       </div>
       <div aria-hidden="true" className="backdrop-scrim absolute inset-0" />
 
@@ -130,11 +119,13 @@ async function LandingHeroContent({ list }: { list: CatalogList }) {
  * for it: it fills a full width box, which `w1280` can only fill stretched,
  * and the loader still serves a ladder size to a screen that needs no more
  * (prompts/home-hero-backdrop-quality.md, decision 2). The poster stops at
- * `w780`, TMDB's largest poster rung.
+ * `w780`, TMDB's largest poster rung; a game's cover is IGDB's uploaded file
+ * when that is larger than the 528px card cover (`fullPosterUrl`,
+ * prompts/detail-backdrop-hero-size.md, decision 14).
  */
 function HeroArtwork({ item }: { item: LandingItem }) {
   const backdrop = resizeImageUrl(item.backdropUrl, "original");
-  const poster = resizeImageUrl(item.posterUrl, "w780");
+  const poster = resizeImageUrl(item.fullPosterUrl ?? item.posterUrl, "w780");
   if (backdrop === null && poster === null) {
     return <ArtFallback iconClassName="size-10" />;
   }

@@ -73,6 +73,7 @@ function game(id: number, extra: Partial<GameSummary> = {}): GameSummary {
     id,
     name: `Game ${id}`,
     coverUrl: null,
+    fullCoverUrl: null,
     artUrl: null,
     releaseDate: "2017-03-03",
     releaseYear: 2017,

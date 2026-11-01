@@ -160,8 +160,9 @@ describe("GameHero", () => {
 
     const backdrop = container.querySelector('[data-slot="detail-backdrop"]');
     expect(backdrop).not.toBeNull();
-    expect(backdrop?.querySelector("img")?.getAttribute("src")).toContain(
-      "images.igdb.com",
+    const src = backdrop?.querySelector("img")?.getAttribute("src");
+    expect(decodeURIComponent(src ?? "")).toContain(
+      "images.igdb.com/igdb/image/upload/t_1080p/ar1.jpg",
     );
   });
 

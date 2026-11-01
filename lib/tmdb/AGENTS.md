@@ -78,9 +78,10 @@ feature 4. Runtime steps live in that spec's `verify.md`.
   maps a `next/image` width onto TMDB's own
   sizes, never above the size `images.ts` pinned, so the browser loads
   straight from TMDB's CDN (prompts/tmdb-image-loader.md). `original` is
-  requested only by the landing hero, the one exception: the loader serves it
-  whole past the `w1280` rung and a ladder size below it
-  (prompts/home-hero-backdrop-quality.md). A new
+  requested only by the landing hero and the title page backdrop
+  (`DetailHero`), the two exceptions: the loader serves it whole past the
+  `w1280` rung and a ladder size below it
+  (prompts/home-hero-backdrop-quality.md, prompts/detail-backdrop-hero-size.md). A new
   image field keeps a size from `TMDB_IMAGE_WIDTHS` in `images.ts`, the one
   list the loader and `TmdbImageSize` share. `h632`, another host or a size
   off that list passes through unresized, and Next's dev warning ("does not

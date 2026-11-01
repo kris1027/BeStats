@@ -93,4 +93,14 @@ describe("igdbImageLoader", () => {
   ])("returns %s unchanged", (src) => {
     expect(igdbImageLoader({ src, width: 100 })).toBe(src);
   });
+
+  // prompts/detail-backdrop-hero-size.md, decision 14: the landing hero's
+  // full size cover steps down the cover ladder and is served whole past it.
+  it.each([
+    [264, at("t_cover_big")],
+    [528, at("t_cover_big_2x")],
+    [1080, same("t_original")],
+  ])("serves the hero's original cover at width %i as %s", (width, url) => {
+    expect(igdbImageLoader({ src: at("t_original"), width })).toBe(url);
+  });
 });

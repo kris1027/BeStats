@@ -71,6 +71,27 @@ describe("MovieHero", () => {
     for (const image of images) expect(image).toHaveAttribute("alt", "");
   });
 
+  it("asks for the original backdrop, as the landing hero does (prompts/detail-backdrop-hero-size.md)", () => {
+    const { container } = render(<MovieHero {...FULL} />);
+
+    const backdrop = container.querySelector('[data-slot="detail-backdrop"]');
+    const src = backdrop?.querySelector("img")?.getAttribute("src");
+    expect(decodeURIComponent(src ?? "")).toContain(
+      "/t/p/original/backdrop.jpg",
+    );
+  });
+
+  // prompts/detail-backdrop-hero-size.md, AC-6 and decision 15.
+  it("caps the title block's width only over a backdrop", () => {
+    const withArt = render(<MovieHero {...FULL} />).container;
+    const flat = render(<MovieHero {...EMPTY} />).container;
+    const grid = (root: HTMLElement) =>
+      root.querySelector('[data-slot="detail-hero"] > .grid');
+
+    expect(grid(withArt)).toHaveClass("lg:max-w-5xl");
+    expect(grid(flat)).not.toHaveClass("lg:max-w-5xl");
+  });
+
   it("leaves every missing value out rather than inventing one", () => {
     const { container } = render(<MovieHero {...EMPTY} />);
 
