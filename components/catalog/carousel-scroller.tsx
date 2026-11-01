@@ -6,6 +6,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
+/**
+ * Firefox restores a button's last `disabled` state on a reload unless it
+ * carries `autocomplete="off"`, and React's button type does not list the
+ * attribute, so it is spread in rather than written as a prop.
+ */
+const NO_STATE_RESTORE = { autoComplete: "off" } as Record<string, string>;
+
 /** How far one press scrolls, as a share of the row's visible width (AC-6). */
 const SCROLL_STEP = 0.9;
 
@@ -17,7 +24,9 @@ const SCROLL_STEP = 0.9;
  * and scrolls with the arrow keys, and touch and trackpad scroll it natively,
  * with or without this component's script. The two buttons show from `md`
  * and start disabled, so before hydration (or with the bundle failing) they
- * are inert while the row still scrolls. After that, each is enabled only
+ * are inert while the row still scrolls. `NO_STATE_RESTORE` stops Firefox
+ * restoring their last enabled state on a reload, which would hand React a
+ * button the server rendered disabled and fail hydration. After that, each is enabled only
  * while the row can move its way, measured on scroll and whenever the row or
  * its streamed cards change size.
  *
@@ -88,6 +97,7 @@ function CarouselScroller({
             <Button
               size="icon-bar"
               aria-label={`Scroll ${label} back`}
+              {...NO_STATE_RESTORE}
               disabled={!canGoBack}
               onClick={() => scroll(-1)}
             >
@@ -96,6 +106,7 @@ function CarouselScroller({
             <Button
               size="icon-bar"
               aria-label={`Scroll ${label} forward`}
+              {...NO_STATE_RESTORE}
               disabled={!canGoForward}
               onClick={() => scroll(1)}
             >
