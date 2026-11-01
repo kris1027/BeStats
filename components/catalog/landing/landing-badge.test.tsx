@@ -61,7 +61,6 @@ const BASE = {
   title: "Dune",
   href: "/movies/1",
   posterUrl: null,
-  heroPosterUrl: null,
   backdropUrl: null,
   rating: { source: "tmdb" as const, value: 8 },
   year: 2026,

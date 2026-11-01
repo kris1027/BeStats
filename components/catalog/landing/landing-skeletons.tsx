@@ -1,5 +1,6 @@
 import type * as React from "react";
 
+import { HERO_ART_FIT, HERO_BLEED } from "@/components/catalog/hero-frame";
 import { PosterCardSkeleton, Skeleton } from "@/components/skeleton";
 import { LANDING_COUNTS } from "@/lib/catalog/landing";
 
@@ -115,25 +116,20 @@ export const TOP_CARD_CLASS = "relative pt-14 md:pt-20 lg:pt-23";
 /**
  * The hero's box: pulled up behind the transparent navbar and out to the
  * column's edges, the way a title page's backdrop is (`detail-hero.tsx`,
- * prompts/title-backdrop-under-navbar.md). The negative margins are `main`'s
- * padding plus `--navbar-height`. A full small viewport at every width, so a
+ * prompts/title-backdrop-under-navbar.md), through the shared `HERO_BLEED`. A full small viewport at every width, so a
  * phone opens on the title the way a desktop does
  * (prompts/mobile-landing-parallax.md, decision 12); `svh`, so the address
  * bar sliding away does not resize it.
  */
-export const HERO_BOX =
-  "relative -mx-4 -mt-[calc(2rem+var(--navbar-height))] block h-svh min-h-[560px] overflow-hidden md:-mt-[calc(3rem+var(--navbar-height))] lg:min-h-[620px]";
+export const HERO_BOX = `relative ${HERO_BLEED} block h-svh min-h-[560px] overflow-hidden lg:min-h-[620px]`;
 
 /**
- * The artwork's box. Below `lg` it covers the hero, which suits the portrait
- * poster shown there. From `lg` it is 16:9 at the hero's width, never taller
- * than the hero, so the backdrop is drawn near its own size rather than
- * covered across a full screen (prompts/home-hero-backdrop-quality.md,
- * decision 1). It bleeds 16px past each side so the pointer drift never
+ * The artwork's box, fitted by the shared `HERO_ART_FIT`: below `lg` it
+ * covers the hero, which suits the portrait poster shown there, and from `lg`
+ * it is 16:9 and never taller than the hero. It bleeds 16px past each side so the pointer drift never
  * shows an edge.
  */
-export const HERO_ART_BOX =
-  "absolute -inset-x-4 top-0 h-full lg:h-auto lg:aspect-video lg:max-h-full";
+export const HERO_ART_BOX = `absolute -inset-x-4 ${HERO_ART_FIT}`;
 
 /**
  * The title block, over the artwork's lower part: at the foot of a phone's

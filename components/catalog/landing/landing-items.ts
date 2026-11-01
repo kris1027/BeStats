@@ -26,11 +26,11 @@ export type LandingItem = {
   href: string;
   posterUrl: string | null;
   /**
-   * The hero's full screen phone art: the poster, or for a game its uploaded
-   * cover when IGDB has one larger than the card cover
-   * (prompts/detail-backdrop-hero-size.md, decision 14).
+   * A game's uploaded cover when IGDB has one larger than the card cover, the
+   * hero's full screen phone art in place of `posterUrl`; null or absent
+   * otherwise (prompts/detail-backdrop-hero-size.md, decision 14).
    */
-  heroPosterUrl: string | null;
+  fullPosterUrl?: string | null;
   backdropUrl: string | null;
   /** The community rating, always shown as its own catalog's (AGENTS.md §9). */
   rating: { source: "tmdb" | "igdb"; value: number | null };
@@ -90,7 +90,6 @@ export function landingItems(
       title: show.name,
       href: titleHref("tv", show.id),
       posterUrl: show.posterUrl,
-      heroPosterUrl: show.posterUrl,
       backdropUrl: show.backdropUrl,
       rating: { source: "tmdb", value: show.tmdbRating },
       releaseDate: null,
@@ -105,7 +104,7 @@ export function landingItems(
       title: game.name,
       href: gameHref(game.id),
       posterUrl: game.coverUrl,
-      heroPosterUrl: game.fullCoverUrl ?? game.coverUrl,
+      fullPosterUrl: game.fullCoverUrl,
       backdropUrl: game.artUrl,
       rating: { source: "igdb", value: game.communityRating },
       releaseDate: game.releaseDate,
@@ -119,7 +118,6 @@ export function landingItems(
     title: movie.title,
     href: titleHref("movie", movie.id),
     posterUrl: movie.posterUrl,
-    heroPosterUrl: movie.posterUrl,
     backdropUrl: movie.backdropUrl,
     rating: { source: "tmdb", value: movie.tmdbRating },
     releaseDate: movie.releaseDate,

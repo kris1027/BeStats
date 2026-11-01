@@ -4,6 +4,7 @@ import { ROW_ITEM_CLASS } from "@/components/catalog/carousel-row-states";
 import {
   DETAIL_ART_BOX,
   DETAIL_HERO_BOX,
+  DETAIL_TEXT_CAP,
 } from "@/components/catalog/detail-hero";
 import { PosterCardSkeleton, Skeleton } from "@/components/skeleton";
 
@@ -40,7 +41,12 @@ function DetailHeroSkeleton({
        * from `sm`. Each line sits in a box one line of the real type tall
        * (`h-[1lh]`), and each row of pills at the real row's height.
        */}
-      <div className="relative z-10 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 sm:grid-rows-[1fr_auto] md:gap-x-8 lg:max-w-5xl">
+      <div
+        className={cn(
+          "relative z-10 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 sm:grid-rows-[1fr_auto] md:gap-x-8",
+          backdrop && DETAIL_TEXT_CAP,
+        )}
+      >
         <Skeleton
           shape="poster"
           className="col-start-1 row-start-1 w-28 shrink-0 self-end sm:row-span-2 sm:w-40 md:w-60"

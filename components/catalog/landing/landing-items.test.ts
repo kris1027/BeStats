@@ -35,6 +35,7 @@ function game(id: number, extra: Record<string, unknown> = {}) {
     id,
     name: `Game ${id}`,
     coverUrl: `https://images.igdb.com/igdb/image/upload/t_cover_big/c${id}.jpg`,
+    fullCoverUrl: null,
     artUrl: `https://images.igdb.com/igdb/image/upload/t_1080p/a${id}.jpg`,
     releaseDate: "2026-11-19",
     releaseYear: 2026,
@@ -85,7 +86,7 @@ describe("landingItems", () => {
       title: "Game 1942",
       href: "/games/1942",
       posterUrl: game(1942).coverUrl,
-      heroPosterUrl: game(1942).coverUrl,
+      fullPosterUrl: null,
       backdropUrl: game(1942).artUrl,
       rating: { source: "igdb", value: 8.4 },
       releaseDate: "2026-11-19",
@@ -103,7 +104,7 @@ describe("landingItems", () => {
       1,
     );
 
-    expect(item.heroPosterUrl).toBe(full);
+    expect(item.fullPosterUrl).toBe(full);
     expect(item.posterUrl).toBe(game(1942).coverUrl);
   });
 
