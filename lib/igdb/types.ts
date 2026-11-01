@@ -90,6 +90,12 @@ export type GameSummary = {
   name: string;
   coverUrl: string | null;
   /**
+   * The uploaded cover at `t_original`, only when it is wider than
+   * `coverUrl`'s 528px, else null: the landing hero's full screen phone art
+   * (prompts/detail-backdrop-hero-size.md, decision 14).
+   */
+  fullCoverUrl: string | null;
+  /**
    * Wide 16:9 art for the games hero and wide cards: an artwork, else a
    * screenshot, else null (spec 0028, AC-6).
    */

@@ -99,7 +99,12 @@ scope feature G1. It mirrors `lib/tmdb/` in shape but shares no code with it.
   every image loads.** `lib/images/igdb-loader.ts` steps a `next/image` width
   down `IGDB_COVER_LADDER` in `constants.ts` and never past the URL's own size
   (spec 0025, AC-12). A game's wide art (`artUrl`, built at `t_1080p`) steps
-  down `IGDB_ART_LADDER` the same way (spec 0028, AC-6). The loader lives
+  down `IGDB_ART_LADDER` the same way (spec 0028, AC-6). `artUrl` picks the
+  sharpest artwork or screenshot by its real `width` and `height` (the width it
+  keeps in a 16:9 box; a tie goes to an artwork), because IGDB's larger sizes
+  only upscale a small upload. The one `t_original` URL is `fullCoverUrl`,
+  the uploaded cover when IGDB says it is wider than 528px (else null), the
+  landing hero's phone art, served whole past the cover ladder (prompts/detail-backdrop-hero-size.md, decision 14). The loader lives
   outside this folder because it runs in the browser; `lib/images/loader.ts`,
   the `loaderFile`, sends it every IGDB URL.
 - Adding a field is a three place change: `schemas.ts`, `types.ts`,

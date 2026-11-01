@@ -41,17 +41,31 @@ const versionParent = z.number().int().nullish().catch(0);
 /** An array that may hold anything; `normalize.ts` keeps the valid entries. */
 const looseArray = z.array(z.unknown()).nullish().catch(null);
 
+/** An image's pixel size, or null when IGDB sends none or an odd one. */
+const imageSize = z.number().int().positive().nullish().catch(null);
+
 const coverSchema = z
-  .object({ image_id: z.string().nullish() })
+  .object({ image_id: z.string().nullish(), width: imageSize })
   .nullish()
   .catch(null);
 
 /**
- * Artworks or screenshots, each `{ image_id }`. An entry of another shape is
- * dropped, and an absent or odd list reads as none (spec 0028, AC-6).
+ * Artworks or screenshots, each `{ image_id, width, height }`. An entry of
+ * another shape is dropped, an odd size reads as unknown rather than dropping
+ * the image, and an absent or odd list reads as none (spec 0028, AC-6;
+ * prompts/detail-backdrop-hero-size.md, decision 14).
  */
 const imageListSchema = z
-  .array(z.object({ image_id: z.string().nullish() }).nullish().catch(null))
+  .array(
+    z
+      .object({
+        image_id: z.string().nullish(),
+        width: imageSize,
+        height: imageSize,
+      })
+      .nullish()
+      .catch(null),
+  )
   .nullish()
   .catch(null);
 

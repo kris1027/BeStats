@@ -10,6 +10,7 @@ import {
   releaseDay,
   screenshotUrls,
 } from "./normalize";
+import { gameSummarySchema } from "./schemas";
 
 /**
  * The value sourcing rules of spec 0023 (AC-15, AC-16), on the pure mapping.
@@ -57,6 +58,53 @@ describe("artUrl (spec 0028, AC-6)", () => {
         screenshots: [{ image_id: "scb" }, { image_id: "sca" }],
       }),
     ).toBe(at("sca"));
+  });
+
+  // prompts/detail-backdrop-hero-size.md, decision 14: IGDB's larger sizes
+  // only upscale, so the real pixels decide which image is sharp.
+  it("picks the image that keeps the most width in a 16:9 box", () => {
+    expect(
+      artUrl({
+        artworks: [
+          { image_id: "ar1", width: 1200, height: 675 },
+          { image_id: "ar2", width: 1920, height: 620 },
+        ],
+        screenshots: [{ image_id: "sc1", width: 1920, height: 1080 }],
+      }),
+    ).toBe(at("sc1"));
+  });
+
+  it("keeps an artwork over a screenshot of the same sharpness", () => {
+    expect(
+      artUrl({
+        artworks: [{ image_id: "ar9", width: 3840, height: 2160 }],
+        screenshots: [{ image_id: "sc1", width: 1920, height: 1080 }],
+      }),
+    ).toBe(at("ar9"));
+    expect(
+      artUrl({
+        artworks: [{ image_id: "ar9", width: 1920, height: 1080 }],
+        screenshots: [{ image_id: "sc1", width: 1920, height: 1080 }],
+      }),
+    ).toBe(at("ar9"));
+  });
+
+  it("ranks an image with no size below one with a size", () => {
+    expect(
+      artUrl({
+        artworks: [{ image_id: "ar1" }],
+        screenshots: [{ image_id: "sc1", width: 640, height: 360 }],
+      }),
+    ).toBe(at("sc1"));
+  });
+
+  it("keeps an image whose size IGDB sends oddly", () => {
+    const record = gameSummarySchema.parse({
+      id: 1,
+      name: "G",
+      artworks: [{ image_id: "ar1", width: "big", height: -1 }],
+    });
+    expect(normalizeSummary(record).artUrl).toBe(at("ar1"));
   });
 
   it("answers null with no art at all", () => {

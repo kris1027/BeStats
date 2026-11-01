@@ -45,6 +45,15 @@ export const IGDB_COVER_LADDER: readonly { size: string; width: number }[] = [
 export const IGDB_ART_SIZE = "t_1080p";
 
 /**
+ * The uploaded cover, which the landing hero's phone art asks for when the
+ * upload is wider than the 528px `t_cover_big_2x` (`fullCoverUrl`,
+ * prompts/detail-backdrop-hero-size.md, decision 14): IGDB only upscales a
+ * smaller one. The loader serves the cover ladder up to its top rung and this
+ * file whole past it, as the TMDB loader does with `original`.
+ */
+export const IGDB_HERO_COVER_SIZE = "t_original";
+
+/**
  * IGDB's art sizes the loader may pick, narrowest first, with their pixel
  * widths (spec 0028, AC-6). Kept apart from the cover ladder, so an art URL
  * is never matched against cover rungs. The two screenshot sizes are fixed
@@ -179,7 +188,11 @@ export const IGDB_GAME_FIELDS = [
   "rating_count",
   "storyline",
   "artworks.image_id",
+  "artworks.width",
+  "artworks.height",
   "screenshots.image_id",
+  "screenshots.width",
+  "screenshots.height",
   "videos.id",
   "videos.name",
   "videos.video_id",
@@ -228,8 +241,13 @@ export const IGDB_MAX_SCREENSHOTS = 12;
 export const IGDB_SUMMARY_FIELDS = [
   "name",
   "cover.image_id",
+  "cover.width",
   "artworks.image_id",
+  "artworks.width",
+  "artworks.height",
   "screenshots.image_id",
+  "screenshots.width",
+  "screenshots.height",
   "first_release_date",
   "rating",
   "rating_count",
