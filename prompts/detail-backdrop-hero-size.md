@@ -42,12 +42,21 @@ The backdrop on `/movies/{id}`, `/shows/{id}` and `/games/{id}` stops at 70vh an
     - **Full size cover on phones.** The landing hero's phone art asks for the cover at `t_original` instead of `t_cover_big_2x`, only when IGDB's `cover.width` says the upload is wider than 528px (`GameSummary.fullCoverUrl`, else null, so the hero keeps the 528px cover), since IGDB's sized covers upscale a smaller upload (Witcher 3's is 600×800; Roblox's is 1798×2396, so it gets `t_original`). The IGDB loader treats `t_original` on a cover like the TMDB loader treats `original`: the cover ladder up to 528px, the whole file past it. Only the landing hero builds that URL; every other cover stays `t_cover_big_2x`.
     - Recorded in `lib/igdb/AGENTS.md` beside the existing size rules. `pnpm igdb:live` keeps checking the ladders; `t_original` is not a ladder rung, so it adds no live width check.
 
+15. **Review fixes (2026-11-01, after the two axis review against `main`).**
+    - The width cap of decision 13 applies only over art (`DETAIL_TEXT_CAP`), so a title with no backdrop renders exactly as before (AC-6).
+    - The two heroes share one module, `components/catalog/hero-frame.tsx`: the bleed (`HERO_BLEED`), the art fit (`HERO_ART_FIT`), the mask (`HERO_ART_MASK`) and the shade (`HeroShade`), so the landing and title page heroes cannot drift apart.
+    - Below `lg` the backdrop's `sizes` is `max(100vw, 178vh, 996px)`: the cover crop's width on a landscape tablet and over the 560px floor too, not only a portrait screen. A 3× phone still loads `original`, which decision 12 accepts.
+    - The `backdrop-scrim` spans the whole box but fades out 8rem under the navbar, so it never darkens the title block.
+    - The IGDB loader serves `t_original` as an unbounded top rung of a cover ladder rather than a second code path; `artUrl` ranks with an `isArtwork` boolean over one `IgdbImage` type; the landing item carries only a game's `fullPosterUrl` and the hero falls back to `posterUrl`.
+    - **Firefox carousel fix (commit `0298cf9`).** Not part of this plan: a Firefox reload restored a carousel arrow's enabled state, which fails hydration on the pages these heroes sit on. Kept on this branch as its own `fix(ui)` commit rather than a separate PR; the attribute is now typed as an input's `autoComplete`, so a typo fails the type check.
+
 ## Expected files
 
-- `components/catalog/detail-hero.tsx`: the full screen box, `HeroPicture`, masks and shade; the JSDoc names this plan.
+- `components/catalog/detail-hero.tsx`: the full screen box, the backdrop at every width (decision 12), the masks and the shade; the JSDoc names this plan.
+- `components/catalog/hero-frame.tsx`: the bleed, art fit, mask and shade both heroes share (decision 15).
 - `components/catalog/detail-skeletons.tsx`: the same boxes, so nothing moves when the hero streams in.
 - `lib/tmdb/image-loader.ts` and `lib/tmdb/AGENTS.md`: the `original` exception names the title page backdrop beside the landing hero.
-- Decision 14: `lib/igdb/constants.ts` (the four size fields, `IGDB_HERO_COVER_SIZE`), `lib/igdb/schemas.ts` (`width` and `height` on an image), `lib/igdb/normalize.ts` (`artUrl` by size, `fullCoverUrl`), `lib/igdb/types.ts` (`GameSummary.fullCoverUrl`), `components/catalog/landing/landing-items.ts` (`heroPosterUrl`), `lib/images/igdb-loader.ts` (`t_original` on a cover), `components/catalog/landing/landing-hero.tsx` (the phone cover), `lib/igdb/AGENTS.md`, and tests in `lib/igdb/normalize.test.ts` and `lib/images/igdb-loader.test.ts`.
+- Decision 14: `lib/igdb/constants.ts` (the four size fields, `IGDB_HERO_COVER_SIZE`), `lib/igdb/schemas.ts` (`width` and `height` on an image), `lib/igdb/normalize.ts` (`artUrl` by size, `fullCoverUrl`), `lib/igdb/types.ts` (`GameSummary.fullCoverUrl`), `components/catalog/landing/landing-items.ts` (`fullPosterUrl`), `lib/images/igdb-loader.ts` (`t_original` on a cover), `components/catalog/landing/landing-hero.tsx` (the phone cover), `lib/igdb/AGENTS.md`, and tests in `lib/igdb/normalize.test.ts` and `lib/images/igdb-loader.test.ts`.
 - Tests:
   - `components/movie/movie-hero.test.tsx`: the backdrop `src` uses `/t/p/original/`; the poster is unchanged.
   - `components/game/game-hero.test.tsx`: the IGDB art URL is passed through unchanged.
