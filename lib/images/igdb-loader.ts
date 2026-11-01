@@ -20,10 +20,23 @@ const SAME_SIZE_FRAGMENT = "#same-size";
 const IMAGE_PATH = /^([^/]+)\/([^/?#]+\.jpg)$/;
 
 /**
- * The two ladders, each matched only against its own sizes, so a cover never
- * steps onto an art rung or the other way round (spec 0028, AC-6).
+ * A game's uploaded cover, `fullCoverUrl` (prompts/detail-backdrop-hero-size.md,
+ * decision 14): the cover ladder with the uploaded file as an unbounded top
+ * rung, so it steps down like any cover and serves the file whole past
+ * `t_cover_big_2x`, the rule the TMDB loader gives `original`.
  */
-const LADDERS = [IGDB_COVER_LADDER, IGDB_ART_LADDER];
+const HERO_COVER_LADDER = [
+  ...IGDB_COVER_LADDER,
+  { size: IGDB_HERO_COVER_SIZE, width: Number.POSITIVE_INFINITY },
+];
+
+/**
+ * The ladders, each matched only against its own sizes, so a cover never
+ * steps onto an art rung or the other way round (spec 0028, AC-6). A cover
+ * size matches the plain cover ladder first, so `t_original` stays the
+ * ceiling only of a URL that named it.
+ */
+const LADDERS = [IGDB_COVER_LADDER, IGDB_ART_LADDER, HERO_COVER_LADDER];
 
 /**
  * Maps a `next/image` width request onto IGDB's own pre-sized covers and art,
@@ -50,7 +63,6 @@ export function igdbImageLoader({ src, width }: ImageLoaderProps): string {
   if (!match) return src;
 
   const [, size, file] = match;
-  if (size === IGDB_HERO_COVER_SIZE) return heroCover(file, width);
   const ladder = LADDERS.find((rungs) =>
     rungs.some((rung) => rung.size === size),
   );
@@ -61,17 +73,4 @@ export function igdbImageLoader({ src, width }: ImageLoaderProps): string {
   const fit = allowed.find((rung) => rung.width >= width) ?? allowed[ceiling];
   const url = `${IGDB_IMAGE_BASE}/${fit.size}/${file}`;
   return url === source ? `${url}${SAME_SIZE_FRAGMENT}` : url;
-}
-
-/**
- * A game's uploaded cover, `fullCoverUrl` (prompts/detail-backdrop-hero-size.md,
- * decision 14): the cover ladder while a rung is wide enough, and the
- * uploaded file whole past its top rung, the rule the TMDB loader gives
- * `original`. Only covers are built at this size, so it reads the cover
- * ladder.
- */
-function heroCover(file: string, width: number): string {
-  const fit = IGDB_COVER_LADDER.find((rung) => rung.width >= width);
-  if (fit) return `${IGDB_IMAGE_BASE}/${fit.size}/${file}`;
-  return `${IGDB_IMAGE_BASE}/${IGDB_HERO_COVER_SIZE}/${file}${SAME_SIZE_FRAGMENT}`;
 }

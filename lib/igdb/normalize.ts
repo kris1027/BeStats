@@ -55,26 +55,22 @@ const COVER_CEILING_WIDTH =
  * sized covers upscale it (prompts/detail-backdrop-hero-size.md, decision 14).
  */
 export function fullCoverUrl(
-  cover: { image_id?: string | null; width?: number | null } | null | undefined,
+  cover: IgdbImage | null | undefined,
 ): string | null {
   const id = cover?.image_id?.trim();
   if (!id || !cover?.width || cover.width <= COVER_CEILING_WIDTH) return null;
   return `${IGDB_IMAGE_BASE}/${IGDB_HERO_COVER_SIZE}/${id}.jpg`;
 }
 
+/** A cover, artwork or screenshot as `schemas.ts` leaves it. */
+type IgdbImage = {
+  image_id?: string | null;
+  width?: number | null;
+  height?: number | null;
+};
+
 /** Artworks or screenshots as `schemas.ts` leaves them. */
-type ImageList =
-  | readonly (
-      | {
-          image_id?: string | null;
-          width?: number | null;
-          height?: number | null;
-        }
-      | null
-      | undefined
-    )[]
-  | null
-  | undefined;
+type ImageList = readonly (IgdbImage | null | undefined)[] | null | undefined;
 
 /**
  * The wide art of a game (spec 0028, AC-6): the sharpest of its artworks and
@@ -93,33 +89,30 @@ export function artUrl(record: {
   screenshots?: ImageList;
 }): string | null {
   const candidates = [
-    ...(record.artworks ?? []).map((image) => ({ image, artwork: 1 })),
-    ...(record.screenshots ?? []).map((image) => ({ image, artwork: 0 })),
+    ...(record.artworks ?? []).map((image) => ({ image, isArtwork: true })),
+    ...(record.screenshots ?? []).map((image) => ({ image, isArtwork: false })),
   ];
   let best: ArtCandidate | null = null;
-  for (const { image, artwork } of candidates) {
+  for (const { image, isArtwork } of candidates) {
     const id = image?.image_id?.trim();
-    if (!id) continue;
-    const next = { id, score: boxWidth(image?.width, image?.height), artwork };
+    if (!image || !id) continue;
+    const next = { id, score: boxWidth(image), isArtwork };
     if (best === null || isSharper(next, best)) best = next;
   }
   return best === null ? null : artImageUrl(best.id);
 }
 
-type ArtCandidate = { id: string; score: number; artwork: number };
+type ArtCandidate = { id: string; score: number; isArtwork: boolean };
 
 /** Higher score, then artwork over screenshot, then the lower `image_id`. */
 function isSharper(a: ArtCandidate, b: ArtCandidate): boolean {
   if (a.score !== b.score) return a.score > b.score;
-  if (a.artwork !== b.artwork) return a.artwork > b.artwork;
+  if (a.isArtwork !== b.isArtwork) return a.isArtwork;
   return a.id < b.id;
 }
 
 /** The width an image keeps in a 16:9 box, or 0 when its size is unknown. */
-function boxWidth(
-  width: number | null | undefined,
-  height: number | null | undefined,
-): number {
+function boxWidth({ width, height }: IgdbImage): number {
   if (!width || !height) return 0;
   return Math.min(width, (height * 16) / 9);
 }
