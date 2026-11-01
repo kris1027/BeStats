@@ -85,12 +85,26 @@ describe("landingItems", () => {
       title: "Game 1942",
       href: "/games/1942",
       posterUrl: game(1942).coverUrl,
+      heroPosterUrl: game(1942).coverUrl,
       backdropUrl: game(1942).artUrl,
       rating: { source: "igdb", value: 8.4 },
       releaseDate: "2026-11-19",
       year: 2026,
       genreIds: [12, 31],
     });
+  });
+
+  // prompts/detail-backdrop-hero-size.md, decision 14.
+  it("gives the hero a game's full size cover when IGDB has one", () => {
+    const full = "https://images.igdb.com/igdb/image/upload/t_original/co1.jpg";
+    const [item] = landingItems(
+      gamePage([game(1942, { fullCoverUrl: full })]),
+      0,
+      1,
+    );
+
+    expect(item.heroPosterUrl).toBe(full);
+    expect(item.posterUrl).toBe(game(1942).coverUrl);
   });
 
   it("keeps a game's missing art, date and rating as nulls, never invented", () => {
