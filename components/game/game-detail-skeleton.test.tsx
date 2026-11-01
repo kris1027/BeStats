@@ -13,9 +13,9 @@ import { GameDetailSkeleton } from "@/components/game/game-detail-skeleton";
 const skeletons = (container: HTMLElement) =>
   container.querySelectorAll('[data-slot="skeleton"]');
 
-/** The backdrop band is the one skeleton drawn at a video aspect ratio. */
+/** The artwork is the one skeleton drawn at a video aspect ratio from `lg`. */
 const backdrop = (container: HTMLElement) =>
-  container.querySelector('[data-slot="skeleton"].aspect-video');
+  container.querySelector('[data-slot="skeleton"].lg\\:aspect-video');
 
 describe("GameDetailSkeleton", () => {
   it("tells a screen reader the game is loading", () => {

@@ -71,6 +71,16 @@ describe("MovieHero", () => {
     for (const image of images) expect(image).toHaveAttribute("alt", "");
   });
 
+  it("asks for the original backdrop, as the landing hero does (prompts/detail-backdrop-hero-size.md)", () => {
+    const { container } = render(<MovieHero {...FULL} />);
+
+    const backdrop = container.querySelector('[data-slot="detail-backdrop"]');
+    const src = backdrop?.querySelector("img")?.getAttribute("src");
+    expect(decodeURIComponent(src ?? "")).toContain(
+      "/t/p/original/backdrop.jpg",
+    );
+  });
+
   it("leaves every missing value out rather than inventing one", () => {
     const { container } = render(<MovieHero {...EMPTY} />);
 

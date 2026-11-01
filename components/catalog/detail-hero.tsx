@@ -5,6 +5,29 @@ import type * as React from "react";
 
 import { IgdbRatingBadge, TmdbRatingBadge } from "@/components/rating-badges";
 import { formatVoteCount } from "@/lib/format";
+import { resizeImageUrl } from "@/lib/tmdb/images";
+
+/**
+ * The hero's box when the title has a backdrop, shared with
+ * `DetailHeroSkeleton` so nothing moves when the hero streams in. One full
+ * screen at every width, like the landing hero (`HERO_BOX`,
+ * prompts/detail-backdrop-hero-size.md, decision 11), with the poster and
+ * title block at its foot and the Overview below the fold. A minimum height
+ * rather than a fixed one, so a long title block grows the box instead of
+ * being cut. It bleeds to the edges of the main column and up behind the
+ * navbar: the negative margins are `main`'s own padding in `app/layout.tsx`
+ * plus `--navbar-height`, given back as padding so the content keeps its place.
+ */
+const DETAIL_HERO_BOX =
+  "relative -mx-4 -mt-[calc(2rem+var(--navbar-height))] flex min-h-[max(100svh,560px)] flex-col justify-end overflow-hidden px-4 pt-[calc(2rem+var(--navbar-height))] pb-10 md:-mt-[calc(3rem+var(--navbar-height))] md:pt-[calc(3rem+var(--navbar-height))] lg:min-h-[max(100svh,620px)] lg:pb-[16vh]";
+
+/**
+ * The artwork's box, the landing hero's `HERO_ART_BOX` without its parallax
+ * bleed: below `lg` it covers the screen, and from `lg` it is 16:9 capped at
+ * the screen's height.
+ */
+const DETAIL_ART_BOX =
+  "absolute inset-x-0 top-0 h-full lg:h-auto lg:aspect-video lg:max-h-full";
 
 type DetailHeroProps = {
   title: string;
@@ -46,9 +69,9 @@ type DetailHeroProps = {
 };
 
 /**
- * The top of a title page: the backdrop faded into the page, with the poster
- * and the title block overlapping its lower edge (spec 0006, AC-3; spec 0009,
- * AC-3).
+ * The top of a title page: one full screen of artwork faded into the page,
+ * like the landing hero, with the poster and the title block at its foot
+ * (spec 0006, AC-3; spec 0009, AC-3; prompts/detail-backdrop-hero-size.md).
  *
  * Extracted from the movie hero so the show page reuses the same geometry
  * rather than a second design (spec 0009). No original design drew
@@ -72,40 +95,57 @@ function DetailHero({
   actions,
 }: DetailHeroProps) {
   return (
-    <header data-slot="detail-hero" className="flex flex-col">
+    <header
+      data-slot="detail-hero"
+      className={backdropUrl ? DETAIL_HERO_BOX : "flex flex-col"}
+    >
       {backdropUrl ? (
-        /*
-         * Bleeds to the edges of the main column and up behind the navbar, so
-         * the artwork reads as the page's backdrop rather than a boxed image.
-         * The negative margins are `main`'s own padding in `app/layout.tsx`
-         * plus `--navbar-height`.
-         */
-        <div
-          data-slot="detail-backdrop"
-          className="relative -mx-4 -mt-[calc(2rem+var(--navbar-height))] aspect-video max-h-[70vh] min-h-[calc(var(--navbar-height)+12rem)] overflow-hidden mask-b-from-67% mask-l-from-67% md:-mt-[calc(3rem+var(--navbar-height))] min-[1600px]:mask-r-from-83%"
-        >
-          {/*
-           * The fade into the page is a mask, not a colour laid over the
-           * image, so the artwork dissolves into whatever is behind it: the
-           * film strip background, which a fade to `--background` would cut
-           * off with a black band. Bottom third and left side per the spec;
-           * the right edge only fades once the column stops at its 1600px cap
-           * and the image would otherwise end in a hard line.
-           */}
-          <Image
-            src={backdropUrl}
-            alt=""
-            fill
-            preload
-            sizes="(min-width: 1600px) 1600px, 100vw"
-            className="object-cover object-top"
-          />
+        <>
+          <div
+            data-slot="detail-backdrop"
+            className={cn(
+              DETAIL_ART_BOX,
+              "mask-b-from-60% lg:mask-b-from-75% lg:mask-l-from-70% min-[1600px]:mask-r-from-90%",
+            )}
+          >
+            {/*
+             * The backdrop at every width, TMDB's `original` (decisions 2
+             * and 12): below `lg` it covers the full screen box, cropped to
+             * its centre, so the art never repeats the poster tile in front
+             * of it. Its `sizes` follow that crop, a 16:9 image a screen tall
+             * is about 178vh wide. The fade is a mask, not a colour laid over
+             * the image, so the art dissolves into the film strip background.
+             */}
+            <Image
+              src={resizeImageUrl(backdropUrl, "original") ?? backdropUrl}
+              alt=""
+              fill
+              preload
+              sizes="(min-width: 1600px) 1600px, (min-width: 64rem) 100vw, 178vh"
+              className="object-cover object-center lg:object-top"
+            />
+            {/*
+             * Keeps the title block readable over bright artwork, inside the
+             * mask so it fades out with the image rather than painting a
+             * band: from below at every width, where the block sits, and from
+             * the left from `lg`, deep enough for a game's bright art and its
+             * long Platforms line (decisions 10 and 13).
+             */}
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 bg-linear-to-t from-background/85 via-background/40 via-35% to-transparent to-60%"
+            />
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 hidden bg-linear-to-r from-background/85 via-background/45 via-45% to-transparent to-80% lg:block"
+            />
+          </div>
           {/*
            * The image reaches up behind the navbar, so the bar sits on the
            * artwork. The shade keeps its text and controls readable there.
            */}
           <div aria-hidden="true" className="backdrop-scrim absolute inset-0" />
-        </div>
+        </>
       ) : null}
 
       {/*
@@ -114,13 +154,10 @@ function DetailHero({
        * spans both rows and the facts sit directly under the title, beside it.
        * The first row takes the slack (`1fr`), so the title block stays
        * pinned to the bottom of the poster rather than floating at its top.
+       * From `lg` it stops at about the landing hero's text width, so long
+       * facts wrap inside the shaded left side (decision 13).
        */}
-      <div
-        className={cn(
-          "relative z-10 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 sm:grid-rows-[1fr_auto] md:gap-x-8",
-          backdropUrl ? "-mt-10 sm:-mt-20 md:-mt-40" : null,
-        )}
-      >
+      <div className="relative z-10 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 sm:grid-rows-[1fr_auto] md:gap-x-8 lg:max-w-5xl">
         <HeroPoster posterUrl={posterUrl} fallbackIcon={fallbackIcon} />
 
         <div className="col-start-2 row-start-1 flex flex-col gap-2 self-end md:gap-3">
@@ -257,4 +294,10 @@ function IgdbRatingBlock({
   );
 }
 
-export { DetailHero, IgdbRatingBlock, TmdbRatingBlock };
+export {
+  DETAIL_ART_BOX,
+  DETAIL_HERO_BOX,
+  DetailHero,
+  IgdbRatingBlock,
+  TmdbRatingBlock,
+};

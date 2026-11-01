@@ -1,6 +1,10 @@
 import { cn } from "cn";
 
 import { ROW_ITEM_CLASS } from "@/components/catalog/carousel-row-states";
+import {
+  DETAIL_ART_BOX,
+  DETAIL_HERO_BOX,
+} from "@/components/catalog/detail-hero";
 import { PosterCardSkeleton, Skeleton } from "@/components/skeleton";
 
 /**
@@ -23,11 +27,11 @@ function DetailHeroSkeleton({
   tagline?: boolean;
 }) {
   return (
-    <div className="flex flex-col">
+    <div className={backdrop ? DETAIL_HERO_BOX : "flex flex-col"}>
       {backdrop ? (
         <Skeleton
           shape="line"
-          className="-mx-4 -mt-[calc(2rem+var(--navbar-height))] aspect-video h-auto w-auto max-h-[70vh] min-h-[calc(var(--navbar-height)+12rem)] rounded-none md:-mt-[calc(3rem+var(--navbar-height))]"
+          className={cn(DETAIL_ART_BOX, "w-auto rounded-none")}
         />
       ) : null}
       {/*
@@ -36,12 +40,7 @@ function DetailHeroSkeleton({
        * from `sm`. Each line sits in a box one line of the real type tall
        * (`h-[1lh]`), and each row of pills at the real row's height.
        */}
-      <div
-        className={cn(
-          "relative z-10 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 sm:grid-rows-[1fr_auto] md:gap-x-8",
-          backdrop ? "-mt-10 sm:-mt-20 md:-mt-40" : null,
-        )}
-      >
+      <div className="relative z-10 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 sm:grid-rows-[1fr_auto] md:gap-x-8 lg:max-w-5xl">
         <Skeleton
           shape="poster"
           className="col-start-1 row-start-1 w-28 shrink-0 self-end sm:row-span-2 sm:w-40 md:w-60"
