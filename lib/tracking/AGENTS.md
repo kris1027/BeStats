@@ -28,7 +28,9 @@ Placement is worked out per request and never stored. No page writes when it loa
 - **Movies** (`lib/catalog/movie-page.ts`): a planned movie is on Watchlist from its release day and on Coming soon before it or with no date; a watched movie is on Watched.
 - **Games**: the stored status picks the page; Want to play splits by release date (`isGameReleased`) into Want to play and Coming soon, a view and not a status ([prompts/game-coming-soon.md](../../prompts/game-coming-soon.md)).
 
-Reads (`library-lists.ts`): a shows or movies tab classifies every tracked show or planned unwatched movie, at most 500 per media type, from one cached TMDB details read per title. The `/shows`, `/movies` and `/search` grids place their titles with the same classifiers so a card always matches its library page: one `cache()`d read per grid, and TMDB details only for the grid's tracked shows (`show-grid-status.ts`, `getMovieGridStates`; [prompts/catalog-card-status.md](../../prompts/catalog-card-status.md)). Games (`game-library.ts`): Playing and Finished read one counted `user_game_state` page of 24 plus one `getGamesByIds` batch, with no 500 limit; Want to play and Coming soon read up to 500 Want to play rows and one batch, split and paged in memory (`getWantToPlayTab`).
+## Reads
+
+Library tabs (`library-lists.ts`): a shows or movies tab classifies every tracked show or planned unwatched movie, at most 500 per media type, from one cached TMDB details read per title. The `/shows`, `/movies` and `/search` grids place their titles with the same classifiers so a card always matches its library page: one `cache()`d read per grid, and TMDB details only for the grid's tracked shows (`show-grid-status.ts`, `getMovieGridStates`; [prompts/catalog-card-status.md](../../prompts/catalog-card-status.md)). Games (`game-library.ts`): Playing and Finished read one counted `user_game_state` page of 24 plus one `getGamesByIds` batch, with no 500 limit; Want to play and Coming soon read up to 500 Want to play rows and one batch, split and paged in memory (`getWantToPlayTab`).
 
 ## Games
 

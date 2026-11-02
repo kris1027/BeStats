@@ -20,4 +20,4 @@ RLS is on for every user-owned table; policies constrain select, insert, update 
 
 - Change `schemas/`, add the matching migration, then regenerate types with `pnpm db:types` (`pnpm db:types:check` confirms they match).
 - `pnpm test:db` runs pgTAP against the local stack (`pnpm dev:docker`). Leftover verify fixtures fail 030 and 040, so `supabase db reset` first.
-- Remote: `supabase db push` before merging the PR that adds the migration; auth settings only through `supabase config push`. Both apply without a prompt from an agent shell, so run them only once approved ([docs/deploy.md](../docs/deploy.md)).
+- Remote pushes (`db push`, `config push`): root `AGENTS.md` "Commands and repo facts" and [docs/deploy.md](../docs/deploy.md).
