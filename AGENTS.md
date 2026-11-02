@@ -124,12 +124,13 @@ Keep the scope small, follow the existing UI, keep ratings, watched progress and
 
 Planned in [docs/scope/games.md](docs/scope/games.md) (G1 to G10, all shipped). IGDB is read only through `lib/igdb/` ([lib/igdb/AGENTS.md](lib/igdb/AGENTS.md): credentials, catalog filter, hidden games). `game` is a `LibraryType`, never a `MediaType`, so it is narrowed away before any TMDB read. Statuses, release gate, ratings and timestamps: [lib/tracking/AGENTS.md](lib/tracking/AGENTS.md).
 
-## Repo facts
+## Commands and repo facts
 
+- Scripts live in `package.json`; `pnpm dev:docker` runs the dev server against the local Supabase stack. `pnpm-workspace.yaml` exists only to pin `allowBuilds`; this is a single package repo.
 - Imports use the `@/*` alias for the repo root.
 - `cacheComponents: true`: every route is prerenderable or exports `instant = false`; every cached read calls `cacheLife` inside its own `use cache` scope, and returns a plain result rather than throwing (a thrown error loses its class across the scope). Routing, proxy, images and region rules: [app/AGENTS.md](app/AGENTS.md), read before editing `proxy.ts`, `next.config.ts` or a route.
 - Middleware is `proxy.ts` exporting `proxy` (Next.js 16 ignores a `middleware.ts`).
-- Read public env values through `getPublicEnv()` in `lib/env.ts`; code on every page calls `publicEnvProblems()` first and falls back to signed out, so a missing auth config never takes the catalog down.
+- Read public env values through `getPublicEnv()` in `lib/env.ts`, never `process.env`. It validates lazily, so a build with no Supabase project still succeeds while every auth call fails loudly. Code on every page calls `publicEnvProblems()` first and falls back to signed out, so a missing auth config never takes the catalog down.
 - Supabase clients: `lib/supabase/client.ts` (browser) and the async `lib/supabase/server.ts`, created per request.
 - A colour value lives only in `app/globals.css` (Tailwind v4 is CSS first; there is no `tailwind.config.*`); `design-tokens-boundary.test.ts` enforces it.
 - Legal facts live only in `lib/legal/operator.ts`, `TMDB_ATTRIBUTION` and `IGDB_ATTRIBUTION` (`lib/legal/boundary.test.ts`). A change that adds a processor, email provider or analytics updates `PROCESSORS`, `/privacy`, `/terms` and `LEGAL_LAST_UPDATED` in the same PR. Never edit `public/tmdb-logo.svg` or `public/igdb-logo.svg` (hash checked).
