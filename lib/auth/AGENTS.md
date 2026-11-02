@@ -22,6 +22,7 @@ Authentication rules shared by every auth surface: the forms in `app/(auth)/`, `
 - A new `"use server"` file, or a new export from a private one, registers in `private-actions-boundary.test.ts` at the repo root with a valid call; the suite fails until it does, and proves every private action refuses a missing session before it opens a database client.
 - Auth Server Actions return `AuthActionState` and never throw, except `redirect()`, which is always called outside any `try`.
 - Copy comes from `messages.ts` only. Sign in, sign up and reset must never reveal whether an address has an account; the unconfirmed address outcome is the one exception.
+- `NEXT_PUBLIC_AUTH_EMAIL_DELIVERY` (`on` or `off`, unset meaning `off`) is read only through `getAuthEmailDelivery()` in `lib/env.ts`, kept apart from `getPublicEnv()` so previews with no Supabase variables still build. Being `NEXT_PUBLIC_`, a change takes a redeploy.
 - While `getAuthEmailDelivery()` is `off` (production today), sign up does say when an address already has an account, with a link to sign in (spec 0018 AC-12), and every email surface (resend, recovery, `/check-email`) shows a notice or refuses on the server instead of calling Supabase. Write `on` and `off` tests for any new auth surface that mentions email.
 - Logs carry an event and an outcome class only: no address, password, token, cookie or link.
 - The browser never calls Supabase Auth. Session cookies are `HttpOnly` through `sessionCookieOptions()` in `lib/supabase/cookie-options.ts`, shared by the server client and the proxy.
