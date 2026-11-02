@@ -45,9 +45,10 @@ One Next.js App Router app at the repo root (`app/`, `components/`, `lib/`, `sup
 
 - Server Components by default; a Client Component only where an interaction needs it.
 - `lib/tmdb/` and `lib/igdb/` are server-only modules that own every catalog request, its normalization, caching and errors.
-- Mutations are Server Actions: validate input with Zod, authenticate inside the action, and take the user ID from the verified session, never from the client.
+- Mutations are Server Actions (or Route Handlers, following the existing pattern): validate input with Zod, authenticate inside the action, and take the user ID from the verified session, never from the client.
 - Business rules (ratings, episode eligibility, library placement) are pure functions in `lib/`.
 - Postgres constraints and RLS enforce ownership and valid data independently of the UI.
+- Ordinary user operations never use an elevated role that bypasses RLS: no service role key in application code or `.env.example` (`security-boundary.test.ts`).
 
 ## 6. Stack
 
