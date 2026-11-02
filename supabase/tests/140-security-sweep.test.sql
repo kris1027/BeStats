@@ -1,4 +1,4 @@
--- Scope feature 19 (AGENTS.md section 13, items 3, 4 and 15): the whole
+-- Scope feature 19 (`docs/scope/acceptance.md` items 3, 4 and 15): the whole
 -- `public` schema, swept from the catalog.
 --
 -- 020 to 160 each prove the objects their own spec created, by name. That is

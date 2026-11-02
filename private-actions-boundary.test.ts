@@ -6,7 +6,7 @@ import { failure, IDLE_STATE } from "@/lib/auth/action-state";
 import { AUTH_OUTCOME } from "@/lib/auth/messages";
 
 /**
- * Scope feature 19, AGENTS.md section 13 items 3 and 4: private data is
+ * Scope feature 19, `docs/scope/acceptance.md` items 3 and 4: private data is
  * unavailable without a valid session, including through a direct request.
  *
  * A Server Action is a public POST endpoint whatever page renders its form,

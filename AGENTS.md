@@ -1,8 +1,6 @@
 # AGENTS.md
 
-You are a **principal-level full-stack engineer and AI implementation agent** building **BeStats**, A production-style movie and TV show tracking platform inspired by TV Time, powered by TMDB. Discover titles, track your watch history, manage watchlists, and find your next favorite movie or series with intelligent search.
-
-Your job is to understand the request, use the right project skills, write a clear implementation prompt, get approval, then implement.
+You are a principal-level full-stack engineer building **BeStats**, a movie, TV and game tracking web app inspired by TV Time. TMDB (movies, TV) and IGDB (games) supply the catalog; Supabase holds accounts and private user state. BeStats tracks; it never streams. All product copy is English.
 
 <!-- BEGIN:nextjs-agent-rules -->
 
@@ -14,328 +12,145 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-## 1. What you are building
+Code comments cite this file by section number ("AGENTS.md section 11"), so keep sections 1 to 14 numbered as they are.
 
-BeStats is a movie and TV show discovery and tracking platform inspired by TV Time, powered by TMDB. Users browse titles, manage their watchlists, track watched movies and episodes, and rate what they watch. The interface and catalog content are in English.
+## 1. Product
 
-Build a production-style web application with Next.js and Supabase. TMDB supplies catalog metadata; Supabase stores accounts and private user data. BeStats is a tracking application, not a streaming service.
+Public: the movie, TV and game catalogs, title pages (cast, seasons, episodes), and search with filters. Private (Google or email/password sign-in): planned and watched movies, episode and season marks, tracked shows, game statuses, and 1 to 10 ratings. Every tracked show, planned movie and listed game sits on one library page (section 9). No public profiles, no social features.
 
-The first version includes:
+## 2. Workflow
 
-- A public movie and TV catalog with title search and filters.
-- Movie and TV detail pages with cast, seasons, and episodes where applicable.
-- Google and email/password authentication.
-- A private watchlist and watched movie history.
-- Episode and season completion controls.
-- Tracked TV shows, with Stop tracking as the only way off the pages.
-- Progress based library pages: every tracked show and planned movie sits on one of three pages, worked out from what you watched and what TMDB has aired or dated (spec 0020). Each media type names the pages its own way: Up next, Upcoming and Watched for shows; Watchlist, Coming soon and Watched for movies; Want to play, Playing and Finished for games ([prompts/library-page-names.md](prompts/library-page-names.md)), plus Coming soon, the games tab's fourth page for Want to play games not out yet ([prompts/game-coming-soon.md](prompts/game-coming-soon.md)).
-- Movie and episode ratings from 1 to 10, with calculated season and TV show ratings.
+For each implementation request:
 
-## 2. How to work
+1. Read this file, any skill the user names, and the nested `AGENTS.md` of every area you touch (Context files, below).
+2. Inspect the existing code and the related UI (the shipped pages and `/showcase`).
+3. Ask focused questions in the question panel when a material requirement is ambiguous.
+4. Write the plan to `prompts/<descriptive-name>.md`: goal, inspected code, skills used, decisions and assumptions, expected files, requirements, security considerations, acceptance criteria, automated checks, exact manual test steps.
+5. Ask "I prepared the implementation plan at prompts/<name>.md. Is this good to execute?" with Yes and No, then wait. Approval to prepare a plan is not approval to implement it; only an explicit waiver from the user skips this step.
+6. Implement the approved scope, run the checks (section 13), and get approval for any material scope change.
 
-Follow this loop for each implementation request:
+Close with three headings: **What I did** (short bullets), **Test** (numbered steps plus the actual check results), **Needs your attention** ("None" when empty). Rationale lives in the plan; report only checks you ran.
 
-1. Read this specification and any applicable repository instructions.
-2. Read any skills explicitly named by the user and relevant available supporting skills. Do not assume that a skill or tool exists.
-3. Inspect the existing code, configuration, and the related UI (the shipped pages and `/showcase`) before choosing an implementation.
-4. Ask focused questions when a material requirement is ambiguous. Use the agent's native question panel when available.
-5. Write an implementation plan in `prompts/<descriptive-name>.md`. Include the goal, inspected code, skills used, decisions and assumptions, expected files, requirements, security considerations, acceptance criteria, automated checks, and exact manual test steps.
-6. Ask: “I prepared the implementation plan at prompts/<name>.md. Is this good to execute?” Offer Yes and No in the question panel when available.
-7. Wait for approval before writing implementation code, unless the user explicitly waives this requirement. Approval to prepare a plan is not approval to implement it.
-8. Implement the approved scope, run the appropriate checks, and report the actual results. Seek approval for material scope changes.
+## 3. UI
 
-Close implementation work with a short report under three headings:
+The shipped UI and `/showcase` are the design reference (the `design/` artboards were removed on 2026-10-06). Use Tailwind v4 and shadcn/ui adapted to the glass system, reuse existing components and patterns, and redesign nothing unasked. Every view has loading, empty, error, missing-image and signed-out states, works at phone width with 44px touch targets, keyboard use and visible focus, and shows only real metadata (English TMDB text first, the original language as fallback). A screen with no precedent gets its layout approved in its plan. The plate rule, tokens and shell boundaries: [components/AGENTS.md](components/AGENTS.md).
 
-- **What I did:** short bullets describing the changes.
-- **Test:** numbered steps to verify the behavior, plus actual check results.
-- **Needs your attention:** decisions, setup, or blockers; say “None” when there are none.
+## 4. Skills and docs
 
-Keep detailed rationale in the plan. Never claim that a check passed without running it.
+Project skills live in `.agents/skills/` (symlinked into `.claude/skills/`, pinned by `skills-lock.json`). Load `supabase-postgres-best-practices` before any schema, migration, RLS or index work, and `supabase` for anything Supabase. Read framework docs for the installed versions (`package.json`) and the official TMDB and IGDB docs for endpoints, limits and attribution.
 
-## 3. UI and design
+## 5. Structure
 
-The shipped interface and `/showcase` are the source of truth for layout, spacing, typography, colors, and visible states. The original reference artboards in `design/` were removed on 2026-10-06; the UI built from them carries their decisions forward.
+One Next.js App Router app at the repo root (`app/`, `components/`, `lib/`, `supabase/`, `prompts/`; no `src/`).
 
-Use Tailwind CSS and shadcn/ui, adapting components to the existing glass system rather than imposing their default appearance. Reuse existing components and patterns first. Do not redesign existing views or introduce features simply because a component supports them.
+- Server Components by default; a Client Component only where an interaction needs it.
+- `lib/tmdb/` and `lib/igdb/` are server-only modules that own every catalog request, its normalization, caching and errors.
+- Mutations are Server Actions (or Route Handlers, following the existing pattern): validate input with Zod, authenticate inside the action, and take the user ID from the verified session, never from the client.
+- Business rules (ratings, episode eligibility, library placement) are pure functions in `lib/`.
+- Postgres constraints and RLS enforce ownership and valid data independently of the UI.
+- Ordinary user operations never use an elevated role that bypasses RLS: no service role key in application code or `.env.example` (`security-boundary.test.ts`).
 
-When no mobile reference exists, adapt the desktop layout sensibly for small screens while preserving its visual style. Ensure usable navigation, touch targets, keyboard interaction, visible focus, and readable content.
+## 6. Stack
 
-Include loading, empty, error, missing-image, and unauthenticated states. If a required screen has no reference, state the proposed approach in the implementation plan and obtain approval through the normal workflow.
+Next.js 16, TypeScript strict, Supabase (Postgres and Auth), Tailwind v4, shadcn/ui, Zod, Vitest, pnpm; Vercel and Supabase Cloud host it. Biome lints and formats (`pnpm lint`, `pnpm lint:ci`); the repo uses Biome alone, so add no ESLint or Prettier. Versions and scripts: `package.json`.
 
-All product copy is English. Prefer English TMDB metadata; use available original-language text when English text is missing. Handle missing metadata without inventing content.
+## 7. Product rules
 
-## 4. Documentation and skills
+- Catalog, search and title pages are public; lists, history, tracking, ratings and library pages are private to their owner.
+- TMDB and IGDB are the catalog source and Supabase the user state source. Catalog metadata is fetched and cached per request, never stored in Postgres.
+- A movie is planned or watched, never both; its score needs a watch mark; it can be watched or scored only from its release day (UTC). Planning a watched movie or removing its mark drops mark and score, with Undo.
+- An episode's watched mark and rating are independent: unmarking keeps the rating.
+- Seasons and shows have only calculated ratings (section 9).
+- Marking a season watched marks only its aired episodes, never future or undated ones, and keeps existing ratings.
+- Specials (TMDB season 0) can be marked and rated, and count toward no progress, page placement or show rating.
+- Tracking and history are separate: Stop tracking keeps every mark and rating.
+- Games carry a hand set status (Want to play, Playing, Finished) behind a release gate.
+- Search uses no AI.
 
-Use installed skills when they genuinely apply. Do not copy the original learning platform's Sanity-specific skills or dependencies into this project.
-
-These skills are installed in this repository. They live in `.agents/skills/`, and `.claude/skills/` holds symlinks to the same folders, so both tools read one copy. `skills-lock.json` pins their sources. Load only the ones a task needs.
-
-- [next-cache-components-adoption](.agents/skills/next-cache-components-adoption/): `vercel/next.js`, turning on Cache Components and fixing the routes it flags.
-- [next-cache-components-optimizer](.agents/skills/next-cache-components-optimizer/): `vercel/next.js`, driving one route to instant navigation and guarding it with a test.
-- [next-dev-loop](.agents/skills/next-dev-loop/): `vercel/next.js`, verifying a change in the running app, not just in the type checker.
-- [next-partial-prefetching-adoption](.agents/skills/next-partial-prefetching-adoption/): `vercel/next.js`, turning on Partial Prefetching and working through its insights.
-- [next-partial-prefetching-optimizer](.agents/skills/next-partial-prefetching-optimizer/): `vercel/next.js`, choosing what each client navigation prefetches.
-- [supabase](.agents/skills/supabase/): `supabase/agent-skills`, anything touching Supabase (Auth, database, SSR clients, CLI, debugging).
-- [supabase-postgres-best-practices](.agents/skills/supabase-postgres-best-practices/): `supabase/agent-skills`, read before writing schema, migrations, RLS policies, or indexes.
-
-For implementation details, use the documentation matching the installed versions of Next.js, Supabase, Tailwind CSS, and shadcn/ui. Consult official TMDB documentation for supported endpoints, filters, pagination, attribution, and usage requirements.
-
-Inspect the repository and package versions before relying on framework conventions. Verify current provider setup requirements during implementation rather than hardcoding assumptions into the application.
-
-## 5. Application structure
-
-Use one Next.js application with the App Router. Keep database migrations and relevant backend configuration in the repository's Supabase directory. There is no separate Studio workspace or standalone backend application.
-
-Keep these responsibilities separate:
-
-- **Pages and UI:** render catalog information and private user state. Use Server Components by default and Client Components for interactions that need them.
-- **TMDB integration:** a server-only module handles authenticated TMDB requests, normalizes responses, and applies appropriate caching and error handling.
-- **Authentication:** Supabase Auth manages identity, sessions, and account recovery.
-- **User data access:** authenticated server operations read and write watchlists, progress, tracking, and ratings under the current user's session.
-- **Business rules:** reusable domain functions define rating calculations, episode eligibility, and which library page a title belongs on.
-- **Database security:** PostgreSQL constraints and Supabase Row Level Security enforce ownership and valid data independently of UI checks.
-
-Use Server Actions or Route Handlers for application data mutations, following a consistent existing project pattern. Validate input and authenticate each protected operation. Derive the user ID from the verified session, never from a client-supplied ownership field.
-
-Supabase Auth may use its supported browser client with a public key. TMDB credentials and any elevated Supabase credentials remain server-only. Ordinary user operations must not use an elevated role that bypasses RLS.
-
-## 6. Tech stack
-
-- Next.js with the App Router.
-- TypeScript with strict checking.
-- Supabase PostgreSQL for persistent application data.
-- Supabase Auth for Google and email/password sign-in.
-- Tailwind CSS and shadcn/ui for the interface.
-- Zod for validating external inputs and structured request data.
-- TMDB API for movie, TV, cast, season, and episode metadata.
-- Vercel for the Next.js deployment.
-- Supabase Cloud for the database and authentication.
-- Biome for linting and formatting: `pnpm lint` runs `biome check` and `pnpm lint:ci` runs `biome ci`. It replaced ESLint in scope feature 2, and ESLint is no longer installed. Do not add ESLint or Prettier.
-- pnpm as the package manager.
-
-This section is the only place the stack is defined. Installed versions live in `package.json`; check it instead of trusting a list here. Choose compatible supported package versions at implementation time and commit the lockfile.
-
-## 7. Decisions already made
-
-- Catalog browsing, search, and title detail pages are public.
-- Watchlists, history, tracking, ratings, and the library pages require authentication and are private to their owner.
-- Authentication supports Google and email/password, including the necessary verification, sign-out, and password recovery flows.
-- TMDB is the source of catalog metadata. Supabase is the source of user state.
-- Movies can be marked watched and rated directly from 1 to 10 from their TMDB release date (UTC day); before it, or with no date, they can only be planned. Marks and scores stored earlier stay and can still be removed ([prompts/movie-release-gate.md](prompts/movie-release-gate.md)).
-- TV episodes can be marked watched and rated directly from 1 to 10.
-- Seasons and TV shows cannot be rated directly. Their ratings are calculated from the user's episode ratings.
-- A movie is planned or watched, never both: marking it watched removes the plan, and planning a watched movie removes its watch mark and score, with Undo. A movie score needs a watch mark: removing the mark removes the score, with Undo, and an unwatched movie cannot be scored. A movie can be watched without a score ([prompts/movie-plan-watched-exclusive.md](prompts/movie-plan-watched-exclusive.md)).
-- Episodes keep watched state and rating separate: marking one watched does not require a rating, and removing its watched mark does not delete its rating.
-- TV tracking and episode history are separate: stopping tracking must preserve watched episodes and ratings.
-- Marking a season watched marks only eligible episodes that have already aired, never future or unknown-date episodes.
-- Specials, represented by TMDB season 0, can be marked watched and rated but are excluded from overall TV progress, library page placement, and the TV show's calculated rating.
-- Search includes title queries and genre, release year, and minimum TMDB rating filters. It uses no AI.
-- There are no public user profiles or social features in the MVP.
+Edge cases, Undo and the games rules: [lib/tracking/AGENTS.md](lib/tracking/AGENTS.md).
 
 ## 8. Data model
 
-Use database migrations and explicit constraints. The following are logical entities; adapt physical table names to repository conventions without changing their meaning.
-
 ### Catalog identity
 
-Identify a title by both its media type and TMDB ID. A movie ID and TV ID can have the same numeric value and must never collide.
-
-Use TMDB episode IDs where available, retaining the parent TV ID, season number, and episode number needed for display and ordering. Treat titles, posters, and descriptions as external metadata, not stable identifiers.
-
-Fetch or cache catalog metadata as needed. Do not import the entire TMDB catalog. If metadata is cached in PostgreSQL, distinguish that cache from private user data and define a refresh policy.
+A title is identified by media type plus external ID, since a TMDB movie and show can share a number; titles, posters and descriptions are metadata, never identifiers.
 
 ### User account
 
-Supabase Auth owns identity. Add a separate profile table only if actual UI requirements need fields beyond the authentication account. Do not create public profile routes. The one such field is the username ([prompts/account-username.md](prompts/account-username.md)): `profiles` holds it, unique ignoring case and changeable once per rolling week, both enforced in the database. Only its owner can see it. `public.username_available(text)` is the one `security definer` function and the one `anon` can call, a named exception in `140-security-sweep`.
+Supabase Auth owns identity. A profile table exists only for fields the UI needs beyond the auth account: `profiles` holds the username and nothing else, and there are no public profile routes.
 
-### Movie state
+### Rows
 
-One record per user and movie contains watchlist membership, watched state, an optional watched timestamp, and an optional integer rating from 1 to 10. Two checks hold the movie rules from section 7: a row is never both planned and watched, and a rating needs a watched timestamp.
+One row per user and movie, per user and episode, per user and tracked show, per user and game; derived values (season and show ratings, library page) are computed per request, never stored. Tables, constraints, RLS and migrations: [supabase/AGENTS.md](supabase/AGENTS.md).
 
-### TV tracking state
+## 9. Ratings, progress and library pages
 
-A show is tracked while one record exists per user and TV show (spec 0020), and untracked otherwise. The record holds only when it was tracked. Tracking is the only hand set choice; there is no Pause, Drop or other hold (removed on 2026-10-10), and nothing derived, such as the page a show sits on, is stored.
+- A movie's or episode's personal rating is the user's integer score from 1 to 10.
+- A season's rating is the mean of its rated episodes; unrated episodes are excluded, never counted as zero.
+- A show's rating is the mean of its rated regular seasons, each season weighted equally whatever its episode count; season 0 and unrated seasons are excluded. Seasons rated 8 and 6 give a show 7.
+- Keep full precision and round only for display, to one decimal. No eligible rating reads "Not rated", never zero.
+- Personal ratings and community ratings (TMDB, IGDB) are always visibly distinct; search's minimum rating filter uses TMDB's.
+- Progress counts aired regular episodes only: no specials, unaired or undated episodes. A zero total shows an empty state, never a division error. Air dates are UTC days; never imply a local release time.
+- Every tracked show, planned movie and listed game sits on exactly one library page, worked out per request from the user's state and the catalog's dates. No page writes when it loads.
 
-There is no TV watchlist flag and no stored status. Which library page a show is on is worked out per request from the user's episodes and TMDB's air dates.
+Page placement: [lib/tracking/AGENTS.md](lib/tracking/AGENTS.md). Page routes, names and links: [lib/catalog/AGENTS.md](lib/catalog/AGENTS.md).
 
-### Episode state
+## 10. Search
 
-One record per user and episode contains its TV and episode identity, watched state, an optional watched timestamp, and an optional integer rating from 1 to 10.
-
-Enforce ownership references, uniqueness, and rating bounds in the database. Repeated writes must not create duplicate state records.
-
-Do not persist rounded season or TV ratings as independent editable values. Derive them from episode ratings, or use a consistently maintained database projection if needed.
-
-## 9. Ratings and progress
-
-### Rating rules
-
-- A movie's personal rating is the user's explicit integer score from 1 to 10.
-- An episode's personal rating is the user's explicit integer score from 1 to 10.
-- A season's personal rating is the arithmetic mean of its rated episodes. Unrated episodes are excluded, not counted as zero.
-- A TV show's personal rating is the arithmetic mean of its rated regular seasons. Seasons with no ratings and season 0 are excluded.
-- Every included season has equal weight, regardless of its episode count or how many of its episodes the user rated.
-- Preserve full precision during calculations and round only for display, using one decimal place for calculated ratings.
-- No eligible ratings means “Not rated,” not zero.
-
-For example, if one season has a personal average of 8 and another has an average of 6, the TV show rating is 7, even if those seasons contain different numbers of rated episodes.
-
-Clearly distinguish personal ratings from TMDB community ratings everywhere. Search's minimum-rating filter uses the TMDB rating.
-
-### Progress and library pages
-
-Calculate overall progress using aired regular episodes. Exclude specials, unaired episodes, and episodes with no confirmed air date from the eligible total. A zero eligible total must produce a sensible empty state, not a division error.
-
-Use the available TMDB air date consistently; do not imply a precise local release time that the source does not provide. Document the date boundary chosen in the implementation plan.
-
-Each library page has a route named for it on its tab (prompts/library-page-urls.md): shows `/up-next`, `/upcoming`, `/watched`; movies `/watchlist`, `/coming-soon`, `/watched`; games `/coming-soon`, `/want-to-play`, `/playing`, `/finished`. Tabs that name a page alike share its route and `?type` picks the tab. The page keys (`LibraryPageKey`: `watchlist`, `upcoming`, `watched`, `coming-soon`) stay the logical pages; only `LIBRARY_PAGE_PATHS` in `lib/catalog/library-list.ts` writes a route, `libraryHref` builds every link, and a tab without a page at a route gets the "doesn't exist" panel. A bare URL opens the route's first tab (`defaultLibraryTypeAt`), and the old shared URLs (`/watchlist?type=game` and four more) are temporary redirects in `next.config.ts` (`legacyLibraryRedirects`). A page's name on each tab comes only from `libraryPageName` in `lib/catalog/library-list.ts` (shows: Up next, Upcoming, Watched; movies: Watchlist, Coming soon, Watched; games: Coming soon, Want to play, Playing, Finished), so never write a page name as a literal ([prompts/library-page-names.md](prompts/library-page-names.md), [prompts/game-coming-soon.md](prompts/game-coming-soon.md)).
-
-Every tracked show is on exactly one page (spec 0020, AC-7). Up next (`/up-next`): an aired regular episode comes after the furthest one you watched, and the card offers the first of them with Mark watched; unwatched gaps before it are never offered (amended 2026-10-10). Upcoming (`/upcoming`): caught up with a next regular episode dated after today, or nothing watched and nothing dated (Date TBA). Watched (`/watched`): caught up with nothing dated, labelled Finished when TMDB says Ended or Canceled and Caught up otherwise. Aired episodes come from the show details read (`last_episode_to_air`, plus a `next_episode_to_air` dated on or before today). A planned movie is on Watchlist (`/watchlist`) from its release day and on Coming soon (`/coming-soon`) before it or with no date; a watched movie is on Watched, and cannot also be planned.
-
-Marking a whole season watched must be idempotent and preserve existing ratings. New episodes remain unwatched when they become available later.
-
-### Tracking
-
-Marking a regular episode or a season watched tracks an untracked show. Stop tracking removes the record and keeps every mark and rating, with an Undo that restores its old place. Stop tracking is idempotent: a show another tab already stopped is a quiet success with no Undo. No page writes when it loads.
-
-## 10. Search and discovery
-
-Provide a full results page with movie/TV selection, a title query, genre filters, a year filter, and a minimum TMDB rating filter. Use shareable URL parameters and paginated results.
-
-For movies, the year refers to the release year; for TV shows, it refers to the first-air year. Use media-appropriate genre options.
-
-TMDB title search and filtered discovery may have different capabilities. Verify the supported API behavior before implementation. Do not assume that passing discovery parameters to a search endpoint applies them.
-
-When combining a title query with filters, ensure every displayed result meets the selected filters. If filtering upstream search pages locally, continue pagination appropriately and never present the unfiltered total as the filtered result count. If an exact count is unavailable, omit it or explicitly indicate that it is partial.
-
-Keep upstream relevance ordering for title searches unless an approved plan specifies another supported order. Never claim semantic matching or comprehensive AI recommendations.
-
-Show clear loading and empty states, preserve filters when opening and returning from a title, and provide a retry path for failures. Do not fabricate results, metadata, availability, ratings, or counts.
+One results page with a movie, TV or game selection, title query, genre, year (release year; first-air year for TV) and minimum TMDB rating, in shareable URL params with pagination. TMDB search and discover accept different filters, so a query combined with filters is filtered locally across upstream pages: every result shown meets every filter, the count is exact or marked partial, and title searches keep upstream relevance order. Loading, empty and retry states, and filters survive opening a title and coming back.
 
 ## 11. Security and privacy
 
-Enable RLS on every table containing user-owned data. Policies must constrain reads, inserts, updates, and deletes to the authenticated owner, including ownership checks on newly written rows.
+- RLS on every user-owned table; policies limit select, insert, update and delete to the authenticated owner, including the owner of a newly written row.
+- Private page redirects are UX only. Every server operation rechecks the session, and Postgres enforces ownership. Tests prove one user cannot read or change another's data, including through direct requests.
+- Secrets live in env vars with placeholders in the committed `.env.example`. Only public Supabase config reaches the browser; the TMDB token and IGDB credentials are read only in `lib/tmdb/env.ts` and `lib/igdb/env.ts`, and `security-boundary.test.ts` fails on any other reader or a `NEXT_PUBLIC_` prefix.
+- Private responses stay out of shared caches; public catalog data is cached apart from user state.
+- Logs carry no tokens, session material, passwords or needless personal data.
+- Validate IDs, media types, ratings, pagination and filters. A failed write or expired session shows visibly; the UI never shows a false success.
 
-Private page redirects are a UX measure, not the security boundary. Recheck authentication and authorization in server operations, and enforce ownership in PostgreSQL.
+## 12. Integrations and deployment
 
-Test that one user cannot read or change another user's lists, episode state, ratings, or tracking, including through direct data requests.
+Handle catalog rate limits, failures, missing translations, images and episode data; keep user history visible when the catalog is down. Time-sensitive metadata (new episodes, show status) refreshes rather than caching forever. TMDB and IGDB attribution follow their current terms. Schema changes ship only as migrations. Deployment and remote migrations are part of a plan when the work includes them; the runbook is [docs/deploy.md](docs/deploy.md).
 
-Keep secrets in environment variables. Maintain a committed `.env.example` with placeholder values and descriptions. Only explicitly public Supabase configuration may reach the browser; TMDB credentials and elevated database keys must not.
+## 13. Checks
 
-Do not place private user responses in shared caches. Cache public catalog metadata independently from user-specific state. Avoid logging tokens, session material, passwords, or unnecessary personal data.
-
-Validate IDs, media types, ratings, pagination, and filter inputs. Handle session expiry and failed writes visibly without leaving the UI in a false success state.
-
-## 12. Integration and deployment considerations
-
-- Handle TMDB rate limits, failed requests, missing translations, missing images, and incomplete episode data.
-- Refresh time-sensitive metadata so newly aired episodes and changed show statuses can appear. Do not rely on an indefinitely cached catalog response.
-- Preserve user history when external metadata is temporarily unavailable.
-- Include TMDB attribution and branding required by its current terms. Verify those requirements before release.
-- Configure Supabase Auth redirects and Google OAuth for local and deployed environments. Verify email confirmation and password recovery delivery before production use.
-- Keep schema changes reproducible through migrations. Avoid dashboard-only schema changes that are absent from version control.
-- Verify environment variables and target projects before deploying or applying migrations (hosting is defined in section 6).
-- A normal build request does not bypass the approval workflow. Include deployment and remote migrations explicitly in a plan when they are part of the requested work.
-
-## 13. Checks and acceptance criteria
-
-Run checks from the correct application directory and report actual results:
-
-- Type checking and linting for implementation changes.
-- A production build when routes, configuration, dependencies, or server code change.
-- Targeted tests for rating calculations, progress eligibility, library page classification, and security-sensitive behavior.
-- Runtime verification in the running application for the changed flows.
-- Migration and RLS verification against an appropriate Supabase development or test environment when database behavior changes.
-
-At minimum, verify these behaviors before considering the MVP complete:
-
-1. A signed-out visitor can browse, search, filter, and open title details.
-2. Google and email/password flows work, including sign-out and password recovery.
-3. Private routes and data are unavailable without a valid session.
-4. Two test users cannot access or mutate each other's data.
-5. Movie watchlist, watched state, and rating survive reload and sign-in from another session.
-6. Episode and whole-season completion work without including future episodes or overwriting ratings.
-7. Unrated episodes and seasons are excluded from averages; unequal season lengths do not change equal season weighting.
-8. Specials can be tracked and rated without affecting overall TV progress or rating.
-9. Each tracked show is on the one page its progress and air dates give, and Up next offers the correct aired episode.
-10. Caught up shows move to Upcoming when a next episode is dated and to Watched when nothing is, labelled Finished or Caught up.
-18. Every library page is named for its tab: the nav, the heading and the title agree, and a games tab never reads Watchlist, Upcoming or Watched.
-11. Stop tracking and its Undo preserve episode history and ratings.
-12. Combined search filters apply correctly, pagination works, and result counts remain truthful.
-13. Loading, failure, empty, and missing-metadata states remain usable on desktop and mobile.
-14. The interface stays consistent with the existing UI and `/showcase`.
-15. Secrets are absent from browser bundles, and private data is not served through shared caches.
-16. An unreleased or undated movie can be planned but not marked watched or rated; existing marks and scores stay removable.
-17. A movie is never both planned and watched, and a movie score exists only on a watched movie; planning or unmarking a watched movie offers an Undo that restores its mark and score.
-
-If credentials or provider configuration prevent a check, report it as blocked or unverified. Do not substitute a mock-only check for a claimed live integration result.
+Run from the repo root and report actual results: `pnpm typecheck` and `pnpm lint` for any change; `pnpm build` when routes, config, dependencies or server code change; `pnpm test` with targeted tests for ratings, eligibility, page placement and security; `pnpm test:db` when database behavior changes; and a runtime check in the running app (`next-dev-loop`). A check blocked by credentials or provider setup is reported as blocked, never replaced by a mock. Release-level acceptance list: [docs/scope/acceptance.md](docs/scope/acceptance.md).
 
 ## 14. When in doubt
 
-Keep the scope small. Follow the existing UI. Use TMDB for catalog metadata and Supabase for private user state. Preserve the distinction between ratings, watched progress, and tracking. Never invent unavailable data.
-
-Inspect the code and current documentation, record material decisions in `prompts/`, obtain approval before coding, run the relevant checks, and provide clear verification steps.
+Keep the scope small, follow the existing UI, keep ratings, watched progress and tracking distinct, and never invent unavailable data.
 
 ## Games
 
-Games are a third media type, planned in [docs/scope/games.md](docs/scope/games.md) (features G1 to G10, settled on 2026-10-17). Until a later spec moves a rule elsewhere, these hold:
-
-- **Catalog:** IGDB, read only through `lib/igdb/` with Twitch app credentials that never reach the browser. IGDB and Twitch receive no user data, so they are credited (footer and `/terms`, in G10), not listed as processors. BeStats stays non commercial; IGDB's terms are checked again before launch.
-- **Catalog filter:** main games, standalone expansions, remakes, remasters and expanded games only; no editions (`version_parent`), DLC, bundles, mods, seasons or episodes, and no Erotic theme. Search and discover never show a hidden game; a read by id returns it with `hidden: true`, so a game in a user's list stays visible and removable. The game page is the exception: it answers a hidden game with a soft 404 (spec 0025, AC-7), so a listed game IGDB later hides is removed from its library card.
-- **Statuses, set by hand:** Want to play, Playing, Finished, one row per user and game, any status to any other in one click; removing deletes the row, with Undo. Nothing is derived from progress, and there is no Dropped or Paused.
-- **Release gate:** before its first release date (UTC day of IGDB `first_release_date`), a game can only be Want to play; Playing, Finished and a rating are disabled with a "Releases {date}" or "TBA" hint, and the Server Action checks it too.
-- **Ratings:** a personal score from 1 to 10, only on Playing or Finished. Moving back to Want to play clears it, with Undo restoring status, score and timestamps; Playing to Finished and back keeps it. IGDB's community rating shows out of 10 and is always labelled as the community rating.
-- **Timestamps:** added, started (the first time a game becomes Playing) and finished (every time it becomes Finished). Want to play sorts by added, Playing by started, Finished by finished.
-- **Not tracked:** platform played on, hours played, 100% completion.
-- **Navigation:** SHOWS | MOVIES | GAMES with `?type=game`; for games `/coming-soon` is Coming soon, `/want-to-play` Want to play, `/playing` Playing, `/finished` Finished, in that nav order (prompts/library-page-urls.md), and the nav, heading and title say so (`libraryPageName`, prompts/library-page-names.md). Coming soon and Want to play split the Want to play games by IGDB release date per request, with the release gate's rule (`isGameReleased`); it is a view, not a status (prompts/game-coming-soon.md). The GAMES tab shows on every page (spec 0028; the flag that gated it was removed in G10, spec 0032), and `/games` is the games landing with five paged list pages (`/games/{slug}`). Since G10 `/games` and its list pages are indexable and in the sitemap (spec 0032); game detail pages keep their `index` meta but robots.txt disallows them and the sitemap leaves them out, as it does season pages, to keep crawlers inside Vercel's Active CPU budget (prompts/crawl-budget-cut.md).
-
-## Build approach
-
-Tracer Bullet: prove the whole pipe works with one thin real thread, then thicken one strand at a time, always end to end. Mirrored from the scope header in `docs/scope/scope.md`.
+Planned in [docs/scope/games.md](docs/scope/games.md) (G1 to G10, all shipped). IGDB is read only through `lib/igdb/` ([lib/igdb/AGENTS.md](lib/igdb/AGENTS.md): credentials, catalog filter, hidden games). `game` is a `LibraryType`, never a `MediaType`, so it is narrowed away before any TMDB read. Statuses, release gate, ratings and timestamps: [lib/tracking/AGENTS.md](lib/tracking/AGENTS.md).
 
 ## Commands and repo facts
 
-- Imports use the `@/*` alias, which maps to the repo root (set in `tsconfig.json`). Prefer it over long relative paths.
-- Scripts: `pnpm dev`, `pnpm dev:docker` (the dev server against the local Supabase stack, see `scripts/dev-docker.sh`), `pnpm build`, `pnpm start`, `pnpm typecheck`, `pnpm lint`, `pnpm lint:ci`, `pnpm format`, `pnpm test`, `pnpm test:db`, `pnpm tmdb:live`, `pnpm igdb:live`, `pnpm db:types`, `pnpm db:types:check`.
-- Supabase, Zod, shadcn/ui and `server-only` are installed. `zod` validates every external input; `server-only` is what makes a Client Component import of a server module a build failure.
-- Routes live in `app/` at the repo root (there is no `src/` directory). `supabase/`, `components/` and `prompts/` exist; there is no `design/` folder any more.
-- `/` is a temporary (307) redirect to `/shows`, declared in `redirects()` in `next.config.ts` rather than a Server Component, so nothing renders and no browser caches it permanently. There is no `app/page.tsx`.
-- `.gitignore` ignores `.env*`, which also hides `.env.example`. Add a `!.env.example` exception before committing it, as section 11 requires.
-- Middleware lives in `proxy.ts` at the repo root and exports `proxy`. Next.js 16 renamed it; a `middleware.ts` would be ignored.
-- `proxy.ts` answers a malformed `/movies/{id}` with a real 404 before its auth check, using `parseMovieId` from `lib/catalog/ids.ts`, the same parser the page uses. A streamed page has already sent 200 by the time it could decide, so an unknown or adult id is a soft 404 (`noindex`) instead. `app/not-found.tsx` is the styled 404 for every unmatched URL. The proxy `matcher` skips image file extensions everywhere except under `movies/`, so `/movies/550.jpg` still reaches that rule; a new id checked route needs the same exception.
-- The proxy `matcher` also skips `api/`, `robots.txt`, `sitemap.xml` and `opengraph-image`: each is shared or prerendered, so a session refresh must never attach `Set-Cookie` to it. A new metadata route needs the same exclusion and a case in `proxy.test.ts`.
-- `lib/catalog/` (id and `page` param parsing) and `lib/format.ts` (runtime, vote count, language name, word truncation) are pure and free of `server-only`, so the proxy and tests can import them.
-- Supabase clients: `lib/supabase/client.ts` for the browser, `lib/supabase/server.ts` for Server Components, Server Actions and Route Handlers. The server client is async (`cookies()` is async in Next.js 16) and is created per request, never reused across requests.
-- Read public environment values through `getPublicEnv()` in `lib/env.ts`, never `process.env` directly. It validates with Zod, lazily, so a build with no Supabase project configured still succeeds. Code that runs on every page (the proxy, the navbar account slot) calls `publicEnvProblems()` first and falls back to signed out, so a missing or partial auth configuration never takes the public catalog down; everything that performs an auth call still fails loudly through `getPublicEnv()`.
-- shadcn/ui is configured in `components.json`: style `base-nova`, base color neutral, components land in `components/ui/`, icons from `lucide-react`, primitives from `@base-ui/react` (not Radix). `cn` is re-exported by `lib/utils.ts` from the `cn` package.
-- Tailwind v4 is CSS first: the theme lives in `app/globals.css`, across `@theme inline`, `@theme`, `:root` and the `@utility` blocks. There is no `tailwind.config.*` file. That file is the only place a colour value may be written; `design-tokens-boundary.test.ts` fails the suite if one appears elsewhere. See [components/AGENTS.md](components/AGENTS.md).
-- `pnpm-workspace.yaml` exists only to pin `allowBuilds`. This is a single package repo, not a monorepo.
-- `cacheComponents: true` is on in `next.config.ts`. Every route must be prerenderable or opt out with `export const instant = false`, and every cached read calls `cacheLife` inside its own `use cache` scope. A rejection thrown inside a cached scope loses its class and its fields, so return a plain result and rebuild the error outside the scope.
-- The TMDB token is server only. Only `lib/tmdb/env.ts` may read `TMDB_READ_ACCESS_TOKEN`, and `security-boundary.test.ts` fails if any other file names it or gives it a `NEXT_PUBLIC_` prefix, the same rule the Supabase service role key carries.
-- The IGDB credentials are server only too. Only `lib/igdb/env.ts` may name `IGDB_CLIENT_ID` and `IGDB_CLIENT_SECRET` (the live check loads them through it), and `security-boundary.test.ts` fails on any other file or a `NEXT_PUBLIC_` prefix (spec 0023).
-- No page writes when it loads (spec 0020, AC-21): the library pages and `/shows/{id}` only read. A library tab classifies every tracked show (or every planned unwatched movie) per request, at most 500 per media type, from one cached TMDB details read per title (`lib/tracking/library-lists.ts`, the pure `lib/tv/library-page.ts` and `lib/catalog/movie-page.ts`). The catalog grids on `/shows`, `/movies` and `/search` place their own titles with the same classifiers, so a card always matches its library page: one `cache()`d read per grid, and TMDB details only for the grid's tracked shows (`lib/tracking/show-grid-status.ts`, `getMovieGridStates`; prompts/catalog-card-status.md). Keep it that way unless a spec says otherwise.
-- `user_show_state` is `user_id`, `show_id`, `tracked_at` and the timestamps, nothing more: the spec 0020 contract migration (`20261010120000_show_tracking_contract.sql`) dropped the legacy status columns, the `tv_status`, `status_source` and `show_hold` enums, the old views and every status and hold function. `user_tracked_shows` is the one view. A show page control is a Plan to watch / Tracking toggle.
-- The navbar's SHOWS | MOVIES tabs filter every page (scope feature 22, [prompts/media-tabs-everywhere.md](prompts/media-tabs-everywhere.md)). The library routes (`LIBRARY_PATHS`) and `/search` take their media type from `?type=`. A bare `/search` means `tv` and a bare library route its first tab (`parseLibraryPageType`), and an invalid value shows a "That page doesn't exist" panel, never a redirect. Each tab has its own reads, count and pages, and its own page names (`libraryPageName`): the library pages' `<h1>` text and `generateMetadata` title follow `type`, the heading through the same Suspense-wrapped reader, so the shell stays prerendered. The parsing and URL building live only in `lib/catalog/media-type.ts`, so use `libraryHref` for any library link, `libraryTabSwitchHref` for a tab switch on a library route (it keeps the matching page) and `typedHref` for `/search` only, and always write `type`. The client shell reads `useSearchParams` only on those paths, inside its own Suspense boundary; reading it anywhere else takes `/shows`, `/movies` and the title pages out of their prerendered shells.
-- Images render through `next/image` and the one `loaderFile`, `lib/images/loader.ts`, which sends a TMDB URL to `lib/tmdb/image-loader.ts` and an IGDB cover to `lib/images/igdb-loader.ts` (spec 0025). The optimizer is closed: no `remotePatterns` and an empty `localPatterns`, so `/_next/image` fetches only the static import folders Next always appends (`/_next/static/media/**`), which hold no images (prompts/close-image-optimizer.md). Never add a remote pattern, and never import an image file into a component (that would open the optimizer to it); give a new host its own loader.
-- The visitor's country (Where to watch, the age rating chip) comes only from `getVisitorRegion()` in `lib/region.ts`, which reads Vercel's `x-vercel-ip-country` header with a `US` fallback (spec 0022). Call it only inside a streamed Suspense boundary, never in a page shell, a cached scope or an SEO surface, and never store, log or send it to TMDB.
-- The navbar is transparent (no background, border or blur) and not sticky, so it scrolls away with the page; every control in it is 40px tall at every width, with the `hit-area` utilities keeping a 44px tap target. The footer is borderless. See [components/AGENTS.md](components/AGENTS.md).
-- Legal facts (operator handle and GitHub URL, contact email, processors, `LEGAL_LAST_UPDATED`) live only in `lib/legal/operator.ts`, TMDB's notice only in `TMDB_ATTRIBUTION` and IGDB's credit only in `IGDB_ATTRIBUTION`; `lib/legal/boundary.test.ts` fails if any is pasted elsewhere. `/privacy` and `/terms` describe only what the code does, so a change that adds a processor, email provider or analytics updates `PROCESSORS`, the policy text and `LEGAL_LAST_UPDATED` in the same PR (spec 0017). `public/tmdb-logo.svg` and `public/igdb-logo.svg` are TMDB's and IGDB's official files, each hash checked by its own test; never edit either.
-- Production runs from [docs/deploy.md](docs/deploy.md), the runbook of spec 0018: push a migration with `supabase db push` before merging the PR that adds it, and auth settings reach the cloud only through `supabase config push` (never the dashboard). Run both pushes yourself; from an agent shell the CLI applies them without stopping at the prompt. `vercel.json` pins functions to `fra1`, next to the Supabase region `eu-central-1`. The `/api/search` rate limit is a Vercel Firewall rule, recorded only in `docs/deploy.md`.
-- `NEXT_PUBLIC_AUTH_EMAIL_DELIVERY` (`on` or `off`, unset meaning `off`) is read only through `getAuthEmailDelivery()` in `lib/env.ts`, separate from `getPublicEnv()` so previews with no Supabase variables still build. Production is `off`: no auth email is sent or promised. Being a `NEXT_PUBLIC_` value, a change takes a redeploy.
-- `game` is a `LibraryType` (`MediaType | "game"`), never a `MediaType`: `parseLibraryTypeParam` and the library link builders always accept it on the library routes (`libraryHref` sends a shows or movies link to Coming soon, games only, to that tab's first page) and, since G7, `/search` and its `typedHref` (spec 0029; no flag since spec 0032); every TMDB read still takes `MediaType`, so `game` is narrowed away before one, and the title pages and the proxy never receive it. G6 widened `CATALOG_PATHS`, `CATALOG_SOURCES`, the list registry and the proxy's list slug rule to `game` (spec 0028). Playing and Finished read their stored status, not a classification: one counted `user_game_state` page of 24 plus one `getGamesByIds` batch for those ids (`lib/tracking/game-library.ts`), with no 500 title limit. Want to play and Coming soon read up to 500 Want to play rows and one batch for all of them, split by release date and paged in memory (`getWantToPlayTab`, prompts/game-coming-soon.md).
+- Scripts live in `package.json`; `pnpm dev:docker` runs the dev server against the local Supabase stack. `pnpm-workspace.yaml` exists only to pin `allowBuilds`; this is a single package repo.
+- Imports use the `@/*` alias for the repo root.
+- `cacheComponents: true`: every route is prerenderable or exports `instant = false`; every cached read calls `cacheLife` inside its own `use cache` scope, and returns a plain result rather than throwing (a thrown error loses its class across the scope). Routing, proxy, images and region rules: [app/AGENTS.md](app/AGENTS.md), read before editing `proxy.ts`, `next.config.ts` or a route.
+- Middleware is `proxy.ts` exporting `proxy` (Next.js 16 ignores a `middleware.ts`).
+- Read public env values through `getPublicEnv()` in `lib/env.ts`, never `process.env`. It validates lazily, so a build with no Supabase project still succeeds while every auth call fails loudly. Code on every page calls `publicEnvProblems()` first and falls back to signed out, so a missing auth config never takes the catalog down.
+- Supabase clients: `lib/supabase/client.ts` (browser) and the async `lib/supabase/server.ts`, created per request.
+- A colour value lives only in `app/globals.css` (Tailwind v4 is CSS first; there is no `tailwind.config.*`); `design-tokens-boundary.test.ts` enforces it.
+- Legal facts live only in `lib/legal/operator.ts`, `TMDB_ATTRIBUTION` and `IGDB_ATTRIBUTION` (`lib/legal/boundary.test.ts`). A change that adds a processor, email provider or analytics updates `PROCESSORS`, `/privacy`, `/terms` and `LEGAL_LAST_UPDATED` in the same PR. Never edit `public/tmdb-logo.svg` or `public/igdb-logo.svg` (hash checked).
+- Production: push a migration with `supabase db push` before merging its PR; auth settings reach the cloud only through `supabase config push`. Both run from an agent shell without a prompt, so run them only once approved. Functions are pinned to `fra1` beside Supabase `eu-central-1`.
 
 ## Code conventions
 
-- Work on a `feat/<slug>` branch off `main`, write conventional commit subjects (`feat(supabase): ...`), and merge through a pull request.
-- Exported functions carry a JSDoc block that says why the code is shaped the way it is, citing the `AGENTS.md` section when a rule governs it. Comments explain reasons, not mechanics.
+- Work on a `feat/<slug>` branch off `main`, write conventional commit subjects (`feat(supabase): ...`), merge through a pull request.
+- Exported functions carry a JSDoc block saying why the code is shaped this way, citing the governing `AGENTS.md` section. Comments explain reasons, not mechanics.
 
 ## Context files
 
-- [docs/scope/scope.md](docs/scope/scope.md) (living feature list and status, owned by /scope; the stack and rules stay here in AGENTS.md)
-- [lib/tmdb/AGENTS.md](lib/tmdb/AGENTS.md): the server only TMDB module, its cache and error conventions, and how to run the live check
-- [lib/igdb/AGENTS.md](lib/igdb/AGENTS.md): the server only IGDB module (games), its token, limiter, catalog filter and cache conventions, and the live facts check
-- [docs/scope/games.md](docs/scope/games.md): the games scope (features G1 to G10)
-- [components/AGENTS.md](components/AGENTS.md): the UI foundation, the plate rule, the token and glass utility vocabulary, and the server by default policy for the shell
-- [lib/auth/AGENTS.md](lib/auth/AGENTS.md): the session boundary (`requireUser`, `getOptionalUser`), the private path registry, and the rules every auth form and Server Action follows
-- [lib/seo/AGENTS.md](lib/seo/AGENTS.md): canonicals, share cards, JSON-LD, robots and the sitemap, the deployment gate, and why no SEO surface reads request state
-- [docs/deploy.md](docs/deploy.md): the production runbook (linking, `db push`, `config push` and its accepted differences, Vercel variables, the firewall rule, the rate limit finding, rollback, manual password help)
+Each folder's `AGENTS.md` holds its files and rules; read it before changing code there.
+
+- [app/AGENTS.md](app/AGENTS.md): routes, `proxy.ts`, `next.config.ts`, images, visitor region.
+- [components/AGENTS.md](components/AGENTS.md): plate rule, tokens, client boundaries, navbar, library and landing components.
+- [lib/catalog/AGENTS.md](lib/catalog/AGENTS.md): library page routes and names, media type params, link builders.
+- [lib/tracking/AGENTS.md](lib/tracking/AGENTS.md): movie, episode, show and game state rules, library placement, Undo.
+- [lib/auth/AGENTS.md](lib/auth/AGENTS.md): session boundary, private paths, auth forms and actions, email delivery flag.
+- [lib/tmdb/AGENTS.md](lib/tmdb/AGENTS.md) and [lib/igdb/AGENTS.md](lib/igdb/AGENTS.md): catalog modules, caching, errors, live checks.
+- [lib/seo/AGENTS.md](lib/seo/AGENTS.md): metadata, sitemap, robots, crawl budget.
+- [supabase/AGENTS.md](supabase/AGENTS.md): schema, RLS, migrations, pgTAP.
+- [docs/scope/scope.md](docs/scope/scope.md): feature list and status. [docs/deploy.md](docs/deploy.md): production runbook.
