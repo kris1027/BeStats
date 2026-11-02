@@ -71,7 +71,17 @@ Edge cases, Undo and the games rules: [lib/tracking/AGENTS.md](lib/tracking/AGEN
 
 ## 8. Data model
 
-A title is identified by media type plus external ID, since a TMDB movie and show can share a number. One row per user and movie, per user and episode, per user and tracked show, per user and game; derived values (season and show ratings, library page) are computed per request, never stored. Tables, constraints, RLS and migrations: [supabase/AGENTS.md](supabase/AGENTS.md).
+### Catalog identity
+
+A title is identified by media type plus external ID, since a TMDB movie and show can share a number; titles, posters and descriptions are metadata, never identifiers.
+
+### User account
+
+Supabase Auth owns identity. A profile table exists only for fields the UI needs beyond the auth account: `profiles` holds the username and nothing else, and there are no public profile routes.
+
+### Rows
+
+One row per user and movie, per user and episode, per user and tracked show, per user and game; derived values (season and show ratings, library page) are computed per request, never stored. Tables, constraints, RLS and migrations: [supabase/AGENTS.md](supabase/AGENTS.md).
 
 ## 9. Ratings, progress and library pages
 
