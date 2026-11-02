@@ -6,7 +6,7 @@ Pure catalog helpers: ID and `page` param parsing (`ids.ts`, also used by `proxy
 
 - `MediaType` is `movie | tv`; `LibraryType` is `MediaType | "game"`. Every TMDB read takes `MediaType`, so narrow `game` away first; title pages and the proxy never receive it.
 - The navbar's SHOWS | MOVIES | GAMES tabs filter every page ([prompts/media-tabs-everywhere.md](../../prompts/media-tabs-everywhere.md)). The library routes (`LIBRARY_PATHS`) and `/search` take their type from `?type=`: a bare `/search` means `tv`, a bare library route its first tab (`parseLibraryPageType`, `defaultLibraryTypeAt`), and an invalid value shows a "That page doesn't exist" panel, never a redirect.
-- All parsing and URL building lives here. Write `type` on every link: `libraryHref` for any library link (a shows or movies link sent to a games only page lands on Coming soon), `libraryTabSwitchHref` for a tab switch on a library route (it keeps the matching page), `typedHref` for `/search` only.
+- All parsing and URL building lives here. Write `type` on every link: `libraryHref` for any library link (a shows or movies link to a games only page lands on that tab's first page, through `libraryPath`), `libraryTabSwitchHref` for a tab switch on a library route (it keeps the matching page), `typedHref` for `/search` only.
 - `CATALOG_PATHS`, `CATALOG_SOURCES` and the list registry cover `game` too (spec 0028).
 - `useSearchParams` is read only on the library routes and `/search`, inside its own Suspense boundary; anywhere else it costs `/shows`, `/movies` and the title pages their prerendered shells (see [components/AGENTS.md](../../components/AGENTS.md)).
 

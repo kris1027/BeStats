@@ -6,7 +6,7 @@ Routes, plus the root files that shape them: `proxy.ts` and `next.config.ts`. `c
 
 - `/` is a temporary (307) redirect to `/shows` in `redirects()` in `next.config.ts`; there is no `app/page.tsx`.
 - Library routes and their legacy redirects: [lib/catalog/AGENTS.md](../lib/catalog/AGENTS.md). A new private route registers in `PRIVATE_PATH_PREFIXES` ([lib/auth/AGENTS.md](../lib/auth/AGENTS.md)).
-- `/games` is the games landing with five paged list pages (`/games/{slug}`), indexable and in the sitemap. Game detail and season pages are disallowed in robots.txt and left out of the sitemap to protect Vercel's Active CPU budget ([lib/seo/AGENTS.md](../lib/seo/AGENTS.md)).
+- `/games` is the games landing with five paged list pages (`/games/{slug}`), indexable and in the sitemap. Game detail pages keep their `index` meta, but they and season pages are disallowed in robots.txt and left out of the sitemap to protect Vercel's Active CPU budget ([lib/seo/AGENTS.md](../lib/seo/AGENTS.md)).
 - `app/not-found.tsx` is the styled 404 for every unmatched URL. The game page answers a hidden game with a soft 404.
 - `/showcase` is a static 404 in production and renders under `next dev` and Vitest.
 
