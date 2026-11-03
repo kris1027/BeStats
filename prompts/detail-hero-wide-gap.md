@@ -45,7 +45,7 @@ No test asserts the hero's height class today; no test file changes unless a che
 
 - AC-1: At 2560×1440 and 1920×1200, the poster and title block sit on the lower part of the backdrop, with no empty band between the art's fade and the poster.
 - AC-2: At 1440×900 the hero is about 810px tall and the poster overlaps the art's lower part.
-- AC-8: From `lg` the poster's foot sits 40px above the art's bottom edge, as on a phone (decision 6).
+- AC-8: From `lg` the poster's foot sits 40px above the hero's bottom edge, as on a phone (decision 6): the art's bottom edge from about 1100px wide, and up to about 44px lower, inside the art's fade, where the 620px floor (decision 7) outgrows the art (576px of art at 1024px wide).
 - AC-3: At 1024×768 the hero is at least 620px tall and the title block is fully visible without scrolling.
 - AC-4: Below `lg` (390×844, 768×1024) the hero is unchanged: one screen tall, backdrop cropped to its centre, title block at its foot.
 - AC-5: The skeleton and the loaded hero have the same box at every width.
