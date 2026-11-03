@@ -16,14 +16,18 @@ import { resizeImageUrl } from "@/lib/tmdb/images";
 /**
  * The hero's box when the title has a backdrop, shared with
  * `DetailHeroSkeleton` so nothing moves when the hero streams in. One full
- * screen at every width, like the landing hero (`HERO_BOX`,
+ * screen below `lg`, like the landing hero (`HERO_BOX`,
  * prompts/detail-backdrop-hero-size.md, decision 11), with the poster and
- * title block at its foot and the Overview below the fold. A minimum height
- * rather than a fixed one, so a long title block grows the box instead of
- * being cut. It bleeds behind the navbar with the landing's `HERO_BLEED`,
- * given back as padding so the content keeps its place.
+ * title block at its foot. From `lg` it is only as tall as the art (16:9 of
+ * the 1600px capped column), so on a wide or tall window the block stays on
+ * the art instead of sliding below its fade (prompts/detail-hero-wide-gap.md,
+ * decision 2). The block's foot sits on the art's foot at every width, the
+ * phone's `pb-10` (decision 6). A minimum height rather than a fixed one, so
+ * a long title block grows the box instead of being cut. It bleeds behind the
+ * navbar with the landing's `HERO_BLEED`, given back as padding so the content
+ * keeps its place.
  */
-const DETAIL_HERO_BOX = `relative ${HERO_BLEED} flex min-h-[max(100svh,560px)] flex-col justify-end overflow-hidden px-4 pt-[calc(2rem+var(--navbar-height))] pb-10 md:pt-[calc(3rem+var(--navbar-height))] lg:min-h-[max(100svh,620px)] lg:pb-[16vh]`;
+const DETAIL_HERO_BOX = `relative ${HERO_BLEED} flex min-h-[max(100svh,560px)] flex-col justify-end overflow-hidden px-4 pt-[calc(2rem+var(--navbar-height))] pb-10 md:pt-[calc(3rem+var(--navbar-height))] lg:min-h-[max(min(100svh,56.25vw,900px),620px)]`;
 
 /**
  * The artwork's box, the landing hero's fit (`HERO_ART_FIT`) without its
