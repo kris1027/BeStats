@@ -18,16 +18,18 @@ import { resizeImageUrl } from "@/lib/tmdb/images";
  * `DetailHeroSkeleton` so nothing moves when the hero streams in. One full
  * screen below `lg`, like the landing hero (`HERO_BOX`,
  * prompts/detail-backdrop-hero-size.md, decision 11), with the poster and
- * title block at its foot. From `lg` it is only as tall as the art (16:9 of
- * the 1600px capped column), so on a wide or tall window the block stays on
- * the art instead of sliding below its fade (prompts/detail-hero-wide-gap.md,
- * decision 2). The block's foot sits on the art's foot at every width, the
- * phone's `pb-10` (decision 6). A minimum height rather than a fixed one, so
- * a long title block grows the box instead of being cut. It bleeds behind the
- * navbar with the landing's `HERO_BLEED`, given back as padding so the content
- * keeps its place.
+ * title block at its foot. From `lg` it is only as tall as the art
+ * (`--hero-art-height`), so on a wide or tall window the block stays on the
+ * art instead of sliding below its fade (prompts/detail-hero-wide-gap.md,
+ * decision 2), and never under 620px (decision 7). The phone's `pb-10` holds
+ * at every width, so the block's foot sits 40px above the box's foot: the
+ * art's foot from about 1100px wide, a little below it on the 620px floor
+ * (decision 6). A minimum height rather than a fixed one, so a long title
+ * block grows the box instead of being cut. It bleeds behind the navbar with
+ * the landing's `HERO_BLEED`, given back as padding so the content keeps its
+ * place (root AGENTS.md section 3).
  */
-const DETAIL_HERO_BOX = `relative ${HERO_BLEED} flex min-h-[max(100svh,560px)] flex-col justify-end overflow-hidden px-4 pt-[calc(2rem+var(--navbar-height))] pb-10 md:pt-[calc(3rem+var(--navbar-height))] lg:min-h-[max(min(100svh,56.25vw,900px),620px)]`;
+const DETAIL_HERO_BOX = `relative ${HERO_BLEED} flex min-h-[max(100svh,560px)] flex-col justify-end overflow-hidden px-4 pt-[calc(2rem+var(--navbar-height))] pb-10 md:pt-[calc(3rem+var(--navbar-height))] lg:min-h-[max(min(100svh,var(--hero-art-height)),620px)]`;
 
 /**
  * The artwork's box, the landing hero's fit (`HERO_ART_FIT`) without its
@@ -82,9 +84,10 @@ type DetailHeroProps = {
 };
 
 /**
- * The top of a title page: one full screen of artwork faded into the page,
- * like the landing hero, with the poster and the title block at its foot
- * (spec 0006, AC-3; spec 0009, AC-3; prompts/detail-backdrop-hero-size.md).
+ * The top of a title page: artwork faded into the page, like the landing
+ * hero, one screen tall below `lg` and as tall as the art from it, with the
+ * poster and the title block at its foot (spec 0006, AC-3; spec 0009, AC-3;
+ * prompts/detail-backdrop-hero-size.md; prompts/detail-hero-wide-gap.md).
  *
  * Extracted from the movie hero so the show page reuses the same geometry
  * rather than a second design (spec 0009). No original design drew

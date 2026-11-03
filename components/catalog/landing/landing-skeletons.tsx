@@ -120,11 +120,11 @@ export const TOP_CARD_CLASS = "relative pt-14 md:pt-20 lg:pt-23";
  * A full small viewport below `lg`, so a phone opens on the title
  * (prompts/mobile-landing-parallax.md, decision 12); `svh`, so the address
  * bar sliding away does not resize it. From `lg` it is only as tall as the
- * art (16:9 of the column plus its 32px bleed), so a wide or tall window
- * never leaves the title below the art's fade
- * (prompts/landing-hero-wide-gap.md, decision 1).
+ * art, `--hero-art-height` plus the 18px its 32px wider bleed adds at 16:9,
+ * so a wide or tall window never leaves the title below the art's fade
+ * (prompts/landing-hero-wide-gap.md, decision 1; root AGENTS.md section 3).
  */
-export const HERO_BOX = `relative ${HERO_BLEED} block h-svh min-h-[560px] overflow-hidden lg:h-[min(100svh,calc(56.25vw+18px),918px)] lg:min-h-[620px]`;
+export const HERO_BOX = `relative ${HERO_BLEED} block h-svh min-h-[560px] overflow-hidden lg:h-[min(100svh,calc(var(--hero-art-height)+18px))] lg:min-h-[620px]`;
 
 /**
  * The artwork's box, fitted by the shared `HERO_ART_FIT`: below `lg` it
@@ -139,7 +139,7 @@ export const HERO_ART_BOX = `absolute -inset-x-4 ${HERO_ART_FIT}`;
  * parallax drifts the art down as the page scrolls, which slides the art's
  * fade below the hero's clip and leaves a hard edge; this mask does not move,
  * so the art always dissolves into the page (prompts/landing-hero-wide-gap.md,
- * decision 5).
+ * decision 5; root AGENTS.md section 3).
  */
 export const HERO_ART_FRAME = "absolute inset-0 mask-b-from-80%";
 
