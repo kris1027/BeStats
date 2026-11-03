@@ -214,6 +214,15 @@
    * bar's padding stops matching these parts.
    */
   --navbar-height: calc(2.5rem + 2 * 0.5rem);
+
+  /*
+   * A hero's artwork height from `lg`: `HERO_ART_FIT`'s 16:9 at the hero's
+   * width, which `main` caps at 1600px (`app/layout.tsx`), so 900px at most.
+   * Both heroes size their box from it (`DETAIL_HERO_BOX`, `HERO_BOX`), so a
+   * change to the fit or the column cap is made here once
+   * (prompts/detail-hero-wide-gap.md, decision 2).
+   */
+  --hero-art-height: min(56.25vw, 900px);
 }
 
 /*

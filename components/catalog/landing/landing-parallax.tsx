@@ -34,7 +34,6 @@ const MOVED = [
   "[data-depth]",
   "[data-hero-bg]",
   "[data-hero-fg]",
-  "[data-hero-cue]",
   "[data-pin-track]",
   "[data-pin-bar]",
   "[data-speed]",
@@ -145,8 +144,8 @@ function deckWrites(deck: HTMLElement): Array<() => void> {
  *
  * - `data-depth`: the background blobs, moved by scroll and, with a mouse,
  *   by the pointer. Half depth below `md`.
- * - `data-hero-bg`, `data-hero-fg`, `data-hero-cue`: the hero's backdrop
- *   drifts, its text rises and fades, the scroll cue fades.
+ * - `data-hero-bg`, `data-hero-fg`: the hero's backdrop drifts, its text
+ *   rises and fades.
  * - `data-pin` with `data-pin-track` and `data-pin-bar`: the pinned row's
  *   sideways pan and progress bar.
  * - `data-speed`: a vertical drift against the centre of the viewport,
@@ -243,12 +242,6 @@ function LandingParallax({
           const opacity = String(1 - clamp01(scroll / (viewport * 0.55)));
           writes.push(() => {
             node.style.transform = `translate3d(0, ${-scroll * 0.25}px, 0)`;
-            node.style.opacity = opacity;
-          });
-        }
-        for (const node of all("[data-hero-cue]")) {
-          const opacity = String(1 - clamp01(scroll / 150));
-          writes.push(() => {
             node.style.opacity = opacity;
           });
         }

@@ -24,6 +24,7 @@ import {
 } from "./landing-items";
 import {
   HERO_ART_BOX,
+  HERO_ART_FRAME,
   HERO_BOX,
   HERO_TEXT_BOX,
   LandingHeroSkeleton,
@@ -31,8 +32,9 @@ import {
 
 /**
  * The landing's hero (prompts/home-parallax-landing.md, decisions 4 and 11):
- * TMDB's number one trending title over its artwork, a full screen at every
- * width (prompts/mobile-landing-parallax.md, decision 12), with its TMDB
+ * TMDB's number one trending title over its artwork, a full screen below `lg`
+ * (prompts/mobile-landing-parallax.md, decision 12) and as tall as the art
+ * from it (prompts/landing-hero-wide-gap.md, decision 1), with its TMDB
  * rating, genres, Trailer and the tracking control. It streams behind a
  * skeleton of the same box, so nothing below it moves when it arrives.
  */
@@ -60,14 +62,16 @@ async function LandingHeroContent({ list }: { list: CatalogList }) {
 
   return (
     <section aria-labelledby="landing-hero-title" className={HERO_BOX}>
-      <div
-        data-hero-bg=""
-        suppressHydrationWarning
-        className={cn(HERO_ART_BOX, HERO_ART_MASK)}
-      >
-        <HeroArtwork item={item} />
-        {/* The same shade as the title pages (decision 13). */}
-        <HeroShade />
+      <div className={HERO_ART_FRAME}>
+        <div
+          data-hero-bg=""
+          suppressHydrationWarning
+          className={cn(HERO_ART_BOX, HERO_ART_MASK)}
+        >
+          <HeroArtwork item={item} />
+          {/* The same shade as the title pages (decision 13). */}
+          <HeroShade />
+        </div>
       </div>
       <div aria-hidden="true" className="backdrop-scrim absolute inset-0" />
 
@@ -98,15 +102,6 @@ async function LandingHeroContent({ list }: { list: CatalogList }) {
           )}
           <LandingTracking item={item} />
         </div>
-      </div>
-
-      <div
-        data-hero-cue=""
-        suppressHydrationWarning
-        aria-hidden="true"
-        className="absolute bottom-8 left-1/2 hidden -translate-x-1/2 text-xs tracking-[0.14em] text-muted-foreground uppercase lg:block"
-      >
-        Scroll
       </div>
     </section>
   );
