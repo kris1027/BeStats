@@ -24,6 +24,7 @@ import {
 } from "./landing-items";
 import {
   HERO_ART_BOX,
+  HERO_ART_FRAME,
   HERO_BOX,
   HERO_TEXT_BOX,
   LandingHeroSkeleton,
@@ -60,14 +61,16 @@ async function LandingHeroContent({ list }: { list: CatalogList }) {
 
   return (
     <section aria-labelledby="landing-hero-title" className={HERO_BOX}>
-      <div
-        data-hero-bg=""
-        suppressHydrationWarning
-        className={cn(HERO_ART_BOX, HERO_ART_MASK)}
-      >
-        <HeroArtwork item={item} />
-        {/* The same shade as the title pages (decision 13). */}
-        <HeroShade />
+      <div className={HERO_ART_FRAME}>
+        <div
+          data-hero-bg=""
+          suppressHydrationWarning
+          className={cn(HERO_ART_BOX, HERO_ART_MASK)}
+        >
+          <HeroArtwork item={item} />
+          {/* The same shade as the title pages (decision 13). */}
+          <HeroShade />
+        </div>
       </div>
       <div aria-hidden="true" className="backdrop-scrim absolute inset-0" />
 
@@ -98,15 +101,6 @@ async function LandingHeroContent({ list }: { list: CatalogList }) {
           )}
           <LandingTracking item={item} />
         </div>
-      </div>
-
-      <div
-        data-hero-cue=""
-        suppressHydrationWarning
-        aria-hidden="true"
-        className="absolute bottom-8 left-1/2 hidden -translate-x-1/2 text-xs tracking-[0.14em] text-muted-foreground uppercase lg:block"
-      >
-        Scroll
       </div>
     </section>
   );
