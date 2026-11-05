@@ -72,10 +72,13 @@ function GlassPill({
  * pills, the next episode pill and the Playing or Finished chip. Mobile
  * first, 32px with 11px text on phones, where a two column card is about
  * 165px wide, and 36px with 13px text from `md`. One class so the pills on
- * different cards never drift apart (prompts/upcoming-date-pill-wrap.md,
- * decision 8). It never shrinks, so a date is never cut.
+ * different cards never drift apart (root AGENTS.md section 3;
+ * prompts/upcoming-date-pill-wrap.md, decision 8). It never shrinks, so a
+ * date is never cut. No blur of its own: the pills sit in the card's
+ * `plate-solid` slot, whose plates are opaque (components/AGENTS.md,
+ * Backdrop blur).
  */
 const CARD_PILL =
-  "h-8 shrink-0 px-2.5 text-[11px] backdrop-blur-glass md:h-9 md:px-3 md:text-[13px]";
+  "h-8 shrink-0 px-2.5 text-[11px] md:h-9 md:px-3 md:text-[13px]";
 
 export { CARD_PILL, GlassPill, type GlassPillTone, glassPillClassName };
