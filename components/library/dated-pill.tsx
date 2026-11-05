@@ -19,9 +19,8 @@ const DATED_PILL =
  * above it.
  *
  * The pill never shrinks or cuts its date, glyph and year included at every
- * width (prompts/upcoming-date-pill-wrap.md). `PosterCard` keys on
- * `data-dated-pill` to give it the whole bottom row, moving the card's
- * button to the top right and the badge to the top left. The full date is also the accessible text.
+ * width (prompts/upcoming-date-pill-wrap.md). It has the card's bottom row
+ * to itself: `PosterCard` puts the badge top left and the bookmark top right. The full date is also the accessible text.
  *
  * @param label The pill's accessible text, with the full date.
  * @param text What the pill prints.
@@ -44,7 +43,6 @@ function DatedPill({
   return (
     <GlassPill
       data-slot={slot}
-      data-dated-pill=""
       icon={<CalendarIcon />}
       className={cn(
         DATED_PILL,
@@ -71,7 +69,6 @@ function DateTbaPill({ label }: { label: string }) {
   return (
     <GlassPill
       data-slot="upcoming-date"
-      data-dated-pill=""
       icon={<CalendarIcon />}
       className={DATED_PILL}
     >

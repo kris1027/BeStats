@@ -487,7 +487,11 @@ export default function ShowcasePage() {
                   <GlassPill icon={<TvIcon aria-hidden="true" />}>
                     S2E3
                   </GlassPill>
-                  <Button size="icon" aria-label="Add to watchlist">
+                  <Button
+                    size="icon"
+                    aria-label="Add to watchlist"
+                    data-card-top=""
+                  >
                     <PlanIcon className="size-4" />
                   </Button>
                 </>

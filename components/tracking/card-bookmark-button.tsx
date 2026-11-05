@@ -61,7 +61,7 @@ function CardBookmarkButton({
       label={`Plan ${title}`}
       pressed={optimistic}
       onClick={toggle}
-      className="ml-auto"
+      top
     >
       {optimistic ? (
         <PlannedIcon className="size-4" />

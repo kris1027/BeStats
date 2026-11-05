@@ -15,11 +15,15 @@ import type * as React from "react";
  * @param pressed For a toggle, its state; leave it out for a plain action.
  * @param disabled While the action it started runs (spec 0014, AC-8): the
  * button refuses a second tap and reports itself busy.
+ * @param top For the Plan and Planned bookmarks, which `PosterCard` places in
+ * the poster's top right corner rather than the bottom row
+ * (prompts/upcoming-date-pill-wrap.md).
  */
 function CardRoundButton({
   label,
   pressed,
   disabled,
+  top = false,
   onClick,
   className,
   children,
@@ -27,6 +31,7 @@ function CardRoundButton({
   label: string;
   pressed?: boolean;
   disabled?: boolean;
+  top?: boolean;
   onClick: () => void;
   className?: string;
   children: React.ReactNode;
@@ -37,6 +42,7 @@ function CardRoundButton({
       aria-label={label}
       aria-pressed={pressed}
       aria-busy={disabled || undefined}
+      data-card-top={top ? "" : undefined}
       disabled={disabled}
       onClick={onClick}
       className={cn(

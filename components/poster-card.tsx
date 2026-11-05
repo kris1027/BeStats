@@ -21,13 +21,14 @@ const CONTROLS_ROW =
   "plate-solid absolute inset-x-2.5 bottom-2.5 z-20 flex pointer-events-none items-center justify-between gap-2 *:pointer-events-auto";
 
 /**
- * The same row on a card with a date pill: it spans the poster, the pill
- * stays bottom left at its full width, and every other control goes to the
- * top right. The 44px button's 36px circle lines up with the 10px inset the
- * badge uses, so it sits 4px out on phones and flush from `md`.
+ * The same row holding a Plan or Planned bookmark (`data-card-top`): it
+ * spans the poster, its other controls stay packed at the bottom, and the
+ * bookmark goes to the top right corner. The 44px button's 36px circle lines
+ * up with the badge's 10px inset, so it sits 4px out on phones and flush
+ * from `md`.
  */
-const DATED_CONTROLS_ROW =
-  "has-[[data-dated-pill]]:top-2.5 has-[[data-dated-pill]]:items-end [&:has([data-dated-pill])>:not([data-dated-pill])]:absolute [&:has([data-dated-pill])>:not([data-dated-pill])]:-top-1 [&:has([data-dated-pill])>:not([data-dated-pill])]:-right-1 md:[&:has([data-dated-pill])>:not([data-dated-pill])]:top-0 md:[&:has([data-dated-pill])>:not([data-dated-pill])]:right-0";
+const TOP_CONTROL_ROW =
+  "has-[[data-card-top]]:top-2.5 has-[[data-card-top]]:flex-wrap has-[[data-card-top]]:content-end [&>[data-card-top]]:absolute [&>[data-card-top]]:-top-1 [&>[data-card-top]]:-right-1 md:[&>[data-card-top]]:top-0 md:[&>[data-card-top]]:right-0";
 
 /**
  * The single most repeated element in the UI: a 2:3 poster inside a rounded
@@ -149,20 +150,19 @@ function PosterCard({
          * between and around the controls would swallow clicks meant for the
          * link.
          *
-         * A card holding a date pill gives the date the whole bottom row:
-         * its button moves to the top right corner and the badge to the top
-         * left (prompts/upcoming-date-pill-wrap.md). The row then spans the
-         * poster, still letting clicks through, so the button can sit at its
-         * top. Every other card keeps the badge top right and one row.
+         * The badge sits top left and the Plan or Planned bookmark top right
+         * (prompts/upcoming-date-pill-wrap.md), so a date pill has the bottom
+         * row to itself. The badge is top left on every card, bookmark or
+         * not, so it never jumps when the signed in controls stream in.
          */}
         {badge ? (
-          <div className="plate-solid absolute top-2.5 right-2.5 z-20 rounded-full backdrop-blur-glass group-has-[[data-dated-pill]]:right-auto group-has-[[data-dated-pill]]:left-2.5">
+          <div className="plate-solid absolute top-2.5 left-2.5 z-20 rounded-full backdrop-blur-glass">
             {badge}
           </div>
         ) : null}
 
         {controls ? (
-          <div className={cn(CONTROLS_ROW, DATED_CONTROLS_ROW)}>{controls}</div>
+          <div className={cn(CONTROLS_ROW, TOP_CONTROL_ROW)}>{controls}</div>
         ) : null}
       </div>
 
