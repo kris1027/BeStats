@@ -77,7 +77,10 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { catalogList, listPath } from "@/lib/catalog/lists";
 import { TMDB_HOME_URL } from "@/lib/legal/operator";
 
-import { CardRoundButtonDemo } from "./card-round-button-demo";
+import {
+  CardRoundButtonDemo,
+  CornerBookmarkDemo,
+} from "./card-round-button-demo";
 import { GameCardDemo } from "./game-card-demo";
 import { GameLibraryCardDemo } from "./game-library-card-demo";
 import { GameSearchDemo } from "./game-search-demo";
@@ -490,13 +493,7 @@ export default function ShowcasePage() {
                   >
                     S2E3
                   </GlassPill>
-                  <Button
-                    size="icon"
-                    aria-label="Add to watchlist"
-                    data-card-top=""
-                  >
-                    <PlanIcon className="size-4" />
-                  </Button>
+                  <CornerBookmarkDemo />
                 </>
               }
             />
