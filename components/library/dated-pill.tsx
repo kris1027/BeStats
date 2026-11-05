@@ -13,28 +13,29 @@ const ENDS_IN_YEAR = /\d{4}$/;
  * AC-11, AC-13): the
  * calendar glyph and a short date, at the shared `CARD_PILL` size.
  *
- * The pill never shrinks or cuts its date, glyph and year included at every
- * width (prompts/upcoming-date-pill-wrap.md). It has the card's bottom row
- * to itself: `PosterCard` puts the badge top left and the bookmark top
- * right. The full date is also the accessible text.
+ * The pill never shrinks or cuts its date, and the year always shows
+ * (prompts/upcoming-date-pill-wrap.md); only a `longText` pill drops its
+ * glyph, and only on phones. It has the card's bottom row to itself:
+ * `PosterCard` puts the badge top left and the bookmark top right. The full
+ * date is also the accessible text (root AGENTS.md section 3).
  *
  * @param label The pill's accessible text, with the full date.
  * @param text What the pill prints.
- * @param phoneGlyphless For a pill alone in its row, which has no button to
- * move: the show card's `S12E10 · Feb 23, 2027` is wider than a 375px two
- * column card, so below `sm` a dated text with a year drops the glyph rather
- * than spill past the poster (owner, 2026-11-05).
+ * @param longText For text too long to fit a phone card with its glyph: the
+ * show card's `S12E10 · Feb 23, 2027` is wider than a 375px two column card,
+ * so below `sm` a dated text with a year drops the glyph rather than spill
+ * past the poster (owner, 2026-11-05).
  */
 function DatedPill({
   slot,
   label,
   text,
-  phoneGlyphless = false,
+  longText = false,
 }: {
   slot: string;
   label: string;
   text: string;
-  phoneGlyphless?: boolean;
+  longText?: boolean;
 }) {
   return (
     <GlassPill
@@ -42,7 +43,7 @@ function DatedPill({
       icon={<CalendarIcon />}
       className={cn(
         CARD_PILL,
-        phoneGlyphless &&
+        longText &&
           ENDS_IN_YEAR.test(text) &&
           "max-sm:px-2 max-sm:[&>span:first-child]:hidden",
       )}
