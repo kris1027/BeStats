@@ -135,6 +135,11 @@ function PosterCard({
          * through and only its children catch them. Otherwise the empty space
          * between and around the controls would swallow clicks meant for the
          * link.
+         *
+         * A row holding a date pill wraps rather than cut the date: the pill
+         * keeps the bottom line and the button, `ml-auto`, moves to a line
+         * above it (prompts/upcoming-date-pill-wrap.md). Every other row
+         * stays one line.
          */}
         {badge ? (
           <div className="plate-solid absolute top-2.5 right-2.5 z-20 rounded-full backdrop-blur-glass">
@@ -143,7 +148,7 @@ function PosterCard({
         ) : null}
 
         {controls ? (
-          <div className="plate-solid absolute inset-x-2.5 bottom-2.5 z-20 flex pointer-events-none items-center justify-between gap-2 *:pointer-events-auto">
+          <div className="plate-solid absolute inset-x-2.5 bottom-2.5 z-20 flex pointer-events-none items-center justify-between gap-2 has-[[data-dated-pill]]:flex-wrap-reverse *:pointer-events-auto">
             {controls}
           </div>
         ) : null}
