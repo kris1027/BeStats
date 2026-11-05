@@ -70,9 +70,12 @@ function PosterCard({
    * after it moves (spec 0014, AC-16).
    */
   linkId?: string;
-  /** Top right slot, typically a `TmdbRatingBadge`. */
+  /** Top left slot, typically a `TmdbRatingBadge`. */
   badge?: React.ReactNode;
-  /** Bottom row slot for the tracking controls features 8 and 12 add. */
+  /**
+   * Bottom row slot for the tracking controls features 8 and 12 add; a
+   * `CardRoundButton` with `top` (the bookmark) goes top right instead.
+   */
   controls?: React.ReactNode;
   /**
    * A one line caption under the title, such as a season card's year and

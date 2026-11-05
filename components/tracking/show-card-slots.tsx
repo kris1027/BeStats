@@ -34,7 +34,7 @@ async function readTrackedStatuses(gridShowIds: readonly number[]) {
 }
 
 /**
- * The top right badge. The page renders the TMDB rating as the fallback, so
+ * The top left badge. The page renders the TMDB rating as the fallback, so
  * only tracked shows swap: the calculated show rating on a rated show on
  * Watched, nothing on Upcoming, the TMDB rating otherwise.
  *
@@ -81,8 +81,8 @@ async function ShowCardMeta({
 
 /**
  * The bottom row: the next episode's date pill or Date TBA on Upcoming, and
- * the bookmark, filled for every tracked show. Nothing for a visitor or a
- * failed read.
+ * the bookmark, filled for every tracked show, which `PosterCard` lifts to
+ * the top right corner. Nothing for a visitor or a failed read.
  *
  * @param name The TMDB name, for the accessible name and the toasts.
  * @param returnPath The grid page, for the session expired toast.

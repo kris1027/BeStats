@@ -46,7 +46,7 @@ async function readStatus({
 }
 
 /**
- * The top right badge. The page renders the TMDB rating as the fallback, so
+ * The top left badge. The page renders the TMDB rating as the fallback, so
  * only the user's own titles swap: the cyan score on a scored watched movie,
  * nothing on an Upcoming one, the TMDB rating otherwise.
  *
@@ -73,7 +73,8 @@ async function MovieCardBadge({
 /**
  * The bottom row: the filled watched mark on a watched movie, the release
  * pill and the Planned bookmark on an Upcoming one, and the plan bookmark
- * otherwise. Nothing for a visitor or a failed read.
+ * otherwise. Nothing for a visitor or a failed read. `PosterCard` lifts the
+ * bookmark to the top right corner (prompts/upcoming-date-pill-wrap.md).
  *
  * @param title The TMDB title, for the accessible names.
  * @param returnPath The grid page, for the session expired toast.
