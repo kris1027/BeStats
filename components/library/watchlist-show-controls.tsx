@@ -1,8 +1,10 @@
+import { cn } from "cn";
 import { cache } from "react";
 
 import { CARD_PILL, GlassPill } from "@/components/glass-pill";
 import { RetryLink } from "@/components/retry-link";
 import { Skeleton } from "@/components/skeleton";
+import { CARD_ROUND_BOX } from "@/components/tracking/card-round-button";
 import { NextEpisodeIcon } from "@/components/tracking/tracking-icons";
 import { libraryHref } from "@/lib/catalog/media-type";
 import { getSeason, TmdbError } from "@/lib/tmdb";
@@ -137,15 +139,15 @@ async function NextEpisodeName({
 /**
  * The controls' stand in while the season read is on its way: the pill is
  * already known, and the button waits for the episode's id (AC-9). The
- * skeleton circle sits in the button's own box, 44px below `md` and 36px from
- * it, so the circle doesn't move when the button arrives
- * (prompts/upcoming-date-pill-wrap.md, decision 9).
+ * skeleton circle sits in the button's own box, `CARD_ROUND_BOX`, so it
+ * doesn't move when the button arrives (prompts/upcoming-date-pill-wrap.md,
+ * decision 9).
  */
 function WatchlistShowControlsPending({ next }: { next: EpisodePlace }) {
   return (
     <>
       <NextEpisodePill next={next} />
-      <div className="ml-auto flex size-11 shrink-0 items-center justify-center md:size-9">
+      <div className={cn(CARD_ROUND_BOX, "ml-auto")}>
         <Skeleton shape="pill" className="size-9 rounded-full" />
       </div>
     </>

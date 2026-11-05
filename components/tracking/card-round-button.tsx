@@ -2,6 +2,15 @@ import { cn } from "cn";
 import type * as React from "react";
 
 /**
+ * The round button's box: 44px below `md` so a thumb can hit it, the 36px
+ * circle from it (root AGENTS.md section 3, touch targets). Shared with the
+ * Mark next watched placeholder, so its skeleton circle sits where the button
+ * arrives (prompts/upcoming-date-pill-wrap.md, decision 9).
+ */
+const CARD_ROUND_BOX =
+  "flex size-11 shrink-0 items-center justify-center md:size-9";
+
+/**
  * The round glass button on a poster card, the bookmark and the status
  * circles on the list pages (spec 0007, AC-16; spec 0008).
  *
@@ -48,7 +57,8 @@ function CardRoundButton({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full disabled:cursor-default disabled:opacity-60 md:size-9",
+        CARD_ROUND_BOX,
+        "cursor-pointer rounded-full disabled:cursor-default disabled:opacity-60",
         corner && "max-md:-m-1",
         className,
       )}
@@ -60,4 +70,4 @@ function CardRoundButton({
   );
 }
 
-export { CardRoundButton };
+export { CARD_ROUND_BOX, CardRoundButton };
