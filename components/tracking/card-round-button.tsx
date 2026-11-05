@@ -15,15 +15,17 @@ import type * as React from "react";
  * @param pressed For a toggle, its state; leave it out for a plain action.
  * @param disabled While the action it started runs (spec 0014, AC-8): the
  * button refuses a second tap and reports itself busy.
- * @param top For the Plan and Planned bookmarks, which `PosterCard` places in
- * the poster's top right corner rather than the bottom row
- * (prompts/upcoming-date-pill-wrap.md).
+ * @param corner For the Plan and Planned bookmarks, which `PosterCard` and
+ * `WideCardView` place in the art's top right corner rather than the bottom
+ * row (prompts/upcoming-date-pill-wrap.md). The button owns the offset: below
+ * `md` its 44px box sits 4px out, so the 36px circle meets the badge's 10px
+ * inset whatever card holds it (root AGENTS.md section 3, touch targets).
  */
 function CardRoundButton({
   label,
   pressed,
   disabled,
-  top = false,
+  corner = false,
   onClick,
   className,
   children,
@@ -31,7 +33,7 @@ function CardRoundButton({
   label: string;
   pressed?: boolean;
   disabled?: boolean;
-  top?: boolean;
+  corner?: boolean;
   onClick: () => void;
   className?: string;
   children: React.ReactNode;
@@ -42,11 +44,12 @@ function CardRoundButton({
       aria-label={label}
       aria-pressed={pressed}
       aria-busy={disabled || undefined}
-      data-card-top={top ? "" : undefined}
+      data-card-corner={corner ? "" : undefined}
       disabled={disabled}
       onClick={onClick}
       className={cn(
         "flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full disabled:cursor-default disabled:opacity-60 md:size-9",
+        corner && "max-md:-m-1",
         className,
       )}
     >

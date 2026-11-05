@@ -87,7 +87,7 @@ function GameLibraryCard({
             <CardRoundButton
               label={`Remove ${item.name} from ${libraryPageName(list, "game")}`}
               onClick={onRemove}
-              top
+              corner
             >
               <PlannedIcon className="size-4" />
             </CardRoundButton>

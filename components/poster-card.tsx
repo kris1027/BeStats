@@ -21,14 +21,13 @@ const CONTROLS_ROW =
   "plate-solid absolute inset-x-2.5 bottom-2.5 z-20 flex pointer-events-none items-center justify-between gap-2 *:pointer-events-auto";
 
 /**
- * The same row holding a Plan or Planned bookmark (`data-card-top`): it
- * spans the poster, its other controls stay packed at the bottom, and the
- * bookmark goes to the top right corner. The 44px button's 36px circle lines
- * up with the badge's 10px inset, so it sits 4px out on phones and flush
- * from `md`.
+ * The same row holding a Plan or Planned bookmark (`CardRoundButton corner`,
+ * `data-card-corner`): it spans the poster, its other controls stay packed at
+ * the bottom, and the bookmark goes to the top right corner at the badge's
+ * 10px inset. The button applies its own phone offset.
  */
-const TOP_CONTROL_ROW =
-  "has-[[data-card-top]]:top-2.5 has-[[data-card-top]]:flex-wrap has-[[data-card-top]]:content-end [&>[data-card-top]]:absolute [&>[data-card-top]]:-top-1 [&>[data-card-top]]:-right-1 md:[&>[data-card-top]]:top-0 md:[&>[data-card-top]]:right-0";
+const CORNER_CONTROL_ROW =
+  "has-[[data-card-corner]]:top-2.5 has-[[data-card-corner]]:flex-wrap has-[[data-card-corner]]:content-end [&>[data-card-corner]]:absolute [&>[data-card-corner]]:top-0 [&>[data-card-corner]]:right-0";
 
 /**
  * The single most repeated element in the UI: a 2:3 poster inside a rounded
@@ -74,7 +73,7 @@ function PosterCard({
   badge?: React.ReactNode;
   /**
    * Bottom row slot for the tracking controls features 8 and 12 add; a
-   * `CardRoundButton` with `top` (the bookmark) goes top right instead.
+   * `CardRoundButton` with `corner` (the bookmark) goes top right instead.
    */
   controls?: React.ReactNode;
   /**
@@ -165,7 +164,7 @@ function PosterCard({
         ) : null}
 
         {controls ? (
-          <div className={cn(CONTROLS_ROW, TOP_CONTROL_ROW)}>{controls}</div>
+          <div className={cn(CONTROLS_ROW, CORNER_CONTROL_ROW)}>{controls}</div>
         ) : null}
       </div>
 

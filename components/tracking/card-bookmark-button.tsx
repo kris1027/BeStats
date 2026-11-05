@@ -61,7 +61,7 @@ function CardBookmarkButton({
       label={`Plan ${title}`}
       pressed={optimistic}
       onClick={toggle}
-      top
+      corner
     >
       {optimistic ? (
         <PlannedIcon className="size-4" />

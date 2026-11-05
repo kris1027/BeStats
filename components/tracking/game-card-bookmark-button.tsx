@@ -70,7 +70,7 @@ function GameCardBookmarkButton({
       pressed={optimistic}
       disabled={pending}
       onClick={toggle}
-      top
+      corner
     >
       {optimistic ? (
         <PlannedIcon className="size-4" />

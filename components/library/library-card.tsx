@@ -123,7 +123,7 @@ function RemoveButton({
     <CardRoundButton
       label={`Remove ${name} from ${libraryPageName(list, "movie")}`}
       onClick={onRemove}
-      top
+      corner
     >
       <PlannedIcon className="size-4" />
     </CardRoundButton>

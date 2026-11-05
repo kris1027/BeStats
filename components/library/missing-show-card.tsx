@@ -67,7 +67,7 @@ function MissingShowCard({
             focusNeighbour(itemId, fallbackId);
             tracking.untrack({ before: () => setHidden(true) });
           }}
-          top
+          corner
         >
           <PlannedIcon className="size-4" />
         </CardRoundButton>

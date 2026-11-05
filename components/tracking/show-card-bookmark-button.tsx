@@ -37,7 +37,7 @@ function ShowCardBookmarkButton({
     <CardRoundButton
       label={shown ? `Stop tracking ${name}` : `Track ${name}`}
       onClick={toggle}
-      top
+      corner
     >
       {shown ? (
         <PlannedIcon className="size-4" />
