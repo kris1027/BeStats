@@ -1,6 +1,6 @@
 import { cn } from "cn";
 
-import { GlassPill } from "@/components/glass-pill";
+import { CARD_PILL, GlassPill } from "@/components/glass-pill";
 import { CalendarIcon } from "@/components/tracking/tracking-icons";
 import type { ReleaseDate } from "@/lib/format";
 import { UPCOMING_MESSAGES } from "@/lib/tracking/messages";
@@ -11,38 +11,45 @@ const ENDS_IN_YEAR = /\d{4}$/;
 /**
  * The calendar pill on the Upcoming page (spec 0014, AC-5, AC-12; spec 0020,
  * AC-11, AC-13): the
- * calendar glyph and a short date, smaller below `md` (32px, 11px text) than
- * above it.
+ * calendar glyph and a short date, at the shared `CARD_PILL` size.
  *
- * At a 375px two column grid the 44px touch target leaves no room for the
- * glyph beside a date with a year, so below `sm` that pill drops the glyph
- * rather than cutting the date. The full date is always in the accessible
- * text.
+ * The pill never shrinks or cuts its date, and the year always shows
+ * (prompts/upcoming-date-pill-wrap.md); only a `longText` pill drops its
+ * glyph, and only on phones. It has the card's bottom row to itself:
+ * `PosterCard` puts the badge top left and the bookmark top right. The full
+ * date is also the accessible text (root AGENTS.md section 3).
  *
  * @param label The pill's accessible text, with the full date.
  * @param text What the pill prints.
+ * @param longText For text too long to fit a phone card with its glyph: the
+ * show card's `S12E10 · Feb 23, 2027` is wider than a 375px two column card,
+ * so below `sm` a dated text with a year drops the glyph rather than spill
+ * past the poster (owner, 2026-11-05).
  */
 function DatedPill({
   slot,
   label,
   text,
+  longText = false,
 }: {
   slot: string;
   label: string;
   text: string;
+  longText?: boolean;
 }) {
   return (
     <GlassPill
       data-slot={slot}
       icon={<CalendarIcon />}
       className={cn(
-        "h-8 min-w-0 px-2.5 text-[11px] backdrop-blur-glass md:h-9 md:px-3 md:text-[13px]",
-        ENDS_IN_YEAR.test(text) &&
+        CARD_PILL,
+        longText &&
+          ENDS_IN_YEAR.test(text) &&
           "max-sm:px-2 max-sm:[&>span:first-child]:hidden",
       )}
     >
       <span className="sr-only">{label}</span>
-      <span aria-hidden="true" className="truncate">
+      <span aria-hidden="true" className="whitespace-nowrap">
         {text}
       </span>
     </GlassPill>
@@ -60,10 +67,10 @@ function DateTbaPill({ label }: { label: string }) {
     <GlassPill
       data-slot="upcoming-date"
       icon={<CalendarIcon />}
-      className="h-8 min-w-0 px-2.5 text-[11px] backdrop-blur-glass md:h-9 md:px-3 md:text-[13px]"
+      className={CARD_PILL}
     >
       <span className="sr-only">{label}</span>
-      <span aria-hidden="true" className="truncate">
+      <span aria-hidden="true" className="whitespace-nowrap">
         {UPCOMING_MESSAGES.dateTba}
       </span>
     </GlassPill>

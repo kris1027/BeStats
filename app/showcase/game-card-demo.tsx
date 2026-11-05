@@ -127,7 +127,7 @@ function DemoBookmark({
         label={`Want to play: ${name}`}
         pressed={pressed}
         onClick={() => setPressed(!pressed)}
-        className="ml-auto"
+        corner
       >
         {pressed ? (
           <PlannedIcon className="size-4" />

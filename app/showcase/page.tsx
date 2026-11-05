@@ -28,7 +28,7 @@ import {
 import { GameFacts } from "@/components/game/game-facts";
 import { GameOverview } from "@/components/game/game-overview";
 import { ScreenshotGallery } from "@/components/game/screenshot-gallery";
-import { GlassPill } from "@/components/glass-pill";
+import { CARD_PILL, GlassPill } from "@/components/glass-pill";
 import { IconKey } from "@/components/layout/icon-key";
 import { LibraryNavView } from "@/components/layout/library-nav";
 import { MobileAccountBlock } from "@/components/layout/mobile-account-block";
@@ -77,7 +77,10 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { catalogList, listPath } from "@/lib/catalog/lists";
 import { TMDB_HOME_URL } from "@/lib/legal/operator";
 
-import { CardRoundButtonDemo } from "./card-round-button-demo";
+import {
+  CardRoundButtonDemo,
+  CornerBookmarkDemo,
+} from "./card-round-button-demo";
 import { GameCardDemo } from "./game-card-demo";
 import { GameLibraryCardDemo } from "./game-library-card-demo";
 import { GameSearchDemo } from "./game-search-demo";
@@ -484,12 +487,13 @@ export default function ShowcasePage() {
               badge={<TmdbRatingBadge value={9} />}
               controls={
                 <>
-                  <GlassPill icon={<TvIcon aria-hidden="true" />}>
+                  <GlassPill
+                    icon={<TvIcon aria-hidden="true" />}
+                    className={CARD_PILL}
+                  >
                     S2E3
                   </GlassPill>
-                  <Button size="icon" aria-label="Add to watchlist">
-                    <PlanIcon className="size-4" />
-                  </Button>
+                  <CornerBookmarkDemo />
                 </>
               }
             />

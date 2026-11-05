@@ -1,7 +1,7 @@
 "use client";
 
 import { CardRoundButton } from "@/components/tracking/card-round-button";
-import { WatchedIcon } from "@/components/tracking/tracking-icons";
+import { PlanIcon, WatchedIcon } from "@/components/tracking/tracking-icons";
 
 /**
  * `CardRoundButton` at rest and busy (spec 0014, AC-8), for `/showcase`. A
@@ -18,5 +18,19 @@ export function CardRoundButtonDemo() {
         <WatchedIcon filled={false} className="size-4" />
       </CardRoundButton>
     </>
+  );
+}
+
+/**
+ * The Plan bookmark in a poster's top right corner, for the "With controls"
+ * card: the real `CardRoundButton corner`, so `/showcase` shows the 44px
+ * target and the 10px inset the shipped cards have (root AGENTS.md section 3;
+ * prompts/upcoming-date-pill-review-fixes.md, decision 3).
+ */
+export function CornerBookmarkDemo() {
+  return (
+    <CardRoundButton label="Add to watchlist" corner onClick={() => {}}>
+      <PlanIcon className="size-4" />
+    </CardRoundButton>
   );
 }

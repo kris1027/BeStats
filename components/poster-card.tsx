@@ -16,6 +16,19 @@ import { POSTER_GRID_SIZES } from "@/components/poster-grid";
  */
 const POSTER_SIZES = POSTER_GRID_SIZES.catalog;
 
+/** The bottom control row: full width, clicks pass through to the link. */
+const CONTROLS_ROW =
+  "plate-solid absolute inset-x-2.5 bottom-2.5 z-20 flex pointer-events-none items-center justify-between gap-2 *:pointer-events-auto";
+
+/**
+ * The same row holding a Plan or Planned bookmark (`CardRoundButton corner`,
+ * `data-card-corner`): it spans the poster, its other controls stay packed at
+ * the bottom, and the bookmark goes to the top right corner at the badge's
+ * 10px inset. The button applies its own phone offset.
+ */
+const CORNER_CONTROL_ROW =
+  "has-[[data-card-corner]]:top-2.5 has-[[data-card-corner]]:flex-wrap has-[[data-card-corner]]:content-end [&>[data-card-corner]]:absolute [&>[data-card-corner]]:top-0 [&>[data-card-corner]]:right-0";
+
 /**
  * The single most repeated element in the UI: a 2:3 poster inside a rounded
  * frame with a gradient rim, a title caption underneath, and two slots the
@@ -56,9 +69,12 @@ function PosterCard({
    * after it moves (spec 0014, AC-16).
    */
   linkId?: string;
-  /** Top right slot, typically a `TmdbRatingBadge`. */
+  /** Top left slot, typically a `TmdbRatingBadge`. */
   badge?: React.ReactNode;
-  /** Bottom row slot for the tracking controls features 8 and 12 add. */
+  /**
+   * Bottom row slot for the tracking controls features 8 and 12 add; a
+   * `CardRoundButton` with `corner` (the bookmark) goes top right instead.
+   */
   controls?: React.ReactNode;
   /**
    * A one line caption under the title, such as a season card's year and
@@ -135,17 +151,20 @@ function PosterCard({
          * through and only its children catch them. Otherwise the empty space
          * between and around the controls would swallow clicks meant for the
          * link.
+         *
+         * The badge sits top left and the Plan or Planned bookmark top right
+         * (prompts/upcoming-date-pill-wrap.md), so a date pill has the bottom
+         * row to itself. The badge is top left on every card, bookmark or
+         * not, so it never jumps when the signed in controls stream in.
          */}
         {badge ? (
-          <div className="plate-solid absolute top-2.5 right-2.5 z-20 rounded-full backdrop-blur-glass">
+          <div className="plate-solid absolute top-2.5 left-2.5 z-20 rounded-full backdrop-blur-glass">
             {badge}
           </div>
         ) : null}
 
         {controls ? (
-          <div className="plate-solid absolute inset-x-2.5 bottom-2.5 z-20 flex pointer-events-none items-center justify-between gap-2 *:pointer-events-auto">
-            {controls}
-          </div>
+          <div className={cn(CONTROLS_ROW, CORNER_CONTROL_ROW)}>{controls}</div>
         ) : null}
       </div>
 

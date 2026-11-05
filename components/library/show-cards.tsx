@@ -66,6 +66,7 @@ function UpcomingShowPill({
     return (
       <DatedPill
         slot="upcoming-date"
+        longText
         label={UPCOMING_MESSAGES.episodeAirs(
           next.season,
           next.episode,

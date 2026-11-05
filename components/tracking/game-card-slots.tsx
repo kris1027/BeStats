@@ -60,7 +60,7 @@ async function readCard({
 }
 
 /**
- * The top right badge (AC-2): the cyan score on a scored Playing or Finished
+ * The top left badge (AC-2): the cyan score on a scored Playing or Finished
  * game, IGDB's community rating otherwise. The page renders the IGDB rating
  * as the fallback, so only a scored game swaps.
  *
@@ -83,8 +83,9 @@ async function GameCardBadge({
 
 /**
  * The bottom row: the read only chip on a Playing or Finished game (AC-6),
- * and the Want to play bookmark otherwise (AC-3), with the release pill
- * beside it while a wanted game is not out (AC-7). Nothing for a visitor or
+ * and the Want to play bookmark otherwise (AC-3), which `PosterCard` lifts to
+ * the top right corner, with the release pill at the bottom while a wanted
+ * game is not out (AC-7). Nothing for a visitor or
  * a failed read (AC-9).
  *
  * @param name The IGDB name, for the accessible names.
