@@ -16,6 +16,19 @@ import { POSTER_GRID_SIZES } from "@/components/poster-grid";
  */
 const POSTER_SIZES = POSTER_GRID_SIZES.catalog;
 
+/** The bottom control row: full width, clicks pass through to the link. */
+const CONTROLS_ROW =
+  "plate-solid absolute inset-x-2.5 bottom-2.5 z-20 flex pointer-events-none items-center justify-between gap-2 *:pointer-events-auto";
+
+/**
+ * The same row on a card with a date pill: it spans the poster, the pill
+ * stays bottom left at its full width, and every other control goes to the
+ * top right. The 44px button's 36px circle lines up with the 10px inset the
+ * badge uses, so it sits 4px out on phones and flush from `md`.
+ */
+const DATED_CONTROLS_ROW =
+  "has-[[data-dated-pill]]:top-2.5 has-[[data-dated-pill]]:items-end [&:has([data-dated-pill])>:not([data-dated-pill])]:absolute [&:has([data-dated-pill])>:not([data-dated-pill])]:-top-1 [&:has([data-dated-pill])>:not([data-dated-pill])]:-right-1 md:[&:has([data-dated-pill])>:not([data-dated-pill])]:top-0 md:[&:has([data-dated-pill])>:not([data-dated-pill])]:right-0";
+
 /**
  * The single most repeated element in the UI: a 2:3 poster inside a rounded
  * frame with a gradient rim, a title caption underneath, and two slots the
@@ -136,21 +149,20 @@ function PosterCard({
          * between and around the controls would swallow clicks meant for the
          * link.
          *
-         * A row holding a date pill wraps rather than cut the date: the pill
-         * keeps the bottom line and the button, `ml-auto`, moves to a line
-         * above it (prompts/upcoming-date-pill-wrap.md). Every other row
-         * stays one line.
+         * A card holding a date pill gives the date the whole bottom row:
+         * its button moves to the top right corner and the badge to the top
+         * left (prompts/upcoming-date-pill-wrap.md). The row then spans the
+         * poster, still letting clicks through, so the button can sit at its
+         * top. Every other card keeps the badge top right and one row.
          */}
         {badge ? (
-          <div className="plate-solid absolute top-2.5 right-2.5 z-20 rounded-full backdrop-blur-glass">
+          <div className="plate-solid absolute top-2.5 right-2.5 z-20 rounded-full backdrop-blur-glass group-has-[[data-dated-pill]]:right-auto group-has-[[data-dated-pill]]:left-2.5">
             {badge}
           </div>
         ) : null}
 
         {controls ? (
-          <div className="plate-solid absolute inset-x-2.5 bottom-2.5 z-20 flex pointer-events-none items-center justify-between gap-2 has-[[data-dated-pill]]:flex-wrap-reverse *:pointer-events-auto">
-            {controls}
-          </div>
+          <div className={cn(CONTROLS_ROW, DATED_CONTROLS_ROW)}>{controls}</div>
         ) : null}
       </div>
 

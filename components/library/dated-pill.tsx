@@ -19,9 +19,9 @@ const DATED_PILL =
  * above it.
  *
  * The pill never shrinks or cuts its date, glyph and year included at every
- * width (prompts/upcoming-date-pill-wrap.md). Where the card's button does
- * not fit beside it, `PosterCard` wraps the button above the pill, keyed on
- * `data-dated-pill`. The full date is also the accessible text.
+ * width (prompts/upcoming-date-pill-wrap.md). `PosterCard` keys on
+ * `data-dated-pill` to give it the whole bottom row, moving the card's
+ * button to the top right and the badge to the top left. The full date is also the accessible text.
  *
  * @param label The pill's accessible text, with the full date.
  * @param text What the pill prints.
