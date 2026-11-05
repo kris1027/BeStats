@@ -12,9 +12,12 @@ const CARD_SIZES = "(min-width: 768px) 340px, 260px";
  * A wide card: the backdrop (a game's IGDB art), or the poster cropped to
  * fill, or the flat missing image plate (decision 10; spec 0028, AC-8), with
  * the title and date over a shade at the bottom. The whole card is the
- * title's link; the badge and, top left, the controls sit above it
- * (prompts/landing-card-controls.md). The control row lets clicks through
- * between its children, as `PosterCard`'s does.
+ * title's link; the badge (top left) and the controls (top right) sit above
+ * it, the corners every `PosterCard` uses (prompts/landing-card-controls.md;
+ * prompts/upcoming-date-pill-wrap.md, decision 7). The control row lets
+ * clicks through between its children, as `PosterCard`'s does. Its only
+ * control is the bookmark, whose 44px box below `md` sits 4px out so the
+ * 36px circle lines up with the badge's 10px inset.
  *
  * Kept apart from the slots that read the session, so `/showcase` can draw
  * it with a plain badge.
@@ -54,11 +57,11 @@ function WideCardView({
         aria-hidden="true"
         className="rim glass-rim pointer-events-none absolute inset-0 rounded-lg"
       />
-      <div className="plate-solid absolute top-2.5 right-2.5 z-20 rounded-full backdrop-blur-glass">
+      <div className="plate-solid absolute top-2.5 left-2.5 z-20 rounded-full backdrop-blur-glass">
         {badge}
       </div>
       {/* `empty:hidden`: a visitor's controls render nothing, so no plate. */}
-      <div className="plate-solid pointer-events-none absolute top-2.5 left-2.5 z-20 flex items-center gap-2 empty:hidden *:pointer-events-auto">
+      <div className="plate-solid pointer-events-none absolute top-1.5 right-1.5 z-20 flex items-center gap-2 empty:hidden *:pointer-events-auto md:top-2.5 md:right-2.5">
         {controls}
       </div>
       <div className="absolute inset-x-4 bottom-3.5 flex items-end justify-between gap-3">
