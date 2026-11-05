@@ -28,7 +28,7 @@ import {
 import { GameFacts } from "@/components/game/game-facts";
 import { GameOverview } from "@/components/game/game-overview";
 import { ScreenshotGallery } from "@/components/game/screenshot-gallery";
-import { GlassPill } from "@/components/glass-pill";
+import { CARD_PILL, GlassPill } from "@/components/glass-pill";
 import { IconKey } from "@/components/layout/icon-key";
 import { LibraryNavView } from "@/components/layout/library-nav";
 import { MobileAccountBlock } from "@/components/layout/mobile-account-block";
@@ -484,7 +484,10 @@ export default function ShowcasePage() {
               badge={<TmdbRatingBadge value={9} />}
               controls={
                 <>
-                  <GlassPill icon={<TvIcon aria-hidden="true" />}>
+                  <GlassPill
+                    icon={<TvIcon aria-hidden="true" />}
+                    className={CARD_PILL}
+                  >
                     S2E3
                   </GlassPill>
                   <Button

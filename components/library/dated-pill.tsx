@@ -1,6 +1,6 @@
 import { cn } from "cn";
 
-import { GlassPill } from "@/components/glass-pill";
+import { CARD_PILL, GlassPill } from "@/components/glass-pill";
 import { CalendarIcon } from "@/components/tracking/tracking-icons";
 import type { ReleaseDate } from "@/lib/format";
 import { UPCOMING_MESSAGES } from "@/lib/tracking/messages";
@@ -8,19 +8,15 @@ import { UPCOMING_MESSAGES } from "@/lib/tracking/messages";
 /** A short date that carries its year, such as `Feb 3, 2027`. */
 const ENDS_IN_YEAR = /\d{4}$/;
 
-/** The pill's size, shared by the dated and Date TBA pills; never shrinks. */
-const DATED_PILL =
-  "h-8 shrink-0 px-2.5 text-[11px] backdrop-blur-glass md:h-9 md:px-3 md:text-[13px]";
-
 /**
  * The calendar pill on the Upcoming page (spec 0014, AC-5, AC-12; spec 0020,
  * AC-11, AC-13): the
- * calendar glyph and a short date, smaller below `md` (32px, 11px text) than
- * above it.
+ * calendar glyph and a short date, at the shared `CARD_PILL` size.
  *
  * The pill never shrinks or cuts its date, glyph and year included at every
  * width (prompts/upcoming-date-pill-wrap.md). It has the card's bottom row
- * to itself: `PosterCard` puts the badge top left and the bookmark top right. The full date is also the accessible text.
+ * to itself: `PosterCard` puts the badge top left and the bookmark top
+ * right. The full date is also the accessible text.
  *
  * @param label The pill's accessible text, with the full date.
  * @param text What the pill prints.
@@ -45,7 +41,7 @@ function DatedPill({
       data-slot={slot}
       icon={<CalendarIcon />}
       className={cn(
-        DATED_PILL,
+        CARD_PILL,
         phoneGlyphless &&
           ENDS_IN_YEAR.test(text) &&
           "max-sm:px-2 max-sm:[&>span:first-child]:hidden",
@@ -70,7 +66,7 @@ function DateTbaPill({ label }: { label: string }) {
     <GlassPill
       data-slot="upcoming-date"
       icon={<CalendarIcon />}
-      className={DATED_PILL}
+      className={CARD_PILL}
     >
       <span className="sr-only">{label}</span>
       <span aria-hidden="true" className="whitespace-nowrap">

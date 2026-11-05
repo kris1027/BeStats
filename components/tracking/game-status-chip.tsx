@@ -1,4 +1,6 @@
-import { GlassPill } from "@/components/glass-pill";
+import { cn } from "cn";
+
+import { CARD_PILL, GlassPill } from "@/components/glass-pill";
 import { GAME_STATUS_LABELS } from "@/lib/tracking/messages";
 import type { StartedGameStatus } from "@/lib/tracking/types";
 
@@ -12,7 +14,7 @@ import type { StartedGameStatus } from "@/lib/tracking/types";
  */
 function GameStatusChip({ status }: { status: StartedGameStatus }) {
   return (
-    <GlassPill data-slot="game-status" className="ml-auto">
+    <GlassPill data-slot="game-status" className={cn(CARD_PILL, "ml-auto")}>
       {GAME_STATUS_LABELS[status]}
     </GlassPill>
   );

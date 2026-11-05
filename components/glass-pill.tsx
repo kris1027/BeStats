@@ -67,4 +67,15 @@ function GlassPill({
   );
 }
 
-export { GlassPill, type GlassPillTone, glassPillClassName };
+/**
+ * The size of every pill in a poster card's bottom row: the date and Date TBA
+ * pills, the next episode pill and the Playing or Finished chip. Mobile
+ * first, 32px with 11px text on phones, where a two column card is about
+ * 165px wide, and 36px with 13px text from `md`. One class so the pills on
+ * different cards never drift apart (prompts/upcoming-date-pill-wrap.md,
+ * decision 8). It never shrinks, so a date is never cut.
+ */
+const CARD_PILL =
+  "h-8 shrink-0 px-2.5 text-[11px] backdrop-blur-glass md:h-9 md:px-3 md:text-[13px]";
+
+export { CARD_PILL, GlassPill, type GlassPillTone, glassPillClassName };

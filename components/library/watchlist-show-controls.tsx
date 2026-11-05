@@ -1,6 +1,6 @@
 import { cache } from "react";
 
-import { GlassPill } from "@/components/glass-pill";
+import { CARD_PILL, GlassPill } from "@/components/glass-pill";
 import { RetryLink } from "@/components/retry-link";
 import { Skeleton } from "@/components/skeleton";
 import { NextEpisodeIcon } from "@/components/tracking/tracking-icons";
@@ -55,7 +55,7 @@ function NextEpisodePill({ next }: { next: EpisodePlace }) {
     <GlassPill
       data-slot="next-episode-pill"
       icon={<NextEpisodeIcon />}
-      className="h-9 px-3 backdrop-blur-glass"
+      className={CARD_PILL}
     >
       <span className="sr-only">
         {NEXT_EPISODE_MESSAGES.accessible(next.season, next.episode)}
