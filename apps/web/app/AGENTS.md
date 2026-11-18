@@ -18,7 +18,7 @@ Routes, plus the root files that shape them: `proxy.ts` and `next.config.ts`. Th
 
 ## Images
 
-Every image goes through `next/image` and the one `loaderFile`, `lib/images/loader.ts`, which hands TMDB URLs to `lib/tmdb/image-loader.ts` and IGDB covers to `lib/images/igdb-loader.ts`. The optimizer is closed (no `remotePatterns`, empty `localPatterns`; [prompts/close-image-optimizer.md](../prompts/close-image-optimizer.md)): a new host gets its own loader, and components reference images by URL rather than importing image files.
+Every image goes through `next/image` and the one `loaderFile`, `lib/images/loader.ts`, which hands TMDB URLs to `lib/tmdb/image-loader.ts` and IGDB covers to `lib/images/igdb-loader.ts`. The optimizer is closed (no `remotePatterns`, empty `localPatterns`; [prompts/close-image-optimizer.md](../../../prompts/close-image-optimizer.md)): a new host gets its own loader, and components reference images by URL rather than importing image files.
 
 ## Visitor region
 
@@ -26,4 +26,4 @@ Where to watch and the age rating chip read the country only from `getVisitorReg
 
 ## Search rate limit
 
-The `/api/search` rate limit is a Vercel Firewall rule, recorded only in [docs/deploy.md](../docs/deploy.md).
+The `/api/search` rate limit is a Vercel Firewall rule, recorded only in [docs/deploy.md](../../../docs/deploy.md).

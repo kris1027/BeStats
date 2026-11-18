@@ -10,9 +10,10 @@ Steps that change Vercel, GitHub or the Supabase project are marked **remote**. 
 |---|---|---|
 | Production origin | `https://bestats-sable.vercel.app` | assigned by Vercel to project `bestats`; repeated in `NEXT_PUBLIC_SITE_URL` and `[remotes.production.auth]` |
 | Supabase project | `kyatxtclyikcmkebjxan` (name `BeStats`, Free plan) | `[remotes.production]` in `supabase/config.toml` |
-| Supabase region | `eu-central-1`, Frankfurt | `SUPABASE_REGION` in `lib/legal/operator.ts` |
-| Vercel function region | `fra1`, Frankfurt | `regions` in `vercel.json` |
-| Supabase CLI | `2.117.0`, run as `pnpm exec supabase` | `package.json`, and the `database` job in `.github/workflows/checks.yml` |
+| Supabase region | `eu-central-1`, Frankfurt | `SUPABASE_REGION` in `apps/web/lib/legal/operator.ts` |
+| Vercel function region | `fra1`, Frankfurt | `regions` in `apps/web/vercel.json` |
+| Vercel Root Directory | `apps/web`, with files outside the root directory included | the Vercel project settings (spec 0034) |
+| Supabase CLI | `2.117.0`, run as `pnpm exec supabase` | the root `package.json`, and the `database` job in `.github/workflows/checks.yml` |
 | Node | 22 | the Vercel project settings, and CI |
 | Access token signing | ES256 (asymmetric) | Supabase dashboard, JWT Keys |
 
@@ -61,7 +62,7 @@ If a later push shows anything beyond these, cancel and investigate.
 
 ## 4. Vercel environment variables (remote)
 
-Set them in the Vercel project, under Settings, Environment Variables. `.env.example` documents each one with a placeholder.
+Set them in the Vercel project, under Settings, Environment Variables. `apps/web/.env.example` documents each one with a placeholder.
 
 | Variable | Production | Preview |
 |---|---|---|
@@ -164,7 +165,7 @@ Checked on 2026-10-04: `robots.txt` allows crawling and names the sitemap, `/mov
 
 ## 10. The legal read through (release gate)
 
-Before you invite anyone, read `/privacy` and `/terms` in full on production and fix anything that isn't true of the app as it runs (spec 0017). Any legal fact you change lives in `lib/legal/operator.ts`; bump `LEGAL_LAST_UPDATED` with it.
+Before you invite anyone, read `/privacy` and `/terms` in full on production and fix anything that isn't true of the app as it runs (spec 0017). Any legal fact you change lives in `apps/web/lib/legal/operator.ts`; bump `LEGAL_LAST_UPDATED` with it.
 
 ## 11. Manual password help
 

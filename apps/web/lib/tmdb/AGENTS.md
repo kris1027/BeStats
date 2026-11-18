@@ -3,7 +3,7 @@
 The server only module every TMDB request goes through, plus the one browser
 file, `image-loader.ts`, that `lib/images/loader.ts` (the `loaderFile`)
 sends every TMDB URL to. Decided in
-[spec 0002](../../docs/specs/0002-tmdb-integration-module/index.md); scope
+[spec 0002](../../../../docs/specs/0002-tmdb-integration-module/index.md); scope
 feature 4. Runtime steps live in that spec's `verify.md`.
 
 ## What lives where
