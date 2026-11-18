@@ -33,12 +33,12 @@ Project skills live in `.agents/skills/` (symlinked into `.claude/skills/`, pinn
 
 ## 5. Structure
 
-A pnpm workspace: the Next.js App Router app lives in `apps/web/` (`app/`, `components/`, `lib/`; no `src/`), while `supabase/`, `docs/`, `prompts/` and `scripts/` stay at the repo root. `packages/*` is reserved for shared code.
+A pnpm workspace: the Next.js App Router app lives in `apps/web/` (`app/`, `components/`, `lib/`; no `src/`), while `supabase/`, `docs/`, `prompts/` and `scripts/` stay at the repo root. `packages/core` (`@bestats/core`) holds the pure code both apps share ([packages/core/AGENTS.md](packages/core/AGENTS.md)).
 
 - Server Components by default; a Client Component only where an interaction needs it.
 - `lib/tmdb/` and `lib/igdb/` are server-only modules that own every catalog request, its normalization, caching and errors.
 - Mutations are Server Actions (or Route Handlers, following the existing pattern): validate input with Zod, authenticate inside the action, and take the user ID from the verified session, never from the client.
-- Business rules (ratings, episode eligibility, library placement) are pure functions in `lib/`.
+- Business rules (ratings, episode eligibility, library placement) are pure functions in `packages/core/src/`, never importing a framework, Supabase or `process.env` (`purity.test.ts`).
 - Postgres constraints and RLS enforce ownership and valid data independently of the UI.
 - Ordinary user operations never use an elevated role that bypasses RLS: no service role key in application code or `.env.example` (`security-boundary.test.ts`).
 
@@ -118,7 +118,7 @@ Planned in [docs/scope/games.md](docs/scope/games.md) (G1 to G10, all shipped). 
 
 ## Commands and repo facts
 
-- Scripts live in `package.json`; `pnpm dev:docker` runs the dev server against the local Supabase stack. Root scripts delegate to `@bestats/web` through `pnpm --filter`. `pnpm-workspace.yaml` lists the `apps/*` and `packages/*` globs, pins `allowBuilds`, and hoists `@types/react` and `@types/react-dom` so `next` still finds them.
+- Scripts live in `package.json`; `pnpm dev:docker` runs the dev server against the local Supabase stack. Root `typecheck` and `test` run in every package (`pnpm -r`); the other app scripts delegate to `@bestats/web` through `pnpm --filter`. `pnpm-workspace.yaml` lists the `apps/*` and `packages/*` globs, pins `allowBuilds`, and hoists `@types/react` and `@types/react-dom` so `next` still finds them.
 - Imports use the `@/*` alias for the app root (`apps/web/`).
 - Env files (`.env.local`, `.env.example`) live in `apps/web/`, where Next reads them.
 - A test that reads repo files resolves their paths from its own file (`import.meta.url`), never the working directory, and the boundary scans walk the whole workspace, so a new app or package is covered the day it appears.
@@ -126,7 +126,7 @@ Planned in [docs/scope/games.md](docs/scope/games.md) (G1 to G10, all shipped). 
 - Middleware is `proxy.ts` exporting `proxy` (Next.js 16 ignores a `middleware.ts`).
 - Read public env values through `getPublicEnv()` in `lib/env.ts`, never `process.env`. It validates lazily, so a build with no Supabase project still succeeds while every auth call fails loudly. Code on every page calls `publicEnvProblems()` first and falls back to signed out, so a missing auth config never takes the catalog down.
 - Supabase clients: `lib/supabase/client.ts` (browser) and the async `lib/supabase/server.ts`, created per request.
-- A colour value lives only in `app/globals.css` (Tailwind v4 is CSS first; there is no `tailwind.config.*`); `design-tokens-boundary.test.ts` enforces it.
+- A colour value lives only in `app/globals.css` (Tailwind v4 is CSS first; there is no `tailwind.config.*`); `design-tokens-boundary.test.ts` enforces it. Its one copy, `packages/core/src/tokens.generated.ts` for the mobile app, is written by `pnpm tokens` after any token change (`tokens.test.ts` fails while it is stale).
 - Legal facts live only in `packages/core/src/legal/operator.ts` (with `IGDB_ATTRIBUTION`) and `packages/core/src/legal/attribution.ts` (`TMDB_ATTRIBUTION`), checked by `apps/web/lib/legal/boundary.test.ts`. A change that adds a processor, email provider or analytics updates `PROCESSORS`, `/privacy`, `/terms` and `LEGAL_LAST_UPDATED` in the same PR. Never edit `public/tmdb-logo.svg` or `public/igdb-logo.svg` (hash checked).
 - Production: push a migration with `supabase db push` before merging its PR; auth settings reach the cloud only through `supabase config push`. Both run from an agent shell without a prompt, so run them only once approved. Functions are pinned to `fra1` beside Supabase `eu-central-1`.
 

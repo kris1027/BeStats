@@ -23,8 +23,8 @@ scope feature G1. It mirrors `lib/tmdb/` in shape but shares no code with it.
   `IGDB_CLIENT_SECRET` (`security-boundary.test.ts`). The live check loads
   `.env.local` with Node's `process.loadEnvFile`, which names neither.
 - `query.ts` is the only builder of Apicalypse bodies; `catalog-filter.ts`
-  holds the catalog rule; `limiter.ts`, `log.ts`, `constants.ts`,
-  `schemas.ts`, `normalize.ts`, `types.ts`, `validation.ts`, `errors.ts`,
+  holds the catalog rule; `limiter.ts`, `log.ts`,
+  `schemas.ts`, `normalize.ts`, `validation.ts`, `errors.ts`,
   `result.ts`, then the reads in `games.ts`, `batch.ts`, `search.ts`,
   `discover.ts` (both paging through `summary-page.ts`), `popularity.ts`
   (Trending and Popular: the `popularity_primitives` ranks, then the batch
@@ -32,13 +32,14 @@ scope feature G1. It mirrors `lib/tmdb/` in shape but shares no code with it.
 - Pure code outside this folder (`packages/core/src/catalog/game-lists.ts`,
   `packages/core/src/catalog/media-type.ts`, `lib/catalog-list-read.ts`, `packages/core/src/format.ts`,
   `lib/images/` and `lib/search/`) may import `constants.ts` and `types.ts`
-  directly, since `index.ts` is server only; a page or component never does, and
+  directly, since `index.ts` is server only. Both live in core since spec 0034
+  (`packages/core/src/igdb/`, imported as `@bestats/core/igdb/constants` and
+  `@bestats/core/igdb/types`); a page or component never does, and
   reads search's IGDB limits through `SEARCH_CATALOGS`
   (`packages/core/src/search/catalogs.ts`). Nothing outside imports `query.ts`; a rule it
-  shares, like the control character pattern, moves to `constants.ts`.
+  shares, like the control character pattern, moves to core's `igdb/constants.ts`.
 - Pure files (no `server-only`, so tests and the live check read them):
-  `catalog-filter.ts`, `constants.ts`, `errors.ts`, `query.ts`, `types.ts`,
-  `validation.ts`. Every other file starts with `import "server-only";`.
+  `catalog-filter.ts`, `errors.ts`, `query.ts`, `validation.ts`. Every other file starts with `import "server-only";`.
 
 ## Conventions this module holds to
 
@@ -97,7 +98,7 @@ scope feature G1. It mirrors `lib/tmdb/` in shape but shares no code with it.
   days; only the year bound of a filter reads the current year.
 - **Covers are built at `t_cover_big_2x` (528px), the ceiling, not the size
   every image loads.** `lib/images/igdb-loader.ts` steps a `next/image` width
-  down `IGDB_COVER_LADDER` in `constants.ts` and never past the URL's own size
+  down `IGDB_COVER_LADDER` in core's `igdb/constants.ts` and never past the URL's own size
   (spec 0025, AC-12). A game's wide art (`artUrl`, built at `t_1080p`) steps
   down `IGDB_ART_LADDER` the same way (spec 0028, AC-6). `artUrl` picks the
   sharpest artwork or screenshot by its real `width` and `height` (the width it
@@ -107,8 +108,9 @@ scope feature G1. It mirrors `lib/tmdb/` in shape but shares no code with it.
   landing hero's phone art, served whole past the cover ladder (prompts/detail-backdrop-hero-size.md, decision 14). The loader lives
   outside this folder because it runs in the browser; `lib/images/loader.ts`,
   the `loaderFile`, sends it every IGDB URL.
-- Adding a field is a three place change: `schemas.ts`, `types.ts`,
-  `normalize.ts`, plus the field list in `constants.ts`.
+- Adding a field is a three place change: `schemas.ts`, core's
+  `igdb/types.ts`, `normalize.ts`, plus the field list in core's
+  `igdb/constants.ts`.
 
 ## Commands
 
@@ -120,7 +122,7 @@ scope feature G1. It mirrors `lib/tmdb/` in shape but shares no code with it.
   facts gate: the pinned game type ids, the Erotic theme id, the filter syntax,
   `search` with `where`, the count header, the cover URL and every cover
   ladder rung's real pixel width. Run it after any
-  change to `constants.ts`, `catalog-filter.ts` or `query.ts`.
+  change to core's `igdb/constants.ts`, `catalog-filter.ts` or `query.ts`.
 - Fixtures under `__fixtures__/` are IGDB responses captured on 2026-10-17.
 
 ## Known gaps
