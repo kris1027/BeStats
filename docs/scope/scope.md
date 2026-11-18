@@ -44,7 +44,7 @@ _2026-10-06: the `design/` artboards were removed. The UI built from them carrie
 | 25 | Consistent card size and richer title pages | Slice 12 | done |
 | 26 | Library page names per media type | Slice 13 | done |
 | 27 | Library page URLs follow their names | Slice 13 | done |
-| 28 | Mobile app (iOS and Android) | Slice 14 | in-progress |
+| 28 | Mobile app (iOS and Android) | Slice 14 | planned |
 
 ## Foundations
 
@@ -453,16 +453,16 @@ plan [prompts/library-page-urls.md](../../prompts/library-page-urls.md) · code 
 
 ## Slice 14: Mobile
 
-### 28. Mobile app (iOS and Android) · in-progress · GA
-A native Expo app for iOS and Android beside the web app, in a pnpm monorepo (`apps/web`, `apps/mobile`, `packages/core`). v1 covers sign in and account (email and password, self serve deletion on both apps), browse and search, all tracking with Undo, and every library page, with a read only offline cache. The phone reaches TMDB, IGDB and tracking writes only through a bearer authenticated `/api/v1` on the web project, so keys and the release gate stay on the server. Designed on 2026-11-18.
+### 28. Mobile app (iOS and Android) · planned · GA
+A native app for iOS and Android beside the web app, sharing its rules with it. v1 covers sign in and account (email and password, self serve deletion on both apps), browse and search, all tracking with Undo, and every library page, with a read only offline cache. The phone never holds a catalog key, so the release gate and every rule stay on the server. Designed on 2026-11-18.
 **Done when:** both store builds sign in, browse, search, track and show every library page with the same rules and names as the web; the web still deploys unchanged from `apps/web`; no TMDB or IGDB secret or service role key is reachable from the app or the repo; account deletion works on both apps; and the attribution, privacy text and store privacy labels are in place.
 - [x] Design it (spec): `/architect mobile app`
 - [ ] Build it: `/develop mobile app`
-  - [ ] Monorepo move and shared core: `git mv` into `apps/web` green on Vercel, then the core extraction by the file inventory, tokens script and boundary tests (spec 0034)
-  - [ ] Tracer bullet: sign in, open a movie, mark it watched, through `withV1`, the bearer client, the first command split, NativeWind v5 and an EAS dev build on real devices, plus the `use cache` and `delete_own_account` proofs (spec 0033 First slice, 0035, 0036)
-  - [ ] API thickened: every public and `me` route, Undo restores, library and titles batching, the claim username sign up, versioning, caching headers and their enforcement tests (spec 0035)
-  - [ ] App thickened: every screen ported from the shipped UI and `/showcase`, offline cache and wipe, About and attribution, account deletion on web and mobile, deep link files (spec 0033, 0036)
-  - [ ] Release: store accounts, EAS Submit, privacy labels, `/privacy` and `/terms` update, firewall rules recorded in `docs/deploy.md`, first TestFlight and Play internal builds
+  - [ ] Monorepo move and shared core (spec 0033 Build plan steps 1 and 2): AC-1, AC-2, AC-3
+  - [ ] Tracer: sign in, open a movie, mark it watched (step 3): AC-4, AC-5, AC-6, AC-11
+  - [ ] API thickened (step 4): AC-5 to AC-10
+  - [ ] App thickened (step 5): AC-10, AC-12, AC-13, AC-14, AC-16
+  - [ ] Release (step 6): AC-15, AC-17
 - [ ] Verify it: `/check verify mobile app`
 - [ ] Test it: `/test mobile app`
 - [ ] Review it (fresh model): `/check review mobile app`
