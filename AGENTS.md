@@ -127,7 +127,7 @@ Planned in [docs/scope/games.md](docs/scope/games.md) (G1 to G10, all shipped). 
 - Read public env values through `getPublicEnv()` in `lib/env.ts`, never `process.env`. It validates lazily, so a build with no Supabase project still succeeds while every auth call fails loudly. Code on every page calls `publicEnvProblems()` first and falls back to signed out, so a missing auth config never takes the catalog down.
 - Supabase clients: `lib/supabase/client.ts` (browser) and the async `lib/supabase/server.ts`, created per request.
 - A colour value lives only in `app/globals.css` (Tailwind v4 is CSS first; there is no `tailwind.config.*`); `design-tokens-boundary.test.ts` enforces it.
-- Legal facts live only in `lib/legal/operator.ts`, `TMDB_ATTRIBUTION` and `IGDB_ATTRIBUTION` (`lib/legal/boundary.test.ts`). A change that adds a processor, email provider or analytics updates `PROCESSORS`, `/privacy`, `/terms` and `LEGAL_LAST_UPDATED` in the same PR. Never edit `public/tmdb-logo.svg` or `public/igdb-logo.svg` (hash checked).
+- Legal facts live only in `packages/core/src/legal/operator.ts` (with `IGDB_ATTRIBUTION`) and `packages/core/src/legal/attribution.ts` (`TMDB_ATTRIBUTION`), checked by `apps/web/lib/legal/boundary.test.ts`. A change that adds a processor, email provider or analytics updates `PROCESSORS`, `/privacy`, `/terms` and `LEGAL_LAST_UPDATED` in the same PR. Never edit `public/tmdb-logo.svg` or `public/igdb-logo.svg` (hash checked).
 - Production: push a migration with `supabase db push` before merging its PR; auth settings reach the cloud only through `supabase config push`. Both run from an agent shell without a prompt, so run them only once approved. Functions are pinned to `fra1` beside Supabase `eu-central-1`.
 
 ## Code conventions
@@ -139,6 +139,7 @@ Planned in [docs/scope/games.md](docs/scope/games.md) (G1 to G10, all shipped). 
 
 Each folder's `AGENTS.md` holds its files and rules; read it before changing code there.
 
+- [packages/core/AGENTS.md](packages/core/AGENTS.md): `@bestats/core`, the pure rules both apps share, its purity rule and the generated tokens.
 - [app/AGENTS.md](apps/web/app/AGENTS.md): routes, `proxy.ts`, `next.config.ts`, images, visitor region.
 - [components/AGENTS.md](apps/web/components/AGENTS.md): plate rule, tokens, client boundaries, navbar, library and landing components.
 - [lib/catalog/AGENTS.md](apps/web/lib/catalog/AGENTS.md): library page routes and names, media type params, link builders.

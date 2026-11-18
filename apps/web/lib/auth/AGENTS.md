@@ -4,6 +4,8 @@ Authentication rules shared by every auth surface: the forms in `app/(auth)/`, `
 
 ## Files
 
+Since spec 0034 the pure files below (`private-paths.ts`, `next-path.ts`, `action-state.ts`, `identity.ts`, `messages.ts`, `schemas.ts`, `username.ts`) live in `packages/core/src/auth/` and are imported as `@bestats/core/auth/<file>`; `user.ts`, `profile.ts`, `log.ts` and `supabase-error.ts` stay here.
+
 - `user.ts`: `requireUser()` for every private page, which redirects a signed out visitor. `getOptionalUser()` everywhere signed out is a state to handle rather than redirect: the navbar slot, the signed in parts of public pages, `getOwnProfile()`, and every Server Action, which answers an ended session with a returned state and writes nothing (spec 0005 AC-17). Both verify with `getClaims()`, never `getSession()`.
 - `private-paths.ts`: `PRIVATE_PATH_PREFIXES`, the one list the proxy guards. A new private route registers here; never restate the prefixes elsewhere (`proxy.test.ts` checks).
 - `next-path.ts`: `isSafeNextPath()` / `safeNextPath()`. Call it at every read of a `next` value (query string, hidden field, header, email link), not once per journey.
