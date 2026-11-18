@@ -4,11 +4,12 @@ import {
   isMovieReleased,
   movieReleaseNote,
 } from "@bestats/core/catalog/movie-page";
-import { formatRuntime } from "@bestats/core/format";
+import { formatAirDate, formatRuntime } from "@bestats/core/format";
 import { TMDB_ATTRIBUTION } from "@bestats/core/legal/attribution";
 import { applyTrackingIntent } from "@bestats/core/tracking/intent";
 import {
   MOVIE_CLEARED_MESSAGES,
+  MOVIE_OVERVIEW_MISSING,
   TRACKING_MESSAGES,
   TRACKING_READ_FAILED,
 } from "@bestats/core/tracking/messages";
@@ -147,7 +148,8 @@ export default function MovieScreen() {
   const isWatched = state.data?.watchedAt != null;
   const canMark = released || isWatched;
   const meta = [
-    detail.releaseYear ? String(detail.releaseYear) : null,
+    formatAirDate(detail.releaseDate) ??
+      (detail.releaseYear ? String(detail.releaseYear) : null),
     detail.runtimeMinutes ? formatRuntime(detail.runtimeMinutes) : null,
     detail.genres
       .map((genre) => genre.name)
@@ -250,7 +252,7 @@ export default function MovieScreen() {
             {detail.overview}
           </Text>
         ) : (
-          <Text className="text-text-secondary">No overview yet.</Text>
+          <Text className="text-text-secondary">{MOVIE_OVERVIEW_MISSING}</Text>
         )}
         <Text className="text-xs text-muted-foreground">
           {TMDB_ATTRIBUTION}

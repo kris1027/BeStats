@@ -1,3 +1,4 @@
+import { signedInAs } from "@bestats/core/auth/messages";
 import { Redirect, router } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, Text, TextInput, View } from "react-native";
@@ -29,7 +30,7 @@ export default function Home() {
   return (
     <View className="flex-1 gap-6 bg-background px-4 pt-6">
       <Text className="text-text-secondary">
-        Signed in as {session.user.email}
+        {signedInAs(session.user.email)}
       </Text>
       <View className="gap-2">
         <Text

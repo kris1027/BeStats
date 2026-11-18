@@ -1,4 +1,8 @@
-import { MOVIE_CLEARED_MESSAGES } from "@bestats/core/tracking/messages";
+import { formatAirDate } from "@bestats/core/format";
+import {
+  MOVIE_CLEARED_MESSAGES,
+  MOVIE_OVERVIEW_MISSING,
+} from "@bestats/core/tracking/messages";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, screen, userEvent } from "@testing-library/react-native";
 import { renderRouter } from "expo-router/testing-library";
@@ -99,6 +103,15 @@ test("shows the movie with TMDB's rating labelled and the user's state", async (
   await open();
   expect(await screen.findByText("Mark watched")).toBeOnTheScreen();
   expect(screen.getByText("TMDB 8.2")).toBeOnTheScreen();
+  expect(
+    screen.getByText(`${formatAirDate("1999-03-31")} · 2h 16m · Action`),
+  ).toBeOnTheScreen();
+});
+
+test("says so when the movie has no overview", async () => {
+  mockFetchMovie.mockResolvedValue({ ...MOVIE, overview: null });
+  await open();
+  expect(await screen.findByText(MOVIE_OVERVIEW_MISSING)).toBeOnTheScreen();
 });
 
 test("marking a planned, unrated movie takes it off the plan at once", async () => {
