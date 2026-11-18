@@ -4,6 +4,7 @@ Routes, plus the root files that shape them: `proxy.ts` and `next.config.ts`. Th
 
 ## Routing
 
+- `turbopack.root` and `outputFileTracingRoot` in `next.config.ts` point at the workspace root, two folders up, so the build can resolve and ship files from `packages/*`.
 - `/` is a temporary (307) redirect to `/shows` in `redirects()` in `next.config.ts`; there is no `app/page.tsx`.
 - Library routes and their legacy redirects: [lib/catalog/AGENTS.md](../lib/catalog/AGENTS.md). A new private route registers in `PRIVATE_PATH_PREFIXES` ([lib/auth/AGENTS.md](../lib/auth/AGENTS.md)).
 - `/games` is the games landing with five paged list pages (`/games/{slug}`), indexable and in the sitemap. Game detail pages keep their `index` meta, but they and season pages are disallowed in robots.txt and left out of the sitemap to protect Vercel's Active CPU budget ([lib/seo/AGENTS.md](../lib/seo/AGENTS.md)).
@@ -18,7 +19,7 @@ Routes, plus the root files that shape them: `proxy.ts` and `next.config.ts`. Th
 
 ## Images
 
-Every image goes through `next/image` and the one `loaderFile`, `lib/images/loader.ts`, which hands TMDB URLs to `lib/tmdb/image-loader.ts` and IGDB covers to `lib/images/igdb-loader.ts`. The optimizer is closed (no `remotePatterns`, empty `localPatterns`; [prompts/close-image-optimizer.md](../prompts/close-image-optimizer.md)): a new host gets its own loader, and components reference images by URL rather than importing image files.
+Every image goes through `next/image` and the one `loaderFile`, `lib/images/loader.ts`, which hands TMDB URLs to `lib/tmdb/image-loader.ts` and IGDB covers to `lib/images/igdb-loader.ts`. The optimizer is closed (no `remotePatterns`, empty `localPatterns`; [prompts/close-image-optimizer.md](../../../prompts/close-image-optimizer.md)): a new host gets its own loader, and components reference images by URL rather than importing image files.
 
 ## Visitor region
 
@@ -26,4 +27,4 @@ Where to watch and the age rating chip read the country only from `getVisitorReg
 
 ## Search rate limit
 
-The `/api/search` rate limit is a Vercel Firewall rule, recorded only in [docs/deploy.md](../docs/deploy.md).
+The `/api/search` rate limit is a Vercel Firewall rule, recorded only in [docs/deploy.md](../../../docs/deploy.md).

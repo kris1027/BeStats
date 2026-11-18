@@ -15,7 +15,7 @@ Every text colour must still meet WCAG AA, checked against the worst pixel that 
   - The glass gradient's brightest stop is `rgb(255 255 255 / 0.18)`. In the contrast math below this "sheen" costs more contrast than the plate does.
   - `--destructive` `#fb8a8a` was tuned to reach 4.67:1 over the opaque control plate.
 - **`lib/film-scene/palette.ts`**: `peakLuminance()` caps every background pixel at the luminance where `--muted-foreground` `#a8adbc` keeps 4.5:1. The ceiling is 0.0541, which equals a grey of `#424242`.
-- **[components/AGENTS.md](../components/AGENTS.md)**: the plate rule, the "blur only on surfaces that overlap content" rule, and the touch and focus rules.
+- **[components/AGENTS.md](../apps/web/components/AGENTS.md)**: the plate rule, the "blur only on surfaces that overlap content" rule, and the touch and focus rules.
 - **Plate users**, about 25 files:
   - `ui/button.tsx`, `ui/card.tsx`, `ui/toggle-group.tsx`, `ui/popover.tsx`, `ui/sonner.tsx` and `ui/dialog.tsx`.
   - `glass-pill.tsx`, `state-panel.tsx` and `skeleton.tsx`.

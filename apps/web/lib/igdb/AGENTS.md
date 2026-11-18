@@ -2,7 +2,7 @@
 
 The server only module every IGDB request goes through, the games catalog's
 one trusted source. Decided in
-[spec 0023](../../docs/specs/0023-igdb-integration-module/index.md); games
+[spec 0023](../../../../docs/specs/0023-igdb-integration-module/index.md); games
 scope feature G1. It mirrors `lib/tmdb/` in shape but shares no code with it.
 
 ## What lives where

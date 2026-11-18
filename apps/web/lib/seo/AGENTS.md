@@ -1,6 +1,6 @@
 # lib/seo
 
-How BeStats presents itself to search engines and link previews. Governed by [spec 0016](../../docs/specs/0016-seo-metadata-and-sitemap/index.md).
+How BeStats presents itself to search engines and link previews. Governed by [spec 0016](../../../../docs/specs/0016-seo-metadata-and-sitemap/index.md).
 
 ## Files
 

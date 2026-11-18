@@ -2,15 +2,7 @@
 
 You are a principal-level full-stack engineer building **BeStats**, a movie, TV and game tracking web app inspired by TV Time. TMDB (movies, TV) and IGDB (games) supply the catalog; Supabase holds accounts and private user state. BeStats tracks; it never streams. All product copy is English.
 
-<!-- BEGIN:nextjs-agent-rules -->
-
-# This is NOT the Next.js you know
-
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
-
-This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
-
-<!-- END:nextjs-agent-rules -->
+This Next.js has breaking changes from your training data: read [apps/web/AGENTS.md](apps/web/AGENTS.md) (kept by `next dev`) and the guides in `apps/web/node_modules/next/dist/docs/` before writing any code.
 
 Code comments cite this file by section number ("AGENTS.md section 11"), so keep sections 1 to 14 numbered as they are.
 
@@ -33,7 +25,7 @@ Close with three headings: **What I did** (short bullets), **Test** (numbered st
 
 ## 3. UI
 
-The shipped UI and `/showcase` are the design reference (the `design/` artboards were removed on 2026-10-06). Use Tailwind v4 and shadcn/ui adapted to the glass system, reuse existing components and patterns, and redesign nothing unasked. Every view has loading, empty, error, missing-image and signed-out states, works at phone width with 44px touch targets, keyboard use and visible focus, and shows only real metadata (English TMDB text first, the original language as fallback). A screen with no precedent gets its layout approved in its plan. The plate rule, tokens and shell boundaries: [components/AGENTS.md](components/AGENTS.md).
+The shipped UI and `/showcase` are the design reference (the `design/` artboards were removed on 2026-10-06). Use Tailwind v4 and shadcn/ui adapted to the glass system, reuse existing components and patterns, and redesign nothing unasked. Every view has loading, empty, error, missing-image and signed-out states, works at phone width with 44px touch targets, keyboard use and visible focus, and shows only real metadata (English TMDB text first, the original language as fallback). A screen with no precedent gets its layout approved in its plan. The plate rule, tokens and shell boundaries: [components/AGENTS.md](apps/web/components/AGENTS.md).
 
 ## 4. Skills and docs
 
@@ -41,7 +33,7 @@ Project skills live in `.agents/skills/` (symlinked into `.claude/skills/`, pinn
 
 ## 5. Structure
 
-One Next.js App Router app at the repo root (`app/`, `components/`, `lib/`, `supabase/`, `prompts/`; no `src/`).
+A pnpm workspace: the Next.js App Router app lives in `apps/web/` (`app/`, `components/`, `lib/`; no `src/`), while `supabase/`, `docs/`, `prompts/` and `scripts/` stay at the repo root. `packages/*` is reserved for shared code.
 
 - Server Components by default; a Client Component only where an interaction needs it.
 - `lib/tmdb/` and `lib/igdb/` are server-only modules that own every catalog request, its normalization, caching and errors.
@@ -67,7 +59,7 @@ Next.js 16, TypeScript strict, Supabase (Postgres and Auth), Tailwind v4, shadcn
 - Games carry a hand set status (Want to play, Playing, Finished) behind a release gate.
 - Search uses no AI.
 
-Edge cases, Undo and the games rules: [lib/tracking/AGENTS.md](lib/tracking/AGENTS.md).
+Edge cases, Undo and the games rules: [lib/tracking/AGENTS.md](apps/web/lib/tracking/AGENTS.md).
 
 ## 8. Data model
 
@@ -93,7 +85,7 @@ One row per user and movie, per user and episode, per user and tracked show, per
 - Progress counts aired regular episodes only: no specials, unaired or undated episodes. A zero total shows an empty state, never a division error. Air dates are UTC days; never imply a local release time.
 - Every tracked show, planned movie and listed game sits on exactly one library page, worked out per request from the user's state and the catalog's dates. No page writes when it loads.
 
-Page placement: [lib/tracking/AGENTS.md](lib/tracking/AGENTS.md). Page routes, names and links: [lib/catalog/AGENTS.md](lib/catalog/AGENTS.md).
+Page placement: [lib/tracking/AGENTS.md](apps/web/lib/tracking/AGENTS.md). Page routes, names and links: [lib/catalog/AGENTS.md](apps/web/lib/catalog/AGENTS.md).
 
 ## 10. Search
 
@@ -122,13 +114,15 @@ Keep the scope small, follow the existing UI, keep ratings, watched progress and
 
 ## Games
 
-Planned in [docs/scope/games.md](docs/scope/games.md) (G1 to G10, all shipped). IGDB is read only through `lib/igdb/` ([lib/igdb/AGENTS.md](lib/igdb/AGENTS.md): credentials, catalog filter, hidden games). `game` is a `LibraryType`, never a `MediaType`, so it is narrowed away before any TMDB read. Statuses, release gate, ratings and timestamps: [lib/tracking/AGENTS.md](lib/tracking/AGENTS.md).
+Planned in [docs/scope/games.md](docs/scope/games.md) (G1 to G10, all shipped). IGDB is read only through `lib/igdb/` ([lib/igdb/AGENTS.md](apps/web/lib/igdb/AGENTS.md): credentials, catalog filter, hidden games). `game` is a `LibraryType`, never a `MediaType`, so it is narrowed away before any TMDB read. Statuses, release gate, ratings and timestamps: [lib/tracking/AGENTS.md](apps/web/lib/tracking/AGENTS.md).
 
 ## Commands and repo facts
 
-- Scripts live in `package.json`; `pnpm dev:docker` runs the dev server against the local Supabase stack. `pnpm-workspace.yaml` exists only to pin `allowBuilds`; this is a single package repo.
-- Imports use the `@/*` alias for the repo root.
-- `cacheComponents: true`: every route is prerenderable or exports `instant = false`; every cached read calls `cacheLife` inside its own `use cache` scope, and returns a plain result rather than throwing (a thrown error loses its class across the scope). Routing, proxy, images and region rules: [app/AGENTS.md](app/AGENTS.md), read before editing `proxy.ts`, `next.config.ts` or a route.
+- Scripts live in `package.json`; `pnpm dev:docker` runs the dev server against the local Supabase stack. Root scripts delegate to `@bestats/web` through `pnpm --filter`. `pnpm-workspace.yaml` lists the `apps/*` and `packages/*` globs, pins `allowBuilds`, and hoists `@types/react` and `@types/react-dom` so `next` still finds them.
+- Imports use the `@/*` alias for the app root (`apps/web/`).
+- Env files (`.env.local`, `.env.example`) live in `apps/web/`, where Next reads them.
+- A test that reads repo files resolves their paths from its own file (`import.meta.url`), never the working directory, and the boundary scans walk the whole workspace, so a new app or package is covered the day it appears.
+- `cacheComponents: true`: every route is prerenderable or exports `instant = false`; every cached read calls `cacheLife` inside its own `use cache` scope, and returns a plain result rather than throwing (a thrown error loses its class across the scope). Routing, proxy, images and region rules: [app/AGENTS.md](apps/web/app/AGENTS.md), read before editing `proxy.ts`, `next.config.ts` or a route.
 - Middleware is `proxy.ts` exporting `proxy` (Next.js 16 ignores a `middleware.ts`).
 - Read public env values through `getPublicEnv()` in `lib/env.ts`, never `process.env`. It validates lazily, so a build with no Supabase project still succeeds while every auth call fails loudly. Code on every page calls `publicEnvProblems()` first and falls back to signed out, so a missing auth config never takes the catalog down.
 - Supabase clients: `lib/supabase/client.ts` (browser) and the async `lib/supabase/server.ts`, created per request.
@@ -145,12 +139,12 @@ Planned in [docs/scope/games.md](docs/scope/games.md) (G1 to G10, all shipped). 
 
 Each folder's `AGENTS.md` holds its files and rules; read it before changing code there.
 
-- [app/AGENTS.md](app/AGENTS.md): routes, `proxy.ts`, `next.config.ts`, images, visitor region.
-- [components/AGENTS.md](components/AGENTS.md): plate rule, tokens, client boundaries, navbar, library and landing components.
-- [lib/catalog/AGENTS.md](lib/catalog/AGENTS.md): library page routes and names, media type params, link builders.
-- [lib/tracking/AGENTS.md](lib/tracking/AGENTS.md): movie, episode, show and game state rules, library placement, Undo.
-- [lib/auth/AGENTS.md](lib/auth/AGENTS.md): session boundary, private paths, auth forms and actions, email delivery flag.
-- [lib/tmdb/AGENTS.md](lib/tmdb/AGENTS.md) and [lib/igdb/AGENTS.md](lib/igdb/AGENTS.md): catalog modules, caching, errors, live checks.
-- [lib/seo/AGENTS.md](lib/seo/AGENTS.md): metadata, sitemap, robots, crawl budget.
+- [app/AGENTS.md](apps/web/app/AGENTS.md): routes, `proxy.ts`, `next.config.ts`, images, visitor region.
+- [components/AGENTS.md](apps/web/components/AGENTS.md): plate rule, tokens, client boundaries, navbar, library and landing components.
+- [lib/catalog/AGENTS.md](apps/web/lib/catalog/AGENTS.md): library page routes and names, media type params, link builders.
+- [lib/tracking/AGENTS.md](apps/web/lib/tracking/AGENTS.md): movie, episode, show and game state rules, library placement, Undo.
+- [lib/auth/AGENTS.md](apps/web/lib/auth/AGENTS.md): session boundary, private paths, auth forms and actions, email delivery flag.
+- [lib/tmdb/AGENTS.md](apps/web/lib/tmdb/AGENTS.md) and [lib/igdb/AGENTS.md](apps/web/lib/igdb/AGENTS.md): catalog modules, caching, errors, live checks.
+- [lib/seo/AGENTS.md](apps/web/lib/seo/AGENTS.md): metadata, sitemap, robots, crawl budget.
 - [supabase/AGENTS.md](supabase/AGENTS.md): schema, RLS, migrations, pgTAP.
 - [docs/scope/scope.md](docs/scope/scope.md): feature list and status. [docs/deploy.md](docs/deploy.md): production runbook.

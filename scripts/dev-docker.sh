@@ -7,7 +7,7 @@
 # checks belong. Next.js lets a real environment variable win over any `.env*`
 # file, so the two public Supabase values and the site URL are exported here
 # and `.env.local` is never edited. Everything else (the TMDB token) still
-# comes from `.env.local`.
+# comes from `apps/web/.env.local`.
 #
 # The site URL is pinned to the one origin the local stack allows
 # (`site_url` and `additional_redirect_urls` in `supabase/config.toml`), so
@@ -58,4 +58,5 @@ NEXT_PUBLIC_SITE_URL="http://localhost:$LOCAL_PORT"
 export NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY NEXT_PUBLIC_SITE_URL
 echo "Using local Supabase at $NEXT_PUBLIC_SUPABASE_URL (Studio: http://127.0.0.1:54323, Mailpit: http://127.0.0.1:54324)"
 
-exec pnpm exec next dev "$@"
+# The web app lives in apps/web (spec 0034); Next reads `.env.local` from there.
+exec pnpm --filter @bestats/web exec next dev "$@"

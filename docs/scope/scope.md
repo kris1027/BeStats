@@ -44,7 +44,7 @@ _2026-10-06: the `design/` artboards were removed. The UI built from them carrie
 | 25 | Consistent card size and richer title pages | Slice 12 | done |
 | 26 | Library page names per media type | Slice 13 | done |
 | 27 | Library page URLs follow their names | Slice 13 | done |
-| 28 | Mobile app (iOS and Android) | Slice 14 | planned |
+| 28 | Mobile app (iOS and Android) | Slice 14 | in-progress |
 
 ## Foundations
 
@@ -133,7 +133,7 @@ Email and password sign in, email verification, sign out, password recovery, and
 - [x] Test it: `/test authentication`
 - [x] Review it (fresh model): `/check review authentication`
 - [x] Document it: `/document authentication`
-code in [lib/auth/](../../lib/auth/), [app/(auth)/](<../../app/(auth)/>), [app/account/](../../app/account/), [app/auth/callback/](../../app/auth/callback/), [components/auth/](../../components/auth/)
+code in [lib/auth/](../../apps/web/lib/auth/), [app/(auth)/](<../../apps/web/app/(auth)/>), [app/account/](../../apps/web/app/account/), [app/auth/callback/](../../apps/web/app/auth/callback/), [components/auth/](../../apps/web/components/auth/)
 spec [0005](../specs/0005-authentication/index.md)
 
 ### 7. Movie page · done
@@ -150,7 +150,7 @@ Public movie detail page with poster, overview, cast, genres and the TMDB commun
   - [x] Follow-up: the cold cache spot check (one TMDB request for body plus metadata) and the reproducible transient failure retry in [verify.md](../specs/0006-movie-page/verify.md), both verified 2026-09-23
 - [x] Test it: `/test movie page`
 - [x] Document it: `/document movie page`
-code in [app/movies/](../../app/movies/), [components/movie/](../../components/movie/), [lib/catalog/](../../lib/catalog/), [lib/format.ts](../../lib/format.ts), [lib/tmdb/](../../lib/tmdb/), [proxy.ts](../../proxy.ts)
+code in [app/movies/](../../apps/web/app/movies/), [components/movie/](../../apps/web/components/movie/), [lib/catalog/](../../apps/web/lib/catalog/), [lib/format.ts](../../apps/web/lib/format.ts), [lib/tmdb/](../../apps/web/lib/tmdb/), [proxy.ts](../../apps/web/proxy.ts)
 spec [0006](../specs/0006-movie-page/index.md)
 
 ### 8. Movie tracking · done · GA
@@ -200,7 +200,7 @@ Public TV detail page with cast, seasons and episode lists (including season 0 s
 - [x] Verify it: `/check verify TV show page`
 - [x] Test it: `/test TV show page`
 - [x] Document it: `/document TV show page`
-spec [0009](../specs/0009-tv-show-page/index.md) · code in [app/shows/](../../app/shows/), [components/show/](../../components/show/), [components/catalog/](../../components/catalog/), [lib/catalog/](../../lib/catalog/), [lib/format.ts](../../lib/format.ts), [lib/tmdb/](../../lib/tmdb/), [proxy.ts](../../proxy.ts)
+spec [0009](../specs/0009-tv-show-page/index.md) · code in [app/shows/](../../apps/web/app/shows/), [components/show/](../../apps/web/components/show/), [components/catalog/](../../apps/web/components/catalog/), [lib/catalog/](../../apps/web/lib/catalog/), [lib/format.ts](../../apps/web/lib/format.ts), [lib/tmdb/](../../apps/web/lib/tmdb/), [proxy.ts](../../apps/web/proxy.ts)
 
 ## Slice 3: Search
 
@@ -216,7 +216,7 @@ Results page for movies or TV with a title query, genre, year and minimum TMDB r
   - [x] Proof: metadata and `noindex`, purity and request scope tests, prerendered build, Back navigation, 375px and keyboard passes — AC-6, AC-17, AC-21, AC-22
 - [x] Verify it: `/check verify search and filters`
 - [x] Test it: `/test search and filters`
-spec [0010](../specs/0010-search-and-filters/index.md) · code in [app/search/](../../app/search/), [app/api/search/](../../app/api/search/), [components/search/](../../components/search/), [lib/search/](../../lib/search/), [lib/tmdb/](../../lib/tmdb/), [proxy.ts](../../proxy.ts)
+spec [0010](../specs/0010-search-and-filters/index.md) · code in [app/search/](../../apps/web/app/search/), [app/api/search/](../../apps/web/app/api/search/), [components/search/](../../apps/web/components/search/), [lib/search/](../../apps/web/lib/search/), [lib/tmdb/](../../apps/web/lib/tmdb/), [proxy.ts](../../apps/web/proxy.ts)
 
 ## Slice 4: Episode tracking
 
@@ -234,7 +234,7 @@ Mark episodes watched and rate them from 1 to 10; mark a season watched, which c
 - [x] Test it: `/test episode and season tracking`
 - [x] Review it (fresh model): `/check review episode and season tracking`
 - [x] Document it: `/document episode and season tracking`
-spec [0011](../specs/0011-episode-and-season-tracking/index.md) · code in [components/tracking/](../../components/tracking/), [app/shows/actions.ts](../../app/shows/actions.ts), [lib/tv/](../../lib/tv/)
+spec [0011](../specs/0011-episode-and-season-tracking/index.md) · code in [components/tracking/](../../apps/web/components/tracking/), [app/shows/actions.ts](../../apps/web/app/shows/actions.ts), [lib/tv/](../../apps/web/lib/tv/)
 
 ## Slice 5: Calculated ratings
 
@@ -251,7 +251,7 @@ Domain functions for season rating (mean of rated episodes) and show rating (equ
 - [x] Test it: `/test calculated season and show ratings`
 - [x] Review it (fresh model): `/check review calculated season and show ratings`
 - [x] Document it: `/document calculated season and show ratings`
-spec [0012](../specs/0012-calculated-season-show-ratings/index.md) · code in [lib/tv/](../../lib/tv/), [lib/tracking/](../../lib/tracking/), [components/tracking/](../../components/tracking/), [components/show/](../../components/show/)
+spec [0012](../specs/0012-calculated-season-show-ratings/index.md) · code in [lib/tv/](../../apps/web/lib/tv/), [lib/tracking/](../../apps/web/lib/tracking/), [components/tracking/](../../apps/web/components/tracking/), [components/show/](../../apps/web/components/show/)
 
 ## Slice 6: TV status and progress
 
@@ -269,7 +269,7 @@ Five statuses with manual choices kept apart from automatic ones, overall progre
 - [x] Test it: `/test TV status and progress`
 - [x] Review it (fresh model): `/check review TV status and progress`
 - [x] Document it: `/document TV status and progress`
-spec [0013](../specs/0013-tv-status-and-progress/index.md) · code in [lib/tracking/show-state.ts](../../lib/tracking/show-state.ts), [lib/tv/progress.ts](../../lib/tv/progress.ts), [components/tracking/](../../components/tracking/), [components/library/](../../components/library/), [app/shows/actions.ts](../../app/shows/actions.ts), `supabase/migrations/20260926*`
+spec [0013](../specs/0013-tv-status-and-progress/index.md) · code in [lib/tracking/show-state.ts](../../apps/web/lib/tracking/show-state.ts), [lib/tv/progress.ts](../../apps/web/lib/tv/progress.ts), [components/tracking/](../../apps/web/components/tracking/), [components/library/](../../apps/web/components/library/), [app/shows/actions.ts](../../apps/web/app/shows/actions.ts), `supabase/migrations/20260926*`
 
 ## Slice 7: Up Next and completion
 
@@ -285,7 +285,7 @@ The private `/upcoming` page (the navbar's Upcoming link): an Up Next section sh
   - [x] Proof: 375px and keyboard passes, query plan and cold load timings, checks and `verify.md` — AC-15, AC-16
 - [x] Verify it: `/check verify Up Next`
 - [x] Test it: `/test Up Next`
-spec [0014](../specs/0014-up-next/index.md) · code in [app/upcoming/](../../app/upcoming/), [components/upcoming/](../../components/upcoming/), [lib/tracking/up-next.ts](../../lib/tracking/up-next.ts), [lib/tv/up-next.ts](../../lib/tv/up-next.ts), `supabase/migrations/20260928*`
+spec [0014](../specs/0014-up-next/index.md) · code in [app/upcoming/](../../apps/web/app/upcoming/), `components/upcoming/`, `lib/tracking/up-next.ts`, `lib/tv/up-next.ts`, `supabase/migrations/20260928*`
 
 ### 16. Automatic completion · done · GA
 Move a show to Completed only when TMDB says ended or canceled and every aired regular episode is watched, using complete metadata only, and reversible when the condition changes.
@@ -301,7 +301,7 @@ Move a show to Completed only when TMDB says ended or canceled and every aired r
 - [x] Test it: `/test automatic completion`
 - [x] Review it (fresh model): `/check review automatic completion`
 - [x] Document it: `/document automatic completion`
-spec [0015](../specs/0015-automatic-completion/index.md) · code in [lib/tv/auto-completion.ts](../../lib/tv/auto-completion.ts), [lib/tracking/auto-completion.ts](../../lib/tracking/auto-completion.ts), [app/shows/actions.ts](../../app/shows/actions.ts), [components/upcoming/](../../components/upcoming/), `supabase/migrations/20260930*`
+spec [0015](../specs/0015-automatic-completion/index.md) · code in `lib/tv/auto-completion.ts`, `lib/tracking/auto-completion.ts`, [app/shows/actions.ts](../../apps/web/app/shows/actions.ts), `components/upcoming/`, `supabase/migrations/20260930*`
 
 ## Slice 8: Launch readiness
 
@@ -344,7 +344,7 @@ Run the full `AGENTS.md` section 13 checklist with two test users, including dir
 ### 20. Deploy and provider setup · done · GA
 Vercel deployment on the free `vercel.app` address, the existing Supabase Free project configured from the repo (`db push` and `config push` through a runbook), branch protection, and the hosted security checks spec 0005 left here. Production sends no email: sign up needs no confirmation, recovery shows a contact notice, and Google sign in stays absent (both deferred together). Remote migrations and deployment need your explicit approval in the plan.
 **Done when:** the deployed app signs users up and in with email and password against the cloud project with every migration applied, hosted auth settings match `supabase/config.toml`, environment variables target the intended projects, and no screen promises an email production can't send.
-spec [0018](../specs/0018-deploy-and-provider-setup/index.md) · code in [docs/deploy.md](../deploy.md), [vercel.json](../../vercel.json), [supabase/config.toml](../../supabase/config.toml), [lib/env.ts](../../lib/env.ts), [app/(auth)/](../../app/(auth)/)
+spec [0018](../specs/0018-deploy-and-provider-setup/index.md) · code in [docs/deploy.md](../deploy.md), [vercel.json](../../apps/web/vercel.json), [supabase/config.toml](../../supabase/config.toml), [lib/env.ts](../../apps/web/lib/env.ts), [app/(auth)/](<../../apps/web/app/(auth)/>)
 - [x] Design it (spec): `/architect deploy and provider setup`
 - [x] Build it: `/develop deploy and provider setup`
   - [x] Thin thread to production: Vercel project, branch protection, EU region and JWT key checks, `db push` and `config push`, a real signed in write (AC-1 to AC-9)
@@ -453,7 +453,7 @@ plan [prompts/library-page-urls.md](../../prompts/library-page-urls.md) · code 
 
 ## Slice 14: Mobile
 
-### 28. Mobile app (iOS and Android) · planned · GA
+### 28. Mobile app (iOS and Android) · in-progress · GA
 A native app for iOS and Android beside the web app, sharing its rules with it. v1 covers sign in and account (email and password, self serve deletion on both apps), browse and search, all tracking with Undo, and every library page, with a read only offline cache. The phone never holds a catalog key, so the release gate and every rule stay on the server. Designed on 2026-11-18.
 **Done when:** both store builds sign in, browse, search, track and show every library page with the same rules and names as the web; the web still deploys unchanged from `apps/web`; no TMDB or IGDB secret or service role key is reachable from the app or the repo; account deletion works on both apps; and the attribution, privacy text and store privacy labels are in place.
 - [x] Design it (spec): `/architect mobile app`

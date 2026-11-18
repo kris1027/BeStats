@@ -49,7 +49,7 @@ A server only module that reads games from IGDB, the way `lib/tmdb/` reads movie
   - [x] Cache lifetimes, the entry point surface test, the full fixture suite, and the AGENTS.md updates, AC-8, AC-19 to AC-21
 - [x] Verify it: `/check verify IGDB integration module`
 - [x] Test it: `/test IGDB integration module`
-spec [0023](../specs/0023-igdb-integration-module/index.md) · code in [lib/igdb/](../../lib/igdb/)
+spec [0023](../specs/0023-igdb-integration-module/index.md) · code in [lib/igdb/](../../apps/web/lib/igdb/)
 
 ### G2. Game data model and security policies · done · GA
 The private table behind every games feature: one row per user and game holding its status, score and dates.
@@ -80,7 +80,7 @@ The thinnest real `/games/{id}`: hero only (cover, title, release date, platform
   - [x] States and checks: the game skeleton, 375px and 1280px states, typecheck, lint, test, build, AC-9, AC-13
 - [x] Verify it: `/check verify game page`
 - [x] Test it: `/test game page`
-spec [0025](../specs/0025-game-page/index.md) · code in [app/games/](../../app/games/)
+spec [0025](../specs/0025-game-page/index.md) · code in [app/games/](../../apps/web/app/games/)
 
 ### G4. Game status and rating · done · GA
 The segmented control (Want to play · Playing · Finished) and the score on the game page, saved through Server Actions.
@@ -95,7 +95,7 @@ The segmented control (Want to play · Playing · Finished) and the score on the
 - [x] Test it: `/test game status and rating`
 - [x] Review it (fresh model): `/check review game status and rating`
 - [x] Document it: `/document game status and rating`
-spec [0026](../specs/0026-game-status-rating/index.md) · code in [app/games/](../../app/games/)
+spec [0026](../specs/0026-game-status-rating/index.md) · code in [app/games/](../../apps/web/app/games/)
 
 ## Slice G2: The games library
 
@@ -113,7 +113,7 @@ GAMES joins the navbar tabs, and the three library pages show Want to play, Play
 - [x] Test it: `/test games tab and library pages`
 - [x] Review it (fresh model): `/check review games tab and library pages`
 - [x] Document it: `/document games tab and library pages`
-spec [0027](../specs/0027-games-library-pages/index.md) · code in [components/library/](../../components/library/)
+spec [0027](../specs/0027-games-library-pages/index.md) · code in [components/library/](../../apps/web/components/library/)
 
 ## Slice G3: Discovery
 

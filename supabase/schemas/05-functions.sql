@@ -14,7 +14,7 @@
 --      score, and returns what it cleared, so the app can offer an Undo
 --      (`restore_movie_watched` below puts both back).
 --
--- `lib/tracking/intent.ts` mirrors these rules for the optimistic UI, and
+-- `apps/web/lib/tracking/intent.ts` mirrors these rules for the optimistic UI, and
 -- `supabase/tests/050-movie-tracking-functions.test.sql` pins them here.
 --
 -- Every function is SECURITY INVOKER with an empty `search_path`: it runs as
@@ -241,7 +241,7 @@ grant execute on function public.restore_movie_watched(integer, timestamptz, sma
 -- The same shape as the movie functions above: SECURITY INVOKER with an empty
 -- `search_path`, so the row level security policies apply inside them, and
 -- `user_id` always `auth.uid()`. The TypeScript mirror is
--- `lib/tracking/episode-intent.ts`, and
+-- `apps/web/lib/tracking/episode-intent.ts`, and
 -- `supabase/tests/080-episode-tracking-functions.test.sql` pins both.
 --
 -- `season_number` and `episode_number` are the TMDB season read's, passed in
@@ -383,8 +383,8 @@ grant execute on function public.restore_show_tracking(integer, timestamptz) to 
 -- The same shape as every function in this file: SECURITY INVOKER with an
 -- empty `search_path`, so the four row level security policies apply inside,
 -- and `user_id` always `auth.uid()`, never an argument. The release gate is
--- not here; only the Server Action in `app/games/actions.ts` checks it
--- (spec 0024, security model). `lib/tracking/game-intent.ts` mirrors these
+-- not here; only the Server Action in `apps/web/app/games/actions.ts` checks it
+-- (spec 0024, security model). `apps/web/lib/tracking/game-intent.ts` mirrors these
 -- rules for the optimistic UI, and
 -- `supabase/tests/190-game-tracking-functions.test.sql` pins them.
 

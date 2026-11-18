@@ -6,7 +6,7 @@
 -- who may execute), what they write, what they report, the guards, and that
 -- user A can never read or change user B's rows through them.
 --
--- `lib/tracking/episode-intent.test.ts` runs the same cases against the
+-- `apps/web/lib/tracking/episode-intent.test.ts` runs the same cases against the
 -- TypeScript mirror, so the optimistic UI and the database cannot drift apart.
 --
 -- Show 900301 with episodes 930101 to 930120 is free for user A in this file;

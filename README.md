@@ -55,7 +55,7 @@ pnpm install --frozen-lockfile
 cp .env.example .env.local
 ```
 
-If `.env.local` already exists, update it from the example instead of overwriting it. The committed [.env.example](.env.example) explains each setting and where to get it. Keep real credentials in the ignored local file.
+If `.env.local` already exists, update it from the example instead of overwriting it. The committed [.env.example](apps/web/.env.example) explains each setting and where to get it. Keep real credentials in the ignored local file.
 
 ### Credentials
 
@@ -133,13 +133,13 @@ Vercel hosts the app in Frankfurt (`fra1`), next to the Supabase project in `eu-
 
 | Path | Contents |
 | --- | --- |
-| [app/](app/) | App Router pages, Server Actions, metadata routes and global styles. |
-| [components/](components/) | Shared UI built on shadcn/ui and the glass design system. |
-| [lib/tmdb/](lib/tmdb/) | Server only TMDB access, caching, normalization and fixtures. |
-| [lib/igdb/](lib/igdb/) | Server only IGDB access, token handling, catalog filter and fixtures. |
-| [lib/supabase/](lib/supabase/) | Browser and server clients, plus the generated database types. |
-| [lib/](lib/) | Auth, tracking, rating and library rules, SEO, legal facts and helpers. |
-| [proxy.ts](proxy.ts) | Request middleware: session refresh and early 404s. |
+| [apps/web/app/](apps/web/app/) | App Router pages, Server Actions, metadata routes and global styles. |
+| [apps/web/components/](apps/web/components/) | Shared UI built on shadcn/ui and the glass design system. |
+| [apps/web/lib/tmdb/](apps/web/lib/tmdb/) | Server only TMDB access, caching, normalization and fixtures. |
+| [apps/web/lib/igdb/](apps/web/lib/igdb/) | Server only IGDB access, token handling, catalog filter and fixtures. |
+| [apps/web/lib/supabase/](apps/web/lib/supabase/) | Browser and server clients, plus the generated database types. |
+| [apps/web/lib/](apps/web/lib/) | Auth, tracking, rating and library rules, SEO, legal facts and helpers. |
+| [apps/web/proxy.ts](apps/web/proxy.ts) | Request middleware: session refresh and early 404s. |
 | [supabase/](supabase/) | Local configuration, declarative schemas, migrations, seed and database tests. |
 | [docs/](docs/) | Scopes, specs, reviews, the deploy runbook and screenshots. |
 | [prompts/](prompts/) | Implementation plans prepared for approval. |

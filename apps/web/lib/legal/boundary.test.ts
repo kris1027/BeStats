@@ -1,6 +1,11 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
-import { extname, join } from "node:path";
+import { extname } from "node:path";
 import { describe, expect, it } from "vitest";
+
+import {
+  isDotfile,
+  readWorkspaceFile as read,
+  workspaceFiles,
+} from "@/workspace-files";
 
 import {
   CONTACT_EMAIL,
@@ -23,75 +28,74 @@ import {
  * until the day the constant changes. So this reads the source instead.
  */
 
-/** Application source only; tests name the strings they forbid. */
-const SOURCE_DIRS = ["app", "components", "lib"];
-const SOURCE_EXTENSIONS = new Set([".ts", ".tsx"]);
+/** The web app's folder, relative to the workspace root. */
+const WEB = "apps/web";
 
-function filesUnder(dir: string): string[] {
-  const found: string[] = [];
-  for (const entry of readdirSync(dir)) {
-    const path = join(dir, entry);
-    if (statSync(path).isDirectory()) {
-      found.push(...filesUnder(path));
-    } else if (
-      SOURCE_EXTENSIONS.has(extname(path)) &&
-      !/\.(test|spec)\.tsx?$/.test(path)
-    ) {
-      found.push(path);
-    }
-  }
-  return found;
-}
+/**
+ * Application source only; tests name the strings they forbid. Every app and
+ * package (`apps/mobile`, `packages/core`) is read the day it appears,
+ * whichever folder vitest runs from. Paths are workspace relative.
+ */
+const SOURCES = workspaceFiles({
+  roots: ["apps", "packages"],
+  skipDirs: new Set(["node_modules"]),
+  keep: (path) =>
+    !isDotfile(path) &&
+    [".ts", ".tsx"].includes(extname(path)) &&
+    !/\.(test|spec)\.tsx?$/.test(path),
+});
 
-const SOURCES = [...SOURCE_DIRS.flatMap(filesUnder), "proxy.ts"];
-
-/** The files that contain a literal, as repo relative paths. */
+/** The files that contain a literal, as workspace relative paths. */
 function filesContaining(literal: string): string[] {
-  return SOURCES.filter((path) => readFileSync(path, "utf8").includes(literal));
+  return SOURCES.filter((path) => read(path).includes(literal));
 }
 
 describe("one home for each legal fact", () => {
   it("writes TMDB's notice only in lib/tmdb/constants.ts (AC-3)", () => {
     // A fragment, so a reworded copy of the sentence is caught too.
     expect(filesContaining("otherwise approved by TMDB")).toEqual([
-      "lib/tmdb/constants.ts",
+      `${WEB}/lib/tmdb/constants.ts`,
     ]);
   });
 
   it("writes IGDB's credit only in lib/legal/operator.ts (spec 0032, AC-8)", () => {
     expect(filesContaining(IGDB_ATTRIBUTION)).toEqual([
-      "lib/legal/operator.ts",
+      `${WEB}/lib/legal/operator.ts`,
     ]);
   });
 
   it("writes IGDB's site URL only in lib/legal/operator.ts", () => {
-    expect(filesContaining(IGDB_HOME_URL)).toEqual(["lib/legal/operator.ts"]);
+    expect(filesContaining(IGDB_HOME_URL)).toEqual([
+      `${WEB}/lib/legal/operator.ts`,
+    ]);
   });
 
   it("writes TMDB's site URL only in lib/legal/operator.ts", () => {
-    expect(filesContaining(TMDB_HOME_URL)).toEqual(["lib/legal/operator.ts"]);
+    expect(filesContaining(TMDB_HOME_URL)).toEqual([
+      `${WEB}/lib/legal/operator.ts`,
+    ]);
   });
 
   it("names no processor's country in /privacy itself", () => {
-    expect(readFileSync("app/privacy/page.tsx", "utf8")).not.toContain(
-      "United States",
-    );
+    expect(read(`${WEB}/app/privacy/page.tsx`)).not.toContain("United States");
   });
 
   it("writes the JustWatch credit only in lib/legal/operator.ts (spec 0022, AC-12)", () => {
     expect(filesContaining(JUSTWATCH_ATTRIBUTION)).toEqual([
-      "lib/legal/operator.ts",
+      `${WEB}/lib/legal/operator.ts`,
     ]);
   });
 
   it("writes the contact email only in lib/legal/operator.ts (AC-10)", () => {
-    expect(filesContaining(CONTACT_EMAIL)).toEqual(["lib/legal/operator.ts"]);
+    expect(filesContaining(CONTACT_EMAIL)).toEqual([
+      `${WEB}/lib/legal/operator.ts`,
+    ]);
   });
 
-  it.each(["app/privacy/page.tsx", "app/terms/page.tsx"])(
+  it.each([`${WEB}/app/privacy/page.tsx`, `${WEB}/app/terms/page.tsx`])(
     "%s hardcodes no operator value (AC-10)",
     (page) => {
-      const source = readFileSync(page, "utf8");
+      const source = read(page);
       for (const value of [
         OPERATOR_HANDLE,
         OPERATOR_GITHUB_URL,
@@ -108,11 +112,11 @@ describe("one home for each legal fact", () => {
 
 describe("the legal pages stay static Server Components (AC-6)", () => {
   it.each([
-    "app/privacy/page.tsx",
-    "app/terms/page.tsx",
-    "components/legal/legal-document.tsx",
+    `${WEB}/app/privacy/page.tsx`,
+    `${WEB}/app/terms/page.tsx`,
+    `${WEB}/components/legal/legal-document.tsx`,
   ])("%s has no client boundary and reads no request state", (path) => {
-    const source = readFileSync(path, "utf8");
+    const source = read(path);
     expect(source).not.toMatch(/^\s*["']use client["']/m);
     expect(source).not.toMatch(
       /\b(cookies|headers|connection|draftMode)\s*\(|@\/lib\/supabase|searchParams/,
@@ -120,7 +124,7 @@ describe("the legal pages stay static Server Components (AC-6)", () => {
   });
 
   it("keeps the operator module pure, with no server-only guard (AC-10)", () => {
-    expect(readFileSync("lib/legal/operator.ts", "utf8")).not.toMatch(
+    expect(read(`${WEB}/lib/legal/operator.ts`)).not.toMatch(
       /import\s+["']server-only["']/,
     );
   });

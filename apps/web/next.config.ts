@@ -1,7 +1,15 @@
+import { join } from "node:path";
 import type { NextConfig } from "next";
 
 import { legacyLibraryRedirects } from "./lib/catalog/library-list";
 import { getAuthEmailDelivery } from "./lib/env";
+
+/**
+ * The workspace root, two folders above this app (spec 0034, Tooling). Turbopack
+ * and output tracing both default to this folder, which would leave
+ * `packages/core` outside what the build can resolve and ship.
+ */
+const WORKSPACE_ROOT = join(__dirname, "..", "..");
 
 /**
  * Cache Components is on from the first data feature rather than adopted later
@@ -16,6 +24,8 @@ import { getAuthEmailDelivery } from "./lib/env";
  */
 const nextConfig: NextConfig = {
   cacheComponents: true,
+  turbopack: { root: WORKSPACE_ROOT },
+  outputFileTracingRoot: WORKSPACE_ROOT,
   /**
    * `/` sends people to `/shows` (spec 0004, AC-17).
    *

@@ -34,12 +34,7 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
-      exclude: [
-        "**/*.config.*",
-        ".next/**",
-        "supabase/**",
-        "**/__fixtures__/**",
-      ],
+      exclude: ["**/*.config.*", ".next/**", "**/__fixtures__/**"],
     },
     projects: [
       {

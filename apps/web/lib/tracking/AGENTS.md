@@ -4,9 +4,9 @@ The signed in user's state for movies, episodes, shows and games: the reads behi
 
 ## Movies
 
-- A row is planned or watched, never both: marking it watched removes the plan, and planning a watched movie removes its watch mark and score, with Undo ([prompts/movie-plan-watched-exclusive.md](../../prompts/movie-plan-watched-exclusive.md)).
+- A row is planned or watched, never both: marking it watched removes the plan, and planning a watched movie removes its watch mark and score, with Undo ([prompts/movie-plan-watched-exclusive.md](../../../../prompts/movie-plan-watched-exclusive.md)).
 - A score needs a watch mark: removing the mark removes the score, with Undo; an unwatched movie cannot be scored; a watched movie may have no score.
-- Release gate: watched and scored only from the TMDB release date (UTC day). Before it, or with no date, a movie can only be planned. Marks and scores stored earlier stay and stay removable ([prompts/movie-release-gate.md](../../prompts/movie-release-gate.md)).
+- Release gate: watched and scored only from the TMDB release date (UTC day). Before it, or with no date, a movie can only be planned. Marks and scores stored earlier stay and stay removable ([prompts/movie-release-gate.md](../../../../prompts/movie-release-gate.md)).
 
 ## Episodes and seasons
 
@@ -26,11 +26,11 @@ Placement is worked out per request and never stored. No page writes when it loa
 
 - **Shows** (pure classifier `lib/tv/library-page.ts`): Up next when an aired regular episode comes after the furthest one watched, offering the first of them with Mark watched (earlier gaps are never offered). Upcoming when caught up with a next regular episode dated after today, or when nothing is watched and nothing is dated (Date TBA). Watched when caught up with nothing dated, labelled Finished if TMDB says Ended or Canceled, otherwise Caught up. Aired episodes come from the show details read: `last_episode_to_air`, plus a `next_episode_to_air` dated on or before today.
 - **Movies** (`lib/catalog/movie-page.ts`): a planned movie is on Watchlist from its release day and on Coming soon before it or with no date; a watched movie is on Watched.
-- **Games**: the stored status picks the page; Want to play splits by release date (`isGameReleased`) into Want to play and Coming soon, a view and not a status ([prompts/game-coming-soon.md](../../prompts/game-coming-soon.md)).
+- **Games**: the stored status picks the page; Want to play splits by release date (`isGameReleased`) into Want to play and Coming soon, a view and not a status ([prompts/game-coming-soon.md](../../../../prompts/game-coming-soon.md)).
 
 ## Reads
 
-Library tabs (`library-lists.ts`): a shows or movies tab classifies every tracked show or planned unwatched movie, at most 500 per media type, from one cached TMDB details read per title. The `/shows`, `/movies` and `/search` grids place their titles with the same classifiers so a card always matches its library page: one `cache()`d read per grid, and TMDB details only for the grid's tracked shows (`show-grid-status.ts`, `getMovieGridStates`; [prompts/catalog-card-status.md](../../prompts/catalog-card-status.md)). Games (`game-library.ts`): Playing and Finished read one counted `user_game_state` page of 24 plus one `getGamesByIds` batch, with no 500 limit; Want to play and Coming soon read up to 500 Want to play rows and one batch, split and paged in memory (`getWantToPlayTab`).
+Library tabs (`library-lists.ts`): a shows or movies tab classifies every tracked show or planned unwatched movie, at most 500 per media type, from one cached TMDB details read per title. The `/shows`, `/movies` and `/search` grids place their titles with the same classifiers so a card always matches its library page: one `cache()`d read per grid, and TMDB details only for the grid's tracked shows (`show-grid-status.ts`, `getMovieGridStates`; [prompts/catalog-card-status.md](../../../../prompts/catalog-card-status.md)). Games (`game-library.ts`): Playing and Finished read one counted `user_game_state` page of 24 plus one `getGamesByIds` batch, with no 500 limit; Want to play and Coming soon read up to 500 Want to play rows and one batch, split and paged in memory (`getWantToPlayTab`).
 
 ## Games
 
