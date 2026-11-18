@@ -52,10 +52,10 @@ function filesContaining(literal: string): string[] {
 }
 
 describe("one home for each legal fact", () => {
-  it("writes TMDB's notice only in lib/tmdb/constants.ts (AC-3)", () => {
+  it("writes TMDB's notice only in core legal/attribution.ts (AC-3)", () => {
     // A fragment, so a reworded copy of the sentence is caught too.
     expect(filesContaining("otherwise approved by TMDB")).toEqual([
-      `${WEB}/lib/tmdb/constants.ts`,
+      `${CORE}/legal/attribution.ts`,
     ]);
   });
 

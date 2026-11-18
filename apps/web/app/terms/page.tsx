@@ -1,3 +1,4 @@
+import { TMDB_ATTRIBUTION } from "@bestats/core/legal/attribution";
 import {
   COMPLAINT_RESPONSE_DAYS,
   DELETION_DAYS,
@@ -16,7 +17,6 @@ import {
   OperatorLink,
 } from "@/components/legal/legal-document";
 import { catalogMetadata } from "@/lib/seo/metadata";
-import { TMDB_ATTRIBUTION } from "@/lib/tmdb";
 
 export const metadata: Metadata = catalogMetadata({
   title: "Terms of Service",

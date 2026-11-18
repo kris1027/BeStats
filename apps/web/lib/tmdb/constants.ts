@@ -54,15 +54,6 @@ export const TMDB_CONCURRENCY_LIMIT = 8;
 export const SHOW_CAST_LIMIT = 12;
 
 /**
- * The notice TMDB's API Terms of Use require, quoted verbatim from section 3
- * as updated 20 October 2023 (spec 0017, AC-3). The site footer renders it on
- * every route; this module only owns the text, so it exists as a literal
- * nowhere else.
- */
-export const TMDB_ATTRIBUTION =
-  "This website uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.";
-
-/**
  * The timezone TMDB uses to decide "today" for the Airing today and On the air
  * TV lists (spec 0021, AC-2). Fixed app wide rather than per visitor: following
  * the visitor is a deferred decision in the scope, not a constant change.

@@ -44,7 +44,6 @@ export type {
   TvShowSummary,
 } from "@bestats/core/tmdb/types";
 export type { SettledBatch } from "./batch";
-export { TMDB_ATTRIBUTION } from "./constants";
 export { isTmdbNotFound, TmdbError, type TmdbErrorKind } from "./errors";
 export { imageUrl, resizeImageUrl, type TmdbImageSize } from "./images";
 export {

@@ -1,3 +1,4 @@
+import { TMDB_ATTRIBUTION } from "@bestats/core/legal/attribution";
 import {
   IGDB_ATTRIBUTION,
   IGDB_HOME_URL,
@@ -9,7 +10,6 @@ import { cn } from "cn";
 import Image from "next/image";
 import Link from "next/link";
 import type * as React from "react";
-import { TMDB_ATTRIBUTION } from "@/lib/tmdb";
 
 import { IconKey } from "./icon-key";
 
