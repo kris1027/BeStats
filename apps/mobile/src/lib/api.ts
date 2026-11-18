@@ -1,6 +1,7 @@
 import {
   V1_ERROR_MESSAGES,
   V1_NETWORK_MESSAGE,
+  type V1ErrorCode,
   v1ErrorBodySchema,
 } from "@bestats/core/api/v1/errors";
 import { APP_VERSION_HEADER } from "@bestats/core/api/v1/version";
@@ -9,6 +10,9 @@ import type { z } from "zod";
 
 import { getPublicEnv } from "./env";
 import { getAccessToken, refreshAfterUnauthorized } from "./supabase";
+
+/** A v1 error code, or `network` when no answer arrived at all. */
+export type ApiErrorCode = V1ErrorCode | "network";
 
 /**
  * A refused or failed API call, carrying the v1 error code and, for a
@@ -19,7 +23,7 @@ import { getAccessToken, refreshAfterUnauthorized } from "./supabase";
 export class ApiError extends Error {
   constructor(
     readonly status: number,
-    readonly code: string,
+    readonly code: ApiErrorCode,
     message: string,
     readonly reason?: string,
   ) {

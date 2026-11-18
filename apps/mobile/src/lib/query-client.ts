@@ -1,6 +1,7 @@
 import { QueryClient } from "@tanstack/react-query";
 
 import { ApiError } from "./api";
+import { PRIVATE_QUERY_ROOT } from "./movies";
 
 /**
  * The app's one query cache. In the tracer it lives in memory only, so no
@@ -34,6 +35,6 @@ export const queryClient = new QueryClient({
  * left that screen on a spinner for good (prompts/mobile-sign-out-spinner.md).
  */
 export function clearPrivateQueries(client: QueryClient = queryClient): void {
-  client.removeQueries({ queryKey: ["me"] });
+  client.removeQueries({ queryKey: [PRIVATE_QUERY_ROOT] });
   client.getMutationCache().clear();
 }

@@ -19,6 +19,7 @@ const mockFetchMovie = jest.fn();
 const mockFetchMovieState = jest.fn();
 const mockPutMovieWatched = jest.fn();
 jest.mock("@/lib/movies", () => ({
+  PRIVATE_QUERY_ROOT: "me",
   queryKeys: {
     movie: (id: number) => ["catalog", "movie", id],
     movieState: (id: number) => ["me", "titles", `movie:${id}`],
