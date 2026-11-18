@@ -128,6 +128,8 @@ Planned in [docs/scope/games.md](docs/scope/games.md) (G1 to G10, all shipped). 
 
 - Scripts live in `package.json`; `pnpm dev:docker` runs the dev server against the local Supabase stack. Root scripts delegate to `@bestats/web` through `pnpm --filter`. `pnpm-workspace.yaml` lists the `apps/*` and `packages/*` globs, pins `allowBuilds`, and hoists `@types/react` and `@types/react-dom` so `next` still finds them.
 - Imports use the `@/*` alias for the app root (`apps/web/`).
+- Env files (`.env.local`, `.env.example`) live in `apps/web/`, where Next reads them.
+- A test that reads repo files resolves their paths from its own file (`import.meta.url`), never the working directory, and the boundary scans walk the whole workspace, so a new app or package is covered the day it appears.
 - `cacheComponents: true`: every route is prerenderable or exports `instant = false`; every cached read calls `cacheLife` inside its own `use cache` scope, and returns a plain result rather than throwing (a thrown error loses its class across the scope). Routing, proxy, images and region rules: [app/AGENTS.md](apps/web/app/AGENTS.md), read before editing `proxy.ts`, `next.config.ts` or a route.
 - Middleware is `proxy.ts` exporting `proxy` (Next.js 16 ignores a `middleware.ts`).
 - Read public env values through `getPublicEnv()` in `lib/env.ts`, never `process.env`. It validates lazily, so a build with no Supabase project still succeeds while every auth call fails loudly. Code on every page calls `publicEnvProblems()` first and falls back to signed out, so a missing auth config never takes the catalog down.
