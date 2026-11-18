@@ -5,6 +5,13 @@ import { legacyLibraryRedirects } from "./lib/catalog/library-list";
 import { getAuthEmailDelivery } from "./lib/env";
 
 /**
+ * The workspace root, two folders above this app (spec 0034, Tooling). Turbopack
+ * and output tracing both default to this folder, which would leave
+ * `packages/core` outside what the build can resolve and ship.
+ */
+const WORKSPACE_ROOT = join(__dirname, "..", "..");
+
+/**
  * Cache Components is on from the first data feature rather than adopted later
  * as a migration across finished pages (spec 0002, AC-4). Every route from here
  * on must be prerenderable or explicitly opt out with `export const instant =
@@ -15,13 +22,6 @@ import { getAuthEmailDelivery } from "./lib/env";
  * hardcoded `TMDB_IMAGE_BASE` and `IGDB_IMAGE_BASE` (spec 0002, AC-20; spec
  * 0025, AC-11), so the image config below needs no remote host of its own.
  */
-/**
- * The workspace root, two folders above this app (spec 0034, Tooling). Turbopack
- * and output tracing both default to this folder, which would leave
- * `packages/core` outside what the build can resolve and ship.
- */
-const WORKSPACE_ROOT = join(__dirname, "..", "..");
-
 const nextConfig: NextConfig = {
   cacheComponents: true,
   turbopack: { root: WORKSPACE_ROOT },

@@ -15,10 +15,10 @@ coverage/
 
 # next.js
 .next/
-out/
+/apps/web/out/
 
 # production
-build/
+/apps/web/build/
 
 # misc
 .DS_Store
