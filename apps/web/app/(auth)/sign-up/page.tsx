@@ -1,13 +1,12 @@
+import { isSafeNextPath } from "@bestats/core/auth/next-path";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-
 import { AuthCrossLink } from "@/components/auth/auth-cross-link";
 import { AuthPanel } from "@/components/auth/auth-panel";
 import { AuthUnavailableNotice } from "@/components/auth/auth-unavailable-notice";
 import { LEGAL_LINK_CLASS } from "@/components/legal/legal-document";
 import { Skeleton } from "@/components/skeleton";
-import { isSafeNextPath } from "@/lib/auth/next-path";
 import { publicEnvProblems } from "@/lib/env";
 import { SignUpForm } from "./sign-up-form";
 

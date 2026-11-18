@@ -1,9 +1,8 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { LIBRARY_PATHS } from "@bestats/core/catalog/library-list";
+import { MOVIE_LIST_SLUGS, TV_LIST_SLUGS } from "@bestats/core/catalog/lists";
 import { describe, expect, it } from "vitest";
-
-import { LIBRARY_PATHS } from "@/lib/catalog/library-list";
-import { MOVIE_LIST_SLUGS, TV_LIST_SLUGS } from "@/lib/catalog/lists";
 
 /**
  * covers: spec 0006, AC-13, as amended by spec 0007, AC-19

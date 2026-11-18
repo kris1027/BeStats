@@ -10,17 +10,21 @@
  * catalog card; the failure is logged inside the read (AC-9). The card shows
  * the stored status as it is, so it always matches the library tab (AC-8).
  */
+
+import {
+  type GameCardStatus,
+  gameCardStatus,
+} from "@bestats/core/catalog/game-page";
+import { formatReleaseDate } from "@bestats/core/format";
+import { idsKey } from "@bestats/core/tracking/ids-key";
+import { isStartedGame } from "@bestats/core/tracking/types";
 import { ReleasePill } from "@/components/library/dated-pill";
 import {
   IgdbRatingBadge,
   PersonalScoreBadge,
 } from "@/components/rating-badges";
-import { type GameCardStatus, gameCardStatus } from "@/lib/catalog/game-page";
-import { formatReleaseDate } from "@/lib/format";
 import { requestTodayUtc } from "@/lib/tracking/episode-state";
 import { getGameGridStates } from "@/lib/tracking/game-state";
-import { idsKey } from "@/lib/tracking/ids-key";
-import { isStartedGame } from "@/lib/tracking/types";
 
 import { GameCardBookmarkButton } from "./game-card-bookmark-button";
 import { GameStatusChip } from "./game-status-chip";

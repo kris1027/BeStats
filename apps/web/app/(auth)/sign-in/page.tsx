@@ -1,18 +1,17 @@
-import type { Metadata } from "next";
-import { Suspense } from "react";
-
-import { AuthCrossLink } from "@/components/auth/auth-cross-link";
-import { AuthPanel } from "@/components/auth/auth-panel";
-import { AuthUnavailableNotice } from "@/components/auth/auth-unavailable-notice";
-import { Skeleton } from "@/components/skeleton";
 import {
   AUTH_MESSAGES,
   type AuthOutcome,
   authMessage,
   SIGN_IN_NOTICES,
   type SignInNotice,
-} from "@/lib/auth/messages";
-import { isSafeNextPath } from "@/lib/auth/next-path";
+} from "@bestats/core/auth/messages";
+import { isSafeNextPath } from "@bestats/core/auth/next-path";
+import type { Metadata } from "next";
+import { Suspense } from "react";
+import { AuthCrossLink } from "@/components/auth/auth-cross-link";
+import { AuthPanel } from "@/components/auth/auth-panel";
+import { AuthUnavailableNotice } from "@/components/auth/auth-unavailable-notice";
+import { Skeleton } from "@/components/skeleton";
 import { getAuthEmailDelivery, publicEnvProblems } from "@/lib/env";
 import { SignInForm } from "./sign-in-form";
 

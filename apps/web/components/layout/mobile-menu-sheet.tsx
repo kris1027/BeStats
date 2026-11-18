@@ -1,12 +1,12 @@
 "use client";
 
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
+import type { LibraryType } from "@bestats/core/catalog/media-type";
 import { cn } from "cn";
 import { MenuIcon, XIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type * as React from "react";
 import { useEffect, useState } from "react";
-
 import {
   BrandLinkView,
   rememberedLibraryType,
@@ -16,7 +16,6 @@ import { MEDIA_TABS, mediaTabHref } from "@/components/layout/media-type-tabs";
 import { QuickSearch } from "@/components/search/quick-search";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import type { LibraryType } from "@/lib/catalog/media-type";
 
 import { WithPageMediaType } from "./page-media-type";
 

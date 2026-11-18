@@ -14,6 +14,21 @@ import "server-only";
  * build failure rather than a leaked credential (AC-2).
  */
 
+export type {
+  BatchResult,
+  DiscoverGamesOptions,
+  DiscoverSort,
+  Game,
+  GameRef,
+  GameReleaseDate,
+  GameSummary,
+  GameType,
+  GameVideo,
+  Paged,
+  PlatformRelease,
+  PopularGamesKind,
+  SearchGamesOptions,
+} from "@bestats/core/igdb/types";
 export {
   IgdbError,
   type IgdbErrorKind,
@@ -29,18 +44,3 @@ export {
   getPopularGames,
   searchGames,
 } from "./reads";
-export type {
-  BatchResult,
-  DiscoverGamesOptions,
-  DiscoverSort,
-  Game,
-  GameRef,
-  GameReleaseDate,
-  GameSummary,
-  GameType,
-  GameVideo,
-  Paged,
-  PlatformRelease,
-  PopularGamesKind,
-  SearchGamesOptions,
-} from "./types";

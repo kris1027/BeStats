@@ -1,18 +1,16 @@
 import "server-only";
 
+import type { TrackingRead } from "@bestats/core/tracking/types";
+import { classifyShow, type ShowPage } from "@bestats/core/tv/library-page";
 import { cache } from "react";
-
 import { getOptionalUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
 import { getTvShowsSettled, TmdbError } from "@/lib/tmdb";
-import { classifyShow, type ShowPage } from "@/lib/tv/library-page";
-
 import { requestTodayUtc } from "./episode-state";
 import { readWatchedRegular } from "./library-lists";
 import { logTrackingEvent, TRACKING_EVENT } from "./log";
 import { getShowRatings } from "./show-ratings";
 import { getTrackedShows } from "./show-state";
-import type { TrackingRead } from "./types";
 
 /**
  * What a catalog card shows of one tracked show: the library page it sits on

@@ -1,13 +1,12 @@
 "use client";
 
+import { libraryHref } from "@bestats/core/catalog/media-type";
+import { MISSING_SHOW_COPY } from "@bestats/core/tracking/messages";
 import { useOptimistic } from "react";
-
 import { PosterCard } from "@/components/poster-card";
 import { CardRoundButton } from "@/components/tracking/card-round-button";
 import { PlannedIcon } from "@/components/tracking/tracking-icons";
 import { useShowTracking } from "@/components/tracking/use-show-tracking";
-import { libraryHref } from "@/lib/catalog/media-type";
-import { MISSING_SHOW_COPY } from "@/lib/tracking/messages";
 
 import { neighbourCardTarget, shownElementById } from "./card-focus";
 import { SHOW_CARD_LINK_SELECTOR } from "./ids";

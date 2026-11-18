@@ -1,7 +1,10 @@
+import {
+  type LibraryPath,
+  libraryTab,
+} from "@bestats/core/catalog/library-list";
+import { parseLibraryPageType } from "@bestats/core/catalog/media-type";
+import { parsePageParam } from "@bestats/core/catalog/pages";
 import { requireUser } from "@/lib/auth/user";
-import { type LibraryPath, libraryTab } from "@/lib/catalog/library-list";
-import { parseLibraryPageType } from "@/lib/catalog/media-type";
-import { parsePageParam } from "@/lib/catalog/pages";
 import { requestTodayUtc } from "@/lib/tracking/episode-state";
 
 import { gameLibraryTab } from "./game-library-tab";

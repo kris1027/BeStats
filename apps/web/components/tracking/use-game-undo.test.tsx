@@ -1,7 +1,6 @@
+import type { GameUndo } from "@bestats/core/tracking/types";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-
-import type { GameUndo } from "@/lib/tracking/types";
 
 /**
  * covers: spec 0026, AC-4, AC-5; spec 0027, AC-12

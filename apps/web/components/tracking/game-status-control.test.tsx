@@ -1,8 +1,7 @@
+import type { GameTrackingState } from "@bestats/core/tracking/types";
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-import type { GameTrackingState } from "@/lib/tracking/types";
 
 /**
  * covers: spec 0026, AC-2 to AC-8, AC-11

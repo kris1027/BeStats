@@ -1,5 +1,13 @@
 "use client";
 
+import {
+  type AuthActionState,
+  IDLE_STATE,
+} from "@bestats/core/auth/action-state";
+import {
+  USERNAME_HINT,
+  USERNAME_MAX_LENGTH,
+} from "@bestats/core/auth/username";
 import Link from "next/link";
 import { useActionState } from "react";
 import {
@@ -7,8 +15,6 @@ import {
   AuthSubmitButton,
 } from "@/components/auth/auth-feedback";
 import { AuthField } from "@/components/auth/auth-field";
-import { type AuthActionState, IDLE_STATE } from "@/lib/auth/action-state";
-import { USERNAME_HINT, USERNAME_MAX_LENGTH } from "@/lib/auth/username";
 import { signUpAction } from "../actions";
 
 /**

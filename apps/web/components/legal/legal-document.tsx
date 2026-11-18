@@ -1,11 +1,10 @@
-import type * as React from "react";
-
 import {
   CONTACT_EMAIL,
   LEGAL_LAST_UPDATED,
   OPERATOR_GITHUB_URL,
   OPERATOR_HANDLE,
-} from "@/lib/legal/operator";
+} from "@bestats/core/legal/operator";
+import type * as React from "react";
 
 /**
  * `3 October 2026`, from the fixed constant and never the clock, parsed and

@@ -10,12 +10,13 @@
  * is quieter than an error on twenty cards (AC-2, AC-17). The failure is
  * logged inside the read.
  */
+
+import { movieCardStatus } from "@bestats/core/catalog/movie-page";
+import { formatReleaseDate } from "@bestats/core/format";
+import { idsKey } from "@bestats/core/tracking/ids-key";
 import { ReleasePill } from "@/components/library/dated-pill";
 import { PersonalScoreBadge } from "@/components/rating-badges";
-import { movieCardStatus } from "@/lib/catalog/movie-page";
-import { formatReleaseDate } from "@/lib/format";
 import { requestTodayUtc } from "@/lib/tracking/episode-state";
-import { idsKey } from "@/lib/tracking/ids-key";
 import { getMovieGridStates } from "@/lib/tracking/movie-state";
 
 import { CardBookmarkButton } from "./card-bookmark-button";

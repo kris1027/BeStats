@@ -1,9 +1,9 @@
 import "server-only";
 
+import { AUTH_OUTCOME } from "@bestats/core/auth/messages";
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { AUTH_EVENT, logAuthEvent } from "./log";
-import { AUTH_OUTCOME } from "./messages";
 import { getOptionalUser } from "./user";
 
 /** The signed in account's own profile (prompts/account-username.md). */

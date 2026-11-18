@@ -1,6 +1,5 @@
 import { z } from "zod";
-
-import { IGDB_MIN_YEAR } from "@/lib/igdb/constants";
+import { IGDB_MIN_YEAR } from "../igdb/constants";
 
 import {
   defaultLibraryTypeAt,

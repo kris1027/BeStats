@@ -1,10 +1,10 @@
+import { avatarLetter, displayName } from "@bestats/core/auth/identity";
 import { signOutAction } from "@/app/(auth)/actions";
 import { Avatar } from "@/components/layout/avatar";
 import { LibraryNav } from "@/components/layout/library-nav";
 import { MobileAccountBlock } from "@/components/layout/mobile-account-block";
 import { MobileMenuSheet } from "@/components/layout/mobile-menu-sheet";
 import { Button, ButtonLink } from "@/components/ui/button";
-import { avatarLetter, displayName } from "@/lib/auth/identity";
 import { getOwnProfile } from "@/lib/auth/profile";
 import { getOptionalUser } from "@/lib/auth/user";
 import { publicEnvProblems } from "@/lib/env";

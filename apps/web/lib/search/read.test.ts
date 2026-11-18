@@ -1,8 +1,13 @@
+import {
+  emptySearchParams,
+  type TmdbSearchParams,
+} from "@bestats/core/search/params";
+import type {
+  MovieSummary,
+  Paged,
+  TvShowSummary,
+} from "@bestats/core/tmdb/types";
 import { afterEach, describe, expect, it, vi } from "vitest";
-
-import type { MovieSummary, Paged, TvShowSummary } from "@/lib/tmdb/types";
-
-import { emptySearchParams, type TmdbSearchParams } from "./params";
 
 /** covers: spec 0010, AC-11, AC-12, AC-13, AC-16, AC-20; spec 0022, AC-21 */
 

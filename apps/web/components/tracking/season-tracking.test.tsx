@@ -1,8 +1,7 @@
+import type { EpisodeStates } from "@bestats/core/tracking/episode-intent";
 import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-import type { EpisodeStates } from "@/lib/tracking/episode-intent";
 
 /**
  * covers: spec 0011, AC-1, AC-2, AC-4, AC-8, AC-10, AC-11, AC-13, AC-14,

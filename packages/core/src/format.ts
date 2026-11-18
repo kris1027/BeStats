@@ -7,7 +7,7 @@
  * Pure and dependency free, so both Server Components and tests can use them.
  */
 
-import type { GameReleaseDate } from "@/lib/igdb/types";
+import type { GameReleaseDate } from "./igdb/types";
 
 /**
  * A runtime as `2h 19m`, `45m` under an hour, or `2h` on the hour

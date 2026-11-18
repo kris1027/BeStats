@@ -5,7 +5,7 @@
  * `MovieTrackingState` and branch on a `MovieTrackingError` to pick a toast.
  */
 
-import { Constants, type Database } from "@/lib/supabase/database.types";
+import { Constants, type Database } from "../supabase/database.types";
 
 /** What the reads return and what the controls hold between clicks. */
 export type MovieTrackingState = {

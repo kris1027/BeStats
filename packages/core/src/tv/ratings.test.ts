@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
-
-import { formatCalculatedRating } from "@/lib/format";
+import { formatCalculatedRating } from "../format";
 
 import { ratingsBySeason, seasonRating, showRating } from "./ratings";
 

@@ -1,7 +1,6 @@
+import { RECOVERY_UNAVAILABLE_MESSAGE } from "@bestats/core/auth/messages";
 import { render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-
-import { RECOVERY_UNAVAILABLE_MESSAGE } from "@/lib/auth/messages";
 import ForgotPasswordPage from "./forgot-password/page";
 import ResetPasswordPage from "./reset-password/page";
 

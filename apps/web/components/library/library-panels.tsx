@@ -1,35 +1,34 @@
-import { redirect } from "next/navigation";
-import type { ReactNode } from "react";
-
-import { PosterGrid } from "@/components/poster-grid";
-import { RetryLink } from "@/components/retry-link";
-import { PosterCardSkeleton } from "@/components/skeleton";
-import { StatePanel } from "@/components/state-panel";
-import { ButtonLink } from "@/components/ui/button";
 import {
   defaultLibraryTypeAt,
   type LibraryPageKey,
   type LibraryPath,
   libraryPathName,
   shownLibraryPage,
-} from "@/lib/catalog/library-list";
+} from "@bestats/core/catalog/library-list";
 import {
   CATALOG_PATHS,
   type LibraryType,
   libraryHref,
   type MediaType,
-} from "@/lib/catalog/media-type";
-import {
-  LIBRARY_CLASSIFY_LIMIT,
-  type LibraryTab,
-  libraryLastPage,
-} from "@/lib/tracking/library-lists";
+} from "@bestats/core/catalog/media-type";
 import {
   LIBRARY_LIST_FAILED,
   LIBRARY_LIST_FAILED_TITLE,
   LIBRARY_NOTES,
   libraryCopy,
-} from "@/lib/tracking/messages";
+} from "@bestats/core/tracking/messages";
+import { redirect } from "next/navigation";
+import type { ReactNode } from "react";
+import { PosterGrid } from "@/components/poster-grid";
+import { RetryLink } from "@/components/retry-link";
+import { PosterCardSkeleton } from "@/components/skeleton";
+import { StatePanel } from "@/components/state-panel";
+import { ButtonLink } from "@/components/ui/button";
+import {
+  LIBRARY_CLASSIFY_LIMIT,
+  type LibraryTab,
+  libraryLastPage,
+} from "@/lib/tracking/library-lists";
 
 import type { LibraryList } from "./types";
 

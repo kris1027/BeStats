@@ -1,8 +1,8 @@
 import "server-only";
+import type { Movie } from "@bestats/core/tmdb/types";
 import { tmdbRequest } from "./client";
 import { normalizeMovie } from "./normalize";
 import { movieSchema } from "./schemas";
-import type { Movie } from "./types";
 import { assertId } from "./validation";
 
 /**

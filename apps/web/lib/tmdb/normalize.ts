@@ -1,7 +1,20 @@
+import { parseTmdbDate } from "@bestats/core/format";
+import type {
+  CastMember,
+  Company,
+  Episode,
+  EpisodeToAir,
+  Genre,
+  Movie,
+  MovieSummary,
+  SeasonDetail,
+  SeasonSummary,
+  ShowCastMember,
+  TmdbShowStatus,
+  TvShow,
+  TvShowSummary,
+} from "@bestats/core/tmdb/types";
 import type { z } from "zod";
-
-import { parseTmdbDate } from "@/lib/format";
-
 import { SHOW_CAST_LIMIT } from "./constants";
 import {
   BACKDROP_SIZE,
@@ -27,21 +40,6 @@ import {
   type RawTvSummary,
   translationSchema,
 } from "./schemas";
-import type {
-  CastMember,
-  Company,
-  Episode,
-  EpisodeToAir,
-  Genre,
-  Movie,
-  MovieSummary,
-  SeasonDetail,
-  SeasonSummary,
-  ShowCastMember,
-  TmdbShowStatus,
-  TvShow,
-  TvShowSummary,
-} from "./types";
 
 /**
  * TMDB's shapes turned into the app's own.

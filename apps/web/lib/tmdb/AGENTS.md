@@ -9,8 +9,10 @@ feature 4. Runtime steps live in that spec's `verify.md`.
 ## What lives where
 
 - `index.ts` is the only entry point a page may import. It exports the cached
-  reads, `imageUrl`, `isTmdbNotFound`, `TmdbError`, `TMDB_ATTRIBUTION` and the
-  normalized types. Everything else in this folder is internal, except
+  reads, `imageUrl`, `isTmdbNotFound`, `TmdbError` and the normalized types
+  (which live in `packages/core/src/tmdb/types.ts`). `TMDB_ATTRIBUTION` lives
+  in `packages/core/src/legal/attribution.ts`. Everything else in this folder
+  is internal, except
   `image-loader.ts` (`'use client'`), which only `lib/images/loader.ts` (the
   `loaderFile`) imports, and the pure `images.ts` it reads.
 - `reads.ts` holds every `use cache` wrapper and is the only file that imports
@@ -18,9 +20,9 @@ feature 4. Runtime steps live in that spec's `verify.md`.
 - `client.ts` owns auth, the deadline, the retry budget, the status mapping and
   the failure logging. No other file calls `fetch`.
 - `constants.ts` pins the base URLs, `en-US`, the 8 second timeout, the 3
-  attempt ceiling, the concurrency cap of 8 and the attribution wording.
-- `schemas.ts` (Zod), `normalize.ts` (TMDB shape to app shape), `types.ts` (the
-  app's own types), `validation.ts` (input guards), `errors.ts`, `result.ts`,
+  attempt ceiling and the concurrency cap of 8.
+- `schemas.ts` (Zod), `normalize.ts` (TMDB shape to app shape, the app's own
+  types being core's `tmdb/types.ts`), `validation.ts` (input guards), `errors.ts`, `result.ts`,
   `images.ts`, `concurrency.ts`, then the reads themselves in `movies.ts`,
   `tv.ts`, `search.ts`, `genres.ts`, `batch.ts`, `show-episodes.ts` and
   `lists.ts` (TMDB's trending, dated and top rated lists, spec 0021), and
@@ -87,7 +89,7 @@ feature 4. Runtime steps live in that spec's `verify.md`.
   off that list passes through unresized, and Next's dev warning ("does not
   implement width") names it.
 - Adding a field the app needs is a three place change: `schemas.ts`,
-  `types.ts`, `normalize.ts`.
+  core's `tmdb/types.ts`, `normalize.ts`.
 
 ## Commands
 

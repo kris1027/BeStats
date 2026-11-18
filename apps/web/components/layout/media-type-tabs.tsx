@@ -1,8 +1,5 @@
 "use client";
 
-import { cn } from "cn";
-import Link from "next/link";
-
 import {
   CATALOG_PATHS,
   isLibraryPath,
@@ -11,7 +8,9 @@ import {
   libraryTabSwitchHref,
   type TypedPath,
   typedHref,
-} from "@/lib/catalog/media-type";
+} from "@bestats/core/catalog/media-type";
+import { cn } from "cn";
+import Link from "next/link";
 
 import { WithLibraryTypedPage } from "./page-media-type";
 

@@ -1,4 +1,7 @@
-import { IGDB_EROTIC_THEME_ID, IGDB_VISIBLE_GAME_TYPES } from "./constants";
+import {
+  IGDB_EROTIC_THEME_ID,
+  IGDB_VISIBLE_GAME_TYPES,
+} from "@bestats/core/igdb/constants";
 import { type Condition as Clause, cond, type IgdbField } from "./query";
 
 /**

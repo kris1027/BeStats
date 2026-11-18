@@ -1,9 +1,15 @@
 "use client";
 
+import { formatPersonalScore } from "@bestats/core/format";
+import type { EpisodeIntent } from "@bestats/core/tracking/episode-intent";
+import {
+  EMPTY_EPISODE_TRACKING,
+  type EpisodeTrackingResult,
+  type EpisodeTrackingState,
+} from "@bestats/core/tracking/types";
 import { cn } from "cn";
 import { StarIcon } from "lucide-react";
 import { useRef, useState } from "react";
-
 import { setEpisodeRating, setEpisodeWatched } from "@/app/shows/actions";
 import { glassPillClassName } from "@/components/glass-pill";
 import {
@@ -12,13 +18,6 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { formatPersonalScore } from "@/lib/format";
-import type { EpisodeIntent } from "@/lib/tracking/episode-intent";
-import {
-  EMPTY_EPISODE_TRACKING,
-  type EpisodeTrackingResult,
-  type EpisodeTrackingState,
-} from "@/lib/tracking/types";
 
 import { ScorePicker } from "./score-picker";
 import { useEpisodeStates, useSeasonTracking } from "./season-tracking-store";

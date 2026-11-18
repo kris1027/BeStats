@@ -1,11 +1,11 @@
-import { CATALOG_SOURCES } from "@/lib/catalog/media-type";
+import { CATALOG_SOURCES } from "@bestats/core/catalog/media-type";
 import {
   type CountEndpoint,
   formatPartialCount,
   formatResultCount,
   mediaNoun,
-} from "@/lib/search/count";
-import type { SearchType } from "@/lib/search/params";
+} from "@bestats/core/search/count";
+import type { SearchType } from "@bestats/core/search/params";
 
 /**
  * The line above the results, in the one form that is true for the mode

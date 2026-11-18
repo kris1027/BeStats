@@ -1,9 +1,8 @@
 "use client";
 
+import { SHOW_TRACKING_COPY } from "@bestats/core/tracking/messages";
 import { cn } from "cn";
-
 import { glassPillClassName } from "@/components/glass-pill";
-import { SHOW_TRACKING_COPY } from "@/lib/tracking/messages";
 
 import { PlanIcon, PlannedIcon } from "./tracking-icons";
 import { TRACKING_PILL } from "./tracking-pill";

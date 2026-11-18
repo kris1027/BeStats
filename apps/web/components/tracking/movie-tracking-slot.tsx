@@ -1,7 +1,10 @@
+import {
+  isMovieReleased,
+  movieReleaseNote,
+} from "@bestats/core/catalog/movie-page";
+import { TRACKING_READ_FAILED } from "@bestats/core/tracking/messages";
 import { RetryLink } from "@/components/retry-link";
-import { isMovieReleased, movieReleaseNote } from "@/lib/catalog/movie-page";
 import { requestTodayUtc } from "@/lib/tracking/episode-state";
-import { TRACKING_READ_FAILED } from "@/lib/tracking/messages";
 import { getMovieTracking } from "@/lib/tracking/movie-state";
 
 import { MovieTrackingControls } from "./movie-tracking-controls";

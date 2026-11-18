@@ -1,7 +1,9 @@
+import {
+  type LibraryPath,
+  libraryPathName,
+} from "@bestats/core/catalog/library-list";
+import { shownLibraryType } from "@bestats/core/catalog/media-type";
 import type { Metadata } from "next";
-
-import { type LibraryPath, libraryPathName } from "./library-list";
-import { shownLibraryType } from "./media-type";
 
 /**
  * A library page's metadata: its name on the current tab as the title, and

@@ -1,8 +1,13 @@
 import "server-only";
+import type {
+  Episode,
+  SeasonDetail,
+  ShowEpisodes,
+  TvShow,
+} from "@bestats/core/tmdb/types";
 import { mapWithConcurrency } from "./concurrency";
 import { TMDB_CONCURRENCY_LIMIT } from "./constants";
 import { fetchSeason, fetchTvShow } from "./tv";
-import type { Episode, SeasonDetail, ShowEpisodes, TvShow } from "./types";
 
 /**
  * Every regular episode of one show, with an honest flag for whether the read

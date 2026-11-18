@@ -1,7 +1,6 @@
 import { join } from "node:path";
+import { legacyLibraryRedirects } from "@bestats/core/catalog/library-list";
 import type { NextConfig } from "next";
-
-import { legacyLibraryRedirects } from "./lib/catalog/library-list";
 import { getAuthEmailDelivery } from "./lib/env";
 
 /**
@@ -26,6 +25,9 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   turbopack: { root: WORKSPACE_ROOT },
   outputFileTracingRoot: WORKSPACE_ROOT,
+  // `@bestats/core` ships TypeScript source with no build step, so Next
+  // compiles it like the app's own files (spec 0034, Tooling).
+  transpilePackages: ["@bestats/core"],
   /**
    * `/` sends people to `/shows` (spec 0004, AC-17).
    *

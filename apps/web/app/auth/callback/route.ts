@@ -1,9 +1,8 @@
+import { AUTH_OUTCOME, type AuthOutcome } from "@bestats/core/auth/messages";
+import { safeNextPath } from "@bestats/core/auth/next-path";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
-
 import { AUTH_EVENT, logAuthEvent } from "@/lib/auth/log";
-import { AUTH_OUTCOME, type AuthOutcome } from "@/lib/auth/messages";
-import { safeNextPath } from "@/lib/auth/next-path";
 import { classifyAuthError } from "@/lib/auth/supabase-error";
 import { createClient } from "@/lib/supabase/server";
 

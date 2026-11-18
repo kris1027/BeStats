@@ -1,3 +1,4 @@
+import { AUTH_OUTCOME } from "@bestats/core/auth/messages";
 import {
   AuthApiError,
   AuthPKCECodeVerifierMissingError,
@@ -5,8 +6,6 @@ import {
   AuthWeakPasswordError,
 } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
-
-import { AUTH_OUTCOME } from "./messages";
 import { classifyAuthError, classifyProfileWriteError } from "./supabase-error";
 
 describe("classifyAuthError", () => {

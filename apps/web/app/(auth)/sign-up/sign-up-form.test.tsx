@@ -1,7 +1,6 @@
+import { AUTH_MESSAGES, AUTH_OUTCOME } from "@bestats/core/auth/messages";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-
-import { AUTH_MESSAGES, AUTH_OUTCOME } from "@/lib/auth/messages";
 import { signUpAction } from "../actions";
 import { SignUpForm } from "./sign-up-form";
 

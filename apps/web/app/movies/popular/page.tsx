@@ -1,7 +1,6 @@
+import { catalogList } from "@bestats/core/catalog/lists";
 import type { Metadata } from "next";
-
 import { CatalogListPage } from "@/components/catalog/catalog-list-page";
-import { catalogList } from "@/lib/catalog/lists";
 import { catalogListMetadata } from "@/lib/landing-metadata";
 
 const LIST = catalogList("movie", "popular");

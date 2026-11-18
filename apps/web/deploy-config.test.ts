@@ -1,9 +1,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { SUPABASE_REGION } from "@bestats/core/legal/operator";
 import { describe, expect, it } from "vitest";
-
-import { SUPABASE_REGION } from "@/lib/legal/operator";
 
 /**
  * The deployment is configured from the repo: `supabase config push` sends

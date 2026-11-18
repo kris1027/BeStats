@@ -1,7 +1,6 @@
+import { catalogListsFor, listPath } from "@bestats/core/catalog/lists";
 import type { MetadataRoute } from "next";
 import { cacheLife } from "next/cache";
-
-import { catalogListsFor, listPath } from "@/lib/catalog/lists";
 import { isIndexableDeployment, siteUrl } from "@/lib/seo/site";
 import { DISCOVER_PAGES_PER_TYPE, sitemapEntries } from "@/lib/seo/sitemap";
 import { discoverMovies, discoverTvShows, TmdbError } from "@/lib/tmdb";

@@ -1,18 +1,17 @@
+import { libraryHref } from "@bestats/core/catalog/media-type";
+import {
+  MARK_NEXT_MESSAGES,
+  NEXT_EPISODE_MESSAGES,
+} from "@bestats/core/tracking/messages";
+import type { EpisodePlace } from "@bestats/core/tv/library-page";
 import { cn } from "cn";
 import { cache } from "react";
-
 import { CARD_PILL, GlassPill } from "@/components/glass-pill";
 import { RetryLink } from "@/components/retry-link";
 import { Skeleton } from "@/components/skeleton";
 import { CARD_ROUND_BOX } from "@/components/tracking/card-round-button";
 import { NextEpisodeIcon } from "@/components/tracking/tracking-icons";
-import { libraryHref } from "@/lib/catalog/media-type";
 import { getSeason, TmdbError } from "@/lib/tmdb";
-import {
-  MARK_NEXT_MESSAGES,
-  NEXT_EPISODE_MESSAGES,
-} from "@/lib/tracking/messages";
-import type { EpisodePlace } from "@/lib/tv/library-page";
 
 import { MarkNextWatchedButton } from "./mark-next-watched-button";
 

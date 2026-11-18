@@ -1,10 +1,13 @@
 import "server-only";
+import {
+  IGDB_BATCH_LIMIT,
+  IGDB_POPULARITY_TYPES,
+} from "@bestats/core/igdb/constants";
+import type { GameSummary, PopularGamesKind } from "@bestats/core/igdb/types";
 import { fetchGamesByIds } from "./batch";
 import { igdbRequest } from "./client";
-import { IGDB_BATCH_LIMIT, IGDB_POPULARITY_TYPES } from "./constants";
 import { buildQuery, cond } from "./query";
 import { popularityPrimitiveSchema, recordsSchema } from "./schemas";
-import type { GameSummary, PopularGamesKind } from "./types";
 import { canonicalGameIds, type ValidPopularKind } from "./validation";
 
 /**

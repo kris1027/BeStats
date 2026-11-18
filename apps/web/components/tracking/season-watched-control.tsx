@@ -1,21 +1,23 @@
 "use client";
 
-import { cn } from "cn";
-import { toast } from "sonner";
-
-import { setSeasonWatched, undoSeasonWatched } from "@/app/shows/actions";
-import { glassPillClassName } from "@/components/glass-pill";
 import type {
   EpisodeIntent,
   EpisodeStates,
-} from "@/lib/tracking/episode-intent";
-import { SEASON_MESSAGES, UNDO_ACTION_LABEL } from "@/lib/tracking/messages";
-import type { SeasonUndo } from "@/lib/tracking/types";
+} from "@bestats/core/tracking/episode-intent";
+import {
+  SEASON_MESSAGES,
+  UNDO_ACTION_LABEL,
+} from "@bestats/core/tracking/messages";
+import type { SeasonUndo } from "@bestats/core/tracking/types";
 import {
   airedEpisodesForMarking,
   type SeasonEpisode,
   seasonWatchSummary,
-} from "@/lib/tv/season-watch";
+} from "@bestats/core/tv/season-watch";
+import { cn } from "cn";
+import { toast } from "sonner";
+import { setSeasonWatched, undoSeasonWatched } from "@/app/shows/actions";
+import { glassPillClassName } from "@/components/glass-pill";
 
 import { SeasonRating } from "./season-rating";
 import { useEpisodeStates, useSeasonTracking } from "./season-tracking-store";

@@ -1,6 +1,6 @@
+import { CATALOG_PATHS } from "@bestats/core/catalog/media-type";
 import { StatePanel } from "@/components/state-panel";
 import { ButtonLink } from "@/components/ui/button";
-import { CATALOG_PATHS } from "@/lib/catalog/media-type";
 
 /**
  * A game id IGDB does not know, or one the catalog filter hides (spec 0025,

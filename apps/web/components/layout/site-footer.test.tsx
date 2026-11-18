@@ -1,21 +1,12 @@
-import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
-
+import { TMDB_ATTRIBUTION } from "@bestats/core/legal/attribution";
 import {
   IGDB_ATTRIBUTION,
   IGDB_HOME_URL,
   OPERATOR_GITHUB_URL,
   OPERATOR_HANDLE,
-} from "@/lib/legal/operator";
-import { TMDB_ATTRIBUTION } from "@/lib/tmdb/constants";
-
-// The real entry point pulls `server-only` and the cached reads into jsdom.
-// Only the constant crosses it here, taken from the file that owns it, so the
-// footer still renders the real wording.
-vi.mock("@/lib/tmdb", async () => {
-  const constants = await import("@/lib/tmdb/constants");
-  return { TMDB_ATTRIBUTION: constants.TMDB_ATTRIBUTION };
-});
+} from "@bestats/core/legal/operator";
+import { render, screen, within } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
 
 const { SiteFooter } = await import("./site-footer");
 

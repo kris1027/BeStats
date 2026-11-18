@@ -1,12 +1,11 @@
 import "server-only";
 
+import { AUTH_OUTCOME, type AuthOutcome } from "@bestats/core/auth/messages";
 import {
   type AuthError,
   isAuthSessionMissingError,
   isAuthWeakPasswordError,
 } from "@supabase/supabase-js";
-
-import { AUTH_OUTCOME, type AuthOutcome } from "./messages";
 
 /**
  * Classifies a Supabase auth error into one of our outcomes (spec 0005).

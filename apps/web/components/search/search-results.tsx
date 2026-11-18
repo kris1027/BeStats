@@ -1,5 +1,24 @@
+import { GRID_PAGE_SIZE } from "@bestats/core/catalog/grid-page";
+import {
+  CATALOG_SOURCES,
+  type LibraryType,
+  parseLibraryTypeParam,
+  titleHref,
+  typedHref,
+} from "@bestats/core/catalog/media-type";
+import { SEARCH_CATALOGS } from "@bestats/core/search/catalogs";
+import { formatRange, mediaNoun } from "@bestats/core/search/count";
+import { searchMode } from "@bestats/core/search/mode";
+import {
+  parseGameSearchParams,
+  parseTmdbSearchParams,
+  type SearchParamName,
+  type SearchParams,
+  type SearchType,
+  searchHref,
+  type TmdbSearchParams,
+} from "@bestats/core/search/params";
 import { Suspense } from "react";
-
 import { GameListCard } from "@/components/catalog/list-cards";
 import { PaginationLinks } from "@/components/pagination-links";
 import { PosterCard } from "@/components/poster-card";
@@ -22,34 +41,14 @@ import {
   ShowCardMeta,
 } from "@/components/tracking/show-card-slots";
 import { ButtonLink } from "@/components/ui/button";
-import { GRID_PAGE_SIZE } from "@/lib/catalog/grid-page";
-import {
-  CATALOG_SOURCES,
-  type LibraryType,
-  parseLibraryTypeParam,
-  titleHref,
-  typedHref,
-} from "@/lib/catalog/media-type";
 import { gameHasNextPage, lastGamePage } from "@/lib/catalog-list-read";
 import {
   type GameSummary,
   IgdbError,
   type Paged as IgdbPaged,
 } from "@/lib/igdb";
-import { SEARCH_CATALOGS } from "@/lib/search/catalogs";
-import { formatRange, mediaNoun } from "@/lib/search/count";
 import { readGameSearchPage } from "@/lib/search/game-read";
 import { readGameLists } from "@/lib/search/lists";
-import { searchMode } from "@/lib/search/mode";
-import {
-  parseGameSearchParams,
-  parseTmdbSearchParams,
-  type SearchParamName,
-  type SearchParams,
-  type SearchType,
-  searchHref,
-  type TmdbSearchParams,
-} from "@/lib/search/params";
 import {
   readSearchGridPage,
   type SearchPage,

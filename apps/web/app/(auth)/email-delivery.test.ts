@@ -1,12 +1,11 @@
-import { AuthApiError } from "@supabase/supabase-js";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-import { IDLE_STATE } from "@/lib/auth/action-state";
+import { IDLE_STATE } from "@bestats/core/auth/action-state";
 import {
   AUTH_MESSAGES,
   AUTH_OUTCOME,
   RECOVERY_UNAVAILABLE_MESSAGE,
-} from "@/lib/auth/messages";
+} from "@bestats/core/auth/messages";
+import { AuthApiError } from "@supabase/supabase-js";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
  * The Auth server is the boundary, so the request scoped client is the one

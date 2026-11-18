@@ -1,6 +1,9 @@
+import {
+  CATALOG_PATHS,
+  type LibraryType,
+} from "@bestats/core/catalog/media-type";
 import type * as React from "react";
 import { Suspense } from "react";
-
 import { IgdbRatingBadge, TmdbRatingBadge } from "@/components/rating-badges";
 import {
   GameCardBadge,
@@ -17,7 +20,6 @@ import {
   ShowCardControls,
 } from "@/components/tracking/show-card-slots";
 import { ShowTrackingSlot } from "@/components/tracking/show-tracking-slot";
-import { CATALOG_PATHS, type LibraryType } from "@/lib/catalog/media-type";
 
 import type { LandingItem } from "./landing-items";
 

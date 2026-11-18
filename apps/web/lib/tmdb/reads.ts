@@ -1,4 +1,23 @@
 import "server-only";
+import type {
+  BatchResult,
+  DiscoverOptions,
+  Genre,
+  ListOptions,
+  Movie,
+  MovieExtras,
+  MovieListKind,
+  MovieSummary,
+  Paged,
+  SearchOptions,
+  SeasonDetail,
+  ShowCastMember,
+  ShowEpisodes,
+  TvExtras,
+  TvListKind,
+  TvShow,
+  TvShowSummary,
+} from "@bestats/core/tmdb/types";
 import { cacheLife } from "next/cache";
 import {
   fetchMoviesByIds,
@@ -25,25 +44,6 @@ import {
 } from "./search";
 import { fetchShowEpisodes } from "./show-episodes";
 import { fetchSeason, fetchShowCast, fetchTvShow } from "./tv";
-import type {
-  BatchResult,
-  DiscoverOptions,
-  Genre,
-  ListOptions,
-  Movie,
-  MovieExtras,
-  MovieListKind,
-  MovieSummary,
-  Paged,
-  SearchOptions,
-  SeasonDetail,
-  ShowCastMember,
-  ShowEpisodes,
-  TvExtras,
-  TvListKind,
-  TvShow,
-  TvShowSummary,
-} from "./types";
 
 /**
  * The cached half of every TMDB read: thin `use cache` wrappers over the inner

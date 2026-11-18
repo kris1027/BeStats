@@ -1,6 +1,6 @@
 # lib/catalog
 
-Pure catalog helpers: ID and `page` param parsing (`ids.ts`, also used by `proxy.ts`), media type params and link builders (`media-type.ts`), library page routes and names (`library-list.ts`, `library-metadata.ts`), and the movie and game page classifiers. Nothing here imports `server-only`, so the proxy and tests can use it; the same holds for `lib/format.ts`.
+Pure catalog helpers: ID and `page` param parsing (`ids.ts`, also used by `proxy.ts`), media type params and link builders (`media-type.ts`), library page routes and names (`library-list.ts`, `library-metadata.ts`), and the movie and game page classifiers. Since spec 0034 every one of them except `library-metadata.ts` (a `next` Metadata builder) lives in `packages/core/src/catalog/` and is imported as `@bestats/core/catalog/<file>`, so the mobile app runs the same rules; `format.ts` sits beside them in core. The rules below still govern those files.
 
 ## Media types
 

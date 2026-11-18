@@ -1,6 +1,14 @@
 import "server-only";
 
-import { gameHref } from "@/lib/catalog/media-type";
+import { gameHref } from "@bestats/core/catalog/media-type";
+import { IGDB_LIST_PAGE_SIZE } from "@bestats/core/igdb/constants";
+import {
+  GAME_MIN_RATING_COUNT,
+  QUICK_LIMIT,
+} from "@bestats/core/search/constants";
+import type { GameSearchMode } from "@bestats/core/search/mode";
+import type { GameSearchParams } from "@bestats/core/search/params";
+import type { QuickSearchResponse } from "@bestats/core/search/quick";
 import { sliceGamePage } from "@/lib/catalog-list-read";
 import {
   discoverGames,
@@ -10,12 +18,6 @@ import {
   type SearchGamesOptions,
   searchGames,
 } from "@/lib/igdb";
-import { IGDB_LIST_PAGE_SIZE } from "@/lib/igdb/constants";
-
-import { GAME_MIN_RATING_COUNT, QUICK_LIMIT } from "./constants";
-import type { GameSearchMode } from "./mode";
-import type { GameSearchParams } from "./params";
-import type { QuickSearchResponse } from "./quick";
 
 /**
  * One 24 game page of a games search, in the mode the URL decides (spec 0029,

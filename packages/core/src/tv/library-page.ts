@@ -1,5 +1,9 @@
-import type { LibraryList } from "@/lib/catalog/library-list";
-import type { EpisodeToAir, SeasonSummary, TmdbShowStatus } from "@/lib/tmdb";
+import type { LibraryList } from "../catalog/library-list";
+import type {
+  EpisodeToAir,
+  SeasonSummary,
+  TmdbShowStatus,
+} from "../tmdb/types";
 
 import { airStatus } from "./air-status";
 

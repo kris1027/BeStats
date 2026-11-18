@@ -1,11 +1,10 @@
+import { isSafeNextPath } from "@bestats/core/auth/next-path";
+import { emailSchema } from "@bestats/core/auth/schemas";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-
 import { AuthPanel } from "@/components/auth/auth-panel";
 import { Skeleton } from "@/components/skeleton";
-import { isSafeNextPath } from "@/lib/auth/next-path";
-import { emailSchema } from "@/lib/auth/schemas";
 import { ResendForm } from "./resend-form";
 
 export const metadata: Metadata = {

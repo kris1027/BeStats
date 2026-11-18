@@ -1,9 +1,12 @@
+import {
+  gameReleaseNote,
+  isGameReleased,
+} from "@bestats/core/catalog/game-page";
+import { gameHref } from "@bestats/core/catalog/media-type";
+import { TRACKING_READ_FAILED } from "@bestats/core/tracking/messages";
 import { RetryLink } from "@/components/retry-link";
-import { gameReleaseNote, isGameReleased } from "@/lib/catalog/game-page";
-import { gameHref } from "@/lib/catalog/media-type";
 import { requestTodayUtc } from "@/lib/tracking/episode-state";
 import { getGameTracking } from "@/lib/tracking/game-state";
-import { TRACKING_READ_FAILED } from "@/lib/tracking/messages";
 
 import { GameStatusControl } from "./game-status-control";
 

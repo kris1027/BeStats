@@ -1,6 +1,5 @@
+import type { GameSearchParams } from "@bestats/core/search/params";
 import { afterEach, describe, expect, it, vi } from "vitest";
-
-import type { GameSearchParams } from "./params";
 
 /**
  * covers: spec 0029, AC-4 to AC-7
@@ -17,7 +16,7 @@ const igdb = vi.hoisted(() => ({
 vi.mock("@/lib/igdb", () => igdb);
 vi.mock("next/server", () => ({ connection: async () => {} }));
 
-const { emptySearchParams } = await import("./params");
+const { emptySearchParams } = await import("@bestats/core/search/params");
 const { readGameSearchPage } = await import("./game-read");
 
 function params(overrides: Partial<GameSearchParams> = {}): GameSearchParams {

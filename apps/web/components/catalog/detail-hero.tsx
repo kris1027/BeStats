@@ -1,8 +1,8 @@
+import { formatVoteCount } from "@bestats/core/format";
 import { cn } from "cn";
 import { FilmIcon, type LucideIcon } from "lucide-react";
 import Image from "next/image";
 import type * as React from "react";
-
 import {
   HERO_ART_FIT,
   HERO_ART_MASK,
@@ -10,7 +10,6 @@ import {
   HeroShade,
 } from "@/components/catalog/hero-frame";
 import { IgdbRatingBadge, TmdbRatingBadge } from "@/components/rating-badges";
-import { formatVoteCount } from "@/lib/format";
 import { resizeImageUrl } from "@/lib/tmdb/images";
 
 /**

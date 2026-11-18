@@ -1,7 +1,6 @@
+import type { MovieTrackingState } from "@bestats/core/tracking/types";
 import { render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-
-import type { MovieTrackingState } from "@/lib/tracking/types";
 
 /**
  * covers: spec 0007, AC-2, AC-16, AC-17; prompts/catalog-card-status.md, R1

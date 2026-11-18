@@ -64,7 +64,7 @@ vi.mock("@/components/tracking/show-tracking-slot", () => ({
 
 const { TmdbError } = await import("@/lib/tmdb/errors");
 const { IgdbError } = await import("@/lib/igdb/errors");
-const { landingSlots } = await import("@/lib/catalog/landing");
+const { landingSlots } = await import("@bestats/core/catalog/landing");
 const { LandingHeroContent } = await import("./landing-hero");
 
 const MOVIE = {

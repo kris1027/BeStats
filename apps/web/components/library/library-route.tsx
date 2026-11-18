@@ -1,6 +1,5 @@
+import type { LibraryPath } from "@bestats/core/catalog/library-list";
 import { Suspense } from "react";
-
-import type { LibraryPath } from "@/lib/catalog/library-list";
 
 import { LibraryErrorBoundary } from "./library-error-boundary";
 import { LibraryHeading } from "./library-heading";

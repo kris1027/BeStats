@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { installFetchMock, restoreFetchMock } from "./__fixtures__/helpers";
 import movieFixture from "./__fixtures__/movie-550.json";
-import { TMDB_ATTRIBUTION } from "./constants";
 import { getTmdbToken, resetTmdbTokenCache } from "./env";
 import { isTmdbNotFound, TmdbError } from "./errors";
 import { imageUrl, resizeImageUrl } from "./images";
@@ -147,13 +146,5 @@ describe("the two function split", () => {
     await expect(fetchMovie(550)).resolves.toMatchObject({
       title: "Fight Club",
     });
-  });
-});
-
-describe("attribution", () => {
-  it("exports TMDB's required wording verbatim", () => {
-    expect(TMDB_ATTRIBUTION).toBe(
-      "This website uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.",
-    );
   });
 });

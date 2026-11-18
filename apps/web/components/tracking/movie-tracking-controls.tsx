@@ -1,10 +1,18 @@
 "use client";
 
+import { formatPersonalScore } from "@bestats/core/format";
+import {
+  applyTrackingIntent,
+  type TrackingIntent,
+} from "@bestats/core/tracking/intent";
+import type {
+  MovieTrackingResult,
+  MovieTrackingState,
+} from "@bestats/core/tracking/types";
 import { cn } from "cn";
 import { StarIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { startTransition, useOptimistic, useRef, useState } from "react";
-
 import {
   setMovieRating,
   setMovieWatched,
@@ -17,15 +25,6 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { formatPersonalScore } from "@/lib/format";
-import {
-  applyTrackingIntent,
-  type TrackingIntent,
-} from "@/lib/tracking/intent";
-import type {
-  MovieTrackingResult,
-  MovieTrackingState,
-} from "@/lib/tracking/types";
 
 import { ScorePicker } from "./score-picker";
 import { PlanIcon, PlannedIcon, WatchedIcon } from "./tracking-icons";

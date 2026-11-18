@@ -1,3 +1,13 @@
+import type {
+  MovieExtras,
+  MovieSummary,
+  Paged,
+  Provider,
+  RegionProviders,
+  Trailer,
+  TvExtras,
+  TvShowSummary,
+} from "@bestats/core/tmdb/types";
 import { imageUrl, PROVIDER_LOGO_SIZE } from "./images";
 import { normalizeMovieSummary, normalizeTvSummary } from "./normalize";
 import {
@@ -11,16 +21,6 @@ import {
   videoSchema,
   watchProviderSchema,
 } from "./schemas";
-import type {
-  MovieExtras,
-  MovieSummary,
-  Paged,
-  Provider,
-  RegionProviders,
-  Trailer,
-  TvExtras,
-  TvShowSummary,
-} from "./types";
 
 /**
  * The appended extras of a title page turned into the app's shapes

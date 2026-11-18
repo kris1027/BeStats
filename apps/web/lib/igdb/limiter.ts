@@ -1,5 +1,8 @@
 import "server-only";
-import { IGDB_MAX_OPEN, IGDB_MIN_SPACING_MS } from "./constants";
+import {
+  IGDB_MAX_OPEN,
+  IGDB_MIN_SPACING_MS,
+} from "@bestats/core/igdb/constants";
 
 /**
  * The in process request limiter (spec 0023, AC-6).

@@ -34,7 +34,7 @@ vi.mock("@/components/catalog/list-cards", () => ({
 }));
 
 const { TmdbError } = await import("@/lib/tmdb/errors");
-const { JUSTWATCH_ATTRIBUTION } = await import("@/lib/legal/operator");
+const { JUSTWATCH_ATTRIBUTION } = await import("@bestats/core/legal/operator");
 const {
   AgeRatingSlotContent,
   MoreLikeThisContent,

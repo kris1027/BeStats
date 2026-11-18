@@ -10,14 +10,15 @@
     "lint": "biome check",
     "lint:ci": "biome ci --error-on-warnings",
     "format": "biome check --write",
-    "typecheck": "pnpm --filter @bestats/web typecheck",
-    "test": "pnpm --filter @bestats/web test",
+    "tokens": "node packages/core/scripts/tokens.ts",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
     "test:watch": "pnpm --filter @bestats/web test:watch",
     "test:coverage": "pnpm --filter @bestats/web test:coverage",
     "test:db": "supabase test db",
     "tmdb:live": "pnpm --filter @bestats/web tmdb:live",
     "igdb:live": "pnpm --filter @bestats/web igdb:live",
-    "db:types": "supabase gen types typescript --local --schema public > apps/web/lib/supabase/database.types.ts",
+    "db:types": "supabase gen types typescript --local --schema public > packages/core/src/supabase/database.types.ts",
     "db:types:check": "./scripts/db-types-check.sh"
   },
   "devDependencies": {

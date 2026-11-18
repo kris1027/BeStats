@@ -1,5 +1,10 @@
 "use client";
 
+import {
+  type AuthActionState,
+  IDLE_STATE,
+} from "@bestats/core/auth/action-state";
+import { AUTH_OUTCOME } from "@bestats/core/auth/messages";
 import Link from "next/link";
 import { useActionState } from "react";
 import {
@@ -7,8 +12,6 @@ import {
   AuthSubmitButton,
 } from "@/components/auth/auth-feedback";
 import { AuthField } from "@/components/auth/auth-field";
-import { type AuthActionState, IDLE_STATE } from "@/lib/auth/action-state";
-import { AUTH_OUTCOME } from "@/lib/auth/messages";
 import type { AuthEmailDelivery } from "@/lib/env";
 import { signInAction } from "../actions";
 

@@ -1,8 +1,7 @@
+import { RECOVERY_UNAVAILABLE_MESSAGE } from "@bestats/core/auth/messages";
 import type { Metadata } from "next";
 import Link from "next/link";
-
 import { AuthPanel } from "@/components/auth/auth-panel";
-import { RECOVERY_UNAVAILABLE_MESSAGE } from "@/lib/auth/messages";
 import { getAuthEmailDelivery } from "@/lib/env";
 import { ResetPasswordForm } from "./reset-password-form";
 

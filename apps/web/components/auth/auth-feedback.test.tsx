@@ -1,9 +1,8 @@
+import { failure, IDLE_STATE, success } from "@bestats/core/auth/action-state";
+import { AUTH_OUTCOME } from "@bestats/core/auth/messages";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-
 import { AuthFeedback } from "@/components/auth/auth-feedback";
-import { failure, IDLE_STATE, success } from "@/lib/auth/action-state";
-import { AUTH_OUTCOME } from "@/lib/auth/messages";
 
 /**
  * covers: spec 0005, AC-21

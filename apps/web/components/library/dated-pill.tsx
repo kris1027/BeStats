@@ -1,9 +1,8 @@
+import type { ReleaseDate } from "@bestats/core/format";
+import { UPCOMING_MESSAGES } from "@bestats/core/tracking/messages";
 import { cn } from "cn";
-
 import { CARD_PILL, GlassPill } from "@/components/glass-pill";
 import { CalendarIcon } from "@/components/tracking/tracking-icons";
-import type { ReleaseDate } from "@/lib/format";
-import { UPCOMING_MESSAGES } from "@/lib/tracking/messages";
 
 /** A short date that carries its year, such as `Feb 3, 2027`. */
 const ENDS_IN_YEAR = /\d{4}$/;

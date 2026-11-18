@@ -1,7 +1,6 @@
+import type { AuthActionState } from "@bestats/core/auth/action-state";
+import { AUTH_OUTCOME } from "@bestats/core/auth/messages";
 import Link from "next/link";
-
-import type { AuthActionState } from "@/lib/auth/action-state";
-import { AUTH_OUTCOME } from "@/lib/auth/messages";
 
 /**
  * The way forward under an `/account` form whose session ended

@@ -1,8 +1,7 @@
+import { LANDING_COUNTS } from "@bestats/core/catalog/landing";
+import type { CatalogList } from "@bestats/core/catalog/lists";
+import { formatShortDate } from "@bestats/core/format";
 import { Suspense } from "react";
-
-import { LANDING_COUNTS } from "@/lib/catalog/landing";
-import type { CatalogList } from "@/lib/catalog/lists";
-import { formatShortDate } from "@/lib/format";
 import { requestTodayUtc } from "@/lib/tracking/episode-state";
 import { LandingBadge, LandingControls } from "./landing-badge";
 import {

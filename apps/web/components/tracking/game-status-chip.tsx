@@ -1,8 +1,7 @@
+import { GAME_STATUS_LABELS } from "@bestats/core/tracking/messages";
+import type { StartedGameStatus } from "@bestats/core/tracking/types";
 import { cn } from "cn";
-
 import { CARD_PILL, GlassPill } from "@/components/glass-pill";
-import { GAME_STATUS_LABELS } from "@/lib/tracking/messages";
-import type { StartedGameStatus } from "@/lib/tracking/types";
 
 /**
  * The read only Playing or Finished chip in a game card's bottom row (spec

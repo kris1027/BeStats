@@ -1,12 +1,12 @@
+import { libraryHref } from "@bestats/core/catalog/media-type";
+import { LIBRARY_COPY } from "@bestats/core/tracking/messages";
 import { PaginationLinks } from "@/components/pagination-links";
 import { POSTER_GRID_EAGER, PosterGrid } from "@/components/poster-grid";
-import { libraryHref } from "@/lib/catalog/media-type";
 import {
   getShowLibraryTab,
   type LibraryTabQuery,
   type ShowTabCard,
 } from "@/lib/tracking/library-lists";
-import { LIBRARY_COPY } from "@/lib/tracking/messages";
 import { getShowRatings } from "@/lib/tracking/show-ratings";
 
 import { LIBRARY_HEADING_ID } from "./ids";

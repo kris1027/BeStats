@@ -1,9 +1,8 @@
+import { seasonMetaParts } from "@bestats/core/format";
 import { Suspense } from "react";
-
 import { PosterCard } from "@/components/poster-card";
 import { POSTER_GRID_SIZES, PosterGrid } from "@/components/poster-grid";
 import { SeasonRatingBadgeSlot } from "@/components/tracking/season-rating-badge-slot";
-import { seasonMetaParts } from "@/lib/format";
 import type { SeasonSummary } from "@/lib/tmdb";
 
 /**

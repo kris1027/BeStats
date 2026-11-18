@@ -1,11 +1,10 @@
-import { connection } from "next/server";
-
-import type { CatalogList } from "@/lib/catalog/lists";
+import type { CatalogList } from "@bestats/core/catalog/lists";
 import {
   gameHref,
   type LibraryType,
   titleHref,
-} from "@/lib/catalog/media-type";
+} from "@bestats/core/catalog/media-type";
+import { connection } from "next/server";
 import { isCatalogError } from "@/lib/catalog-errors";
 import {
   readTaggedCatalogList,

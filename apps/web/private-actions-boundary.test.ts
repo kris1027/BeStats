@@ -1,9 +1,8 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { extname, join } from "node:path";
+import { failure, IDLE_STATE } from "@bestats/core/auth/action-state";
+import { AUTH_OUTCOME } from "@bestats/core/auth/messages";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-import { failure, IDLE_STATE } from "@/lib/auth/action-state";
-import { AUTH_OUTCOME } from "@/lib/auth/messages";
 
 /**
  * Scope feature 19, `docs/scope/acceptance.md` items 3 and 4: private data is

@@ -1,10 +1,23 @@
 "use client";
 
+import { formatPersonalScore } from "@bestats/core/format";
+import {
+  applyGameIntent,
+  canHoldScore,
+  type GameIntent,
+} from "@bestats/core/tracking/game-intent";
+import { GAME_STATUS_LABELS } from "@bestats/core/tracking/messages";
+import {
+  GAME_STATUSES,
+  type GameStatus,
+  type GameTrackingResult,
+  type GameTrackingState,
+  type GameUndo,
+} from "@bestats/core/tracking/types";
 import { cn } from "cn";
 import { StarIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { startTransition, useOptimistic, useRef, useState } from "react";
-
 import { removeGame, setGameRating, setGameStatus } from "@/app/games/actions";
 import { glassPillClassName } from "@/components/glass-pill";
 import {
@@ -13,20 +26,6 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { formatPersonalScore } from "@/lib/format";
-import {
-  applyGameIntent,
-  canHoldScore,
-  type GameIntent,
-} from "@/lib/tracking/game-intent";
-import { GAME_STATUS_LABELS } from "@/lib/tracking/messages";
-import {
-  GAME_STATUSES,
-  type GameStatus,
-  type GameTrackingResult,
-  type GameTrackingState,
-  type GameUndo,
-} from "@/lib/tracking/types";
 
 import { ScorePicker } from "./score-picker";
 import { WatchedIcon } from "./tracking-icons";

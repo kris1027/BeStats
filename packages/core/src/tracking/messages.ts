@@ -3,8 +3,8 @@ import {
   type LibraryList,
   type LibraryPageKey,
   libraryPageName,
-} from "@/lib/catalog/library-list";
-import type { LibraryType } from "@/lib/catalog/media-type";
+} from "../catalog/library-list";
+import type { LibraryType } from "../catalog/media-type";
 
 import type {
   EpisodeTrackingError,

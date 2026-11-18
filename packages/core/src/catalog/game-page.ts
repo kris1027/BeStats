@@ -1,8 +1,5 @@
-import { isMovieReleased, movieReleaseNote } from "@/lib/catalog/movie-page";
-import type {
-  GameTrackingState,
-  StartedGameStatus,
-} from "@/lib/tracking/types";
+import type { GameTrackingState, StartedGameStatus } from "../tracking/types";
+import { isMovieReleased, movieReleaseNote } from "./movie-page";
 
 /**
  * Whether a game can be Playing, Finished or scored yet (`AGENTS.md`

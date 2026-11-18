@@ -23,7 +23,7 @@ const igdb = vi.hoisted(() => ({
 vi.mock("@/lib/igdb", () => igdb);
 vi.mock("next/server", () => ({ connection: async () => {} }));
 
-const { catalogList } = await import("@/lib/catalog/lists");
+const { catalogList } = await import("@bestats/core/catalog/lists");
 const {
   lastListPage,
   listHasNextPage,

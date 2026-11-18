@@ -1,8 +1,7 @@
+import type { CatalogList } from "@bestats/core/catalog/lists";
 import { render, screen } from "@testing-library/react";
 import type * as React from "react";
 import { describe, expect, it, vi } from "vitest";
-
-import type { CatalogList } from "@/lib/catalog/lists";
 
 /**
  * covers: prompts/home-parallax-landing.md, AC-1

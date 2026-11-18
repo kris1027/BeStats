@@ -1,9 +1,8 @@
 "use client";
 
+import type { CatalogRef } from "@bestats/core/search/params";
 import { useState } from "react";
-
 import { PlatformList, PlatformPicker } from "@/components/search/filter-bar";
-import type { CatalogRef } from "@/lib/search/params";
 
 const PLATFORMS: CatalogRef[] = [
   { id: 6, name: "PC (Microsoft Windows)" },

@@ -1,8 +1,7 @@
+import { LANDING_COUNTS } from "@bestats/core/catalog/landing";
 import type * as React from "react";
-
 import { HERO_ART_FIT, HERO_BLEED } from "@/components/catalog/hero-frame";
 import { PosterCardSkeleton, Skeleton } from "@/components/skeleton";
-import { LANDING_COUNTS } from "@/lib/catalog/landing";
 
 /*
  * The landing sections' layout classes, Top rated's column speeds and the

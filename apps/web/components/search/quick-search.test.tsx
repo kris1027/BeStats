@@ -1,8 +1,7 @@
+import type { QuickSearchResponse } from "@bestats/core/search/quick";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-import type { QuickSearchResponse } from "@/lib/search/quick";
 
 import { QuickSearch } from "./quick-search";
 

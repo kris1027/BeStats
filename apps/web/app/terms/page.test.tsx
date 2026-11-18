@@ -1,8 +1,4 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
-
-import { sectionId } from "@/components/legal/legal-document";
-import { expectOperatorLinks } from "@/components/legal/test-helpers";
+import { TMDB_ATTRIBUTION } from "@bestats/core/legal/attribution";
 import {
   COMPLAINT_RESPONSE_DAYS,
   CONTACT_EMAIL,
@@ -12,15 +8,11 @@ import {
   MINIMUM_AGE,
   OPERATOR_COUNTRY,
   OPERATOR_HANDLE,
-} from "@/lib/legal/operator";
-import { TMDB_ATTRIBUTION } from "@/lib/tmdb/constants";
-
-// The entry point pulls `server-only` and the cached reads into jsdom; only
-// the real constant crosses it here.
-vi.mock("@/lib/tmdb", async () => {
-  const constants = await import("@/lib/tmdb/constants");
-  return { TMDB_ATTRIBUTION: constants.TMDB_ATTRIBUTION };
-});
+} from "@bestats/core/legal/operator";
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
+import { sectionId } from "@/components/legal/legal-document";
+import { expectOperatorLinks } from "@/components/legal/test-helpers";
 
 const { default: TermsPage, metadata } = await import("./page");
 

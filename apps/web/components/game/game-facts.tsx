@@ -1,9 +1,9 @@
+import { formatGameReleaseDate } from "@bestats/core/format";
 import {
   type Fact,
   FactsPanel,
   textFact,
 } from "@/components/catalog/title-details";
-import { formatGameReleaseDate } from "@/lib/format";
 import type { Game, GameRef } from "@/lib/igdb";
 
 /** Names joined in IGDB's order, or null with none (spec 0031, AC-9). */

@@ -1,11 +1,13 @@
 import "server-only";
 
+import {
+  DEFAULT_SIGNED_IN_PATH,
+  isSafeNextPath,
+} from "@bestats/core/auth/next-path";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
-
 import { createClient } from "@/lib/supabase/server";
-import { DEFAULT_SIGNED_IN_PATH, isSafeNextPath } from "./next-path";
 
 /**
  * The single place a private surface learns who is asking (spec 0005, AC-12).

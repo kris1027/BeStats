@@ -1,24 +1,23 @@
 "use client";
 
 import { Autocomplete } from "@base-ui/react/autocomplete";
+import { CATALOG_SOURCES } from "@bestats/core/catalog/media-type";
+import { SEARCH_CATALOGS } from "@bestats/core/search/catalogs";
+import { QUICK_LIMIT, QUICK_MIN_CHARS } from "@bestats/core/search/constants";
+import { formatResultCount, mediaNoun } from "@bestats/core/search/count";
+import type { SearchType } from "@bestats/core/search/params";
+import {
+  type QuickResult,
+  type QuickSearchResponse,
+  seeAllHref,
+} from "@bestats/core/search/quick";
 import { cn } from "cn";
 import { SearchIcon, XIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type * as React from "react";
 import { useRef, useState } from "react";
-
 import { Button } from "@/components/ui/button";
-import { CATALOG_SOURCES } from "@/lib/catalog/media-type";
-import { SEARCH_CATALOGS } from "@/lib/search/catalogs";
-import { QUICK_LIMIT, QUICK_MIN_CHARS } from "@/lib/search/constants";
-import { formatResultCount, mediaNoun } from "@/lib/search/count";
-import type { SearchType } from "@/lib/search/params";
-import {
-  type QuickResult,
-  type QuickSearchResponse,
-  seeAllHref,
-} from "@/lib/search/quick";
 
 import { QuickSearchRow, QuickSearchRowSkeleton } from "./quick-search-row";
 import { type QuickSearchState, useQuickSearch } from "./use-quick-search";

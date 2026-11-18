@@ -2,6 +2,8 @@
 
 The signed in user's state for movies, episodes, shows and games: the reads behind the library pages and catalog cards, the intent helpers the Server Actions use, and the rules below. Root `AGENTS.md` sections 7 and 9 hold the summary; this file holds the detail. Governed by specs 0007, 0011, 0020 and 0026 to 0027 in `docs/specs/`.
 
+The pure half (`episode-intent.ts`, `game-intent.ts`, `ids-key.ts`, `intent.ts`, `messages.ts`, `schemas.ts`, `types.ts`) and the TV rules (`tv/*`: air status, progress, ratings, season watch, library placement) live in `packages/core/src/` since spec 0034, imported as `@bestats/core/...`; the reads and writes that need a session stay here. The rules below govern both.
+
 ## Movies
 
 - A row is planned or watched, never both: marking it watched removes the plan, and planning a watched movie removes its watch mark and score, with Undo ([prompts/movie-plan-watched-exclusive.md](../../../../prompts/movie-plan-watched-exclusive.md)).
@@ -24,8 +26,8 @@ The signed in user's state for movies, episodes, shows and games: the reads behi
 
 Placement is worked out per request and never stored. No page writes when it loads (spec 0020, AC-21).
 
-- **Shows** (pure classifier `lib/tv/library-page.ts`): Up next when an aired regular episode comes after the furthest one watched, offering the first of them with Mark watched (earlier gaps are never offered). Upcoming when caught up with a next regular episode dated after today, or when nothing is watched and nothing is dated (Date TBA). Watched when caught up with nothing dated, labelled Finished if TMDB says Ended or Canceled, otherwise Caught up. Aired episodes come from the show details read: `last_episode_to_air`, plus a `next_episode_to_air` dated on or before today.
-- **Movies** (`lib/catalog/movie-page.ts`): a planned movie is on Watchlist from its release day and on Coming soon before it or with no date; a watched movie is on Watched.
+- **Shows** (pure classifier `packages/core/src/tv/library-page.ts`): Up next when an aired regular episode comes after the furthest one watched, offering the first of them with Mark watched (earlier gaps are never offered). Upcoming when caught up with a next regular episode dated after today, or when nothing is watched and nothing is dated (Date TBA). Watched when caught up with nothing dated, labelled Finished if TMDB says Ended or Canceled, otherwise Caught up. Aired episodes come from the show details read: `last_episode_to_air`, plus a `next_episode_to_air` dated on or before today.
+- **Movies** (`packages/core/src/catalog/movie-page.ts`): a planned movie is on Watchlist from its release day and on Coming soon before it or with no date; a watched movie is on Watched.
 - **Games**: the stored status picks the page; Want to play splits by release date (`isGameReleased`) into Want to play and Coming soon, a view and not a status ([prompts/game-coming-soon.md](../../../../prompts/game-coming-soon.md)).
 
 ## Reads

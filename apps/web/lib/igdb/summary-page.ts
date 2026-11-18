@@ -1,11 +1,11 @@
 import "server-only";
+import { IGDB_SUMMARY_FIELDS } from "@bestats/core/igdb/constants";
+import type { GameFilters, GameSummary, Paged } from "@bestats/core/igdb/types";
 import { catalogWhereClause } from "./catalog-filter";
 import { igdbRequest } from "./client";
-import { IGDB_SUMMARY_FIELDS } from "./constants";
 import { normalizeSummary } from "./normalize";
 import { buildQuery, type Condition, cond, type Sort } from "./query";
 import { gameSummarySchema, recordsSchema } from "./schemas";
-import type { GameFilters, GameSummary, Paged } from "./types";
 
 /**
  * The paged summary read and the filters that `search.ts` and `discover.ts`

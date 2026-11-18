@@ -1,7 +1,9 @@
+import {
+  CONTACT_EMAIL,
+  LEGAL_LAST_UPDATED,
+} from "@bestats/core/legal/operator";
 import { render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-
-import { CONTACT_EMAIL, LEGAL_LAST_UPDATED } from "@/lib/legal/operator";
 import {
   ContactEmail,
   ExternalLink,
@@ -76,15 +78,17 @@ describe("the Last updated date across timezones (AC-7)", () => {
 
   afterEach(() => {
     process.env.TZ = originalTz;
-    vi.doUnmock("@/lib/legal/operator");
+    vi.doUnmock("@bestats/core/legal/operator");
     vi.resetModules();
   });
 
   it("reads 1 January 2026 on a server west of UTC, never 31 December 2025", async () => {
     process.env.TZ = "America/Los_Angeles";
     vi.resetModules();
-    vi.doMock("@/lib/legal/operator", async (importOriginal) => ({
-      ...(await importOriginal<typeof import("@/lib/legal/operator")>()),
+    vi.doMock("@bestats/core/legal/operator", async (importOriginal) => ({
+      ...(await importOriginal<
+        typeof import("@bestats/core/legal/operator")
+      >()),
       LEGAL_LAST_UPDATED: "2026-01-01",
     }));
     const { LegalDocument: Shifted } = await import("./legal-document");

@@ -1,8 +1,7 @@
 "use client";
 
+import { IGDB_IMAGE_BASE } from "@bestats/core/igdb/constants";
 import type { ImageLoaderProps } from "next/image";
-
-import { IGDB_IMAGE_BASE } from "@/lib/igdb/constants";
 import { TMDB_IMAGE_BASE } from "@/lib/tmdb/constants";
 import { tmdbImageLoader } from "@/lib/tmdb/image-loader";
 

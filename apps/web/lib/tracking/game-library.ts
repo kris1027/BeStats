@@ -1,10 +1,13 @@
 import "server-only";
 
-import { isGameReleased } from "@/lib/catalog/game-page";
-import type { LibraryList, LibraryPageKey } from "@/lib/catalog/library-list";
+import { isGameReleased } from "@bestats/core/catalog/game-page";
+import type {
+  LibraryList,
+  LibraryPageKey,
+} from "@bestats/core/catalog/library-list";
+import type { GameStatus } from "@bestats/core/tracking/types";
 import { type GameSummary, getGamesByIds, IgdbError } from "@/lib/igdb";
 import { createClient } from "@/lib/supabase/server";
-
 import {
   capRows,
   compareDates,
@@ -15,7 +18,6 @@ import {
   readCountedPage,
 } from "./library-lists";
 import { logTrackingEvent, TRACKING_EVENT } from "./log";
-import type { GameStatus } from "./types";
 
 /**
  * The reads behind the games pages, `/want-to-play`, `/playing` and

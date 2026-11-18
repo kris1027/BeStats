@@ -1,7 +1,14 @@
+import { GRID_PAGE_SIZE } from "@bestats/core/catalog/grid-page";
+import {
+  type CatalogList,
+  listPageHref,
+  listPath,
+} from "@bestats/core/catalog/lists";
+import { CATALOG_PATHS } from "@bestats/core/catalog/media-type";
+import { parsePageParam } from "@bestats/core/catalog/pages";
 import { ArrowLeftIcon } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
-
 import { CatalogListCards } from "@/components/catalog/catalog-list-cards";
 import {
   ListEmptyPanel,
@@ -12,10 +19,6 @@ import { POSTER_GRID_EAGER, PosterGrid } from "@/components/poster-grid";
 import { PaginationSkeleton, PosterCardSkeleton } from "@/components/skeleton";
 import { StatePanel } from "@/components/state-panel";
 import { ButtonLink } from "@/components/ui/button";
-import { GRID_PAGE_SIZE } from "@/lib/catalog/grid-page";
-import { type CatalogList, listPageHref, listPath } from "@/lib/catalog/lists";
-import { CATALOG_PATHS } from "@/lib/catalog/media-type";
-import { parsePageParam } from "@/lib/catalog/pages";
 import { isCatalogError } from "@/lib/catalog-errors";
 import {
   lastListPage,

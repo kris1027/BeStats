@@ -1,9 +1,4 @@
 import "server-only";
-import type { z } from "zod";
-import { type TmdbQuery, tmdbRequest } from "./client";
-import { MOVIE_LIST_REGION, TV_LIST_TIMEZONE } from "./constants";
-import { normalizeMovieSummary, normalizeTvSummary } from "./normalize";
-import { movieListItemSchema, pagedSchema, tvListItemSchema } from "./schemas";
 import type {
   ListOptions,
   MovieListKind,
@@ -11,7 +6,12 @@ import type {
   Paged,
   TvListKind,
   TvShowSummary,
-} from "./types";
+} from "@bestats/core/tmdb/types";
+import type { z } from "zod";
+import { type TmdbQuery, tmdbRequest } from "./client";
+import { MOVIE_LIST_REGION, TV_LIST_TIMEZONE } from "./constants";
+import { normalizeMovieSummary, normalizeTvSummary } from "./normalize";
+import { movieListItemSchema, pagedSchema, tvListItemSchema } from "./schemas";
 import { assertPage } from "./validation";
 
 /**

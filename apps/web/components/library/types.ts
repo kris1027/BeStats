@@ -4,10 +4,10 @@
  * Client Component.
  */
 
-export type { LibraryList } from "@/lib/catalog/library-list";
+export type { LibraryList } from "@bestats/core/catalog/library-list";
 
-import type { ReleaseDate } from "@/lib/format";
-import type { GameStatus } from "@/lib/tracking/types";
+import type { ReleaseDate } from "@bestats/core/format";
+import type { GameStatus } from "@bestats/core/tracking/types";
 
 export type { ReleaseDate };
 

@@ -1,4 +1,4 @@
-import type { EpisodeTrackingState } from "@/lib/tracking/types";
+import type { EpisodeTrackingState } from "../tracking/types";
 
 import { airStatus } from "./air-status";
 

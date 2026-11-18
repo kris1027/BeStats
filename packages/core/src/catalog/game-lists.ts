@@ -1,5 +1,5 @@
-import { IGDB_LIST_PAGE_SIZE } from "@/lib/igdb/constants";
-import type { DiscoverGamesOptions, PopularGamesKind } from "@/lib/igdb/types";
+import { IGDB_LIST_PAGE_SIZE } from "../igdb/constants";
+import type { DiscoverGamesOptions, PopularGamesKind } from "../igdb/types";
 
 import type { GameListSlug } from "./lists";
 

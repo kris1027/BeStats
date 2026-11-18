@@ -1,7 +1,9 @@
+import {
+  formatCalculatedRating,
+  formatPersonalScore,
+} from "@bestats/core/format";
 import { StarIcon } from "lucide-react";
-
 import { GlassPill } from "@/components/glass-pill";
-import { formatCalculatedRating, formatPersonalScore } from "@/lib/format";
 
 /**
  * Community and personal ratings must never be confused for one another

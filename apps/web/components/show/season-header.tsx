@@ -1,10 +1,9 @@
+import { seasonMetaParts } from "@bestats/core/format";
 import { ArrowLeftIcon, FilmIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import type * as React from "react";
-
 import { MetaLine } from "@/components/catalog/detail-hero-meta";
-import { seasonMetaParts } from "@/lib/format";
 
 /**
  * The top of a season page (spec 0009, AC-9): a way back to the show, then a

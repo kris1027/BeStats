@@ -1,29 +1,27 @@
 "use client";
 
-import { cn } from "cn";
-import { ChevronRightIcon } from "lucide-react";
-import Link from "next/link";
-import type * as React from "react";
-
-import {
-  CalendarIcon,
-  NextEpisodeIcon,
-  PlanIcon,
-  WatchedIcon,
-} from "@/components/tracking/tracking-icons";
-
 import {
   defaultLibraryTypeAt,
   type LibraryPageKey,
   libraryPageName,
   libraryPages,
   libraryPath,
-} from "@/lib/catalog/library-list";
+} from "@bestats/core/catalog/library-list";
 import {
   isLibraryPath,
   type LibraryType,
   libraryHref,
-} from "@/lib/catalog/media-type";
+} from "@bestats/core/catalog/media-type";
+import { cn } from "cn";
+import { ChevronRightIcon } from "lucide-react";
+import Link from "next/link";
+import type * as React from "react";
+import {
+  CalendarIcon,
+  NextEpisodeIcon,
+  PlanIcon,
+  WatchedIcon,
+} from "@/components/tracking/tracking-icons";
 
 import { NAV_PILL_CLASS } from "./media-type-tabs";
 import { WithLibraryTypedPage } from "./page-media-type";

@@ -1,7 +1,5 @@
 "use server";
 
-import { refresh } from "next/cache";
-
 import {
   type AuthActionState,
   failure,
@@ -9,15 +7,19 @@ import {
   keepUsername,
   passwordFieldFor,
   success,
-} from "@/lib/auth/action-state";
-import { AUTH_EVENT, logAuthEvent } from "@/lib/auth/log";
+} from "@bestats/core/auth/action-state";
 import {
   AUTH_OUTCOME,
   USERNAME_UNCHANGED_MESSAGE,
   USERNAME_UPDATED_MESSAGE,
-} from "@/lib/auth/messages";
+} from "@bestats/core/auth/messages";
+import {
+  changePasswordSchema,
+  changeUsernameSchema,
+} from "@bestats/core/auth/schemas";
+import { refresh } from "next/cache";
+import { AUTH_EVENT, logAuthEvent } from "@/lib/auth/log";
 import { getOwnProfile } from "@/lib/auth/profile";
-import { changePasswordSchema, changeUsernameSchema } from "@/lib/auth/schemas";
 import {
   classifyAuthError,
   classifyProfileWriteError,

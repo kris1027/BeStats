@@ -1,8 +1,3 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
-
-import { sectionId } from "@/components/legal/legal-document";
-import { expectOperatorLinks } from "@/components/legal/test-helpers";
 import {
   CONTACT_EMAIL,
   DELETION_DAYS,
@@ -14,7 +9,11 @@ import {
   RIGHTS_RESPONSE,
   SUPABASE_REGION,
   SUPERVISORY_AUTHORITY,
-} from "@/lib/legal/operator";
+} from "@bestats/core/legal/operator";
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
+import { sectionId } from "@/components/legal/legal-document";
+import { expectOperatorLinks } from "@/components/legal/test-helpers";
 import PrivacyPage, { metadata } from "./page";
 
 /**

@@ -1,11 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-import { IDLE_STATE } from "@/lib/auth/action-state";
+import { IDLE_STATE } from "@bestats/core/auth/action-state";
 import {
   AUTH_OUTCOME,
   USERNAME_UNCHANGED_MESSAGE,
   USERNAME_UPDATED_MESSAGE,
-} from "@/lib/auth/messages";
+} from "@bestats/core/auth/messages";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
  * The database is the judge of the lock and of uniqueness, so the client is

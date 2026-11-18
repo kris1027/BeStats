@@ -1,8 +1,7 @@
+import { IDLE_STATE } from "@bestats/core/auth/action-state";
+import { AUTH_OUTCOME } from "@bestats/core/auth/messages";
 import { AuthApiError, AuthWeakPasswordError } from "@supabase/supabase-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-import { IDLE_STATE } from "@/lib/auth/action-state";
-import { AUTH_OUTCOME } from "@/lib/auth/messages";
 
 /**
  * The Auth server is the boundary, so the request scoped client and the

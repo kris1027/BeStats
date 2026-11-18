@@ -1,5 +1,15 @@
 "use client";
 
+import {
+  applyEpisodeIntents,
+  type EpisodeIntent,
+  type EpisodeStates,
+} from "@bestats/core/tracking/episode-intent";
+import { SHOW_TRACKING_COPY } from "@bestats/core/tracking/messages";
+import type {
+  EpisodeTrackingError,
+  ShowTrackingFlags,
+} from "@bestats/core/tracking/types";
 import { useRouter } from "next/navigation";
 import {
   createContext,
@@ -8,17 +18,6 @@ import {
   useOptimistic,
 } from "react";
 import { toast } from "sonner";
-
-import {
-  applyEpisodeIntents,
-  type EpisodeIntent,
-  type EpisodeStates,
-} from "@/lib/tracking/episode-intent";
-import { SHOW_TRACKING_COPY } from "@/lib/tracking/messages";
-import type {
-  EpisodeTrackingError,
-  ShowTrackingFlags,
-} from "@/lib/tracking/types";
 
 import { showEpisodeTrackingError } from "./tracking-toast";
 

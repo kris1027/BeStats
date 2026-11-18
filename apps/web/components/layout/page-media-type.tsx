@@ -1,6 +1,3 @@
-import { usePathname, useSearchParams } from "next/navigation";
-import { type ReactNode, Suspense } from "react";
-
 import {
   isTypedPath,
   type LibraryType,
@@ -8,7 +5,9 @@ import {
   type MediaType,
   mediaTypeForLocation,
   type TypedPath,
-} from "@/lib/catalog/media-type";
+} from "@bestats/core/catalog/media-type";
+import { usePathname, useSearchParams } from "next/navigation";
+import { type ReactNode, Suspense } from "react";
 
 /**
  * Where the visitor is, as the navbar's type aware controls need it: the

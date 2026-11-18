@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Database } from "@/lib/supabase/database.types";
+import type { Database } from "./database.types";
 
 /**
  * Spec 0001 AC-14: the committed types match the live schema. Since the spec

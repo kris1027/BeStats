@@ -1,12 +1,12 @@
-import { PosterCard } from "@/components/poster-card";
-import { CalculatedRatingBadge } from "@/components/rating-badges";
-import { formatAirDate, formatShortDate } from "@/lib/format";
-import type { LibraryTitle } from "@/lib/tracking/library-lists";
+import { formatAirDate, formatShortDate } from "@bestats/core/format";
 import {
   UPCOMING_MESSAGES,
   WATCHED_SHOW_LABELS,
-} from "@/lib/tracking/messages";
-import type { EpisodePlace } from "@/lib/tv/library-page";
+} from "@bestats/core/tracking/messages";
+import type { EpisodePlace } from "@bestats/core/tv/library-page";
+import { PosterCard } from "@/components/poster-card";
+import { CalculatedRatingBadge } from "@/components/rating-badges";
+import type { LibraryTitle } from "@/lib/tracking/library-lists";
 
 import { DatedPill, DateTbaPill } from "./dated-pill";
 import { showCardLink } from "./ids";

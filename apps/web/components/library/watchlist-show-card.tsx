@@ -1,8 +1,7 @@
+import type { EpisodePlace } from "@bestats/core/tv/library-page";
 import { Suspense } from "react";
-
 import { PosterCard } from "@/components/poster-card";
 import type { LibraryTitle } from "@/lib/tracking/library-lists";
-import type { EpisodePlace } from "@/lib/tv/library-page";
 
 import { showCardLink } from "./ids";
 import {

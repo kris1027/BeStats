@@ -1,14 +1,13 @@
+import { type CatalogList, listPath } from "@bestats/core/catalog/lists";
 import { cn } from "cn";
 import { ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
 import type * as React from "react";
-
 import {
   CarouselRowEmpty,
   CarouselRowError,
 } from "@/components/catalog/carousel-row-states";
 import { PosterCard } from "@/components/poster-card";
-import { type CatalogList, listPath } from "@/lib/catalog/lists";
 
 import { LandingBadge, LandingControls, landingMeta } from "./landing-badge";
 import {

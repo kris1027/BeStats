@@ -1,12 +1,15 @@
 "use client";
 
+import {
+  type AuthActionState,
+  IDLE_STATE,
+} from "@bestats/core/auth/action-state";
 import { useActionState } from "react";
 import {
   AuthFeedback,
   AuthSubmitButton,
 } from "@/components/auth/auth-feedback";
 import { AuthField } from "@/components/auth/auth-field";
-import { type AuthActionState, IDLE_STATE } from "@/lib/auth/action-state";
 import { requestPasswordResetAction } from "../actions";
 
 /**

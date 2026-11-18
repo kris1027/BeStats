@@ -1,10 +1,13 @@
+import { isPrivatePath } from "@bestats/core/auth/private-paths";
+import {
+  parseGameId,
+  parseSeasonNumber,
+  parseTmdbId,
+} from "@bestats/core/catalog/ids";
+import { isCatalogListSlug } from "@bestats/core/catalog/lists";
+import type { LibraryType } from "@bestats/core/catalog/media-type";
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
-
-import { isPrivatePath } from "@/lib/auth/private-paths";
-import { parseGameId, parseSeasonNumber, parseTmdbId } from "@/lib/catalog/ids";
-import { isCatalogListSlug } from "@/lib/catalog/lists";
-import type { LibraryType } from "@/lib/catalog/media-type";
 import { getPublicEnv, publicEnvProblems } from "@/lib/env";
 import { sessionCookieOptions } from "@/lib/supabase/cookie-options";
 
