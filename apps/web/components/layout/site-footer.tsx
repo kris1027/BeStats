@@ -1,14 +1,14 @@
-import { cn } from "cn";
-import Image from "next/image";
-import Link from "next/link";
-import type * as React from "react";
 import {
   IGDB_ATTRIBUTION,
   IGDB_HOME_URL,
   OPERATOR_GITHUB_URL,
   OPERATOR_HANDLE,
   TMDB_HOME_URL,
-} from "@/lib/legal/operator";
+} from "@bestats/core/legal/operator";
+import { cn } from "cn";
+import Image from "next/image";
+import Link from "next/link";
+import type * as React from "react";
 import { TMDB_ATTRIBUTION } from "@/lib/tmdb";
 
 import { IconKey } from "./icon-key";

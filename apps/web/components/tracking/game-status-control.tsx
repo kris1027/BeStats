@@ -1,10 +1,10 @@
 "use client";
 
+import { formatPersonalScore } from "@bestats/core/format";
 import { cn } from "cn";
 import { StarIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { startTransition, useOptimistic, useRef, useState } from "react";
-
 import { removeGame, setGameRating, setGameStatus } from "@/app/games/actions";
 import { glassPillClassName } from "@/components/glass-pill";
 import {
@@ -13,7 +13,6 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { formatPersonalScore } from "@/lib/format";
 import {
   applyGameIntent,
   canHoldScore,

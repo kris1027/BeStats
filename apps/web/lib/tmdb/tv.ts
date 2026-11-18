@@ -1,4 +1,9 @@
 import "server-only";
+import type {
+  SeasonDetail,
+  ShowCastMember,
+  TvShow,
+} from "@bestats/core/tmdb/types";
 import { tmdbRequest } from "./client";
 import {
   normalizeSeasonDetail,
@@ -10,7 +15,6 @@ import {
   seasonDetailSchema,
   tvShowSchema,
 } from "./schemas";
-import type { SeasonDetail, ShowCastMember, TvShow } from "./types";
 import { assertId, assertSeasonNumber } from "./validation";
 
 /**

@@ -1,14 +1,14 @@
 import "server-only";
-import { tmdbRequest } from "./client";
-import { normalizeMovieSummary, normalizeTvSummary } from "./normalize";
-import { movieSummarySchema, pagedSchema, tvSummarySchema } from "./schemas";
 import type {
   DiscoverOptions,
   MovieSummary,
   Paged,
   SearchOptions,
   TvShowSummary,
-} from "./types";
+} from "@bestats/core/tmdb/types";
+import { tmdbRequest } from "./client";
+import { normalizeMovieSummary, normalizeTvSummary } from "./normalize";
+import { movieSummarySchema, pagedSchema, tvSummarySchema } from "./schemas";
 import { assertPage, assertQuery } from "./validation";
 
 /**

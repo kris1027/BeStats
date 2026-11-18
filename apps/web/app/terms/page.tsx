@@ -1,6 +1,12 @@
+import {
+  COMPLAINT_RESPONSE_DAYS,
+  DELETION_DAYS,
+  IGDB_ATTRIBUTION,
+  MINIMUM_AGE,
+  OPERATOR_COUNTRY,
+} from "@bestats/core/legal/operator";
 import type { Metadata } from "next";
 import Link from "next/link";
-
 import {
   ContactEmail,
   LEGAL_LINK_CLASS,
@@ -9,13 +15,6 @@ import {
   LegalSection,
   OperatorLink,
 } from "@/components/legal/legal-document";
-import {
-  COMPLAINT_RESPONSE_DAYS,
-  DELETION_DAYS,
-  IGDB_ATTRIBUTION,
-  MINIMUM_AGE,
-  OPERATOR_COUNTRY,
-} from "@/lib/legal/operator";
 import { catalogMetadata } from "@/lib/seo/metadata";
 import { TMDB_ATTRIBUTION } from "@/lib/tmdb";
 

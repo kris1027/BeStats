@@ -1,7 +1,7 @@
+import type { MovieListKind, TvListKind } from "@bestats/core/tmdb/types";
 import { afterEach, describe, expect, it } from "vitest";
 import { installFetchMock, restoreFetchMock } from "./__fixtures__/helpers";
 import { fetchMovieList, fetchTvList } from "./lists";
-import type { MovieListKind, TvListKind } from "./types";
 
 /**
  * covers: spec 0021, AC-2, AC-8

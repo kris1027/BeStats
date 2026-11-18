@@ -1,5 +1,4 @@
 import "server-only";
-import type { z } from "zod";
 import {
   IGDB_API_BASE,
   IGDB_MAX_ATTEMPTS,
@@ -8,7 +7,8 @@ import {
   IGDB_RETRY_DELAYS_MS,
   IGDB_SLOT_WAIT_MS,
   IGDB_TIMEOUT_MS,
-} from "./constants";
+} from "@bestats/core/igdb/constants";
+import type { z } from "zod";
 import { getIgdbCredentials } from "./env";
 import { IgdbError, type IgdbErrorKind, isAbortError } from "./errors";
 import { igdbLimiter, type ReleaseSlot, SlotWaitExceeded } from "./limiter";

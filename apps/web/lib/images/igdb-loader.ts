@@ -1,13 +1,12 @@
 "use client";
 
-import type { ImageLoaderProps } from "next/image";
-
 import {
   IGDB_ART_LADDER,
   IGDB_COVER_LADDER,
   IGDB_HERO_COVER_SIZE,
   IGDB_IMAGE_BASE,
-} from "@/lib/igdb/constants";
+} from "@bestats/core/igdb/constants";
+import type { ImageLoaderProps } from "next/image";
 
 /**
  * Appended when the fitting size is the source's own, for the reason the TMDB

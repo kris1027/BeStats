@@ -1,7 +1,7 @@
 import "server-only";
+import type { GameSummary, Paged } from "@bestats/core/igdb/types";
 import { cond } from "./query";
 import { readSummaryPage, sharedConditions } from "./summary-page";
-import type { GameSummary, Paged } from "./types";
 import type { ValidSearchOptions } from "./validation";
 
 /**

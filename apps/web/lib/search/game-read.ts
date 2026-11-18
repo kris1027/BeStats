@@ -1,5 +1,6 @@
 import "server-only";
 
+import { IGDB_LIST_PAGE_SIZE } from "@bestats/core/igdb/constants";
 import { gameHref } from "@/lib/catalog/media-type";
 import { sliceGamePage } from "@/lib/catalog-list-read";
 import {
@@ -10,7 +11,6 @@ import {
   type SearchGamesOptions,
   searchGames,
 } from "@/lib/igdb";
-import { IGDB_LIST_PAGE_SIZE } from "@/lib/igdb/constants";
 
 import { GAME_MIN_RATING_COUNT, QUICK_LIMIT } from "./constants";
 import type { GameSearchMode } from "./mode";

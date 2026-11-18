@@ -1,5 +1,8 @@
+import {
+  IGDB_LIST_PAGE_SIZE,
+  IGDB_MAX_PAGE,
+} from "@bestats/core/igdb/constants";
 import { connection } from "next/server";
-
 import {
   gameListOptions,
   isPopularGameList,
@@ -21,7 +24,6 @@ import {
   getPopularGames,
   type Paged as IgdbPaged,
 } from "@/lib/igdb";
-import { IGDB_LIST_PAGE_SIZE, IGDB_MAX_PAGE } from "@/lib/igdb/constants";
 import {
   discoverMovies,
   discoverTvShows,

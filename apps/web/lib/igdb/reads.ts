@@ -1,12 +1,4 @@
 import "server-only";
-import { cacheLife } from "next/cache";
-import { fetchGamesByIds } from "./batch";
-import { fetchDiscoverGames } from "./discover";
-import { fetchGame } from "./games";
-import { fetchPopularGames } from "./popularity";
-import { fetchGameGenres, fetchGamePlatforms } from "./reference";
-import { failureProfile, type IgdbResult, toFailure, unwrap } from "./result";
-import { fetchSearchGames } from "./search";
 import type {
   BatchResult,
   DiscoverGamesOptions,
@@ -16,7 +8,15 @@ import type {
   Paged,
   PopularGamesKind,
   SearchGamesOptions,
-} from "./types";
+} from "@bestats/core/igdb/types";
+import { cacheLife } from "next/cache";
+import { fetchGamesByIds } from "./batch";
+import { fetchDiscoverGames } from "./discover";
+import { fetchGame } from "./games";
+import { fetchPopularGames } from "./popularity";
+import { fetchGameGenres, fetchGamePlatforms } from "./reference";
+import { failureProfile, type IgdbResult, toFailure, unwrap } from "./result";
+import { fetchSearchGames } from "./search";
 import {
   assertGameId,
   assertPopularKind,

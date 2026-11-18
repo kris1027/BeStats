@@ -1,6 +1,6 @@
+import { formatAirDate, formatShortDate } from "@bestats/core/format";
 import { PosterCard } from "@/components/poster-card";
 import { CalculatedRatingBadge } from "@/components/rating-badges";
-import { formatAirDate, formatShortDate } from "@/lib/format";
 import type { LibraryTitle } from "@/lib/tracking/library-lists";
 import {
   UPCOMING_MESSAGES,

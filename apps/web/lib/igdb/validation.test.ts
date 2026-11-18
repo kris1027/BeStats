@@ -1,6 +1,9 @@
+import type {
+  DiscoverGamesOptions,
+  SearchGamesOptions,
+} from "@bestats/core/igdb/types";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { IgdbValidationError } from "./errors";
-import type { DiscoverGamesOptions, SearchGamesOptions } from "./types";
 import {
   assertGameId,
   canonicalGameIds,

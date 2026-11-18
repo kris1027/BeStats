@@ -1,9 +1,8 @@
+import { formatAirDate, formatRuntime } from "@bestats/core/format";
 import { ImageOffIcon } from "lucide-react";
 import Image from "next/image";
 import type * as React from "react";
-
 import { TmdbRatingBadge } from "@/components/rating-badges";
-import { formatAirDate, formatRuntime } from "@/lib/format";
 import type { Episode } from "@/lib/tmdb";
 
 /**

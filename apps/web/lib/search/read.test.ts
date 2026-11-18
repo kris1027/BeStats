@@ -1,6 +1,9 @@
+import type {
+  MovieSummary,
+  Paged,
+  TvShowSummary,
+} from "@bestats/core/tmdb/types";
 import { afterEach, describe, expect, it, vi } from "vitest";
-
-import type { MovieSummary, Paged, TvShowSummary } from "@/lib/tmdb/types";
 
 import { emptySearchParams, type TmdbSearchParams } from "./params";
 

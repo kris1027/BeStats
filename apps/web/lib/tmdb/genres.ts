@@ -1,7 +1,7 @@
 import "server-only";
+import type { Genre } from "@bestats/core/tmdb/types";
 import { tmdbRequest } from "./client";
 import { genreListSchema } from "./schemas";
-import type { Genre } from "./types";
 
 /**
  * The genre lists TMDB's discover filters take ids from, uncached.

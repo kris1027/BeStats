@@ -1,9 +1,9 @@
 "use client";
 
+import { formatPersonalScore } from "@bestats/core/format";
 import { cn } from "cn";
 import { StarIcon } from "lucide-react";
 import { useRef, useState } from "react";
-
 import { setEpisodeRating, setEpisodeWatched } from "@/app/shows/actions";
 import { glassPillClassName } from "@/components/glass-pill";
 import {
@@ -12,7 +12,6 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { formatPersonalScore } from "@/lib/format";
 import type { EpisodeIntent } from "@/lib/tracking/episode-intent";
 import {
   EMPTY_EPISODE_TRACKING,

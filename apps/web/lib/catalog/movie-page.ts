@@ -1,5 +1,5 @@
+import { formatAirDate } from "@bestats/core/format";
 import type { LibraryList } from "@/lib/catalog/library-list";
-import { formatAirDate } from "@/lib/format";
 import { UPCOMING_MESSAGES } from "@/lib/tracking/messages";
 import type { MovieTrackingState } from "@/lib/tracking/types";
 import { airStatus } from "@/lib/tv/air-status";

@@ -1,10 +1,10 @@
 import "server-only";
-import { z } from "zod";
 import {
   IGDB_TOKEN_REFRESH_MARGIN_MS,
   IGDB_TOKEN_TIMEOUT_MS,
   TWITCH_TOKEN_URL,
-} from "./constants";
+} from "@bestats/core/igdb/constants";
+import { z } from "zod";
 import { getIgdbCredentials } from "./env";
 import { IgdbError, type IgdbErrorKind, isAbortError } from "./errors";
 import { logIgdb } from "./log";

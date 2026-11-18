@@ -1,9 +1,9 @@
 import "server-only";
+import { IGDB_BATCH_LIMIT } from "@bestats/core/igdb/constants";
+import type { GameRef } from "@bestats/core/igdb/types";
 import { igdbRequest } from "./client";
-import { IGDB_BATCH_LIMIT } from "./constants";
 import { buildQuery } from "./query";
 import { recordsSchema, refSchema } from "./schemas";
-import type { GameRef } from "./types";
 
 /**
  * The genre and platform lists G7's filters offer and a card names its ids

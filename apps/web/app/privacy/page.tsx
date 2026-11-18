@@ -1,15 +1,3 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-
-import {
-  ContactEmail,
-  ExternalLink,
-  LEGAL_LINK_CLASS,
-  LegalDocument,
-  LegalList,
-  LegalSection,
-  OperatorLink,
-} from "@/components/legal/legal-document";
 import {
   DELETION_DAYS,
   IGDB_HOME_URL,
@@ -20,7 +8,18 @@ import {
   SUPABASE_REGION,
   SUPERVISORY_AUTHORITY,
   TMDB_HOME_URL,
-} from "@/lib/legal/operator";
+} from "@bestats/core/legal/operator";
+import type { Metadata } from "next";
+import Link from "next/link";
+import {
+  ContactEmail,
+  ExternalLink,
+  LEGAL_LINK_CLASS,
+  LegalDocument,
+  LegalList,
+  LegalSection,
+  OperatorLink,
+} from "@/components/legal/legal-document";
 import { catalogMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = catalogMetadata({

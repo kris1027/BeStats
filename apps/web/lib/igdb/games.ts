@@ -1,11 +1,11 @@
 import "server-only";
+import { IGDB_GAME_FIELDS } from "@bestats/core/igdb/constants";
+import type { Game } from "@bestats/core/igdb/types";
 import { igdbRequest } from "./client";
-import { IGDB_GAME_FIELDS } from "./constants";
 import { IgdbError } from "./errors";
 import { normalizeGame } from "./normalize";
 import { buildQuery, cond } from "./query";
 import { gameDetailSchema, recordsSchema } from "./schemas";
-import type { Game } from "./types";
 import type { GameId } from "./validation";
 
 /**

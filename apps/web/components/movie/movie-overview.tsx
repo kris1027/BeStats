@@ -1,4 +1,4 @@
-import { languageName } from "@/lib/format";
+import { languageName } from "@bestats/core/format";
 
 /**
  * The overview text, honest about which language it is in (spec 0006, AC-5).

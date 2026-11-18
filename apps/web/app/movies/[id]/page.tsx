@@ -1,7 +1,7 @@
+import { truncateAtWord } from "@bestats/core/format";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-
 import { JsonLd } from "@/components/catalog/json-ld";
 import { MovieCrew, MovieFacts } from "@/components/catalog/title-details";
 import {
@@ -19,7 +19,6 @@ import { RetryLink } from "@/components/retry-link";
 import { StatePanel } from "@/components/state-panel";
 import { MovieTrackingSlot } from "@/components/tracking/movie-tracking-slot";
 import { parseTmdbId } from "@/lib/catalog/ids";
-import { truncateAtWord } from "@/lib/format";
 import { movieJsonLd } from "@/lib/seo/json-ld";
 import { catalogMetadata } from "@/lib/seo/metadata";
 

@@ -1,4 +1,4 @@
-import { parseTmdbDate } from "@/lib/format";
+import { parseTmdbDate } from "@bestats/core/format";
 
 /**
  * Whether an episode can be tracked yet (spec 0011, AC-3).

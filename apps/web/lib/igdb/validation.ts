@@ -6,9 +6,7 @@ import {
   IGDB_MIN_YEAR,
   IGDB_PAGE_SIZE,
   IGDB_YEARS_AHEAD,
-} from "./constants";
-import { IgdbValidationError } from "./errors";
-import { cleanSearchText } from "./query";
+} from "@bestats/core/igdb/constants";
 import type {
   DiscoverGamesOptions,
   DiscoverPageSize,
@@ -16,7 +14,9 @@ import type {
   GameFilters,
   PopularGamesKind,
   SearchGamesOptions,
-} from "./types";
+} from "@bestats/core/igdb/types";
+import { IgdbValidationError } from "./errors";
+import { cleanSearchText } from "./query";
 
 /**
  * Input guards, run before any request (spec 0023, AC-11, AC-12b).

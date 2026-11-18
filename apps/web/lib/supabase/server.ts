@@ -1,9 +1,8 @@
+import type { Database } from "@bestats/core/supabase/database.types";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-
 import { getPublicEnv } from "@/lib/env";
 import { sessionCookieOptions } from "@/lib/supabase/cookie-options";
-import type { Database } from "@/lib/supabase/database.types";
 import { withJwtSkewRetry } from "@/lib/supabase/jwt-skew-retry";
 
 /**

@@ -1,4 +1,4 @@
-import type { Paged } from "@/lib/tmdb/types";
+import type { Paged } from "@bestats/core/tmdb/types";
 
 import { lastReachablePage, TMDB_MAX_PAGE, TMDB_PAGE_SIZE } from "./pages";
 

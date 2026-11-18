@@ -1,4 +1,4 @@
-import { formatAirDate } from "@/lib/format";
+import { formatAirDate } from "@bestats/core/format";
 import {
   getSeasonEpisodeTracking,
   requestTodayUtc,

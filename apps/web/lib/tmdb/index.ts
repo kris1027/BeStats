@@ -15,32 +15,6 @@ import "server-only";
  * token (AC-2).
  */
 
-export type { SettledBatch } from "./batch";
-export { TMDB_ATTRIBUTION } from "./constants";
-export { isTmdbNotFound, TmdbError, type TmdbErrorKind } from "./errors";
-export { imageUrl, resizeImageUrl, type TmdbImageSize } from "./images";
-export {
-  discoverMovies,
-  discoverTvShows,
-  getMovie,
-  getMovieExtras,
-  getMovieGenres,
-  getMovieList,
-  getMovieSummaries,
-  getMoviesByIds,
-  getMoviesSettled,
-  getSeason,
-  getShowCast,
-  getShowEpisodes,
-  getTvExtras,
-  getTvGenres,
-  getTvList,
-  getTvShow,
-  getTvShowsByIds,
-  getTvShowsSettled,
-  searchMovies,
-  searchTvShows,
-} from "./reads";
 export type {
   BatchResult,
   CastMember,
@@ -68,4 +42,30 @@ export type {
   TvListKind,
   TvShow,
   TvShowSummary,
-} from "./types";
+} from "@bestats/core/tmdb/types";
+export type { SettledBatch } from "./batch";
+export { TMDB_ATTRIBUTION } from "./constants";
+export { isTmdbNotFound, TmdbError, type TmdbErrorKind } from "./errors";
+export { imageUrl, resizeImageUrl, type TmdbImageSize } from "./images";
+export {
+  discoverMovies,
+  discoverTvShows,
+  getMovie,
+  getMovieExtras,
+  getMovieGenres,
+  getMovieList,
+  getMovieSummaries,
+  getMoviesByIds,
+  getMoviesSettled,
+  getSeason,
+  getShowCast,
+  getShowEpisodes,
+  getTvExtras,
+  getTvGenres,
+  getTvList,
+  getTvShow,
+  getTvShowsByIds,
+  getTvShowsSettled,
+  searchMovies,
+  searchTvShows,
+} from "./reads";

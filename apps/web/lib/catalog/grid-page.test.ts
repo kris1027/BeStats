@@ -1,6 +1,5 @@
+import type { Paged } from "@bestats/core/tmdb/types";
 import { describe, expect, it, vi } from "vitest";
-
-import type { Paged } from "@/lib/tmdb/types";
 
 import {
   combineGridPage,

@@ -1,9 +1,9 @@
 import "server-only";
+import type { MovieExtras, TvExtras } from "@bestats/core/tmdb/types";
 import type { z } from "zod";
 import { tmdbRequest } from "./client";
 import { normalizeMovieExtras, normalizeTvExtras } from "./normalize-extras";
 import { movieExtrasSchema, tvExtrasSchema } from "./schemas";
-import type { MovieExtras, TvExtras } from "./types";
 import { assertId } from "./validation";
 
 /**

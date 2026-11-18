@@ -1,7 +1,11 @@
 import "server-only";
+import type {
+  DiscoverSort,
+  GameSummary,
+  Paged,
+} from "@bestats/core/igdb/types";
 import { cond, type Sort } from "./query";
 import { readSummaryPage, sharedConditions, unixDay } from "./summary-page";
-import type { DiscoverSort, GameSummary, Paged } from "./types";
 import type { ValidDiscoverOptions } from "./validation";
 
 /**

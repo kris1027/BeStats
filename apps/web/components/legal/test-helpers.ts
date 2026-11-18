@@ -1,6 +1,8 @@
+import {
+  OPERATOR_GITHUB_URL,
+  OPERATOR_HANDLE,
+} from "@bestats/core/legal/operator";
 import { expect } from "vitest";
-
-import { OPERATOR_GITHUB_URL, OPERATOR_HANDLE } from "@/lib/legal/operator";
 
 /**
  * Asserts the page names its operator by handle, linked to the GitHub profile

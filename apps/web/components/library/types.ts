@@ -6,7 +6,7 @@
 
 export type { LibraryList } from "@/lib/catalog/library-list";
 
-import type { ReleaseDate } from "@/lib/format";
+import type { ReleaseDate } from "@bestats/core/format";
 import type { GameStatus } from "@/lib/tracking/types";
 
 export type { ReleaseDate };

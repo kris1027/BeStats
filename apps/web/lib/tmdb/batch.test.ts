@@ -1,3 +1,4 @@
+import type { Movie, SeasonDetail, TvShow } from "@bestats/core/tmdb/types";
 import { afterEach, describe, expect, it } from "vitest";
 import { restoreFetchMock } from "./__fixtures__/helpers";
 import { fetchMoviesByIds, fetchTvShowsByIds, readEachSettled } from "./batch";
@@ -5,7 +6,6 @@ import { mapWithConcurrency } from "./concurrency";
 import { TMDB_CONCURRENCY_LIMIT } from "./constants";
 import { TmdbError } from "./errors";
 import { fetchShowEpisodes } from "./show-episodes";
-import type { Movie, SeasonDetail, TvShow } from "./types";
 
 /**
  * The batch helpers and `getShowEpisodes`, driven through injected readers so

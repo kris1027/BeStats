@@ -1,8 +1,7 @@
+import { formatRuntime } from "@bestats/core/format";
 import type * as React from "react";
-
 import { DetailHero, TmdbRatingBlock } from "@/components/catalog/detail-hero";
 import { GenreChips, MetaLine } from "@/components/catalog/detail-hero-meta";
-import { formatRuntime } from "@/lib/format";
 import type { Movie } from "@/lib/tmdb";
 
 type MovieHeroProps = {

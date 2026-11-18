@@ -1,8 +1,3 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
-
-import { sectionId } from "@/components/legal/legal-document";
-import { expectOperatorLinks } from "@/components/legal/test-helpers";
 import {
   COMPLAINT_RESPONSE_DAYS,
   CONTACT_EMAIL,
@@ -12,7 +7,11 @@ import {
   MINIMUM_AGE,
   OPERATOR_COUNTRY,
   OPERATOR_HANDLE,
-} from "@/lib/legal/operator";
+} from "@bestats/core/legal/operator";
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { sectionId } from "@/components/legal/legal-document";
+import { expectOperatorLinks } from "@/components/legal/test-helpers";
 import { TMDB_ATTRIBUTION } from "@/lib/tmdb/constants";
 
 // The entry point pulls `server-only` and the cached reads into jsdom; only

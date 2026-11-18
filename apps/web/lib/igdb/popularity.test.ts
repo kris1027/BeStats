@@ -1,3 +1,4 @@
+import type { PopularGamesKind } from "@bestats/core/igdb/types";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   installIgdbMock,
@@ -5,7 +6,6 @@ import {
   settle,
 } from "./__fixtures__/helpers";
 import { fetchPopularGames as fetchValidPopularGames } from "./popularity";
-import type { PopularGamesKind } from "./types";
 import { assertPopularKind } from "./validation";
 
 /** The inner read, given the input `reads.ts` would check first. */

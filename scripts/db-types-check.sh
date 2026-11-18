@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fails when apps/web/lib/supabase/database.types.ts has drifted from the live schema.
+# Fails when packages/core/src/supabase/database.types.ts has drifted from the live schema.
 #
 # Spec 0001 AC-14: the committed types must match the database. Generated types
 # that are merely regenerable are not enough, because nothing then notices when
@@ -9,7 +9,7 @@
 # Needs the local Supabase stack running (`pnpm supabase start`).
 set -euo pipefail
 
-TYPES_FILE="apps/web/lib/supabase/database.types.ts"
+TYPES_FILE="packages/core/src/supabase/database.types.ts"
 TMP_FILE="$(mktemp)"
 trap 'rm -f "$TMP_FILE"' EXIT
 

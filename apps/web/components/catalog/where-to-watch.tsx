@@ -1,10 +1,9 @@
+import { JUSTWATCH_ATTRIBUTION } from "@bestats/core/legal/operator";
 import { ExternalLinkIcon } from "lucide-react";
 import Image from "next/image";
 import type * as React from "react";
-
 import { Skeleton } from "@/components/skeleton";
 import type { Region } from "@/lib/catalog/region";
-import { JUSTWATCH_ATTRIBUTION } from "@/lib/legal/operator";
 import type { Provider, RegionProviders } from "@/lib/tmdb";
 
 import { SECTION_HEADING_CLASS, SectionErrorLine } from "./title-section";

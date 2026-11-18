@@ -1,12 +1,11 @@
-import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
-
 import {
   IGDB_ATTRIBUTION,
   IGDB_HOME_URL,
   OPERATOR_GITHUB_URL,
   OPERATOR_HANDLE,
-} from "@/lib/legal/operator";
+} from "@bestats/core/legal/operator";
+import { render, screen, within } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import { TMDB_ATTRIBUTION } from "@/lib/tmdb/constants";
 
 // The real entry point pulls `server-only` and the cached reads into jsdom.

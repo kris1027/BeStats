@@ -1,10 +1,9 @@
+import { formatMonthYear, formatReleaseDate } from "@bestats/core/format";
 import { redirect } from "next/navigation";
-
 import { PaginationLinks } from "@/components/pagination-links";
 import { isGameReleased } from "@/lib/catalog/game-page";
 import type { LibraryPageKey } from "@/lib/catalog/library-list";
 import { libraryHref } from "@/lib/catalog/media-type";
-import { formatMonthYear, formatReleaseDate } from "@/lib/format";
 import type { GameSummary } from "@/lib/igdb";
 import {
   type GameLibraryRow,

@@ -1,9 +1,8 @@
+import { formatReleaseDate } from "@bestats/core/format";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
-
 import { PaginationLinks } from "@/components/pagination-links";
 import { libraryHref } from "@/lib/catalog/media-type";
-import { formatReleaseDate } from "@/lib/format";
 import {
   getLibraryMovieTitles,
   getMovieLibraryTab,

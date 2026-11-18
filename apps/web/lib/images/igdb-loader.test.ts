@@ -1,6 +1,5 @@
+import { IGDB_IMAGE_BASE } from "@bestats/core/igdb/constants";
 import { describe, expect, it } from "vitest";
-
-import { IGDB_IMAGE_BASE } from "@/lib/igdb/constants";
 
 import { igdbImageLoader } from "./igdb-loader";
 

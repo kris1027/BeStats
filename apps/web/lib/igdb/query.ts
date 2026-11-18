@@ -1,4 +1,7 @@
-import { IGDB_CONTROL_CHARACTERS, IGDB_MAX_QUERY_LENGTH } from "./constants";
+import {
+  IGDB_CONTROL_CHARACTERS,
+  IGDB_MAX_QUERY_LENGTH,
+} from "@bestats/core/igdb/constants";
 import { IgdbValidationError } from "./errors";
 
 /**

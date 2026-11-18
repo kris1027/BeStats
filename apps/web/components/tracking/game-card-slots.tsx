@@ -10,13 +10,14 @@
  * catalog card; the failure is logged inside the read (AC-9). The card shows
  * the stored status as it is, so it always matches the library tab (AC-8).
  */
+
+import { formatReleaseDate } from "@bestats/core/format";
 import { ReleasePill } from "@/components/library/dated-pill";
 import {
   IgdbRatingBadge,
   PersonalScoreBadge,
 } from "@/components/rating-badges";
 import { type GameCardStatus, gameCardStatus } from "@/lib/catalog/game-page";
-import { formatReleaseDate } from "@/lib/format";
 import { requestTodayUtc } from "@/lib/tracking/episode-state";
 import { getGameGridStates } from "@/lib/tracking/game-state";
 import { idsKey } from "@/lib/tracking/ids-key";

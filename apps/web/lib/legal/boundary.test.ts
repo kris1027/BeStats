@@ -1,12 +1,4 @@
 import { extname } from "node:path";
-import { describe, expect, it } from "vitest";
-
-import {
-  isDotfile,
-  readWorkspaceFile as read,
-  workspaceFiles,
-} from "@/workspace-files";
-
 import {
   CONTACT_EMAIL,
   IGDB_ATTRIBUTION,
@@ -17,7 +9,13 @@ import {
   OPERATOR_HANDLE,
   SUPERVISORY_AUTHORITY,
   TMDB_HOME_URL,
-} from "./operator";
+} from "@bestats/core/legal/operator";
+import { describe, expect, it } from "vitest";
+import {
+  isDotfile,
+  readWorkspaceFile as read,
+  workspaceFiles,
+} from "@/workspace-files";
 
 /**
  * covers: spec 0017, AC-3, AC-6, AC-10; spec 0032, AC-8
@@ -30,6 +28,9 @@ import {
 
 /** The web app's folder, relative to the workspace root. */
 const WEB = "apps/web";
+
+/** The shared core's sources, where the legal facts live (spec 0034). */
+const CORE = "packages/core/src";
 
 /**
  * Application source only; tests name the strings they forbid. Every app and
@@ -58,21 +59,21 @@ describe("one home for each legal fact", () => {
     ]);
   });
 
-  it("writes IGDB's credit only in lib/legal/operator.ts (spec 0032, AC-8)", () => {
+  it("writes IGDB's credit only in core legal/operator.ts (spec 0032, AC-8)", () => {
     expect(filesContaining(IGDB_ATTRIBUTION)).toEqual([
-      `${WEB}/lib/legal/operator.ts`,
+      `${CORE}/legal/operator.ts`,
     ]);
   });
 
-  it("writes IGDB's site URL only in lib/legal/operator.ts", () => {
+  it("writes IGDB's site URL only in core legal/operator.ts", () => {
     expect(filesContaining(IGDB_HOME_URL)).toEqual([
-      `${WEB}/lib/legal/operator.ts`,
+      `${CORE}/legal/operator.ts`,
     ]);
   });
 
-  it("writes TMDB's site URL only in lib/legal/operator.ts", () => {
+  it("writes TMDB's site URL only in core legal/operator.ts", () => {
     expect(filesContaining(TMDB_HOME_URL)).toEqual([
-      `${WEB}/lib/legal/operator.ts`,
+      `${CORE}/legal/operator.ts`,
     ]);
   });
 
@@ -80,15 +81,15 @@ describe("one home for each legal fact", () => {
     expect(read(`${WEB}/app/privacy/page.tsx`)).not.toContain("United States");
   });
 
-  it("writes the JustWatch credit only in lib/legal/operator.ts (spec 0022, AC-12)", () => {
+  it("writes the JustWatch credit only in core legal/operator.ts (spec 0022, AC-12)", () => {
     expect(filesContaining(JUSTWATCH_ATTRIBUTION)).toEqual([
-      `${WEB}/lib/legal/operator.ts`,
+      `${CORE}/legal/operator.ts`,
     ]);
   });
 
-  it("writes the contact email only in lib/legal/operator.ts (AC-10)", () => {
+  it("writes the contact email only in core legal/operator.ts (AC-10)", () => {
     expect(filesContaining(CONTACT_EMAIL)).toEqual([
-      `${WEB}/lib/legal/operator.ts`,
+      `${CORE}/legal/operator.ts`,
     ]);
   });
 
@@ -124,7 +125,7 @@ describe("the legal pages stay static Server Components (AC-6)", () => {
   });
 
   it("keeps the operator module pure, with no server-only guard (AC-10)", () => {
-    expect(read(`${WEB}/lib/legal/operator.ts`)).not.toMatch(
+    expect(read(`${CORE}/legal/operator.ts`)).not.toMatch(
       /import\s+["']server-only["']/,
     );
   });

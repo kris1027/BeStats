@@ -1,6 +1,5 @@
+import { formatCalculatedRating } from "@bestats/core/format";
 import { describe, expect, it } from "vitest";
-
-import { formatCalculatedRating } from "@/lib/format";
 
 import { ratingsBySeason, seasonRating, showRating } from "./ratings";
 

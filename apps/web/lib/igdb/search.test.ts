@@ -1,3 +1,7 @@
+import type {
+  DiscoverGamesOptions,
+  SearchGamesOptions,
+} from "@bestats/core/igdb/types";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import genres from "./__fixtures__/genres.json";
 import {
@@ -11,7 +15,6 @@ import { fetchDiscoverGames as fetchValidDiscoverGames } from "./discover";
 import { IgdbValidationError } from "./errors";
 import { fetchGameGenres, fetchGamePlatforms } from "./reference";
 import { fetchSearchGames as fetchValidSearchGames } from "./search";
-import type { DiscoverGamesOptions, SearchGamesOptions } from "./types";
 import { validateDiscoverOptions, validateSearchOptions } from "./validation";
 
 /** The inner read, given the input `reads.ts` would check first. */

@@ -1,10 +1,9 @@
+import { formatAirDate } from "@bestats/core/format";
 import { Gamepad2Icon } from "lucide-react";
 import type * as React from "react";
-
 import { DetailHero, IgdbRatingBlock } from "@/components/catalog/detail-hero";
 import { GenreChips, MetaLine } from "@/components/catalog/detail-hero-meta";
 import { TrailerButton } from "@/components/catalog/trailer-button";
-import { formatAirDate } from "@/lib/format";
 import type { Game, GameType } from "@/lib/igdb";
 
 type GameHeroProps = {

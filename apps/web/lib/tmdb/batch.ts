@@ -1,16 +1,16 @@
 import "server-only";
-import { mapWithConcurrency } from "./concurrency";
-import { TMDB_CONCURRENCY_LIMIT } from "./constants";
-import { TmdbError } from "./errors";
-import { fetchMovie } from "./movies";
-import { fetchTvShow } from "./tv";
 import type {
   BatchResult,
   Movie,
   MovieSummary,
   TvShow,
   TvShowSummary,
-} from "./types";
+} from "@bestats/core/tmdb/types";
+import { mapWithConcurrency } from "./concurrency";
+import { TMDB_CONCURRENCY_LIMIT } from "./constants";
+import { TmdbError } from "./errors";
+import { fetchMovie } from "./movies";
+import { fetchTvShow } from "./tv";
 
 /**
  * Reading many titles by id, which is what a watchlist screen needs.

@@ -1,5 +1,4 @@
 import "server-only";
-import { isCatalogVisible } from "./catalog-filter";
 import {
   IGDB_ART_SIZE,
   IGDB_COVER_LADDER,
@@ -9,15 +8,7 @@ import {
   IGDB_IMAGE_BASE,
   IGDB_MAX_SCREENSHOTS,
   IGDB_VISIBLE_GAME_TYPES,
-} from "./constants";
-import {
-  type GameDetailRecord,
-  type GameSummaryRecord,
-  involvedCompanySchema,
-  refSchema,
-  releaseDateSchema,
-  videoSchema,
-} from "./schemas";
+} from "@bestats/core/igdb/constants";
 import type {
   Game,
   GameRef,
@@ -26,7 +17,16 @@ import type {
   GameType,
   GameVideo,
   PlatformRelease,
-} from "./types";
+} from "@bestats/core/igdb/types";
+import { isCatalogVisible } from "./catalog-filter";
+import {
+  type GameDetailRecord,
+  type GameSummaryRecord,
+  involvedCompanySchema,
+  refSchema,
+  releaseDateSchema,
+  videoSchema,
+} from "./schemas";
 
 /**
  * IGDB's shape to the app's shape (spec 0023, AC-15, AC-16).
