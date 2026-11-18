@@ -1,8 +1,14 @@
 import { execFileSync } from "node:child_process";
-import { readdirSync, readFileSync, statSync } from "node:fs";
-import { extname, join, relative } from "node:path";
-import { fileURLToPath } from "node:url";
+import { statSync } from "node:fs";
+import { extname, join } from "node:path";
 import { describe, expect, it } from "vitest";
+
+import {
+  isDotfile,
+  readWorkspaceFile,
+  WORKSPACE_ROOT,
+  workspaceFiles,
+} from "./workspace-files";
 
 /**
  * Spec 0001 AC-15: the Supabase service role key appears nowhere in
@@ -27,8 +33,6 @@ import { describe, expect, it } from "vitest";
  * test run from `apps/web` still sees them (spec 0034, Tooling). Paths are
  * reported relative to the workspace root.
  */
-const WORKSPACE_ROOT = fileURLToPath(new URL("../..", import.meta.url));
-
 /** The web app's folder, relative to the workspace root. */
 const WEB = "apps/web";
 
@@ -51,25 +55,34 @@ const EXCLUDED_DIRS = new Set([
   "fixtures",
   "__fixtures__",
 ]);
-/** Dotted, so the directory walk skips it; scanned by name instead. */
-const ENV_EXAMPLE = `${WEB}/.env.example`;
-const SCANNED_FILES = [ENV_EXAMPLE];
-const SCANNED_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".mjs", ".sh", ""]);
 
-/** Every scannable file under a directory, recursively. */
-function filesUnder(dir: string): string[] {
-  const found: string[] = [];
-  for (const entry of readdirSync(dir)) {
-    if (EXCLUDED_DIRS.has(entry) || entry.startsWith(".")) continue;
-    const path = join(dir, entry);
-    if (statSync(path).isDirectory()) {
-      found.push(...filesUnder(path));
-    } else if (SCANNED_EXTENSIONS.has(extname(path))) {
-      found.push(path);
-    }
-  }
-  return found;
-}
+/** The web app's committed example env file, the one IGDB must be listed in. */
+const ENV_EXAMPLE = `${WEB}/.env.example`;
+
+/**
+ * Code, scripts and config. JSON is here because Expo sets build env in
+ * `app.json` and `eas.json`, exactly where an `EXPO_PUBLIC_` secret would land.
+ */
+const SCANNED_EXTENSIONS = new Set([
+  ".ts",
+  ".tsx",
+  ".mts",
+  ".cts",
+  ".js",
+  ".jsx",
+  ".mjs",
+  ".cjs",
+  ".json",
+  ".sh",
+  "",
+]);
+
+/**
+ * Every committed example env file, in any app or package. Dotted, so the
+ * extension match would skip them; matched by name instead, so a later
+ * `apps/mobile/.env.example` is scanned the day it appears.
+ */
+const ENV_EXAMPLE_NAME = /(^|\/)\.env\.example$/;
 
 /** A test file names the thing it forbids, so scanning one is a false alarm. */
 function isTest(path: string): boolean {
@@ -77,17 +90,19 @@ function isTest(path: string): boolean {
 }
 
 function scannedPaths(): string[] {
-  return [
-    ...filesUnder(WORKSPACE_ROOT).map((path) => relative(WORKSPACE_ROOT, path)),
-    ...SCANNED_FILES,
-  ].filter((path) => !isTest(path));
+  return workspaceFiles({
+    skipDirs: EXCLUDED_DIRS,
+    keep: (path) =>
+      ENV_EXAMPLE_NAME.test(path) ||
+      (!isDotfile(path) &&
+        SCANNED_EXTENSIONS.has(extname(path)) &&
+        !isTest(path)),
+  });
 }
 
 function offenders(needle: string): string[] {
   return scannedPaths().filter((path) =>
-    readFileSync(join(WORKSPACE_ROOT, path), "utf8")
-      .toLowerCase()
-      .includes(needle),
+    readWorkspaceFile(path).toLowerCase().includes(needle),
   );
 }
 
@@ -106,6 +121,10 @@ describe("the service role boundary", () => {
 
   it("scans the request-facing root files, proxy.ts above all", () => {
     expect(scannedPaths()).toContain(`${WEB}/proxy.ts`);
+  });
+
+  it("scans the committed example env file", () => {
+    expect(scannedPaths()).toContain(ENV_EXAMPLE);
   });
 });
 
@@ -173,7 +192,7 @@ describe("the IGDB credential boundary", () => {
   });
 
   it("is listed in .env.example", () => {
-    const example = readFileSync(join(WORKSPACE_ROOT, ENV_EXAMPLE), "utf8");
+    const example = readWorkspaceFile(ENV_EXAMPLE);
     for (const variable of IGDB_VARIABLES) {
       expect(example).toContain(`${variable}=`);
     }
@@ -206,7 +225,7 @@ describe("the removed games flag", () => {
           })?.isFile(),
       );
     const named = tracked.filter((path) =>
-      readFileSync(join(WORKSPACE_ROOT, path), "utf8").includes(GAMES_FLAG),
+      readWorkspaceFile(path).includes(GAMES_FLAG),
     );
     expect(named).toEqual([]);
   });

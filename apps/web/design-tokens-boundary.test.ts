@@ -1,7 +1,11 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
-import { extname, join, relative } from "node:path";
-import { fileURLToPath } from "node:url";
+import { extname } from "node:path";
 import { describe, expect, it } from "vitest";
+
+import {
+  isDotfile,
+  readWorkspaceFile as read,
+  workspaceFiles,
+} from "./workspace-files";
 
 /**
  * covers: AC-1, AC-2, AC-3, AC-4
@@ -22,14 +26,8 @@ import { describe, expect, it } from "vitest";
  * remembered to add. "The whole repository" is the workspace, found from this
  * file rather than the working directory, so `apps/mobile` and `packages/core`
  * are held to the same rule (spec 0034, Tooling). Paths are relative to the
- * workspace root.
+ * workspace root (`workspace-files.ts`).
  */
-const WORKSPACE_ROOT = fileURLToPath(new URL("../..", import.meta.url));
-
-/** Reads a file by its path relative to the workspace root. */
-function read(path: string): string {
-  return readFileSync(join(WORKSPACE_ROOT, path), "utf8");
-}
 
 /**
  * Directories skipped at any depth. Dependencies and build output are not ours
@@ -54,21 +52,6 @@ const EXCLUDED_DIRS = new Set([
  */
 const SCANNED_EXTENSIONS = new Set([".ts", ".tsx", ".css", ".mjs", ".js"]);
 
-/** Every scannable file under a directory, recursively. */
-function filesUnder(dir: string): string[] {
-  const found: string[] = [];
-  for (const entry of readdirSync(dir)) {
-    if (EXCLUDED_DIRS.has(entry) || entry.startsWith(".")) continue;
-    const path = join(dir, entry);
-    if (statSync(path).isDirectory()) {
-      found.push(...filesUnder(path));
-    } else if (SCANNED_EXTENSIONS.has(extname(path))) {
-      found.push(path);
-    }
-  }
-  return found;
-}
-
 /**
  * Paths the colour rule does not apply to: this file, whose own subject is the
  * rule, and `globals.css`, which is the one place a colour value may be
@@ -77,9 +60,13 @@ function filesUnder(dir: string): string[] {
 const EXEMPT_FROM_COLOUR_RULE =
   /^apps\/web\/(design-tokens-boundary\.test\.ts|app\/globals\.css)$/;
 
-const SOURCE_FILES = filesUnder(WORKSPACE_ROOT)
-  .map((path) => relative(WORKSPACE_ROOT, path))
-  .filter((path) => !EXEMPT_FROM_COLOUR_RULE.test(path));
+const SOURCE_FILES = workspaceFiles({
+  skipDirs: EXCLUDED_DIRS,
+  keep: (path) =>
+    !isDotfile(path) &&
+    SCANNED_EXTENSIONS.has(extname(path)) &&
+    !EXEMPT_FROM_COLOUR_RULE.test(path),
+});
 
 const GLOBALS_CSS = read("apps/web/app/globals.css");
 

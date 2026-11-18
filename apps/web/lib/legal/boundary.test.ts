@@ -1,7 +1,11 @@
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { extname, join, relative } from "node:path";
-import { fileURLToPath } from "node:url";
+import { extname } from "node:path";
 import { describe, expect, it } from "vitest";
+
+import {
+  isDotfile,
+  readWorkspaceFile as read,
+  workspaceFiles,
+} from "@/workspace-files";
 
 import {
   CONTACT_EMAIL,
@@ -24,45 +28,22 @@ import {
  * until the day the constant changes. So this reads the source instead.
  */
 
-/**
- * The workspace root, found from this file rather than the working directory,
- * so the scan covers every app and package (`apps/mobile`, `packages/core`)
- * the day it appears, whichever folder vitest runs from.
- */
-const WORKSPACE_ROOT = fileURLToPath(new URL("../../../..", import.meta.url));
+/** The web app's folder, relative to the workspace root. */
 const WEB = "apps/web";
 
-/** Application source only; tests name the strings they forbid. */
-const SOURCE_ROOTS = ["apps", "packages"];
-const SOURCE_EXTENSIONS = new Set([".ts", ".tsx"]);
-const SKIPPED_DIRS = new Set(["node_modules"]);
-
-function filesUnder(dir: string): string[] {
-  const found: string[] = [];
-  for (const entry of readdirSync(dir)) {
-    if (SKIPPED_DIRS.has(entry) || entry.startsWith(".")) continue;
-    const path = join(dir, entry);
-    if (statSync(path).isDirectory()) {
-      found.push(...filesUnder(path));
-    } else if (
-      SOURCE_EXTENSIONS.has(extname(path)) &&
-      !/\.(test|spec)\.tsx?$/.test(path)
-    ) {
-      found.push(path);
-    }
-  }
-  return found;
-}
-
-const SOURCES = SOURCE_ROOTS.map((root) => join(WORKSPACE_ROOT, root))
-  .filter((root) => existsSync(root))
-  .flatMap(filesUnder)
-  .map((path) => relative(WORKSPACE_ROOT, path));
-
-/** Reads a file by its workspace relative path. */
-function read(path: string): string {
-  return readFileSync(join(WORKSPACE_ROOT, path), "utf8");
-}
+/**
+ * Application source only; tests name the strings they forbid. Every app and
+ * package (`apps/mobile`, `packages/core`) is read the day it appears,
+ * whichever folder vitest runs from. Paths are workspace relative.
+ */
+const SOURCES = workspaceFiles({
+  roots: ["apps", "packages"],
+  skipDirs: new Set(["node_modules"]),
+  keep: (path) =>
+    !isDotfile(path) &&
+    [".ts", ".tsx"].includes(extname(path)) &&
+    !/\.(test|spec)\.tsx?$/.test(path),
+});
 
 /** The files that contain a literal, as workspace relative paths. */
 function filesContaining(literal: string): string[] {
