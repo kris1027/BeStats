@@ -44,6 +44,7 @@ _2026-10-06: the `design/` artboards were removed. The UI built from them carrie
 | 25 | Consistent card size and richer title pages | Slice 12 | done |
 | 26 | Library page names per media type | Slice 13 | done |
 | 27 | Library page URLs follow their names | Slice 13 | in-progress |
+| 28 | Mobile app (iOS and Android) | Slice 14 | in-progress |
 
 ## Foundations
 
@@ -450,13 +451,33 @@ Each library page's URL says its name: shows `/up-next`, `/upcoming`, `/watched`
 - [x] Build it: `LIBRARY_PAGE_PATHS`, `libraryHref`, the four new routes, the tab switch, the private paths and the redirects, checked in the running app — AC-1 to AC-7
 plan [prompts/library-page-urls.md](../../prompts/library-page-urls.md) · code in `lib/catalog/library-list.ts`, `lib/catalog/media-type.ts`, `next.config.ts`, `app/up-next/`, `app/want-to-play/`, `app/playing/`, `app/finished/`
 
+## Slice 14: Mobile
+
+### 28. Mobile app (iOS and Android) · in-progress · GA
+A native Expo app for iOS and Android beside the web app, in a pnpm monorepo (`apps/web`, `apps/mobile`, `packages/core`). v1 covers sign in and account (email and password, self serve deletion on both apps), browse and search, all tracking with Undo, and every library page, with a read only offline cache. The phone reaches TMDB, IGDB and tracking writes only through a bearer authenticated `/api/v1` on the web project, so keys and the release gate stay on the server. Designed on 2026-11-18.
+**Done when:** both store builds sign in, browse, search, track and show every library page with the same rules and names as the web; the web still deploys unchanged from `apps/web`; no TMDB or IGDB secret or service role key is reachable from the app or the repo; account deletion works on both apps; and the attribution, privacy text and store privacy labels are in place.
+- [x] Design it (spec): `/architect mobile app`
+- [ ] Build it: `/develop mobile app`
+  - [ ] Monorepo move and shared core: `git mv` into `apps/web` green on Vercel, then the core extraction by the file inventory, tokens script and boundary tests (spec 0034)
+  - [ ] Tracer bullet: sign in, open a movie, mark it watched, through `withV1`, the bearer client, the first command split, NativeWind v5 and an EAS dev build on real devices, plus the `use cache` and `delete_own_account` proofs (spec 0033 First slice, 0035, 0036)
+  - [ ] API thickened: every public and `me` route, Undo restores, library and titles batching, the claim username sign up, versioning, caching headers and their enforcement tests (spec 0035)
+  - [ ] App thickened: every screen ported from the shipped UI and `/showcase`, offline cache and wipe, About and attribution, account deletion on web and mobile, deep link files (spec 0033, 0036)
+  - [ ] Release: store accounts, EAS Submit, privacy labels, `/privacy` and `/terms` update, firewall rules recorded in `docs/deploy.md`, first TestFlight and Play internal builds
+- [ ] Verify it: `/check verify mobile app`
+- [ ] Test it: `/test mobile app`
+- [ ] Review it (fresh model): `/check review mobile app`
+- [ ] Document it: `/document mobile app`
+spec [0033](../specs/0033-mobile-app-expo/index.md) · code in `apps/mobile/`, `packages/core/`, `apps/web/app/api/v1/`, `apps/web/lib/tracking/commands/`, `apps/web/lib/supabase/bearer.ts`, `supabase/schemas/` (`delete_own_account`)
+
 ## Deferred
 Out of scope for the current build pass, kept so the plan stays honest.
 - **Public profiles and social features**: ruled out of the MVP by `AGENTS.md`
 - **Per visitor region and timezone on the home rows** (from spec 0021): Now playing, Upcoming, Airing today and On the air use the fixed `PL` region and `Europe/Warsaw`. Following the visitor needs its own decision (a request header or an account setting).
 - **More title page sections** (from the 2026-10-12 grilling): external links (IMDb, homepage, socials) and the movie collection row are a later batch; keywords, image gallery, TMDB reviews and the aggregate show cast were skipped
 - **Error monitoring and product analytics**: not selected for this pass
-- **Self serve account deletion and data export** (from specs 0005 and 0017): GDPR requests are handled by email for now. Undesigned; a `/account` flow needs the Supabase admin API or a security definer function, an elevated call nothing else in the app uses, so it deserves its own decision, including what happens to the cascading tracking data
+- **Self serve account deletion and data export** (from specs 0005 and 0017): GDPR requests are handled by email for now. Undesigned; a `/account` flow needs the Supabase admin API or a security definer function, an elevated call nothing else in the app uses, so it deserves its own decision, including what happens to the cascading tracking data. _2026-11-18: deletion is now designed in spec 0036 (`delete_own_account()`) and ships with feature 28; data export stays deferred._
+- **Push notifications** (from spec 0033): a new episode aired for a tracked show. Needs a device token table, a scheduled air date check and Expo Push as a new processor, so it gets its own spec after the mobile app ships
+- **Sign in with Apple** (from spec 0033): required on iOS once Google sign in ships there, so it comes with the Google item below
 - **Rate limit on sign in and sign up** (from spec 0018): Supabase counts Vercel's addresses, so its auth limit is shared by every visitor ([docs/deploy.md](../deploy.md) section 6). If it bites, add a second Vercel Firewall rule on sign in and sign up posts per IP. (The `/api/search` limit from spec 0010 shipped as a firewall rule in feature 20.)
 - **A paid Supabase plan** (from spec 0018): the Free project pauses after about a week idle and has no automatic backups; revisit if that bites, or before inviting more than a handful of users
 - **Email delivery and Google sign in** (from spec 0018): an SMTP provider (your own domain, or Gmail SMTP), `enable_confirmations = true` and `NEXT_PUBLIC_AUTH_EMAIL_DELIVERY=on`, password recovery back, a browser pass of spec 0005's email steps, the Google button restored, a pre account takeover guard for accounts created while confirmation was off, `secure_password_change = true`, Google and the email provider added to `PROCESSORS`, and leaked password protection if you move to Pro
