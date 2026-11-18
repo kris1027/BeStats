@@ -2,6 +2,10 @@ import "server-only";
 
 import { readGridPage } from "@bestats/core/catalog/grid-page";
 import { type MediaType, titleHref } from "@bestats/core/catalog/media-type";
+import { MIN_VOTE_COUNT, QUICK_LIMIT } from "@bestats/core/search/constants";
+import type { SearchMode } from "@bestats/core/search/mode";
+import type { TmdbSearchParams } from "@bestats/core/search/params";
+import type { QuickSearchResponse } from "@bestats/core/search/quick";
 import {
   discoverMovies,
   discoverTvShows,
@@ -12,10 +16,6 @@ import {
   searchTvShows,
   type TvShowSummary,
 } from "@/lib/tmdb";
-import { MIN_VOTE_COUNT, QUICK_LIMIT } from "./constants";
-import type { SearchMode } from "./mode";
-import type { TmdbSearchParams } from "./params";
-import type { QuickSearchResponse } from "./quick";
 
 /**
  * A search result from either catalog, reduced to what search needs to show

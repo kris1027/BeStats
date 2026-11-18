@@ -1,10 +1,12 @@
 "use client";
 
+import {
+  QUICK_DEBOUNCE_MS,
+  QUICK_MIN_CHARS,
+} from "@bestats/core/search/constants";
+import type { SearchType } from "@bestats/core/search/params";
+import type { QuickSearchResponse } from "@bestats/core/search/quick";
 import { useEffect, useState } from "react";
-
-import { QUICK_DEBOUNCE_MS, QUICK_MIN_CHARS } from "@/lib/search/constants";
-import type { SearchType } from "@/lib/search/params";
-import type { QuickSearchResponse } from "@/lib/search/quick";
 
 /**
  * What the quick search panel can be showing (spec 0010, AC-2, AC-5).

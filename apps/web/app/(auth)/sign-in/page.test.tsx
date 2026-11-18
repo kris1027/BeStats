@@ -1,14 +1,13 @@
-import { render, screen } from "@testing-library/react";
-import type * as React from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
 import {
   AUTH_MESSAGES,
   AUTH_OUTCOME,
   AUTH_UNCONFIGURED_MESSAGE,
   SIGN_IN_NOTICE,
   SIGN_IN_NOTICES,
-} from "@/lib/auth/messages";
+} from "@bestats/core/auth/messages";
+import { render, screen } from "@testing-library/react";
+import type * as React from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { stubPublicEnv } from "@/lib/env.test-helpers";
 import SignInPage from "./page";
 

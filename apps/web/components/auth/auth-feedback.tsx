@@ -1,8 +1,8 @@
 "use client";
 
+import type { AuthActionState } from "@bestats/core/auth/action-state";
 import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/button";
-import type { AuthActionState } from "@/lib/auth/action-state";
 
 /**
  * The form level message an auth action returned (spec 0005, AC-21).

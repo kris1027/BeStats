@@ -1,8 +1,7 @@
+import { quickSearchRequestSchema } from "@bestats/core/search/quick";
 import { type NextRequest, NextResponse } from "next/server";
-
 import { IgdbError, IgdbValidationError, searchGames } from "@/lib/igdb";
 import { toGameQuickSearchResponse } from "@/lib/search/game-read";
-import { quickSearchRequestSchema } from "@/lib/search/quick";
 import { readSearchPage, toQuickSearchResponse } from "@/lib/search/read";
 import { TmdbError } from "@/lib/tmdb";
 

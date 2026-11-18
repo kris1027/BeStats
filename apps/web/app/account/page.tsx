@@ -1,18 +1,20 @@
-import { cn } from "cn";
-import type { Metadata } from "next";
-
-import { signOutAction } from "@/app/(auth)/actions";
-import { Button, ButtonLink } from "@/components/ui/button";
-import { hasPasswordIdentity } from "@/lib/auth/identity";
+import { hasPasswordIdentity } from "@bestats/core/auth/identity";
 import {
   ACCOUNT_NOTICE,
   ACCOUNT_NOTICES,
   AUTH_OUTCOME,
   authMessage,
-} from "@/lib/auth/messages";
+} from "@bestats/core/auth/messages";
+import {
+  isUsernameLocked,
+  usernameUnlocksAt,
+} from "@bestats/core/auth/username";
+import { cn } from "cn";
+import type { Metadata } from "next";
+import { signOutAction } from "@/app/(auth)/actions";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { getOwnProfile } from "@/lib/auth/profile";
 import { requireUser } from "@/lib/auth/user";
-import { isUsernameLocked, usernameUnlocksAt } from "@/lib/auth/username";
 import { createClient } from "@/lib/supabase/server";
 import { ChangePasswordForm } from "./change-password-form";
 import { ChangeUsernameForm } from "./change-username-form";

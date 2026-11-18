@@ -1,6 +1,24 @@
 "use client";
 
 import { CATALOG_SOURCES, typedHref } from "@bestats/core/catalog/media-type";
+import { SEARCH_CATALOGS } from "@bestats/core/search/catalogs";
+import {
+  FILTER_DEBOUNCE_MS,
+  GAME_MIN_RATING_COUNT,
+  MAX_QUERY_LENGTH,
+  MIN_VOTE_COUNT,
+  RATING_STEPS,
+  type RatingStep,
+} from "@bestats/core/search/constants";
+import { mediaNoun } from "@bestats/core/search/count";
+import {
+  type CatalogRef,
+  emptySearchParams,
+  minYear,
+  type SearchParams,
+  type SearchType,
+  searchHref,
+} from "@bestats/core/search/params";
 import { cn } from "cn";
 import {
   ChevronDownIcon,
@@ -25,24 +43,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { SEARCH_CATALOGS } from "@/lib/search/catalogs";
-import {
-  FILTER_DEBOUNCE_MS,
-  GAME_MIN_RATING_COUNT,
-  MAX_QUERY_LENGTH,
-  MIN_VOTE_COUNT,
-  RATING_STEPS,
-  type RatingStep,
-} from "@/lib/search/constants";
-import { mediaNoun } from "@/lib/search/count";
-import {
-  type CatalogRef,
-  emptySearchParams,
-  minYear,
-  type SearchParams,
-  type SearchType,
-  searchHref,
-} from "@/lib/search/params";
 
 /** Each type's genre list, or null when its catalog could not supply it. */
 type Genres = Record<SearchType, CatalogRef[] | null>;

@@ -1,6 +1,6 @@
+import { success } from "@bestats/core/auth/action-state";
+import { AUTH_UNCONFIGURED_MESSAGE } from "@bestats/core/auth/messages";
 import { AuthFeedback } from "@/components/auth/auth-feedback";
-import { success } from "@/lib/auth/action-state";
-import { AUTH_UNCONFIGURED_MESSAGE } from "@/lib/auth/messages";
 
 /**
  * Stands in for the sign in and sign up forms when this deployment has no

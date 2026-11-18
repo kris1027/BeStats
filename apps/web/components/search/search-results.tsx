@@ -6,6 +6,18 @@ import {
   titleHref,
   typedHref,
 } from "@bestats/core/catalog/media-type";
+import { SEARCH_CATALOGS } from "@bestats/core/search/catalogs";
+import { formatRange, mediaNoun } from "@bestats/core/search/count";
+import { searchMode } from "@bestats/core/search/mode";
+import {
+  parseGameSearchParams,
+  parseTmdbSearchParams,
+  type SearchParamName,
+  type SearchParams,
+  type SearchType,
+  searchHref,
+  type TmdbSearchParams,
+} from "@bestats/core/search/params";
 import { Suspense } from "react";
 import { GameListCard } from "@/components/catalog/list-cards";
 import { PaginationLinks } from "@/components/pagination-links";
@@ -35,20 +47,8 @@ import {
   IgdbError,
   type Paged as IgdbPaged,
 } from "@/lib/igdb";
-import { SEARCH_CATALOGS } from "@/lib/search/catalogs";
-import { formatRange, mediaNoun } from "@/lib/search/count";
 import { readGameSearchPage } from "@/lib/search/game-read";
 import { readGameLists } from "@/lib/search/lists";
-import { searchMode } from "@/lib/search/mode";
-import {
-  parseGameSearchParams,
-  parseTmdbSearchParams,
-  type SearchParamName,
-  type SearchParams,
-  type SearchType,
-  searchHref,
-  type TmdbSearchParams,
-} from "@/lib/search/params";
 import {
   readSearchGridPage,
   type SearchPage,

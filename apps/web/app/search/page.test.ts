@@ -1,6 +1,5 @@
+import { MAX_QUERY_LENGTH } from "@bestats/core/search/constants";
 import { afterEach, describe, expect, it, vi } from "vitest";
-
-import { MAX_QUERY_LENGTH } from "@/lib/search/constants";
 
 /**
  * covers: spec 0016, AC-11, AC-18

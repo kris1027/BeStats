@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { AuthOutcome } from "./messages";
+import type { AuthOutcome } from "@bestats/core/auth/messages";
 
 /**
  * The only way an auth path is allowed to write to the log (spec 0005, AC-19).

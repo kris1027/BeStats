@@ -1,13 +1,12 @@
-import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
-
 import {
   type CatalogRef,
   emptySearchParams,
   type GameSearchParams,
   type SearchParams,
-} from "@/lib/search/params";
+} from "@bestats/core/search/params";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { FilterBar } from "./filter-bar";
 

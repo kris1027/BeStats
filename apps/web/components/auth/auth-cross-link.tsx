@@ -1,8 +1,7 @@
+import { isSafeNextPath } from "@bestats/core/auth/next-path";
 import Link from "next/link";
 import type * as React from "react";
 import { Suspense } from "react";
-
-import { isSafeNextPath } from "@/lib/auth/next-path";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 

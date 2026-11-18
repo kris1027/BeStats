@@ -1,12 +1,11 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
-
 import {
   AUTH_MESSAGES,
   AUTH_OUTCOME,
   SIGN_IN_NOTICE,
   SIGN_IN_NOTICES,
-} from "@/lib/auth/messages";
+} from "@bestats/core/auth/messages";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import { signInAction } from "../actions";
 import { SignInForm } from "./sign-in-form";
 

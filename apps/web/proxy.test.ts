@@ -65,7 +65,7 @@ describe("the proxy guard (AC-10, AC-17)", () => {
   it("reads the private list rather than restating it", () => {
     // A second copy of the prefixes here would drift from the one features 9,
     // 14 and 15 register in.
-    expect(PROXY).toContain('from "@/lib/auth/private-paths"');
+    expect(PROXY).toContain('from "@bestats/core/auth/private-paths"');
     expect(PROXY).not.toMatch(
       /"\/(watchlist|upcoming|watched|coming-soon|up-next|want-to-play|playing|finished)"/,
     );
@@ -450,7 +450,7 @@ describe("the proxy and the legal pages", () => {
   });
 
   it("keeps both out of the private path registry", async () => {
-    const { isPrivatePath } = await import("@/lib/auth/private-paths");
+    const { isPrivatePath } = await import("@bestats/core/auth/private-paths");
     expect(isPrivatePath("/privacy")).toBe(false);
     expect(isPrivatePath("/terms")).toBe(false);
   });

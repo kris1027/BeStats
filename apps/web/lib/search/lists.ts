@@ -1,5 +1,5 @@
+import type { GameLists } from "@bestats/core/search/params";
 import { getGameGenres, getGamePlatforms, IgdbError } from "@/lib/igdb";
-import type { GameLists } from "@/lib/search/params";
 import { TmdbError } from "@/lib/tmdb";
 
 /**

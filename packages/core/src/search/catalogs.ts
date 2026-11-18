@@ -2,7 +2,7 @@ import {
   IGDB_MAX_FILTER_IDS,
   IGDB_MAX_PAGE,
   IGDB_MIN_YEAR,
-} from "@bestats/core/igdb/constants";
+} from "../igdb/constants";
 
 import { MIN_YEAR } from "./constants";
 import type { CountEndpoint } from "./count";

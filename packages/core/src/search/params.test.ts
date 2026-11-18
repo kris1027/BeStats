@@ -1,5 +1,5 @@
-import type { Genre } from "@bestats/core/tmdb/types";
 import { describe, expect, it } from "vitest";
+import type { Genre } from "../tmdb/types";
 
 import { searchMode } from "./mode";
 import {

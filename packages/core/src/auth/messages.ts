@@ -1,4 +1,4 @@
-import { CONTACT_EMAIL } from "@bestats/core/legal/operator";
+import { CONTACT_EMAIL } from "../legal/operator";
 
 /**
  * Every message an auth surface can show, written once (spec 0005, AC-2, AC-5,

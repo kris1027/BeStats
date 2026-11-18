@@ -1,11 +1,11 @@
 import { parseLibraryTypeParam } from "@bestats/core/catalog/media-type";
-import { Skeleton } from "@/components/skeleton";
-import { readGameLists, settleList } from "@/lib/search/lists";
 import {
   emptySearchParams,
   parseGameSearchParams,
   parseTmdbSearchParams,
-} from "@/lib/search/params";
+} from "@bestats/core/search/params";
+import { Skeleton } from "@/components/skeleton";
+import { readGameLists, settleList } from "@/lib/search/lists";
 import { getMovieGenres, getTvGenres } from "@/lib/tmdb";
 
 import { FilterBar } from "./filter-bar";

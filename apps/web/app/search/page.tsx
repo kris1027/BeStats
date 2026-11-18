@@ -1,6 +1,6 @@
+import { MAX_QUERY_LENGTH } from "@bestats/core/search/constants";
 import type { Metadata } from "next";
 import { Suspense } from "react";
-
 import {
   SearchFilters,
   SearchFiltersSkeleton,
@@ -10,7 +10,6 @@ import {
   SearchResults,
   SearchResultsSkeleton,
 } from "@/components/search/search-results";
-import { MAX_QUERY_LENGTH } from "@/lib/search/constants";
 import { shareMetadata } from "@/lib/seo/metadata";
 
 /** The search page's description, the same for every query (spec 0016, AC-18). */

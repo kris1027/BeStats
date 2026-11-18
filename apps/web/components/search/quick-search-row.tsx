@@ -1,4 +1,6 @@
 import { CATALOG_SOURCES } from "@bestats/core/catalog/media-type";
+import type { SearchType } from "@bestats/core/search/params";
+import type { QuickResult } from "@bestats/core/search/quick";
 import { cn } from "cn";
 import {
   FilmIcon,
@@ -7,8 +9,6 @@ import {
   StarIcon,
 } from "lucide-react";
 import Image from "next/image";
-import type { SearchType } from "@/lib/search/params";
-import type { QuickResult } from "@/lib/search/quick";
 
 /** The icon a row with no poster or cover shows, per catalog. */
 const FALLBACK_ICONS = {

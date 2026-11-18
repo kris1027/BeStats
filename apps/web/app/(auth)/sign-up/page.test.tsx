@@ -1,9 +1,8 @@
+import { AUTH_UNCONFIGURED_MESSAGE } from "@bestats/core/auth/messages";
 import { render, screen } from "@testing-library/react";
 import type * as React from "react";
 import { Suspense } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-
-import { AUTH_UNCONFIGURED_MESSAGE } from "@/lib/auth/messages";
 import { stubNoPublicEnv, stubPublicEnv } from "@/lib/env.test-helpers";
 import SignUpPage from "./page";
 

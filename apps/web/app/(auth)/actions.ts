@@ -1,7 +1,5 @@
 "use server";
 
-import { redirect } from "next/navigation";
-
 import {
   type AuthActionState,
   failure,
@@ -10,23 +8,24 @@ import {
   keepUsername,
   passwordFieldFor,
   success,
-} from "@/lib/auth/action-state";
-import { isRecoverySession } from "@/lib/auth/identity";
-import { AUTH_EVENT, logAuthEvent } from "@/lib/auth/log";
+} from "@bestats/core/auth/action-state";
+import { isRecoverySession } from "@bestats/core/auth/identity";
 import {
   ACCOUNT_NOTICE,
   AUTH_OUTCOME,
   RESEND_REQUESTED_MESSAGE,
   RESET_REQUESTED_MESSAGE,
   SIGN_IN_NOTICE,
-} from "@/lib/auth/messages";
-import { safeNextPath } from "@/lib/auth/next-path";
+} from "@bestats/core/auth/messages";
+import { safeNextPath } from "@bestats/core/auth/next-path";
 import {
   emailOnlySchema,
   resetPasswordSchema,
   signInSchema,
   signUpSchema,
-} from "@/lib/auth/schemas";
+} from "@bestats/core/auth/schemas";
+import { redirect } from "next/navigation";
+import { AUTH_EVENT, logAuthEvent } from "@/lib/auth/log";
 import {
   classifyAuthError,
   classifyProfileWriteError,

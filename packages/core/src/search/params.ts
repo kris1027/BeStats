@@ -2,12 +2,12 @@ import {
   type LibraryType,
   type MediaType,
   parseLibraryTypeParam,
-} from "@bestats/core/catalog/media-type";
-import { parsePageParam } from "@bestats/core/catalog/pages";
+} from "../catalog/media-type";
+import { parsePageParam } from "../catalog/pages";
 import {
   IGDB_CONTROL_CHARACTERS,
   IGDB_MAX_QUERY_LENGTH,
-} from "@bestats/core/igdb/constants";
+} from "../igdb/constants";
 
 import { SEARCH_CATALOGS } from "./catalogs";
 
