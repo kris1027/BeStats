@@ -1,15 +1,14 @@
 "use client";
 
-import { cn } from "cn";
-import { useEffect } from "react";
-
-import { WithPageMediaType } from "@/components/layout/page-media-type";
-import { SKELETON_SURFACE } from "@/components/skeleton";
 import {
   defaultLibraryTypeAt,
   type LibraryPath,
   libraryPathName,
-} from "@/lib/catalog/library-list";
+} from "@bestats/core/catalog/library-list";
+import { cn } from "cn";
+import { useEffect } from "react";
+import { WithPageMediaType } from "@/components/layout/page-media-type";
+import { SKELETON_SURFACE } from "@/components/skeleton";
 
 import { shownElementById } from "./card-focus";
 import { LIBRARY_HEADING_ID } from "./ids";

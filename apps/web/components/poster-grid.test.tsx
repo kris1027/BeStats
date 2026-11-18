@@ -1,6 +1,6 @@
+import { GRID_PAGE_SIZE } from "@bestats/core/catalog/grid-page";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-
 import { POSTER_SIZES } from "@/components/poster-card";
 import {
   POSTER_GRID_EAGER,
@@ -8,7 +8,6 @@ import {
   PosterGrid,
   type PosterGridColumns,
 } from "@/components/poster-grid";
-import { GRID_PAGE_SIZE } from "@/lib/catalog/grid-page";
 
 /**
  * covers: spec 0004 AC-9, AC-8; spec 0022 AC-1, AC-3, AC-4, AC-5, AC-22

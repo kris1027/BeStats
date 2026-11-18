@@ -1,7 +1,7 @@
+import { TRACKING_READ_FAILED } from "@bestats/core/tracking/messages";
+import { ratingsBySeason, showRating } from "@bestats/core/tv/ratings";
 import { RetryLink } from "@/components/retry-link";
-import { TRACKING_READ_FAILED } from "@/lib/tracking/messages";
 import { getShowEpisodeRatings } from "@/lib/tracking/show-ratings";
-import { ratingsBySeason, showRating } from "@/lib/tv/ratings";
 
 import { CalculatedRatingLine, ratedCount } from "./calculated-rating-line";
 

@@ -1,4 +1,4 @@
-import { LIBRARY_PATHS } from "@/lib/catalog/library-list";
+import { LIBRARY_PATHS } from "@bestats/core/catalog/library-list";
 
 /**
  * Every path prefix that requires a session (spec 0005, value sourcing table).

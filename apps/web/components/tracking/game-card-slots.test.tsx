@@ -1,7 +1,6 @@
+import type { GameTrackingState } from "@bestats/core/tracking/types";
 import { render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-
-import type { GameTrackingState } from "@/lib/tracking/types";
 
 /**
  * covers: spec 0030, AC-1, AC-2, AC-3, AC-6, AC-7, AC-9

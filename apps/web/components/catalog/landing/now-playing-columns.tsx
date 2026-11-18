@@ -1,8 +1,7 @@
+import { LANDING_COUNTS, nowBlurb } from "@bestats/core/catalog/landing";
+import type { CatalogList } from "@bestats/core/catalog/lists";
 import { Suspense } from "react";
-
 import { Skeleton } from "@/components/skeleton";
-import { LANDING_COUNTS, nowBlurb } from "@/lib/catalog/landing";
-import type { CatalogList } from "@/lib/catalog/lists";
 import { landingItems, readLandingList } from "./landing-items";
 import {
   headingId,

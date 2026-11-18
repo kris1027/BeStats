@@ -1,8 +1,8 @@
 import "server-only";
+
+import { parseRegion, type Region } from "@bestats/core/catalog/region";
 import { headers } from "next/headers";
 import { cache } from "react";
-
-import { parseRegion, type Region } from "@/lib/catalog/region";
 
 /**
  * The visitor's country for Where to watch and the age rating (spec 0022,

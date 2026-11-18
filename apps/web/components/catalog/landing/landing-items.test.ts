@@ -24,7 +24,7 @@ vi.mock("@/lib/catalog-list-read", () => ({
 
 const { IgdbError, IgdbValidationError } = await import("@/lib/igdb/errors");
 const { TmdbError } = await import("@/lib/tmdb/errors");
-const { catalogList } = await import("@/lib/catalog/lists");
+const { catalogList } = await import("@bestats/core/catalog/lists");
 const { itemIds, landingItems, newLandingItems, readLandingList } =
   await import("./landing-items");
 

@@ -1,28 +1,28 @@
 "use server";
 
-import { isGameReleased } from "@/lib/catalog/game-page";
-import { TRACKING_EVENT, type TrackingEvent } from "@/lib/tracking/log";
+import { isGameReleased } from "@bestats/core/catalog/game-page";
 import {
   gameRatingInputSchema,
   gameStatusInputSchema,
   removeGameInputSchema,
   restoreGameStatusInputSchema,
   restoreRemovedGameInputSchema,
-} from "@/lib/tracking/schemas";
-import { classifyGameTrackingError } from "@/lib/tracking/supabase-error";
+} from "@bestats/core/tracking/schemas";
 import type {
   GameRestoreState,
   GameStatus,
   GameTrackingError,
   GameTrackingResult,
   GameUndo,
-} from "@/lib/tracking/types";
+} from "@bestats/core/tracking/types";
+import { todayUtc } from "@bestats/core/tv/air-status";
+import { TRACKING_EVENT, type TrackingEvent } from "@/lib/tracking/log";
+import { classifyGameTrackingError } from "@/lib/tracking/supabase-error";
 import {
   parseTrackingInput,
   runTrackingWrite,
   type WriteStep,
 } from "@/lib/tracking/write";
-import { todayUtc } from "@/lib/tv/air-status";
 
 import { readGameIncludingHidden } from "./[id]/load-game";
 

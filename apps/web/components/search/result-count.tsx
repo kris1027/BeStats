@@ -1,4 +1,4 @@
-import { CATALOG_SOURCES } from "@/lib/catalog/media-type";
+import { CATALOG_SOURCES } from "@bestats/core/catalog/media-type";
 import {
   type CountEndpoint,
   formatPartialCount,

@@ -1,9 +1,8 @@
+import type { CatalogList } from "@bestats/core/catalog/lists";
 import { render, screen, within } from "@testing-library/react";
 import type * as React from "react";
 import { Suspense } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-
-import type { CatalogList } from "@/lib/catalog/lists";
 
 /**
  * covers: spec 0021, AC-4, AC-7, AC-9, AC-10
@@ -75,7 +74,7 @@ vi.mock("@/components/catalog/list-cards", () => ({
 
 const { TmdbError } = await import("@/lib/tmdb/errors");
 const { IgdbError, IgdbValidationError } = await import("@/lib/igdb/errors");
-const { catalogList } = await import("@/lib/catalog/lists");
+const { catalogList } = await import("@bestats/core/catalog/lists");
 const { CatalogListPage } = await import("./catalog-list-page");
 
 type Element = React.ReactElement<Record<string, unknown>>;

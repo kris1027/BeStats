@@ -1,6 +1,6 @@
+import { type CatalogList, listPageHref } from "@bestats/core/catalog/lists";
+import { parsePageParam } from "@bestats/core/catalog/pages";
 import type { Metadata } from "next";
-import { type CatalogList, listPageHref } from "@/lib/catalog/lists";
-import { parsePageParam } from "@/lib/catalog/pages";
 import {
   lastListPage,
   readTaggedCatalogGridPage,

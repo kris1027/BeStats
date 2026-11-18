@@ -8,11 +8,12 @@
  * boundary, so the posters never wait on the session. A visitor and a failed
  * read get the catalog card.
  */
+
+import { idsKey } from "@bestats/core/tracking/ids-key";
+import { WATCHED_SHOW_LABELS } from "@bestats/core/tracking/messages";
 import { UpcomingShowPill } from "@/components/library/show-cards";
 import { CalculatedRatingBadge } from "@/components/rating-badges";
 import { requestTodayUtc } from "@/lib/tracking/episode-state";
-import { idsKey } from "@/lib/tracking/ids-key";
-import { WATCHED_SHOW_LABELS } from "@/lib/tracking/messages";
 import { getShowGridStatus } from "@/lib/tracking/show-grid-status";
 
 import { CardRatingBadge } from "./card-rating-badge";

@@ -1,6 +1,6 @@
+import { type MediaType, titleHref } from "@bestats/core/catalog/media-type";
 import type * as React from "react";
 import { cache, Suspense } from "react";
-
 import {
   CarouselRowSkeleton,
   ROW_ITEM_CLASS,
@@ -9,7 +9,6 @@ import {
 } from "@/components/catalog/carousel-row-states";
 import { CarouselScroller } from "@/components/catalog/carousel-scroller";
 import { CatalogListCards } from "@/components/catalog/catalog-list-cards";
-import { type MediaType, titleHref } from "@/lib/catalog/media-type";
 import type { TaggedCatalogPage } from "@/lib/catalog-list-read";
 import { getVisitorRegion } from "@/lib/region";
 import {

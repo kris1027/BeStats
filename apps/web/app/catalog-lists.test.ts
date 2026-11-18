@@ -1,12 +1,11 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
-
 import {
   GAME_LIST_SLUGS,
   MOVIE_LIST_SLUGS,
   TV_LIST_SLUGS,
-} from "@/lib/catalog/lists";
+} from "@bestats/core/catalog/lists";
+import { describe, expect, it } from "vitest";
 
 /**
  * covers: spec 0021, the registry invariant; spec 0028, AC-9

@@ -56,7 +56,7 @@ vi.mock("./landing-badge", () => ({
 
 const { TmdbError } = await import("@/lib/tmdb/errors");
 const { IgdbError } = await import("@/lib/igdb/errors");
-const { landingSlots } = await import("@/lib/catalog/landing");
+const { landingSlots } = await import("@bestats/core/catalog/landing");
 const { TrendingItems } = await import("./trending-pin");
 const { PopularItems } = await import("./popular-grid");
 const { NowBlurb, NowItems } = await import("./now-playing-columns");

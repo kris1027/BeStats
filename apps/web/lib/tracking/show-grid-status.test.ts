@@ -25,7 +25,7 @@ vi.mock("@/lib/tmdb", () => ({
   getTvShowsSettled: (...args: unknown[]) => getTvShowsSettled(...args),
 }));
 const classifyShow = vi.fn();
-vi.mock("@/lib/tv/library-page", () => ({
+vi.mock("@bestats/core/tv/library-page", () => ({
   classifyShow: (...args: unknown[]) => classifyShow(...args),
 }));
 const getShowRatings = vi.fn();

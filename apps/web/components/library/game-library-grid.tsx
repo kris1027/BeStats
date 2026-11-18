@@ -1,8 +1,8 @@
 "use client";
 
+import type { LibraryPageKey } from "@bestats/core/catalog/library-list";
 import { useRouter } from "next/navigation";
 import { startTransition, useOptimistic, useRef } from "react";
-
 import { removeGame } from "@/app/games/actions";
 import { POSTER_GRID_EAGER, PosterGrid } from "@/components/poster-grid";
 import {
@@ -10,7 +10,6 @@ import {
   showGameTrackingError,
 } from "@/components/tracking/tracking-toast";
 import { showGameUndo } from "@/components/tracking/use-game-undo";
-import type { LibraryPageKey } from "@/lib/catalog/library-list";
 import { GameLibraryCard } from "./game-library-card";
 
 import { gameItemKey, type LibraryGameItem } from "./types";

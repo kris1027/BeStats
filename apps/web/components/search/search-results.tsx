@@ -1,5 +1,12 @@
+import { GRID_PAGE_SIZE } from "@bestats/core/catalog/grid-page";
+import {
+  CATALOG_SOURCES,
+  type LibraryType,
+  parseLibraryTypeParam,
+  titleHref,
+  typedHref,
+} from "@bestats/core/catalog/media-type";
 import { Suspense } from "react";
-
 import { GameListCard } from "@/components/catalog/list-cards";
 import { PaginationLinks } from "@/components/pagination-links";
 import { PosterCard } from "@/components/poster-card";
@@ -22,14 +29,6 @@ import {
   ShowCardMeta,
 } from "@/components/tracking/show-card-slots";
 import { ButtonLink } from "@/components/ui/button";
-import { GRID_PAGE_SIZE } from "@/lib/catalog/grid-page";
-import {
-  CATALOG_SOURCES,
-  type LibraryType,
-  parseLibraryTypeParam,
-  titleHref,
-  typedHref,
-} from "@/lib/catalog/media-type";
 import { gameHasNextPage, lastGamePage } from "@/lib/catalog-list-read";
 import {
   type GameSummary,

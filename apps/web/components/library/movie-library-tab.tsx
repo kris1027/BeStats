@@ -1,8 +1,9 @@
+import { libraryHref } from "@bestats/core/catalog/media-type";
 import { formatReleaseDate } from "@bestats/core/format";
+import { LIBRARY_COPY } from "@bestats/core/tracking/messages";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { PaginationLinks } from "@/components/pagination-links";
-import { libraryHref } from "@/lib/catalog/media-type";
 import {
   getLibraryMovieTitles,
   getMovieLibraryTab,
@@ -12,7 +13,6 @@ import {
   type MovieTab,
   type MovieTabCard,
 } from "@/lib/tracking/library-lists";
-import { LIBRARY_COPY } from "@/lib/tracking/messages";
 
 import { LibraryGrid } from "./library-grid";
 import {

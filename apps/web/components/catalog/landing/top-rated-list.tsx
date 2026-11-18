@@ -1,9 +1,8 @@
+import { LANDING_COUNTS } from "@bestats/core/catalog/landing";
+import type { CatalogList } from "@bestats/core/catalog/lists";
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
-
-import { LANDING_COUNTS } from "@/lib/catalog/landing";
-import type { CatalogList } from "@/lib/catalog/lists";
 import { ArtFallback } from "./art-fallback";
 import { LandingBadge, LandingControls } from "./landing-badge";
 import type { LandingItem } from "./landing-items";

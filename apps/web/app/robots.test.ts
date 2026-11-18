@@ -1,6 +1,5 @@
+import { catalogListsFor, listPath } from "@bestats/core/catalog/lists";
 import { afterEach, describe, expect, it, vi } from "vitest";
-
-import { catalogListsFor, listPath } from "@/lib/catalog/lists";
 import { CRAWL_BUDGET_DISALLOW } from "@/lib/seo/crawl";
 
 import robots from "./robots";

@@ -1,10 +1,10 @@
 import { formatAirDate } from "@bestats/core/format";
+import { EMPTY_EPISODE_TRACKING } from "@bestats/core/tracking/types";
+import { airStatus } from "@bestats/core/tv/air-status";
 import {
   getSeasonEpisodeTracking,
   requestTodayUtc,
 } from "@/lib/tracking/episode-state";
-import { EMPTY_EPISODE_TRACKING } from "@/lib/tracking/types";
-import { airStatus } from "@/lib/tv/air-status";
 
 import { EpisodeTrackingControls } from "./episode-tracking-controls";
 

@@ -1,5 +1,5 @@
+import type { CatalogSource } from "@bestats/core/catalog/media-type";
 import { RetryLink } from "@/components/retry-link";
-import type { CatalogSource } from "@/lib/catalog/media-type";
 
 /**
  * The h2 look every title page section shares: Overview, Seasons, Where to

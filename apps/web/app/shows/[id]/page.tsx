@@ -1,3 +1,5 @@
+import { parseTmdbId } from "@bestats/core/catalog/ids";
+import { orderSeasons } from "@bestats/core/catalog/seasons";
 import { formatAirSpan, truncateAtWord } from "@bestats/core/format";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -23,8 +25,6 @@ import { StatePanel } from "@/components/state-panel";
 import { ShowProgressSlot } from "@/components/tracking/show-progress-slot";
 import { ShowRatingSlot } from "@/components/tracking/show-rating-slot";
 import { ShowTrackingSlot } from "@/components/tracking/show-tracking-slot";
-import { parseTmdbId } from "@/lib/catalog/ids";
-import { orderSeasons } from "@/lib/catalog/seasons";
 import { showJsonLd } from "@/lib/seo/json-ld";
 import { catalogMetadata } from "@/lib/seo/metadata";
 import {

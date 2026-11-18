@@ -1,9 +1,9 @@
 "use client";
 
+import type { LibraryPageKey } from "@bestats/core/catalog/library-list";
 import { GameLibraryCard } from "@/components/library/game-library-card";
 import type { LibraryGameItem } from "@/components/library/types";
 import { PosterGrid } from "@/components/poster-grid";
-import type { LibraryPageKey } from "@/lib/catalog/library-list";
 
 /**
  * Every state of the game library card (spec 0027, AC-17), for `/showcase`.

@@ -1,9 +1,11 @@
+import type { CatalogList } from "@bestats/core/catalog/lists";
+import {
+  CATALOG_PATHS,
+  CATALOG_SOURCES,
+} from "@bestats/core/catalog/media-type";
 import type * as React from "react";
-
 import { RetryLink } from "@/components/retry-link";
 import { PosterCardSkeleton } from "@/components/skeleton";
-import type { CatalogList } from "@/lib/catalog/lists";
-import { CATALOG_PATHS, CATALOG_SOURCES } from "@/lib/catalog/media-type";
 
 /** How many titles a row holds: the first 12 of TMDB's page 1 (AC-3). */
 const ROW_SIZE = 12;

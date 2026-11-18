@@ -1,7 +1,7 @@
 import "server-only";
 
-import { readGridPage } from "@/lib/catalog/grid-page";
-import { type MediaType, titleHref } from "@/lib/catalog/media-type";
+import { readGridPage } from "@bestats/core/catalog/grid-page";
+import { type MediaType, titleHref } from "@bestats/core/catalog/media-type";
 import {
   discoverMovies,
   discoverTvShows,

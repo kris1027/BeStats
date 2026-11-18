@@ -1,9 +1,10 @@
+import { isGameReleased } from "@bestats/core/catalog/game-page";
+import type { LibraryPageKey } from "@bestats/core/catalog/library-list";
+import { libraryHref } from "@bestats/core/catalog/media-type";
 import { formatMonthYear, formatReleaseDate } from "@bestats/core/format";
+import { GAME_DATE_LINES, libraryCopy } from "@bestats/core/tracking/messages";
 import { redirect } from "next/navigation";
 import { PaginationLinks } from "@/components/pagination-links";
-import { isGameReleased } from "@/lib/catalog/game-page";
-import type { LibraryPageKey } from "@/lib/catalog/library-list";
-import { libraryHref } from "@/lib/catalog/media-type";
 import type { GameSummary } from "@/lib/igdb";
 import {
   type GameLibraryRow,
@@ -13,7 +14,6 @@ import {
   type WantToPlayPage,
 } from "@/lib/tracking/game-library";
 import { libraryLastPage } from "@/lib/tracking/library-lists";
-import { GAME_DATE_LINES, libraryCopy } from "@/lib/tracking/messages";
 
 import { GameLibraryGrid } from "./game-library-grid";
 import {

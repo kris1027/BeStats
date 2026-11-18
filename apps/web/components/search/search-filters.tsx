@@ -1,5 +1,5 @@
+import { parseLibraryTypeParam } from "@bestats/core/catalog/media-type";
 import { Skeleton } from "@/components/skeleton";
-import { parseLibraryTypeParam } from "@/lib/catalog/media-type";
 import { readGameLists, settleList } from "@/lib/search/lists";
 import {
   emptySearchParams,

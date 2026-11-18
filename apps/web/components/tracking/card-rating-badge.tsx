@@ -1,7 +1,6 @@
+import type { LibraryList } from "@bestats/core/catalog/library-list";
 import type { ReactNode } from "react";
-
 import { TmdbRatingBadge } from "@/components/rating-badges";
-import type { LibraryList } from "@/lib/catalog/library-list";
 
 /**
  * The top left badge of a catalog poster card, shared by movies and shows

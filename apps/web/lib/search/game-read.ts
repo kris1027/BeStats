@@ -1,7 +1,7 @@
 import "server-only";
 
+import { gameHref } from "@bestats/core/catalog/media-type";
 import { IGDB_LIST_PAGE_SIZE } from "@bestats/core/igdb/constants";
-import { gameHref } from "@/lib/catalog/media-type";
 import { sliceGamePage } from "@/lib/catalog-list-read";
 import {
   discoverGames,

@@ -1,3 +1,4 @@
+import type { Region } from "@bestats/core/catalog/region";
 import {
   formatAirDate,
   formatUsdCompact,
@@ -6,7 +7,6 @@ import {
 import Image from "next/image";
 import type * as React from "react";
 import { GlassPill } from "@/components/glass-pill";
-import type { Region } from "@/lib/catalog/region";
 import type { Company, Movie, TvShow } from "@/lib/tmdb";
 
 import { SECTION_HEADING_CLASS } from "./title-section";

@@ -1,13 +1,12 @@
 "use client";
 
-import { catchError, type ErrorInfo } from "next/error";
-
-import { StatePanel } from "@/components/state-panel";
-import { Button } from "@/components/ui/button";
 import {
   LIBRARY_LIST_FAILED,
   LIBRARY_LIST_FAILED_TITLE,
-} from "@/lib/tracking/messages";
+} from "@bestats/core/tracking/messages";
+import { catchError, type ErrorInfo } from "next/error";
+import { StatePanel } from "@/components/state-panel";
+import { Button } from "@/components/ui/button";
 
 /**
  * The panel a library page shows when its section throws instead of

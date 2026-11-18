@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReleaseDate } from "@bestats/core/format";
+import type { StartedGameStatus } from "@bestats/core/tracking/types";
 import { useState } from "react";
 import { ReleasePill } from "@/components/library/dated-pill";
 import { PosterCard } from "@/components/poster-card";
@@ -12,7 +13,6 @@ import {
 import { CardRoundButton } from "@/components/tracking/card-round-button";
 import { GameStatusChip } from "@/components/tracking/game-status-chip";
 import { PlanIcon, PlannedIcon } from "@/components/tracking/tracking-icons";
-import type { StartedGameStatus } from "@/lib/tracking/types";
 
 type DemoCard = {
   name: string;

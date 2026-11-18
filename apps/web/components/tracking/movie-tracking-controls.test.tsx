@@ -1,8 +1,7 @@
+import type { MovieTrackingState } from "@bestats/core/tracking/types";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-import type { MovieTrackingState } from "@/lib/tracking/types";
 
 /**
  * covers: spec 0007, AC-1, AC-7, AC-9, AC-10, AC-11, AC-12, AC-15;

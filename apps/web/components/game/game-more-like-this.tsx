@@ -1,5 +1,5 @@
+import { CATALOG_SOURCES, gameHref } from "@bestats/core/catalog/media-type";
 import { Suspense } from "react";
-
 import {
   CarouselRowSkeleton,
   ROW_SIZE,
@@ -9,7 +9,6 @@ import {
   MoreLikeThisRow,
 } from "@/components/catalog/title-extras";
 import { SectionErrorLine } from "@/components/catalog/title-section";
-import { CATALOG_SOURCES, gameHref } from "@/lib/catalog/media-type";
 import { type GameSummary, getGamesByIds, IgdbError } from "@/lib/igdb";
 
 type MoreLikeThisProps = { gameId: number; similarGameIds: number[] };

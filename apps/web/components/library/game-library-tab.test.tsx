@@ -1,7 +1,6 @@
+import type { LibraryPath } from "@bestats/core/catalog/library-list";
 import { render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-import type { LibraryPath } from "@/lib/catalog/library-list";
 
 import type { LibraryGameItem, LibraryList } from "./types";
 
@@ -93,7 +92,7 @@ vi.mock("./game-library-grid", () => ({
 }));
 
 const { LibrarySection } = await import("./library-section");
-const { libraryPath } = await import("@/lib/catalog/library-list");
+const { libraryPath } = await import("@bestats/core/catalog/library-list");
 
 type List = "watchlist" | "upcoming" | "watched" | "coming-soon";
 

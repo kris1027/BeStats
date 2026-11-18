@@ -1,10 +1,10 @@
+import { TRACKING_READ_FAILED } from "@bestats/core/tracking/messages";
+import type { SeasonEpisode } from "@bestats/core/tv/season-watch";
 import { RetryLink } from "@/components/retry-link";
 import {
   getSeasonEpisodeTracking,
   requestTodayUtc,
 } from "@/lib/tracking/episode-state";
-import { TRACKING_READ_FAILED } from "@/lib/tracking/messages";
-import type { SeasonEpisode } from "@/lib/tv/season-watch";
 
 import { SeasonWatchedControl } from "./season-watched-control";
 

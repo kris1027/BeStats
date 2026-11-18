@@ -1,8 +1,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { GAME_LIST_SLUGS } from "@bestats/core/catalog/lists";
 import { describe, expect, it } from "vitest";
-
-import { GAME_LIST_SLUGS } from "@/lib/catalog/lists";
 
 /**
  * covers: spec 0028, AC-18, AC-19; spec 0032, AC-14

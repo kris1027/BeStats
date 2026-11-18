@@ -1,9 +1,8 @@
 "use client";
 
+import type { LibraryType } from "@bestats/core/catalog/media-type";
 import { SearchIcon } from "lucide-react";
-
 import { WithLibraryTypedPage } from "@/components/layout/page-media-type";
-import type { LibraryType } from "@/lib/catalog/media-type";
 import { mediaNoun } from "@/lib/search/count";
 
 import { QuickSearch } from "./quick-search";

@@ -1,8 +1,8 @@
-import { formatAirDate } from "@bestats/core/format";
-import type { LibraryList } from "@/lib/catalog/library-list";
-import { UPCOMING_MESSAGES } from "@/lib/tracking/messages";
-import type { MovieTrackingState } from "@/lib/tracking/types";
-import { airStatus } from "@/lib/tv/air-status";
+import { formatAirDate } from "../format";
+import { UPCOMING_MESSAGES } from "../tracking/messages";
+import type { MovieTrackingState } from "../tracking/types";
+import { airStatus } from "../tv/air-status";
+import type { LibraryList } from "./library-list";
 
 /** The library pages a movie can sit on (spec 0020, AC-13). */
 export type MoviePage = LibraryList;

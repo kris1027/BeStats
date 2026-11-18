@@ -1,11 +1,11 @@
 import "server-only";
 
-import type { TrackingOutcome } from "./log";
 import type {
   GameTrackingError,
   MovieTrackingError,
   TrackingError,
-} from "./types";
+} from "@bestats/core/tracking/types";
+import type { TrackingOutcome } from "./log";
 
 /**
  * Reduces a PostgREST error to the class the client sees and the outcome the

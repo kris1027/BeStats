@@ -1,5 +1,5 @@
 import type { TmdbShowStatus } from "@bestats/core/tmdb/types";
-import { isFinishedShowStatus } from "@/lib/tv/library-page";
+import { isFinishedShowStatus } from "@bestats/core/tv/library-page";
 
 import { absoluteUrl } from "./site";
 

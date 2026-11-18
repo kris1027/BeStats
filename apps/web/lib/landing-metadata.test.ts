@@ -1,6 +1,5 @@
+import { catalogList, GAME_LIST_SLUGS } from "@bestats/core/catalog/lists";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-import { catalogList, GAME_LIST_SLUGS } from "@/lib/catalog/lists";
 import { IgdbError, IgdbValidationError } from "@/lib/igdb/errors";
 import { TmdbError } from "@/lib/tmdb/errors";
 

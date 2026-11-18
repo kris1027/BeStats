@@ -1,13 +1,12 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useSyncExternalStore } from "react";
-
 import {
   CATALOG_PATHS,
   isMediaType,
   type LibraryType,
-} from "@/lib/catalog/media-type";
+} from "@bestats/core/catalog/media-type";
+import Link from "next/link";
+import { useEffect, useSyncExternalStore } from "react";
 
 import { WithPageMediaType } from "./page-media-type";
 

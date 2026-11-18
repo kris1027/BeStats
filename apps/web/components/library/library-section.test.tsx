@@ -84,7 +84,7 @@ vi.mock("./missing-show-card", () => ({
 }));
 
 const { LibrarySection } = await import("./library-section");
-const { libraryPath } = await import("@/lib/catalog/library-list");
+const { libraryPath } = await import("@bestats/core/catalog/library-list");
 
 type List = "watchlist" | "upcoming" | "watched";
 

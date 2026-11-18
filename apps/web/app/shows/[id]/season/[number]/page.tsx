@@ -1,4 +1,7 @@
+import { parseSeasonNumber, parseTmdbId } from "@bestats/core/catalog/ids";
+import { adjacentSeasons, orderSeasons } from "@bestats/core/catalog/seasons";
 import { truncateAtWord } from "@bestats/core/format";
+import { idsKey } from "@bestats/core/tracking/ids-key";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -11,10 +14,7 @@ import { StatePanel } from "@/components/state-panel";
 import { SeasonTrackingSlot } from "@/components/tracking/season-tracking-slot";
 import { SeasonTrackingStore } from "@/components/tracking/season-tracking-store";
 import { ButtonLink } from "@/components/ui/button";
-import { parseSeasonNumber, parseTmdbId } from "@/lib/catalog/ids";
-import { adjacentSeasons, orderSeasons } from "@/lib/catalog/seasons";
 import { catalogMetadata } from "@/lib/seo/metadata";
-import { idsKey } from "@/lib/tracking/ids-key";
 
 import { loadSeason } from "./load-season";
 

@@ -1,9 +1,13 @@
 "use client";
 
+import { libraryHref } from "@bestats/core/catalog/media-type";
+import {
+  MARK_NEXT_MESSAGES,
+  UNDO_ACTION_LABEL,
+} from "@bestats/core/tracking/messages";
 import { useRouter } from "next/navigation";
 import { startTransition, useEffect, useRef, useTransition } from "react";
 import { toast } from "sonner";
-
 import { setEpisodeWatched, undoEpisodeMark } from "@/app/shows/actions";
 import { CardRoundButton } from "@/components/tracking/card-round-button";
 import { WatchedIcon } from "@/components/tracking/tracking-icons";
@@ -12,8 +16,6 @@ import {
   showEpisodeTrackingError,
   UNDO_TOAST_MS,
 } from "@/components/tracking/tracking-toast";
-import { libraryHref } from "@/lib/catalog/media-type";
-import { MARK_NEXT_MESSAGES, UNDO_ACTION_LABEL } from "@/lib/tracking/messages";
 
 import { neighbourCardTarget, shownElementById } from "./card-focus";
 import {

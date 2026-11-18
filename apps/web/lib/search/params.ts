@@ -1,13 +1,13 @@
 import {
-  IGDB_CONTROL_CHARACTERS,
-  IGDB_MAX_QUERY_LENGTH,
-} from "@bestats/core/igdb/constants";
-import {
   type LibraryType,
   type MediaType,
   parseLibraryTypeParam,
-} from "@/lib/catalog/media-type";
-import { parsePageParam } from "@/lib/catalog/pages";
+} from "@bestats/core/catalog/media-type";
+import { parsePageParam } from "@bestats/core/catalog/pages";
+import {
+  IGDB_CONTROL_CHARACTERS,
+  IGDB_MAX_QUERY_LENGTH,
+} from "@bestats/core/igdb/constants";
 
 import { SEARCH_CATALOGS } from "./catalogs";
 

@@ -1,11 +1,13 @@
 "use client";
 
+import {
+  GAME_UNDO_MESSAGES,
+  UNDO_ACTION_LABEL,
+} from "@bestats/core/tracking/messages";
+import type { GameUndo } from "@bestats/core/tracking/types";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-
 import { restoreGameStatus, restoreRemovedGame } from "@/app/games/actions";
-import { GAME_UNDO_MESSAGES, UNDO_ACTION_LABEL } from "@/lib/tracking/messages";
-import type { GameUndo } from "@/lib/tracking/types";
 
 import {
   type GameToastTarget,

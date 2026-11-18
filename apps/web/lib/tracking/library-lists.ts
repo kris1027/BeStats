@@ -1,12 +1,18 @@
 import "server-only";
 
-import { GRID_PAGE_SIZE } from "@/lib/catalog/grid-page";
-import type { LibraryList } from "@/lib/catalog/library-list";
+import { GRID_PAGE_SIZE } from "@bestats/core/catalog/grid-page";
+import type { LibraryList } from "@bestats/core/catalog/library-list";
 import {
   classifyMovie,
   type MoviePage,
   upcomingReleaseDate,
-} from "@/lib/catalog/movie-page";
+} from "@bestats/core/catalog/movie-page";
+import {
+  classifyShow,
+  type EpisodeKey,
+  episodeKey,
+  type ShowPage,
+} from "@bestats/core/tv/library-page";
 import { createClient } from "@/lib/supabase/server";
 import {
   getMovieSummaries,
@@ -16,12 +22,6 @@ import {
   type SettledBatch,
   TmdbError,
 } from "@/lib/tmdb";
-import {
-  classifyShow,
-  type EpisodeKey,
-  episodeKey,
-  type ShowPage,
-} from "@/lib/tv/library-page";
 
 import { logTrackingEvent, TRACKING_EVENT } from "./log";
 

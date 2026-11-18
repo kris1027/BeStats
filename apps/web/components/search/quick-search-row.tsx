@@ -1,3 +1,4 @@
+import { CATALOG_SOURCES } from "@bestats/core/catalog/media-type";
 import { cn } from "cn";
 import {
   FilmIcon,
@@ -6,8 +7,6 @@ import {
   StarIcon,
 } from "lucide-react";
 import Image from "next/image";
-
-import { CATALOG_SOURCES } from "@/lib/catalog/media-type";
 import type { SearchType } from "@/lib/search/params";
 import type { QuickResult } from "@/lib/search/quick";
 

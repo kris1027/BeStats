@@ -1,16 +1,21 @@
 "use client";
 
+import {
+  SHOW_TRACKING_COPY,
+  UNDO_ACTION_LABEL,
+} from "@bestats/core/tracking/messages";
+import type {
+  ShowTrackingError,
+  ShowTrackingUndo,
+} from "@bestats/core/tracking/types";
 import { useRouter } from "next/navigation";
 import { startTransition, useOptimistic } from "react";
 import { toast } from "sonner";
-
 import {
   restoreShowTracking,
   trackShow,
   untrackShow,
 } from "@/app/shows/actions";
-import { SHOW_TRACKING_COPY, UNDO_ACTION_LABEL } from "@/lib/tracking/messages";
-import type { ShowTrackingError, ShowTrackingUndo } from "@/lib/tracking/types";
 
 import {
   settleResultCall,

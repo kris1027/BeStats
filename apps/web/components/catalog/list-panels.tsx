@@ -1,7 +1,7 @@
+import type { CatalogList } from "@bestats/core/catalog/lists";
+import { CATALOG_SOURCES } from "@bestats/core/catalog/media-type";
 import { RetryLink } from "@/components/retry-link";
 import { StatePanel } from "@/components/state-panel";
-import type { CatalogList } from "@/lib/catalog/lists";
-import { CATALOG_SOURCES } from "@/lib/catalog/media-type";
 
 /**
  * A list page whose catalog read failed, naming its source, with Try again

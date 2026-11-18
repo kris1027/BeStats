@@ -1,8 +1,8 @@
 "use client";
 
-import type { EpisodeStates } from "@/lib/tracking/episode-intent";
-import { seasonRating } from "@/lib/tv/ratings";
-import type { SeasonEpisode } from "@/lib/tv/season-watch";
+import type { EpisodeStates } from "@bestats/core/tracking/episode-intent";
+import { seasonRating } from "@bestats/core/tv/ratings";
+import type { SeasonEpisode } from "@bestats/core/tv/season-watch";
 
 import { CalculatedRatingLine, ratedCount } from "./calculated-rating-line";
 

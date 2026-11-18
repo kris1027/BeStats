@@ -1,3 +1,5 @@
+import { landingSlots } from "@bestats/core/catalog/landing";
+import type { LibraryType } from "@bestats/core/catalog/media-type";
 import { LandingHero } from "@/components/catalog/landing/landing-hero";
 import { LandingParallax } from "@/components/catalog/landing/landing-parallax";
 import { NowPlayingColumns } from "@/components/catalog/landing/now-playing-columns";
@@ -5,8 +7,6 @@ import { PopularGrid } from "@/components/catalog/landing/popular-grid";
 import { TopRatedList } from "@/components/catalog/landing/top-rated-list";
 import { TrendingPin } from "@/components/catalog/landing/trending-pin";
 import { UpcomingRows } from "@/components/catalog/landing/upcoming-rows";
-import { landingSlots } from "@/lib/catalog/landing";
-import type { LibraryType } from "@/lib/catalog/media-type";
 
 /**
  * A catalog landing, `/shows`, `/movies` or `/games` (prompts/home-parallax-

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { lastReachablePage, TMDB_PAGE_SIZE } from "@/lib/catalog/pages";
+import { lastReachablePage, TMDB_PAGE_SIZE } from "@bestats/core/catalog/pages";
 
 import { MIN_VOTE_COUNT, SCAN_MAX_PAGES, SCAN_TARGET } from "./constants";
 import type { SearchParams, TmdbSearchParams } from "./params";

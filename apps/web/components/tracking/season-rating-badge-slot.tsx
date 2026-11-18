@@ -1,6 +1,6 @@
+import { ratingsBySeason } from "@bestats/core/tv/ratings";
 import { CalculatedRatingBadge } from "@/components/rating-badges";
 import { getShowEpisodeRatings } from "@/lib/tracking/show-ratings";
-import { ratingsBySeason } from "@/lib/tv/ratings";
 
 /**
  * A season card's calculated rating badge (spec 0012, AC-8).

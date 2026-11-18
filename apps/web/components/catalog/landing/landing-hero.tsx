@@ -1,11 +1,11 @@
+import type { CatalogList } from "@bestats/core/catalog/lists";
+import type { LibraryType } from "@bestats/core/catalog/media-type";
 import { cn } from "cn";
 import Link from "next/link";
 import { Suspense } from "react";
 import { HERO_ART_MASK, HeroShade } from "@/components/catalog/hero-frame";
 import { TrailerSlot } from "@/components/catalog/title-extras";
 import { GlassPill } from "@/components/glass-pill";
-import type { CatalogList } from "@/lib/catalog/lists";
-import type { LibraryType } from "@/lib/catalog/media-type";
 import { isCatalogError } from "@/lib/catalog-errors";
 import { getGameGenres } from "@/lib/igdb";
 import {

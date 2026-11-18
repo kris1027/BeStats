@@ -1,5 +1,6 @@
 "use client";
 
+import { CATALOG_SOURCES, typedHref } from "@bestats/core/catalog/media-type";
 import { cn } from "cn";
 import {
   ChevronDownIcon,
@@ -18,14 +19,12 @@ import {
   useState,
   useTransition,
 } from "react";
-
 import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CATALOG_SOURCES, typedHref } from "@/lib/catalog/media-type";
 import { SEARCH_CATALOGS } from "@/lib/search/catalogs";
 import {
   FILTER_DEBOUNCE_MS,

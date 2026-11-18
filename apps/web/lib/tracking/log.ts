@@ -5,7 +5,7 @@ import type {
   GameTrackingError,
   MovieTrackingError,
   ShowTrackingError,
-} from "./types";
+} from "@bestats/core/tracking/types";
 
 /**
  * The only way a tracking path writes to the log (spec 0007, AC-21).

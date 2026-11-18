@@ -1,3 +1,4 @@
+import { catalogList, listPath } from "@bestats/core/catalog/lists";
 import { TMDB_HOME_URL } from "@bestats/core/legal/operator";
 import { CircleStopIcon, SearchIcon, TvIcon } from "lucide-react";
 import type { Metadata } from "next";
@@ -75,7 +76,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { catalogList, listPath } from "@/lib/catalog/lists";
 
 import {
   CardRoundButtonDemo,

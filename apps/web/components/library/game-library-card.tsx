@@ -1,6 +1,11 @@
+import {
+  type LibraryPageKey,
+  libraryPageName,
+} from "@bestats/core/catalog/library-list";
+import { gameHref } from "@bestats/core/catalog/media-type";
+import { isStartedGame } from "@bestats/core/tracking/types";
 import { XIcon } from "lucide-react";
 import type { ReactNode } from "react";
-
 import { PosterCard } from "@/components/poster-card";
 import {
   IgdbRatingBadge,
@@ -9,12 +14,6 @@ import {
 import { CardRoundButton } from "@/components/tracking/card-round-button";
 import { GameStatusChip } from "@/components/tracking/game-status-chip";
 import { PlannedIcon } from "@/components/tracking/tracking-icons";
-import {
-  type LibraryPageKey,
-  libraryPageName,
-} from "@/lib/catalog/library-list";
-import { gameHref } from "@/lib/catalog/media-type";
-import { isStartedGame } from "@/lib/tracking/types";
 
 import { ReleasePill } from "./dated-pill";
 import type { LibraryGameItem } from "./types";

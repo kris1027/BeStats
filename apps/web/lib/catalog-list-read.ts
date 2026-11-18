@@ -1,14 +1,9 @@
 import {
-  IGDB_LIST_PAGE_SIZE,
-  IGDB_MAX_PAGE,
-} from "@bestats/core/igdb/constants";
-import { connection } from "next/server";
-import {
   gameListOptions,
   isPopularGameList,
   POPULAR_GAME_LISTS,
-} from "@/lib/catalog/game-lists";
-import { readGridPage } from "@/lib/catalog/grid-page";
+} from "@bestats/core/catalog/game-lists";
+import { readGridPage } from "@bestats/core/catalog/grid-page";
 import type {
   CatalogList,
   GameCatalogList,
@@ -17,7 +12,12 @@ import type {
   TmdbCatalogList,
   TvCatalogList,
   TvListSlug,
-} from "@/lib/catalog/lists";
+} from "@bestats/core/catalog/lists";
+import {
+  IGDB_LIST_PAGE_SIZE,
+  IGDB_MAX_PAGE,
+} from "@bestats/core/igdb/constants";
+import { connection } from "next/server";
 import {
   discoverGames,
   type GameSummary,

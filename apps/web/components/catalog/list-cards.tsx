@@ -1,3 +1,4 @@
+import { gameHref } from "@bestats/core/catalog/media-type";
 import { formatReleaseDate } from "@bestats/core/format";
 import { Suspense } from "react";
 import { ReleasePill } from "@/components/library/dated-pill";
@@ -16,7 +17,6 @@ import {
   ShowCardControls,
   ShowCardMeta,
 } from "@/components/tracking/show-card-slots";
-import { gameHref } from "@/lib/catalog/media-type";
 import type { GameSummary } from "@/lib/igdb";
 import type { MovieSummary, TvShowSummary } from "@/lib/tmdb";
 

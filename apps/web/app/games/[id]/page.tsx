@@ -1,3 +1,5 @@
+import { parseGameId } from "@bestats/core/catalog/ids";
+import { gameHref } from "@bestats/core/catalog/media-type";
 import { truncateAtWord } from "@bestats/core/format";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -12,8 +14,6 @@ import { ScreenshotGallery } from "@/components/game/screenshot-gallery";
 import { RetryLink } from "@/components/retry-link";
 import { StatePanel } from "@/components/state-panel";
 import { GameTrackingSlot } from "@/components/tracking/game-tracking-slot";
-import { parseGameId } from "@/lib/catalog/ids";
-import { gameHref } from "@/lib/catalog/media-type";
 import { gameJsonLd } from "@/lib/seo/json-ld";
 import { catalogMetadata } from "@/lib/seo/metadata";
 

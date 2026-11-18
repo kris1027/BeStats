@@ -1,8 +1,7 @@
+import { SHOW_TRACKING_COPY } from "@bestats/core/tracking/messages";
 import { cn } from "cn";
-
 import { glassPillClassName } from "@/components/glass-pill";
 import { RetryLink } from "@/components/retry-link";
-import { SHOW_TRACKING_COPY } from "@/lib/tracking/messages";
 import { getShowTracking } from "@/lib/tracking/show-state";
 
 import { ShowTrackingControl } from "./show-tracking-control";
