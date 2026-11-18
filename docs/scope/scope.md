@@ -43,7 +43,8 @@ _2026-10-06: the `design/` artboards were removed. The UI built from them carrie
 | 24 | Home carousels | Slice 11 | done |
 | 25 | Consistent card size and richer title pages | Slice 12 | done |
 | 26 | Library page names per media type | Slice 13 | done |
-| 27 | Library page URLs follow their names | Slice 13 | in-progress |
+| 27 | Library page URLs follow their names | Slice 13 | done |
+| 28 | Mobile app (iOS and Android) | Slice 14 | planned |
 
 ## Foundations
 
@@ -443,12 +444,30 @@ The three library routes stay shared, but each media type names them for what th
 - [x] Build it: `libraryPageName`, the nav, the streamed heading, `generateMetadata` titles, the panels, card labels and toasts, `/showcase` and the docs, checked on all nine tabs in the running app — AC-1 to AC-6
 plan [prompts/library-page-names.md](../../prompts/library-page-names.md) · code in `lib/catalog/library-list.ts`, `components/layout/library-nav.tsx`, `components/library/library-heading.tsx`, `lib/catalog/library-metadata.ts`, `app/watchlist/`, `app/upcoming/`, `app/watched/`
 
-### 27. Library page URLs follow their names · in-progress
+### 27. Library page URLs follow their names · done
 Each library page's URL says its name: shows `/up-next`, `/upcoming`, `/watched`; movies `/watchlist`, `/coming-soon`, `/watched`; games `/coming-soon`, `/want-to-play`, `/playing`, `/finished`. Tabs that name a page alike share its route, and `?type` stays. Switching tabs keeps the matching page, a bare URL opens the route's first tab, and the five old URLs whose page moved redirect temporarily. Settled in a grilling session on 2026-10-30.
 **Done when:** every page opens at its own route with the right heading, title and nav; tab switches keep the matching page; the old URLs answer 307 to the new ones; all eight routes are private and keep their prerendered shell.
 - [x] Design it (plan): [prompts/library-page-urls.md](../../prompts/library-page-urls.md)
 - [x] Build it: `LIBRARY_PAGE_PATHS`, `libraryHref`, the four new routes, the tab switch, the private paths and the redirects, checked in the running app — AC-1 to AC-7
 plan [prompts/library-page-urls.md](../../prompts/library-page-urls.md) · code in `lib/catalog/library-list.ts`, `lib/catalog/media-type.ts`, `next.config.ts`, `app/up-next/`, `app/want-to-play/`, `app/playing/`, `app/finished/`
+
+## Slice 14: Mobile
+
+### 28. Mobile app (iOS and Android) · planned · GA
+A native app for iOS and Android beside the web app, sharing its rules with it. v1 covers sign in and account (email and password, self serve deletion on both apps), browse and search, all tracking with Undo, and every library page, with a read only offline cache. The phone never holds a catalog key, so the release gate and every rule stay on the server. Designed on 2026-11-18.
+**Done when:** both store builds sign in, browse, search, track and show every library page with the same rules and names as the web; the web still deploys unchanged from `apps/web`; no TMDB or IGDB secret or service role key is reachable from the app or the repo; account deletion works on both apps; and the attribution, privacy text and store privacy labels are in place.
+- [x] Design it (spec): `/architect mobile app`
+- [ ] Build it: `/develop mobile app`
+  - [ ] Monorepo move and shared core (spec 0033 Build plan steps 1 and 2): AC-1, AC-2, AC-3
+  - [ ] Tracer: sign in, open a movie, mark it watched (step 3): AC-4, AC-5, AC-6, AC-11
+  - [ ] API thickened (step 4): AC-5 to AC-10
+  - [ ] App thickened (step 5): AC-10, AC-12, AC-13, AC-14, AC-16
+  - [ ] Release (step 6): AC-15, AC-17
+- [ ] Verify it: `/check verify mobile app`
+- [ ] Test it: `/test mobile app`
+- [ ] Review it (fresh model): `/check review mobile app`
+- [ ] Document it: `/document mobile app`
+spec [0033](../specs/0033-mobile-app-expo/index.md) · code in `apps/mobile/`, `packages/core/`, `apps/web/app/api/v1/`, `apps/web/lib/tracking/commands/`, `apps/web/lib/supabase/bearer.ts`, `supabase/schemas/` (`delete_own_account`)
 
 ## Deferred
 Out of scope for the current build pass, kept so the plan stays honest.
@@ -456,7 +475,9 @@ Out of scope for the current build pass, kept so the plan stays honest.
 - **Per visitor region and timezone on the home rows** (from spec 0021): Now playing, Upcoming, Airing today and On the air use the fixed `PL` region and `Europe/Warsaw`. Following the visitor needs its own decision (a request header or an account setting).
 - **More title page sections** (from the 2026-10-12 grilling): external links (IMDb, homepage, socials) and the movie collection row are a later batch; keywords, image gallery, TMDB reviews and the aggregate show cast were skipped
 - **Error monitoring and product analytics**: not selected for this pass
-- **Self serve account deletion and data export** (from specs 0005 and 0017): GDPR requests are handled by email for now. Undesigned; a `/account` flow needs the Supabase admin API or a security definer function, an elevated call nothing else in the app uses, so it deserves its own decision, including what happens to the cascading tracking data
+- **Self serve account deletion and data export** (from specs 0005 and 0017): GDPR requests are handled by email for now. Undesigned; a `/account` flow needs the Supabase admin API or a security definer function, an elevated call nothing else in the app uses, so it deserves its own decision, including what happens to the cascading tracking data. _2026-11-18: deletion is now designed in spec 0036 (`delete_own_account()`) and ships with feature 28; data export stays deferred._
+- **Push notifications** (from spec 0033): a new episode aired for a tracked show. Needs a device token table, a scheduled air date check and Expo Push as a new processor, so it gets its own spec after the mobile app ships
+- **Sign in with Apple** (from spec 0033): required on iOS once Google sign in ships there, so it comes with the Google item below
 - **Rate limit on sign in and sign up** (from spec 0018): Supabase counts Vercel's addresses, so its auth limit is shared by every visitor ([docs/deploy.md](../deploy.md) section 6). If it bites, add a second Vercel Firewall rule on sign in and sign up posts per IP. (The `/api/search` limit from spec 0010 shipped as a firewall rule in feature 20.)
 - **A paid Supabase plan** (from spec 0018): the Free project pauses after about a week idle and has no automatic backups; revisit if that bites, or before inviting more than a handful of users
 - **Email delivery and Google sign in** (from spec 0018): an SMTP provider (your own domain, or Gmail SMTP), `enable_confirmations = true` and `NEXT_PUBLIC_AUTH_EMAIL_DELIVERY=on`, password recovery back, a browser pass of spec 0005's email steps, the Google button restored, a pre account takeover guard for accounts created while confirmation was off, `secure_password_change = true`, Google and the email provider added to `PROCESSORS`, and leaked password protection if you move to Pro
