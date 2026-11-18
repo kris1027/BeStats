@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { AUTH_OUTCOME, authMessage } from "./messages";
@@ -74,7 +74,9 @@ describe("the weekly lock", () => {
  */
 describe("the SQL rules match", () => {
   const sql = readFileSync(
-    join(process.cwd(), "../../supabase/schemas/02-tables.sql"),
+    fileURLToPath(
+      new URL("../../../../supabase/schemas/02-tables.sql", import.meta.url),
+    ),
     "utf8",
   );
 

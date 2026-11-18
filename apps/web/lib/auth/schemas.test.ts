@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -48,7 +49,12 @@ describe("password rules (AC-9)", () => {
   });
 
   it("stays equal to minimum_password_length in supabase/config.toml", () => {
-    const config = readFileSync("../../supabase/config.toml", "utf8");
+    const config = readFileSync(
+      fileURLToPath(
+        new URL("../../../../supabase/config.toml", import.meta.url),
+      ),
+      "utf8",
+    );
     const match = config.match(/^minimum_password_length = (\d+)$/m);
 
     expect(
