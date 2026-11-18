@@ -8,7 +8,10 @@
     "scheme": "bestats",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "bundleIdentifier": "com.kris1027.bestats"
+      "bundleIdentifier": "com.kris1027.bestats",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
