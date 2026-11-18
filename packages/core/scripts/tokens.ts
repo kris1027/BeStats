@@ -14,9 +14,18 @@ import { fileURLToPath, pathToFileURL } from "node:url";
  * plate rule natively.
  */
 
+/**
+ * The web stylesheet that owns every colour (AGENTS.md, Commands and repo
+ * facts), resolved from this file so the script and its test run from any
+ * working directory.
+ */
 export const GLOBALS_CSS = fileURLToPath(
   new URL("../../../apps/web/app/globals.css", import.meta.url),
 );
+/**
+ * The one generated copy of the tokens that the mobile app reads, kept in core
+ * because core is the only package both apps share (packages/core/AGENTS.md).
+ */
 export const TOKENS_FILE = fileURLToPath(
   new URL("../src/tokens.generated.ts", import.meta.url),
 );
@@ -26,8 +35,19 @@ function block(css: string, opener: RegExp): [string, string][] {
   const start = css.search(opener);
   if (start < 0) throw new Error(`globals.css has no ${opener} block`);
   const open = css.indexOf("{", start);
-  const close = css.indexOf("}", open);
-  const body = css.slice(open + 1, close);
+  // Match the brace that closes this block, so a nested rule cannot cut the
+  // token list short; only declarations at the block's own depth are kept.
+  let depth = 0;
+  let body = "";
+  let close = open;
+  for (; close < css.length; close++) {
+    const char = css[close];
+    if (char === "{") depth++;
+    else if (char === "}" && --depth === 0) break;
+    else if (depth === 1) body += char;
+  }
+  if (depth !== 0)
+    throw new Error(`globals.css has an unclosed ${opener} block`);
   return [...body.matchAll(/--([a-z0-9-]+)\s*:\s*([^;]+);/g)].map((m) => [
     m[1],
     m[2].replace(/\s+/g, " ").trim(),
@@ -37,7 +57,9 @@ function block(css: string, opener: RegExp): [string, string][] {
 /**
  * Every token by name (without the leading `--`), with a value that is only a
  * `var(--name)` reference replaced by what it points at, so a colour reads as
- * the colour rather than as another name.
+ * the colour rather than as another name. Mobile has no CSS variables to
+ * follow a reference at runtime, so it needs the final value (AGENTS.md,
+ * Commands and repo facts).
  */
 export function readTokens(css: string): Record<string, string> {
   const source = css.replace(/\/\*[\s\S]*?\*\//g, "");
@@ -59,7 +81,12 @@ export function readTokens(css: string): Record<string, string> {
   );
 }
 
-/** The generated module's full text for the given stylesheet. */
+/**
+ * The generated module's full text for the given stylesheet. It is a pure
+ * string so `src/tokens.test.ts` can rebuild it in memory and fail on drift
+ * without writing to disk, which is how CI keeps the one copy honest
+ * (AGENTS.md, Commands and repo facts).
+ */
 export function renderTokens(css: string): string {
   const tokens = readTokens(css);
   const lines = Object.entries(tokens).map(
