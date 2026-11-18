@@ -108,9 +108,9 @@ scope feature G1. It mirrors `lib/tmdb/` in shape but shares no code with it.
   landing hero's phone art, served whole past the cover ladder (prompts/detail-backdrop-hero-size.md, decision 14). The loader lives
   outside this folder because it runs in the browser; `lib/images/loader.ts`,
   the `loaderFile`, sends it every IGDB URL.
-- Adding a field is a three place change: `schemas.ts`, core's
-  `igdb/types.ts`, `normalize.ts`, plus the field list in core's
-  `igdb/constants.ts`.
+- Adding a field is a four place change across two packages: `schemas.ts`
+  and `normalize.ts` here, and `igdb/types.ts` and the field list in
+  `igdb/constants.ts` in core.
 
 ## Commands
 
