@@ -17,7 +17,9 @@ import { runTrackingCommand, type TrackingDeps, type WriteStep } from "./run";
 /**
  * Reads what `plan_movie` or `unmark_movie_watched` cleared. Both return the
  * old watch mark and score, null when nothing was watched; only a removed
- * watch mark is worth an Undo (prompts/movie-plan-watched-exclusive.md).
+ * watch mark is worth an Undo, since planning a watched movie or removing its
+ * mark drops mark and score with Undo (AGENTS.md section 7;
+ * prompts/movie-plan-watched-exclusive.md).
  *
  * The parameter is wider than the generated row on purpose: the generator
  * marks a `returns table` column not null, but both columns are null when
@@ -67,7 +69,8 @@ export async function checkTmdb(
 /**
  * The movie side of `runTrackingCommand`: the TMDB check and release gate,
  * and the cleared watch mark that comes back for an Undo. Shared by every
- * movie command, so each one returns the action's `MovieTrackingResult`.
+ * movie command, so each one returns the action's `MovieTrackingResult` and
+ * the release gate (AGENTS.md section 7) cannot be skipped by any of them.
  */
 export async function runMovieCommand<D>(
   deps: TrackingDeps,
