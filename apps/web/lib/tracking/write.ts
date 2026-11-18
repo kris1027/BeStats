@@ -6,100 +6,74 @@ import type { z } from "zod";
 import { getOptionalUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
 
+import { runTrackingCommand, type TrackingDeps } from "./commands/run";
 import {
   logTrackingEvent,
   type TrackingEvent,
   type TrackingOutcome,
 } from "./log";
 
-type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
+export type { WriteStep } from "./commands/run";
 
 /**
- * What a write step returns: PostgREST's typed data, and its error or null on
- * success. `D` is the generated return type of the call, so the reader that
- * consumes it is checked against `database.types.ts`.
- */
-export type WriteStep<D> = (
-  supabase: SupabaseClient,
-  userId: string,
-) => PromiseLike<{ data: D | null; error: { code?: string | null } | null }>;
-
-/**
- * The shared order of every movie and game tracking action once its input is
- * parsed (spec 0007, spec 0026, AC-10): the verified session, then the
- * catalog check, then the write through Row Level Security, then `refresh()`
- * on success only. One copy, so the two media types can never drift apart on
- * the order or on what reaches a log line.
+ * The Server Action side of every tracking command (spec 0033, child 0035,
+ * Shared command layer): the verified cookie session and its client, then the
+ * command, then `refresh()` on success only. The v1 routes run the same
+ * commands with a bearer session instead, so the two paths share everything
+ * but how the user is found.
  *
- * It never throws: every failure is returned, so it reaches a toast rather
- * than an error boundary. `user_id` is always the session's, never an
- * argument (`AGENTS.md` section 5). The show and episode actions keep their
- * own runner, because their bodies interleave TMDB reads with several writes.
+ * It never throws: an ended session is `session_expired` and writes nothing
+ * (spec 0005, AC-17), and a failure building the session is `write_failed`.
  *
- * @param options.event The log event for a refusal.
- * @param options.check The catalog check, run after the session: a refusal,
- * or null to go on. Absent for a write that must work whatever the catalog
- * says (a removal, a cleared score, a restore).
- * @param options.write The Supabase call, given the request client and the
- * user id.
- * @param options.classify Maps a PostgREST error to the class the client sees
- * and the outcome the log records.
- * @param options.read For a write whose row carries something back (what it
- * cleared, an Undo), reads it from the data.
- * @returns `value` is what `read` found, or undefined.
+ * @param event The log event for a refusal.
+ * @param run The command, given the verified user and its client.
  */
-export async function runTrackingWrite<D, R, E extends TrackingOutcome>({
-  event,
-  check,
-  write,
-  classify,
-  read,
-}: {
-  event: TrackingEvent;
-  check?: () => Promise<E | null>;
-  write: WriteStep<D>;
-  classify: (error: { code?: string | null }) => {
-    error: E;
-    outcome: TrackingOutcome;
-  };
-  read?: (data: D | null) => R | undefined;
-}): Promise<
-  | { ok: true; value: R | undefined }
-  | { ok: false; error: E | "session_expired" | "write_failed" }
-> {
-  let value: R | undefined;
+export async function withCookieSession<T extends { ok: boolean }>(
+  event: TrackingEvent,
+  run: (deps: TrackingDeps) => Promise<T>,
+): Promise<T | { ok: false; error: "session_expired" | "write_failed" }> {
+  let userId: string;
   try {
     const user = await getOptionalUser();
     if (!user) {
       logTrackingEvent(event, "session_expired");
       return { ok: false, error: "session_expired" };
     }
-
-    const refusal = check ? await check() : null;
-    if (refusal) {
-      logTrackingEvent(event, refusal);
-      return { ok: false, error: refusal };
-    }
-
-    const supabase = await createClient();
-    const { data, error } = await write(supabase, user.id);
-    if (error) {
-      const classified = classify(error);
-      logTrackingEvent(event, classified.outcome);
-      return { ok: false, error: classified.error };
-    }
-    value = read?.(data);
+    userId = user.id;
   } catch {
-    // A network failure inside supabase-js, or a bug the catalog check
-    // rethrew. The error object is dropped on purpose: its message can carry
-    // request details that must not reach a log line (spec 0007, AC-21;
-    // spec 0026, AC-15).
+    // The error object is dropped on purpose: its message can carry request
+    // details that must not reach a log line (spec 0007, AC-21).
     logTrackingEvent(event, "db_error");
     return { ok: false, error: "write_failed" };
   }
 
-  refresh();
-  return { ok: true, value };
+  const deps: TrackingDeps = { userId, getClient: createClient };
+  const result = await run(deps);
+  if (result.ok) refresh();
+  return result;
+}
+
+/**
+ * The shared order of every movie and game tracking action once its input is
+ * parsed (spec 0007, spec 0026, AC-10): the verified session, then
+ * `runTrackingCommand` (catalog check, then the write through Row Level
+ * Security), then `refresh()` on success only. One copy, so the two media
+ * types can never drift apart on the order or on what reaches a log line.
+ *
+ * The show and episode actions keep their own runner, because their bodies
+ * interleave TMDB reads with several writes.
+ *
+ * @returns `value` is what `read` found, or undefined.
+ */
+export function runTrackingWrite<D, R, E extends TrackingOutcome>(
+  options: Parameters<typeof runTrackingCommand<D, R, E>>[1],
+): Promise<
+  | { ok: true; value: R | undefined }
+  | { ok: false; error: E | "session_expired" | "write_failed" }
+> {
+  return withCookieSession(options.event, (deps) =>
+    runTrackingCommand(deps, options),
+  );
 }
 
 /**
