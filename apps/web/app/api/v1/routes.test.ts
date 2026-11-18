@@ -153,7 +153,11 @@ describe("GET /api/v1/movies/{id}", () => {
 });
 
 describe("PUT /api/v1/me/movies/{id}/watched", () => {
-  const put = (body: unknown, headers = AUTH, id = "550") =>
+  const put = (
+    body: unknown,
+    headers: Record<string, string> = AUTH,
+    id = "550",
+  ) =>
     putWatched(
       req(`/api/v1/me/movies/${id}/watched`, headers, { method: "PUT", body }),
       ctx({ id }),

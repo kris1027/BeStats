@@ -51,7 +51,10 @@ async function errorCode(response: Response) {
 
 describe("the version check", () => {
   it("answers 400 without a valid header", async () => {
-    for (const headers of [{}, { "X-BeStats-App-Version": "1.0" }]) {
+    for (const headers of [{}, { "X-BeStats-App-Version": "1.0" }] as Record<
+      string,
+      string
+    >[]) {
       const response = await publicRoute(request(headers), ctx());
       expect(response.status).toBe(400);
       expect(await errorCode(response)).toBe("invalid_input");
