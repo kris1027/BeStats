@@ -27,7 +27,8 @@ export const semverSchema = z
 
 /**
  * Compares two versions that passed `semverSchema`, part by part as numbers,
- * so `1.10.0` sorts after `1.9.0` (a string compare would not).
+ * so `1.10.0` sorts after `1.9.0` (a string compare would not). Pure, so the
+ * web check and the app agree on the order (AGENTS.md section 5).
  *
  * @returns A negative number when `a` is older, 0 when equal, positive when newer.
  */
@@ -44,6 +45,8 @@ export function compareSemver(a: string, b: string): number {
 /**
  * What the version header means for a request: missing or malformed is a bad
  * request, older than the minimum needs an update, anything else is served.
+ * The API validates every input before it runs (AGENTS.md section 11), and
+ * the app reaches the web only through `/api/v1` (section 5).
  *
  * @param header The raw header value, or null when absent.
  */

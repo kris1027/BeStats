@@ -6,6 +6,7 @@ import { v1Ok, withV1 } from "@/lib/api/v1/with-v1";
  * `GET /api/v1/config` (spec 0033, child 0035): the minimum app version, read
  * before anything else. It is the one route without the version check, so an
  * app too old for every other route can still learn that it must update.
+ * The app reaches the web only through `/api/v1` (AGENTS.md section 5).
  */
 export const GET = withV1({
   name: "config",

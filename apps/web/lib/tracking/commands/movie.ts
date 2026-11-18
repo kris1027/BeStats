@@ -47,7 +47,8 @@ export type TmdbCheck = "none" | "exists" | "released";
 /**
  * Confirms the movie with TMDB, and for `released` its release date against
  * today in UTC. The date is always read on the server, never taken from the
- * caller, so a phone cannot skip the gate (spec 0033, AC-6).
+ * caller, so a phone cannot skip the gate (spec 0033, AC-6; AGENTS.md
+ * section 7, release day in UTC).
  */
 export async function checkTmdb(
   movieId: number,

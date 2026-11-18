@@ -20,7 +20,9 @@ const JWT_SHAPE = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*$/;
 
 /**
  * The token from an `Authorization: Bearer <jwt>` header, or null for any
- * other shape (spec 0033, child 0035, Bearer auth).
+ * other shape (spec 0033, child 0035, Bearer auth). Every server operation
+ * rechecks the session, so a malformed header never reaches Supabase
+ * (AGENTS.md section 11).
  *
  * @param header The raw header value, or null when absent.
  */

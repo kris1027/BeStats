@@ -12,7 +12,8 @@ import { loadMovie } from "@/lib/tmdb/load-movie";
  * bearer header), through the same cached `loadMovie` the web page uses, so a
  * CDN may share one answer for five minutes and TMDB is asked once per cache
  * lifetime. An adult or unknown movie is 404, a TMDB failure 502, both
- * `no-store`.
+ * `no-store`. Public catalog data is cached apart from user state (AGENTS.md
+ * sections 7 and 11).
  */
 export const GET = withV1({
   name: "movies.get",

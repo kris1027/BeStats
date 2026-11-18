@@ -26,7 +26,9 @@ export type PublicEnv = z.infer<typeof publicEnvSchema>;
 let cached: PublicEnv | null = null;
 
 /**
- * Reads and validates the public environment once.
+ * Reads and validates the public environment once, as the only reader of
+ * `process.env.EXPO_PUBLIC_*`: only public config reaches the app and no
+ * secret takes a public name (AGENTS.md section 11).
  *
  * @throws When a variable is missing or malformed; the message names it.
  */

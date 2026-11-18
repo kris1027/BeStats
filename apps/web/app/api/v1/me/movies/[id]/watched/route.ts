@@ -18,7 +18,9 @@ import { setMovieWatchedCommand } from "@/lib/tracking/commands/set-movie-watche
  * (AC-5). The release gate runs inside it on a date read on the server: a mark
  * before release day (UTC) answers 409 `not_released` and writes nothing,
  * while clearing a mark is never gated (AC-6). A refusal carries the action's
- * own error word as `reason` and its English copy as the message.
+ * own error word as `reason` and its English copy as the message. The user
+ * id is the verified token's, never the caller's (AGENTS.md sections 5, 7
+ * and 11).
  */
 export const PUT = withV1({
   name: "me.movies.watched.put",
