@@ -8,7 +8,7 @@
 -- who may execute), what they write, and that user A can never reach user B's
 -- row through them. The two table checks are pinned here too.
 --
--- `lib/tracking/intent.test.ts` runs the same cases against the TypeScript
+-- `apps/web/lib/tracking/intent.test.ts` runs the same cases against the TypeScript
 -- mirror, so the optimistic UI and the database cannot drift apart unnoticed.
 --
 -- User A and user B come from supabase/seed.sql. B owns movie 603, planned and

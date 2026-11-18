@@ -1,7 +1,7 @@
 -- Every tracked show with the times the library pages sort by (spec 0020,
 -- data model). It decides no page: which of Watchlist, Upcoming and Watched
 -- a show is on is worked out per request in TypeScript from TMDB and the
--- user's episodes (`lib/tv/library-page.ts`), and nothing derived is stored.
+-- user's episodes (`apps/web/lib/tv/library-page.ts`), and nothing derived is stored.
 --
 -- `last_regular_watched_at` is the newest watched regular episode (specials
 -- never move a card), `last_watched_at` the newest watched episode in any
