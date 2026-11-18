@@ -9,6 +9,10 @@
 - **Layout mirrors the web's old `lib/`**: `src/tracking/schemas.ts` is imported as `@bestats/core/tracking/schemas` (the `"./*"` export). There is no barrel. Inside core, files import each other by relative path; the `@/*` alias is the web's.
 - Tests sit beside their files and run in core's own Vitest (`pnpm test` runs every package). A test that reads a repo file resolves it from its own file.
 
+## API contracts
+
+`src/api/v1/` holds the `/api/v1` contracts both apps parse with: `version.ts` (`MIN_APP_VERSION`, `checkAppVersion`, the header name), `errors.ts` (every v1 error code, its status and English copy), and one file per resource (`movie.ts`, `titles.ts`, `config.ts`). `/api/v1` is frozen once the first store build ships, so a breaking change goes to a new `api/v2/` folder, never into these files (spec 0035, Versioning).
+
 ## Generated files
 
 - `src/supabase/database.types.ts`: written by `pnpm db:types` from the local schema and checked by `pnpm db:types:check`. Never edit it; Biome skips it.
