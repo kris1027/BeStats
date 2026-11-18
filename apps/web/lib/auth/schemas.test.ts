@@ -48,7 +48,7 @@ describe("password rules (AC-9)", () => {
   });
 
   it("stays equal to minimum_password_length in supabase/config.toml", () => {
-    const config = readFileSync("supabase/config.toml", "utf8");
+    const config = readFileSync("../../supabase/config.toml", "utf8");
     const match = config.match(/^minimum_password_length = (\d+)$/m);
 
     expect(

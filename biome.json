@@ -13,8 +13,8 @@
       "!docs",
       "!design",
       "!supabase",
-      "!public",
-      "!lib/supabase/database.types.ts"
+      "!apps/web/public",
+      "!apps/web/lib/supabase/database.types.ts"
     ]
   },
   "formatter": {

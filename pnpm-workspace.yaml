@@ -1,3 +1,14 @@
+packages:
+  - apps/*
+  - packages/*
+
 allowBuilds:
   sharp: false
   unrs-resolver: false
+
+# `next` resolves the React types from its own folder upward, which in a
+# workspace no longer passes through apps/web/node_modules. Hoisting them to
+# the root keeps `Link` and friends typed, as they were before the move.
+publicHoistPattern:
+  - "@types/react"
+  - "@types/react-dom"

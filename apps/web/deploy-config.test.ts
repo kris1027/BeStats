@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { SUPABASE_REGION } from "@/lib/legal/operator";
@@ -13,7 +14,13 @@ import { SUPABASE_REGION } from "@/lib/legal/operator";
  * a quiet drift between the repo, `docs/deploy.md` and the hosted project.
  */
 
-const ROOT = process.cwd();
+/**
+ * The web app's folder, found from this file rather than the working directory.
+ * `vercel.json` and `.env.example` live here; `supabase/` sits at the
+ * workspace root, one level above `apps/` (spec 0034).
+ */
+const ROOT = fileURLToPath(new URL(".", import.meta.url));
+const WORKSPACE_ROOT = join(ROOT, "..", "..");
 
 type TomlValue = string | number | boolean | string[];
 type TomlTables = Map<string, Map<string, TomlValue>>;
@@ -28,7 +35,9 @@ function readToml(path: string): TomlTables {
   const tables: TomlTables = new Map([["", new Map()]]);
   let current = tables.get("") as Map<string, TomlValue>;
 
-  for (const raw of readFileSync(join(ROOT, path), "utf8").split("\n")) {
+  for (const raw of readFileSync(join(WORKSPACE_ROOT, path), "utf8").split(
+    "\n",
+  )) {
     const line = raw.trim();
     if (line === "" || line.startsWith("#")) continue;
 

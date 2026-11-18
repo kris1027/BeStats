@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { extname, join } from "node:path";
+import { extname, join, relative } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 /**
@@ -20,7 +21,16 @@ import { describe, expect, it } from "vitest";
  * Exclusions are therefore explicit and narrow — documentation, design
  * references, generated output and the tests themselves, none of which ship in
  * a request path.
+ *
+ * "The repository" is the whole workspace, found from this file rather than the
+ * working directory, so `apps/mobile` and `packages/core` are scanned too and a
+ * test run from `apps/web` still sees them (spec 0034, Tooling). Paths are
+ * reported relative to the workspace root.
  */
+const WORKSPACE_ROOT = fileURLToPath(new URL("../..", import.meta.url));
+
+/** The web app's folder, relative to the workspace root. */
+const WEB = "apps/web";
 
 /** Built from fragments so this file does not match its own search. */
 const FORBIDDEN = ["service", "role"].join("_");
@@ -42,7 +52,8 @@ const EXCLUDED_DIRS = new Set([
   "__fixtures__",
 ]);
 /** Dotted, so the directory walk skips it; scanned by name instead. */
-const SCANNED_FILES = [".env.example"];
+const ENV_EXAMPLE = `${WEB}/.env.example`;
+const SCANNED_FILES = [ENV_EXAMPLE];
 const SCANNED_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".mjs", ".sh", ""]);
 
 /** Every scannable file under a directory, recursively. */
@@ -66,14 +77,17 @@ function isTest(path: string): boolean {
 }
 
 function scannedPaths(): string[] {
-  return [...filesUnder("."), ...SCANNED_FILES]
-    .map((path) => (path.startsWith("./") ? path.slice(2) : path))
-    .filter((path) => !isTest(path));
+  return [
+    ...filesUnder(WORKSPACE_ROOT).map((path) => relative(WORKSPACE_ROOT, path)),
+    ...SCANNED_FILES,
+  ].filter((path) => !isTest(path));
 }
 
 function offenders(needle: string): string[] {
   return scannedPaths().filter((path) =>
-    readFileSync(path, "utf8").toLowerCase().includes(needle),
+    readFileSync(join(WORKSPACE_ROOT, path), "utf8")
+      .toLowerCase()
+      .includes(needle),
   );
 }
 
@@ -91,7 +105,7 @@ describe("the service role boundary", () => {
   });
 
   it("scans the request-facing root files, proxy.ts above all", () => {
-    expect(scannedPaths()).toContain("proxy.ts");
+    expect(scannedPaths()).toContain(`${WEB}/proxy.ts`);
   });
 });
 
@@ -112,9 +126,9 @@ const TMDB_TOKEN_VARIABLE = "TMDB_READ_ACCESS_TOKEN";
  * live check that needs a real credential, and the committed example file.
  */
 const TMDB_TOKEN_READERS = new Set([
-  "lib/tmdb/env.ts",
-  "lib/tmdb/tmdb.live.ts",
-  ".env.example",
+  `${WEB}/lib/tmdb/env.ts`,
+  `${WEB}/lib/tmdb/tmdb.live.ts`,
+  ENV_EXAMPLE,
 ]);
 
 describe("the TMDB token boundary", () => {
@@ -128,6 +142,10 @@ describe("the TMDB token boundary", () => {
   it("is never given a NEXT_PUBLIC_ prefix, which would publish it", () => {
     expect(offenders("next_public_tmdb")).toEqual([]);
   });
+
+  it("is never given an EXPO_PUBLIC_ prefix, which bakes it into the app", () => {
+    expect(offenders("expo_public_tmdb")).toEqual([]);
+  });
 });
 
 /**
@@ -136,10 +154,10 @@ describe("the TMDB token boundary", () => {
  * them through it, so it does not name them either).
  */
 const IGDB_VARIABLES = ["IGDB_CLIENT_ID", "IGDB_CLIENT_SECRET"];
-const IGDB_READERS = new Set(["lib/igdb/env.ts", ".env.example"]);
+const IGDB_READERS = new Set([`${WEB}/lib/igdb/env.ts`, ENV_EXAMPLE]);
 
 describe("the IGDB credential boundary", () => {
-  it.each(IGDB_VARIABLES)("%s is read only by lib/igdb/env.ts", (variable) => {
+  it.each(IGDB_VARIABLES)("%s is read only by its env reader", (variable) => {
     const named = offenders(variable.toLowerCase()).filter(
       (path) => !IGDB_READERS.has(path),
     );
@@ -150,8 +168,12 @@ describe("the IGDB credential boundary", () => {
     expect(offenders("next_public_igdb")).toEqual([]);
   });
 
+  it("is never given an EXPO_PUBLIC_ prefix, which bakes it into the app", () => {
+    expect(offenders("expo_public_igdb")).toEqual([]);
+  });
+
   it("is listed in .env.example", () => {
-    const example = readFileSync(".env.example", "utf8");
+    const example = readFileSync(join(WORKSPACE_ROOT, ENV_EXAMPLE), "utf8");
     for (const variable of IGDB_VARIABLES) {
       expect(example).toContain(`${variable}=`);
     }
@@ -170,6 +192,7 @@ const GAMES_FLAG = ["NEXT_PUBLIC", "GAMES", "LIBRARY"].join("_");
 describe("the removed games flag", () => {
   it("is named by no tracked file outside docs/", () => {
     const tracked = execFileSync("git", ["ls-files", "-z"], {
+      cwd: WORKSPACE_ROOT,
       encoding: "utf8",
     })
       .split("\0")
@@ -177,11 +200,13 @@ describe("the removed games flag", () => {
         (path) =>
           path !== "" &&
           !path.startsWith("docs/") &&
-          path !== "security-boundary.test.ts" &&
-          statSync(path, { throwIfNoEntry: false })?.isFile(),
+          path !== `${WEB}/security-boundary.test.ts` &&
+          statSync(join(WORKSPACE_ROOT, path), {
+            throwIfNoEntry: false,
+          })?.isFile(),
       );
     const named = tracked.filter((path) =>
-      readFileSync(path, "utf8").includes(GAMES_FLAG),
+      readFileSync(join(WORKSPACE_ROOT, path), "utf8").includes(GAMES_FLAG),
     );
     expect(named).toEqual([]);
   });

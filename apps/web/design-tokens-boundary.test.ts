@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { extname, join } from "node:path";
+import { extname, join, relative } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 /**
@@ -18,8 +19,17 @@ import { describe, expect, it } from "vitest";
  *
  * The walk covers the whole repository rather than a list of directories, for
  * the same reason that file gives: the violation arrives in a directory nobody
- * remembered to add.
+ * remembered to add. "The whole repository" is the workspace, found from this
+ * file rather than the working directory, so `apps/mobile` and `packages/core`
+ * are held to the same rule (spec 0034, Tooling). Paths are relative to the
+ * workspace root.
  */
+const WORKSPACE_ROOT = fileURLToPath(new URL("../..", import.meta.url));
+
+/** Reads a file by its path relative to the workspace root. */
+function read(path: string): string {
+  return readFileSync(join(WORKSPACE_ROOT, path), "utf8");
+}
 
 /**
  * Directories skipped at any depth. Dependencies and build output are not ours
@@ -65,19 +75,17 @@ function filesUnder(dir: string): string[] {
  * written (AGENTS.md, the Tailwind v4 note).
  */
 const EXEMPT_FROM_COLOUR_RULE =
-  /(^|\/)(design-tokens-boundary\.test\.ts|app\/globals\.css)$/;
+  /^apps\/web\/(design-tokens-boundary\.test\.ts|app\/globals\.css)$/;
 
-const SOURCE_FILES = filesUnder(".").filter(
-  (path) => !EXEMPT_FROM_COLOUR_RULE.test(path),
-);
+const SOURCE_FILES = filesUnder(WORKSPACE_ROOT)
+  .map((path) => relative(WORKSPACE_ROOT, path))
+  .filter((path) => !EXEMPT_FROM_COLOUR_RULE.test(path));
 
-const GLOBALS_CSS = readFileSync("app/globals.css", "utf8");
+const GLOBALS_CSS = read("apps/web/app/globals.css");
 
 describe("typeface boundary (AC-2)", () => {
   it("finds no trace of the starter's typefaces in application code", () => {
-    const offenders = SOURCE_FILES.filter((path) =>
-      /geist/i.test(readFileSync(path, "utf8")),
-    );
+    const offenders = SOURCE_FILES.filter((path) => /geist/i.test(read(path)));
 
     expect(offenders).toEqual([]);
   });
@@ -87,7 +95,7 @@ describe("typeface boundary (AC-2)", () => {
   });
 
   it("keeps Inter as the one typeface the root layout loads", () => {
-    const layout = readFileSync("app/layout.tsx", "utf8");
+    const layout = read("apps/web/app/layout.tsx");
 
     expect(layout).toMatch(/from "next\/font\/google"/);
     expect(layout.match(/Inter\(/g)).toHaveLength(1);
@@ -112,12 +120,12 @@ describe("colour boundary (AC-3, AC-4)", () => {
    * so the plate rule has something legible to fail against (AC-5). It is test
    * fixture artwork living in a development only route, not a product colour.
    */
-  const ALLOWED = new Map([["app/showcase/page.tsx", ["#C8B89A"]]]);
+  const ALLOWED = new Map([["apps/web/app/showcase/page.tsx", ["#C8B89A"]]]);
 
   it("keeps every colour value in globals.css and out of the components", () => {
     const offenders = SOURCE_FILES.flatMap((path) => {
-      const allowed = ALLOWED.get(path.replace(/^\.\//, "")) ?? [];
-      const found = readFileSync(path, "utf8").match(COLOUR_LITERAL) ?? [];
+      const allowed = ALLOWED.get(path) ?? [];
+      const found = read(path).match(COLOUR_LITERAL) ?? [];
       const unexpected = found.filter(
         (value) =>
           !allowed.some((ok) => ok.toLowerCase() === value.toLowerCase()),

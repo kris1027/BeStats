@@ -74,7 +74,7 @@ describe("the weekly lock", () => {
  */
 describe("the SQL rules match", () => {
   const sql = readFileSync(
-    join(process.cwd(), "supabase/schemas/02-tables.sql"),
+    join(process.cwd(), "../../supabase/schemas/02-tables.sql"),
     "utf8",
   );
 
