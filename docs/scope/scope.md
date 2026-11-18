@@ -44,7 +44,7 @@ _2026-10-06: the `design/` artboards were removed. The UI built from them carrie
 | 25 | Consistent card size and richer title pages | Slice 12 | done |
 | 26 | Library page names per media type | Slice 13 | done |
 | 27 | Library page URLs follow their names | Slice 13 | done |
-| 28 | Mobile app (iOS and Android) | Slice 14 | planned |
+| 28 | Mobile app (iOS and Android) | Slice 14 | in-progress |
 
 ## Foundations
 
@@ -453,7 +453,7 @@ plan [prompts/library-page-urls.md](../../prompts/library-page-urls.md) · code 
 
 ## Slice 14: Mobile
 
-### 28. Mobile app (iOS and Android) · planned · GA
+### 28. Mobile app (iOS and Android) · in-progress · GA
 A native app for iOS and Android beside the web app, sharing its rules with it. v1 covers sign in and account (email and password, self serve deletion on both apps), browse and search, all tracking with Undo, and every library page, with a read only offline cache. The phone never holds a catalog key, so the release gate and every rule stay on the server. Designed on 2026-11-18.
 **Done when:** both store builds sign in, browse, search, track and show every library page with the same rules and names as the web; the web still deploys unchanged from `apps/web`; no TMDB or IGDB secret or service role key is reachable from the app or the repo; account deletion works on both apps; and the attribution, privacy text and store privacy labels are in place.
 - [x] Design it (spec): `/architect mobile app`
