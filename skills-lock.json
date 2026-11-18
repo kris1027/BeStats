@@ -1,6 +1,13 @@
 {
   "version": 2,
   "skills": {
+    "debug-nw": {
+      "source": "nativewind/nativewind",
+      "commit": "ddcfd80648760402bec8710068c9f2401bcfe629",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/debug-nw/SKILL.md",
+      "computedHash": "e5d78350b8b70dc777ff832f6c82973dcffdb61c51903332170e073294891a07"
+    },
     "eas-app-stores": {
       "source": "expo/skills",
       "commit": "dfdebcc6c4c1bf7a9471cefd6b6f39c7ba6c884d",
@@ -42,6 +49,13 @@
       "sourceType": "github",
       "skillPath": "plugins/expo/skills/expo-upgrade/SKILL.md",
       "computedHash": "e7963891b55078eec241470f30ebd45afe0d3b7f1363d62e26f5af1b32382f7e"
+    },
+    "nativewind-preview-to-rc": {
+      "source": "nativewind/nativewind",
+      "commit": "ddcfd80648760402bec8710068c9f2401bcfe629",
+      "sourceType": "github",
+      "skillPath": "skills/nativewind-preview-to-rc/SKILL.md",
+      "computedHash": "ac277517415a88df3dd4ccb333fbc51b8789dc3393d3b7db7df33552e0b868de"
     },
     "next-cache-components-adoption": {
       "source": "vercel/next.js",
