@@ -29,13 +29,13 @@ Move today's Next.js app from the repo root into `apps/web` inside a pnpm worksp
 6. **Next config**: `turbopack.root` and `outputFileTracingRoot` point at the workspace root (two folders up), so the build can follow files outside `apps/web` once core exists.
 7. **`.gitignore`**: the root anchored patterns lose their leading slash (`node_modules/`, `.next/`, `coverage/`) so they match inside `apps/web`.
 8. **Your local `.env.local`** (git ignored, holds your keys) moves to `apps/web/.env.local` with a plain `mv`, since Next reads env files from the app folder. Nothing in it is read or printed.
-9. **Links**: path fixes only. Relative links inside the moved `AGENTS.md` files, the root `AGENTS.md` Context files list, `docs/deploy.md` and the feature 28 code pointer in the scope are corrected to the new paths. Root `AGENTS.md` prose (section 5 "one app at the root", a mobile section) is left for `/sync`, as spec 0033 Follow-up says. Old specs and prompts are history and keep their old paths.
+9. **Links**: path fixes only. Relative links inside the moved `AGENTS.md` files, the root `AGENTS.md` Context files list, `docs/deploy.md` and the feature 28 code pointer in the scope are corrected to the new paths. Root `AGENTS.md` prose (section 5 "one app at the root", a mobile section) is left for `/sync`, as spec 0033 Follow-up says. Old specs and prompts are history and keep their old paths. _Revised after code review: dead links in old specs and prompts were repointed too (paths only, no prose), and the three stale root `AGENTS.md` facts (section 5, the workspace file, the `@/*` alias) were corrected rather than left wrong until `/sync`._
 10. **Vercel**: the project's Root Directory becomes `apps/web` with "Include files outside the root directory" on. This is a dashboard setting that affects production, so it is a separate step you approve at the time (see Manual test). Order: open the PR, flip the setting, redeploy the PR preview and check it, then merge so production builds from `apps/web`. Flipping it back is the rollback.
-11. **pnpm linker**: the default isolated linker (spec 0034). No `nodeLinker: hoisted` unless something fails.
+11. **pnpm linker**: the default isolated linker (spec 0034). No `nodeLinker: hoisted` unless something fails. _Implementation note: `next` resolves the React types from its own folder upward, which no longer passes through `apps/web/node_modules`, so `publicHoistPattern` hoists only `@types/react` and `@types/react-dom`._
 
 ## Expected files
 
-- New: `apps/web/package.json`, `prompts/monorepo-move.md` (this file).
+- New: `apps/web/package.json`, `prompts/monorepo-move.md` (this file), `apps/web/AGENTS.md` and `apps/web/CLAUDE.md` (written by `next dev` once it runs from `apps/web`).
 - Moved (`git mv`, content unchanged unless listed): everything in decision 1.
 - Edited: root `package.json`, `pnpm-workspace.yaml`, `pnpm-lock.yaml` (regenerated), `biome.json`, `.gitignore`, `apps/web/next.config.ts`, the five path sensitive tests, `apps/web/vitest.config.mts` (only if a path needs it), `scripts/dev-docker.sh`, `scripts/db-types-check.sh`, `.github/workflows/checks.yml` (only if a step needs a path), the nested `AGENTS.md` links, root `AGENTS.md` Context files links, `docs/deploy.md`, `docs/scope/scope.md` (feature 28 status and pointer), spec 0033 `**Status**:` line (`Proposed` to `In Progress`).
 
@@ -43,7 +43,7 @@ Move today's Next.js app from the repo root into `apps/web` inside a pnpm worksp
 
 - AC-1 (this step's half): the web app lives in `apps/web`; `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm build` and `pnpm test:db` pass from the root; a Vercel preview of `apps/web` serves the same routes and behavior as before.
 - AC-3 (workspace half): the TMDB and IGDB env readers are still found only in `apps/web/lib/tmdb/env.ts` and `apps/web/lib/igdb/env.ts`; no workspace file names the service role key; `NEXT_PUBLIC_` and `EXPO_PUBLIC_` are both forbidden on those secrets.
-- No route, URL, response, redirect, header or test expectation changes. Test count stays the same (plus the new `EXPO_PUBLIC_` case).
+- No route, URL, response, redirect, header or test expectation changes. Test count stays the same plus the two new `EXPO_PUBLIC_` cases (one each for TMDB and IGDB).
 
 ## Security considerations
 
@@ -54,7 +54,7 @@ Move today's Next.js app from the repo root into `apps/web` inside a pnpm worksp
 ## Acceptance criteria
 
 1. `git log --follow apps/web/lib/tracking/schemas.ts` shows the file's old history.
-2. All the root checks below pass with the same test count as `main` plus one.
+2. All the root checks below pass with the same test count as `main` plus two.
 3. `pnpm dev:docker` serves the app at `localhost:3000`, signed in and signed out, as before.
 4. A Vercel preview built from `apps/web` serves `/shows`, a movie page, a game page, `/sitemap.xml` and sign in exactly as production does.
 

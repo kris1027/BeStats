@@ -41,7 +41,7 @@ Project skills live in `.agents/skills/` (symlinked into `.claude/skills/`, pinn
 
 ## 5. Structure
 
-One Next.js App Router app at the repo root (`app/`, `components/`, `lib/`, `supabase/`, `prompts/`; no `src/`).
+A pnpm workspace: the Next.js App Router app lives in `apps/web/` (`app/`, `components/`, `lib/`; no `src/`), while `supabase/`, `docs/`, `prompts/` and `scripts/` stay at the repo root. `packages/*` is reserved for shared code.
 
 - Server Components by default; a Client Component only where an interaction needs it.
 - `lib/tmdb/` and `lib/igdb/` are server-only modules that own every catalog request, its normalization, caching and errors.
@@ -126,8 +126,8 @@ Planned in [docs/scope/games.md](docs/scope/games.md) (G1 to G10, all shipped). 
 
 ## Commands and repo facts
 
-- Scripts live in `package.json`; `pnpm dev:docker` runs the dev server against the local Supabase stack. `pnpm-workspace.yaml` exists only to pin `allowBuilds`; this is a single package repo.
-- Imports use the `@/*` alias for the repo root.
+- Scripts live in `package.json`; `pnpm dev:docker` runs the dev server against the local Supabase stack. Root scripts delegate to `@bestats/web` through `pnpm --filter`. `pnpm-workspace.yaml` lists the `apps/*` and `packages/*` globs, pins `allowBuilds`, and hoists `@types/react` and `@types/react-dom` so `next` still finds them.
+- Imports use the `@/*` alias for the app root (`apps/web/`).
 - `cacheComponents: true`: every route is prerenderable or exports `instant = false`; every cached read calls `cacheLife` inside its own `use cache` scope, and returns a plain result rather than throwing (a thrown error loses its class across the scope). Routing, proxy, images and region rules: [app/AGENTS.md](apps/web/app/AGENTS.md), read before editing `proxy.ts`, `next.config.ts` or a route.
 - Middleware is `proxy.ts` exporting `proxy` (Next.js 16 ignores a `middleware.ts`).
 - Read public env values through `getPublicEnv()` in `lib/env.ts`, never `process.env`. It validates lazily, so a build with no Supabase project still succeeds while every auth call fails loudly. Code on every page calls `publicEnvProblems()` first and falls back to signed out, so a missing auth config never takes the catalog down.
