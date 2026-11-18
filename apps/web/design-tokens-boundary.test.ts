@@ -55,10 +55,13 @@ const SCANNED_EXTENSIONS = new Set([".ts", ".tsx", ".css", ".mjs", ".js"]);
 /**
  * Paths the colour rule does not apply to: this file, whose own subject is the
  * rule, and `globals.css`, which is the one place a colour value may be
- * written (AGENTS.md, the Tailwind v4 note).
+ * written (AGENTS.md, the Tailwind v4 note). The one other exemption is
+ * core's `tokens.generated.ts`, a copy `pnpm tokens` writes from
+ * `globals.css` for the mobile app; core's `tokens.test.ts` fails if it ever
+ * holds anything `globals.css` does not (spec 0034, Design tokens).
  */
 const EXEMPT_FROM_COLOUR_RULE =
-  /^apps\/web\/(design-tokens-boundary\.test\.ts|app\/globals\.css)$/;
+  /^(apps\/web\/(design-tokens-boundary\.test\.ts|app\/globals\.css)|packages\/core\/src\/tokens\.generated\.ts)$/;
 
 const SOURCE_FILES = workspaceFiles({
   skipDirs: EXCLUDED_DIRS,
