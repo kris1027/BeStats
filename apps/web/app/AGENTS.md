@@ -11,6 +11,13 @@ Routes, plus the root files that shape them: `proxy.ts` and `next.config.ts`. Th
 - `app/not-found.tsx` is the styled 404 for every unmatched URL. The game page answers a hidden game with a soft 404.
 - `/showcase` is a static 404 in production and renders under `next dev` and Vitest.
 
+## /api/v1 (the mobile API)
+
+- Every handler under `app/api/v1/` is exported as `export const GET = withV1({...})` from `lib/api/v1/with-v1.ts`; `with-v1.test.ts` fails on a handler that isn't (spec 0033, AC-4). `withV1` checks `X-BeStats-App-Version` (400 or 426; only `/config` sets `skipVersionCheck`), verifies the bearer token on `auth: "bearer"` routes, parses the path, query and body with the core schemas a route declares in `input` (a handler never parses its own; 400 before it runs), answers `{ error: { code, message } }`, sets `Cache-Control`, and logs every failure through `logV1Failure` (`lib/api/v1/log.ts`) or, for a refused token, `logAuthEvent(AUTH_EVENT.bearer)`.
+- Public routes pass their `s-maxage` value as `cache`; every `me` answer is `private, no-store`, and every error `no-store`. Handlers return `v1Ok` or `v1Fail` and never build a `Response` themselves.
+- Request and response shapes live in `packages/core/src/api/v1/`; a route test parses each body with its core schema.
+- A write route calls the same command as its Server Action ([lib/tracking/AGENTS.md](../lib/tracking/AGENTS.md)); a refusal maps through the core error table and carries the action's word as `reason`.
+
 ## proxy.ts
 
 - It answers a malformed title ID, season number or list slug under `/movies/`, `/shows/` and `/games/` with a real 404 before its auth check, using the pages' own parsers in `packages/core/src/catalog/ids.ts` and `packages/core/src/catalog/lists.ts`. A streamed page has already sent 200, so an unknown or adult ID is a soft 404 (`noindex`).

@@ -10,7 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  */
 const loadMovie = vi.fn();
 
-vi.mock("./load-movie", () => ({
+vi.mock("@/lib/tmdb/load-movie", () => ({
   loadMovie: (id: number) => loadMovie(id),
 }));
 

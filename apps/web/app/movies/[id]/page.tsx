@@ -22,7 +22,7 @@ import { MovieTrackingSlot } from "@/components/tracking/movie-tracking-slot";
 import { movieJsonLd } from "@/lib/seo/json-ld";
 import { catalogMetadata } from "@/lib/seo/metadata";
 
-import { loadMovie } from "./load-movie";
+import { loadMovie } from "@/lib/tmdb/load-movie";
 
 /** Longest meta description the page emits (spec 0006, AC-12). */
 const DESCRIPTION_LIMIT = 160;

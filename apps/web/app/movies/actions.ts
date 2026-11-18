@@ -1,6 +1,5 @@
 "use server";
 
-import { isMovieReleased } from "@bestats/core/catalog/movie-page";
 import {
   ratingInputSchema,
   restoreWatchedInputSchema,
@@ -10,19 +9,20 @@ import {
 } from "@bestats/core/tracking/schemas";
 import type {
   MovieClearedState,
-  MovieTrackingError,
   MovieTrackingResult,
 } from "@bestats/core/tracking/types";
-import { todayUtc } from "@bestats/core/tv/air-status";
+import {
+  readCleared,
+  runMovieCommand,
+  type TmdbCheck,
+} from "@/lib/tracking/commands/movie";
+import { setMovieWatchedCommand } from "@/lib/tracking/commands/set-movie-watched";
 import { TRACKING_EVENT, type TrackingEvent } from "@/lib/tracking/log";
-import { classifyMovieTrackingError } from "@/lib/tracking/supabase-error";
 import {
   parseTrackingInput,
-  runTrackingWrite,
   type WriteStep,
+  withCookieSession,
 } from "@/lib/tracking/write";
-
-import { loadMovie } from "./[id]/load-movie";
 
 /**
  * The movie tracking mutations, as Server Actions: the three from spec 0007,
@@ -43,36 +43,9 @@ import { loadMovie } from "./[id]/load-movie";
  */
 
 /**
- * Reads what `plan_movie` or `unmark_movie_watched` cleared. Both return the
- * old watch mark and score, null when nothing was watched; only a removed
- * watch mark is worth an Undo (prompts/movie-plan-watched-exclusive.md).
- *
- * The parameter is wider than the generated row on purpose: the generator
- * marks a `returns table` column not null, but both columns are null when
- * the row had no watch mark to clear.
- */
-function readCleared(
-  row: {
-    cleared_watched_at: string | null;
-    cleared_rating: number | null;
-  } | null,
-): MovieClearedState | undefined {
-  if (!row?.cleared_watched_at) return undefined;
-  return { watchedAt: row.cleared_watched_at, rating: row.cleared_rating };
-}
-
-/**
- * What a write checks with TMDB first. `none` for a removal or the watchlist
- * restore, which must keep working for a movie TMDB later drops, or during an
- * outage (AC-14). `exists` for a write that can insert a row. `released` for a
- * watched mark or score, new or restored, which also waits for the release
- * date (prompts/movie-release-gate.md).
- */
-type TmdbCheck = "none" | "exists" | "released";
-
-/**
- * The movie side of `runTrackingWrite`: the TMDB check and release gate, and
- * the cleared watch mark that comes back for an Undo.
+ * The cookie session side of `runMovieCommand` (spec 0033, child 0035): the
+ * Server Action finds the user from its cookies, the command does the rest,
+ * and `refresh()` follows a success.
  *
  * @param event The log event for a refusal.
  * @param movieId The already parsed movie id.
@@ -80,40 +53,16 @@ type TmdbCheck = "none" | "exists" | "released";
  * @param write The Supabase call, given the request client and the user id.
  * @param readResult For a write whose row says what it cleared, reads it.
  */
-async function runMovieWrite<D>(
+function runMovieWrite<D>(
   event: TrackingEvent,
   movieId: number,
   check: TmdbCheck,
   write: WriteStep<D>,
   readResult?: (data: D | null) => MovieClearedState | undefined,
 ): Promise<MovieTrackingResult> {
-  const outcome = await runTrackingWrite({
-    event,
-    check: check === "none" ? undefined : () => checkTmdb(movieId, check),
-    write,
-    classify: classifyMovieTrackingError,
-    read: readResult,
-  });
-  if (!outcome.ok) return outcome;
-  return outcome.value ? { ok: true, cleared: outcome.value } : { ok: true };
-}
-
-/** Confirms the movie with TMDB, and for `released` its release date. */
-async function checkTmdb(
-  movieId: number,
-  check: Exclude<TmdbCheck, "none">,
-): Promise<MovieTrackingError | null> {
-  const movie = await loadMovie(movieId);
-  if (movie.kind !== "found") {
-    return movie.kind === "failed" ? "tmdb_unavailable" : "not_found";
-  }
-  if (
-    check === "released" &&
-    !isMovieReleased(movie.movie.releaseDate, todayUtc(new Date()))
-  ) {
-    return "not_released";
-  }
-  return null;
+  return withCookieSession(event, (deps) =>
+    runMovieCommand(deps, event, movieId, check, write, readResult),
+  );
 }
 
 /**
@@ -181,21 +130,8 @@ export async function setMovieWatched(
   );
   if (!input) return { ok: false, error: "invalid_input" };
 
-  if (input.watched) {
-    return runMovieWrite(event, input.movieId, "released", (supabase) =>
-      supabase.rpc("mark_movie_watched", { p_movie_id: input.movieId }),
-    );
-  }
-
-  return runMovieWrite(
-    event,
-    input.movieId,
-    "none",
-    (supabase) =>
-      supabase
-        .rpc("unmark_movie_watched", { p_movie_id: input.movieId })
-        .single(),
-    readCleared,
+  return withCookieSession(event, (deps) =>
+    setMovieWatchedCommand(deps, input),
   );
 }
 

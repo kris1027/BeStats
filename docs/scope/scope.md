@@ -459,7 +459,8 @@ A native app for iOS and Android beside the web app, sharing its rules with it. 
 - [x] Design it (spec): `/architect mobile app`
 - [ ] Build it: `/develop mobile app`
   - [x] Monorepo move and shared core (spec 0033 Build plan steps 1 and 2): AC-1, AC-2, AC-3 (step 1 in PR #74; step 2 in [prompts/shared-core.md](../../prompts/shared-core.md))
-  - [ ] Tracer: sign in, open a movie, mark it watched (step 3): AC-4, AC-5, AC-6, AC-11
+  - [x] Tracer: sign in, open a movie, mark it watched (step 3): AC-4, AC-5, AC-6, AC-11 (PR #79, plan in [prompts/mobile-tracer.md](../../prompts/mobile-tracer.md); checked in the iOS Simulator from an EAS development build; real iPhone and Android builds wait for the Apple developer account and an Android SDK)
+  - [ ] Settle the image contract before step 4 (spec 0035 says image paths plus size tokens with a core URL helper; the tracer returns full TMDB image URLs): `/architect mobile app: settle 0035's image contract (paths plus size tokens, or full URLs)`
   - [ ] API thickened (step 4): AC-5 to AC-10
   - [ ] App thickened (step 5): AC-10, AC-12, AC-13, AC-14, AC-16
   - [ ] Release (step 6): AC-15, AC-17

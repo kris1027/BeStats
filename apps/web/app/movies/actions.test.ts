@@ -13,7 +13,7 @@ const getOptionalUser = vi.fn();
 vi.mock("@/lib/auth/user", () => ({ getOptionalUser }));
 
 const loadMovie = vi.fn();
-vi.mock("./[id]/load-movie", () => ({ loadMovie }));
+vi.mock("@/lib/tmdb/load-movie", () => ({ loadMovie }));
 
 const refresh = vi.fn();
 vi.mock("next/cache", () => ({ refresh }));

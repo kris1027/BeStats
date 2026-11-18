@@ -9,6 +9,7 @@ import {
   RESET_REQUESTED_MESSAGE,
   SIGN_IN_NOTICE,
   SIGN_IN_NOTICES,
+  signedInAs,
 } from "./messages";
 import { signInSchema } from "./schemas";
 
@@ -116,5 +117,15 @@ describe("sign in notices (AC-8)", () => {
     const copy = SIGN_IN_NOTICES[SIGN_IN_NOTICE.passwordReset];
     expect(copy).toMatch(/new password/i);
     expect(copy).toMatch(/sign in/i);
+  });
+});
+
+describe("signedInAs", () => {
+  it("names the caller's own address", () => {
+    expect(signedInAs("a@example.test")).toBe("Signed in as a@example.test");
+  });
+
+  it("reads plainly when the session has no address", () => {
+    expect(signedInAs(undefined)).toBe("Signed in");
   });
 });

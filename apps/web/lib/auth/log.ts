@@ -28,6 +28,8 @@ export const AUTH_EVENT = {
   readProfile: "auth.read_profile",
   callback: "auth.callback",
   guard: "auth.guard",
+  /** A `/api/v1/me` bearer token that did not verify (spec 0033, child 0035). */
+  bearer: "auth.bearer",
 } as const;
 
 export type AuthEvent = (typeof AUTH_EVENT)[keyof typeof AUTH_EVENT];

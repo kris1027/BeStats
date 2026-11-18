@@ -93,6 +93,12 @@ export const UNDO_ACTION_LABEL = "Undo";
 /** The label on the session expired toast's action. */
 export const SIGN_IN_ACTION_LABEL = "Sign in";
 
+/**
+ * What a movie with no overview in any language shows (spec 0006, AC-4).
+ * Both apps print it, so it lives here rather than in either screen.
+ */
+export const MOVIE_OVERVIEW_MISSING = "No overview available.";
+
 /** The line that replaces the controls when the tracking read fails (AC-17). */
 export const TRACKING_READ_FAILED = "Couldn't load your tracking.";
 

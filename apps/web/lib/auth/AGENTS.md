@@ -21,6 +21,7 @@ Since spec 0034 the pure files below (`private-paths.ts`, `next-path.ts`, `actio
 ## Rules
 
 - The proxy redirect is a convenience. The boundary is the session check inside the page or action (`requireUser()` or `getOptionalUser()`), plus Row Level Security (`AGENTS.md` section 11). The proxy redirects only `GET`; a Server Action POST is never redirected, it is refused inside the action.
+- `/api/v1/me/*` has no cookie: `withV1` finds the user through `verifyBearer()` in `lib/supabase/bearer.ts`, which verifies the token with `getClaims(jwt)`, accepts only the `authenticated` role (so the publishable key used as a token fails) and takes the user ID from `sub`. Its client uses the publishable key with the caller's token, never an elevated key. Never use `getOptionalUser()` in a v1 route.
 - A new `"use server"` file, or a new export from a private one, registers in `private-actions-boundary.test.ts` at the web app root (`apps/web/`) with a valid call; the suite fails until it does, and proves every private action refuses a missing session before it opens a database client.
 - Auth Server Actions return `AuthActionState` and never throw, except `redirect()`, which is always called outside any `try`.
 - Copy comes from `messages.ts` only. Sign in, sign up and reset must never reveal whether an address has an account; the unconfirmed address outcome is the one exception.

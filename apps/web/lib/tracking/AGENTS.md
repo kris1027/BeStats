@@ -4,6 +4,13 @@ The signed in user's state for movies, episodes, shows and games: the reads behi
 
 The pure half (`episode-intent.ts`, `game-intent.ts`, `ids-key.ts`, `intent.ts`, `messages.ts`, `schemas.ts`, `types.ts`) and the TV rules (`tv/*`: air status, progress, ratings, season watch, library placement) live in `packages/core/src/` since spec 0034, imported as `@bestats/core/...`; the reads and writes that need a session stay here. The rules below govern both.
 
+## Commands (shared by Server Actions and `/api/v1`)
+
+- A write the app also needs splits into a command in `commands/` (spec 0033, child 0035): `(deps: TrackingDeps, parsedInput) => result`, where `TrackingDeps` is `{ userId, getClient }`. A command never reads cookies, headers or the session and never calls `refresh()`; it runs the catalog check, the release gate and the write through `runTrackingCommand` in `commands/run.ts`.
+- The Server Action keeps the Zod parse and wraps the command in `withCookieSession` (`write.ts`), which verifies the cookie session and calls `refresh()` on success. The v1 route wraps the same command with the bearer user, so both return the same result union for the same input.
+- `getClient` is a function so a catalog refusal opens no database client, as the actions always did; tests assert it.
+- Split so far: `setMovieWatchedCommand` and the movie helpers in `commands/movie.ts`, plus the `readMovieTitles` read. The other movie, show and game actions still run through `runTrackingWrite` until step 4 of spec 0033 splits them.
+
 ## Movies
 
 - A row is planned or watched, never both: marking it watched removes the plan, and planning a watched movie removes its watch mark and score, with Undo ([prompts/movie-plan-watched-exclusive.md](../../../../prompts/movie-plan-watched-exclusive.md)).

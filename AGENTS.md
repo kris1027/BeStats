@@ -33,7 +33,7 @@ Project skills live in `.agents/skills/` (symlinked into `.claude/skills/`, pinn
 
 ## 5. Structure
 
-A pnpm workspace: the Next.js App Router app lives in `apps/web/` (`app/`, `components/`, `lib/`; no `src/`), while `supabase/`, `docs/`, `prompts/` and `scripts/` stay at the repo root. `packages/core` (`@bestats/core`) holds the pure code both apps share ([packages/core/AGENTS.md](packages/core/AGENTS.md)).
+A pnpm workspace: the Next.js App Router app lives in `apps/web/` (`app/`, `components/`, `lib/`; no `src/`), while `supabase/`, `docs/`, `prompts/` and `scripts/` stay at the repo root. `packages/core` (`@bestats/core`) holds the pure code both apps share ([packages/core/AGENTS.md](packages/core/AGENTS.md)). The Expo app lives in `apps/mobile/` and reaches the catalog and the user's state only through `/api/v1` on the web ([apps/mobile/AGENTS.md](apps/mobile/AGENTS.md)).
 
 - Server Components by default; a Client Component only where an interaction needs it.
 - `lib/tmdb/` and `lib/igdb/` are server-only modules that own every catalog request, its normalization, caching and errors.
@@ -95,7 +95,7 @@ One results page with a movie, TV or game selection, title query, genre, year (r
 
 - RLS on every user-owned table; policies limit select, insert, update and delete to the authenticated owner, including the owner of a newly written row.
 - Private page redirects are UX only. Every server operation rechecks the session, and Postgres enforces ownership. Tests prove one user cannot read or change another's data, including through direct requests.
-- Secrets live in env vars with placeholders in the committed `.env.example`. Only public Supabase config reaches the browser; the TMDB token and IGDB credentials are read only in `lib/tmdb/env.ts` and `lib/igdb/env.ts`, and `security-boundary.test.ts` fails on any other reader or a `NEXT_PUBLIC_` prefix.
+- Secrets live in env vars with placeholders in the committed `.env.example`. Only public Supabase config reaches the browser; the TMDB token and IGDB credentials are read only in `lib/tmdb/env.ts` and `lib/igdb/env.ts`, and `security-boundary.test.ts` fails on any other reader or a `NEXT_PUBLIC_` or `EXPO_PUBLIC_` prefix.
 - Private responses stay out of shared caches; public catalog data is cached apart from user state.
 - Logs carry no tokens, session material, passwords or needless personal data.
 - Validate IDs, media types, ratings, pagination and filters. A failed write or expired session shows visibly; the UI never shows a false success.
@@ -140,6 +140,7 @@ Planned in [docs/scope/games.md](docs/scope/games.md) (G1 to G10, all shipped). 
 Each folder's `AGENTS.md` holds its files and rules; read it before changing code there.
 
 - [packages/core/AGENTS.md](packages/core/AGENTS.md): `@bestats/core`, the pure rules both apps share, its purity rule and the generated tokens.
+- [apps/mobile/AGENTS.md](apps/mobile/AGENTS.md): the Expo app, its session store, `/api/v1` client, NativeWind tokens, EAS builds and Agent Skills.
 - [app/AGENTS.md](apps/web/app/AGENTS.md): routes, `proxy.ts`, `next.config.ts`, images, visitor region.
 - [components/AGENTS.md](apps/web/components/AGENTS.md): plate rule, tokens, client boundaries, navbar, library and landing components.
 - [lib/catalog/AGENTS.md](apps/web/lib/catalog/AGENTS.md): library page routes and names, media type params, link builders.

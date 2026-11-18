@@ -16,8 +16,9 @@ Email and password only, using the rules in `lib/auth/schemas.ts` (core) and the
 
 - `@supabase/supabase-js` in `apps/mobile` with `autoRefreshToken: true`, `persistSession: true`, `detectSessionInUrl: false`, and the storage adapter from Supabase's Expo guide: a random encryption key in `expo-secure-store` (iOS Keychain, Android Keystore) and the AES encrypted session in AsyncStorage, because a full session can exceed SecureStore's value size limit.
 - `AppState`: call `supabase.auth.startAutoRefresh()` when the app becomes active and `stopAutoRefresh()` otherwise, as the guide shows.
-- Every API call gets its token from one `getAccessToken()` that calls `supabase.auth.getSession()` and relies on the library's own lock. The app never calls `refreshSession()` itself, because Supabase rotates refresh tokens and two refreshes racing can sign the user out.
-- On a 401 from `/api/v1/me/*`: call `getSession()` once, retry the request once with the new token, and if it fails again sign out with a visible "Your session expired, sign in again" notice. Never a silent failure (AGENTS.md section 11).
+- Every API call gets its token from one `getAccessToken()` that calls `supabase.auth.getSession()` and relies on the library's own lock. The app calls `refreshSession()` only after a server 401 (below), never on its own, because Supabase rotates refresh tokens and two refreshes racing can sign the user out.
+- On a 401 from `/api/v1/me/*`: call `refreshAfterUnauthorized(rejectedToken)`, which returns the current token if another call already rotated it, and otherwise runs one `refreshSession()` shared by every call that failed together (a phone can hold a token it believes valid that the server refuses, such as with a clock behind, so `getSession()` alone would resend it). Retry the request once with that token, and if there is none or it fails again sign out with a visible "Your session expired, sign in again" notice. Never a silent failure (AGENTS.md section 11). Decided 2026-11-18 (prompts/mobile-tracer-review-fixes.md).
+- Signing out on the phone always ends signed out: when supabase-js refuses a local sign out (it does when the expired session cannot refresh), the app deletes the stored session itself and sets its signed out state without waiting for an auth event (prompts/mobile-forced-sign-out.md).
 - Public env, read through one validated `getPublicEnv()` in `apps/mobile`: `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `EXPO_PUBLIC_API_BASE_URL`, `EXPO_PUBLIC_AUTH_EMAIL_DELIVERY`, mirroring the web's `NEXT_PUBLIC_*` values. These are public by design.
 
 ### Password reset and deep links
@@ -42,7 +43,7 @@ Email and password only, using the rules in `lib/auth/schemas.ts` (core) and the
 ### Offline cache and sign out
 
 - TanStack Query persists catalog queries and `/api/v1/me/*` reads to AsyncStorage, `maxAge` 24 hours, `gcTime` at least as long, `buster` set to the app version so an update drops old shapes. Tokens never go in this cache.
-- The persisted `me` data is private data at rest. Sign out, an expired session and account deletion all call `queryClient.clear()` and remove the persisted store, so the next person on a shared phone never sees the previous library.
+- The persisted `me` data is private data at rest. Sign out, an expired session and account deletion all wipe every `"me"` query and every mutation (`clearPrivateQueries()`) and remove the persisted store, so the next person on a shared phone never sees the previous library. Public catalog queries stay: `queryClient.clear()` cancelled the reload of a query an open screen observed and left it spinning (prompts/mobile-sign-out-spinner.md).
 - `@react-native-community/netinfo` drives the offline banner. Offline, the last loaded library and title pages show with the banner; writes fail visibly with Retry (no queued writes).
 - Optimistic writes: a mark updates the screen at once and reverts with the error message when the server refuses it.
 
