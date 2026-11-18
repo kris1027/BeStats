@@ -189,4 +189,4 @@ console.log(error ? `failed: ${error.message}` : "password updated");
 unset SUPABASE_SECRET_KEY
 ```
 
-Run it from the repo root so `@supabase/supabase-js` resolves. Send the temporary password, and ask them to change it at once on `/account`. If you created the secret key only for this, delete it in the dashboard afterwards.
+Run it from `apps/web`, where `@supabase/supabase-js` is installed; from the repo root the import fails. Send the temporary password, and ask them to change it at once on `/account`. If you created the secret key only for this, delete it in the dashboard afterwards.
