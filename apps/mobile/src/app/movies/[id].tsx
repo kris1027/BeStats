@@ -1,3 +1,4 @@
+import { V1_ERROR_MESSAGES } from "@bestats/core/api/v1/errors";
 import { movieIdParamSchema } from "@bestats/core/api/v1/movie";
 import {
   isMovieReleased,
@@ -5,7 +6,11 @@ import {
 } from "@bestats/core/catalog/movie-page";
 import { formatRuntime } from "@bestats/core/format";
 import { TMDB_ATTRIBUTION } from "@bestats/core/legal/attribution";
-import { MOVIE_CLEARED_MESSAGES } from "@bestats/core/tracking/messages";
+import {
+  MOVIE_CLEARED_MESSAGES,
+  TRACKING_MESSAGES,
+  TRACKING_READ_FAILED,
+} from "@bestats/core/tracking/messages";
 import { todayUtc } from "@bestats/core/tv/air-status";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Image } from "expo-image";
@@ -85,7 +90,7 @@ export default function MovieScreen() {
         text:
           error instanceof ApiError
             ? error.message
-            : "Couldn't save that change. Try again.",
+            : TRACKING_MESSAGES.write_failed,
       });
     },
     onSuccess: (result) => {
@@ -98,7 +103,7 @@ export default function MovieScreen() {
   });
 
   if (!parsedId.success) {
-    return <Centered text="This movie isn't available." />;
+    return <Centered text={V1_ERROR_MESSAGES.not_found} />;
   }
   if (movie.isPending) {
     return (
@@ -113,11 +118,9 @@ export default function MovieScreen() {
     return (
       <Centered
         text={
-          notFound
-            ? "We couldn't find this movie."
-            : movie.error instanceof ApiError
-              ? movie.error.message
-              : "Couldn't load this movie."
+          movie.error instanceof ApiError
+            ? movie.error.message
+            : V1_ERROR_MESSAGES.internal
         }
         retry={notFound ? undefined : () => movie.refetch()}
       />
@@ -202,7 +205,7 @@ export default function MovieScreen() {
           <ActivityIndicator accessibilityLabel="Loading your tracking" />
         ) : state.isError ? (
           <View className="gap-3">
-            <Notice tone="error" message="Couldn't load your tracking." />
+            <Notice tone="error" message={TRACKING_READ_FAILED} />
             <GlassButton label="Retry" onPress={() => state.refetch()} />
           </View>
         ) : (

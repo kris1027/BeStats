@@ -16,7 +16,12 @@ export const TOKEN_VARS: Record<`--${string}`, string> = Object.fromEntries(
     .map(([name, value]) => [`--bs-${name}`, value]),
 );
 
-/** A token's raw value, for the few props that take a colour, not a class. */
+/**
+ * A token's raw value, for the few props that take a colour, not a class
+ * (such as `placeholderTextColor`). It reads the generated copy so no colour
+ * value is ever written in the app (AGENTS.md section 3; Commands and repo
+ * facts, the token rule).
+ */
 export function tokenColor(name: keyof typeof TOKENS): string {
   return TOKENS[name];
 }

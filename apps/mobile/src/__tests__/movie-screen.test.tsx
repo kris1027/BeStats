@@ -1,3 +1,4 @@
+import { MOVIE_CLEARED_MESSAGES } from "@bestats/core/tracking/messages";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { screen, userEvent } from "@testing-library/react-native";
 import { renderRouter } from "expo-router/testing-library";
@@ -9,7 +10,8 @@ import { ApiError } from "@/lib/api";
 /**
  * covers: spec 0033, AC-6 (the pill reads as unavailable before release),
  * AC-11 (signed out shows Sign in), and child 0036 (an optimistic mark that
- * the server refuses goes back and says why)
+ * the server refuses goes back and says why; unmarking says so only when a
+ * score went with the mark)
  */
 const mockFetchMovie = jest.fn();
 const mockFetchMovieState = jest.fn();
@@ -150,4 +152,43 @@ test("offers Retry when the catalog read fails", async () => {
     await screen.findByText("Couldn't reach the catalog. Try again."),
   ).toBeOnTheScreen();
   expect(screen.getByRole("button", { name: "Retry" })).toBeOnTheScreen();
+});
+
+test("unmarking a movie with no score shows no notice", async () => {
+  mockFetchMovieState.mockResolvedValue({
+    planned: false,
+    watchedAt: "2026-11-18T12:00:00+00:00",
+    rating: null,
+  });
+  mockPutMovieWatched.mockResolvedValue({
+    ok: true,
+    cleared: { watchedAt: "2026-11-18T12:00:00+00:00", rating: null },
+  });
+  const user = userEvent.setup();
+  await open();
+  await user.press(
+    await screen.findByRole("button", { name: "Mark The Matrix watched" }),
+  );
+  expect(mockPutMovieWatched).toHaveBeenCalledWith(603, false);
+  expect(screen.queryByText(MOVIE_CLEARED_MESSAGES.unwatched)).toBeNull();
+});
+
+test("unmarking a scored movie says the score went too", async () => {
+  mockFetchMovieState.mockResolvedValue({
+    planned: false,
+    watchedAt: "2026-11-18T12:00:00+00:00",
+    rating: 8,
+  });
+  mockPutMovieWatched.mockResolvedValue({
+    ok: true,
+    cleared: { watchedAt: "2026-11-18T12:00:00+00:00", rating: 8 },
+  });
+  const user = userEvent.setup();
+  await open();
+  await user.press(
+    await screen.findByRole("button", { name: "Mark The Matrix watched" }),
+  );
+  expect(
+    await screen.findByText(MOVIE_CLEARED_MESSAGES.unwatched),
+  ).toBeOnTheScreen();
 });

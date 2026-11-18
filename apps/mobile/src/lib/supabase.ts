@@ -53,9 +53,41 @@ export function watchAppStateForRefresh(): () => void {
 /**
  * The access token for one API call: always through `getSession()`, which
  * relies on the library's own lock and refreshes an expired token itself.
- * The app never calls `refreshSession()` (child 0036).
+ * The only other refresh is `refreshAfterUnauthorized`, after a server 401
+ * (child 0036).
  */
 export async function getAccessToken(): Promise<string | null> {
   const { data } = await getSupabase().auth.getSession();
   return data.session?.access_token ?? null;
+}
+
+let refreshing: Promise<string | null> | null = null;
+
+/**
+ * A token to retry with after the server refused `rejected` (child 0036).
+ *
+ * The phone can believe a token is valid that the server refuses (a clock
+ * behind, a revoked session), and `getSession()` would hand the same token
+ * back. So this refreshes, but only once however many calls failed together:
+ * Supabase rotates refresh tokens, and two refreshes racing can sign the user
+ * out. A call whose 401 arrives after another call already refreshed takes
+ * the new token without refreshing again.
+ *
+ * @returns The new access token, or null when the session cannot be renewed.
+ */
+export async function refreshAfterUnauthorized(
+  rejected: string,
+): Promise<string | null> {
+  if (!refreshing) {
+    const current = await getAccessToken();
+    if (current && current !== rejected) return current;
+  }
+  refreshing ??= getSupabase()
+    .auth.refreshSession()
+    .then(({ data }) => data.session?.access_token ?? null)
+    .catch(() => null)
+    .finally(() => {
+      refreshing = null;
+    });
+  return refreshing;
 }

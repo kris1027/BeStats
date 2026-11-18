@@ -1,17 +1,14 @@
-import { v1ErrorBodySchema } from "@bestats/core/api/v1/errors";
+import {
+  V1_ERROR_MESSAGES,
+  V1_NETWORK_MESSAGE,
+  v1ErrorBodySchema,
+} from "@bestats/core/api/v1/errors";
 import { APP_VERSION_HEADER } from "@bestats/core/api/v1/version";
 import Constants from "expo-constants";
 import type { z } from "zod";
 
 import { getPublicEnv } from "./env";
-import { getAccessToken } from "./supabase";
-
-/** What the app shows when a request never reached the server. */
-export const OFFLINE_MESSAGE =
-  "You're offline. Check your connection and try again.";
-
-/** The notice a second 401 signs the user out with (spec 0033, child 0036). */
-export const SESSION_EXPIRED_MESSAGE = "Your session expired, sign in again.";
+import { getAccessToken, refreshAfterUnauthorized } from "./supabase";
 
 /**
  * A refused or failed API call, carrying the v1 error code and, for a
@@ -36,13 +33,17 @@ let onSessionExpired: () => Promise<void> = async () => {};
 /**
  * Registers what happens when a `me` call is refused twice: the session
  * provider signs out locally, wipes the query cache and shows
- * `SESSION_EXPIRED_MESSAGE`, so a failure is never silent.
+ * the core `unauthenticated` copy, so a failure is never silent.
  */
 export function setSessionExpiredHandler(handler: () => Promise<void>): void {
   onSessionExpired = handler;
 }
 
-/** The user facing app version the API checks (`X-BeStats-App-Version`). */
+/**
+ * The user facing app version the API checks (`X-BeStats-App-Version`). The
+ * app reaches the catalog and its state only through `/api/v1`, which refuses
+ * an app too old for its contract (AGENTS.md section 5).
+ */
 export function appVersion(): string {
   return Constants.expoConfig?.version ?? "0.0.0";
 }
@@ -59,8 +60,10 @@ type RequestOptions = {
  * the API cannot drift (spec 0033, child 0035).
  *
  * For a `me` call it takes the token from `getAccessToken()`. On a 401 it asks
- * for the session once more (the library refreshes it if it can) and retries
- * exactly once; a second 401 signs out with a visible notice (child 0036).
+ * `refreshAfterUnauthorized` for a token other than the refused one (one
+ * shared refresh, however many calls failed together) and retries exactly
+ * once; no new token, or a second 401, signs out with a visible notice
+ * (child 0036; AGENTS.md section 11).
  *
  * @throws ApiError for every refusal, an unreadable answer, or no network.
  */
@@ -69,20 +72,21 @@ export async function apiRequest<T>(
   schema: z.ZodType<T>,
   options: RequestOptions = {},
 ): Promise<T> {
-  let response = await send(path, options);
-  if (response.status === 401 && options.auth) {
-    response = await send(path, options);
-    if (response.status === 401) {
-      await onSessionExpired();
-      throw new ApiError(401, "unauthenticated", SESSION_EXPIRED_MESSAGE);
-    }
+  let token = options.auth ? await getAccessToken() : null;
+  if (options.auth && !token) return sessionExpired();
+  let response = await send(path, options, token);
+  if (response.status === 401 && token) {
+    token = await refreshAfterUnauthorized(token);
+    if (!token) return sessionExpired();
+    response = await send(path, options, token);
+    if (response.status === 401) return sessionExpired();
   }
 
   const body: unknown = await response.json().catch(() => null);
   if (response.ok) {
     const parsed = schema.safeParse(body);
     if (parsed.success) return parsed.data;
-    throw new ApiError(response.status, "internal", "Something went wrong.");
+    throw unreadable(response.status);
   }
 
   const error = v1ErrorBodySchema.safeParse(body);
@@ -94,23 +98,29 @@ export async function apiRequest<T>(
       error.data.error.reason,
     );
   }
-  throw new ApiError(response.status, "internal", "Something went wrong.");
+  throw unreadable(response.status);
 }
 
-async function send(path: string, options: RequestOptions): Promise<Response> {
+async function sessionExpired(): Promise<never> {
+  await onSessionExpired();
+  throw new ApiError(401, "unauthenticated", V1_ERROR_MESSAGES.unauthenticated);
+}
+
+function unreadable(status: number): ApiError {
+  return new ApiError(status, "internal", V1_ERROR_MESSAGES.internal);
+}
+
+async function send(
+  path: string,
+  options: RequestOptions,
+  token: string | null,
+): Promise<Response> {
   const headers: Record<string, string> = {
     Accept: "application/json",
     [APP_VERSION_HEADER]: appVersion(),
   };
   if (options.body !== undefined) headers["Content-Type"] = "application/json";
-  if (options.auth) {
-    const token = await getAccessToken();
-    if (!token) {
-      await onSessionExpired();
-      throw new ApiError(401, "unauthenticated", SESSION_EXPIRED_MESSAGE);
-    }
-    headers.Authorization = `Bearer ${token}`;
-  }
+  if (token) headers.Authorization = `Bearer ${token}`;
 
   try {
     return await fetch(`${getPublicEnv().EXPO_PUBLIC_API_BASE_URL}${path}`, {
@@ -120,6 +130,6 @@ async function send(path: string, options: RequestOptions): Promise<Response> {
         options.body === undefined ? undefined : JSON.stringify(options.body),
     });
   } catch {
-    throw new ApiError(0, "network", OFFLINE_MESSAGE);
+    throw new ApiError(0, "network", V1_NETWORK_MESSAGE);
   }
 }

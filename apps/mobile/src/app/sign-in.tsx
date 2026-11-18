@@ -1,4 +1,6 @@
+import { AUTH_MESSAGES, AUTH_OUTCOME } from "@bestats/core/auth/messages";
 import { signInSchema } from "@bestats/core/auth/schemas";
+import { SIGN_IN_ACTION_LABEL } from "@bestats/core/tracking/messages";
 import { Redirect } from "expo-router";
 import { useState } from "react";
 import {
@@ -36,7 +38,10 @@ export default function SignIn() {
     setError(null);
     const parsed = signInSchema.safeParse({ email, password });
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Check your details.");
+      setError(
+        parsed.error.issues[0]?.message ??
+          AUTH_MESSAGES[AUTH_OUTCOME.invalidInput],
+      );
       return;
     }
     setBusy(true);
@@ -94,7 +99,7 @@ export default function SignIn() {
         {error ? <Notice tone="error" message={error} /> : null}
         <GlassButton
           variant="primary"
-          label="Sign in"
+          label={SIGN_IN_ACTION_LABEL}
           busy={busy}
           onPress={submit}
         />

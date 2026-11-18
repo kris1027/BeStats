@@ -1,22 +1,24 @@
 import { z } from "zod";
 
 /**
- * covers: spec 0033, AC-11; child 0036 (one retry on a 401, then a visible
- * sign out), and the version header every call sends (AC-4)
+ * covers: spec 0033, AC-11; child 0036 (one refresh and one retry on a 401,
+ * then a visible sign out), and the version header every call sends (AC-4)
  */
 const mockGetAccessToken = jest.fn();
-jest.mock("./supabase", () => ({ getAccessToken: () => mockGetAccessToken() }));
+const mockRefresh = jest.fn();
+jest.mock("./supabase", () => ({
+  getAccessToken: () => mockGetAccessToken(),
+  refreshAfterUnauthorized: (rejected: string) => mockRefresh(rejected),
+}));
 jest.mock("./env", () => ({
   getPublicEnv: () => ({ EXPO_PUBLIC_API_BASE_URL: "http://api.test" }),
 }));
 jest.mock("expo-constants", () => ({ expoConfig: { version: "1.0.0" } }));
 
-const {
-  ApiError,
-  apiRequest,
-  setSessionExpiredHandler,
-  SESSION_EXPIRED_MESSAGE,
-} = require("./api") as typeof import("./api");
+const { ApiError, apiRequest, setSessionExpiredHandler } =
+  require("./api") as typeof import("./api");
+const { V1_ERROR_MESSAGES, V1_NETWORK_MESSAGE } =
+  require("@bestats/core/api/v1/errors") as typeof import("@bestats/core/api/v1/errors");
 
 const fetchMock = jest.fn();
 global.fetch = fetchMock as unknown as typeof fetch;
@@ -31,6 +33,7 @@ const expired = jest.fn(async () => {});
 beforeEach(() => {
   fetchMock.mockReset();
   mockGetAccessToken.mockReset();
+  mockRefresh.mockReset();
   expired.mockClear();
   setSessionExpiredHandler(expired);
 });
@@ -49,8 +52,9 @@ test("sends the app version and the bearer token on a me call", async () => {
   expect(init.headers.Authorization).toBe("Bearer token-1");
 });
 
-test("retries a 401 once with the session's new token", async () => {
-  mockGetAccessToken.mockResolvedValueOnce("old").mockResolvedValueOnce("new");
+test("retries a 401 once with the refreshed token", async () => {
+  mockGetAccessToken.mockResolvedValue("old");
+  mockRefresh.mockResolvedValue("new");
   fetchMock
     .mockResolvedValueOnce(respond(401, null))
     .mockResolvedValueOnce(respond(200, { ok: true }));
@@ -61,17 +65,53 @@ test("retries a 401 once with the session's new token", async () => {
   });
   expect(fetchMock).toHaveBeenCalledTimes(2);
   expect(fetchMock.mock.calls[1][1].headers.Authorization).toBe("Bearer new");
+  expect(mockRefresh).toHaveBeenCalledWith("old");
   expect(expired).not.toHaveBeenCalled();
 });
 
-test("signs out with a visible notice after a second 401", async () => {
-  mockGetAccessToken.mockResolvedValue("token");
+test("signs out without a retry when the session cannot be renewed", async () => {
+  mockGetAccessToken.mockResolvedValue("old");
+  mockRefresh.mockResolvedValue(null);
   fetchMock.mockResolvedValue(respond(401, null));
   await expect(
     apiRequest("/api/v1/me/x", schema, { auth: true }),
   ).rejects.toMatchObject({
     status: 401,
-    message: SESSION_EXPIRED_MESSAGE,
+    message: V1_ERROR_MESSAGES.unauthenticated,
+  });
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+  expect(expired).toHaveBeenCalledTimes(1);
+});
+
+test("signs out before calling when there is no session", async () => {
+  mockGetAccessToken.mockResolvedValue(null);
+  await expect(
+    apiRequest("/api/v1/me/x", schema, { auth: true }),
+  ).rejects.toMatchObject({ status: 401 });
+  expect(fetchMock).not.toHaveBeenCalled();
+  expect(expired).toHaveBeenCalledTimes(1);
+});
+
+test("never refreshes for a public call", async () => {
+  fetchMock.mockResolvedValue(
+    respond(401, { error: { code: "unauthenticated", message: "x" } }),
+  );
+  await expect(apiRequest("/api/v1/movies/1", schema)).rejects.toMatchObject({
+    status: 401,
+  });
+  expect(mockRefresh).not.toHaveBeenCalled();
+  expect(expired).not.toHaveBeenCalled();
+});
+
+test("signs out with a visible notice after a second 401", async () => {
+  mockGetAccessToken.mockResolvedValue("token");
+  mockRefresh.mockResolvedValue("token-2");
+  fetchMock.mockResolvedValue(respond(401, null));
+  await expect(
+    apiRequest("/api/v1/me/x", schema, { auth: true }),
+  ).rejects.toMatchObject({
+    status: 401,
+    message: V1_ERROR_MESSAGES.unauthenticated,
   });
   expect(fetchMock).toHaveBeenCalledTimes(2);
   expect(expired).toHaveBeenCalledTimes(1);
@@ -105,5 +145,6 @@ test("says offline when the request never leaves", async () => {
   await expect(apiRequest("/api/v1/movies/1", schema)).rejects.toMatchObject({
     status: 0,
     code: "network",
+    message: V1_NETWORK_MESSAGE,
   });
 });

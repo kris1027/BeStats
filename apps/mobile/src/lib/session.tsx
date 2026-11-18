@@ -1,3 +1,4 @@
+import { V1_ERROR_MESSAGES } from "@bestats/core/api/v1/errors";
 import type { Session } from "@supabase/supabase-js";
 import {
   createContext,
@@ -9,7 +10,7 @@ import {
   useState,
 } from "react";
 
-import { SESSION_EXPIRED_MESSAGE, setSessionExpiredHandler } from "./api";
+import { setSessionExpiredHandler } from "./api";
 import { queryClient } from "./query-client";
 import { getSupabase, watchAppStateForRefresh } from "./supabase";
 
@@ -60,7 +61,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
     setSessionExpiredHandler(async () => {
       await supabase.auth.signOut({ scope: "local" }).catch(() => {});
       queryClient.clear();
-      setNotice(SESSION_EXPIRED_MESSAGE);
+      setNotice(V1_ERROR_MESSAGES.unauthenticated);
     });
     return () => {
       active = false;
@@ -87,7 +88,12 @@ export function SessionProvider({ children }: PropsWithChildren) {
   );
 }
 
-/** The current session state; only inside `SessionProvider`. */
+/**
+ * The current session state; only inside `SessionProvider`. Screens read the
+ * signed in state from here rather than from the client, so a sign out from a
+ * second 401 shows its notice everywhere at once (AGENTS.md section 11: an
+ * expired session shows visibly).
+ */
 export function useSession(): SessionState {
   const value = useContext(SessionContext);
   if (!value) throw new Error("useSession must be used inside SessionProvider");
