@@ -92,7 +92,12 @@ const movieErrorSchema = z.enum(
   ],
 );
 
-/** Reads a refused write's `reason` back into the action's error, if known. */
+/**
+ * Reads a refused write's `reason` back into the action's error, if known.
+ * The app branches on a closed error word, never on message text, so an
+ * unknown reason from a newer server reads as null rather than being trusted
+ * (AGENTS.md section 11). The Undo routes of build step 4 rely on it.
+ */
 export function movieErrorFromReason(
   reason: unknown,
 ): MovieTrackingError | null {

@@ -45,7 +45,11 @@ export const EMPTY_V1_MOVIE_TITLE_STATE: V1MovieTitleState = {
   rating: null,
 };
 
-/** The key a movie id is listed under. */
+/**
+ * The key a movie id is listed under. A title is its media type plus its
+ * external id, because a TMDB movie and show can share a number, so the key
+ * always carries the type (AGENTS.md section 8, Catalog identity).
+ */
 export function movieTitleKey(id: number): string {
   return `movie:${id}`;
 }

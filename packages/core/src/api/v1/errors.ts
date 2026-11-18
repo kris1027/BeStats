@@ -39,6 +39,14 @@ export const v1ErrorBodySchema = z.object({
 
 export type V1ErrorBody = z.infer<typeof v1ErrorBodySchema>;
 
+/**
+ * What the app shows when a request never reached the server. It has no v1
+ * code because no server answered; it lives here so both apps' copy stays in
+ * core (AGENTS.md section 11: a failure is always visible).
+ */
+export const V1_NETWORK_MESSAGE =
+  "You're offline. Check your connection and try again.";
+
 /** The English copy for the errors no tracking or auth message covers. */
 export const V1_ERROR_MESSAGES: Record<V1ErrorCode, string> = {
   invalid_input: "That request wasn't valid.",
