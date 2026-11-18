@@ -176,3 +176,12 @@ export const USERNAME_UPDATED_MESSAGE = "Username updated.";
 
 /** Shown when the name saved is the one already set; nothing changes. */
 export const USERNAME_UNCHANGED_MESSAGE = "That's already your username.";
+
+/**
+ * The signed in line on the mobile home (prompts/mobile-tracer.md, decision
+ * 7). The address is the caller's own, read from their session, so naming it
+ * leaks nothing (AGENTS.md section 11).
+ */
+export function signedInAs(email: string | undefined): string {
+  return email ? `Signed in as ${email}` : "Signed in";
+}
