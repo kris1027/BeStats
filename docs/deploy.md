@@ -163,7 +163,7 @@ There are no automatic backups on Free. If losing data would hurt, revisit the p
 
 Checked on 2026-10-04: `robots.txt` allows crawling and names the sitemap, `/movies/550` carries a canonical on the production origin, and the sitemap lists 402 URLs (398 titles). The Search Console submission is still yours to do.
 
-Moved on 2026-11-18: production moved from the Vercel-assigned alias to `https://bestats-app.vercel.app` (`bestats.vercel.app` belongs to another account), and the old alias comes off the project once the new origin passes steps 2 and 3. The 2026-10-04 checks above ran against the old alias; repeat steps 2 and 3 on the new origin, and add it as its own Search Console property.
+Moved on 2026-11-18: production moved from the Vercel-assigned alias to `https://bestats-app.vercel.app` (`bestats.vercel.app` belongs to another account). The 2026-10-04 checks above ran against the old alias. On 2026-11-18 steps 2 and 3 passed on the new origin (412 sitemap URLs, canonical and `og:url` on `/movies/550`), and the old alias was then removed from the project and answers 404. Adding the new origin as its own Search Console property is still yours to do.
 
 ## 10. The legal read through (release gate)
 
