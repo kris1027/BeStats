@@ -12,7 +12,11 @@ import {
 
 import { setSessionExpiredHandler } from "./api";
 import { clearPrivateQueries } from "./query-client";
-import { getSupabase, watchAppStateForRefresh } from "./supabase";
+import {
+  getSupabase,
+  signOutLocally,
+  watchAppStateForRefresh,
+} from "./supabase";
 
 type SessionState = {
   session: Session | null;
@@ -60,9 +64,10 @@ export function SessionProvider({ children }: PropsWithChildren) {
     );
     const stopWatching = watchAppStateForRefresh();
     setSessionExpiredHandler(async () => {
-      // The auth listener wipes the private cache; this second wipe covers
-      // a local sign out that failed, so the listener never fired.
-      await supabase.auth.signOut({ scope: "local" }).catch(() => {});
+      // The library may refuse the sign out and send no event, so the
+      // signed out state is set here, not left to the listener.
+      await signOutLocally();
+      setSession(null);
       clearPrivateQueries();
       setNotice(V1_ERROR_MESSAGES.unauthenticated);
     });
@@ -74,9 +79,13 @@ export function SessionProvider({ children }: PropsWithChildren) {
   }, []);
 
   const signOut = useCallback(async () => {
-    await getSupabase()
+    // A refused global sign out returns its error rather than throwing, so
+    // both outcomes fall back to the local one.
+    const { error } = await getSupabase()
       .auth.signOut()
-      .catch(() => getSupabase().auth.signOut({ scope: "local" }));
+      .catch((caught: unknown) => ({ error: caught }));
+    if (error) await signOutLocally();
+    setSession(null);
     clearPrivateQueries();
   }, []);
 

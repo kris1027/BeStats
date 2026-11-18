@@ -8,6 +8,12 @@ import { encryptedSessionStorage } from "./session-storage";
 let client: SupabaseClient<Database> | null = null;
 
 /**
+ * Where the session is stored. Set explicitly so `signOutLocally` can delete
+ * it when the library refuses to (prompts/mobile-forced-sign-out.md).
+ */
+export const SESSION_STORAGE_KEY = "bestats-auth";
+
+/**
  * The app's one Supabase client (spec 0033, child 0036). It holds the session
  * encrypted at rest and is the only thing that ever refreshes it: Supabase
  * rotates refresh tokens, so a second refresher racing it could sign the user
@@ -23,6 +29,7 @@ export function getSupabase(): SupabaseClient<Database> {
     {
       auth: {
         storage: encryptedSessionStorage,
+        storageKey: SESSION_STORAGE_KEY,
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: false,
@@ -90,4 +97,24 @@ export async function refreshAfterUnauthorized(
       refreshing = null;
     });
   return refreshing;
+}
+
+/**
+ * Signs out on this phone only, and always succeeds (child 0036; AGENTS.md
+ * section 11: an expired session never leaves the app half signed in).
+ *
+ * supabase-js 2.116 refuses a local sign out when loading the session fails,
+ * which is exactly what an expired, revoked session does: it returns the
+ * error, keeps the stored session and sends no `SIGNED_OUT` event. Then this
+ * deletes the stored session itself, encrypted blob and key alike. Callers
+ * set their own signed out state rather than wait for the event.
+ */
+export async function signOutLocally(): Promise<void> {
+  try {
+    const { error } = await getSupabase().auth.signOut({ scope: "local" });
+    if (!error) return;
+  } catch {
+    // Falls through to the forced removal below.
+  }
+  await encryptedSessionStorage.removeItem(SESSION_STORAGE_KEY).catch(() => {});
 }

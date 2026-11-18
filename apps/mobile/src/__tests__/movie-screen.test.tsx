@@ -84,7 +84,7 @@ beforeEach(() => {
   client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
-  jest.clearAllMocks();
+  jest.resetAllMocks();
   mockSession = { user: { email: "a@example.test" } };
   mockFetchMovie.mockResolvedValue(MOVIE);
   mockFetchMovieState.mockResolvedValue({
@@ -235,5 +235,33 @@ test("a forced sign out keeps the movie and asks to sign in", async () => {
   });
   expect(await screen.findByText("Sign in to track")).toBeOnTheScreen();
   expect(screen.getByText("TMDB 8.2")).toBeOnTheScreen();
+  expect(client.getQueryData(["me", "titles", "movie:603"])).toBeUndefined();
+});
+
+test("a write refused as unauthenticated brings no private state back", async () => {
+  mockFetchMovieState.mockResolvedValue({
+    planned: false,
+    watchedAt: "2026-11-18T12:00:00+00:00",
+    rating: null,
+  });
+  // What the session provider does on a forced sign out, then the refusal.
+  mockPutMovieWatched.mockImplementation(async () => {
+    setSession(null);
+    clearPrivateQueries(client);
+    throw new ApiError(
+      401,
+      "unauthenticated",
+      "Your session expired, sign in again.",
+    );
+  });
+  const user = userEvent.setup();
+  await open();
+  await user.press(
+    await screen.findByRole("button", { name: "Mark The Matrix watched" }),
+  );
+  expect(await screen.findByText("Sign in to track")).toBeOnTheScreen();
+  expect(
+    screen.getByText("Your session expired, sign in again."),
+  ).toBeOnTheScreen();
   expect(client.getQueryData(["me", "titles", "movie:603"])).toBeUndefined();
 });

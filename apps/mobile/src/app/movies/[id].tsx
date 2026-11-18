@@ -82,7 +82,11 @@ export default function MovieScreen() {
       return { previous };
     },
     onError: (error, _value, context) => {
-      if (context?.previous) {
+      // An expired session has already wiped the private cache; putting the
+      // old state back would bring private data back after sign out.
+      const signedOut =
+        error instanceof ApiError && error.code === "unauthenticated";
+      if (context?.previous && !signedOut) {
         queries.setQueryData(queryKeys.movieState(id), context.previous);
       }
       setMessage({
