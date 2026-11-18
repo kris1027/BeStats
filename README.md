@@ -4,7 +4,7 @@
 
 A tracker for TV shows, movies and games, inspired by TV Time. You browse and search the catalog, keep a private list of what you plan to watch or play, mark movies and episodes watched, and rate what you finish. BeStats tracks what you watch and play; it does not stream anything.
 
-**Live:** [bestats-sable.vercel.app](https://bestats-sable.vercel.app)
+**Live:** [bestats-app.vercel.app](https://bestats-app.vercel.app)
 
 TMDB supplies movie and TV metadata, IGDB supplies game metadata, and Supabase stores accounts and your private data. The stack and product rules live in [AGENTS.md](AGENTS.md); installed versions live in [package.json](package.json).
 

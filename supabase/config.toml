@@ -471,5 +471,5 @@ enabled = true
 project_id = "kyatxtclyikcmkebjxan"
 
 [remotes.production.auth]
-site_url = "https://bestats-sable.vercel.app"
-additional_redirect_urls = ["https://bestats-sable.vercel.app/auth/callback", "https://bestats-sable.vercel.app/**"]
+site_url = "https://bestats-app.vercel.app"
+additional_redirect_urls = ["https://bestats-app.vercel.app/auth/callback", "https://bestats-app.vercel.app/**"]

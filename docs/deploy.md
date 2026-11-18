@@ -8,7 +8,7 @@ Steps that change Vercel, GitHub or the Supabase project are marked **remote**. 
 
 | What | Value | Where it is set |
 |---|---|---|
-| Production origin | `https://bestats-sable.vercel.app` | assigned by Vercel to project `bestats`; repeated in `NEXT_PUBLIC_SITE_URL` and `[remotes.production.auth]` |
+| Production origin | `https://bestats-app.vercel.app` | a domain on Vercel project `bestats`; repeated in `NEXT_PUBLIC_SITE_URL` and `[remotes.production.auth]` |
 | Supabase project | `kyatxtclyikcmkebjxan` (name `BeStats`, Free plan) | `[remotes.production]` in `supabase/config.toml` |
 | Supabase region | `eu-central-1`, Frankfurt | `SUPABASE_REGION` in `apps/web/lib/legal/operator.ts` |
 | Vercel function region | `fra1`, Frankfurt | `regions` in `apps/web/vercel.json` |
@@ -69,7 +69,7 @@ Set them in the Vercel project, under Settings, Environment Variables. `apps/web
 | `NEXT_PUBLIC_SUPABASE_URL` | `https://kyatxtclyikcmkebjxan.supabase.co` | not set |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | the project's publishable key | not set |
 | `TMDB_READ_ACCESS_TOKEN` | your TMDB read token (sensitive) | the same token |
-| `NEXT_PUBLIC_SITE_URL` | `https://bestats-sable.vercel.app`, no trailing slash | not set |
+| `NEXT_PUBLIC_SITE_URL` | `https://bestats-app.vercel.app`, no trailing slash | not set |
 | `NEXT_PUBLIC_AUTH_EMAIL_DELIVERY` | `off` | `off` |
 | `IGDB_CLIENT_ID` | your Twitch app's client id (sensitive) | the same id |
 | `IGDB_CLIENT_SECRET` | your Twitch app's client secret (sensitive) | the same secret |
@@ -157,11 +157,13 @@ There are no automatic backups on Free. If losing data would hurt, revisit the p
 ## 9. Before and after a release
 
 1. Before: run `pnpm tmdb:live` and `pnpm igdb:live` to confirm TMDB and IGDB answer with your credentials.
-2. After the deploy: open `https://bestats-sable.vercel.app/sitemap.xml`. It should list `/movies`, `/shows`, `/games`, the fifteen list pages, `/privacy`, `/terms`, then a few hundred movie and show pages and up to 200 game pages. A sitemap with only the static routes means TMDB failed at build time, and one with no `/games/{id}` entries means IGDB did: redeploy from Vercel.
-3. Check `https://bestats-sable.vercel.app/robots.txt` allows crawling and names the sitemap.
+2. After the deploy: open `https://bestats-app.vercel.app/sitemap.xml`. It should list `/movies`, `/shows`, `/games`, the fifteen list pages, `/privacy`, `/terms`, then a few hundred movie and show pages and up to 200 game pages. A sitemap with only the static routes means TMDB failed at build time, and one with no `/games/{id}` entries means IGDB did: redeploy from Vercel.
+3. Check `https://bestats-app.vercel.app/robots.txt` allows crawling and names the sitemap.
 4. Once, submit the sitemap in Google Search Console (add the origin as a URL prefix property, verify it, then Sitemaps, `sitemap.xml`).
 
 Checked on 2026-10-04: `robots.txt` allows crawling and names the sitemap, `/movies/550` carries a canonical on the production origin, and the sitemap lists 402 URLs (398 titles). The Search Console submission is still yours to do.
+
+Moved on 2026-11-18: production moved from the Vercel-assigned alias to `https://bestats-app.vercel.app` (`bestats.vercel.app` belongs to another account), and the old alias comes off the project once the new origin passes steps 2 and 3. The 2026-10-04 checks above ran against the old alias; repeat steps 2 and 3 on the new origin, and add it as its own Search Console property.
 
 ## 10. The legal read through (release gate)
 
