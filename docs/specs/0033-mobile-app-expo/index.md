@@ -3,7 +3,7 @@
 **Date**: 2026-11-18
 **Status**: In Progress
 
-Scope feature: [28. Mobile app (iOS and Android)](../../scope/scope.md#28-mobile-app-ios-and-android--planned--ga) · GA tier
+Scope feature: [28. Mobile app (iOS and Android)](../../scope/scope.md#28-mobile-app-ios-and-android--in-progress--ga) · GA tier
 
 ## Summary
 

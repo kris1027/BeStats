@@ -285,7 +285,7 @@ The private `/upcoming` page (the navbar's Upcoming link): an Up Next section sh
   - [x] Proof: 375px and keyboard passes, query plan and cold load timings, checks and `verify.md` — AC-15, AC-16
 - [x] Verify it: `/check verify Up Next`
 - [x] Test it: `/test Up Next`
-spec [0014](../specs/0014-up-next/index.md) · code in [app/upcoming/](../../apps/web/app/upcoming/), [components/upcoming/](../../components/upcoming/), [lib/tracking/up-next.ts](../../lib/tracking/up-next.ts), [lib/tv/up-next.ts](../../lib/tv/up-next.ts), `supabase/migrations/20260928*`
+spec [0014](../specs/0014-up-next/index.md) · code in [app/upcoming/](../../apps/web/app/upcoming/), `components/upcoming/`, `lib/tracking/up-next.ts`, `lib/tv/up-next.ts`, `supabase/migrations/20260928*`
 
 ### 16. Automatic completion · done · GA
 Move a show to Completed only when TMDB says ended or canceled and every aired regular episode is watched, using complete metadata only, and reversible when the condition changes.
@@ -301,7 +301,7 @@ Move a show to Completed only when TMDB says ended or canceled and every aired r
 - [x] Test it: `/test automatic completion`
 - [x] Review it (fresh model): `/check review automatic completion`
 - [x] Document it: `/document automatic completion`
-spec [0015](../specs/0015-automatic-completion/index.md) · code in [lib/tv/auto-completion.ts](../../lib/tv/auto-completion.ts), [lib/tracking/auto-completion.ts](../../lib/tracking/auto-completion.ts), [app/shows/actions.ts](../../apps/web/app/shows/actions.ts), [components/upcoming/](../../components/upcoming/), `supabase/migrations/20260930*`
+spec [0015](../specs/0015-automatic-completion/index.md) · code in `lib/tv/auto-completion.ts`, `lib/tracking/auto-completion.ts`, [app/shows/actions.ts](../../apps/web/app/shows/actions.ts), `components/upcoming/`, `supabase/migrations/20260930*`
 
 ## Slice 8: Launch readiness
 
@@ -344,7 +344,7 @@ Run the full `AGENTS.md` section 13 checklist with two test users, including dir
 ### 20. Deploy and provider setup · done · GA
 Vercel deployment on the free `vercel.app` address, the existing Supabase Free project configured from the repo (`db push` and `config push` through a runbook), branch protection, and the hosted security checks spec 0005 left here. Production sends no email: sign up needs no confirmation, recovery shows a contact notice, and Google sign in stays absent (both deferred together). Remote migrations and deployment need your explicit approval in the plan.
 **Done when:** the deployed app signs users up and in with email and password against the cloud project with every migration applied, hosted auth settings match `supabase/config.toml`, environment variables target the intended projects, and no screen promises an email production can't send.
-spec [0018](../specs/0018-deploy-and-provider-setup/index.md) · code in [docs/deploy.md](../deploy.md), [vercel.json](../../apps/web/vercel.json), [supabase/config.toml](../../supabase/config.toml), [lib/env.ts](../../apps/web/lib/env.ts), [app/(auth)/](../../app/(auth)/)
+spec [0018](../specs/0018-deploy-and-provider-setup/index.md) · code in [docs/deploy.md](../deploy.md), [vercel.json](../../apps/web/vercel.json), [supabase/config.toml](../../supabase/config.toml), [lib/env.ts](../../apps/web/lib/env.ts), [app/(auth)/](<../../apps/web/app/(auth)/>)
 - [x] Design it (spec): `/architect deploy and provider setup`
 - [x] Build it: `/develop deploy and provider setup`
   - [x] Thin thread to production: Vercel project, branch protection, EU region and JWT key checks, `db push` and `config push`, a real signed in write (AC-1 to AC-9)
