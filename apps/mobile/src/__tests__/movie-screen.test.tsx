@@ -101,6 +101,44 @@ test("shows the movie with TMDB's rating labelled and the user's state", async (
   expect(screen.getByText("TMDB 8.2")).toBeOnTheScreen();
 });
 
+test("marking a planned, unrated movie takes it off the plan at once", async () => {
+  mockFetchMovieState.mockResolvedValue({
+    planned: true,
+    watchedAt: null,
+    rating: null,
+  });
+  mockPutMovieWatched.mockReturnValue(new Promise(() => {}));
+  const user = userEvent.setup();
+  await open();
+  await user.press(
+    await screen.findByRole("button", { name: "Mark The Matrix watched" }),
+  );
+  expect(client.getQueryData(["me", "titles", "movie:603"])).toEqual({
+    planned: false,
+    watchedAt: expect.any(String),
+    rating: null,
+  });
+});
+
+test("unmarking a rated movie drops the score at once", async () => {
+  mockFetchMovieState.mockResolvedValue({
+    planned: false,
+    watchedAt: "2026-01-01T00:00:00+00:00",
+    rating: 8,
+  });
+  mockPutMovieWatched.mockReturnValue(new Promise(() => {}));
+  const user = userEvent.setup();
+  await open();
+  await user.press(
+    await screen.findByRole("button", { name: "Mark The Matrix watched" }),
+  );
+  expect(client.getQueryData(["me", "titles", "movie:603"])).toEqual({
+    planned: false,
+    watchedAt: null,
+    rating: null,
+  });
+});
+
 test("marks the movie watched", async () => {
   mockPutMovieWatched.mockResolvedValue({ ok: true });
   mockFetchMovieState

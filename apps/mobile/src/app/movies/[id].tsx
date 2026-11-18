@@ -6,6 +6,7 @@ import {
 } from "@bestats/core/catalog/movie-page";
 import { formatRuntime } from "@bestats/core/format";
 import { TMDB_ATTRIBUTION } from "@bestats/core/legal/attribution";
+import { applyTrackingIntent } from "@bestats/core/tracking/intent";
 import {
   MOVIE_CLEARED_MESSAGES,
   TRACKING_MESSAGES,
@@ -71,12 +72,22 @@ export default function MovieScreen() {
       await queries.cancelQueries({ queryKey: key });
       const previous = queries.getQueryData<typeof state.data>(key);
       if (previous) {
+        // The plan, mark and score rule is core's, never a copy here
+        // (apps/mobile/AGENTS.md, BeStats rules); only the timestamp is ours.
+        const next = applyTrackingIntent(
+          {
+            inWatchlist: previous.planned,
+            watched: previous.watchedAt !== null,
+            rating: previous.rating,
+          },
+          { kind: "watched", value },
+        );
         queries.setQueryData(key, {
-          planned: value ? false : previous.planned,
-          watchedAt: value
+          planned: next.inWatchlist,
+          watchedAt: next.watched
             ? (previous.watchedAt ?? new Date().toISOString())
             : null,
-          rating: value ? previous.rating : null,
+          rating: next.rating,
         });
       }
       return { previous };
