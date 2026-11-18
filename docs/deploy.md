@@ -8,7 +8,7 @@ Steps that change Vercel, GitHub or the Supabase project are marked **remote**. 
 
 | What | Value | Where it is set |
 |---|---|---|
-| Production origin | `https://bestats-app.vercel.app` | added to Vercel project `bestats` on 2026-11-18 (`bestats.vercel.app` belongs to another account); repeated in `NEXT_PUBLIC_SITE_URL` and `[remotes.production.auth]` |
+| Production origin | `https://bestats-app.vercel.app` | a domain on Vercel project `bestats`; repeated in `NEXT_PUBLIC_SITE_URL` and `[remotes.production.auth]` |
 | Supabase project | `kyatxtclyikcmkebjxan` (name `BeStats`, Free plan) | `[remotes.production]` in `supabase/config.toml` |
 | Supabase region | `eu-central-1`, Frankfurt | `SUPABASE_REGION` in `apps/web/lib/legal/operator.ts` |
 | Vercel function region | `fra1`, Frankfurt | `regions` in `apps/web/vercel.json` |
@@ -162,6 +162,8 @@ There are no automatic backups on Free. If losing data would hurt, revisit the p
 4. Once, submit the sitemap in Google Search Console (add the origin as a URL prefix property, verify it, then Sitemaps, `sitemap.xml`).
 
 Checked on 2026-10-04: `robots.txt` allows crawling and names the sitemap, `/movies/550` carries a canonical on the production origin, and the sitemap lists 402 URLs (398 titles). The Search Console submission is still yours to do.
+
+Moved on 2026-11-18: production moved from the Vercel-assigned alias to `https://bestats-app.vercel.app` (`bestats.vercel.app` belongs to another account), and the old alias comes off the project once the new origin passes steps 2 and 3. The 2026-10-04 checks above ran against the old alias; repeat steps 2 and 3 on the new origin, and add it as its own Search Console property.
 
 ## 10. The legal read through (release gate)
 
