@@ -1,4 +1,5 @@
 import { languageName } from "@bestats/core/format";
+import { MOVIE_OVERVIEW_MISSING } from "@bestats/core/tracking/messages";
 
 /**
  * The overview text, honest about which language it is in (spec 0006, AC-5).
@@ -18,7 +19,7 @@ function MovieOverview({
   if (overview === null) {
     return (
       <p className="text-[15px] text-muted-foreground">
-        No overview available.
+        {MOVIE_OVERVIEW_MISSING}
       </p>
     );
   }
