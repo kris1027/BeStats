@@ -11,7 +11,7 @@ import {
 } from "react";
 
 import { setSessionExpiredHandler } from "./api";
-import { queryClient } from "./query-client";
+import { clearPrivateQueries } from "./query-client";
 import { getSupabase, watchAppStateForRefresh } from "./supabase";
 
 type SessionState = {
@@ -31,8 +31,9 @@ const SessionContext = createContext<SessionState | null>(null);
  *
  * The session comes only from `supabase-js`, which reads it from the
  * encrypted store and refreshes it while the app is active. Signing out, by
- * choice or because a `me` call was refused twice, clears the query cache, so
- * no private data stays on the phone for the next person (AC-13). An expired
+ * choice or because a `me` call was refused twice, wipes the private part of
+ * the query cache (`clearPrivateQueries`), so no private data stays on the
+ * phone for the next person (AC-13). An expired
  * session is never silent: it leaves a notice for the sign in screen.
  */
 export function SessionProvider({ children }: PropsWithChildren) {
@@ -54,13 +55,15 @@ export function SessionProvider({ children }: PropsWithChildren) {
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, next) => {
         setSession(next);
-        if (!next) queryClient.clear();
+        if (!next) clearPrivateQueries();
       },
     );
     const stopWatching = watchAppStateForRefresh();
     setSessionExpiredHandler(async () => {
+      // The auth listener wipes the private cache; this second wipe covers
+      // a local sign out that failed, so the listener never fired.
       await supabase.auth.signOut({ scope: "local" }).catch(() => {});
-      queryClient.clear();
+      clearPrivateQueries();
       setNotice(V1_ERROR_MESSAGES.unauthenticated);
     });
     return () => {
@@ -74,7 +77,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
     await getSupabase()
       .auth.signOut()
       .catch(() => getSupabase().auth.signOut({ scope: "local" }));
-    queryClient.clear();
+    clearPrivateQueries();
   }, []);
 
   const clearNotice = useCallback(() => setNotice(null), []);

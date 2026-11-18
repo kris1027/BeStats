@@ -1,17 +1,19 @@
 import { MOVIE_CLEARED_MESSAGES } from "@bestats/core/tracking/messages";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { screen, userEvent } from "@testing-library/react-native";
+import { act, screen, userEvent } from "@testing-library/react-native";
 import { renderRouter } from "expo-router/testing-library";
 import type { PropsWithChildren } from "react";
 
 import MovieScreen from "@/app/movies/[id]";
 import { ApiError } from "@/lib/api";
+import { clearPrivateQueries } from "@/lib/query-client";
 
 /**
  * covers: spec 0033, AC-6 (the pill reads as unavailable before release),
  * AC-11 (signed out shows Sign in), and child 0036 (an optimistic mark that
  * the server refuses goes back and says why; unmarking says so only when a
- * score went with the mark)
+ * score went with the mark), and AC-13 (a forced sign out wipes the private
+ * cache yet leaves the open screen usable)
  */
 const mockFetchMovie = jest.fn();
 const mockFetchMovieState = jest.fn();
@@ -28,9 +30,25 @@ jest.mock("@/lib/movies", () => ({
 }));
 
 let mockSession: object | null = { user: { email: "a@example.test" } };
-jest.mock("@/lib/session", () => ({
-  useSession: () => ({ session: mockSession }),
-}));
+const mockListeners = new Set<() => void>();
+function setSession(next: object | null) {
+  mockSession = next;
+  for (const listener of mockListeners) listener();
+}
+jest.mock("@/lib/session", () => {
+  const { useSyncExternalStore } = require("react");
+  return {
+    useSession: () => ({
+      session: useSyncExternalStore(
+        (listener: () => void) => {
+          mockListeners.add(listener);
+          return () => mockListeners.delete(listener);
+        },
+        () => mockSession,
+      ),
+    }),
+  };
+});
 const MOVIE = {
   id: 603,
   title: "The Matrix",
@@ -50,10 +68,8 @@ const MOVIE = {
   cast: [],
 };
 
+let client: QueryClient;
 function wrapper({ children }: PropsWithChildren) {
-  const client = new QueryClient({
-    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-  });
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }
 
@@ -65,6 +81,9 @@ async function open() {
 }
 
 beforeEach(() => {
+  client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
   jest.clearAllMocks();
   mockSession = { user: { email: "a@example.test" } };
   mockFetchMovie.mockResolvedValue(MOVIE);
@@ -191,4 +210,30 @@ test("unmarking a scored movie says the score went too", async () => {
   expect(
     await screen.findByText(MOVIE_CLEARED_MESSAGES.unwatched),
   ).toBeOnTheScreen();
+});
+
+test("a forced sign out keeps the movie and asks to sign in", async () => {
+  await open();
+  expect(await screen.findByText("Mark watched")).toBeOnTheScreen();
+  // A reload of the movie, should the wipe start one, stays in flight until
+  // after the second wipe; the session provider wipes twice on a forced sign
+  // out (the auth listener, then the expired session handler).
+  let finishReload: (movie: unknown) => void = () => {};
+  mockFetchMovie.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finishReload = resolve;
+      }),
+  );
+  await act(async () => {
+    setSession(null);
+    clearPrivateQueries(client);
+  });
+  await act(async () => {
+    clearPrivateQueries(client);
+    finishReload(MOVIE);
+  });
+  expect(await screen.findByText("Sign in to track")).toBeOnTheScreen();
+  expect(screen.getByText("TMDB 8.2")).toBeOnTheScreen();
+  expect(client.getQueryData(["me", "titles", "movie:603"])).toBeUndefined();
 });

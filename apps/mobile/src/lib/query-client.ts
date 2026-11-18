@@ -25,3 +25,15 @@ export const queryClient = new QueryClient({
     mutations: { retry: false },
   },
 });
+
+/**
+ * Wipes everything private from the cache on sign out: every `"me"` query
+ * and every mutation, whose input can be private (spec 0033, AC-13; AGENTS.md
+ * section 11). Public catalog queries stay on purpose. `clear()` would also
+ * remove the movie an open screen is showing and cancel its reload, which
+ * left that screen on a spinner for good (prompts/mobile-sign-out-spinner.md).
+ */
+export function clearPrivateQueries(client: QueryClient = queryClient): void {
+  client.removeQueries({ queryKey: ["me"] });
+  client.getMutationCache().clear();
+}
