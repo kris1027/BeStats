@@ -26,6 +26,9 @@ const FORBIDDEN_PREFIX = [
   "@supabase/",
 ];
 
+/** A read of `process.env`, dotted or bracketed. */
+const READS_ENV = /\bprocess\s*(?:\.\s*env\b|\[\s*["'`]env["'`]\s*\])/;
+
 /** Every specifier a file imports, re-exports or loads dynamically. */
 function specifiers(source: string): string[] {
   const found: string[] = [];
@@ -70,7 +73,7 @@ describe("core purity (spec 0033 AC-2)", () => {
 
   it("reads no environment variable", () => {
     const offenders = files
-      .filter((file) => /process\.env/.test(readFileSync(file, "utf8")))
+      .filter((file) => READS_ENV.test(readFileSync(file, "utf8")))
       .map((file) => relative(SRC, file));
     expect(offenders).toEqual([]);
   });
@@ -97,5 +100,11 @@ describe("core purity (spec 0033 AC-2)", () => {
       expect(isForbiddenSpecifier(s), s).toBe(true);
     }
     expect(isForbiddenSpecifier("zod")).toBe(false);
+  });
+
+  it("spots an environment read in either spelling", () => {
+    expect(READS_ENV.test("process.env.X")).toBe(true);
+    expect(READS_ENV.test('process["env"].X')).toBe(true);
+    expect(READS_ENV.test("processing.envelope")).toBe(false);
   });
 });
