@@ -4,6 +4,7 @@ import {
   v1WatchedBodySchema,
 } from "@bestats/core/api/v1/movie";
 import { TRACKING_MESSAGES } from "@bestats/core/tracking/messages";
+import { z } from "zod";
 
 import { v1Fail, v1Ok, withV1 } from "@/lib/api/v1/with-v1";
 import { setMovieWatchedCommand } from "@/lib/tracking/commands/set-movie-watched";
@@ -22,16 +23,14 @@ import { setMovieWatchedCommand } from "@/lib/tracking/commands/set-movie-watche
 export const PUT = withV1({
   name: "me.movies.watched.put",
   auth: "bearer",
-  handler: async ({ request, params, user }) => {
-    const id = movieIdParamSchema.safeParse(params.id);
-    const body = v1WatchedBodySchema.safeParse(
-      await request.json().catch(() => null),
-    );
-    if (!id.success || !body.success) return v1Fail("invalid_input");
-
+  input: {
+    params: z.object({ id: movieIdParamSchema }),
+    body: v1WatchedBodySchema,
+  },
+  handler: async ({ input, user }) => {
     const result = await setMovieWatchedCommand(
       { userId: user.userId, getClient: async () => user.client },
-      { movieId: id.data, watched: body.data.watched },
+      { movieId: input.params.id, watched: input.body.watched },
     );
     if (result.ok) return v1Ok(result);
     return v1Fail(MOVIE_ERROR_TO_V1[result.error], {

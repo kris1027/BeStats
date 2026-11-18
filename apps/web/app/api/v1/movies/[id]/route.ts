@@ -1,4 +1,5 @@
 import { movieIdParamSchema, type V1Movie } from "@bestats/core/api/v1/movie";
+import { z } from "zod";
 
 import { v1Fail, v1Ok, withV1 } from "@/lib/api/v1/with-v1";
 import { loadMovie } from "@/lib/tmdb/load-movie";
@@ -17,11 +18,9 @@ export const GET = withV1({
   name: "movies.get",
   auth: "public",
   cache: "public, s-maxage=300, stale-while-revalidate=600",
-  handler: async ({ params }) => {
-    const id = movieIdParamSchema.safeParse(params.id);
-    if (!id.success) return v1Fail("invalid_input");
-
-    const loaded = await loadMovie(id.data);
+  input: { params: z.object({ id: movieIdParamSchema }) },
+  handler: async ({ input }) => {
+    const loaded = await loadMovie(input.params.id);
     if (loaded.kind === "not_found") return v1Fail("not_found");
     if (loaded.kind === "failed") return v1Fail("catalog_unavailable");
 

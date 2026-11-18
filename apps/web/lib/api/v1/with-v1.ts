@@ -10,9 +10,14 @@ import {
   APP_VERSION_HEADER,
   checkAppVersion,
 } from "@bestats/core/api/v1/version";
+import { AUTH_OUTCOME } from "@bestats/core/auth/messages";
 import type { NextRequest } from "next/server";
+import type { z } from "zod";
 
+import { AUTH_EVENT, logAuthEvent } from "@/lib/auth/log";
 import { type BearerUser, verifyBearer } from "@/lib/supabase/bearer";
+
+import { logV1Failure } from "./log";
 
 /** What every `me` route answers: private to its caller, never stored. */
 export const PRIVATE_NO_STORE = "private, no-store";
@@ -35,12 +40,19 @@ export type V1Success = { kind: "success"; body: unknown; status?: number };
 
 export type V1Outcome = V1Success | V1Failure;
 
-/** Builds a success outcome. */
+/**
+ * Builds a success outcome. Handlers return an outcome rather than a
+ * `Response`, so only `withV1` sets status and cache headers and no `me`
+ * answer can reach a shared cache (AGENTS.md section 11).
+ */
 export function v1Ok(body: unknown, status = 200): V1Success {
   return { kind: "success", body, status };
 }
 
-/** Builds a failure outcome. */
+/**
+ * Builds a failure outcome from a closed error code, so a handler can never
+ * put raw upstream error text in a body (AGENTS.md section 11).
+ */
 export function v1Fail(
   code: V1ErrorCode,
   extra: { reason?: string; message?: string } = {},
@@ -50,12 +62,25 @@ export function v1Fail(
 
 type RouteContext = { params: Promise<Record<string, string | string[]>> };
 
-type HandlerInput = {
-  request: NextRequest;
-  params: Record<string, string | string[]>;
+/** The core Zod schemas a route reads its path, query and body through. */
+export type V1InputSchemas = {
+  params?: z.ZodType;
+  query?: z.ZodType;
+  body?: z.ZodType;
 };
 
-type PublicOptions = {
+/** What each declared schema parsed to; an undeclared part is absent. */
+type ParsedInput<S extends V1InputSchemas> = {
+  [K in keyof S]: S[K] extends z.ZodType ? z.output<S[K]> : never;
+};
+
+type HandlerInput<S extends V1InputSchemas> = {
+  request: NextRequest;
+  /** Every input the route declared, already parsed (child 0035). */
+  input: ParsedInput<S>;
+};
+
+type PublicOptions<S extends V1InputSchemas> = {
   /** The route name used in log lines, for example `movies.get`. */
   name: string;
   auth: "public";
@@ -63,13 +88,18 @@ type PublicOptions = {
   cache: string;
   /** Only `/api/v1/config` skips the version check. */
   skipVersionCheck?: boolean;
-  handler: (input: HandlerInput) => Promise<V1Outcome>;
+  /** The schemas the handler's `input` is parsed with. */
+  input?: S;
+  handler: (input: HandlerInput<S>) => Promise<V1Outcome>;
 };
 
-type BearerOptions = {
+type BearerOptions<S extends V1InputSchemas> = {
   name: string;
   auth: "bearer";
-  handler: (input: HandlerInput & { user: BearerUser }) => Promise<V1Outcome>;
+  input?: S;
+  handler: (
+    input: HandlerInput<S> & { user: BearerUser },
+  ) => Promise<V1Outcome>;
 };
 
 /** Marks a handler as built by `withV1`, which the coverage test checks. */
@@ -86,70 +116,110 @@ export const V1_HANDLER = Symbol.for("bestats.v1.handler");
  * 2. for a `bearer` route, verifies the token and answers 401 without one, so
  *    the user ID only ever comes from the verified `sub` claim (AGENTS.md
  *    section 5);
- * 3. runs the handler, which parses its own inputs with the core schemas;
- * 4. answers `{ error: { code, message } }` on any refusal, and sets
- *    `Cache-Control`: the route's public value on success, `no-store` on an
- *    error, and `private, no-store` on every `me` answer (AGENTS.md
+ * 3. parses the path, query and body with the core schemas the route
+ *    declares in `input`, answering 400 `invalid_input` before the handler
+ *    runs, so a handler can only ever read parsed values (AGENTS.md
  *    section 11);
- * 5. logs only the route name and the error code, never a header, token or
- *    body.
+ * 4. runs the handler and answers `{ error: { code, message } }` on any
+ *    refusal, and sets `Cache-Control`: the route's public value on success,
+ *    `no-store` on an error, and `private, no-store` on every `me` answer
+ *    (AGENTS.md section 11);
+ * 5. logs every failure through the structural helpers: a refused token
+ *    through `logAuthEvent`, anything else through `logV1Failure`, never a
+ *    header, token or body.
  *
  * A handler that throws answers 500 `internal`, never a stack or message.
  */
-export function withV1(options: PublicOptions | BearerOptions) {
+export function withV1<S extends V1InputSchemas = Record<never, never>>(
+  options: PublicOptions<S> | BearerOptions<S>,
+) {
   const handle = async (
     request: NextRequest,
     context: RouteContext,
   ): Promise<Response> => {
     const failCache = options.auth === "bearer" ? PRIVATE_NO_STORE : NO_STORE;
+    const fail = (failure: V1Failure) => {
+      logV1Failure(options.name, failure.code);
+      return failureResponse(failure, failCache);
+    };
 
     const skipVersion = options.auth === "public" && options.skipVersionCheck;
     if (!skipVersion) {
       const version = checkAppVersion(request.headers.get(APP_VERSION_HEADER));
-      if (version === "invalid") {
-        return failureResponse(v1Fail("invalid_input"), failCache);
-      }
+      if (version === "invalid") return fail(v1Fail("invalid_input"));
       if (version === "upgrade_required") {
-        return failureResponse(v1Fail("upgrade_required"), failCache);
+        return fail(v1Fail("upgrade_required"));
       }
     }
 
     try {
-      const params = await context.params;
+      let outcome: V1Outcome;
+      let successCache: string;
       if (options.auth === "bearer") {
         const user = await verifyBearer(request.headers.get("authorization"));
         if (!user) {
+          logAuthEvent(
+            AUTH_EVENT.bearer,
+            "refused",
+            AUTH_OUTCOME.sessionExpired,
+          );
           return failureResponse(v1Fail("unauthenticated"), PRIVATE_NO_STORE);
         }
-        const outcome = await options.handler({ request, params, user });
-        return toResponse(options.name, outcome, PRIVATE_NO_STORE, failCache);
+        const input = await parseInput(options.input, request, context);
+        if (!input) return fail(v1Fail("invalid_input"));
+        outcome = await options.handler({ request, input, user });
+        successCache = PRIVATE_NO_STORE;
+      } else {
+        const input = await parseInput(options.input, request, context);
+        if (!input) return fail(v1Fail("invalid_input"));
+        outcome = await options.handler({ request, input });
+        successCache = options.cache;
       }
-      const outcome = await options.handler({ request, params });
-      return toResponse(options.name, outcome, options.cache, failCache);
+      if (outcome.kind === "failure") return fail(outcome);
+      return Response.json(outcome.body, {
+        status: outcome.status ?? 200,
+        headers: { "Cache-Control": successCache },
+      });
     } catch {
       // The error is dropped on purpose: its message can carry request
       // details that must not reach a log line (AGENTS.md section 11).
-      logV1Failure(options.name, "internal");
-      return failureResponse(v1Fail("internal"), failCache);
+      return fail(v1Fail("internal"));
     }
   };
   return Object.assign(handle, { [V1_HANDLER]: true as const });
 }
 
-function toResponse(
-  name: string,
-  outcome: V1Outcome,
-  successCache: string,
-  failCache: string,
-): Response {
-  if (outcome.kind === "success") {
-    return Response.json(outcome.body, {
-      status: outcome.status ?? 200,
-      headers: { "Cache-Control": successCache },
-    });
+/**
+ * Parses each declared part with its schema; null when any part fails. The
+ * body is read only when a schema asks for it, and an unreadable body counts
+ * as a failed parse rather than a 500.
+ */
+async function parseInput<S extends V1InputSchemas>(
+  schemas: S | undefined,
+  request: NextRequest,
+  context: RouteContext,
+): Promise<ParsedInput<S> | null> {
+  const parsed: Record<string, unknown> = {};
+  if (schemas?.params) {
+    const result = schemas.params.safeParse(await context.params);
+    if (!result.success) return null;
+    parsed.params = result.data;
   }
-  if (V1_ERROR_STATUS[outcome.code] >= 500) logV1Failure(name, outcome.code);
-  return failureResponse(outcome, failCache);
+  if (schemas?.query) {
+    const result = schemas.query.safeParse(
+      Object.fromEntries(request.nextUrl.searchParams),
+    );
+    if (!result.success) return null;
+    parsed.query = result.data;
+  }
+  if (schemas?.body) {
+    const result = schemas.body.safeParse(
+      await request.json().catch(() => undefined),
+    );
+    if (!result.success) return null;
+    parsed.body = result.data;
+  }
+  return parsed as ParsedInput<S>;
 }
 
 function failureResponse(failure: V1Failure, cache: string): Response {
@@ -164,9 +234,4 @@ function failureResponse(failure: V1Failure, cache: string): Response {
     status: V1_ERROR_STATUS[failure.code],
     headers: { "Cache-Control": cache },
   });
-}
-
-/** The only log line `/api/v1` writes: a route name and an error code. */
-function logV1Failure(name: string, code: V1ErrorCode): void {
-  console.warn(`api_v1.${name} failed ${code}`);
 }

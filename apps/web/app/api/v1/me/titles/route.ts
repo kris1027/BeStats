@@ -1,4 +1,5 @@
 import { titleIdsParamSchema } from "@bestats/core/api/v1/titles";
+import { z } from "zod";
 
 import { v1Fail, v1Ok, withV1 } from "@/lib/api/v1/with-v1";
 import { readMovieTitles } from "@/lib/tracking/commands/read-movie-titles";
@@ -15,15 +16,11 @@ import { readMovieTitles } from "@/lib/tracking/commands/read-movie-titles";
 export const GET = withV1({
   name: "me.titles.get",
   auth: "bearer",
-  handler: async ({ request, user }) => {
-    const ids = titleIdsParamSchema.safeParse(
-      request.nextUrl.searchParams.get("ids"),
-    );
-    if (!ids.success) return v1Fail("invalid_input");
-
+  input: { query: z.object({ ids: titleIdsParamSchema }) },
+  handler: async ({ input, user }) => {
     const titles = await readMovieTitles(
       { userId: user.userId, getClient: async () => user.client },
-      ids.data,
+      input.query.ids,
     );
     return titles ? v1Ok(titles) : v1Fail("internal");
   },
