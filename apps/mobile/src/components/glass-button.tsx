@@ -1,0 +1,54 @@
+import { ActivityIndicator, Pressable, Text } from "react-native";
+
+type Props = {
+  label: string;
+  onPress: () => void;
+  /** The screen reader name when it differs from the visible label. */
+  accessibilityLabel?: string;
+  variant?: "primary" | "glass";
+  pressed?: boolean;
+  disabled?: boolean;
+  busy?: boolean;
+};
+
+/**
+ * The pill button of the shipped web UI (glass plate, round, 44pt tall so it
+ * meets the touch target rule in AGENTS.md section 3). `primary` is the light
+ * filled call to action; `glass` the tracking pill.
+ */
+export function GlassButton({
+  label,
+  onPress,
+  accessibilityLabel,
+  variant = "glass",
+  pressed,
+  disabled,
+  busy,
+}: Props) {
+  const primary = variant === "primary";
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityState={{ disabled: disabled || busy, selected: pressed }}
+      disabled={disabled || busy}
+      onPress={onPress}
+      className={`min-h-11 flex-row items-center justify-center gap-2 rounded-full px-5 ${
+        primary
+          ? "bg-primary"
+          : pressed
+            ? "border border-score-personal bg-glass-plate-score"
+            : "border border-border bg-glass-plate"
+      } ${disabled ? "opacity-50" : ""}`}
+    >
+      {busy ? <ActivityIndicator size="small" /> : null}
+      <Text
+        className={`text-base font-semibold ${
+          primary ? "text-primary-foreground" : "text-foreground"
+        }`}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
