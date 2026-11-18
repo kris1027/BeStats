@@ -458,7 +458,7 @@ A native app for iOS and Android beside the web app, sharing its rules with it. 
 **Done when:** both store builds sign in, browse, search, track and show every library page with the same rules and names as the web; the web still deploys unchanged from `apps/web`; no TMDB or IGDB secret or service role key is reachable from the app or the repo; account deletion works on both apps; and the attribution, privacy text and store privacy labels are in place.
 - [x] Design it (spec): `/architect mobile app`
 - [ ] Build it: `/develop mobile app`
-  - [ ] Monorepo move and shared core (spec 0033 Build plan steps 1 and 2): AC-1, AC-2, AC-3
+  - [x] Monorepo move and shared core (spec 0033 Build plan steps 1 and 2): AC-1, AC-2, AC-3 (step 1 in PR #74; step 2 in [prompts/shared-core.md](../../prompts/shared-core.md))
   - [ ] Tracer: sign in, open a movie, mark it watched (step 3): AC-4, AC-5, AC-6, AC-11
   - [ ] API thickened (step 4): AC-5 to AC-10
   - [ ] App thickened (step 5): AC-10, AC-12, AC-13, AC-14, AC-16
