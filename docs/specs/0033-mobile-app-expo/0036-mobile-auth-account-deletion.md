@@ -10,7 +10,7 @@ The app signs in with email and password through Supabase, the same as the web, 
 
 ### Sign in methods (v1)
 
-Email and password only, using the rules in `lib/auth/schemas.ts` (core) and the existing Supabase project settings. Sign up follows the steps in child 0035 (availability check, `signUp`, then `POST /api/v1/me/profile`). Google and Sign in with Apple ship later, together, on web and mobile.
+Email and password only, using the rules in `lib/auth/schemas.ts` (core) and the existing Supabase project settings. Sign up follows the steps in child 0035 (availability check, `signUp`, then `PUT /api/v1/me/profile`). Google and Sign in with Apple ship later, together, on web and mobile.
 
 ### Session storage and token refresh
 
@@ -25,7 +25,7 @@ Email and password only, using the rules in `lib/auth/schemas.ts` (core) and the
 - **Production sends no email today** (`NEXT_PUBLIC_AUTH_EMAIL_DELIVERY=off` in `docs/deploy.md`), so there is no password reset on web or mobile. This is accepted for v1: mobile hides Forgot password while `EXPO_PUBLIC_AUTH_EMAIL_DELIVERY` is off, exactly as the web does. Turning email delivery on stays its own decision (spec 0018), with its processor and legal page changes.
 - So that reset works the day email is turned on, the deep link plumbing ships with v1:
   - Reset uses PKCE (a one time proof stored on the device that asked for the reset), so a code can only be exchanged where it was requested (see `app/auth/callback/route.ts`). The app therefore uses its own path: it calls `resetPasswordForEmail` with `redirectTo` set to `https://<site>/reset-password/app`, built by a core helper using the same `safeNextPath` rule as the web. The web keeps `/auth/callback` for itself, so a reset asked on the web never opens the app.
-  - `/reset-password/app` is the only Universal Link and App Link path in v1, plus title paths (`/movies/*`, `/shows/*`, `/games/*`) for shared links. On it, the app calls `exchangeCodeForSession` and shows the new password screen. When the app is not installed, the web serves a small page at `/reset-password/app` saying to open the link on the phone that asked for it.
+  - The Universal Link and App Link paths in v1 are exactly `/reset-password/app` and the title paths (`/movies/*`, `/shows/*`, `/games/*`) for shared links. Library routes and every other path stay on the web. On it, the app calls `exchangeCodeForSession` and shows the new password screen. When the app is not installed, the web serves a small page at `/reset-password/app` saying to open the link on the phone that asked for it.
   - `apps/web` serves `public/.well-known/apple-app-site-association` and `public/.well-known/assetlinks.json` with `Content-Type: application/json` set in `next.config.ts` headers (the Apple file has no extension), and `proxy.ts` excludes `.well-known` from its matcher (read `app/AGENTS.md` first).
   - Required inputs that exist only after setup: the Apple Team ID (for the AASA `appIDs`, `<TeamID>.com.kris1027.bestats`) and the SHA-256 fingerprint of the Android app signing key (from `eas credentials` and the first Play upload). Until then those files ship with only the title paths filled in for development builds.
   - Supabase `additional_redirect_urls` gains `https://<site>/reset-password/app` and its local twin; that config reaches the cloud only through `supabase config push`, run once approved.
@@ -37,7 +37,7 @@ Email and password only, using the rules in `lib/auth/schemas.ts` (core) and the
 - Grants: `revoke execute ... from public, anon`; `grant execute ... to authenticated`.
 - Web: a Delete account section on `/account` (its layout is approved in its own build plan, AGENTS.md section 3) calling a Server Action. Mobile: a Delete account screen calling `POST /api/v1/me/account/delete` with `{ confirm: "DELETE" }`. Both make you type `DELETE`, call the same command, then sign out locally.
 - `supabase/AGENTS.md` and `tests/140-security-sweep.test.sql` name this as the second security definer exception beside `username_available`.
-- `/privacy` and `/terms` change from "deletion by email" to the self serve flow, with `LEGAL_LAST_UPDATED` updated in the same PR.
+- `/privacy` and `/terms` change from "deletion by email" to the self serve flow, with `LEGAL_LAST_UPDATED` updated in the same PR. The same privacy change adds the mobile app section of spec 0033 AC-15 (Expo in `PROCESSORS` for EAS Update).
 
 ### Offline cache and sign out
 
@@ -69,7 +69,7 @@ The function runs with elevated rights but takes no input, so its whole effect i
 
 ### Critical test scenarios
 
-- Sign in on the phone, kill the app, reopen: still signed in; the session is in secure storage, not plain AsyncStorage.
+- Sign in on the phone, kill the app, reopen: still signed in; the AsyncStorage value is the encrypted session (no readable token in it), and its key is in `expo-secure-store`.
 - Two requests hit 401 at once: one refresh happens, both retry once, the user stays signed in.
 - Delete account on mobile: 204, signed out, cache empty, signing in again fails, and pgTAP shows the cascade removed every row.
 - `anon` calling `delete_own_account()` through PostgREST gets a permission error.

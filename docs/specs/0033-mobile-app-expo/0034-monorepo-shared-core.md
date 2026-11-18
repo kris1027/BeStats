@@ -28,12 +28,12 @@ packages/core/          @bestats/core: pure rules, Zod schemas, shared types, v1
 
 Also in core:
 - Every `/api/v1` request and response Zod schema, the Undo cleared state schemas, `MIN_APP_VERSION`, `API_VERSION` and `compareSemver` (child 0035).
-- `TMDB_ATTRIBUTION` and `IGDB_ATTRIBUTION` move to core so the app's About screen shows the same text; `lib/legal/boundary.test.ts` is updated to name their new home. The mobile app keeps its own copy of the two logo files, and the hash check covers that copy too.
+- `TMDB_ATTRIBUTION` (today in `lib/tmdb/constants.ts`) and `IGDB_ATTRIBUTION` (in `lib/legal/operator.ts`) move to core so the app's About screen shows the same text; `lib/legal/boundary.test.ts` is updated to name their new home. The two logo files stay in one place, `apps/web/public/`. Metro only bundles assets it can resolve, so `apps/mobile` imports them through a relative `require` into `apps/web/public/` (Metro resolves files across the workspace since SDK 52); if a build cannot resolve that path, copy them at build time from a script rather than committing a second copy. The hash check stays on the single committed copy.
 - Design tokens: `app/globals.css` stays the single colour source (`design-tokens-boundary.test.ts`). A script, `pnpm tokens`, reads its `@theme` block and writes `packages/core/src/tokens.generated.ts`; CI fails if that file is out of date, and the boundary test allows exactly that generated file. Glass plates (blur) are not tokens; mobile rebuilds the plate rule natively with `expo-blur`.
 
 **Purity rule (enforced by a test in core):** no file under `packages/core/src` imports `server-only`, `next`, `next/*`, `react`, `react-native`, `expo*`, `@supabase/*`, or reads `process.env`. Allowed dependencies: `zod` only. A file that mixes a pure rule with a server read is split: the pure function goes to core, the read stays in `apps/web/lib`.
 
-**Stays in `apps/web` (server only):** `lib/tmdb/`, `lib/igdb/`, `lib/supabase/`, `lib/auth/user.ts`, the new action cores (`lib/tracking/commands/`), `lib/seo/`, `lib/legal/`, and every reader of a secret.
+**Stays in `apps/web` (server only):** `lib/tmdb/`, `lib/igdb/`, `lib/supabase/`, `lib/auth/user.ts`, the new action cores (`lib/tracking/commands/`), `lib/seo/`, the legal boundary test `lib/legal/boundary.test.ts` (its scan widens to the workspace; `operator.ts` and its own test move to core), and every reader of a secret.
 
 **Tooling:**
 - `pnpm-workspace.yaml` lists `apps/*` and `packages/*` and keeps its `allowBuilds` pin. Start with pnpm's default isolated linker (Expo supports it since SDK 54); switch to `nodeLinker: hoisted` only if a native library fails to build.
