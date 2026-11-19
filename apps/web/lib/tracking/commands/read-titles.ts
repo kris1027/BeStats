@@ -7,11 +7,12 @@ import {
   type V1ShowTitleState,
   type V1Titles,
 } from "@bestats/core/api/v1/titles";
+import type { ShowEpisodes } from "@bestats/core/tmdb/types";
 import { todayUtc } from "@bestats/core/tv/air-status";
 import { showProgress } from "@bestats/core/tv/progress";
 import { ratingsBySeason, showRating } from "@bestats/core/tv/ratings";
 
-import { getShowEpisodes } from "@/lib/tmdb";
+import { getShowEpisodesSettled } from "@/lib/tmdb";
 
 import { logTrackingEvent, TRACKING_EVENT } from "../log";
 import type { TrackingClient, TrackingDeps } from "./run";
@@ -124,32 +125,36 @@ async function readShows(
     if ((data ?? []).length < EPISODE_PAGE_SIZE) break;
   }
 
+  // At most `TMDB_CONCURRENCY_LIMIT` shows are read at once. A show TMDB
+  // failed for, or an outage for all of them, leaves its progress null while
+  // the user's own state still shows (AGENTS.md section 12).
+  let catalogs: Map<number, ShowEpisodes> = new Map();
+  try {
+    catalogs = (await getShowEpisodesSettled(showIds)).found;
+  } catch {
+    // A systemic TMDB failure: every show keeps its state with null progress.
+  }
+
   const trackedIds = new Set((tracked.data ?? []).map((row) => row.show_id));
   const today = todayUtc(new Date());
-  const states = await Promise.all(
-    showIds.map((id) =>
-      showState(
-        id,
-        trackedIds.has(id),
-        rows.filter((row) => row.show_id === id),
-        today,
-      ),
-    ),
-  );
-
   const titles: V1Titles = {};
-  showIds.forEach((id, index) => {
-    titles[titleKey("tv", id)] = states[index];
-  });
+  for (const id of showIds) {
+    titles[titleKey("tv", id)] = showState(
+      trackedIds.has(id),
+      rows.filter((row) => row.show_id === id),
+      catalogs.get(id) ?? null,
+      today,
+    );
+  }
   return titles;
 }
 
-async function showState(
-  showId: number,
+function showState(
   tracked: boolean,
   rows: EpisodeRow[],
+  catalog: ShowEpisodes | null,
   today: string,
-): Promise<V1ShowTitleState> {
+): V1ShowTitleState {
   const ratings = ratingsBySeason(
     rows.flatMap((row) =>
       row.rating === null
@@ -161,18 +166,11 @@ async function showState(
     rows.filter((row) => row.watched_at !== null).map((row) => row.episode_id),
   );
 
-  let progress: V1ShowTitleState["progress"] = null;
-  try {
-    const catalog = await getShowEpisodes(showId);
-    progress = showProgress(catalog.episodes, watched, today);
-  } catch {
-    // A TMDB outage or an unknown show: the user's own state still shows,
-    // and the app reads null as "progress unavailable" (AGENTS.md section 12).
-  }
-
   return {
     tracked,
-    progress,
+    // Null when the catalog read failed or TMDB no longer has the show: the
+    // app reads it as "progress unavailable" (AGENTS.md section 12).
+    progress: catalog ? showProgress(catalog.episodes, watched, today) : null,
     seasonRatings: [...ratings]
       .sort(([a], [b]) => a - b)
       .map(([seasonNumber, season]) => ({ seasonNumber, ...season })),

@@ -523,6 +523,22 @@ export async function getTvShowsSettled(
   return readEachSettled(ids, getTvShow);
 }
 
+/**
+ * Every regular episode of many shows, each through the cached
+ * `getShowEpisodes`, with a failure kept to its show, for `/api/v1/me/titles`
+ * (spec 0035, API surface). It runs through `readEachSettled`, so at most
+ * `TMDB_CONCURRENCY_LIMIT` shows are read at once: a 40 key request no
+ * longer starts 40 show reads together (AGENTS.md section 12, rate limits).
+ *
+ * @throws {TmdbError} A systemic failure (a rejected credential or an
+ * exhausted rate limit).
+ */
+export async function getShowEpisodesSettled(
+  ids: readonly number[],
+): Promise<SettledBatch<ShowEpisodes>> {
+  return readEachSettled(ids, getShowEpisodes);
+}
+
 /** The movie twin of `getTvShowsSettled`, through the cached `getMovie`. */
 export async function getMoviesSettled(
   ids: readonly number[],

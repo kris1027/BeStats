@@ -11,9 +11,10 @@ import {
 } from "@bestats/core/api/v1/show";
 import { pickTitleState, v1TitlesSchema } from "@bestats/core/api/v1/titles";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
 import seasonFixture from "@/lib/tmdb/__fixtures__/season-1396-1.json";
 import showFixture from "@/lib/tmdb/__fixtures__/tv-1396.json";
+import { TMDB_CONCURRENCY_LIMIT } from "@/lib/tmdb/constants";
+import { TmdbError } from "@/lib/tmdb/errors";
 import { normalizeSeasonDetail, normalizeTvShow } from "@/lib/tmdb/normalize";
 
 import {
@@ -39,7 +40,15 @@ vi.mock("@/lib/tmdb/load-show", () => ({ loadShow }));
 const loadSeason = vi.fn();
 vi.mock("@/lib/tmdb/load-season", () => ({ loadSeason }));
 const getShowEpisodes = vi.fn();
-vi.mock("@/lib/tmdb", () => ({ getShowEpisodes }));
+// The real capped batch over a mocked single show read, so the tests see the
+// same concurrency and per show failures the route does.
+vi.mock("@/lib/tmdb", async () => {
+  const { readEachSettled } = await import("@/lib/tmdb/batch");
+  return {
+    getShowEpisodesSettled: (ids: readonly number[]) =>
+      readEachSettled(ids, getShowEpisodes),
+  };
+});
 const verifyBearer = vi.fn();
 vi.mock("@/lib/supabase/bearer", () => ({ verifyBearer }));
 
@@ -503,6 +512,43 @@ describe("GET /api/v1/me/titles with tv keys", () => {
     ]);
     // Seasons rated 7.5 and 6 give 6.75; Specials never count (AGENTS.md section 9).
     expect(state?.showRating).toBe(6.75);
+  });
+
+  it("reads at most TMDB_CONCURRENCY_LIMIT shows at once", async () => {
+    setDbResult({ data: [], error: null });
+    let inFlight = 0;
+    let peak = 0;
+    getShowEpisodes.mockImplementation(async () => {
+      inFlight += 1;
+      peak = Math.max(peak, inFlight);
+      await new Promise((resolve) => setTimeout(resolve, 1));
+      inFlight -= 1;
+      return { episodes: SEASON.episodes };
+    });
+    const ids = Array.from({ length: 40 }, (_, index) => `tv:${index + 1}`);
+    const response = await send(
+      getTitles,
+      `/api/v1/me/titles?ids=${ids.join(",")}`,
+      {},
+    );
+    expect(response.status).toBe(200);
+    expect(getShowEpisodes).toHaveBeenCalledTimes(40);
+    expect(peak).toBeLessThanOrEqual(TMDB_CONCURRENCY_LIMIT);
+  });
+
+  it("nulls only the progress of a show TMDB failed for", async () => {
+    setDbResult({ data: [], error: null });
+    getShowEpisodes.mockImplementation(async (id: number) => {
+      if (id === 2) throw new TmdbError("timeout", "/tv/2", "slow");
+      return { episodes: SEASON.episodes };
+    });
+    const titles = v1TitlesSchema.parse(
+      await (
+        await send(getTitles, "/api/v1/me/titles?ids=tv:1,tv:2", {})
+      ).json(),
+    );
+    expect(pickTitleState(titles, "tv", 1)?.progress).not.toBeNull();
+    expect(pickTitleState(titles, "tv", 2)?.progress).toBeNull();
   });
 
   it("keeps the user's state with null progress when TMDB is down", async () => {
