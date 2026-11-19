@@ -250,12 +250,39 @@ describe("input parsing", () => {
       ["603", "0", JSON.stringify({ watched: true })],
       ["603", "1", JSON.stringify({ watched: "yes" })],
       ["603", "1", "not json"],
+      // A repeated single value is refused, never one copy picked.
+      ["603", "1&page=2", JSON.stringify({ watched: true })],
     ]) {
       const response = await call(id, page, body);
       expect(response.status, `${id} ${page} ${body}`).toBe(400);
       expect(await errorCode(response)).toBe("invalid_input");
     }
     expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("hands a repeated query key over as an array, as search's genre", async () => {
+    const queryHandler = vi.fn(async () => v1Ok({}));
+    const repeated = withV1({
+      name: "test.repeat",
+      auth: "public",
+      cache: "no-store",
+      input: {
+        query: z.object({ genre: z.array(z.string()), q: z.string() }),
+      },
+      handler: queryHandler,
+    });
+    const response = await repeated(
+      new NextRequest("http://localhost/api/v1/test?genre=28&genre=12&q=x", {
+        headers: { "X-BeStats-App-Version": "1.0.0" },
+      }),
+      ctx(),
+    );
+    expect(response.status).toBe(200);
+    expect(queryHandler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: { query: { genre: ["28", "12"], q: "x" } },
+      }),
+    );
   });
 
   it("checks the token before parsing a me route", async () => {
