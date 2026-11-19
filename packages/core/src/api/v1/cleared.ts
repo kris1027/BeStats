@@ -7,6 +7,7 @@ import {
   restoreShowTrackingInputSchema,
   restoreWatchedInputSchema,
   restoreWatchlistInputSchema,
+  seasonNumberSchema,
   seasonUndoInputSchema,
 } from "../../tracking/schemas";
 
@@ -22,12 +23,19 @@ import {
  * the write's own result (`cleared`, `markedAt` or `undo`) and the ids it
  * sent. Every member only ever names the caller's own rows, which RLS bounds
  * (AGENTS.md section 11).
+ *
+ * The one addition is the season member's `seasonNumber`: the web action's
+ * Undo never leaves its page, but a v1 restore route has `{n}` in its path,
+ * and the route can only bind the Undo to that season if the state names it.
  */
 export const clearedStateSchema = z.discriminatedUnion("kind", [
   restoreWatchlistInputSchema.extend({ kind: z.literal("movie_watchlist") }),
   restoreWatchedInputSchema.extend({ kind: z.literal("movie_watched") }),
   episodeMarkUndoInputSchema.extend({ kind: z.literal("episode") }),
-  seasonUndoInputSchema.extend({ kind: z.literal("season") }),
+  seasonUndoInputSchema.extend({
+    kind: z.literal("season"),
+    seasonNumber: seasonNumberSchema,
+  }),
   restoreShowTrackingInputSchema.extend({ kind: z.literal("show_tracking") }),
   restoreGameStatusInputSchema.extend({ kind: z.literal("game_status") }),
   restoreRemovedGameInputSchema.extend({ kind: z.literal("game_removed") }),

@@ -28,6 +28,7 @@ describe("clearedStateSchema", () => {
     {
       kind: "season",
       showId: 1399,
+      seasonNumber: 1,
       undo: { kind: "unmark", episodeIds: [63056, 63057] },
     },
     {
@@ -52,6 +53,13 @@ describe("clearedStateSchema", () => {
 
   it("refuses an unknown kind and a member missing its fields", () => {
     expect(clearedStateSchema.safeParse({ kind: "other" }).success).toBe(false);
+    expect(
+      clearedStateSchema.safeParse({
+        kind: "season",
+        showId: 1399,
+        undo: { kind: "unmark", episodeIds: [63056] },
+      }).success,
+    ).toBe(false);
     expect(
       clearedStateSchema.safeParse({ kind: "movie_watched", movieId: 550 })
         .success,

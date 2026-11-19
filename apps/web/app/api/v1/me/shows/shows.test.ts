@@ -286,10 +286,11 @@ describe("season watched and its restore", () => {
     });
   });
 
-  it("restores with a season state and refuses another show's", async () => {
+  it("restores with a season state and refuses another show's or season's", async () => {
     const cleared = {
       kind: "season",
       showId: 1396,
+      seasonNumber: 1,
       undo: { kind: "unmark", episodeIds: [62085] },
     };
     const ok = await send(
@@ -304,8 +305,15 @@ describe("season watched and its restore", () => {
       { id: "1", n: "1" },
       { method: "POST", body: { cleared } },
     );
+    const otherSeason = await send(
+      restoreSeason,
+      "/api/v1/me/shows/1396/seasons/2/watched/restore",
+      { id: "1396", n: "2" },
+      { method: "POST", body: { cleared } },
+    );
     expect(ok.status).toBe(200);
     expect(wrong.status).toBe(400);
+    expect(otherSeason.status).toBe(400);
   });
 });
 
