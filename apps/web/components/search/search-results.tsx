@@ -7,7 +7,12 @@ import {
   typedHref,
 } from "@bestats/core/catalog/media-type";
 import { SEARCH_CATALOGS } from "@bestats/core/search/catalogs";
-import { formatRange, mediaNoun } from "@bestats/core/search/count";
+import { mediaNoun } from "@bestats/core/search/count";
+import {
+  emptyBrowseMessage,
+  noMatchesMessage,
+  scanEmptyMessage,
+} from "@bestats/core/search/messages";
 import { searchMode } from "@bestats/core/search/mode";
 import {
   parseGameSearchParams,
@@ -223,11 +228,7 @@ async function GameResults({
 function NoPopularGames() {
   return (
     <div className="py-12">
-      <StatePanel
-        variant="empty"
-        title="No popular games right now"
-        description="IGDB lists no popular games at the moment."
-      />
+      <StatePanel variant="empty" {...emptyBrowseMessage("game")} />
     </div>
   );
 }
@@ -294,8 +295,12 @@ async function FilteredResults({ params }: { params: TmdbSearchParams }) {
       <div className="flex flex-col gap-6 py-12">
         <StatePanel
           variant="empty"
-          title={`No matches in TMDB results ${formatRange(scan.fromIndex, scan.toIndex)}`}
-          description={`None of these results for “${params.q}” fit your filters.${moreHref ? " Later results might." : ""}`}
+          {...scanEmptyMessage({
+            fromIndex: scan.fromIndex,
+            toIndex: scan.toIndex,
+            query: params.q ?? "",
+            hasMore: moreHref !== null,
+          })}
         />
         <FilteredPaging moreHref={moreHref} firstHref={firstHref} />
       </div>
@@ -443,38 +448,17 @@ function ShowResultCard({
   );
 }
 
-/** What to loosen when filters match nothing; games have platforms too. */
-const FILTERED_HINTS = {
-  tv: "Try fewer genres, another year or a lower rating.",
-  movie: "Try fewer genres, another year or a lower rating.",
-  game: "Try fewer genres or platforms, another year or a lower rating.",
-} as const satisfies Record<SearchType, string>;
-
 /**
  * The two empty answers of AC-15: a query alone, or any filter. A games
- * search names platforms too (spec 0029, AC-13).
+ * search names platforms too (spec 0029, AC-13). The copy is core's, shared
+ * with the phone.
  */
 function NoMatches({ params }: { params: SearchParams }) {
-  const noun = mediaNoun(params.type);
-  const filtered =
-    params.genreIds.length > 0 ||
-    params.platformIds.length > 0 ||
-    params.year !== null ||
-    params.rating !== null;
   return (
     <div className="py-12">
       <StatePanel
         variant="empty"
-        title={
-          filtered
-            ? `No ${noun} match these filters`
-            : `No ${noun} match “${params.q}”`
-        }
-        description={
-          filtered
-            ? FILTERED_HINTS[params.type]
-            : "Check the spelling, or try a shorter title."
-        }
+        {...noMatchesMessage(params)}
         action={<ClearFilters type={params.type} />}
       />
     </div>

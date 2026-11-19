@@ -1,10 +1,9 @@
-import { CATALOG_SOURCES } from "@bestats/core/catalog/media-type";
 import {
   type CountEndpoint,
   formatPartialCount,
   formatResultCount,
-  mediaNoun,
 } from "@bestats/core/search/count";
+import { browseCountLine } from "@bestats/core/search/messages";
 import type { SearchType } from "@bestats/core/search/params";
 
 /**
@@ -34,7 +33,7 @@ type ResultCountProps =
 function ResultCount(props: ResultCountProps) {
   let text: string;
   if (props.kind === "browse") {
-    text = `Popular ${mediaNoun(props.type)} on ${CATALOG_SOURCES[props.type]}`;
+    text = browseCountLine(props.type);
   } else if (props.kind === "exact") {
     text = formatResultCount(props.total, props.type, props.endpoint);
   } else {

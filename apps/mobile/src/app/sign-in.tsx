@@ -1,8 +1,8 @@
 import { AUTH_MESSAGES, AUTH_OUTCOME } from "@bestats/core/auth/messages";
 import { signInSchema } from "@bestats/core/auth/schemas";
 import { SIGN_IN_ACTION_LABEL } from "@bestats/core/tracking/messages";
-import { Redirect } from "expo-router";
-import { useState } from "react";
+import { router } from "expo-router";
+import { useEffect, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -24,6 +24,9 @@ import { tokenColor } from "@/theme/token-vars";
  * The password never passes through BeStats' own server. Forgot password
  * stays hidden while production sends no email
  * (`EXPO_PUBLIC_AUTH_EMAIL_DELIVERY`), exactly as on the web.
+ *
+ * It opens as a modal over the tabs, so signing in closes it and leaves you
+ * on the screen that asked (prompts/mobile-app-shell-catalog.md, decision 3).
  */
 export default function SignIn() {
   const { session, notice, clearNotice } = useSession();
@@ -32,7 +35,7 @@ export default function SignIn() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  if (session) return <Redirect href="/" />;
+  if (session) return <CloseSignIn />;
 
   async function submit() {
     setError(null);
@@ -106,4 +109,13 @@ export default function SignIn() {
       </View>
     </KeyboardAvoidingView>
   );
+}
+
+/** Closes the modal once signed in, or opens Home when nothing is under it. */
+function CloseSignIn() {
+  useEffect(() => {
+    if (router.canGoBack()) router.back();
+    else router.replace("/");
+  }, []);
+  return null;
 }

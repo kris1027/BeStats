@@ -50,7 +50,9 @@ Docs: https://docs.expo.dev/eas/index.md
 
 ## Files
 
-- `src/app/`: screens only (`_layout.tsx`, `index.tsx`, `sign-in.tsx`, `movies/[id].tsx`). Route paths mirror the web's (`/movies/[id]`, later `/shows/...`, `/games/...` and the library routes from core).
+- `src/app/`: routes only. `_layout.tsx` is the root stack (the tabs, with `sign-in.tsx` as a modal over them); `(tabs)/_layout.tsx` holds the native bottom tabs (Home, Search, Library, Account). The four tabs share one folder, `(tabs)/(index,search,library,account)/`, so each keeps its own stack; its `unstable_settings` anchors each stack, keyed by the bare group name (`search`, not `(search)`). Route paths mirror the web's: `movies|shows|games/[id].tsx` each open a list screen when the segment is a core list slug (`isCatalogListSlug`) and the title otherwise.
+- `src/screens/`: the screen bodies the routes render (Home, list, Search, movie, show, game; `title-states.tsx` for a failed title read). `src/components/`: shared UI (poster card and grid, landing section, media switch, filters sheet, state panels, `CatalogNotice`).
+- `src/lib/catalog.ts`: the public catalog calls and `catalogKeys`, all under `CATALOG_QUERY_ROOT` (`"catalog"`), never the private root, so sign out keeps them and signed out browsing works. `src/lib/media-type.tsx`: the Shows, Movies, Games choice Home and Search share. `src/lib/search-results.ts`: `searchView`, the pure mapping from loaded search pages to what the screen shows.
 - `src/lib/env.ts`: `getPublicEnv()`, the only reader of `process.env.EXPO_PUBLIC_*` (literal property access, validated lazily). Values are public by design; no secret ever takes an `EXPO_PUBLIC_` name (`security-boundary.test.ts`).
 - `src/lib/supabase.ts` and `session-storage.ts`: the one Supabase client, its session AES encrypted in AsyncStorage with the key in `expo-secure-store`; `AppState` starts and stops auto refresh. `getAccessToken()` is the token source. `refreshSession()` runs only in `refreshAfterUnauthorized()`, after a server 401, single flight and skipped when another call already rotated the token; never call it anywhere else (rotating refresh tokens can race and sign the user out). The session is stored under `SESSION_STORAGE_KEY` (`bestats-auth`); `signOutLocally()` is the only local sign out and deletes that entry itself when supabase-js refuses (2.116 returns an error and keeps the session when the expired session cannot refresh).
 - `src/lib/session.tsx`: `SessionProvider` and `useSession()`. Sign out and an expired session set the session to null themselves (never waiting for `SIGNED_OUT`, which a refused sign out never sends) and call `clearPrivateQueries()` (`src/lib/query-client.ts`): every `"me"` query and every mutation go, public catalog queries stay. Never `queryClient.clear()`: it cancels the reload of a query an open screen observes and leaves that screen spinning.
@@ -63,7 +65,9 @@ Docs: https://docs.expo.dev/eas/index.md
 - The phone never holds a catalog key and never runs a rule the server owns: the release gate, library placement and every write go through `/api/v1`. Pure rules come from `@bestats/core`, never a copy (spec 0033, shared contracts).
 - An optimistic tracking state is computed by core's intent rules (`applyTrackingIntent` in `tracking/intent.ts`), mapped to and from the v1 title state; only the timestamp is the app's own.
 - The UI only shows the server's confirmed state or an optimistic one it reverts with the error message; never a false success (root section 11). A screen covers loading, error with Retry, empty, missing image and signed out states.
-- Copy comes from core's message files (`tracking/messages.ts`, `auth/messages.ts`) so both apps say the same thing.
+- Copy comes from core's message files (`tracking/messages.ts`, `auth/messages.ts`, `search/messages.ts`) so both apps say the same thing.
+- The catalog is public: no screen requires a session. Sign in is a modal that closes back to the screen that asked, and a session notice (an expired session) opens it from the root layout. Navigate from an effect with the `useRouter()` hook, never the global `router`: the global one is bound in a parent layout effect, so it throws on the first commit.
+- The app is dark only: `Appearance.setColorScheme("dark")` in the root layout plus `userInterfaceStyle: "dark"` in `app.json`, so native chrome (glass tab bar, sheets, keyboard) never draws light.
 - The query cache is in memory only until the persisted offline cache lands (spec 0033 step 5, AC-13); when it does, it must be wiped on every sign out.
 
 ## Styling
@@ -76,6 +80,7 @@ Docs: https://docs.expo.dev/eas/index.md
 
 - Jest with the `jest-expo` preset and React Native Testing Library v14 (always `await render(...)`), set up in `jest.setup.ts` (native module stand ins such as AsyncStorage). Screens render through `renderRouter` from `expo-router/testing-library`.
 - `jest.mock` factories may only reference variables named `mock…`.
+- A test that imports the root `_layout.tsx` mocks `../global.css` (`jest.mock("../global.css", () => ({}))`), since Jest cannot parse it.
 - TypeScript 6 loads no global types by default, so `tsconfig.json` lists `jest` and `node` in `types`.
 
 ## Agent skills
