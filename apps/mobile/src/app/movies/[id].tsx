@@ -18,11 +18,18 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { ActivityIndicator, ScrollView, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  ScrollView,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 
 import { GlassButton } from "@/components/glass-button";
 import { Notice } from "@/components/notice";
 import { ApiError } from "@/lib/api";
+import { DETAIL_POSTER_WIDTH, sizedImageUri } from "@/lib/images";
 import {
   fetchMovie,
   fetchMovieState,
@@ -45,6 +52,7 @@ import { useSession } from "@/lib/session";
  */
 export default function MovieScreen() {
   const params = useLocalSearchParams<{ id: string }>();
+  const { width: screenWidth } = useWindowDimensions();
   const parsedId = movieIdParamSchema.safeParse(params.id);
   const id = parsedId.success ? parsedId.data : 0;
   const { session } = useSession();
@@ -165,7 +173,7 @@ export default function MovieScreen() {
       <Stack.Screen options={{ title: detail.title }} />
       {detail.backdropUrl ? (
         <Image
-          source={{ uri: detail.backdropUrl }}
+          source={{ uri: sizedImageUri(detail.backdropUrl, screenWidth) }}
           accessibilityIgnoresInvertColors
           contentFit="cover"
           style={{ width: "100%", aspectRatio: 16 / 9 }}
@@ -175,10 +183,16 @@ export default function MovieScreen() {
         <View className="flex-row gap-4">
           {detail.posterUrl ? (
             <Image
-              source={{ uri: detail.posterUrl }}
+              source={{
+                uri: sizedImageUri(detail.posterUrl, DETAIL_POSTER_WIDTH),
+              }}
               accessibilityLabel={`${detail.title} poster`}
               contentFit="cover"
-              style={{ width: 110, aspectRatio: 2 / 3, borderRadius: 12 }}
+              style={{
+                width: DETAIL_POSTER_WIDTH,
+                aspectRatio: 2 / 3,
+                borderRadius: 12,
+              }}
             />
           ) : (
             <View

@@ -26,7 +26,7 @@ Routes, plus the root files that shape them: `proxy.ts` and `next.config.ts`. Th
 
 ## Images
 
-Every image goes through `next/image` and the one `loaderFile`, `lib/images/loader.ts`, which hands TMDB URLs to `lib/tmdb/image-loader.ts` and IGDB covers to `lib/images/igdb-loader.ts`. The optimizer is closed (no `remotePatterns`, empty `localPatterns`; [prompts/close-image-optimizer.md](../../../prompts/close-image-optimizer.md)): a new host gets its own loader, and components reference images by URL rather than importing image files.
+Every image goes through `next/image` and the one `loaderFile`, `lib/images/loader.ts`, which steps TMDB and IGDB URLs down with `sizeImageUrl` from `@bestats/core/images/image-url`, the same rule the mobile app uses (spec 0035, Images). The optimizer is closed (no `remotePatterns`, empty `localPatterns`; [prompts/close-image-optimizer.md](../../../prompts/close-image-optimizer.md)): a new host gets its own ladder in that core file, and components reference images by URL rather than importing image files.
 
 ## Visitor region
 

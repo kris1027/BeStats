@@ -10,9 +10,6 @@
 /** TMDB's v3 REST base. The token is never part of a URL (spec 0002, AC-3). */
 export const TMDB_API_BASE = "https://api.themoviedb.org/3";
 
-/** TMDB's image CDN base. Sizes are appended by `imageUrl`. */
-export const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p";
-
 /**
  * English first metadata, per AGENTS.md section 3. Sent on every request so a
  * caller cannot silently fetch another language and mix it into the catalog.
