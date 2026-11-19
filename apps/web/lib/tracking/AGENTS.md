@@ -9,7 +9,7 @@ The pure half (`episode-intent.ts`, `game-intent.ts`, `ids-key.ts`, `intent.ts`,
 - A write the app also needs splits into a command in `commands/` (spec 0033, child 0035): `(deps: TrackingDeps, parsedInput) => result`, where `TrackingDeps` is `{ userId, getClient }`. A command never reads cookies, headers or the session and never calls `refresh()`; it runs the catalog check, the release gate and the write through `runTrackingCommand` in `commands/run.ts`.
 - The Server Action keeps the Zod parse and wraps the command in `withCookieSession` (`write.ts`), which verifies the cookie session and calls `refresh()` on success. The v1 route wraps the same command with the bearer user, so both return the same result union for the same input.
 - `getClient` is a function so a catalog refusal opens no database client, as the actions always did; tests assert it.
-- Split so far: every movie command in `commands/movie-writes.ts` (helpers in `movie.ts`), every episode, season and show tracking command in `commands/show-writes.ts`, and the `readTitles` read behind `/me/titles` (movies, shows with progress and calculated ratings, games). The game actions still run through `runTrackingWrite` until spec 0033 step 4c splits them. Show commands open the client before their TMDB check, as the show actions always did.
+- Split so far: every movie command in `commands/movie-writes.ts` (helpers in `movie.ts`), every episode, season and show tracking command in `commands/show-writes.ts`, every game command in `commands/game-writes.ts`, and the `readTitles` read behind `/me/titles` (movies, shows with progress and calculated ratings, games). Show commands open the client before their TMDB check, as the show actions always did.
 
 ## Movies
 
