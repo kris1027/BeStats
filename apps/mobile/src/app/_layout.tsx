@@ -1,7 +1,7 @@
 import "../global.css";
 
 import { QueryClientProvider } from "@tanstack/react-query";
-import { DarkTheme, router, Stack, ThemeProvider } from "expo-router";
+import { DarkTheme, Stack, ThemeProvider, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { VariableContextProvider } from "nativewind";
@@ -49,10 +49,13 @@ function Navigator() {
   }, [loading]);
   // An expired session is never silent (AGENTS.md section 11): with no
   // screen gated on the session any more, its notice opens Sign in, which
-  // shows it.
+  // shows it. The router comes from the hook, not the global `router`: the
+  // global one is bound in a parent effect that runs after this one, so a
+  // notice set at launch (a failed restore) would throw and be lost.
+  const router = useRouter();
   useEffect(() => {
     if (notice) router.push("/sign-in");
-  }, [notice]);
+  }, [notice, router]);
 
   return (
     <Stack
