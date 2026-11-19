@@ -90,6 +90,14 @@ export const UNDO_EXPIRED_MESSAGES = {
 /** The label on a removal toast's action. */
 export const UNDO_ACTION_LABEL = "Undo";
 
+/**
+ * How long a toast carrying Undo stays up, in milliseconds, in both apps:
+ * long enough for a keyboard or screen reader user to reach the action. The
+ * server allows 10 minutes, so the toast is the limit (spec 0033, shared
+ * contracts: the same rules in one place).
+ */
+export const UNDO_TOAST_MS = 10_000;
+
 /** The label on the session expired toast's action. */
 export const SIGN_IN_ACTION_LABEL = "Sign in";
 
