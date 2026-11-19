@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   browseCountLine,
+  emptyBrowseMessage,
   hasFilter,
   noMatchesMessage,
   scanEmptyMessage,
@@ -37,6 +38,23 @@ describe("noMatchesMessage", () => {
     });
     expect(message.title).toBe("No games match these filters");
     expect(message.description).toContain("platforms");
+  });
+});
+
+describe("emptyBrowseMessage", () => {
+  it("keeps the web's games wording", () => {
+    expect(emptyBrowseMessage("game")).toEqual({
+      title: "No popular games right now",
+      description: "IGDB lists no popular games at the moment.",
+    });
+  });
+
+  it("names TMDB for an empty shows list, never a null query", () => {
+    const message = emptyBrowseMessage("tv");
+    expect(message.title).toBe("No popular shows right now");
+    expect(message.description).toBe(
+      "TMDB lists no popular shows at the moment.",
+    );
   });
 });
 

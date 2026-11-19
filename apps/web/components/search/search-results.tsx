@@ -9,6 +9,7 @@ import {
 import { SEARCH_CATALOGS } from "@bestats/core/search/catalogs";
 import { mediaNoun } from "@bestats/core/search/count";
 import {
+  emptyBrowseMessage,
   noMatchesMessage,
   scanEmptyMessage,
 } from "@bestats/core/search/messages";
@@ -227,11 +228,7 @@ async function GameResults({
 function NoPopularGames() {
   return (
     <div className="py-12">
-      <StatePanel
-        variant="empty"
-        title="No popular games right now"
-        description="IGDB lists no popular games at the moment."
-      />
+      <StatePanel variant="empty" {...emptyBrowseMessage("game")} />
     </div>
   );
 }

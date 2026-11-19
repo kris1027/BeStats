@@ -5,6 +5,7 @@ import {
 } from "@bestats/core/search/count";
 import {
   browseCountLine,
+  emptyBrowseMessage,
   noMatchesMessage,
   scanEmptyMessage,
 } from "@bestats/core/search/messages";
@@ -20,14 +21,13 @@ import type { SearchParams } from "@bestats/core/search/params";
  *   range read so far (its total is never known).
  * - `scan_empty`: a filtered title search whose ranges so far kept nothing,
  *   said as such, since later results might match.
- * - `no_matches`: nothing matches the query or filters.
- * - `no_popular_games`: IGDB's Popular list is empty right now.
+ * - `no_matches`: nothing matches the query or filters, or, with neither
+ *   set, the catalog's Popular list is empty right now.
  */
 export type SearchView =
   | { kind: "results"; countLine: string | null }
   | { kind: "scan_empty"; title: string; description: string }
-  | { kind: "no_matches"; title: string; description: string }
-  | { kind: "no_popular_games" };
+  | { kind: "no_matches"; title: string; description: string };
 
 /**
  * The view for `pages` (every page loaded, in order) of a search for
@@ -42,9 +42,13 @@ export function searchView(
 ): SearchView {
   const first = pages[0];
   const results = pages.flatMap((page) => page.results);
+  const noMatches = (): SearchView => ({
+    kind: "no_matches",
+    ...noMatchesMessage(params),
+  });
 
   if (first.mode === "browse" && results.length === 0) {
-    return params.type === "game" ? { kind: "no_popular_games" } : noMatches();
+    return { kind: "no_matches", ...emptyBrowseMessage(params.type) };
   }
   if (
     first.total === 0 ||
@@ -101,8 +105,4 @@ export function searchView(
                 : "search",
           ),
   };
-
-  function noMatches(): SearchView {
-    return { kind: "no_matches", ...noMatchesMessage(params) };
-  }
 }

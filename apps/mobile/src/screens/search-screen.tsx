@@ -160,6 +160,17 @@ export function SearchScreen() {
         action={{ label: "Try again", onPress: () => query.refetch() }}
       />
     );
+  } else if (query.isRefetchError) {
+    // Stale results stay on screen, but never as if they were current
+    // (AGENTS.md section 11, no false success).
+    status = (
+      <StatePanel
+        tone="error"
+        title={`Couldn't refresh from ${source}`}
+        description="These results may be out of date."
+        action={{ label: "Try again", onPress: () => query.refetch() }}
+      />
+    );
   }
 
   const pages = query.data?.pages ?? [];
@@ -218,11 +229,6 @@ export function SearchScreen() {
             {status}
             {view?.kind === "no_matches" || view?.kind === "scan_empty" ? (
               <StatePanel title={view.title} description={view.description} />
-            ) : view?.kind === "no_popular_games" ? (
-              <StatePanel
-                title="No popular games right now"
-                description="IGDB lists no popular games at the moment."
-              />
             ) : null}
             {view === null || view.kind === "no_matches" ? null : more}
             <CatalogNotice type={params.type} />

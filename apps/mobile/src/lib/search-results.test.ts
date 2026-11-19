@@ -127,5 +127,22 @@ test("an empty Popular games list has its own state", () => {
       [page({ type: "game", mode: "browse", results: [], total: null })],
       false,
     ),
-  ).toEqual({ kind: "no_popular_games" });
+  ).toEqual({
+    kind: "no_matches",
+    title: "No popular games right now",
+    description: "IGDB lists no popular games at the moment.",
+  });
+});
+
+test("an empty Popular shows list never names a null query", () => {
+  const view = searchView(
+    emptySearchParams("tv"),
+    [page({ mode: "browse", results: [], total: 0 })],
+    false,
+  );
+  expect(view).toMatchObject({
+    kind: "no_matches",
+    title: "No popular shows right now",
+  });
+  expect(JSON.stringify(view)).not.toContain("null");
 });

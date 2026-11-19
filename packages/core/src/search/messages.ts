@@ -49,6 +49,20 @@ export function noMatchesMessage(params: SearchParams): SearchMessage {
 }
 
 /**
+ * The empty state when a catalog's Popular list comes back empty: there is no
+ * query to name and nothing to loosen, so it says the list is empty rather
+ * than that a search failed (AGENTS.md section 10; spec 0029, AC-4). One copy
+ * for both apps.
+ */
+export function emptyBrowseMessage(type: SearchType): SearchMessage {
+  const noun = mediaNoun(type);
+  return {
+    title: `No popular ${noun} right now`,
+    description: `${CATALOG_SOURCES[type]} lists no popular ${noun} at the moment.`,
+  };
+}
+
+/**
  * The empty state for a filtered title search whose results read so far kept
  * nothing. It names the range checked rather than claiming nothing matches,
  * since later results might (AGENTS.md section 10; spec 0010, AC-15).
