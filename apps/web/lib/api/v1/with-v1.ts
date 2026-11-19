@@ -207,7 +207,7 @@ async function parseInput<S extends V1InputSchemas>(
   }
   if (schemas?.query) {
     const result = schemas.query.safeParse(
-      Object.fromEntries(request.nextUrl.searchParams),
+      queryRecord(request.nextUrl.searchParams),
     );
     if (!result.success) return null;
     parsed.query = result.data;
@@ -220,6 +220,24 @@ async function parseInput<S extends V1InputSchemas>(
     parsed.body = result.data;
   }
   return parsed as ParsedInput<S>;
+}
+
+/**
+ * The query as the web's `searchParams` record has it: a key given once is a
+ * string, a repeated key an array. Search's `genre` and `platform` repeat by
+ * design, and every other schema expects a string, so a repeated `ids` or
+ * `page` fails its parse with 400 rather than one value being picked
+ * silently (AGENTS.md section 11).
+ */
+function queryRecord(
+  params: URLSearchParams,
+): Record<string, string | string[]> {
+  const record: Record<string, string | string[]> = {};
+  for (const key of new Set(params.keys())) {
+    const values = params.getAll(key);
+    record[key] = values.length === 1 ? values[0] : values;
+  }
+  return record;
 }
 
 function failureResponse(failure: V1Failure, cache: string): Response {

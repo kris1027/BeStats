@@ -13,7 +13,6 @@ import {
   episodeKey,
   type ShowPage,
 } from "@bestats/core/tv/library-page";
-import { createClient } from "@/lib/supabase/server";
 import {
   getMovieSummaries,
   getMoviesSettled,
@@ -23,6 +22,7 @@ import {
   TmdbError,
 } from "@/lib/tmdb";
 
+import type { TrackingClient } from "./commands/run";
 import { logTrackingEvent, TRACKING_EVENT } from "./log";
 
 /**
@@ -104,6 +104,14 @@ export type LibraryTitle = {
 export type ShowTab = LibraryList;
 
 /**
+ * Opens the RLS bound client a library read runs on: the cookie client on a
+ * web page, the bearer client on `GET /api/v1/me/library` (spec 0035). A
+ * function, as in `TrackingDeps`, so the reads never pick a session
+ * themselves and both surfaces run the very same queries.
+ */
+export type LibraryClient = () => Promise<TrackingClient>;
+
+/**
  * What one tab read is asked for (AC-16). The four always travel together
  * from the page to the reader.
  */
@@ -131,7 +139,13 @@ export type MovieTab = Exclude<MoviePage, "watched">;
 
 /** One movie card on Watchlist or Upcoming, or one TMDB no longer has. */
 export type MovieTabCard =
-  | { page: "watchlist"; movieId: number; title: LibraryTitle }
+  | {
+      page: "watchlist";
+      movieId: number;
+      title: LibraryTitle;
+      /** TMDB's release date, for the app's card (spec 0035, LibraryEntry). */
+      releaseDate: string | null;
+    }
   | {
       page: "upcoming";
       movieId: number;
@@ -283,13 +297,14 @@ type PlacedShow = {
  */
 export async function getShowLibraryTab(
   query: LibraryTabQuery<ShowTab>,
+  getClient: LibraryClient,
 ): Promise<LibraryTab<ShowTabCard>> {
   const { userId, tab, today } = query;
   let rows: TrackedShowRow[];
   let capped: boolean;
   let watched: Map<number, Set<EpisodeKey>>;
   try {
-    const supabase = await createClient();
+    const supabase = await getClient();
     const { data, error } = await supabase
       .from("user_tracked_shows")
       .select("show_id, tracked_at, last_watched_at")
@@ -413,7 +428,7 @@ function compareDesc(a: string, b: string): number {
  * too, for their tracked shows (prompts/catalog-card-status.md).
  */
 export async function readWatchedRegular(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: TrackingClient,
   userId: string,
   showIds: readonly number[],
 ): Promise<Map<number, Set<EpisodeKey>> | null> {
@@ -462,12 +477,13 @@ type PlannedMovieRow = { id: number };
  */
 export async function getMovieLibraryTab(
   query: LibraryTabQuery<MovieTab>,
+  getClient: LibraryClient,
 ): Promise<LibraryTab<MovieTabCard>> {
   const { userId, tab, today } = query;
   let rows: PlannedMovieRow[];
   let capped: boolean;
   try {
-    const supabase = await createClient();
+    const supabase = await getClient();
     const { data, error } = await supabase
       .from("user_movie_state")
       .select("movie_id, watchlisted_at")
@@ -508,7 +524,12 @@ export async function getMovieLibraryTab(
         tmdbRating: movie.tmdbRating,
       };
       return result === "watchlist"
-        ? { page: "watchlist", movieId: row.id, title }
+        ? {
+            page: "watchlist",
+            movieId: row.id,
+            title,
+            releaseDate: movie.releaseDate,
+          }
         : {
             page: "upcoming",
             movieId: row.id,
@@ -547,13 +568,16 @@ export type WatchedMovieRow = {
  *
  * @param userId The verified session's user, never a client value.
  * @param page A page already parsed by `parsePageParam`.
+ * @param getClient The caller's RLS bound client.
  */
 export function getWatchedMoviesPage(
   userId: string,
   page: number,
+  getClient: LibraryClient,
 ): Promise<LibraryPage<WatchedMovieRow>> {
   return readCountedPage({
     page,
+    getClient,
     read: (supabase, from, to) =>
       supabase
         .from("user_movie_state")
@@ -584,8 +608,8 @@ export function getWatchedMoviesPage(
   });
 }
 
-/** The server client a counted page read runs its queries on. */
-type ServerClient = Awaited<ReturnType<typeof createClient>>;
+/** The client a counted page read runs its queries on. */
+type ServerClient = TrackingClient;
 
 /**
  * One ordered, counted Postgres page of a tab that needs no classification:
@@ -601,14 +625,17 @@ type ServerClient = Awaited<ReturnType<typeof createClient>>;
  * @param query.read The page query, given the inclusive row range.
  * @param query.count The same filters as `read`, as a head count.
  * @param query.map The page's rows, as the tab hands them on.
+ * @param query.getClient The caller's RLS bound client.
  */
 export async function readCountedPage<Raw, Row>({
   page,
+  getClient,
   read,
   count,
   map,
 }: {
   page: number;
+  getClient: LibraryClient;
   read: (
     supabase: ServerClient,
     from: number,
@@ -624,7 +651,7 @@ export async function readCountedPage<Raw, Row>({
   map: (rows: Raw[]) => Row[];
 }): Promise<LibraryPage<Row>> {
   try {
-    const supabase = await createClient();
+    const supabase = await getClient();
     const from = (page - 1) * LIBRARY_PAGE_SIZE;
     const result = await read(supabase, from, from + LIBRARY_PAGE_SIZE - 1);
 

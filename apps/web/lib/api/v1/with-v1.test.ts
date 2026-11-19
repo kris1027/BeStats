@@ -250,12 +250,39 @@ describe("input parsing", () => {
       ["603", "0", JSON.stringify({ watched: true })],
       ["603", "1", JSON.stringify({ watched: "yes" })],
       ["603", "1", "not json"],
+      // A repeated single value is refused, never one copy picked.
+      ["603", "1&page=2", JSON.stringify({ watched: true })],
     ]) {
       const response = await call(id, page, body);
       expect(response.status, `${id} ${page} ${body}`).toBe(400);
       expect(await errorCode(response)).toBe("invalid_input");
     }
     expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("hands a repeated query key over as an array, as search's genre", async () => {
+    const queryHandler = vi.fn(async () => v1Ok({}));
+    const repeated = withV1({
+      name: "test.repeat",
+      auth: "public",
+      cache: "no-store",
+      input: {
+        query: z.object({ genre: z.array(z.string()), q: z.string() }),
+      },
+      handler: queryHandler,
+    });
+    const response = await repeated(
+      new NextRequest("http://localhost/api/v1/test?genre=28&genre=12&q=x", {
+        headers: { "X-BeStats-App-Version": "1.0.0" },
+      }),
+      ctx(),
+    );
+    expect(response.status).toBe(200);
+    expect(queryHandler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: { query: { genre: ["28", "12"], q: "x" } },
+      }),
+    );
   });
 
   it("checks the token before parsing a me route", async () => {
@@ -343,5 +370,55 @@ describe("every /api/v1 handler", () => {
         expect(method[2], `${file} ${method[1]}`).toBeDefined();
       }
     }
+  });
+
+  /**
+   * Spec 0035, Caching: the `Cache-Control` each public route answers on
+   * success, by its folder under `app/api/v1`. Shows and seasons are short
+   * because air dates and status are time sensitive (AGENTS.md section 12).
+   * A new public route fails here until it is added.
+   */
+  const PUBLIC_CACHE: Record<string, string> = {
+    config: "public, s-maxage=60",
+    "shows/[id]": "public, s-maxage=60",
+    "shows/[id]/seasons/[n]": "public, s-maxage=60",
+    genres: "public, s-maxage=86400",
+    search: "public, s-maxage=300, stale-while-revalidate=600",
+    "lists/[type]/[list]": "public, s-maxage=300, stale-while-revalidate=600",
+    "movies/[id]": "public, s-maxage=300, stale-while-revalidate=600",
+    "games/[id]": "public, s-maxage=300, stale-while-revalidate=600",
+  };
+
+  it("sets the cache spec 0035 names for each route", () => {
+    const seen = new Set<string>();
+    for (const file of routeFiles(root)) {
+      const route = file
+        .slice(root.length + 1)
+        .replace(/[\\/]route\.ts$/, "")
+        .replaceAll("\\", "/");
+      const source = readFileSync(file, "utf8");
+      const auths = [...source.matchAll(/auth:\s*"(\w+)"/g)].map((m) => m[1]);
+      const caches = [...source.matchAll(/cache:\s*"([^"]+)"/g)].map(
+        (m) => m[1],
+      );
+      expect(auths.length, route).toBeGreaterThan(0);
+
+      if (route === "me" || route.startsWith("me/")) {
+        // `withV1` answers every bearer route `private, no-store`, success
+        // and error alike, and a bearer route takes no `cache` option.
+        expect(new Set(auths), route).toEqual(new Set(["bearer"]));
+        expect(caches, route).toEqual([]);
+        continue;
+      }
+      expect(new Set(auths), route).toEqual(new Set(["public"]));
+      expect(route in PUBLIC_CACHE, `${route} has no expected cache`).toBe(
+        true,
+      );
+      for (const cache of caches)
+        expect(cache, route).toBe(PUBLIC_CACHE[route]);
+      expect(caches.length, route).toBe(auths.length);
+      seen.add(route);
+    }
+    expect([...seen].sort()).toEqual(Object.keys(PUBLIC_CACHE).sort());
   });
 });

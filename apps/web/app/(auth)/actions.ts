@@ -25,11 +25,9 @@ import {
   signUpSchema,
 } from "@bestats/core/auth/schemas";
 import { redirect } from "next/navigation";
+import { claimUsernameCommand } from "@/lib/auth/commands/username";
 import { AUTH_EVENT, logAuthEvent } from "@/lib/auth/log";
-import {
-  classifyAuthError,
-  classifyProfileWriteError,
-} from "@/lib/auth/supabase-error";
+import { classifyAuthError } from "@/lib/auth/supabase-error";
 import { getAuthEmailDelivery, getPublicEnv } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 
@@ -122,13 +120,14 @@ async function claimUsername(
     return "/account";
   }
 
-  const { error } = await supabase
-    .from("profiles")
-    .insert({ user_id: userId, username });
+  const result = await claimUsernameCommand(
+    { userId, getClient: async () => supabase },
+    { username },
+  );
 
-  if (!error) return nextPath;
+  if (result.ok) return nextPath;
 
-  if (classifyProfileWriteError(error) === AUTH_OUTCOME.usernameTaken) {
+  if (result.error === AUTH_OUTCOME.usernameTaken) {
     logAuthEvent(AUTH_EVENT.signUp, "refused", AUTH_OUTCOME.usernameTaken);
     return `/account?notice=${ACCOUNT_NOTICE.usernameTaken}`;
   }

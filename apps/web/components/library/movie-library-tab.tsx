@@ -4,6 +4,7 @@ import { LIBRARY_COPY } from "@bestats/core/tracking/messages";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { PaginationLinks } from "@/components/pagination-links";
+import { createClient } from "@/lib/supabase/server";
 import {
   getLibraryMovieTitles,
   getMovieLibraryTab,
@@ -13,7 +14,6 @@ import {
   type MovieTab,
   type MovieTabCard,
 } from "@/lib/tracking/library-lists";
-
 import { LibraryGrid } from "./library-grid";
 import {
   CatalogFailed,
@@ -30,7 +30,7 @@ import type { LibraryList, LibraryMovieItem } from "./types";
  */
 export async function movieLibraryTab(query: LibraryTabQuery<MovieTab>) {
   const { tab: list, page, today } = query;
-  const tab = await getMovieLibraryTab(query);
+  const tab = await getMovieLibraryTab(query, createClient);
   const settled = settleTab(tab, list, "movie", page);
   if (settled.kind !== "ok") return settled.panel;
 
@@ -82,7 +82,7 @@ export async function watchedMoviesTab({
   userId: string;
   page: number;
 }) {
-  const result = await getWatchedMoviesPage(userId, page);
+  const result = await getWatchedMoviesPage(userId, page, createClient);
   if (result.kind === "failed") {
     return <ListFailed list="watched" type="movie" page={page} />;
   }

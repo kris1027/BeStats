@@ -9,7 +9,7 @@ The pure half (`episode-intent.ts`, `game-intent.ts`, `ids-key.ts`, `intent.ts`,
 - A write the app also needs splits into a command in `commands/` (spec 0033, child 0035): `(deps: TrackingDeps, parsedInput) => result`, where `TrackingDeps` is `{ userId, getClient }`. A command never reads cookies, headers or the session and never calls `refresh()`; it runs the catalog check, the release gate and the write through `runTrackingCommand` in `commands/run.ts`.
 - The Server Action keeps the Zod parse and wraps the command in `withCookieSession` (`write.ts`), which verifies the cookie session and calls `refresh()` on success. The v1 route wraps the same command with the bearer user, so both return the same result union for the same input.
 - `getClient` is a function so a catalog refusal opens no database client, as the actions always did; tests assert it.
-- Split so far: every movie command in `commands/movie-writes.ts` (helpers in `movie.ts`), every episode, season and show tracking command in `commands/show-writes.ts`, and the `readTitles` read behind `/me/titles` (movies, shows with progress and calculated ratings, games). The game actions still run through `runTrackingWrite` until spec 0033 step 4c splits them. Show commands open the client before their TMDB check, as the show actions always did.
+- Split so far: every movie command in `commands/movie-writes.ts` (helpers in `movie.ts`), every episode, season and show tracking command in `commands/show-writes.ts`, every game command in `commands/game-writes.ts`, and the `readTitles` read behind `/me/titles` (movies, shows with progress and calculated ratings, games). Show commands open the client before their TMDB check, as the show actions always did.
 
 ## Movies
 
@@ -40,6 +40,8 @@ Placement is worked out per request and never stored. No page writes when it loa
 ## Reads
 
 Library tabs (`library-lists.ts`): a shows or movies tab classifies every tracked show or planned unwatched movie, at most 500 per media type, from one cached TMDB details read per title. The `/shows`, `/movies` and `/search` grids place their titles with the same classifiers so a card always matches its library page: one `cache()`d read per grid, and TMDB details only for the grid's tracked shows (`show-grid-status.ts`, `getMovieGridStates`; [prompts/catalog-card-status.md](../../../../prompts/catalog-card-status.md)). Games (`game-library.ts`): Playing and Finished read one counted `user_game_state` page of 24 plus one `getGamesByIds` batch, with no 500 limit; Want to play and Coming soon read up to 500 Want to play rows and one batch, split and paged in memory (`getWantToPlayTab`).
+
+Every library read takes a `getClient` input and never makes its own client: the web tabs pass the cookie client, and `/api/v1/me/library` (`lib/api/v1/library.ts`, `readLibraryPage`) passes the bearer one, so both run the same queries under RLS (spec 0035).
 
 ## Games
 

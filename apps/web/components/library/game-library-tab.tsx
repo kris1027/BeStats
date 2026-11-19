@@ -6,6 +6,7 @@ import { GAME_DATE_LINES, libraryCopy } from "@bestats/core/tracking/messages";
 import { redirect } from "next/navigation";
 import { PaginationLinks } from "@/components/pagination-links";
 import type { GameSummary } from "@/lib/igdb";
+import { createClient } from "@/lib/supabase/server";
 import {
   type GameLibraryRow,
   getGameLibraryPage,
@@ -14,7 +15,6 @@ import {
   type WantToPlayPage,
 } from "@/lib/tracking/game-library";
 import { libraryLastPage } from "@/lib/tracking/library-lists";
-
 import { GameLibraryGrid } from "./game-library-grid";
 import {
   CatalogFailed,
@@ -56,7 +56,12 @@ export async function gameLibraryTab({
     return splitWantToPlayTab({ tab: list, userId, page, today });
   }
 
-  const result = await getGameLibraryPage({ userId, tab: list, page });
+  const result = await getGameLibraryPage({
+    userId,
+    tab: list,
+    page,
+    getClient: createClient,
+  });
   if (result.kind === "failed") {
     return <ListFailed list={list} type="game" page={page} />;
   }
@@ -97,7 +102,13 @@ async function splitWantToPlayTab({
   page: number;
   today: string;
 }) {
-  const result = await getWantToPlayTab({ userId, tab: list, page, today });
+  const result = await getWantToPlayTab({
+    userId,
+    tab: list,
+    page,
+    today,
+    getClient: createClient,
+  });
   if (result.kind === "failed") {
     return <ListFailed list={list} type="game" page={page} />;
   }

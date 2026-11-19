@@ -22,7 +22,8 @@ const getWantToPlayTab = vi.fn();
 const getLibraryGames = vi.fn();
 const getShowLibraryTab = vi.fn();
 vi.mock("server-only", () => ({}));
-vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
+const createClient = vi.fn();
+vi.mock("@/lib/supabase/server", () => ({ createClient }));
 vi.mock("@/lib/tmdb", () => ({ TmdbError: class extends Error {} }));
 vi.mock("@/lib/igdb", () => ({ IgdbError: class extends Error {} }));
 vi.mock("@/lib/tracking/game-library", async (importOriginal) => {
@@ -228,6 +229,7 @@ describe("the parameters (AC-5)", () => {
       userId: "user-a",
       tab: "upcoming",
       page: 1,
+      getClient: createClient,
     });
   });
 
@@ -259,6 +261,7 @@ describe("the reads and the panels (AC-6, AC-7, AC-14)", () => {
         userId: "user-a",
         tab: list,
         page: 1,
+        getClient: createClient,
       });
       expect(getLibraryGames).toHaveBeenCalledWith([1, 2]);
       expect(
@@ -280,6 +283,7 @@ describe("the reads and the panels (AC-6, AC-7, AC-14)", () => {
         tab: list,
         page: 1,
         today: "2026-10-24",
+        getClient: createClient,
       });
       expect(getGameLibraryPage).not.toHaveBeenCalled();
       expect(getLibraryGames).not.toHaveBeenCalled();

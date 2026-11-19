@@ -2,13 +2,13 @@ import { libraryHref } from "@bestats/core/catalog/media-type";
 import { LIBRARY_COPY } from "@bestats/core/tracking/messages";
 import { PaginationLinks } from "@/components/pagination-links";
 import { POSTER_GRID_EAGER, PosterGrid } from "@/components/poster-grid";
+import { createClient } from "@/lib/supabase/server";
 import {
   getShowLibraryTab,
   type LibraryTabQuery,
   type ShowTabCard,
 } from "@/lib/tracking/library-lists";
 import { getShowRatings } from "@/lib/tracking/show-ratings";
-
 import { LIBRARY_HEADING_ID } from "./ids";
 import { EmptyPanel, ListFailed, settleTab, TabNotes } from "./library-panels";
 import { MissingShowCard } from "./missing-show-card";
@@ -23,7 +23,7 @@ import { WatchlistShowCard } from "./watchlist-show-card";
  */
 export async function showLibraryTab(query: LibraryTabQuery<LibraryList>) {
   const { tab: list, userId, page, today } = query;
-  const tab = await getShowLibraryTab(query);
+  const tab = await getShowLibraryTab(query, createClient);
   const settled = settleTab(tab, list, "tv", page);
   if (settled.kind !== "ok") return settled.panel;
   const { cards, total, lastPage } = settled;
