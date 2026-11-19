@@ -17,6 +17,7 @@ Since spec 0034 the pure files below (`private-paths.ts`, `next-path.ts`, `actio
 - `identity.ts`: pure display derivations (name, avatar letter). The username, when there is one, is passed in; otherwise the email name is used.
 - `username.ts`: the username Zod rule, reserved list and weekly lock helpers. Must match the `profiles` checks in `supabase/schemas/02-tables.sql` (`username.test.ts` checks). The database is the judge: the trigger `guard_username_change` owns the lock and the timestamp.
 - `profile.ts`: `getOwnProfile()`, the `cache()`d read of the signed in account's `profiles` row, used by the navbar slot, `/account` and `changeUsernameAction`. A failed read returns null so the navbar falls back, never breaks.
+- `commands/username.ts`: `readProfileRow`, `claimUsernameCommand` and `changeUsernameCommand`, the username read and writes shared by sign up, `/account` and `GET`/`PUT /api/v1/me/profile` (spec 0035). Like the tracking commands, they take `{ userId, getClient }` and never read cookies or the session.
 
 ## Rules
 
