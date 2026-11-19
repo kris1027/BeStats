@@ -1,11 +1,13 @@
 import type { V1Search } from "@bestats/core/api/v1/browse";
-import { CATALOG_SOURCES } from "@bestats/core/catalog/media-type";
 import {
   formatPartialCount,
-  formatRange,
   formatResultCount,
-  mediaNoun,
 } from "@bestats/core/search/count";
+import {
+  browseCountLine,
+  noMatchesMessage,
+  scanEmptyMessage,
+} from "@bestats/core/search/messages";
 import type { SearchParams } from "@bestats/core/search/params";
 
 /**
@@ -27,12 +29,11 @@ export type SearchView =
   | { kind: "no_matches"; title: string; description: string }
   | { kind: "no_popular_games" };
 
-/** What to loosen when filters match nothing (the web's `FILTERED_HINTS`). */
-const FILTERED_HINT = "Try fewer genres, another year or a lower rating.";
-
 /**
  * The view for `pages` (every page loaded, in order) of a search for
- * `params`. Pure, so the copy is tested apart from the screen.
+ * `params`. Pure, so the branching is tested apart from the screen; every
+ * string comes from core's `search/messages`, so the phone says what the web
+ * says (apps/mobile/AGENTS.md, copy comes from core).
  */
 export function searchView(
   params: SearchParams,
@@ -41,11 +42,6 @@ export function searchView(
 ): SearchView {
   const first = pages[0];
   const results = pages.flatMap((page) => page.results);
-  const noun = mediaNoun(params.type);
-  const filtered =
-    params.genreIds.length > 0 ||
-    params.year !== null ||
-    params.rating !== null;
 
   if (first.mode === "browse" && results.length === 0) {
     return params.type === "game" ? { kind: "no_popular_games" } : noMatches();
@@ -64,8 +60,12 @@ export function searchView(
     if (results.length === 0) {
       return {
         kind: "scan_empty",
-        title: `No matches in TMDB results ${formatRange(fromIndex, toIndex)}`,
-        description: `None of these results for “${params.q}” fit your filters.${hasMore ? " Later results might." : ""}`,
+        ...scanEmptyMessage({
+          fromIndex,
+          toIndex,
+          query: params.q ?? "",
+          hasMore,
+        }),
       };
     }
     return {
@@ -83,7 +83,7 @@ export function searchView(
   if (first.mode === "browse") {
     return {
       kind: "results",
-      countLine: `Popular ${noun} on ${CATALOG_SOURCES[params.type]}`,
+      countLine: browseCountLine(params.type),
     };
   }
   return {
@@ -103,14 +103,6 @@ export function searchView(
   };
 
   function noMatches(): SearchView {
-    return {
-      kind: "no_matches",
-      title: filtered
-        ? `No ${noun} match these filters`
-        : `No ${noun} match “${params.q}”`,
-      description: filtered
-        ? FILTERED_HINT
-        : "Check the spelling, or try a shorter title.",
-    };
+    return { kind: "no_matches", ...noMatchesMessage(params) };
   }
 }
