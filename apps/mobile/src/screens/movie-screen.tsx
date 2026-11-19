@@ -50,7 +50,7 @@ import { useSession } from "@/lib/session";
  * gate is the authority (AC-6). TMDB's score is labelled TMDB, apart from any
  * personal score (AGENTS.md section 9).
  */
-export default function MovieScreen() {
+export function MovieScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { width: screenWidth } = useWindowDimensions();
   const parsedId = movieIdParamSchema.safeParse(params.id);

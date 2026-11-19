@@ -7,10 +7,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, screen, userEvent } from "@testing-library/react-native";
 import { renderRouter } from "expo-router/testing-library";
 import type { PropsWithChildren } from "react";
-
-import MovieScreen from "@/app/movies/[id]";
 import { ApiError } from "@/lib/api";
 import { clearPrivateQueries } from "@/lib/query-client";
+import { MovieScreen } from "@/screens/movie-screen";
 
 /**
  * covers: spec 0033, AC-6 (the pill reads as unavailable before release),
