@@ -118,6 +118,14 @@ Check it with `vercel firewall status` (`AI Bots  Deny`). Checked on 2026-10-28:
 
 Hobby refuses a second rate limit rule ("Rate limiting is not available for this plan") and any `header:` rate limit key, so crawlers cannot be rate limited while `Rate limit api search` exists.
 
+**Widen that rule to the mobile API** (spec 0035, Rate limits; decided on 2026-11-19 in [prompts/mobile-api-v1.md](../prompts/mobile-api-v1.md)). Not applied yet: you take this step at deploy time, before the first store build ships. Spec 0035 asks for three rules (search 60, lists and genres 120, the rest of `/api/v1` 300 per minute per IP), but Hobby allows the one rule above, so it becomes one rule with one shared limit per IP:
+- Condition: request path equals `/api/search`, **or** request path starts with `/api/v1/`
+- Limit: proposed 300 requests per 60 seconds, fixed window, keyed by IP address (the spec's general `/api/v1` limit; mobile carriers put many users behind one IP, and the app's library and title screens call several routes per screen). This also loosens `/api/search` from 60. The number owes your approval before you apply it.
+- Action: respond `429`; the app reads it as `rate_limited`.
+- Rename the rule `Rate limit api` so its name matches its reach.
+
+Set it in the Vercel dashboard (Firewall, the existing rule, Edit), then check it with `vercel firewall overview` (still one active custom rule) and a burst against `/api/v1/config` from one address. Record the checked date here. Spec 0035's three rule table owes a short `/architect` update to match.
+
 ## 6. Which IP address Supabase counts (AC-18)
 
 Sign ins run in a Server Action on Vercel, so Supabase may count the visitor's address or Vercel's outbound address. If it counts Vercel's, the limit is shared by everyone, and one person sending wrong passwords quickly makes sign in fail for every visitor.
