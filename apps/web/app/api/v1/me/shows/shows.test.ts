@@ -196,7 +196,7 @@ describe("PUT /api/v1/me/episodes/{episodeId}", () => {
     });
     const response = await put({
       showId: 1396,
-      seasonNumber: 1,
+      season: 1,
       watched: true,
     });
     expect(response.status).toBe(200);
@@ -231,7 +231,7 @@ describe("PUT /api/v1/me/episodes/{episodeId}", () => {
         })),
       },
     });
-    const response = await put({ showId: 1396, seasonNumber: 1, rating: 9 });
+    const response = await put({ showId: 1396, season: 1, rating: 9 });
     expect(response.status).toBe(409);
     expect(await errorOf(response)).toMatchObject({
       code: "not_released",
@@ -241,7 +241,7 @@ describe("PUT /api/v1/me/episodes/{episodeId}", () => {
   });
 
   it("clears a rating with no TMDB read, keeping the mark", async () => {
-    const response = await put({ showId: 1396, seasonNumber: 1, rating: null });
+    const response = await put({ showId: 1396, season: 1, rating: null });
     expect(response.status).toBe(200);
     expect(loadSeason).not.toHaveBeenCalled();
     expect(calls).toContainEqual({
@@ -251,14 +251,24 @@ describe("PUT /api/v1/me/episodes/{episodeId}", () => {
   });
 
   it("answers 400 for a body with neither a mark nor a rating", async () => {
-    const response = await put({ showId: 1396, seasonNumber: 1 });
+    const response = await put({ showId: 1396, season: 1 });
     expect(response.status).toBe(400);
+  });
+
+  it("answers 400 for the old seasonNumber field, writing nothing", async () => {
+    const response = await put({
+      showId: 1396,
+      seasonNumber: 1,
+      watched: true,
+    });
+    expect(response.status).toBe(400);
+    expect(calls).toEqual([]);
   });
 
   it("answers 400 for a mark and a rating together, writing nothing", async () => {
     const response = await put({
       showId: 1396,
-      seasonNumber: 1,
+      season: 1,
       watched: true,
       rating: 7,
     });

@@ -33,7 +33,7 @@ export const PUT = withV1({
     const body = input.body;
     const target = {
       showId: body.showId,
-      seasonNumber: body.seasonNumber,
+      seasonNumber: body.season,
       episodeId: input.params.episodeId,
     };
     const result =
