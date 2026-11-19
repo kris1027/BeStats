@@ -14,10 +14,9 @@ import { ScreenshotGallery } from "@/components/game/screenshot-gallery";
 import { RetryLink } from "@/components/retry-link";
 import { StatePanel } from "@/components/state-panel";
 import { GameTrackingSlot } from "@/components/tracking/game-tracking-slot";
+import { loadGame } from "@/lib/igdb/load-game";
 import { gameJsonLd } from "@/lib/seo/json-ld";
 import { catalogMetadata } from "@/lib/seo/metadata";
-
-import { loadGame } from "@/lib/igdb/load-game";
 
 /** Longest meta description the page emits, the movie page's limit. */
 const DESCRIPTION_LIMIT = 160;

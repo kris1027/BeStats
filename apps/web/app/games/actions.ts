@@ -16,6 +16,7 @@ import type {
   GameUndo,
 } from "@bestats/core/tracking/types";
 import { todayUtc } from "@bestats/core/tv/air-status";
+import { readGameIncludingHidden } from "@/lib/igdb/load-game";
 import { TRACKING_EVENT, type TrackingEvent } from "@/lib/tracking/log";
 import { classifyGameTrackingError } from "@/lib/tracking/supabase-error";
 import {
@@ -23,8 +24,6 @@ import {
   runTrackingWrite,
   type WriteStep,
 } from "@/lib/tracking/write";
-
-import { readGameIncludingHidden } from "@/lib/igdb/load-game";
 
 /**
  * The game status and rating mutations, as Server Actions (spec 0026, API
