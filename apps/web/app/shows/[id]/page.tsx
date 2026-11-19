@@ -34,7 +34,7 @@ import {
   type TmdbErrorKind,
 } from "@/lib/tmdb";
 
-import { loadShow } from "./load-show";
+import { loadShow } from "@/lib/tmdb/load-show";
 
 /** Longest meta description the page emits (spec 0009, AC-16). */
 const DESCRIPTION_LIMIT = 160;

@@ -13,10 +13,10 @@ const getOptionalUser = vi.fn();
 vi.mock("@/lib/auth/user", () => ({ getOptionalUser }));
 
 const loadSeason = vi.fn();
-vi.mock("./[id]/season/[number]/load-season", () => ({ loadSeason }));
+vi.mock("@/lib/tmdb/load-season", () => ({ loadSeason }));
 
 const loadShow = vi.fn();
-vi.mock("./[id]/load-show", () => ({ loadShow }));
+vi.mock("@/lib/tmdb/load-show", () => ({ loadShow }));
 
 const refresh = vi.fn();
 vi.mock("next/cache", () => ({ refresh }));

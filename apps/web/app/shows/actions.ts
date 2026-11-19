@@ -38,8 +38,8 @@ import {
 } from "@/lib/tracking/log";
 import { classifyTrackingError } from "@/lib/tracking/supabase-error";
 
-import { loadShow } from "./[id]/load-show";
-import { loadSeason } from "./[id]/season/[number]/load-season";
+import { loadShow } from "@/lib/tmdb/load-show";
+import { loadSeason } from "@/lib/tmdb/load-season";
 
 /**
  * The episode and season tracking mutations, as Server Actions (spec 0011,

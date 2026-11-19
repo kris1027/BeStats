@@ -24,7 +24,7 @@ import {
   type WriteStep,
 } from "@/lib/tracking/write";
 
-import { readGameIncludingHidden } from "./[id]/load-game";
+import { readGameIncludingHidden } from "@/lib/igdb/load-game";
 
 /**
  * The game status and rating mutations, as Server Actions (spec 0026, API

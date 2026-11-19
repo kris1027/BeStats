@@ -17,7 +17,7 @@ import { GameTrackingSlot } from "@/components/tracking/game-tracking-slot";
 import { gameJsonLd } from "@/lib/seo/json-ld";
 import { catalogMetadata } from "@/lib/seo/metadata";
 
-import { loadGame } from "./load-game";
+import { loadGame } from "@/lib/igdb/load-game";
 
 /** Longest meta description the page emits, the movie page's limit. */
 const DESCRIPTION_LIMIT = 160;

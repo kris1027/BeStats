@@ -8,7 +8,7 @@ import {
   type TvShow,
 } from "@/lib/tmdb";
 
-import { loadShow } from "../../load-show";
+import { loadShow } from "./load-show";
 
 export type LoadSeasonResult =
   | { kind: "found"; show: TvShow; season: SeasonDetail }

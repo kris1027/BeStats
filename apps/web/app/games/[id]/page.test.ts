@@ -23,7 +23,7 @@ import { gameJsonLd } from "@/lib/seo/json-ld";
  */
 const loadGame = vi.fn();
 
-vi.mock("./load-game", () => ({
+vi.mock("@/lib/igdb/load-game", () => ({
   loadGame: (id: number) => loadGame(id),
 }));
 

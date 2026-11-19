@@ -16,7 +16,7 @@ import { SeasonTrackingStore } from "@/components/tracking/season-tracking-store
 import { ButtonLink } from "@/components/ui/button";
 import { catalogMetadata } from "@/lib/seo/metadata";
 
-import { loadSeason } from "./load-season";
+import { loadSeason } from "@/lib/tmdb/load-season";
 
 /** Longest meta description the page emits (spec 0009, AC-16). */
 const DESCRIPTION_LIMIT = 160;
