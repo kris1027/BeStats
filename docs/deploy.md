@@ -124,7 +124,7 @@ Hobby refuses a second rate limit rule ("Rate limiting is not available for this
 - Action: respond `429`; the app reads it as `rate_limited`.
 - Rename the rule `Rate limit api` so its name matches its reach.
 
-Set it in the Vercel dashboard (Firewall, the existing rule, Edit), then check it with `vercel firewall overview` (still one active custom rule) and a burst against `/api/v1/config` from one address. Record the checked date here. Spec 0035's three rule table owes a short `/architect` update to match.
+Set it in the Vercel dashboard (Firewall, the existing rule, Edit), then check it with `vercel firewall overview` (still one active custom rule) and a burst against `/api/v1/config` from one address. Record the checked date here. Spec 0035's Rate limits section records this single rule as the Hobby form of its three rule table.
 
 ## 6. Which IP address Supabase counts (AC-18)
 
