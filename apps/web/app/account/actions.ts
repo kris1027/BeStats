@@ -18,12 +18,10 @@ import {
   changeUsernameSchema,
 } from "@bestats/core/auth/schemas";
 import { refresh } from "next/cache";
+import { changeUsernameCommand } from "@/lib/auth/commands/username";
 import { AUTH_EVENT, logAuthEvent } from "@/lib/auth/log";
 import { getOwnProfile } from "@/lib/auth/profile";
-import {
-  classifyAuthError,
-  classifyProfileWriteError,
-} from "@/lib/auth/supabase-error";
+import { classifyAuthError } from "@/lib/auth/supabase-error";
 import { getOptionalUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
 
@@ -157,31 +155,27 @@ export async function changeUsernameAction(
     return failure(AUTH_OUTCOME.sessionExpired);
   }
 
-  // The identical name is no change, and the trigger would keep the clock
-  // where it was. Saying "updated" for it would be a small lie.
+  // The command answers the identical name as unchanged with no write; the
+  // name it compares with is the request's cached profile read.
   const current = await getOwnProfile();
-  if (current?.username === parsed.data.username) {
-    return keepUsername(success(USERNAME_UNCHANGED_MESSAGE), formData);
-  }
+  const result = await changeUsernameCommand(
+    { userId: user.id, getClient: createClient },
+    { username: parsed.data.username, current: current?.username ?? null },
+  );
 
-  const supabase = await createClient();
-  const { error } = await supabase
-    .from("profiles")
-    .upsert(
-      { user_id: user.id, username: parsed.data.username },
-      { onConflict: "user_id" },
-    );
-
-  if (error) {
-    const outcome = classifyProfileWriteError(error);
-    logAuthEvent(AUTH_EVENT.changeUsername, "refused", outcome);
+  if (!result.ok) {
+    logAuthEvent(AUTH_EVENT.changeUsername, "refused", result.error);
     return keepUsername(
       failure(
-        outcome,
-        outcome === AUTH_OUTCOME.usernameTaken ? ["username"] : [],
+        result.error,
+        result.error === AUTH_OUTCOME.usernameTaken ? ["username"] : [],
       ),
       formData,
     );
+  }
+
+  if (!result.changed) {
+    return keepUsername(success(USERNAME_UNCHANGED_MESSAGE), formData);
   }
 
   refresh();
