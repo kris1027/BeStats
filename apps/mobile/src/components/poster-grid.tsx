@@ -22,7 +22,7 @@ type Props = {
 /**
  * The web's poster grid at phone width: three columns of `PosterCard`s in a
  * virtualized list, so a long list or search scrolls without rendering every
- * page at once.
+ * page at once (AGENTS.md section 3, phone width; section 10, pagination).
  */
 export function PosterGrid({
   items,

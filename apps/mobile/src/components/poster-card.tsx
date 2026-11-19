@@ -11,7 +11,11 @@ import { Pressable, Text, View } from "react-native";
 
 import { sizedImageUri } from "@/lib/images";
 
-/** The href of a catalog card's own page, from core's builders. */
+/**
+ * The href of a catalog card's own page, from core's builders, keyed by media
+ * type plus ID since a TMDB movie and show can share a number (AGENTS.md
+ * section 8, catalog identity).
+ */
 export function cardHref(type: LibraryType, id: number): Href {
   return (type === "game" ? gameHref(id) : titleHref(type, id)) as Href;
 }

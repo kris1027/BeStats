@@ -6,7 +6,8 @@ import { formatReleaseDate } from "@bestats/core/format";
  * The release date pill a card of `list` prints, or null. Only a list core
  * marks `datedCards` (games' Coming soon) prints one, as the web's
  * `CatalogListCards` does (spec 0028, AC-8); the text is core's
- * `formatReleaseDate`, so both apps print the same day.
+ * `formatReleaseDate`, so both apps print the same UTC day (AGENTS.md
+ * section 9, air dates are UTC days).
  *
  * @param today The UTC day (`todayUtc`), for the short date's year rule.
  */

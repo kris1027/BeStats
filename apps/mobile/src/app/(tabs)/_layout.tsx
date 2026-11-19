@@ -3,7 +3,8 @@ import { NativeTabs } from "expo-router/native-tabs";
 import { tokenColor } from "@/theme/token-vars";
 
 /**
- * The app's bottom tabs (prompts/mobile-app-shell-catalog.md, decision 3):
+ * The app's bottom tabs (AGENTS.md section 1, public catalog and private
+ * library; prompts/mobile-app-shell-catalog.md, decision 3):
  * Home, Search, Library and Account, as the platform's own tab bar. Each tab
  * is a group of one shared folder, so every tab keeps its own stack and a
  * title opened from Search goes back to Search. The tabs are static, as

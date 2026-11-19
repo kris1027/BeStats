@@ -29,7 +29,11 @@ export function MediaTypeProvider({ children }: PropsWithChildren) {
   );
 }
 
-/** The shared media type; throws outside `MediaTypeProvider`. */
+/**
+ * The media type Home and Search share, so switching on one carries to the
+ * other as the web's tabs do (AGENTS.md section 3, follow the shipped UI).
+ * Throws outside `MediaTypeProvider`, where there is no type to share.
+ */
 export function useMediaType(): MediaTypeState {
   const value = useContext(MediaTypeContext);
   if (!value) throw new Error("useMediaType needs a MediaTypeProvider");

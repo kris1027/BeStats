@@ -87,7 +87,11 @@ export function DetailHeader({
   );
 }
 
-/** A titled block of body text; renders nothing when there is no text. */
+/**
+ * A titled block of body text. It renders nothing when there is no text
+ * rather than an empty heading, since only real metadata shows (AGENTS.md
+ * section 3).
+ */
 export function DetailSection({
   heading,
   text,

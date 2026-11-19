@@ -36,7 +36,7 @@ type Props = {
 
 /**
  * The web filter bar's Genres, Year and minimum rating as a sheet
- * (prompts/mobile-app-shell-catalog.md, decision 7). The choices come from
+ * (AGENTS.md section 10; prompts/mobile-app-shell-catalog.md, decision 7). The choices come from
  * core and `/api/v1/genres`; a games search has no Platforms filter in this
  * slice (decision 2). A failed genre list leaves its picker unavailable and
  * the rest working, as the web does (spec 0029, AC-11).

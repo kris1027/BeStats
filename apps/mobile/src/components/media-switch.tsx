@@ -13,7 +13,7 @@ const OPTIONS: readonly { type: LibraryType; label: string }[] = [
 /**
  * The Shows, Movies, Games switch Home and Search share
  * (prompts/mobile-app-shell-catalog.md, decision 3): a segmented glass
- * control, each segment 44pt tall and announced as a tab with its selected
+ * control, each segment 44pt tall for the touch rule (AGENTS.md section 3) and announced as a tab with its selected
  * state.
  */
 export function MediaSwitch() {

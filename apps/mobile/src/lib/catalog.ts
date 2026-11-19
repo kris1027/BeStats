@@ -18,7 +18,10 @@ import { apiRequest } from "./api";
  */
 export const CATALOG_QUERY_ROOT = "catalog";
 
-/** Query keys of the public catalog reads. */
+/**
+ * Query keys of the public catalog reads, all under `CATALOG_QUERY_ROOT` so
+ * public data stays apart from user state (AGENTS.md section 11).
+ */
 export const catalogKeys = {
   list: (type: LibraryType, slug: string) =>
     [CATALOG_QUERY_ROOT, "list", type, slug] as const,
@@ -53,17 +56,26 @@ export function fetchSearch(params: SearchParams, page: number) {
   return apiRequest(`/api/v1${href}`, v1SearchSchema);
 }
 
-/** `GET /api/v1/genres?type=`: the search filter's genre choices. */
+/**
+ * `GET /api/v1/genres?type=`: the search filter's genre choices, read through
+ * `/api/v1` because the phone holds no catalog key (AGENTS.md section 5).
+ */
 export function fetchGenres(type: LibraryType) {
   return apiRequest(`/api/v1/genres?type=${type}`, v1GenresSchema);
 }
 
-/** `GET /api/v1/shows/{id}`: the public show detail. */
+/**
+ * `GET /api/v1/shows/{id}`: the public show detail, read through `/api/v1`
+ * because the phone holds no catalog key (AGENTS.md section 5).
+ */
 export function fetchShow(id: number) {
   return apiRequest(`/api/v1/shows/${id}`, v1ShowSchema);
 }
 
-/** `GET /api/v1/games/{id}`: the public game detail. */
+/**
+ * `GET /api/v1/games/{id}`: the public game detail, read through `/api/v1`
+ * because the phone holds no catalog key (AGENTS.md section 5).
+ */
 export function fetchGame(id: number) {
   return apiRequest(`/api/v1/games/${id}`, v1GameSchema);
 }
