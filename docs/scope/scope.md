@@ -474,7 +474,7 @@ A native app for iOS and Android beside the web app, sharing its rules with it. 
   - [ ] Release (step 6): AC-15, AC-17
 - [ ] Verify it: `/check verify mobile app`
 - [ ] Test it: `/test mobile app`
-- [ ] Review it (fresh model): `/check review mobile app`
+- [x] Review it (fresh model): `/check review mobile app`
 - [ ] Document it: `/document mobile app`
 spec [0033](../specs/0033-mobile-app-expo/index.md) · code in `apps/mobile/`, `packages/core/`, `apps/web/app/api/v1/`, `apps/web/lib/tracking/commands/`, `apps/web/lib/supabase/bearer.ts`, `supabase/schemas/` (`delete_own_account`)
 
