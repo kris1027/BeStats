@@ -2,20 +2,19 @@ import { libraryHref } from "@bestats/core/catalog/media-type";
 import { LIBRARY_COPY } from "@bestats/core/tracking/messages";
 import { PaginationLinks } from "@/components/pagination-links";
 import { POSTER_GRID_EAGER, PosterGrid } from "@/components/poster-grid";
+import { createClient } from "@/lib/supabase/server";
 import {
   getShowLibraryTab,
   type LibraryTabQuery,
   type ShowTabCard,
 } from "@/lib/tracking/library-lists";
 import { getShowRatings } from "@/lib/tracking/show-ratings";
-
 import { LIBRARY_HEADING_ID } from "./ids";
 import { EmptyPanel, ListFailed, settleTab, TabNotes } from "./library-panels";
 import { MissingShowCard } from "./missing-show-card";
 import { UpcomingShowCard, WatchedShowCard } from "./show-cards";
 import type { LibraryList } from "./types";
 import { WatchlistShowCard } from "./watchlist-show-card";
-import { createClient } from "@/lib/supabase/server";
 
 /**
  * A show tab (AC-9, AC-11, AC-12, AC-15 to AC-18): Watchlist with Mark

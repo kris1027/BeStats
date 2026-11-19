@@ -6,6 +6,7 @@ import { GAME_DATE_LINES, libraryCopy } from "@bestats/core/tracking/messages";
 import { redirect } from "next/navigation";
 import { PaginationLinks } from "@/components/pagination-links";
 import type { GameSummary } from "@/lib/igdb";
+import { createClient } from "@/lib/supabase/server";
 import {
   type GameLibraryRow,
   getGameLibraryPage,
@@ -14,7 +15,6 @@ import {
   type WantToPlayPage,
 } from "@/lib/tracking/game-library";
 import { libraryLastPage } from "@/lib/tracking/library-lists";
-
 import { GameLibraryGrid } from "./game-library-grid";
 import {
   CatalogFailed,
@@ -23,7 +23,6 @@ import {
   TabNotes,
 } from "./library-panels";
 import type { LibraryGameItem } from "./types";
-import { createClient } from "@/lib/supabase/server";
 
 /**
  * A games tab: Coming soon on `/coming-soon`, Want to play on `/want-to-play`,

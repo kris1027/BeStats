@@ -4,6 +4,7 @@ import { LIBRARY_COPY } from "@bestats/core/tracking/messages";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { PaginationLinks } from "@/components/pagination-links";
+import { createClient } from "@/lib/supabase/server";
 import {
   getLibraryMovieTitles,
   getMovieLibraryTab,
@@ -13,7 +14,6 @@ import {
   type MovieTab,
   type MovieTabCard,
 } from "@/lib/tracking/library-lists";
-
 import { LibraryGrid } from "./library-grid";
 import {
   CatalogFailed,
@@ -23,7 +23,6 @@ import {
   TabNotes,
 } from "./library-panels";
 import type { LibraryList, LibraryMovieItem } from "./types";
-import { createClient } from "@/lib/supabase/server";
 
 /**
  * A planned movie tab, Watchlist or Upcoming (AC-13, AC-15 to AC-18), on the

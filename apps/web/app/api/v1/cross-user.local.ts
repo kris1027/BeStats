@@ -59,7 +59,6 @@ const rating = await import("./me/movies/[id]/rating/route");
 const game = await import("./me/games/[id]/route");
 const titles = await import("./me/titles/route");
 const library = await import("./me/library/route");
-const profile = await import("./me/profile/route");
 
 const URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "";

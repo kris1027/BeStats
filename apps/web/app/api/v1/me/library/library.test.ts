@@ -87,7 +87,7 @@ afterEach(() => {
   warn.mockRestore();
 });
 
-const library = (query: string, headers = AUTH) =>
+const library = (query: string, headers: Record<string, string> = AUTH) =>
   GET(req(`/api/v1/me/library?${query}`, headers), ctx());
 
 async function bodyOf(response: Response) {
