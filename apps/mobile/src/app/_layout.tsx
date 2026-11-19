@@ -8,6 +8,7 @@ import { VariableContextProvider } from "nativewind";
 import { useEffect } from "react";
 import { Appearance } from "react-native";
 
+import { ToastProvider } from "@/components/toast";
 import { MediaTypeProvider } from "@/lib/media-type";
 import { queryClient } from "@/lib/query-client";
 import { SessionProvider, useSession } from "@/lib/session";
@@ -75,8 +76,8 @@ function Navigator() {
 }
 
 /**
- * The app's providers: tokens, the query cache, the session, and the media
- * type Home and Search share.
+ * The app's providers: tokens, the query cache, the session, the media type
+ * Home and Search share, and the one toast tracking writes report through.
  */
 export default function RootLayout() {
   return (
@@ -85,8 +86,10 @@ export default function RootLayout() {
         <SessionProvider>
           <MediaTypeProvider>
             <ThemeProvider value={NAV_THEME}>
-              <StatusBar style="light" />
-              <Navigator />
+              <ToastProvider>
+                <StatusBar style="light" />
+                <Navigator />
+              </ToastProvider>
             </ThemeProvider>
           </MediaTypeProvider>
         </SessionProvider>

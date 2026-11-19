@@ -1,0 +1,211 @@
+import type { ClearedState } from "@bestats/core/api/v1/cleared";
+import { V1_ERROR_MESSAGES } from "@bestats/core/api/v1/errors";
+import { v1SeasonStateSchema } from "@bestats/core/api/v1/show";
+import {
+  pickTitleState,
+  type TitleType,
+  titleKey,
+  v1TitlesSchema,
+} from "@bestats/core/api/v1/titles";
+import { UNDO_ACTION_LABEL } from "@bestats/core/tracking/messages";
+import {
+  type QueryKey,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
+import type { z } from "zod";
+
+import { useToast } from "@/components/toast";
+
+import { ApiError, apiRequest } from "./api";
+import { PRIVATE_QUERY_ROOT } from "./movies";
+
+/**
+ * Query keys of the caller's own state. Every one starts with
+ * `PRIVATE_QUERY_ROOT`, so `clearPrivateQueries()` wipes them all on sign out
+ * (spec 0033, AC-13; AGENTS.md section 11).
+ */
+export const trackingKeys = {
+  title: (type: TitleType, id: number) =>
+    [PRIVATE_QUERY_ROOT, "titles", titleKey(type, id)] as const,
+  season: (showId: number, seasonNumber: number) =>
+    [PRIVATE_QUERY_ROOT, "season", showId, seasonNumber] as const,
+};
+
+/**
+ * One title's stored state, from `/api/v1/me/titles` (spec 0035, API
+ * surface). The API answers every asked key, so a missing or misshapen one is
+ * an unreadable answer, never an empty state guessed by the app (AGENTS.md
+ * section 11).
+ */
+export async function fetchTitleState<T extends TitleType>(
+  type: T,
+  id: number,
+) {
+  const titles = await apiRequest(
+    `/api/v1/me/titles?ids=${titleKey(type, id)}`,
+    v1TitlesSchema,
+    { auth: true },
+  );
+  const state = pickTitleState(titles, type, id);
+  if (!state) throw new ApiError(200, "internal", V1_ERROR_MESSAGES.internal);
+  return state;
+}
+
+/**
+ * `GET /api/v1/me/shows/{id}/seasons/{n}`: the caller's episode rows for one
+ * season, keyed by episode id the way core's episode intents read them.
+ */
+export async function fetchSeasonState(showId: number, seasonNumber: number) {
+  const body = await apiRequest(
+    `/api/v1/me/shows/${showId}/seasons/${seasonNumber}`,
+    v1SeasonStateSchema,
+    { auth: true },
+  );
+  const states: Record<number, { watched: boolean; rating: number | null }> =
+    {};
+  const watchedAt: Record<number, string> = {};
+  for (const row of body.episodes) {
+    states[row.episodeId] = {
+      watched: row.watchedAt !== null,
+      rating: row.rating,
+    };
+    if (row.watchedAt) watchedAt[row.episodeId] = row.watchedAt;
+  }
+  return { states, watchedAt };
+}
+
+export type SeasonState = Awaited<ReturnType<typeof fetchSeasonState>>;
+
+/**
+ * Posts an Undo to its restore route (spec 0035, Undo): the body is always
+ * `{ cleared }`, built from the earlier write's own answer, and the route
+ * refuses a kind that is not its own.
+ */
+export function postRestore<T>(
+  path: string,
+  cleared: ClearedState,
+  schema: z.ZodType<T>,
+) {
+  return apiRequest(path, schema, {
+    method: "POST",
+    body: { cleared },
+    auth: true,
+  });
+}
+
+/**
+ * The English copy for a failed write: the server's own message (core's
+ * tracking copy), or `fallback` for anything that never reached it as a v1
+ * error. The UI never invents a reason (AGENTS.md section 11).
+ */
+export function writeErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof ApiError ? error.message : fallback;
+}
+
+type WriteOptions<TState, TVars, TResult> = {
+  /** The cached state this write moves at once. */
+  stateKey: QueryKey;
+  /** The optimistic state: always one of core's intent rules, never a copy. */
+  apply: (state: TState, vars: TVars) => TState;
+  write: (vars: TVars) => Promise<TResult>;
+  /** Other private queries the write changes (progress, ratings). */
+  alsoInvalidate?: QueryKey[];
+  /** The fallback copy when the error carries no server message. */
+  failure: string;
+  /**
+   * For an Undo: the web's "Couldn't undo" line, shown when the server says
+   * the Undo no longer applies (`undo_expired`, or `conflict` when the state
+   * changed since).
+   */
+  expired?: string;
+  onSuccess?: (result: TResult, vars: TVars) => void;
+  /** Runs after a refused write is rolled back (closes a picker, say). */
+  onFailure?: () => void;
+};
+
+/**
+ * Every tracking control's write (prompts/mobile-title-tracking.md, decision
+ * 2): the state moves at once by core's intent rule, a refusal puts it back
+ * and shows the server's reason in a toast, and the confirmed state is
+ * always refetched from the server afterwards, so the screen never keeps a
+ * false success (AGENTS.md section 11; child 0036, Optimistic writes).
+ *
+ * After a 401 the session is already gone and the private cache wiped, so
+ * the old state is not put back: that would bring private data back after
+ * sign out (spec 0033, AC-13). The refetch waits for the last write on the
+ * same state, so two quick taps never flash the first answer.
+ */
+export function useTrackingWrite<TState, TVars, TResult>({
+  stateKey,
+  apply,
+  write,
+  alsoInvalidate = [],
+  failure,
+  expired,
+  onSuccess,
+  onFailure,
+}: WriteOptions<TState, TVars, TResult>) {
+  const queries = useQueryClient();
+  const toast = useToast();
+  return useMutation({
+    mutationKey: stateKey,
+    mutationFn: write,
+    onMutate: async (vars: TVars) => {
+      await queries.cancelQueries({ queryKey: stateKey });
+      const previous = queries.getQueryData<TState>(stateKey);
+      if (previous !== undefined) {
+        queries.setQueryData(stateKey, apply(previous, vars));
+      }
+      return { previous };
+    },
+    onError: (error, _vars, context) => {
+      const signedOut =
+        error instanceof ApiError && error.code === "unauthenticated";
+      if (context?.previous !== undefined && !signedOut) {
+        queries.setQueryData(stateKey, context.previous);
+      }
+      const stale =
+        expired !== undefined &&
+        error instanceof ApiError &&
+        error.code === "conflict";
+      toast.show({
+        message: stale ? expired : writeErrorMessage(error, failure),
+        tone: "error",
+      });
+      onFailure?.();
+    },
+    onSuccess: (result, vars) => onSuccess?.(result, vars),
+    onSettled: async () => {
+      if (queries.isMutating({ mutationKey: stateKey }) > 1) return;
+      await Promise.all(
+        [stateKey, ...alsoInvalidate].map((queryKey) =>
+          queries.invalidateQueries({ queryKey }),
+        ),
+      );
+    },
+  });
+}
+
+/**
+ * Offers Undo for a write that removed something (spec 0035, Undo): the toast
+ * carries the core Undo label, and pressing it turns the action off, runs the
+ * restore, and closes the toast once it lands. A refused restore replaces it
+ * with the error toast `useTrackingWrite` shows, so the outcome is always
+ * visible (AGENTS.md section 11).
+ */
+export function useUndoToast() {
+  const toast = useToast();
+  return (message: string, restore: (done: () => void) => void) => {
+    const key = toast.show({
+      message,
+      action: {
+        label: UNDO_ACTION_LABEL,
+        onPress: () => {
+          toast.busy(key);
+          restore(() => toast.dismiss(key));
+        },
+      },
+    });
+  };
+}
