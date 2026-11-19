@@ -15,6 +15,7 @@ import { MissingShowCard } from "./missing-show-card";
 import { UpcomingShowCard, WatchedShowCard } from "./show-cards";
 import type { LibraryList } from "./types";
 import { WatchlistShowCard } from "./watchlist-show-card";
+import { createClient } from "@/lib/supabase/server";
 
 /**
  * A show tab (AC-9, AC-11, AC-12, AC-15 to AC-18): Watchlist with Mark
@@ -23,7 +24,7 @@ import { WatchlistShowCard } from "./watchlist-show-card";
  */
 export async function showLibraryTab(query: LibraryTabQuery<LibraryList>) {
   const { tab: list, userId, page, today } = query;
-  const tab = await getShowLibraryTab(query);
+  const tab = await getShowLibraryTab(query, createClient);
   const settled = settleTab(tab, list, "tv", page);
   if (settled.kind !== "ok") return settled.panel;
   const { cards, total, lastPage } = settled;

@@ -7,11 +7,11 @@ import type {
 } from "@bestats/core/catalog/library-list";
 import type { GameStatus } from "@bestats/core/tracking/types";
 import { type GameSummary, getGamesByIds, IgdbError } from "@/lib/igdb";
-import { createClient } from "@/lib/supabase/server";
 import {
   capRows,
   compareDates,
   LIBRARY_CLASSIFY_LIMIT,
+  type LibraryClient,
   type LibraryPage,
   listReadFailed,
   pageSlice,
@@ -69,19 +69,23 @@ export type GameLibraryRow = {
  *
  * @param query.userId The verified session's user, never a client value.
  * @param query.page A page already parsed by `parsePageParam`.
+ * @param query.getClient The caller's RLS bound client.
  */
 export function getGameLibraryPage({
   userId,
   tab,
   page,
+  getClient,
 }: {
   userId: string;
   tab: LibraryList;
   page: number;
+  getClient: LibraryClient;
 }): Promise<LibraryPage<GameLibraryRow>> {
   const { status, order } = GAME_LIBRARY_TABS[tab];
   return readCountedPage({
     page,
+    getClient,
     read: (supabase, from, to) =>
       supabase
         .from("user_game_state")
@@ -170,22 +174,25 @@ export type WantToPlayTab =
  * @param query.userId The verified session's user, never a client value.
  * @param query.page A page already parsed by `parsePageParam`.
  * @param query.today `requestTodayUtc()`, read once per request.
+ * @param query.getClient The caller's RLS bound client.
  */
 export async function getWantToPlayTab({
   userId,
   tab,
   page,
   today,
+  getClient,
 }: {
   userId: string;
   tab: WantToPlayPage;
   page: number;
   today: string;
+  getClient: LibraryClient;
 }): Promise<WantToPlayTab> {
   let rows: GameLibraryRow[];
   let capped: boolean;
   try {
-    const supabase = await createClient();
+    const supabase = await getClient();
     const { data, error } = await supabase
       .from("user_game_state")
       .select(GAME_ROW_COLUMNS)

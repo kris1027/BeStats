@@ -30,6 +30,8 @@ const createClient = vi.fn(async () => ({
 }));
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/server", () => ({ createClient }));
+/** The client function the loaders take, as the web passes `createClient`. */
+const getClient = createClient as never;
 vi.mock("@/lib/tmdb", () => ({ TmdbError: class extends Error {} }));
 
 class FakeIgdbError extends Error {}
@@ -79,7 +81,7 @@ describe("getGameLibraryPage", () => {
       responses = [{ data: [ROW], error: null, count: 25 }];
 
       expect(
-        await getGameLibraryPage({ userId: "user-a", tab, page: 2 }),
+        await getGameLibraryPage({ userId: "user-a", tab, page: 2, getClient }),
       ).toEqual({
         kind: "ok",
         total: 25,
@@ -120,7 +122,12 @@ describe("getGameLibraryPage", () => {
     ];
 
     expect(
-      await getGameLibraryPage({ userId: "user-a", tab: "watched", page: 5 }),
+      await getGameLibraryPage({
+        userId: "user-a",
+        tab: "watched",
+        page: 5,
+        getClient,
+      }),
     ).toEqual({ kind: "ok", rows: [], total: 30 });
     expect(calls.slice(-4)).toEqual([
       { method: "from", args: ["user_game_state"] },
@@ -134,7 +141,12 @@ describe("getGameLibraryPage", () => {
     responses = [{ data: null, error: { code: "42501" }, count: null }];
 
     expect(
-      await getGameLibraryPage({ userId: "user-a", tab: "watchlist", page: 1 }),
+      await getGameLibraryPage({
+        userId: "user-a",
+        tab: "watchlist",
+        page: 1,
+        getClient,
+      }),
     ).toEqual({ kind: "failed" });
     expect(warn).toHaveBeenCalledWith(
       "movie_tracking.list_read refused db_error",
@@ -145,7 +157,12 @@ describe("getGameLibraryPage", () => {
     responses = [{ data: [], error: null, count: 0 }];
 
     expect(
-      await getGameLibraryPage({ userId: "user-a", tab: "watchlist", page: 1 }),
+      await getGameLibraryPage({
+        userId: "user-a",
+        tab: "watchlist",
+        page: 1,
+        getClient,
+      }),
     ).toEqual({ kind: "ok", rows: [], total: 0 });
     expect(calls.at(-1)).toEqual({ method: "range", args: [0, 23] });
   });
@@ -154,7 +171,12 @@ describe("getGameLibraryPage", () => {
     responses = [{ data: [ROW], error: null, count: null }];
 
     expect(
-      await getGameLibraryPage({ userId: "user-a", tab: "watched", page: 1 }),
+      await getGameLibraryPage({
+        userId: "user-a",
+        tab: "watched",
+        page: 1,
+        getClient,
+      }),
     ).toEqual({ kind: "failed" });
   });
 
@@ -165,7 +187,12 @@ describe("getGameLibraryPage", () => {
     ];
 
     expect(
-      await getGameLibraryPage({ userId: "user-a", tab: "watched", page: 9 }),
+      await getGameLibraryPage({
+        userId: "user-a",
+        tab: "watched",
+        page: 9,
+        getClient,
+      }),
     ).toEqual({ kind: "failed" });
     expect(warn).toHaveBeenCalledTimes(1);
   });
@@ -174,7 +201,12 @@ describe("getGameLibraryPage", () => {
     createClient.mockRejectedValueOnce(new Error("no cookies"));
 
     expect(
-      await getGameLibraryPage({ userId: "user-a", tab: "upcoming", page: 1 }),
+      await getGameLibraryPage({
+        userId: "user-a",
+        tab: "upcoming",
+        page: 1,
+        getClient,
+      }),
     ).toEqual({ kind: "failed" });
   });
 });
@@ -236,7 +268,7 @@ describe("getWantToPlayTab", () => {
   }
 
   const read = (tab: "watchlist" | "coming-soon", page = 1) =>
-    getWantToPlayTab({ userId: "user-a", tab, page, today: TODAY });
+    getWantToPlayTab({ userId: "user-a", tab, page, today: TODAY, getClient });
 
   const ids = (result: Awaited<ReturnType<typeof read>>) =>
     result.kind === "ok" ? result.rows.map((row) => row.gameId) : result;

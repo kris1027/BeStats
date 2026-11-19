@@ -23,6 +23,7 @@ import {
   TabNotes,
 } from "./library-panels";
 import type { LibraryGameItem } from "./types";
+import { createClient } from "@/lib/supabase/server";
 
 /**
  * A games tab: Coming soon on `/coming-soon`, Want to play on `/want-to-play`,
@@ -56,7 +57,12 @@ export async function gameLibraryTab({
     return splitWantToPlayTab({ tab: list, userId, page, today });
   }
 
-  const result = await getGameLibraryPage({ userId, tab: list, page });
+  const result = await getGameLibraryPage({
+    userId,
+    tab: list,
+    page,
+    getClient: createClient,
+  });
   if (result.kind === "failed") {
     return <ListFailed list={list} type="game" page={page} />;
   }
@@ -97,7 +103,13 @@ async function splitWantToPlayTab({
   page: number;
   today: string;
 }) {
-  const result = await getWantToPlayTab({ userId, tab: list, page, today });
+  const result = await getWantToPlayTab({
+    userId,
+    tab: list,
+    page,
+    today,
+    getClient: createClient,
+  });
   if (result.kind === "failed") {
     return <ListFailed list={list} type="game" page={page} />;
   }

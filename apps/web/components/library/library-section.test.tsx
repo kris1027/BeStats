@@ -24,7 +24,8 @@ const getWatchedMoviesPage = vi.fn();
 const getLibraryMovieTitles = vi.fn();
 const getShowRatings = vi.fn();
 vi.mock("server-only", () => ({}));
-vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
+const createClient = vi.fn();
+vi.mock("@/lib/supabase/server", () => ({ createClient }));
 vi.mock("@/lib/tmdb", () => ({ TmdbError: class extends Error {} }));
 vi.mock("@/lib/tracking/library-lists", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/tracking/library-lists")>()),
@@ -182,6 +183,7 @@ describe("the session and the parameters come first", () => {
     );
     expect(getMovieLibraryTab).toHaveBeenCalledWith(
       expect.objectContaining({ tab: "watchlist" }),
+      createClient,
     );
     expect(getShowLibraryTab).not.toHaveBeenCalled();
   });
@@ -200,12 +202,15 @@ describe("the reads each tab makes (AC-15, AC-16)", () => {
     "classifies the %s shows tab for the session user, page and today",
     async (list) => {
       await renderSection(list, { type: "tv", page: "1" });
-      expect(getShowLibraryTab).toHaveBeenCalledWith({
-        userId: "user-a",
-        tab: list,
-        page: 1,
-        today: "2026-10-07",
-      });
+      expect(getShowLibraryTab).toHaveBeenCalledWith(
+        {
+          userId: "user-a",
+          tab: list,
+          page: 1,
+          today: "2026-10-07",
+        },
+        createClient,
+      );
     },
   );
 
@@ -213,19 +218,26 @@ describe("the reads each tab makes (AC-15, AC-16)", () => {
     "classifies the %s movies tab",
     async (list) => {
       await renderSection(list, { type: "movie" });
-      expect(getMovieLibraryTab).toHaveBeenCalledWith({
-        userId: "user-a",
-        tab: list,
-        page: 1,
-        today: "2026-10-07",
-      });
+      expect(getMovieLibraryTab).toHaveBeenCalledWith(
+        {
+          userId: "user-a",
+          tab: list,
+          page: 1,
+          today: "2026-10-07",
+        },
+        createClient,
+      );
       expect(getWatchedMoviesPage).not.toHaveBeenCalled();
     },
   );
 
   it("reads watched movies with no classification", async () => {
     await renderSection("watched", { type: "movie" });
-    expect(getWatchedMoviesPage).toHaveBeenCalledWith("user-a", 1);
+    expect(getWatchedMoviesPage).toHaveBeenCalledWith(
+      "user-a",
+      1,
+      createClient,
+    );
     expect(getMovieLibraryTab).not.toHaveBeenCalled();
   });
 

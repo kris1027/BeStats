@@ -23,6 +23,7 @@ import {
   TabNotes,
 } from "./library-panels";
 import type { LibraryList, LibraryMovieItem } from "./types";
+import { createClient } from "@/lib/supabase/server";
 
 /**
  * A planned movie tab, Watchlist or Upcoming (AC-13, AC-15 to AC-18), on the
@@ -30,7 +31,7 @@ import type { LibraryList, LibraryMovieItem } from "./types";
  */
 export async function movieLibraryTab(query: LibraryTabQuery<MovieTab>) {
   const { tab: list, page, today } = query;
-  const tab = await getMovieLibraryTab(query);
+  const tab = await getMovieLibraryTab(query, createClient);
   const settled = settleTab(tab, list, "movie", page);
   if (settled.kind !== "ok") return settled.panel;
 
@@ -82,7 +83,7 @@ export async function watchedMoviesTab({
   userId: string;
   page: number;
 }) {
-  const result = await getWatchedMoviesPage(userId, page);
+  const result = await getWatchedMoviesPage(userId, page, createClient);
   if (result.kind === "failed") {
     return <ListFailed list="watched" type="movie" page={page} />;
   }
