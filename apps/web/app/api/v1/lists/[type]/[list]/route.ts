@@ -1,5 +1,6 @@
 import {
   nextPageOf,
+  V1_PAGE_SIZE,
   type V1List,
   v1ListParamsSchema,
   v1PageQuerySchema,
@@ -77,7 +78,7 @@ export const GET = withV1({
       type,
       list: slug,
       page,
-      pageSize: 24,
+      pageSize: V1_PAGE_SIZE,
       results,
       total,
       totalIsExact: total !== null,
