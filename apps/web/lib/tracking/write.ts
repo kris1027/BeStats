@@ -6,14 +6,8 @@ import type { z } from "zod";
 import { getOptionalUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
 
-import { runTrackingCommand, type TrackingDeps } from "./commands/run";
-import {
-  logTrackingEvent,
-  type TrackingEvent,
-  type TrackingOutcome,
-} from "./log";
-
-export type { WriteStep } from "./commands/run";
+import type { TrackingDeps } from "./commands/run";
+import { logTrackingEvent, type TrackingEvent } from "./log";
 
 /**
  * The Server Action side of every tracking command (spec 0033, child 0035,
@@ -51,29 +45,6 @@ export async function withCookieSession<T extends { ok: boolean }>(
   const result = await run(deps);
   if (result.ok) refresh();
   return result;
-}
-
-/**
- * The shared order of every movie and game tracking action once its input is
- * parsed (spec 0007, spec 0026, AC-10): the verified session, then
- * `runTrackingCommand` (catalog check, then the write through Row Level
- * Security), then `refresh()` on success only. One copy, so the two media
- * types can never drift apart on the order or on what reaches a log line.
- *
- * The show and episode actions keep their own runner, because their bodies
- * interleave TMDB reads with several writes.
- *
- * @returns `value` is what `read` found, or undefined.
- */
-export function runTrackingWrite<D, R, E extends TrackingOutcome>(
-  options: Parameters<typeof runTrackingCommand<D, R, E>>[1],
-): Promise<
-  | { ok: true; value: R | undefined }
-  | { ok: false; error: E | "session_expired" | "write_failed" }
-> {
-  return withCookieSession(options.event, (deps) =>
-    runTrackingCommand(deps, options),
-  );
 }
 
 /**
