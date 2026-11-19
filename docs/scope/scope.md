@@ -465,7 +465,12 @@ A native app for iOS and Android beside the web app, sharing its rules with it. 
     - [x] 4a movies and images, 4b shows (first PR, branch `feat/mobile-api`)
     - [x] 4c games and profile (branch `feat/mobile-api-games-browse`, second PR)
     - [x] 4d browse and library: `/genres`, `/search`, `/lists`, `/me/library`, the per route cache test, the cross user check (`pnpm api:local`), the firewall note (branch `feat/mobile-api-games-browse`, second PR); next `/develop mobile app` starts at step 5
-  - [ ] App thickened (step 5): AC-10, AC-12, AC-13, AC-14, AC-16
+  - [ ] App thickened (step 5): AC-10, AC-12, AC-13, AC-14, AC-16, built in five slices (agreed 2026-11-19)
+    - [x] 5a shell, home, list screens and search, signed out browsing, read only show and game pages, plan in [prompts/mobile-app-shell-catalog.md](../../prompts/mobile-app-shell-catalog.md) (branch `feat/mobile-app-shell`; checked in the iOS Simulator)
+    - [ ] 5b title pages and tracking (full movie, show, season and episodes, game, Undo toasts)
+    - [ ] 5c library tabs (every page from core)
+    - [ ] 5d account: sign up, account screen, deletion on web and mobile with its migration, offline cache and its wipe, About and attribution
+    - [ ] 5e deep links (well known files, `/reset-password/app`)
   - [ ] Release (step 6): AC-15, AC-17
 - [ ] Verify it: `/check verify mobile app`
 - [ ] Test it: `/test mobile app`
