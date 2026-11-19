@@ -1,8 +1,13 @@
 import { v1ErrorBodySchema } from "@bestats/core/api/v1/errors";
 import {
+  v1EpisodeMarkOkSchema,
+  v1EpisodeWriteOkSchema,
   v1SeasonSchema,
   v1SeasonStateSchema,
+  v1SeasonWatchedOkSchema,
   v1ShowSchema,
+  v1ShowTrackingOkSchema,
+  v1UntrackShowOkSchema,
 } from "@bestats/core/api/v1/show";
 import { pickTitleState, v1TitlesSchema } from "@bestats/core/api/v1/titles";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -200,7 +205,7 @@ describe("PUT /api/v1/me/episodes/{episodeId}", () => {
       watched: true,
     });
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({
+    expect(v1EpisodeMarkOkSchema.parse(await response.json())).toEqual({
       ok: true,
       showTracked: true,
       newlyMarked: true,
@@ -243,6 +248,10 @@ describe("PUT /api/v1/me/episodes/{episodeId}", () => {
   it("clears a rating with no TMDB read, keeping the mark", async () => {
     const response = await put({ showId: 1396, season: 1, rating: null });
     expect(response.status).toBe(200);
+    expect(v1EpisodeWriteOkSchema.parse(await response.json())).toEqual({
+      ok: true,
+      showTracked: false,
+    });
     expect(loadSeason).not.toHaveBeenCalled();
     expect(calls).toContainEqual({
       method: "update",
@@ -289,7 +298,7 @@ describe("season watched and its restore", () => {
       { id: "1396", n: "1" },
       { method: "PUT", body: { watched: true } },
     );
-    expect(await response.json()).toEqual({
+    expect(v1SeasonWatchedOkSchema.parse(await response.json())).toEqual({
       ok: true,
       undo: { kind: "unmark", episodeIds: [62085, 62086] },
       showTracked: false,
@@ -322,6 +331,9 @@ describe("season watched and its restore", () => {
       { method: "POST", body: { cleared } },
     );
     expect(ok.status).toBe(200);
+    expect(v1EpisodeWriteOkSchema.safeParse(await ok.json()).success).toBe(
+      true,
+    );
     expect(wrong.status).toBe(400);
     expect(otherSeason.status).toBe(400);
   });
@@ -329,18 +341,16 @@ describe("season watched and its restore", () => {
 
 describe("show tracking and its restore", () => {
   it("tracks after a TMDB check and answers 404 for an unknown show", async () => {
-    expect(
-      (
-        await send(
-          track,
-          "/api/v1/me/shows/1396/tracking",
-          { id: "1396" },
-          {
-            method: "PUT",
-          },
-        )
-      ).status,
-    ).toBe(200);
+    const tracked = await send(
+      track,
+      "/api/v1/me/shows/1396/tracking",
+      { id: "1396" },
+      { method: "PUT" },
+    );
+    expect(tracked.status).toBe(200);
+    expect(v1ShowTrackingOkSchema.parse(await tracked.json())).toEqual({
+      ok: true,
+    });
     loadShow.mockResolvedValueOnce({ kind: "not_found" });
     const missing = await send(
       track,
@@ -364,7 +374,7 @@ describe("show tracking and its restore", () => {
       },
       { method: "DELETE" },
     );
-    const body = (await stopped.json()) as { undo: { trackedAt: string } };
+    const body = v1UntrackShowOkSchema.parse(await stopped.json());
     expect(body.undo).toEqual({ trackedAt: "2026-11-01T09:00:00+00:00" });
 
     const restored = await send(
@@ -379,6 +389,9 @@ describe("show tracking and its restore", () => {
       },
     );
     expect(restored.status).toBe(200);
+    expect(v1ShowTrackingOkSchema.parse(await restored.json())).toEqual({
+      ok: true,
+    });
     expect(calls).toContainEqual({
       method: "rpc",
       args: [

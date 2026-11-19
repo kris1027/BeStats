@@ -158,6 +158,72 @@ export const v1SeasonWatchedBodySchema = z.discriminatedUnion("watched", [
   z.object({ watched: z.literal(false), episodeIds: episodeIdListSchema }),
 ]);
 
+/**
+ * The success bodies of the show and episode writes (spec 0035, API surface):
+ * the `ok` half of each action's own result union, which `trackingAnswer`
+ * sends unchanged, so the app reads exactly what the web reads (spec 0033,
+ * AC-5). Route tests parse every success body with these, so the API and the
+ * app cannot drift apart (spec 0035, Key invariants).
+ */
+const showTrackedShape = { ok: z.literal(true), showTracked: z.boolean() };
+
+/**
+ * A score, a cleared score, an episode Undo or a season Undo: the `ok` half
+ * of `EpisodeTrackingResult`. `showTracked` is true only when the write
+ * tracked a show that was not tracked (AGENTS.md section 7).
+ */
+export const v1EpisodeWriteOkSchema = z.object(showTrackedShape);
+
+/**
+ * A watched mark or unmark: the `ok` half of `MarkEpisodeWatchedResult`.
+ * `markedAt` is the stored `watched_at` and only ever set with
+ * `newlyMarked`, since the app offers Undo only for a mark this call made
+ * and the restore matches that exact value (spec 0035, Undo).
+ */
+export const v1EpisodeMarkOkSchema = z
+  .object({
+    ...showTrackedShape,
+    newlyMarked: z.boolean(),
+    markedAt: z.string().nullable(),
+  })
+  .refine((body) => body.newlyMarked === (body.markedAt !== null));
+
+/**
+ * How to take back a season write, as the write returned it (`SeasonUndo`).
+ * Unlike the restore input it carries no "never in the future" check, since
+ * these dates come from the database, not the client.
+ */
+const seasonUndoSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("unmark"), episodeIds: z.array(z.number()) }),
+  z.object({
+    kind: z.literal("restore"),
+    entries: z.array(
+      z.object({ episodeId: z.number(), watchedAt: z.string() }),
+    ),
+  }),
+]);
+
+/**
+ * `PUT …/seasons/{n}/watched`: the `ok` half of `SeasonWatchedResult`. A null
+ * `undo` means the write changed nothing, so the app offers no Undo.
+ */
+export const v1SeasonWatchedOkSchema = z.object({
+  ...showTrackedShape,
+  undo: seasonUndoSchema.nullable(),
+});
+
+/** Track a show or restore its tracking: the `ok` half of `ShowTrackingResult`. */
+export const v1ShowTrackingOkSchema = z.object({ ok: z.literal(true) });
+
+/**
+ * Stop tracking: the `ok` half of `UntrackShowResult`. A null `undo` means the
+ * show was already stopped (AGENTS.md section 7: marks and ratings stay).
+ */
+export const v1UntrackShowOkSchema = z.object({
+  ok: z.literal(true),
+  undo: z.object({ trackedAt: z.string() }).nullable(),
+});
+
 /** How a refused episode or season write answers over HTTP. */
 export const EPISODE_ERROR_TO_V1: Record<EpisodeTrackingError, V1ErrorCode> = {
   invalid_input: "invalid_input",
