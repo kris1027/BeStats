@@ -18,6 +18,7 @@
     "test:db": "supabase test db",
     "tmdb:live": "pnpm --filter @bestats/web tmdb:live",
     "igdb:live": "pnpm --filter @bestats/web igdb:live",
+    "api:local": "./scripts/api-local.sh",
     "db:types": "supabase gen types typescript --local --schema public > packages/core/src/supabase/database.types.ts",
     "db:types:check": "./scripts/db-types-check.sh"
   },
