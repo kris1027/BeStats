@@ -3,7 +3,11 @@ import {
   v1MovieSchema,
   v1MovieWriteOkSchema,
 } from "@bestats/core/api/v1/movie";
-import { movieTitleKey, v1TitlesSchema } from "@bestats/core/api/v1/titles";
+import {
+  movieTitleKey,
+  pickTitleState,
+  v1TitlesSchema,
+} from "@bestats/core/api/v1/titles";
 
 import { ApiError, apiRequest } from "./api";
 
@@ -33,7 +37,7 @@ export async function fetchMovieState(id: number) {
     v1TitlesSchema,
     { auth: true },
   );
-  const state = titles[movieTitleKey(id)];
+  const state = pickTitleState(titles, "movie", id);
   // The API answers every asked key; a missing one is an unreadable answer.
   if (!state) throw new ApiError(200, "internal", V1_ERROR_MESSAGES.internal);
   return state;

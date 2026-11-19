@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  */
 const loadShow = vi.fn();
 
-vi.mock("./load-show", () => ({
+vi.mock("@/lib/tmdb/load-show", () => ({
   loadShow: (id: number) => loadShow(id),
 }));
 

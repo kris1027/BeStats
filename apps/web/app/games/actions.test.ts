@@ -12,7 +12,7 @@ const getOptionalUser = vi.fn();
 vi.mock("@/lib/auth/user", () => ({ getOptionalUser }));
 
 const readGameIncludingHidden = vi.fn();
-vi.mock("./[id]/load-game", () => ({ readGameIncludingHidden }));
+vi.mock("@/lib/igdb/load-game", () => ({ readGameIncludingHidden }));
 
 const refresh = vi.fn();
 vi.mock("next/cache", () => ({ refresh }));

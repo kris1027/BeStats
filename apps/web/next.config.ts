@@ -91,7 +91,7 @@ const nextConfig: NextConfig = {
    * A custom loader points every `next/image` at its host's own pre-sized
    * files, so the browser loads from TMDB's or IGDB's CDN and Vercel's
    * optimizer, whose Hobby quota a catalog this size outgrows, never runs
-   * (prompts/tmdb-image-loader.md). One file dispatches by host, because Next
+   * (prompts/tmdb-image-loader.md). One file sizes both hosts through core's `sizeImageUrl`, because Next
    * takes a single `loaderFile` (spec 0025, AC-11).
    *
    * The loader alone leaves `/_next/image` answering anyone who still holds an
@@ -100,8 +100,8 @@ const nextConfig: NextConfig = {
    * every local path (prompts/close-image-optimizer.md). Next still appends
    * its static import folders (`/_next/static/media/**` and the immutable
    * one) to any array, which stay harmless only while no code imports an
-   * image file. The image hosts are recorded by `TMDB_IMAGE_BASE` in
-   * `lib/tmdb/constants.ts` and `IGDB_IMAGE_BASE` in `lib/igdb/constants.ts`.
+   * image file. The image hosts are recorded by `TMDB_IMAGE_BASE` and
+   * `IGDB_IMAGE_BASE` in `packages/core/src/{tmdb/images,igdb/constants}.ts`.
    */
   images: {
     loader: "custom",

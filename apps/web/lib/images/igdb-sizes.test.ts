@@ -1,7 +1,7 @@
 import { IGDB_IMAGE_BASE } from "@bestats/core/igdb/constants";
 import { describe, expect, it } from "vitest";
 
-import { igdbImageLoader } from "./igdb-loader";
+import imageLoader from "./loader";
 
 /**
  * covers: spec 0025, AC-12; spec 0028, AC-6; spec 0029, AC-16
@@ -13,7 +13,7 @@ const at = (size: string) => `${IGDB_IMAGE_BASE}/${size}/co1abc.jpg`;
 const same = (size: string) => `${at(size)}#same-size`;
 const art = (size: string) => `${IGDB_IMAGE_BASE}/${size}/ar1abc.jpg`;
 
-describe("igdbImageLoader", () => {
+describe("imageLoader with IGDB sizes", () => {
   it.each([
     [50, "t_cover_small"],
     [90, "t_cover_small"],
@@ -21,7 +21,7 @@ describe("igdbImageLoader", () => {
     [264, "t_cover_big"],
     [480, "t_cover_big_2x"],
   ])("serves a 2x cover at width %i from %s", (width, size) => {
-    const url = igdbImageLoader({ src: at("t_cover_big_2x"), width });
+    const url = imageLoader({ src: at("t_cover_big_2x"), width });
     expect(url.replace("#same-size", "")).toBe(at(size));
   });
 
@@ -35,31 +35,31 @@ describe("igdbImageLoader", () => {
   ])(
     "serves the 42px quick search cover at width %i from %s",
     (width, size) => {
-      const url = igdbImageLoader({ src: at("t_cover_big_2x"), width });
+      const url = imageLoader({ src: at("t_cover_big_2x"), width });
       expect(url).toBe(at(size));
     },
   );
 
   it("marks the source's own size so Next sees the width honoured", () => {
-    expect(igdbImageLoader({ src: at("t_cover_big_2x"), width: 1000 })).toBe(
+    expect(imageLoader({ src: at("t_cover_big_2x"), width: 1000 })).toBe(
       same("t_cover_big_2x"),
     );
-    expect(igdbImageLoader({ src: at("t_cover_big_2x"), width: 480 })).toBe(
+    expect(imageLoader({ src: at("t_cover_big_2x"), width: 480 })).toBe(
       same("t_cover_big_2x"),
     );
   });
 
   it("never goes past the size the URL names", () => {
-    expect(igdbImageLoader({ src: at("t_cover_big"), width: 1000 })).toBe(
+    expect(imageLoader({ src: at("t_cover_big"), width: 1000 })).toBe(
       same("t_cover_big"),
     );
-    expect(igdbImageLoader({ src: at("t_cover_small"), width: 200 })).toBe(
+    expect(imageLoader({ src: at("t_cover_small"), width: 200 })).toBe(
       same("t_cover_small"),
     );
   });
 
   it("strips a #same-size fragment before reading the URL", () => {
-    expect(igdbImageLoader({ src: same("t_cover_big_2x"), width: 50 })).toBe(
+    expect(imageLoader({ src: same("t_cover_big_2x"), width: 50 })).toBe(
       at("t_cover_small"),
     );
   });
@@ -72,12 +72,12 @@ describe("igdbImageLoader", () => {
     [1200, "t_720p"],
     [1600, "t_1080p"],
   ])("serves 1080p art at width %i from %s", (width, size) => {
-    const url = igdbImageLoader({ src: art("t_1080p"), width });
+    const url = imageLoader({ src: art("t_1080p"), width });
     expect(url.replace("#same-size", "")).toBe(art(size));
   });
 
   it("never steps art past the size the URL names", () => {
-    expect(igdbImageLoader({ src: art("t_screenshot_big"), width: 1600 })).toBe(
+    expect(imageLoader({ src: art("t_screenshot_big"), width: 1600 })).toBe(
       `${art("t_screenshot_big")}#same-size`,
     );
   });
@@ -87,10 +87,9 @@ describe("igdbImageLoader", () => {
     `${IGDB_IMAGE_BASE}/t_cover_big/co1.png`,
     `${IGDB_IMAGE_BASE}/co1.jpg`,
     `${IGDB_IMAGE_BASE}/t_cover_big/a/co1.jpg`,
-    "https://image.tmdb.org/t/p/w500/abc.jpg",
     "/tmdb-logo.svg",
   ])("returns %s unchanged", (src) => {
-    expect(igdbImageLoader({ src, width: 100 })).toBe(src);
+    expect(imageLoader({ src, width: 100 })).toBe(src);
   });
 
   // prompts/detail-backdrop-hero-size.md, decision 14: the landing hero's
@@ -100,6 +99,6 @@ describe("igdbImageLoader", () => {
     [528, at("t_cover_big_2x")],
     [1080, same("t_original")],
   ])("serves the hero's original cover at width %i as %s", (width, url) => {
-    expect(igdbImageLoader({ src: at("t_original"), width })).toBe(url);
+    expect(imageLoader({ src: at("t_original"), width })).toBe(url);
   });
 });

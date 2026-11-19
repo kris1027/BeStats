@@ -23,7 +23,7 @@ vi.mock("@/lib/tmdb", async () => {
 });
 
 const { loadShow } = await import("./load-show");
-const { loadSeason } = await import("./season/[number]/load-season");
+const { loadSeason } = await import("./load-season");
 
 const SHOW = {
   id: 1396,

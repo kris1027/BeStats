@@ -97,7 +97,7 @@ scope feature G1. It mirrors `lib/tmdb/` in shape but shares no code with it.
 - **The module never reads the clock for a filter.** Discover callers pass UTC
   days; only the year bound of a filter reads the current year.
 - **Covers are built at `t_cover_big_2x` (528px), the ceiling, not the size
-  every image loads.** `lib/images/igdb-loader.ts` steps a `next/image` width
+  every image loads.** `sizeImageUrl` in `packages/core/src/images/image-url.ts` steps a `next/image` width
   down `IGDB_COVER_LADDER` in core's `igdb/constants.ts` and never past the URL's own size
   (spec 0025, AC-12). A game's wide art (`artUrl`, built at `t_1080p`) steps
   down `IGDB_ART_LADDER` the same way (spec 0028, AC-6). `artUrl` picks the
@@ -105,9 +105,9 @@ scope feature G1. It mirrors `lib/tmdb/` in shape but shares no code with it.
   keeps in a 16:9 box; a tie goes to an artwork), because IGDB's larger sizes
   only upscale a small upload. The one `t_original` URL is `fullCoverUrl`,
   the uploaded cover when IGDB says it is wider than 528px (else null), the
-  landing hero's phone art, served whole past the cover ladder (prompts/detail-backdrop-hero-size.md, decision 14). The loader lives
-  outside this folder because it runs in the browser; `lib/images/loader.ts`,
-  the `loaderFile`, sends it every IGDB URL.
+  landing hero's phone art, served whole past the cover ladder (prompts/detail-backdrop-hero-size.md, decision 14). The sizer is pure
+  and shared with the mobile app; `lib/images/loader.ts`, the `loaderFile`,
+  calls it for every IGDB URL.
 - Adding a field is a four place change across two packages: `schemas.ts`
   and `normalize.ts` here, and `igdb/types.ts` and the field list in
   `igdb/constants.ts` in core.

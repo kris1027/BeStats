@@ -1,6 +1,6 @@
 import { IGDB_IMAGE_BASE } from "@bestats/core/igdb/constants";
+import { TMDB_IMAGE_BASE } from "@bestats/core/tmdb/images";
 import { describe, expect, it } from "vitest";
-import { TMDB_IMAGE_BASE } from "@/lib/tmdb/constants";
 
 import imageLoader from "./loader";
 

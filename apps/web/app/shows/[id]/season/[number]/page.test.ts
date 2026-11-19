@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  */
 const loadSeason = vi.fn();
 
-vi.mock("./load-season", () => ({
+vi.mock("@/lib/tmdb/load-season", () => ({
   loadSeason: (id: number, seasonNumber: number) =>
     loadSeason(id, seasonNumber),
 }));

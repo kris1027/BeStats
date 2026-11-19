@@ -16,7 +16,7 @@ Routes, plus the root files that shape them: `proxy.ts` and `next.config.ts`. Th
 - Every handler under `app/api/v1/` is exported as `export const GET = withV1({...})` from `lib/api/v1/with-v1.ts`; `with-v1.test.ts` fails on a handler that isn't (spec 0033, AC-4). `withV1` checks `X-BeStats-App-Version` (400 or 426; only `/config` sets `skipVersionCheck`), verifies the bearer token on `auth: "bearer"` routes, parses the path, query and body with the core schemas a route declares in `input` (a handler never parses its own; 400 before it runs), answers `{ error: { code, message } }`, sets `Cache-Control`, and logs every failure through `logV1Failure` (`lib/api/v1/log.ts`) or, for a refused token, `logAuthEvent(AUTH_EVENT.bearer)`.
 - Public routes pass their `s-maxage` value as `cache`; every `me` answer is `private, no-store`, and every error `no-store`. Handlers return `v1Ok` or `v1Fail` and never build a `Response` themselves.
 - Request and response shapes live in `packages/core/src/api/v1/`; a route test parses each body with its core schema.
-- A write route calls the same command as its Server Action ([lib/tracking/AGENTS.md](../lib/tracking/AGENTS.md)); a refusal maps through the core error table and carries the action's word as `reason`.
+- A write route calls the same command as its Server Action ([lib/tracking/AGENTS.md](../lib/tracking/AGENTS.md)) and answers through `trackingAnswer` (`lib/api/v1/tracking.ts`, with `bearerDeps`): a refusal maps through the resource's core error table and carries the action's word as `reason`. A restore route takes `restoreBodySchema(kind)` and checks that the cleared state names the path's title (and season, on the season restore), else 400. Route tests share `app/api/v1/test-kit.ts` and keep their own `vi.mock` lines.
 
 ## proxy.ts
 
@@ -26,7 +26,7 @@ Routes, plus the root files that shape them: `proxy.ts` and `next.config.ts`. Th
 
 ## Images
 
-Every image goes through `next/image` and the one `loaderFile`, `lib/images/loader.ts`, which hands TMDB URLs to `lib/tmdb/image-loader.ts` and IGDB covers to `lib/images/igdb-loader.ts`. The optimizer is closed (no `remotePatterns`, empty `localPatterns`; [prompts/close-image-optimizer.md](../../../prompts/close-image-optimizer.md)): a new host gets its own loader, and components reference images by URL rather than importing image files.
+Every image goes through `next/image` and the one `loaderFile`, `lib/images/loader.ts`, which steps TMDB and IGDB URLs down with `sizeImageUrl` from `@bestats/core/images/image-url`, the same rule the mobile app uses (spec 0035, Images). The optimizer is closed (no `remotePatterns`, empty `localPatterns`; [prompts/close-image-optimizer.md](../../../prompts/close-image-optimizer.md)): a new host gets its own ladder in that core file, and components reference images by URL rather than importing image files.
 
 ## Visitor region
 

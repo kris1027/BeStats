@@ -1,8 +1,7 @@
 # AGENTS.md · lib/tmdb
 
-The server only module every TMDB request goes through, plus the one browser
-file, `image-loader.ts`, that `lib/images/loader.ts` (the `loaderFile`)
-sends every TMDB URL to. Decided in
+The server only module every TMDB request goes through, plus the pure
+`images.ts` (pinned sizes, `imageUrl`, `resizeImageUrl`). Decided in
 [spec 0002](../../../../docs/specs/0002-tmdb-integration-module/index.md); scope
 feature 4. Runtime steps live in that spec's `verify.md`.
 
@@ -12,10 +11,10 @@ feature 4. Runtime steps live in that spec's `verify.md`.
   reads, `imageUrl`, `isTmdbNotFound`, `TmdbError` and the normalized types
   (which live in `packages/core/src/tmdb/types.ts`). `TMDB_ATTRIBUTION` lives
   in `packages/core/src/legal/attribution.ts`. Everything else in this folder
-  is internal, except
-  `image-loader.ts` (`'use client'`), which only `lib/images/loader.ts` (the
-  `loaderFile`) imports, and the pure `images.ts` it reads.
-- `load-movie.ts`: `loadMovie()`, the found, not found or failed answer for one movie, imported directly by the movie page, the movie tracking commands and `/api/v1/movies/{id}`. The cached reads work from a Route Handler under `cacheComponents` (checked in the spec 0033 tracer).
+  is internal, except the pure `images.ts`. `TMDB_IMAGE_BASE`,
+  `TMDB_IMAGE_WIDTHS` and `splitImageUrl` live in
+  `packages/core/src/tmdb/images.ts`, since the mobile app sizes the same URLs.
+- `load-movie.ts`, `load-show.ts` and `load-season.ts`: the found, not found or failed answer for one movie, show or season, imported directly by the title pages, the tracking commands and the `/api/v1` catalog routes. The cached reads work from a Route Handler under `cacheComponents` (checked in the spec 0033 tracer).
 - `reads.ts` holds every `use cache` wrapper and is the only file that imports
   `next/cache`.
 - `client.ts` owns auth, the deadline, the retry budget, the status mapping and
@@ -76,19 +75,23 @@ feature 4. Runtime steps live in that spec's `verify.md`.
   (`resolveOverview` in `normalize.ts`, spec 0006, AC-5).
 - **Errors carry a `kind`**, never a bare status. Pages branch through
   `isTmdbNotFound`, not through a hand rolled catch.
-- **Images skip Vercel's optimizer.** `image-loader.ts` (`'use client'`, reached
-  through `lib/images/loader.ts` (the `loaderFile`), which dispatches by host)
-  maps a `next/image` width onto TMDB's own
+- **Images skip Vercel's optimizer.** `lib/images/loader.ts` (the
+  `loaderFile`) calls `sizeImageUrl` in `packages/core/src/images/image-url.ts`,
+  which maps a `next/image` width onto TMDB's own
   sizes, never above the size `images.ts` pinned, so the browser loads
   straight from TMDB's CDN (prompts/tmdb-image-loader.md). `original` is
   requested only by the landing hero and the title page backdrop
   (`DetailHero`), the two exceptions: the loader serves it whole past the
   `w1280` rung and a ladder size below it
   (prompts/home-hero-backdrop-quality.md, prompts/detail-backdrop-hero-size.md). A new
-  image field keeps a size from `TMDB_IMAGE_WIDTHS` in `images.ts`, the one
+  image field keeps a size from `TMDB_IMAGE_WIDTHS` in core, the one
   list the loader and `TmdbImageSize` share. `h632`, another host or a size
   off that list passes through unresized, and Next's dev warning ("does not
   implement width") names it.
+- **Many titles are read through `readEachSettled`, never a bare `Promise.all`.**
+  `getTvShowsSettled`, `getMoviesSettled` and `getShowEpisodesSettled` keep at
+  most `TMDB_CONCURRENCY_LIMIT` reads in flight and a failure with its title;
+  only a systemic failure throws.
 - Adding a field the app needs is a three place change: `schemas.ts`,
   core's `tmdb/types.ts`, `normalize.ts`.
 
@@ -107,6 +110,8 @@ feature 4. Runtime steps live in that spec's `verify.md`.
 
 - The concurrency cap bounds one call inside one process, not the fleet. Revisit
   at scope feature 9 or 20.
+- The caps nest: `getShowEpisodesSettled` reads 8 shows at once and each reads
+  8 seasons at once, so one `/api/v1/me/titles` request can hold 64 requests.
 - A cold read of a show with many seasons still costs one request per season.
   Storing episode data was ruled out in spec 0001.
 

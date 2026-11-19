@@ -59,6 +59,7 @@ export {
   getSeason,
   getShowCast,
   getShowEpisodes,
+  getShowEpisodesSettled,
   getTvExtras,
   getTvGenres,
   getTvList,
