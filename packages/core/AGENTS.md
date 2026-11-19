@@ -11,7 +11,7 @@
 
 ## API contracts
 
-`src/api/v1/` holds the `/api/v1` contracts both apps parse with: `version.ts` (`MIN_APP_VERSION`, `checkAppVersion`, the header name), `errors.ts` (every v1 error code, its status and English copy), and one file per resource (`movie.ts`, `titles.ts`, `config.ts`). `/api/v1` is frozen once the first store build ships, so a breaking change goes to a new `api/v2/` folder, never into these files (spec 0035, Versioning).
+`src/api/v1/` holds the `/api/v1` contracts both apps parse with: `version.ts` (`MIN_APP_VERSION`, `checkAppVersion`, the header name), `errors.ts` (every v1 error code, its status and English copy), and one file per resource (`movie.ts`, `show.ts`, `titles.ts`, `config.ts`), plus `cleared.ts`, the one `ClearedState` union every restore route takes (`restoreBodySchema(kind)` refuses other kinds). Image sizing for both apps is `src/images/image-url.ts` (`sizeImageUrl`, `imageUrlForWidth`), with `TMDB_IMAGE_BASE` and its width ladder in `src/tmdb/images.ts`. `/api/v1` is frozen once the first store build ships, so a breaking change goes to a new `api/v2/` folder, never into these files (spec 0035, Versioning).
 
 ## Generated files
 

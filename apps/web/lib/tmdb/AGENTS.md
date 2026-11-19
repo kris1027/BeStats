@@ -14,7 +14,7 @@ feature 4. Runtime steps live in that spec's `verify.md`.
   is internal, except the pure `images.ts`. `TMDB_IMAGE_BASE`,
   `TMDB_IMAGE_WIDTHS` and `splitImageUrl` live in
   `packages/core/src/tmdb/images.ts`, since the mobile app sizes the same URLs.
-- `load-movie.ts`: `loadMovie()`, the found, not found or failed answer for one movie, imported directly by the movie page, the movie tracking commands and `/api/v1/movies/{id}`. The cached reads work from a Route Handler under `cacheComponents` (checked in the spec 0033 tracer).
+- `load-movie.ts`, `load-show.ts` and `load-season.ts`: the found, not found or failed answer for one movie, show or season, imported directly by the title pages, the tracking commands and the `/api/v1` catalog routes. The cached reads work from a Route Handler under `cacheComponents` (checked in the spec 0033 tracer).
 - `reads.ts` holds every `use cache` wrapper and is the only file that imports
   `next/cache`.
 - `client.ts` owns auth, the deadline, the retry budget, the status mapping and

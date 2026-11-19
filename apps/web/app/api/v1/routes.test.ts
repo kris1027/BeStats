@@ -262,9 +262,9 @@ describe("GET /api/v1/me/titles", () => {
     expect(response.headers.get("Cache-Control")).toBe("private, no-store");
   });
 
-  it("answers 400 for show and game keys until they ship", async () => {
+  it("answers 400 for an unknown title type", async () => {
     const response = await getTitles(
-      req("/api/v1/me/titles?ids=tv:1399", AUTH),
+      req("/api/v1/me/titles?ids=book:1399", AUTH),
       ctx(),
     );
     expect(response.status).toBe(400);

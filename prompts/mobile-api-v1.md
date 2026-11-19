@@ -38,7 +38,7 @@ No app screens are built here (step 5). The one mobile change is the movie scree
 
 ## Decided at approval (2026-11-19)
 
-- **One PR for step 4**: all four slices on `feat/mobile-api`, small commits, built straight through.
+- **Two PRs for step 4** (changed mid build on 2026-11-19): 4a and 4b on `feat/mobile-api`, then 4c and 4d on `feat/mobile-api-games-browse`, branched from the first; small commits in each.
 - **Rate limits: widen the one rule.** Hobby allows one rate limit rule and `/api/search` holds it, so `docs/deploy.md` records that rule widened to `/api/search` and `/api/v1/*` with one shared per IP limit. Changing the dashboard rule is a step you take (or approve) at deploy time. Spec 0035's Rate limits table still names three rules, so it owes a short `/architect` update.
 
 ## Expected files
