@@ -6,6 +6,12 @@ Grow `/api/v1` from the tracer's four routes to the whole surface in spec 0035, 
 
 No app screens are built here (step 5). The one mobile change is the movie screen calling the new image helper.
 
+## Progress (resume here)
+
+- **Done, first PR (`feat/mobile-api`), 2026-11-19**: 4a and 4b. `imageUrlForWidth` and `sizeImageUrl` in `packages/core/src/images/image-url.ts` (the web `loaderFile` wraps it, the two old loaders are gone, the mobile movie screen uses it through `src/lib/images.ts`); `ClearedState` and `restoreBodySchema(kind)` in `packages/core/src/api/v1/cleared.ts`; every movie command in `lib/tracking/commands/movie-writes.ts`; every show command in `lib/tracking/commands/show-writes.ts` (the show actions are thin wrappers now); `loadShow`, `loadSeason` and `loadGame` moved into `lib/tmdb/` and `lib/igdb/`; `readTitles` serves `movie:`, `tv:` and `game:` keys (`pickTitleState` reads one back); show contracts in `packages/core/src/api/v1/show.ts`; `bearerDeps` and `trackingAnswer` in `lib/api/v1/tracking.ts`; route tests share `app/api/v1/test-kit.ts`.
+- **Next session: run `/develop mobile app`, which starts at 4c**, then 4d, both in the second PR on `feat/mobile-api-games-browse`. 4c: split the five game actions (`app/games/actions.ts`, still on `runTrackingWrite`) into `lib/tracking/commands/game-writes.ts`, add `GET /games/{id}`, `PUT` and `DELETE /me/games/{id}`, `POST /me/games/{id}/restore` (kinds `game_status` and `game_removed`), a `GAME_ERROR_TO_V1` table in a new `packages/core/src/api/v1/game.ts`, and `GET`/`PUT /me/profile` (move `claimUsername` out of `app/(auth)/actions.ts` and the change username write out of `app/account/actions.ts` into `lib/auth/commands/username.ts`). 4d as in decision 1 below, plus the closing steps: the spec 0033 and scope ticks, `lib/tracking/AGENTS.md` "Split so far", and the PR.
+- **Checked for the first PR**: typecheck, lint, tests (core 783, mobile 34, web 3197) and build all pass; on `pnpm dev` the public show, season and movie routes answer real TMDB data with the right cache headers, a missing season answers 404 `no-store`, and `me` routes without a token answer 401. Signed in writes were checked only in the route tests (the local Supabase stack was not started); the 4d cross user suite covers them against a real database.
+
 ## Inspected code
 
 - Spec 0033 `index.md` (Requirements, Build plan) and child 0035 (API surface, Undo, Images, Caching, Rate limits, Value sourcing, Critical test scenarios).
