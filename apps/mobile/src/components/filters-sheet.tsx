@@ -132,6 +132,7 @@ export function FiltersSheet({
                 <Chip
                   label={year === null ? "Any year" : String(year)}
                   selected={current.year === year}
+                  single
                   onPress={() => onChange({ ...current, year })}
                 />
               )}
@@ -153,6 +154,7 @@ export function FiltersSheet({
                         : `${source} rating ${rating} or more`
                     }
                     selected={current.rating === rating}
+                    single
                     onPress={() => onChange({ ...current, rating })}
                   />
                 ),
@@ -202,16 +204,19 @@ function Chip({
   disabled,
   onPress,
   accessibilityLabel,
+  single = false,
 }: {
   label: string;
   selected: boolean;
   disabled?: boolean;
   onPress: () => void;
   accessibilityLabel?: string;
+  /** One choice of several (year, rating): read as a radio, not a checkbox. */
+  single?: boolean;
 }) {
   return (
     <Pressable
-      accessibilityRole="checkbox"
+      accessibilityRole={single ? "radio" : "checkbox"}
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ checked: selected, disabled }}
       disabled={disabled}
