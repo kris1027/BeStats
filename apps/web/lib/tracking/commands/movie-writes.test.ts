@@ -10,7 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const loadMovie = vi.fn();
 vi.mock("@/lib/tmdb/load-movie", () => ({ loadMovie }));
 
-const { setMovieWatchedCommand } = await import("./set-movie-watched");
+const { setMovieWatchedCommand } = await import("./movie-writes");
 
 const rpcCalls: unknown[][] = [];
 let rpcResult: { data: unknown; error: unknown } = { data: null, error: null };

@@ -6,8 +6,9 @@ import {
 import { TRACKING_MESSAGES } from "@bestats/core/tracking/messages";
 import { z } from "zod";
 
-import { v1Fail, v1Ok, withV1 } from "@/lib/api/v1/with-v1";
-import { setMovieWatchedCommand } from "@/lib/tracking/commands/set-movie-watched";
+import { bearerDeps, trackingAnswer } from "@/lib/api/v1/tracking";
+import { withV1 } from "@/lib/api/v1/with-v1";
+import { setMovieWatchedCommand } from "@/lib/tracking/commands/movie-writes";
 
 /**
  * `PUT /api/v1/me/movies/{id}/watched` (spec 0033, child 0035): marks a movie
@@ -29,15 +30,13 @@ export const PUT = withV1({
     params: z.object({ id: movieIdParamSchema }),
     body: v1WatchedBodySchema,
   },
-  handler: async ({ input, user }) => {
-    const result = await setMovieWatchedCommand(
-      { userId: user.userId, getClient: async () => user.client },
-      { movieId: input.params.id, watched: input.body.watched },
-    );
-    if (result.ok) return v1Ok(result);
-    return v1Fail(MOVIE_ERROR_TO_V1[result.error], {
-      reason: result.error,
-      message: TRACKING_MESSAGES[result.error],
-    });
-  },
+  handler: async ({ input, user }) =>
+    trackingAnswer(
+      await setMovieWatchedCommand(bearerDeps(user), {
+        movieId: input.params.id,
+        watched: input.body.watched,
+      }),
+      MOVIE_ERROR_TO_V1,
+      TRACKING_MESSAGES,
+    ),
 });

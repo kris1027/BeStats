@@ -7,22 +7,16 @@ import {
   watchedInputSchema,
   watchlistInputSchema,
 } from "@bestats/core/tracking/schemas";
-import type {
-  MovieClearedState,
-  MovieTrackingResult,
-} from "@bestats/core/tracking/types";
+import type { MovieTrackingResult } from "@bestats/core/tracking/types";
 import {
-  readCleared,
-  runMovieCommand,
-  type TmdbCheck,
-} from "@/lib/tracking/commands/movie";
-import { setMovieWatchedCommand } from "@/lib/tracking/commands/set-movie-watched";
-import { TRACKING_EVENT, type TrackingEvent } from "@/lib/tracking/log";
-import {
-  parseTrackingInput,
-  type WriteStep,
-  withCookieSession,
-} from "@/lib/tracking/write";
+  restoreMovieWatchedCommand,
+  restoreMovieWatchlistCommand,
+  setMovieRatingCommand,
+  setMovieWatchedCommand,
+  setMovieWatchlistCommand,
+} from "@/lib/tracking/commands/movie-writes";
+import { TRACKING_EVENT } from "@/lib/tracking/log";
+import { parseTrackingInput, withCookieSession } from "@/lib/tracking/write";
 
 /**
  * The movie tracking mutations, as Server Actions: the three from spec 0007,
@@ -41,29 +35,6 @@ import {
  * always the verified session's, never an argument (`AGENTS.md` section 5,
  * AC-18).
  */
-
-/**
- * The cookie session side of `runMovieCommand` (spec 0033, child 0035): the
- * Server Action finds the user from its cookies, the command does the rest,
- * and `refresh()` follows a success.
- *
- * @param event The log event for a refusal.
- * @param movieId The already parsed movie id.
- * @param check What to confirm with TMDB before writing.
- * @param write The Supabase call, given the request client and the user id.
- * @param readResult For a write whose row says what it cleared, reads it.
- */
-function runMovieWrite<D>(
-  event: TrackingEvent,
-  movieId: number,
-  check: TmdbCheck,
-  write: WriteStep<D>,
-  readResult?: (data: D | null) => MovieClearedState | undefined,
-): Promise<MovieTrackingResult> {
-  return withCookieSession(event, (deps) =>
-    runMovieCommand(deps, event, movieId, check, write, readResult),
-  );
-}
 
 /**
  * Plans or unplans a movie. A movie is planned or watched, never both, so
@@ -87,23 +58,8 @@ export async function setMovieWatchlist(
   );
   if (!input) return { ok: false, error: "invalid_input" };
 
-  if (input.inWatchlist) {
-    return runMovieWrite(
-      event,
-      input.movieId,
-      "exists",
-      (supabase) =>
-        supabase.rpc("plan_movie", { p_movie_id: input.movieId }).single(),
-      readCleared,
-    );
-  }
-
-  return runMovieWrite(event, input.movieId, "none", (supabase, userId) =>
-    supabase
-      .from("user_movie_state")
-      .update({ in_watchlist: false })
-      .eq("user_id", userId)
-      .eq("movie_id", input.movieId),
+  return withCookieSession(event, (deps) =>
+    setMovieWatchlistCommand(deps, input),
   );
 }
 
@@ -157,23 +113,7 @@ export async function setMovieRating(
   );
   if (!input) return { ok: false, error: "invalid_input" };
 
-  const score = input.rating;
-  if (score !== null) {
-    return runMovieWrite(event, input.movieId, "released", (supabase) =>
-      supabase.rpc("rate_movie", {
-        p_movie_id: input.movieId,
-        p_rating: score,
-      }),
-    );
-  }
-
-  return runMovieWrite(event, input.movieId, "none", (supabase, userId) =>
-    supabase
-      .from("user_movie_state")
-      .update({ rating: null })
-      .eq("user_id", userId)
-      .eq("movie_id", input.movieId),
-  );
+  return withCookieSession(event, (deps) => setMovieRatingCommand(deps, input));
 }
 
 /**
@@ -197,8 +137,8 @@ export async function restoreMovieWatchlist(
   );
   if (!input) return { ok: false, error: "invalid_input" };
 
-  return runMovieWrite(event, input.movieId, "none", (supabase) =>
-    supabase.rpc("restore_movie_watchlist", { p_movie_id: input.movieId }),
+  return withCookieSession(event, (deps) =>
+    restoreMovieWatchlistCommand(deps, input),
   );
 }
 
@@ -231,11 +171,7 @@ export async function restoreMovieWatched(
   );
   if (!input) return { ok: false, error: "invalid_input" };
 
-  return runMovieWrite(event, input.movieId, "released", (supabase) =>
-    supabase.rpc("restore_movie_watched", {
-      p_movie_id: input.movieId,
-      p_watched_at: input.watchedAt,
-      p_rating: input.rating ?? undefined,
-    }),
+  return withCookieSession(event, (deps) =>
+    restoreMovieWatchedCommand(deps, input),
   );
 }

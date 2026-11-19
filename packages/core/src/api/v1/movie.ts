@@ -58,6 +58,12 @@ export type V1Movie = z.infer<typeof v1MovieSchema>;
 /** `PUT /api/v1/me/movies/{id}/watched` body. */
 export const v1WatchedBodySchema = z.object({ watched: z.boolean() });
 
+/** `PUT /api/v1/me/movies/{id}/watchlist` body: plan or unplan. */
+export const v1WatchlistBodySchema = z.object({ planned: z.boolean() });
+
+/** `PUT /api/v1/me/movies/{id}/rating` body: a score, or null to clear it. */
+export const v1RatingBodySchema = z.object({ rating: ratingSchema.nullable() });
+
 const movieClearedSchema = z.object({
   watchedAt: z.string(),
   rating: ratingSchema.nullable(),
