@@ -463,8 +463,8 @@ A native app for iOS and Android beside the web app, sharing its rules with it. 
   - [x] Settle the image contract before step 4: full CDN URLs at the ceiling size, stepped down by `imageUrlForWidth` in core, shared with the web loaders (spec 0035, Images, settled 2026-11-19)
   - [ ] API thickened (step 4): AC-5 to AC-10, plan in [prompts/mobile-api-v1.md](../../prompts/mobile-api-v1.md), built in four slices over two PRs
     - [x] 4a movies and images, 4b shows (first PR, branch `feat/mobile-api`)
-    - [ ] 4c games and profile: next `/develop mobile app` starts here, on a new branch `feat/mobile-api-games-browse` (from `main` once the first PR merges, else stacked on `feat/mobile-api`)
-    - [ ] 4d browse and library: `/genres`, `/search`, `/lists`, `/me/library`, the per route cache test, the cross user check, the firewall note (second PR)
+    - [x] 4c games and profile (branch `feat/mobile-api-games-browse`, second PR)
+    - [ ] 4d browse and library: next `/develop mobile app` starts here, on the same branch: `/genres`, `/search`, `/lists`, `/me/library`, the per route cache test, the cross user check, the firewall note (second PR)
   - [ ] App thickened (step 5): AC-10, AC-12, AC-13, AC-14, AC-16
   - [ ] Release (step 6): AC-15, AC-17
 - [ ] Verify it: `/check verify mobile app`
