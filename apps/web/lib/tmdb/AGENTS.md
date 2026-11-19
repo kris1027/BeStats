@@ -88,6 +88,10 @@ feature 4. Runtime steps live in that spec's `verify.md`.
   list the loader and `TmdbImageSize` share. `h632`, another host or a size
   off that list passes through unresized, and Next's dev warning ("does not
   implement width") names it.
+- **Many titles are read through `readEachSettled`, never a bare `Promise.all`.**
+  `getTvShowsSettled`, `getMoviesSettled` and `getShowEpisodesSettled` keep at
+  most `TMDB_CONCURRENCY_LIMIT` reads in flight and a failure with its title;
+  only a systemic failure throws.
 - Adding a field the app needs is a three place change: `schemas.ts`,
   core's `tmdb/types.ts`, `normalize.ts`.
 
@@ -106,6 +110,8 @@ feature 4. Runtime steps live in that spec's `verify.md`.
 
 - The concurrency cap bounds one call inside one process, not the fleet. Revisit
   at scope feature 9 or 20.
+- The caps nest: `getShowEpisodesSettled` reads 8 shows at once and each reads
+  8 seasons at once, so one `/api/v1/me/titles` request can hold 64 requests.
 - A cold read of a show with many seasons still costs one request per season.
   Storing episode data was ruled out in spec 0001.
 
