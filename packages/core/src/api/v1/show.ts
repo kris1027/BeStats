@@ -126,14 +126,19 @@ export type V1SeasonState = z.infer<typeof v1SeasonStateSchema>;
  * `PUT /api/v1/me/episodes/{episodeId}` body: a watched mark or a score, one
  * per request, so each maps to exactly one command (spec 0035, Mapping to
  * actions). The season number is checked against TMDB on the server.
+ *
+ * Both members are strict: a plain object would strip the extra key, so a
+ * body carrying a mark and a score would match the mark, drop the score and
+ * still answer 200, a false success (AGENTS.md section 11). Strict members
+ * refuse it as 400 instead.
  */
 export const v1EpisodeBodySchema = z.union([
-  z.object({
+  z.strictObject({
     showId: tmdbIdSchema,
     seasonNumber: seasonNumberSchema,
     watched: z.boolean(),
   }),
-  z.object({
+  z.strictObject({
     showId: tmdbIdSchema,
     seasonNumber: seasonNumberSchema,
     rating: ratingSchema.nullable(),

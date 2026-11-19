@@ -254,6 +254,17 @@ describe("PUT /api/v1/me/episodes/{episodeId}", () => {
     const response = await put({ showId: 1396, seasonNumber: 1 });
     expect(response.status).toBe(400);
   });
+
+  it("answers 400 for a mark and a rating together, writing nothing", async () => {
+    const response = await put({
+      showId: 1396,
+      seasonNumber: 1,
+      watched: true,
+      rating: 7,
+    });
+    expect(response.status).toBe(400);
+    expect(calls).toEqual([]);
+  });
 });
 
 describe("season watched and its restore", () => {
