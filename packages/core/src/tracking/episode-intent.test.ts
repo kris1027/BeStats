@@ -4,6 +4,7 @@ import {
   applyEpisodeIntent,
   applyEpisodeIntents,
   type EpisodeStates,
+  episodeRowView,
 } from "./episode-intent";
 
 /**
@@ -118,6 +119,36 @@ describe("applyEpisodeIntents (AC-16)", () => {
     ).toEqual({
       1: { watched: true, rating: 6 },
       2: { watched: false, rating: 4 },
+    });
+  });
+});
+
+describe("episodeRowView", () => {
+  it("reads Upcoming for a future episode with nothing stored", () => {
+    expect(episodeRowView(true, undefined)).toEqual({ kind: "upcoming" });
+    expect(episodeRowView(true, { watched: false, rating: null })).toEqual({
+      kind: "upcoming",
+    });
+  });
+
+  it("shows a future episode's stored state with marking held back", () => {
+    expect(episodeRowView(true, { watched: false, rating: 5 })).toEqual({
+      kind: "controls",
+      upcoming: true,
+      canMark: false,
+    });
+    expect(episodeRowView(true, { watched: true, rating: null })).toEqual({
+      kind: "controls",
+      upcoming: true,
+      canMark: true,
+    });
+  });
+
+  it("lets an aired or undated episode be marked", () => {
+    expect(episodeRowView(false, undefined)).toEqual({
+      kind: "controls",
+      upcoming: false,
+      canMark: true,
     });
   });
 });

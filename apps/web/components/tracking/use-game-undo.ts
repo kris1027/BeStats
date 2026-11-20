@@ -3,6 +3,7 @@
 import {
   GAME_UNDO_MESSAGES,
   UNDO_ACTION_LABEL,
+  UNDO_TOAST_MS,
 } from "@bestats/core/tracking/messages";
 import type { GameUndo } from "@bestats/core/tracking/types";
 import { useRouter } from "next/navigation";
@@ -13,7 +14,6 @@ import {
   type GameToastTarget,
   runUndoInToast,
   showGameTrackingError,
-  UNDO_TOAST_MS,
 } from "./tracking-toast";
 
 /**

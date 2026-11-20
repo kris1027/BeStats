@@ -4,7 +4,7 @@ import type { LibraryType } from "@bestats/core/catalog/media-type";
 import { useInfiniteQuery } from "@tanstack/react-query";
 
 import { apiRequest } from "./api";
-import { PRIVATE_QUERY_ROOT } from "./movies";
+import { PRIVATE_QUERY_ROOT } from "./query-client";
 
 /**
  * Query keys of the library pages. They start with `PRIVATE_QUERY_ROOT`, so

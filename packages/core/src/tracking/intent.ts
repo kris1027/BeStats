@@ -44,3 +44,31 @@ export function applyTrackingIntent(
       return state.watched ? { ...state, rating: intent.value } : state;
   }
 }
+
+/** Which movie pills work, from the release gate and the stored state. */
+export type MovieTrackingAvailability = {
+  /** Mark watched can be pressed: the movie is out, or a mark is there to remove. */
+  canMark: boolean;
+  /** Only Plan shows: before release with nothing stored to remove. */
+  planOnly: boolean;
+};
+
+/**
+ * The movie release gate as the pills read it (`AGENTS.md` section 7: a
+ * movie can be watched or scored only from its release day). A stored mark
+ * or score stays removable before release, so neither pill hides it. Both
+ * apps call this, so the web and the phone gate the same way; the server's
+ * own gate stays the authority.
+ *
+ * @param released Whether the release day (UTC) has come, from `isMovieReleased`.
+ * @param state The shown state, pending taps included.
+ */
+export function movieTrackingAvailability(
+  released: boolean,
+  state: Pick<MovieTrackingState, "watched" | "rating">,
+): MovieTrackingAvailability {
+  return {
+    canMark: released || state.watched,
+    planOnly: !released && !state.watched && state.rating === null,
+  };
+}

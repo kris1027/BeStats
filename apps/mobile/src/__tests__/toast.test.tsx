@@ -7,8 +7,9 @@ import { testQueryClient, titleWrapper } from "@/test-utils/title-harness";
 
 /**
  * covers: prompts/mobile-title-tracking.md decision 3: a new toast replaces
- * the one on screen, a toast with Undo stays `UNDO_TOAST_MS` (the web's 10
- * seconds), and a running action keeps it up until its outcome.
+ * the earlier one of the same control and stacks beside another control's,
+ * a toast with Undo stays `UNDO_TOAST_MS` (the web's 10 seconds), and a
+ * running action keeps it up until its outcome.
  */
 let api: ReturnType<typeof useToast>;
 function Probe() {
@@ -23,14 +24,38 @@ async function mount() {
   await render(<Probe />, { wrapper: titleWrapper(testQueryClient()) });
 }
 
-test("a new toast replaces the one on screen", async () => {
+test("a new toast replaces the one of the same control", async () => {
   await mount();
   await act(async () => {
-    api.show({ message: "First" });
-    api.show({ message: "Second" });
+    api.show({ id: "movie-1-watched", message: "First" });
+    api.show({ id: "movie-1-watched", message: "Second" });
   });
   expect(screen.queryByText("First")).toBeNull();
   expect(screen.getByText("Second")).toBeOnTheScreen();
+});
+
+test("another control's failure leaves a pending Undo on screen", async () => {
+  await mount();
+  await act(async () => {
+    api.show({
+      id: "movie-1-watchlist",
+      message: "Removed from watched",
+      action: { label: "Undo", onPress() {} },
+    });
+    api.show({ id: "movie-1-rating", message: "Couldn't save", tone: "error" });
+  });
+  expect(screen.getByText("Removed from watched")).toBeOnTheScreen();
+  expect(screen.getByRole("button", { name: "Undo" })).toBeOnTheScreen();
+  expect(screen.getByText("Couldn't save")).toBeOnTheScreen();
+});
+
+test("at most three toasts show, dropping the oldest", async () => {
+  await mount();
+  await act(async () => {
+    for (const n of [1, 2, 3, 4]) api.show({ message: `Toast ${n}` });
+  });
+  expect(screen.queryByText("Toast 1")).toBeNull();
+  expect(screen.getByText("Toast 4")).toBeOnTheScreen();
 });
 
 test("an Undo toast stays ten seconds, then closes", async () => {

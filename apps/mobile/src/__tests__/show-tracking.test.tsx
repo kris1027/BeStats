@@ -1,5 +1,8 @@
+import { formatAirDate } from "@bestats/core/format";
 import {
+  EPISODE_MARK_MESSAGES,
   SEASON_MESSAGES,
+  SEASON_PAGE_COPY,
   SHOW_PROGRESS_MESSAGES,
   SHOW_TRACKING_COPY,
 } from "@bestats/core/tracking/messages";
@@ -22,8 +25,10 @@ import {
  * and `season` states to their restore routes), AC-14 (personal ratings read
  * "Not rated", never 0, apart from TMDB's); `lib/tracking/AGENTS.md`
  * (marking a season sends no ids, unmarking names the shown ones; an
- * upcoming episode with nothing stored cannot be marked; an unmark keeps the
- * score); AGENTS.md section 11 (a refused write rolls back and says why)
+ * upcoming episode with nothing stored cannot be marked, an undated one can;
+ * an unmark keeps the score; a score on an unwatched episode marks it; a new
+ * single mark offers Undo with its `markedAt`); AGENTS.md section 11 (a
+ * refused write rolls back and says why)
  */
 const mockApi = createApiMock();
 jest.mock("@/lib/api", () => ({
@@ -108,6 +113,7 @@ const SEASON = {
     episode(11, 1, "2011-04-17"),
     episode(12, 2, "2011-04-24"),
     episode(13, 3, "2999-01-01"),
+    episode(14, 4, null),
   ],
 };
 
@@ -265,7 +271,144 @@ test("unmarking the season names the episodes shown", async () => {
   );
   expect(
     mockApi.callsTo("PUT", "/api/v1/me/shows/1399/seasons/1/watched")[0].body,
-  ).toEqual({ watched: false, episodeIds: [11, 12, 13] });
+  ).toEqual({ watched: false, episodeIds: [11, 12, 13, 14] });
+});
+
+test("unmarking the season offers Undo that restores the marks", async () => {
+  seasonRows = [
+    { episodeId: 11, watchedAt: TRACKED_AT, rating: 7 },
+    { episodeId: 12, watchedAt: TRACKED_AT, rating: null },
+  ];
+  const entries = [
+    { episodeId: 11, watchedAt: TRACKED_AT },
+    { episodeId: 12, watchedAt: TRACKED_AT },
+  ];
+  mockApi.on("PUT", "/api/v1/me/shows/1399/seasons/1/watched", () => {
+    seasonRows = [{ episodeId: 11, watchedAt: null, rating: 7 }];
+    return { ok: true, showTracked: false, undo: { kind: "restore", entries } };
+  });
+  mockApi.on("POST", "/api/v1/me/shows/1399/seasons/1/watched/restore", () => {
+    seasonRows = [
+      { episodeId: 11, watchedAt: TRACKED_AT, rating: 7 },
+      { episodeId: 12, watchedAt: TRACKED_AT, rating: null },
+    ];
+    return { ok: true, showTracked: false };
+  });
+  const user = userEvent.setup();
+  await openSeason();
+  await user.press(
+    await screen.findByRole("button", { name: "Mark Season 1 watched" }),
+  );
+  expect(
+    await screen.findByText(SEASON_MESSAGES.unmarked(2)),
+  ).toBeOnTheScreen();
+  expect(screen.getByText("0 of 2 watched")).toBeOnTheScreen();
+  await user.press(screen.getByRole("button", { name: "Undo" }));
+  expect(
+    mockApi.callsTo(
+      "POST",
+      "/api/v1/me/shows/1399/seasons/1/watched/restore",
+    )[0].body,
+  ).toEqual({
+    cleared: {
+      kind: "season",
+      showId: 1399,
+      seasonNumber: 1,
+      undo: { kind: "restore", entries },
+    },
+  });
+  expect(await screen.findByText("2 of 2 watched")).toBeOnTheScreen();
+});
+
+test("a new episode mark offers Undo that clears that mark", async () => {
+  mockApi.on("PUT", "/api/v1/me/episodes/11", () => {
+    seasonRows = [{ episodeId: 11, watchedAt: TRACKED_AT, rating: null }];
+    return {
+      ok: true,
+      showTracked: false,
+      newlyMarked: true,
+      markedAt: TRACKED_AT,
+    };
+  });
+  mockApi.on("POST", "/api/v1/me/episodes/11/restore", () => {
+    seasonRows = [{ episodeId: 11, watchedAt: null, rating: null }];
+    return { ok: true, showTracked: false };
+  });
+  const user = userEvent.setup();
+  await openSeason();
+  await user.press(
+    await screen.findByRole("button", { name: "Mark Episode name 1 watched" }),
+  );
+  expect(
+    await screen.findByText(EPISODE_MARK_MESSAGES.marked("Episode name 1")),
+  ).toBeOnTheScreen();
+  await user.press(screen.getByRole("button", { name: "Undo" }));
+  expect(
+    mockApi.callsTo("POST", "/api/v1/me/episodes/11/restore")[0].body,
+  ).toEqual({
+    cleared: {
+      kind: "episode",
+      showId: 1399,
+      episodeId: 11,
+      markedAt: TRACKED_AT,
+    },
+  });
+  expect(await screen.findByText("0 of 2 watched")).toBeOnTheScreen();
+});
+
+test("a mark the episode already had offers no Undo", async () => {
+  mockApi.on("PUT", "/api/v1/me/episodes/11", () => {
+    // Another device marked it first, so this call made no new mark.
+    seasonRows = [{ episodeId: 11, watchedAt: TRACKED_AT, rating: null }];
+    return { ok: true, showTracked: false, newlyMarked: false, markedAt: null };
+  });
+  const user = userEvent.setup();
+  await openSeason();
+  await user.press(
+    await screen.findByRole("button", { name: "Mark Episode name 1 watched" }),
+  );
+  expect(await screen.findByText("1 of 2 watched")).toBeOnTheScreen();
+  expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
+});
+
+test("a score on an unwatched episode marks it too", async () => {
+  mockApi.on("PUT", "/api/v1/me/episodes/12", () => new Promise(() => {}));
+  const user = userEvent.setup();
+  await openSeason();
+  await user.press(
+    await screen.findByRole("button", {
+      name: "Your score for Episode name 2: Not rated",
+    }),
+  );
+  await user.press(
+    await screen.findByRole("button", { name: "Score Episode name 2 8" }),
+  );
+  expect(mockApi.callsTo("PUT", "/api/v1/me/episodes/12")[0].body).toEqual({
+    showId: 1399,
+    season: 1,
+    rating: 8,
+  });
+  const row = screen.getByRole("button", {
+    name: "Mark Episode name 2 watched",
+  });
+  expect(within(row).getByText(SEASON_PAGE_COPY.watched)).toBeOnTheScreen();
+  expect(screen.getByText("1 of 2 watched")).toBeOnTheScreen();
+});
+
+test("an undated episode can be marked, as no date says it is future", async () => {
+  mockApi.on("PUT", "/api/v1/me/episodes/14", () => new Promise(() => {}));
+  const user = userEvent.setup();
+  await openSeason();
+  const button = await screen.findByRole("button", {
+    name: "Mark Episode name 4 watched",
+  });
+  expect(screen.getByText(/Air date not announced/)).toBeOnTheScreen();
+  await user.press(button);
+  expect(mockApi.callsTo("PUT", "/api/v1/me/episodes/14")[0].body).toEqual({
+    showId: 1399,
+    season: 1,
+    watched: true,
+  });
 });
 
 test("an upcoming episode with nothing stored cannot be marked", async () => {
@@ -274,7 +417,11 @@ test("an upcoming episode with nothing stored cannot be marked", async () => {
   expect(
     screen.queryByRole("button", { name: "Mark Episode name 3 watched" }),
   ).toBeNull();
-  expect(screen.getByText("Upcoming")).toBeOnTheScreen();
+  expect(
+    screen.getByText(
+      SEASON_PAGE_COPY.airs(formatAirDate("2999-01-01") ?? "missing"),
+    ),
+  ).toBeOnTheScreen();
 });
 
 test("unmarking an episode keeps its score", async () => {

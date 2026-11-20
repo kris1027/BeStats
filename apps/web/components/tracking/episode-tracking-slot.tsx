@@ -1,4 +1,6 @@
 import { formatAirDate } from "@bestats/core/format";
+import { episodeRowView } from "@bestats/core/tracking/episode-intent";
+import { SEASON_PAGE_COPY } from "@bestats/core/tracking/messages";
 import { EMPTY_EPISODE_TRACKING } from "@bestats/core/tracking/types";
 import { airStatus } from "@bestats/core/tv/air-status";
 import {
@@ -41,13 +43,10 @@ async function EpisodeTrackingSlot({
   const stored = result.state[episode.id];
   const upcoming = airStatus(episode.airDate, requestTodayUtc()) === "upcoming";
   // Removals keep the row (AC-25), so an emptied row reads the same as no row.
-  const hasState =
-    stored !== undefined && (stored.watched || stored.rating !== null);
-
-  if (upcoming && !hasState) {
+  if (episodeRowView(upcoming, stored).kind === "upcoming") {
     return (
       <p data-slot="episode-upcoming" className="text-sm text-text-secondary">
-        Upcoming
+        {SEASON_PAGE_COPY.upcoming}
       </p>
     );
   }
@@ -55,7 +54,7 @@ async function EpisodeTrackingSlot({
   return (
     <EpisodeTrackingControls
       episodeId={episode.id}
-      label={episode.name ?? `Episode ${episode.episodeNumber}`}
+      label={SEASON_PAGE_COPY.episodeName(episode.name, episode.episodeNumber)}
       state={stored ?? EMPTY_EPISODE_TRACKING}
       upcoming={upcoming}
       airDate={formatAirDate(episode.airDate)}

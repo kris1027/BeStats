@@ -12,11 +12,13 @@ import {
 } from "@bestats/core/format";
 import {
   applyTrackingIntent,
+  movieTrackingAvailability,
   type TrackingIntent,
 } from "@bestats/core/tracking/intent";
 import {
   MOVIE_CLEARED_MESSAGES,
   MOVIE_OVERVIEW_MISSING,
+  MOVIE_TRACKING_LABELS,
   TRACKING_MESSAGES,
 } from "@bestats/core/tracking/messages";
 import { todayUtc } from "@bestats/core/tv/air-status";
@@ -30,17 +32,14 @@ import { CatalogNotice } from "@/components/catalog-notice";
 import { LoadingState, StatePanel } from "@/components/centered-state";
 import { DetailHeader, DetailSection } from "@/components/detail-header";
 import { GlassButton } from "@/components/glass-button";
-import { communityRatingText } from "@/components/poster-card";
+import {
+  communityRatingLabel,
+  communityRatingText,
+} from "@/components/poster-card";
 import { ScoreSheet } from "@/components/score-sheet";
 import { TrackingGate } from "@/components/tracking-gate";
-import {
-  fetchMovie,
-  putMovieRating,
-  putMovieWatched,
-  putMovieWatchlist,
-  queryKeys,
-  restoreMovie,
-} from "@/lib/movies";
+import { catalogKeys } from "@/lib/catalog";
+import { fetchMovie, restoreMovie, writeMovieIntent } from "@/lib/movies";
 import { useSession } from "@/lib/session";
 import {
   fetchTitleState,
@@ -64,7 +63,7 @@ export function MovieScreen() {
   const { session } = useSession();
 
   const movie = useQuery({
-    queryKey: queryKeys.movie(id),
+    queryKey: catalogKeys.movie(id),
     queryFn: () => fetchMovie(id),
     enabled: parsedId.success,
   });
@@ -94,11 +93,7 @@ export function MovieScreen() {
         posterUrl={detail.posterUrl}
         backdropUrl={detail.backdropUrl}
         rating={communityRatingText("movie", detail.tmdbRating)}
-        ratingLabel={
-          detail.tmdbRating === null
-            ? null
-            : `TMDB rating ${detail.tmdbRating.toFixed(1)}`
-        }
+        ratingLabel={communityRatingLabel("movie", detail.tmdbRating)}
         meta={[
           formatAirDate(detail.releaseDate) ??
             (detail.releaseYear ? String(detail.releaseYear) : null),
@@ -175,8 +170,11 @@ function MovieTracking({
   const releaseNote = released ? null : movieReleaseNote(movie.releaseDate);
   const watched = state.watchedAt !== null;
 
+  const control = `movie-${id}`;
+
   const restore = useTrackingWrite({
     stateKey: key,
+    control: `${control}-undo`,
     apply: (current: V1MovieTitleState, cleared: MovieCleared) =>
       applyMovieIntents(current, [
         { kind: "watched", value: true },
@@ -190,14 +188,10 @@ function MovieTracking({
 
   const write = useTrackingWrite({
     stateKey: key,
+    control: (intent: MovieWrite) => `${control}-${intent.kind}`,
     apply: (current: V1MovieTitleState, intent: MovieWrite) =>
       applyMovieIntents(current, [intent]),
-    write: (intent: MovieWrite) =>
-      intent.kind === "watchlist"
-        ? putMovieWatchlist(id, intent.value)
-        : intent.kind === "watched"
-          ? putMovieWatched(id, intent.value)
-          : putMovieRating(id, intent.value),
+    write: (intent: MovieWrite) => writeMovieIntent(id, intent),
     failure: TRACKING_MESSAGES.write_failed,
     onFailure: () => setSheetOpen(false),
     onSuccess: (result, intent) => {
@@ -210,18 +204,24 @@ function MovieTracking({
             ? null
             : MOVIE_CLEARED_MESSAGES.unwatched;
       if (message === null) return;
-      offerUndo(message, (done) =>
-        restore.mutate(cleared, { onSuccess: done }),
+      offerUndo(message, `${control}-${intent.kind}`, (done) =>
+        restore.mutate(cleared, { onSettled: done }),
       );
     },
   });
 
-  const canMark = released || watched;
-  const planOnly = !released && !watched && state.rating === null;
+  const { canMark, planOnly } = movieTrackingAvailability(released, {
+    watched,
+    rating: state.rating,
+  });
 
   const planPill = (
     <GlassButton
-      label={state.planned ? "Planned" : "Plan"}
+      label={
+        state.planned
+          ? MOVIE_TRACKING_LABELS.planned
+          : MOVIE_TRACKING_LABELS.plan
+      }
       accessibilityLabel={`Plan ${movie.title}`}
       pressed={state.planned}
       onPress={() =>
@@ -240,7 +240,11 @@ function MovieTracking({
         {planPill}
         {planOnly ? null : (
           <GlassButton
-            label={watched ? "Watched" : "Mark watched"}
+            label={
+              watched
+                ? MOVIE_TRACKING_LABELS.watched
+                : MOVIE_TRACKING_LABELS.markWatched
+            }
             accessibilityLabel={`Mark ${movie.title} watched`}
             pressed={watched}
             disabled={!canMark}

@@ -6,7 +6,9 @@ import type {
 } from "@bestats/core/tracking/episode-intent";
 import {
   SEASON_MESSAGES,
+  SEASON_PAGE_COPY,
   UNDO_ACTION_LABEL,
+  UNDO_TOAST_MS,
 } from "@bestats/core/tracking/messages";
 import type { SeasonUndo } from "@bestats/core/tracking/types";
 import {
@@ -22,7 +24,6 @@ import { glassPillClassName } from "@/components/glass-pill";
 import { SeasonRating } from "./season-rating";
 import { useEpisodeStates, useSeasonTracking } from "./season-tracking-store";
 import { WatchedIcon } from "./tracking-icons";
-import { UNDO_TOAST_MS } from "./tracking-toast";
 
 /** The pill recipe at the touch sizes: 44px on mobile, 36px from `md`. */
 const PILL = "h-11 px-4 md:h-9 md:px-3.5";
@@ -153,7 +154,7 @@ function SeasonWatchedControl({
           )}
         >
           <WatchedIcon filled={false} />
-          <span aria-hidden="true">Nothing aired yet</span>
+          <span aria-hidden="true">{SEASON_PAGE_COPY.nothingAired}</span>
         </button>
         <SeasonRating episodes={episodes} states={shown} />
       </div>
@@ -179,11 +180,13 @@ function SeasonWatchedControl({
       >
         <WatchedIcon filled={watched} />
         <span aria-hidden="true">
-          {watched ? "Season watched" : "Mark season watched"}
+          {watched
+            ? SEASON_PAGE_COPY.seasonWatched
+            : SEASON_PAGE_COPY.markSeason}
         </span>
       </button>
       <p className="text-sm text-text-secondary">
-        {summary.watchedAired} of {summary.aired} watched
+        {SEASON_PAGE_COPY.watchedCount(summary.watchedAired, summary.aired)}
       </p>
       <SeasonRating episodes={episodes} states={shown} />
     </div>

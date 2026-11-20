@@ -87,3 +87,33 @@ export function applyEpisodeIntents(
 ): EpisodeStates {
   return pending.reduce(applyEpisodeIntent, confirmed);
 }
+
+/**
+ * What an episode row's tracking place shows (spec 0011, AC-2, AC-4):
+ * "Upcoming" for a future episode with nothing stored, otherwise the controls,
+ * with Mark watched held back while the episode is still future and unwatched.
+ * An `unknown` (undated) episode is never treated as future by a single
+ * action (`AirStatus`), so its controls are live. A stored row whose mark and
+ * score were both removed reads the same as no row.
+ */
+export type EpisodeRowView =
+  | { kind: "upcoming" }
+  | { kind: "controls"; upcoming: boolean; canMark: boolean };
+
+/**
+ * The row view both apps render, so the web's season page and the phone's
+ * gate an episode the same way (`AGENTS.md` section 7).
+ *
+ * @param upcoming Whether `airStatus` says `upcoming` for today (UTC).
+ * @param stored The stored state, or undefined for no row.
+ */
+export function episodeRowView(
+  upcoming: boolean,
+  stored: EpisodeTrackingState | undefined,
+): EpisodeRowView {
+  const hasState =
+    stored !== undefined && (stored.watched || stored.rating !== null);
+  if (upcoming && !hasState) return { kind: "upcoming" };
+  const watched = stored?.watched ?? false;
+  return { kind: "controls", upcoming, canMark: !upcoming || watched };
+}

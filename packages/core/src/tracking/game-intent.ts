@@ -47,3 +47,39 @@ export function applyGameIntent(
     ? { ...state, rating: intent.value }
     : state;
 }
+
+/**
+ * Whether the release gate holds a status pill back (`AGENTS.md` "Games",
+ * spec 0026, AC-8): before release only Want to play can be chosen, while the
+ * pressed pill stays live so it can still be removed. Both apps call this;
+ * the server's gate stays the authority.
+ *
+ * @param released Whether the game is out, from `isGameReleased`.
+ * @param current The shown status, pending taps included.
+ * @param status The pill asked about.
+ */
+export function isGameStatusHeldBack(
+  released: boolean,
+  current: GameStatus | null,
+  status: GameStatus,
+): boolean {
+  return !released && status !== "want_to_play" && current !== status;
+}
+
+/**
+ * Whether choosing `status` opens the score sheet (spec 0026, AC-7): moving
+ * into Finished with no score asks for one at once, while Playing never does.
+ *
+ * @param state The shown state, pending taps included.
+ * @param status The pill just chosen.
+ */
+export function opensScoreSheet(
+  state: GameTrackingState,
+  status: GameStatus,
+): boolean {
+  return (
+    status === "finished" &&
+    state.status !== "finished" &&
+    state.rating === null
+  );
+}

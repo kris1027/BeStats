@@ -160,6 +160,10 @@ test("Want to play clears the score, with Undo", async () => {
     state = { status: "want_to_play", rating: null };
     return { ok: true, undo: { kind: "status", previous: PREVIOUS } };
   });
+  mockApi.on("POST", `${WRITE_PATH}/restore`, () => {
+    state = { status: "finished", rating: 9 };
+    return { ok: true };
+  });
   const user = userEvent.setup();
   await open();
   await user.press(await button("Want to play: The Witcher 3"));
@@ -167,6 +171,11 @@ test("Want to play clears the score, with Undo", async () => {
     await screen.findByText(GAME_UNDO_MESSAGES.scoreCleared),
   ).toBeOnTheScreen();
   expect(screen.queryByRole("button", { name: /^Your score for/ })).toBeNull();
+  await user.press(screen.getByRole("button", { name: "Undo" }));
+  expect(mockApi.callsTo("POST", `${WRITE_PATH}/restore`)[0].body).toEqual({
+    cleared: { kind: "game_status", gameId: 1942, previous: PREVIOUS },
+  });
+  expect(await button("Your score for The Witcher 3: 9")).toBeOnTheScreen();
 });
 
 test("before release, Playing and Finished are off", async () => {

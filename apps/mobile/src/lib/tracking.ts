@@ -19,7 +19,7 @@ import { useToast } from "@/components/toast";
 
 import { ApiError, apiRequest } from "./api";
 import { libraryKeys } from "./library";
-import { PRIVATE_QUERY_ROOT } from "./movies";
+import { PRIVATE_QUERY_ROOT } from "./query-client";
 
 /**
  * Query keys of the caller's own state. Every one starts with
@@ -55,7 +55,10 @@ export async function fetchTitleState<T extends TitleType>(
 
 /**
  * `GET /api/v1/me/shows/{id}/seasons/{n}`: the caller's episode rows for one
- * season, keyed by episode id the way core's episode intents read them.
+ * season, keyed by episode id the way core's episode intents read them, so
+ * the optimistic rows come from `applyEpisodeIntent` and never a copy
+ * (apps/mobile/AGENTS.md, BeStats rules). Mark and rating stay separate
+ * fields, as they are independent (AGENTS.md section 7).
  */
 export async function fetchSeasonState(showId: number, seasonNumber: number) {
   const body = await apiRequest(
@@ -81,7 +84,9 @@ export type SeasonState = Awaited<ReturnType<typeof fetchSeasonState>>;
 /**
  * Posts an Undo to its restore route (spec 0035, Undo): the body is always
  * `{ cleared }`, built from the earlier write's own answer, and the route
- * refuses a kind that is not its own.
+ * refuses a kind that is not its own. Every restore goes through here, so
+ * the app never builds an Undo body that names another user's rows; RLS
+ * bounds them on the server anyway (AGENTS.md section 11).
  */
 export function postRestore<T>(
   path: string,
@@ -107,6 +112,11 @@ export function writeErrorMessage(error: unknown, fallback: string): string {
 type WriteOptions<TState, TVars, TResult> = {
   /** The cached state this write moves at once. */
   stateKey: QueryKey;
+  /**
+   * The control a failure toast speaks for, so it replaces only that
+   * control's earlier toast (prompts/mobile-title-tracking.md, decision 3).
+   */
+  control: string | ((vars: TVars) => string);
   /** The optimistic state: always one of core's intent rules, never a copy. */
   apply: (state: TState, vars: TVars) => TState;
   write: (vars: TVars) => Promise<TResult>;
@@ -139,6 +149,7 @@ type WriteOptions<TState, TVars, TResult> = {
  */
 export function useTrackingWrite<TState, TVars, TResult>({
   stateKey,
+  control,
   apply,
   write,
   alsoInvalidate = [],
@@ -160,7 +171,7 @@ export function useTrackingWrite<TState, TVars, TResult>({
       }
       return { previous };
     },
-    onError: (error, _vars, context) => {
+    onError: (error, vars, context) => {
       const signedOut =
         error instanceof ApiError && error.code === "unauthenticated";
       if (context?.previous !== undefined && !signedOut) {
@@ -171,6 +182,7 @@ export function useTrackingWrite<TState, TVars, TResult>({
         error instanceof ApiError &&
         error.code === "conflict";
       toast.show({
+        id: typeof control === "function" ? control(vars) : control,
         message: stale ? expired : writeErrorMessage(error, failure),
         tone: "error",
       });
@@ -192,15 +204,21 @@ export function useTrackingWrite<TState, TVars, TResult>({
 
 /**
  * Offers Undo for a write that removed something (spec 0035, Undo): the toast
- * carries the core Undo label, and pressing it turns the action off, runs the
- * restore, and closes the toast once it lands. A refused restore replaces it
- * with the error toast `useTrackingWrite` shows, so the outcome is always
- * visible (AGENTS.md section 11).
+ * carries the core Undo label and speaks for `control`, and pressing it turns
+ * the action off, runs the restore, and closes the toast once the restore
+ * settles. A refused restore shows the error toast `useTrackingWrite` raises
+ * under the restore's own control, so the outcome is always visible
+ * (AGENTS.md section 11).
  */
 export function useUndoToast() {
   const toast = useToast();
-  return (message: string, restore: (done: () => void) => void) => {
+  return (
+    message: string,
+    control: string,
+    restore: (done: () => void) => void,
+  ) => {
     const key = toast.show({
+      id: control,
       message,
       action: {
         label: UNDO_ACTION_LABEL,

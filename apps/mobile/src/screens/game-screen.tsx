@@ -14,6 +14,8 @@ import {
   applyGameIntent,
   canHoldScore,
   type GameIntent,
+  isGameStatusHeldBack,
+  opensScoreSheet,
 } from "@bestats/core/tracking/game-intent";
 import {
   GAME_STATUS_LABELS,
@@ -35,17 +37,15 @@ import { CatalogNotice } from "@/components/catalog-notice";
 import { LoadingState, StatePanel } from "@/components/centered-state";
 import { DetailHeader, DetailSection } from "@/components/detail-header";
 import { GlassButton } from "@/components/glass-button";
-import { communityRatingText } from "@/components/poster-card";
+import {
+  communityRatingLabel,
+  communityRatingText,
+} from "@/components/poster-card";
 import { ScoreSheet } from "@/components/score-sheet";
 import { ScreenshotRow } from "@/components/screenshot-row";
 import { TrackingGate } from "@/components/tracking-gate";
 import { catalogKeys, fetchGame } from "@/lib/catalog";
-import {
-  putGameRating,
-  putGameStatus,
-  removeGame,
-  restoreGame,
-} from "@/lib/games";
+import { restoreGame, writeGameIntent } from "@/lib/games";
 import { useSession } from "@/lib/session";
 import {
   fetchTitleState,
@@ -100,11 +100,7 @@ export function GameScreen() {
         posterUrl={detail.coverUrl}
         backdropUrl={detail.artUrl}
         rating={communityRatingText("game", detail.communityRating)}
-        ratingLabel={
-          detail.communityRating === null
-            ? null
-            : `IGDB community rating ${detail.communityRating.toFixed(1)}`
-        }
+        ratingLabel={communityRatingLabel("game", detail.communityRating)}
         meta={[
           formatAirDate(detail.releaseDate) ??
             (detail.releaseYear ? String(detail.releaseYear) : null),
@@ -160,8 +156,11 @@ function GameTracking({
   const released = isGameReleased(game.releaseDate, todayUtc(new Date()));
   const releaseNote = released ? null : gameReleaseNote(game.releaseDate);
 
+  const control = `game-${game.id}`;
+
   const restore = useTrackingWrite({
     stateKey: key,
+    control: `${control}-undo`,
     apply: (_current: V1GameTitleState, undo: GameUndo) => ({
       status: undo.previous.status,
       rating: undo.previous.rating,
@@ -183,31 +182,26 @@ function GameTracking({
 
   const write = useTrackingWrite({
     stateKey: key,
+    control: (intent: GameIntent) => `${control}-${intent.kind}`,
     apply: applyGameIntent,
-    write: (intent: GameIntent) =>
-      intent.kind === "rating"
-        ? putGameRating(game.id, intent.value)
-        : intent.value === null
-          ? removeGame(game.id)
-          : putGameStatus(game.id, intent.value),
+    write: (intent: GameIntent) => writeGameIntent(game.id, intent),
     failure: GAME_TRACKING_MESSAGES.write_failed,
     onFailure: () => setSheetOpen(false),
-    onSuccess: (result) => {
+    onSuccess: (result, intent) => {
       const undo = result.undo;
       if (!undo) return;
       offerUndo(
         undo.kind === "removed"
           ? GAME_UNDO_MESSAGES.removed
           : GAME_UNDO_MESSAGES.scoreCleared,
-        (done) => restore.mutate(undo, { onSuccess: done }),
+        `${control}-${intent.kind}`,
+        (done) => restore.mutate(undo, { onSettled: done }),
       );
     },
   });
 
   const heldBack = (status: GameStatus) =>
-    releaseNote !== null &&
-    status !== "want_to_play" &&
-    state.status !== status;
+    isGameStatusHeldBack(released, state.status, status);
 
   function choose(status: GameStatus) {
     if (heldBack(status)) return;
@@ -215,13 +209,7 @@ function GameTracking({
       write.mutate({ kind: "status", value: null });
       return;
     }
-    if (
-      status === "finished" &&
-      state.status !== "finished" &&
-      state.rating === null
-    ) {
-      setSheetOpen(true);
-    }
+    if (opensScoreSheet(state, status)) setSheetOpen(true);
     write.mutate({ kind: "status", value: status });
   }
 

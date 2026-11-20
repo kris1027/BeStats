@@ -139,6 +139,50 @@ export const SEASON_MESSAGES = {
 } as const;
 
 /**
+ * The movie pills' visible labels (spec 0007, AC-1). Both apps draw the same
+ * pills, so the words live here rather than in either control.
+ */
+export const MOVIE_TRACKING_LABELS = {
+  plan: "Plan",
+  planned: "Planned",
+  markWatched: "Mark watched",
+  watched: "Watched",
+} as const;
+
+/**
+ * A season page's header and episode rows (spec 0011, AC-2, AC-4, AC-8): the
+ * season button, its count, the rating line, the empty season and each row's
+ * fallback name, date line and Watched pill. An episode with no TMDB name is
+ * called by its number, never by an invented title (`AGENTS.md` section 14).
+ */
+export const SEASON_PAGE_COPY = {
+  markSeason: "Mark season watched",
+  seasonWatched: "Season watched",
+  nothingAired: "Nothing aired yet",
+  watchedCount: (watched: number, aired: number) =>
+    `${watched} of ${aired} watched`,
+  ratingLabel: "Your season rating",
+  noEpisodes: "No episodes listed yet",
+  noEpisodesDescription: "TMDB lists no episodes for this season yet.",
+  episodeName: (name: string | null, episodeNumber: number) =>
+    name ?? `Episode ${episodeNumber}`,
+  airDateMissing: "Air date not announced",
+  upcoming: "Upcoming",
+  airs: (date: string) => `Airs ${date}`,
+  markWatched: "Mark watched",
+  watched: "Watched",
+} as const;
+
+/**
+ * The toast after a single episode mark this tap made (spec 0035, Undo): it
+ * carries the Undo, which clears that mark only while it is still the one
+ * the tap stored.
+ */
+export const EPISODE_MARK_MESSAGES = {
+  marked: (episode: string) => `Marked ${episode} watched`,
+} as const;
+
+/**
  * The show tracking toggle's copy and toasts (spec 0020, AC-2 to AC-6). Stop
  * tracking, whose toggle goes back to Plan to watch, confirms with a toast
  * that carries the Undo; one that found the show already untracked confirms

@@ -16,9 +16,6 @@ import type {
 import { startTransition } from "react";
 import { toast } from "sonner";
 
-/** Kept here so the web's toasts import it beside their helpers. */
-export { UNDO_TOAST_MS } from "@bestats/core/tracking/messages";
-
 /** Which control failed, so each keeps one toast of its own. */
 export type TrackingControl = "watchlist" | "watched" | "rating";
 
