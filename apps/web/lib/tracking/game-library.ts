@@ -1,16 +1,16 @@
 import "server-only";
 
 import { isGameReleased } from "@bestats/core/catalog/game-page";
-import type {
-  LibraryList,
-  LibraryPageKey,
+import {
+  LIBRARY_CLASSIFY_LIMIT,
+  type LibraryList,
+  type LibraryPageKey,
 } from "@bestats/core/catalog/library-list";
 import type { GameStatus } from "@bestats/core/tracking/types";
 import { type GameSummary, getGamesByIds, IgdbError } from "@/lib/igdb";
 import {
   capRows,
   compareDates,
-  LIBRARY_CLASSIFY_LIMIT,
   type LibraryClient,
   type LibraryPage,
   listReadFailed,

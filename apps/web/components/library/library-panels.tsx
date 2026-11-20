@@ -1,5 +1,6 @@
 import {
   defaultLibraryTypeAt,
+  LIBRARY_CLASSIFY_LIMIT,
   type LibraryPageKey,
   type LibraryPath,
   libraryPathName,
@@ -24,11 +25,7 @@ import { RetryLink } from "@/components/retry-link";
 import { PosterCardSkeleton } from "@/components/skeleton";
 import { StatePanel } from "@/components/state-panel";
 import { ButtonLink } from "@/components/ui/button";
-import {
-  LIBRARY_CLASSIFY_LIMIT,
-  type LibraryTab,
-  libraryLastPage,
-} from "@/lib/tracking/library-lists";
+import { type LibraryTab, libraryLastPage } from "@/lib/tracking/library-lists";
 
 import type { LibraryList } from "./types";
 
