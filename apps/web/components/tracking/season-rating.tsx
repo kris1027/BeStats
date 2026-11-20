@@ -1,8 +1,11 @@
 "use client";
 
 import type { EpisodeStates } from "@bestats/core/tracking/episode-intent";
-import { seasonRating } from "@bestats/core/tv/ratings";
-import type { SeasonEpisode } from "@bestats/core/tv/season-watch";
+import { SEASON_PAGE_COPY } from "@bestats/core/tracking/messages";
+import {
+  listedSeasonRating,
+  type SeasonEpisode,
+} from "@bestats/core/tv/season-watch";
 
 import { CalculatedRatingLine, ratedCount } from "./calculated-rating-line";
 
@@ -26,19 +29,11 @@ function SeasonRating({
   episodes: readonly SeasonEpisode[];
   states: EpisodeStates;
 }) {
-  const ratings: number[] = [];
-  const seen = new Set<number>();
-  for (const { id } of episodes) {
-    if (seen.has(id)) continue;
-    seen.add(id);
-    const rating = states[id]?.rating;
-    if (rating != null) ratings.push(rating);
-  }
-  const result = seasonRating(ratings);
+  const result = listedSeasonRating(episodes, states);
 
   return (
     <CalculatedRatingLine
-      label="Your season rating"
+      label={SEASON_PAGE_COPY.ratingLabel}
       value={result?.mean ?? null}
       basis={
         result ? `from ${ratedCount(result.ratedEpisodes, "episode")}` : null

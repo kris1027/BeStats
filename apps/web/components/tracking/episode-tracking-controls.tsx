@@ -1,7 +1,11 @@
 "use client";
 
 import { formatPersonalScore } from "@bestats/core/format";
-import type { EpisodeIntent } from "@bestats/core/tracking/episode-intent";
+import {
+  type EpisodeIntent,
+  episodeRowView,
+} from "@bestats/core/tracking/episode-intent";
+import { SEASON_PAGE_COPY } from "@bestats/core/tracking/messages";
 import {
   EMPTY_EPISODE_TRACKING,
   type EpisodeTrackingResult,
@@ -72,7 +76,8 @@ function EpisodeTrackingControls({
     });
   }
 
-  const canMark = !upcoming || shown.watched;
+  const view = episodeRowView(upcoming, shown);
+  const canMark = view.kind === "controls" && view.canMark;
   function toggleWatched() {
     if (!canMark) return;
     const value = !shown.watched;
@@ -105,7 +110,9 @@ function EpisodeTrackingControls({
       >
         <WatchedIcon filled={shown.watched} />
         <span aria-hidden="true">
-          {shown.watched ? "Watched" : "Mark watched"}
+          {shown.watched
+            ? SEASON_PAGE_COPY.watched
+            : SEASON_PAGE_COPY.markWatched}
         </span>
       </button>
 

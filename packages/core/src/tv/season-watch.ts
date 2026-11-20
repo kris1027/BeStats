@@ -1,6 +1,7 @@
 import type { EpisodeTrackingState } from "../tracking/types";
 
 import { airStatus } from "./air-status";
+import { type SeasonRatingResult, seasonRating } from "./ratings";
 
 /** The episode fields the season rules read. */
 export type SeasonEpisode = {
@@ -89,4 +90,30 @@ export function airedEpisodesForMarking(
   }
   const ids = [...byId.keys()].sort((a, b) => a - b);
   return { ids, numbers: ids.map((id) => byId.get(id) as number) };
+}
+
+/**
+ * A season's calculated rating over the episodes a page lists (spec 0012,
+ * AC-5, AC-6; `AGENTS.md` section 9). Pages pass the states they show, pending
+ * taps included, so a picked score moves the mean at once and rolls back with
+ * it; an episode TMDB no longer lists stays out, as it does from the count
+ * (spec 0011, AC-25). An id TMDB repeats counts once. Both apps call this,
+ * so the season header reads the same number on the web and the phone.
+ *
+ * @param episodes The TMDB season's episodes.
+ * @param states The shown states by episode id.
+ */
+export function listedSeasonRating(
+  episodes: readonly Pick<SeasonEpisode, "id">[],
+  states: Readonly<Record<number, EpisodeTrackingState>>,
+): SeasonRatingResult | null {
+  const ratings: number[] = [];
+  const seen = new Set<number>();
+  for (const { id } of episodes) {
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const rating = states[id]?.rating;
+    if (rating != null) ratings.push(rating);
+  }
+  return seasonRating(ratings);
 }
