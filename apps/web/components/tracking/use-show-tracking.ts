@@ -3,6 +3,7 @@
 import {
   SHOW_TRACKING_COPY,
   UNDO_ACTION_LABEL,
+  UNDO_TOAST_MS,
 } from "@bestats/core/tracking/messages";
 import type {
   ShowTrackingError,
@@ -17,11 +18,7 @@ import {
   untrackShow,
 } from "@/app/shows/actions";
 
-import {
-  settleResultCall,
-  showShowTrackingError,
-  UNDO_TOAST_MS,
-} from "./tracking-toast";
+import { settleResultCall, showShowTrackingError } from "./tracking-toast";
 
 /**
  * The show tracking writes every surface shares (spec 0020, AC-2 to AC-6):
