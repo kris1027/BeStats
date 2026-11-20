@@ -45,7 +45,8 @@ Run against the local stack (`pnpm dev:docker`) with `npx expo start --dev-clien
 - [ ] Show you don't track: tap Plan to watch → reads Tracking; tap again → "Stopped tracking …" with Undo; Undo → Tracking again; marks and ratings unchanged → AC-5, AC-7
 - [ ] Season 1: Mark season watched → only aired regular episodes mark, "Marked N episodes watched" with Undo, the show's progress line moves; Undo → they unmark → AC-5, AC-7
 - [ ] Score an episode 9, then unmark it → the score stays; the season rating reads 9.0 from 1 rated episode → AC-14
-- [ ] A season with a future episode → that row says Upcoming with no controls → AC-6
+- [ ] A season with a future episode → that row says "Airs {date}" with no controls; an episode with no air date has live controls → AC-6
+- [ ] Mark one unwatched episode → "Marked {episode} watched" with Undo; Undo → it unmarks. Tap Plan on a movie, then make another control fail → both toasts show and the Undo still works → AC-7
 - [ ] Released game: Playing, then Finished → the score sheet opens; pick 9; tap Want to play → "Moved to Want to play. Your score was removed." with Undo; tap the pressed pill → "Removed from your games." with Undo → AC-5, AC-7
 - [ ] Unreleased game → Playing and Finished are off, the release line shows → AC-6
 - [ ] Stop the web server, tap Mark watched → the pill goes back and the error toast shows → AC-5
@@ -58,6 +59,6 @@ Run against the local stack (`pnpm dev:docker`) with `npx expo start --dev-clien
 ## Acceptance-criteria coverage
 - AC-5: every movie, episode, season, show and game write the screens send
 - AC-6: release and air gates on movie, episode and game controls, with the server's 409 shown
-- AC-7: Undo on Plan and unmark (movies), Stop tracking, season writes, game removal and the score cleared by Want to play
+- AC-7: Undo on Plan and unmark (movies), Stop tracking, season writes, a new episode mark, game removal and the score cleared by Want to play
 - AC-14: personal scores and calculated ratings apart from TMDB and IGDB on every title screen
 - AC-10, AC-12, AC-13, AC-16: not in this slice (5c, 5d, 5e)
