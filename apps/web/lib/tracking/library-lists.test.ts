@@ -1,3 +1,4 @@
+import { LIBRARY_CLASSIFY_LIMIT } from "@bestats/core/catalog/library-list";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
@@ -80,7 +81,6 @@ const {
   getMovieLibraryTab,
   getShowLibraryTab,
   getWatchedMoviesPage,
-  LIBRARY_CLASSIFY_LIMIT,
   LIBRARY_PAGE_SIZE,
   libraryLastPage,
 } = await import("./library-lists");

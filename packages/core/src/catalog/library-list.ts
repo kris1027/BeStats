@@ -9,6 +9,15 @@ import type { LibraryType } from "./media-type";
 export type LibraryList = "watchlist" | "upcoming" | "watched";
 
 /**
+ * How many titles one request classifies per media type (spec 0020, AC-16).
+ * Each is a catalog read, cached but cold for a new heavy user, so the most
+ * recently active are checked and every tab says so when there are more. In
+ * core so the web loaders and both apps' "Checked your 500 most recent"
+ * note read one number (prompts/mobile-library-tabs.md, decision 8).
+ */
+export const LIBRARY_CLASSIFY_LIMIT = 500;
+
+/**
  * Every library page, the three shared ones and `coming-soon`, which only
  * the games tab has: its Want to play games not out yet
  * (prompts/game-coming-soon.md). Kept apart from `LibraryList` so the show
