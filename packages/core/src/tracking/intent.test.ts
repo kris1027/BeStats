@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { applyTrackingIntent } from "./intent";
+import { applyTrackingIntent, movieTrackingAvailability } from "./intent";
 import { EMPTY_MOVIE_TRACKING, type MovieTrackingState } from "./types";
 
 /**
@@ -121,5 +121,31 @@ describe("applyTrackingIntent", () => {
       { kind: "watchlist", value: false } as const,
     ].reduce(applyTrackingIntent, EMPTY_MOVIE_TRACKING);
     expect(toggled.inWatchlist).toBe(false);
+  });
+});
+
+describe("movieTrackingAvailability", () => {
+  it("shows only Plan before release with nothing stored", () => {
+    expect(
+      movieTrackingAvailability(false, { watched: false, rating: null }),
+    ).toEqual({ canMark: false, planOnly: true });
+  });
+
+  it("keeps a stored mark removable before release", () => {
+    expect(
+      movieTrackingAvailability(false, { watched: true, rating: null }),
+    ).toEqual({ canMark: true, planOnly: false });
+  });
+
+  it("shows the pills, unable to mark, when only a score is stored", () => {
+    expect(
+      movieTrackingAvailability(false, { watched: false, rating: 6 }),
+    ).toEqual({ canMark: false, planOnly: false });
+  });
+
+  it("lets a released movie be marked", () => {
+    expect(
+      movieTrackingAvailability(true, { watched: false, rating: null }),
+    ).toEqual({ canMark: true, planOnly: false });
   });
 });

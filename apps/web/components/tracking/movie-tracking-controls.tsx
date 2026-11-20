@@ -3,8 +3,10 @@
 import { formatPersonalScore } from "@bestats/core/format";
 import {
   applyTrackingIntent,
+  movieTrackingAvailability,
   type TrackingIntent,
 } from "@bestats/core/tracking/intent";
+import { MOVIE_TRACKING_LABELS } from "@bestats/core/tracking/messages";
 import type {
   MovieTrackingResult,
   MovieTrackingState,
@@ -142,7 +144,10 @@ function MovieTrackingControls({
     );
   }
 
-  const canMark = releaseNote === null || optimistic.watched;
+  const { canMark, planOnly } = movieTrackingAvailability(
+    releaseNote === null,
+    optimistic,
+  );
   function toggleWatched() {
     if (!canMark) return;
     const value = !optimistic.watched;
@@ -165,8 +170,6 @@ function MovieTrackingControls({
   }
 
   const scoreText = formatPersonalScore(optimistic.rating);
-  const planOnly =
-    releaseNote !== null && !optimistic.watched && optimistic.rating === null;
 
   const planPill = (
     <button
@@ -178,7 +181,9 @@ function MovieTrackingControls({
     >
       {optimistic.inWatchlist ? <PlannedIcon /> : <PlanIcon />}
       <span aria-hidden="true">
-        {optimistic.inWatchlist ? "Planned" : "Plan"}
+        {optimistic.inWatchlist
+          ? MOVIE_TRACKING_LABELS.planned
+          : MOVIE_TRACKING_LABELS.plan}
       </span>
     </button>
   );
@@ -217,7 +222,9 @@ function MovieTrackingControls({
       >
         <WatchedIcon filled={optimistic.watched} />
         <span aria-hidden="true">
-          {optimistic.watched ? "Watched" : "Mark watched"}
+          {optimistic.watched
+            ? MOVIE_TRACKING_LABELS.watched
+            : MOVIE_TRACKING_LABELS.markWatched}
         </span>
       </button>
 

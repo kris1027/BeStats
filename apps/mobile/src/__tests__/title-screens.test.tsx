@@ -1,13 +1,13 @@
 import { V1_ERROR_MESSAGES } from "@bestats/core/api/v1/errors";
 import { catalogList } from "@bestats/core/catalog/lists";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import { screen, userEvent } from "@testing-library/react-native";
 import { renderRouter } from "expo-router/testing-library";
-import type { PropsWithChildren } from "react";
 
 import GameRoute from "@/app/(tabs)/(index,search,library,account)/games/[id]";
 import ShowRoute from "@/app/(tabs)/(index,search,library,account)/shows/[id]";
 import { ApiError } from "@/lib/api";
+import { testQueryClient, titleWrapper } from "@/test-utils/title-harness";
 
 /**
  * covers: prompts/mobile-app-shell-catalog.md decisions 7 and 8: a
@@ -25,13 +25,15 @@ jest.mock("@/lib/catalog", () => ({
   fetchGame: (...args: unknown[]) => mockFetchGame(...args),
 }));
 
+// Signed out: these cases are about the catalog read, not tracking.
+jest.mock("@/lib/session", () => ({ useSession: () => ({ session: null }) }));
+
 let client: QueryClient;
-function wrapper({ children }: PropsWithChildren) {
-  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
-}
+let wrapper: ReturnType<typeof titleWrapper>;
 
 beforeEach(() => {
-  client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  client = testQueryClient();
+  wrapper = titleWrapper(client);
   jest.resetAllMocks();
 });
 

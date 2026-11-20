@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { applyGameIntent } from "./game-intent";
+import {
+  applyGameIntent,
+  isGameStatusHeldBack,
+  opensScoreSheet,
+} from "./game-intent";
 import type { GameTrackingState } from "./types";
 
 /**
@@ -64,5 +68,41 @@ describe("applyGameIntent", () => {
       { kind: "rating", value: 7 },
     );
     expect(queued).toEqual({ status: "finished", rating: 7 });
+  });
+});
+
+describe("isGameStatusHeldBack", () => {
+  it("holds Playing and Finished back before release", () => {
+    expect(isGameStatusHeldBack(false, null, "playing")).toBe(true);
+    expect(isGameStatusHeldBack(false, null, "finished")).toBe(true);
+    expect(isGameStatusHeldBack(false, null, "want_to_play")).toBe(false);
+  });
+
+  it("keeps the pressed pill live so it can be removed", () => {
+    expect(isGameStatusHeldBack(false, "playing", "playing")).toBe(false);
+  });
+
+  it("holds nothing back once released", () => {
+    expect(isGameStatusHeldBack(true, null, "finished")).toBe(false);
+  });
+});
+
+describe("opensScoreSheet", () => {
+  it("opens on a move into Finished with no score", () => {
+    expect(
+      opensScoreSheet({ status: "playing", rating: null }, "finished"),
+    ).toBe(true);
+  });
+
+  it("stays shut for Playing, a scored game or Finished again", () => {
+    expect(opensScoreSheet({ status: null, rating: null }, "playing")).toBe(
+      false,
+    );
+    expect(opensScoreSheet({ status: "playing", rating: 7 }, "finished")).toBe(
+      false,
+    );
+    expect(
+      opensScoreSheet({ status: "finished", rating: null }, "finished"),
+    ).toBe(false);
   });
 });

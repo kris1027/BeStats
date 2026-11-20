@@ -1,7 +1,13 @@
 import { QueryClient } from "@tanstack/react-query";
 
 import { ApiError } from "./api";
-import { PRIVATE_QUERY_ROOT } from "./movies";
+
+/**
+ * The first segment of every private query key. `clearPrivateQueries` wipes
+ * by it on sign out, so the keys and the wipe read the same constant
+ * (spec 0033, AC-13; AGENTS.md section 11).
+ */
+export const PRIVATE_QUERY_ROOT = "me";
 
 /**
  * The app's one query cache. In the tracer it lives in memory only, so no

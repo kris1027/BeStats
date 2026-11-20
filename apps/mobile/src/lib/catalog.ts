@@ -4,7 +4,7 @@ import {
   v1SearchSchema,
 } from "@bestats/core/api/v1/browse";
 import { v1GameSchema } from "@bestats/core/api/v1/game";
-import { v1ShowSchema } from "@bestats/core/api/v1/show";
+import { v1SeasonSchema, v1ShowSchema } from "@bestats/core/api/v1/show";
 import type { LibraryType } from "@bestats/core/catalog/media-type";
 import { type SearchParams, searchHref } from "@bestats/core/search/params";
 
@@ -29,7 +29,10 @@ export const catalogKeys = {
     [CATALOG_QUERY_ROOT, "search", searchHref({ ...params, page: 1 })] as const,
   genres: (type: LibraryType) => [CATALOG_QUERY_ROOT, "genres", type] as const,
   show: (id: number) => [CATALOG_QUERY_ROOT, "show", id] as const,
+  season: (showId: number, seasonNumber: number) =>
+    [CATALOG_QUERY_ROOT, "season", showId, seasonNumber] as const,
   game: (id: number) => [CATALOG_QUERY_ROOT, "game", id] as const,
+  movie: (id: number) => [CATALOG_QUERY_ROOT, "movie", id] as const,
 };
 
 /**
@@ -78,4 +81,16 @@ export function fetchShow(id: number) {
  */
 export function fetchGame(id: number) {
   return apiRequest(`/api/v1/games/${id}`, v1GameSchema);
+}
+
+/**
+ * `GET /api/v1/shows/{id}/seasons/{n}`: a season's episodes with their UTC
+ * air dates, read through `/api/v1` because the phone holds no catalog key
+ * (AGENTS.md section 5).
+ */
+export function fetchSeason(showId: number, seasonNumber: number) {
+  return apiRequest(
+    `/api/v1/shows/${showId}/seasons/${seasonNumber}`,
+    v1SeasonSchema,
+  );
 }

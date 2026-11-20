@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { airedEpisodesForMarking, seasonWatchSummary } from "./season-watch";
+import {
+  airedEpisodesForMarking,
+  listedSeasonRating,
+  seasonWatchSummary,
+} from "./season-watch";
 
 /**
  * covers: spec 0011, AC-8, AC-9, AC-12, AC-25
@@ -101,5 +105,26 @@ describe("airedEpisodesForMarking (AC-9)", () => {
       ids: [],
       numbers: [],
     });
+  });
+});
+
+describe("listedSeasonRating", () => {
+  const episodes = [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 1 }];
+
+  it("averages the rated listed episodes, each id once", () => {
+    expect(
+      listedSeasonRating(episodes, {
+        1: { watched: true, rating: 8 },
+        2: { watched: false, rating: 6 },
+        3: { watched: true, rating: null },
+        9: { watched: true, rating: 1 },
+      }),
+    ).toEqual({ mean: 7, ratedEpisodes: 2 });
+  });
+
+  it("is null when nothing listed is rated, never zero", () => {
+    expect(
+      listedSeasonRating(episodes, { 3: { watched: true, rating: null } }),
+    ).toBeNull();
   });
 });

@@ -16,12 +16,6 @@ import type {
 import { startTransition } from "react";
 import { toast } from "sonner";
 
-/**
- * How long a toast carrying Undo stays up: long enough for a keyboard user to
- * reach the action. The server allows 10 minutes, so the toast is the limit.
- */
-export const UNDO_TOAST_MS = 10_000;
-
 /** Which control failed, so each keeps one toast of its own. */
 export type TrackingControl = "watchlist" | "watched" | "rating";
 

@@ -3,17 +3,14 @@
 import {
   MOVIE_CLEARED_MESSAGES,
   UNDO_ACTION_LABEL,
+  UNDO_TOAST_MS,
 } from "@bestats/core/tracking/messages";
 import type { MovieClearedState } from "@bestats/core/tracking/types";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { restoreMovieWatched } from "@/app/movies/actions";
 
-import {
-  runUndoInToast,
-  showTrackingError,
-  UNDO_TOAST_MS,
-} from "./tracking-toast";
+import { runUndoInToast, showTrackingError } from "./tracking-toast";
 
 /** Which write removed the watch mark. */
 export type MovieClearKind = "planned" | "unwatched";

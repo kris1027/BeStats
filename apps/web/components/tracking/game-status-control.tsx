@@ -5,6 +5,8 @@ import {
   applyGameIntent,
   canHoldScore,
   type GameIntent,
+  isGameStatusHeldBack,
+  opensScoreSheet,
 } from "@bestats/core/tracking/game-intent";
 import { GAME_STATUS_LABELS } from "@bestats/core/tracking/messages";
 import {
@@ -127,10 +129,10 @@ function GameStatusControl({
   }
 
   function isHeldBack(status: GameStatus): boolean {
-    return (
-      releaseNote !== null &&
-      status !== "want_to_play" &&
-      optimistic.status !== status
+    return isGameStatusHeldBack(
+      releaseNote === null,
+      optimistic.status,
+      status,
     );
   }
 
@@ -140,10 +142,7 @@ function GameStatusControl({
       run("status", { kind: "status", value: null }, () => removeGame(gameId));
       return;
     }
-    const opensPicker =
-      status === "finished" &&
-      optimistic.status !== "finished" &&
-      optimistic.rating === null;
+    const opensPicker = opensScoreSheet(optimistic, status);
     if (opensPicker) setPickerOpen(true);
     run(
       "status",

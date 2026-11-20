@@ -1,263 +1,113 @@
 import { V1_ERROR_MESSAGES } from "@bestats/core/api/v1/errors";
-import { movieIdParamSchema } from "@bestats/core/api/v1/movie";
+import { movieIdParamSchema, type V1Movie } from "@bestats/core/api/v1/movie";
+import type { V1MovieTitleState } from "@bestats/core/api/v1/titles";
 import {
   isMovieReleased,
   movieReleaseNote,
 } from "@bestats/core/catalog/movie-page";
-import { formatAirDate, formatRuntime } from "@bestats/core/format";
-import { TMDB_ATTRIBUTION } from "@bestats/core/legal/attribution";
-import { applyTrackingIntent } from "@bestats/core/tracking/intent";
+import {
+  formatAirDate,
+  formatPersonalScore,
+  formatRuntime,
+} from "@bestats/core/format";
+import {
+  applyTrackingIntent,
+  movieTrackingAvailability,
+  type TrackingIntent,
+} from "@bestats/core/tracking/intent";
 import {
   MOVIE_CLEARED_MESSAGES,
   MOVIE_OVERVIEW_MISSING,
+  MOVIE_TRACKING_LABELS,
   TRACKING_MESSAGES,
-  TRACKING_READ_FAILED,
 } from "@bestats/core/tracking/messages";
 import { todayUtc } from "@bestats/core/tv/air-status";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Image } from "expo-image";
-import { router, Stack, useLocalSearchParams } from "expo-router";
+import { useQuery } from "@tanstack/react-query";
+import { Stack, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import {
-  ActivityIndicator,
-  ScrollView,
-  Text,
-  useWindowDimensions,
-  View,
-} from "react-native";
+import { ScrollView, Text, View } from "react-native";
 
+import { CastRow } from "@/components/cast-row";
+import { CatalogNotice } from "@/components/catalog-notice";
+import { LoadingState, StatePanel } from "@/components/centered-state";
+import { DetailHeader, DetailSection } from "@/components/detail-header";
 import { GlassButton } from "@/components/glass-button";
-import { Notice } from "@/components/notice";
-import { ApiError } from "@/lib/api";
-import { DETAIL_POSTER_WIDTH, sizedImageUri } from "@/lib/images";
 import {
-  fetchMovie,
-  fetchMovieState,
-  putMovieWatched,
-  queryKeys,
-} from "@/lib/movies";
+  communityRatingLabel,
+  communityRatingText,
+} from "@/components/poster-card";
+import { ScoreSheet } from "@/components/score-sheet";
+import { TrackingGate } from "@/components/tracking-gate";
+import { catalogKeys } from "@/lib/catalog";
+import { fetchMovie, restoreMovie, writeMovieIntent } from "@/lib/movies";
 import { useSession } from "@/lib/session";
+import {
+  fetchTitleState,
+  trackingKeys,
+  useTrackingWrite,
+  useUndoToast,
+} from "@/lib/tracking";
+
+import { TitleReadError } from "./title-states";
 
 /**
- * The tracer's movie screen (spec 0033, first slice): the catalog detail from
- * `/api/v1/movies/{id}` and the Watched pill, in the look of the shipped movie
- * page.
- *
- * The pill starts from the user's real state (`/api/v1/me/titles`), never a
- * guess, and moves at once when tapped; a refusal puts it back and says why
- * (child 0036, Optimistic writes; AGENTS.md section 11). Before release day
- * the pill reads as unavailable, as on the web, but the server's release
- * gate is the authority (AC-6). TMDB's score is labelled TMDB, apart from any
- * personal score (AGENTS.md section 9).
+ * A movie's page (prompts/mobile-title-tracking.md, decision 5): the catalog
+ * detail from `/api/v1/movies/{id}` in the look of the shipped movie page,
+ * the three tracking pills, Directed by, and the cast row. TMDB's score is
+ * labelled TMDB, apart from the user's own score (AGENTS.md section 9).
  */
 export function MovieScreen() {
   const params = useLocalSearchParams<{ id: string }>();
-  const { width: screenWidth } = useWindowDimensions();
   const parsedId = movieIdParamSchema.safeParse(params.id);
   const id = parsedId.success ? parsedId.data : 0;
   const { session } = useSession();
-  const queries = useQueryClient();
-  const [message, setMessage] = useState<{
-    text: string;
-    tone: "info" | "error";
-  } | null>(null);
 
   const movie = useQuery({
-    queryKey: queryKeys.movie(id),
+    queryKey: catalogKeys.movie(id),
     queryFn: () => fetchMovie(id),
     enabled: parsedId.success,
   });
   const state = useQuery({
-    queryKey: queryKeys.movieState(id),
-    queryFn: () => fetchMovieState(id),
+    queryKey: trackingKeys.title("movie", id),
+    queryFn: () => fetchTitleState("movie", id),
     enabled: parsedId.success && session !== null,
   });
 
-  const watched = useMutation({
-    mutationFn: (value: boolean) => putMovieWatched(id, value),
-    onMutate: async (value) => {
-      setMessage(null);
-      const key = queryKeys.movieState(id);
-      await queries.cancelQueries({ queryKey: key });
-      const previous = queries.getQueryData<typeof state.data>(key);
-      if (previous) {
-        // The plan, mark and score rule is core's, never a copy here
-        // (apps/mobile/AGENTS.md, BeStats rules); only the timestamp is ours.
-        const next = applyTrackingIntent(
-          {
-            inWatchlist: previous.planned,
-            watched: previous.watchedAt !== null,
-            rating: previous.rating,
-          },
-          { kind: "watched", value },
-        );
-        queries.setQueryData(key, {
-          planned: next.inWatchlist,
-          watchedAt: next.watched
-            ? (previous.watchedAt ?? new Date().toISOString())
-            : null,
-          rating: next.rating,
-        });
-      }
-      return { previous };
-    },
-    onError: (error, _value, context) => {
-      // An expired session has already wiped the private cache; putting the
-      // old state back would bring private data back after sign out.
-      const signedOut =
-        error instanceof ApiError && error.code === "unauthenticated";
-      if (context?.previous && !signedOut) {
-        queries.setQueryData(queryKeys.movieState(id), context.previous);
-      }
-      setMessage({
-        tone: "error",
-        text:
-          error instanceof ApiError
-            ? error.message
-            : TRACKING_MESSAGES.write_failed,
-      });
-    },
-    onSuccess: (result) => {
-      if (result.cleared && result.cleared.rating !== null) {
-        setMessage({ tone: "info", text: MOVIE_CLEARED_MESSAGES.unwatched });
-      }
-    },
-    onSettled: () =>
-      queries.invalidateQueries({ queryKey: queryKeys.movieState(id) }),
-  });
-
   if (!parsedId.success) {
-    return <Centered text={V1_ERROR_MESSAGES.not_found} />;
+    return <StatePanel tone="error" title={V1_ERROR_MESSAGES.not_found} />;
   }
-  if (movie.isPending) {
-    return (
-      <View className="flex-1 items-center justify-center bg-background">
-        <ActivityIndicator accessibilityLabel="Loading the movie" />
-      </View>
-    );
-  }
+  if (movie.isPending) return <LoadingState label="Loading the movie" />;
   if (movie.isError) {
-    const notFound =
-      movie.error instanceof ApiError && movie.error.code === "not_found";
-    return (
-      <Centered
-        text={
-          movie.error instanceof ApiError
-            ? movie.error.message
-            : V1_ERROR_MESSAGES.internal
-        }
-        retry={notFound ? undefined : () => movie.refetch()}
-      />
-    );
+    return <TitleReadError error={movie.error} retry={() => movie.refetch()} />;
   }
 
   const detail = movie.data;
-  const released = isMovieReleased(detail.releaseDate, todayUtc(new Date()));
-  const isWatched = state.data?.watchedAt != null;
-  const canMark = released || isWatched;
-  const meta = [
-    formatAirDate(detail.releaseDate) ??
-      (detail.releaseYear ? String(detail.releaseYear) : null),
-    detail.runtimeMinutes ? formatRuntime(detail.runtimeMinutes) : null,
-    detail.genres
-      .map((genre) => genre.name)
-      .slice(0, 3)
-      .join(", ") || null,
-  ].filter(Boolean);
-
   return (
     <ScrollView
       className="flex-1 bg-background"
-      contentContainerClassName="pb-10"
+      contentContainerClassName="pb-24"
     >
       <Stack.Screen options={{ title: detail.title }} />
-      {detail.backdropUrl ? (
-        <Image
-          source={{ uri: sizedImageUri(detail.backdropUrl, screenWidth) }}
-          accessibilityIgnoresInvertColors
-          contentFit="cover"
-          style={{ width: "100%", aspectRatio: 16 / 9 }}
-        />
-      ) : null}
+      <DetailHeader
+        title={detail.title}
+        posterUrl={detail.posterUrl}
+        backdropUrl={detail.backdropUrl}
+        rating={communityRatingText("movie", detail.tmdbRating)}
+        ratingLabel={communityRatingLabel("movie", detail.tmdbRating)}
+        meta={[
+          formatAirDate(detail.releaseDate) ??
+            (detail.releaseYear ? String(detail.releaseYear) : null),
+          detail.runtimeMinutes ? formatRuntime(detail.runtimeMinutes) : null,
+          detail.genres
+            .map((genre) => genre.name)
+            .slice(0, 3)
+            .join(", ") || null,
+        ]}
+      />
       <View className="gap-5 px-4 pt-5">
-        <View className="flex-row gap-4">
-          {detail.posterUrl ? (
-            <Image
-              source={{
-                uri: sizedImageUri(detail.posterUrl, DETAIL_POSTER_WIDTH),
-              }}
-              accessibilityLabel={`${detail.title} poster`}
-              contentFit="cover"
-              style={{
-                width: DETAIL_POSTER_WIDTH,
-                aspectRatio: 2 / 3,
-                borderRadius: 12,
-              }}
-            />
-          ) : (
-            <View
-              accessibilityLabel="No poster"
-              className="w-[110px] items-center justify-center rounded-xl border border-border bg-card"
-              style={{ aspectRatio: 2 / 3 }}
-            >
-              <Text className="px-2 text-center text-xs text-muted-foreground">
-                {detail.title}
-              </Text>
-            </View>
-          )}
-          <View className="flex-1 gap-2">
-            <Text
-              accessibilityRole="header"
-              className="text-2xl font-bold text-foreground"
-            >
-              {detail.title}
-            </Text>
-            {meta.length > 0 ? (
-              <Text className="text-text-secondary">{meta.join(" · ")}</Text>
-            ) : null}
-            {detail.tmdbRating !== null ? (
-              <Text
-                accessibilityLabel={`TMDB rating ${detail.tmdbRating.toFixed(1)}`}
-                className="font-semibold text-rating-tmdb"
-              >
-                TMDB {detail.tmdbRating.toFixed(1)}
-              </Text>
-            ) : null}
-          </View>
-        </View>
-
-        {session === null ? (
-          <GlassButton
-            variant="primary"
-            label="Sign in to track"
-            onPress={() => router.push("/sign-in")}
-          />
-        ) : state.isPending ? (
-          <ActivityIndicator accessibilityLabel="Loading your tracking" />
-        ) : state.isError ? (
-          <View className="gap-3">
-            <Notice tone="error" message={TRACKING_READ_FAILED} />
-            <GlassButton label="Retry" onPress={() => state.refetch()} />
-          </View>
-        ) : (
-          <View className="flex-row flex-wrap gap-2">
-            <GlassButton
-              label={isWatched ? "Watched" : "Mark watched"}
-              accessibilityLabel={`Mark ${detail.title} watched`}
-              pressed={isWatched}
-              disabled={!canMark}
-              busy={watched.isPending}
-              onPress={() => watched.mutate(!isWatched)}
-            />
-          </View>
-        )}
-        {!released ? (
-          <Text className="text-sm text-text-secondary">
-            {movieReleaseNote(detail.releaseDate)}
-          </Text>
-        ) : null}
-        {message ? <Notice tone={message.tone} message={message.text} /> : null}
-
+        <TrackingGate signedIn={session !== null} state={state}>
+          {(data) => <MovieTracking movie={detail} state={data} />}
+        </TrackingGate>
         {detail.tagline ? (
           <Text className="italic text-text-secondary">{detail.tagline}</Text>
         ) : null}
@@ -268,21 +118,196 @@ export function MovieScreen() {
         ) : (
           <Text className="text-text-secondary">{MOVIE_OVERVIEW_MISSING}</Text>
         )}
-        <Text className="text-xs text-muted-foreground">
-          {TMDB_ATTRIBUTION}
-        </Text>
+        <DetailSection
+          heading="Directed by"
+          text={detail.directors.join(", ") || null}
+        />
       </View>
+      <View className="pt-6">
+        <CastRow
+          cast={detail.cast}
+          emptyMessage="TMDB lists no cast for this movie."
+        />
+      </View>
+      <CatalogNotice type="movie" />
     </ScrollView>
   );
 }
 
-function Centered({ text, retry }: { text: string; retry?: () => void }) {
+/** What a write that removed a watch mark returned, for its Undo. */
+type MovieCleared = { watchedAt: string; rating: number | null };
+
+/** Movie writes carry their intent, so the optimistic state is core's. */
+type MovieWrite = TrackingIntent & { clears?: "planned" | "unwatched" };
+
+/**
+ * Plan, Mark watched and Your score, as the web's `MovieTrackingControls`
+ * (spec 0007, AC-1): a movie is planned or watched, never both, and a score
+ * needs a watch mark, so the score pill shows only on a watched movie and
+ * Mark watched opens its sheet at once. A write that removed a watch mark
+ * offers Undo, which brings the mark back with its score
+ * (prompts/movie-plan-watched-exclusive.md).
+ *
+ * Before release only Plan works unless a mark or score is stored, which can
+ * then be removed but not added (prompts/movie-release-gate.md); the server's
+ * gate stays the authority (spec 0033, AC-6). Every toggle reads its target
+ * from the cached state, which already holds any pending tap, so a double tap
+ * sends true then false.
+ */
+function MovieTracking({
+  movie,
+  state,
+}: {
+  movie: V1Movie;
+  state: V1MovieTitleState;
+}) {
+  const id = movie.id;
+  const key = trackingKeys.title("movie", id);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const offerUndo = useUndoToast();
+
+  const released = isMovieReleased(movie.releaseDate, todayUtc(new Date()));
+  const releaseNote = released ? null : movieReleaseNote(movie.releaseDate);
+  const watched = state.watchedAt !== null;
+
+  const control = `movie-${id}`;
+
+  const restore = useTrackingWrite({
+    stateKey: key,
+    control: `${control}-undo`,
+    apply: (current: V1MovieTitleState, cleared: MovieCleared) =>
+      applyMovieIntents(current, [
+        { kind: "watched", value: true },
+        { kind: "rating", value: cleared.rating },
+      ]),
+    write: (cleared: MovieCleared) =>
+      restoreMovie({ kind: "movie_watched", movieId: id, ...cleared }),
+    failure: TRACKING_MESSAGES.write_failed,
+    expired: MOVIE_CLEARED_MESSAGES.undoExpired,
+  });
+
+  const write = useTrackingWrite({
+    stateKey: key,
+    control: (intent: MovieWrite) => `${control}-${intent.kind}`,
+    apply: (current: V1MovieTitleState, intent: MovieWrite) =>
+      applyMovieIntents(current, [intent]),
+    write: (intent: MovieWrite) => writeMovieIntent(id, intent),
+    failure: TRACKING_MESSAGES.write_failed,
+    onFailure: () => setSheetOpen(false),
+    onSuccess: (result, intent) => {
+      const cleared = result.cleared;
+      if (!cleared || !intent.clears) return;
+      const message =
+        intent.clears === "planned"
+          ? MOVIE_CLEARED_MESSAGES.planned(cleared.rating !== null)
+          : cleared.rating === null
+            ? null
+            : MOVIE_CLEARED_MESSAGES.unwatched;
+      if (message === null) return;
+      offerUndo(message, `${control}-${intent.kind}`, (done) =>
+        restore.mutate(cleared, { onSettled: done }),
+      );
+    },
+  });
+
+  const { canMark, planOnly } = movieTrackingAvailability(released, {
+    watched,
+    rating: state.rating,
+  });
+
+  const planPill = (
+    <GlassButton
+      label={
+        state.planned
+          ? MOVIE_TRACKING_LABELS.planned
+          : MOVIE_TRACKING_LABELS.plan
+      }
+      accessibilityLabel={`Plan ${movie.title}`}
+      pressed={state.planned}
+      onPress={() =>
+        write.mutate({
+          kind: "watchlist",
+          value: !state.planned,
+          clears: "planned",
+        })
+      }
+    />
+  );
+
   return (
-    <View className="flex-1 items-center justify-center gap-4 bg-background px-6">
-      <Text accessibilityRole="alert" className="text-center text-foreground">
-        {text}
-      </Text>
-      {retry ? <GlassButton label="Retry" onPress={retry} /> : null}
+    <View className="gap-3">
+      <View className="flex-row flex-wrap items-center gap-2">
+        {planPill}
+        {planOnly ? null : (
+          <GlassButton
+            label={
+              watched
+                ? MOVIE_TRACKING_LABELS.watched
+                : MOVIE_TRACKING_LABELS.markWatched
+            }
+            accessibilityLabel={`Mark ${movie.title} watched`}
+            pressed={watched}
+            disabled={!canMark}
+            onPress={() => {
+              const value = !watched;
+              if (value) setSheetOpen(true);
+              write.mutate({
+                kind: "watched",
+                value,
+                clears: value ? undefined : "unwatched",
+              });
+            }}
+          />
+        )}
+        {watched ? (
+          <GlassButton
+            label={`★ ${formatPersonalScore(state.rating)}`}
+            accessibilityLabel={`Your score for ${movie.title}: ${formatPersonalScore(state.rating)}`}
+            onPress={() => setSheetOpen(true)}
+          />
+        ) : null}
+      </View>
+      {releaseNote ? (
+        <Text className="text-sm text-text-secondary">{releaseNote}</Text>
+      ) : null}
+      <ScoreSheet
+        visible={sheetOpen && watched}
+        title={movie.title}
+        rating={state.rating}
+        unavailableNote={releaseNote}
+        onClose={() => setSheetOpen(false)}
+        onPick={(value) => {
+          setSheetOpen(false);
+          write.mutate({ kind: "rating", value });
+        }}
+        onClear={() => {
+          setSheetOpen(false);
+          write.mutate({ kind: "rating", value: null });
+        }}
+      />
     </View>
   );
+}
+
+/**
+ * Core's plan, mark and score rule over the v1 movie state. Only the
+ * timestamp is the app's own: a new mark shows now until the server's answer
+ * replaces it (apps/mobile/AGENTS.md, BeStats rules).
+ */
+function applyMovieIntents(
+  current: V1MovieTitleState,
+  intents: readonly TrackingIntent[],
+): V1MovieTitleState {
+  const next = intents.reduce(applyTrackingIntent, {
+    inWatchlist: current.planned,
+    watched: current.watchedAt !== null,
+    rating: current.rating,
+  });
+  return {
+    planned: next.inWatchlist,
+    watchedAt: next.watched
+      ? (current.watchedAt ?? new Date().toISOString())
+      : null,
+    rating: next.rating,
+  };
 }

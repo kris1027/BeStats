@@ -32,6 +32,20 @@ export function communityRatingText(
   return value === null ? null : `${CATALOG_SOURCES[type]} ${value.toFixed(1)}`;
 }
 
+/**
+ * What a screen reader says for a community rating, "TMDB rating 7.4" or
+ * "IGDB community rating 81.0", so it is never heard as the user's own score
+ * (AGENTS.md section 9). Every title screen and episode row reads it here.
+ */
+export function communityRatingLabel(
+  type: LibraryType,
+  value: number | null,
+): string | null {
+  if (value === null) return null;
+  const noun = type === "game" ? "community rating" : "rating";
+  return `${CATALOG_SOURCES[type]} ${noun} ${value.toFixed(1)}`;
+}
+
 type Props = {
   item: V1CatalogItem;
   type: LibraryType;

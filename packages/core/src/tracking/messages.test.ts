@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  EPISODE_MARK_MESSAGES,
   EPISODE_TRACKING_MESSAGES,
   GAME_DATE_LINES,
   GAME_STATUS_LABELS,
@@ -10,8 +11,10 @@ import {
   LIBRARY_NOTES,
   libraryCopy,
   MARK_NEXT_MESSAGES,
+  MOVIE_TRACKING_LABELS,
   NEXT_EPISODE_MESSAGES,
   SEASON_MESSAGES,
+  SEASON_PAGE_COPY,
   SHOW_PROGRESS_MESSAGES,
   SHOW_TRACKING_COPY,
   SHOW_TRACKING_MESSAGES,
@@ -318,5 +321,24 @@ describe("the games tabs' copy (spec 0027)", () => {
   it("writes the Started and Finished month lines (AC-9)", () => {
     expect(GAME_DATE_LINES.started("Feb 2026")).toBe("Started Feb 2026");
     expect(GAME_DATE_LINES.finished("Oct 2026")).toBe("Finished Oct 2026");
+  });
+});
+
+describe("SEASON_PAGE_COPY", () => {
+  it("names an unnamed episode by its number, never an invented title", () => {
+    expect(SEASON_PAGE_COPY.episodeName(null, 4)).toBe("Episode 4");
+    expect(SEASON_PAGE_COPY.episodeName("Pilot", 1)).toBe("Pilot");
+  });
+
+  it("counts watched aired episodes and dates an upcoming one", () => {
+    expect(SEASON_PAGE_COPY.watchedCount(3, 10)).toBe("3 of 10 watched");
+    expect(SEASON_PAGE_COPY.airs("Mar 3, 2027")).toBe("Airs Mar 3, 2027");
+  });
+});
+
+describe("MOVIE_TRACKING_LABELS and EPISODE_MARK_MESSAGES", () => {
+  it("pins the pill words and the episode mark toast", () => {
+    expect(MOVIE_TRACKING_LABELS.planned).toBe("Planned");
+    expect(EPISODE_MARK_MESSAGES.marked("Pilot")).toBe("Marked Pilot watched");
   });
 });
