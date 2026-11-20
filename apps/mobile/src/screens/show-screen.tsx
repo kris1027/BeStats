@@ -23,7 +23,10 @@ import { CatalogNotice } from "@/components/catalog-notice";
 import { LoadingState, StatePanel } from "@/components/centered-state";
 import { DetailHeader, DetailSection } from "@/components/detail-header";
 import { GlassButton } from "@/components/glass-button";
-import { communityRatingText } from "@/components/poster-card";
+import {
+  communityRatingLabel,
+  communityRatingText,
+} from "@/components/poster-card";
 import { RatingLine, ratedCount } from "@/components/rating-line";
 import { useToast } from "@/components/toast";
 import { TrackingGate } from "@/components/tracking-gate";
@@ -89,11 +92,7 @@ export function ShowScreen() {
         posterUrl={detail.posterUrl}
         backdropUrl={detail.backdropUrl}
         rating={communityRatingText("tv", detail.tmdbRating)}
-        ratingLabel={
-          detail.tmdbRating === null
-            ? null
-            : `TMDB rating ${detail.tmdbRating.toFixed(1)}`
-        }
+        ratingLabel={communityRatingLabel("tv", detail.tmdbRating)}
         meta={[
           formatAirSpan({
             firstAirYear: detail.firstAirYear,
@@ -151,8 +150,11 @@ function ShowTracking({
   const offerUndo = useUndoToast();
   const toast = useToast();
 
+  const control = `show-${show.id}-tracking`;
+
   const restore = useTrackingWrite({
     stateKey: key,
+    control: `${control}-undo`,
     apply: (current: V1ShowTitleState) => ({ ...current, tracked: true }),
     write: (undo: { trackedAt: string }) =>
       restoreShowTracking({ kind: "show_tracking", showId: show.id, undo }),
@@ -161,6 +163,7 @@ function ShowTracking({
   });
   const toggle = useTrackingWrite({
     stateKey: key,
+    control,
     apply: (current: V1ShowTitleState, tracked: boolean) => ({
       ...current,
       tracked,
@@ -175,10 +178,12 @@ function ShowTracking({
       const message = SHOW_TRACKING_COPY.stopped(show.name);
       const undo = result.undo;
       if (undo === null) {
-        toast.show({ message });
+        toast.show({ id: control, message });
         return;
       }
-      offerUndo(message, (done) => restore.mutate(undo, { onSuccess: done }));
+      offerUndo(message, control, (done) =>
+        restore.mutate(undo, { onSettled: done }),
+      );
     },
   });
 

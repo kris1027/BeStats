@@ -1,7 +1,11 @@
 import { formatCalculatedRating } from "@bestats/core/format";
 import { Text, View } from "react-native";
 
-/** "1 rated episode", "5 rated seasons", as the web words it. */
+/**
+ * "1 rated episode", "5 rated seasons", as the web words it: the basis a
+ * calculated rating rests on, so a mean is never read as a single score
+ * (AGENTS.md section 9).
+ */
 export function ratedCount(count: number, noun: "episode" | "season"): string {
   return `${count} rated ${noun}${count === 1 ? "" : "s"}`;
 }

@@ -17,7 +17,11 @@ import { postRestore } from "./tracking";
  * (spec 0033, AC-5, AC-6; `lib/tracking/AGENTS.md`).
  */
 
-/** `PUT /api/v1/me/shows/{id}/tracking`: Plan to watch becomes Tracking. */
+/**
+ * `PUT /api/v1/me/shows/{id}/tracking`: Plan to watch becomes Tracking.
+ * Tracking is separate from history, so this writes no mark (AGENTS.md
+ * section 7).
+ */
 export function trackShow(showId: number) {
   return apiRequest(
     `/api/v1/me/shows/${showId}/tracking`,
@@ -39,7 +43,11 @@ export function untrackShow(showId: number) {
   );
 }
 
-/** `POST …/tracking/restore`: the Undo of Stop tracking. */
+/**
+ * `POST …/tracking/restore`: the Undo of Stop tracking, carrying the
+ * `trackedAt` the stop returned so the show keeps its place in the library
+ * (AGENTS.md section 9; spec 0035, Undo).
+ */
 export function restoreShowTracking(cleared: ClearedOf<"show_tracking">) {
   return postRestore(
     `/api/v1/me/shows/${cleared.showId}/tracking/restore`,
@@ -48,7 +56,12 @@ export function restoreShowTracking(cleared: ClearedOf<"show_tracking">) {
   );
 }
 
-/** `PUT /api/v1/me/episodes/{episodeId}` with a watched mark. */
+/**
+ * `PUT /api/v1/me/episodes/{episodeId}` with a watched mark. The server holds
+ * the air date gate, and unmarking keeps the score (AGENTS.md section 7). The
+ * answer says whether this call made the mark, the only case that offers
+ * Undo (spec 0035, Undo).
+ */
 export function putEpisodeWatched(
   episodeId: number,
   body: { showId: number; season: number; watched: boolean },
@@ -75,7 +88,11 @@ export function putEpisodeRating(
   );
 }
 
-/** `POST …/episodes/{episodeId}/restore`: the Undo of a new mark. */
+/**
+ * `POST …/episodes/{episodeId}/restore`: the Undo of a new mark. It names the
+ * `markedAt` that mark stored, so the server clears it only while it is still
+ * that mark, never a later one (spec 0035, Undo).
+ */
 export function restoreEpisode(cleared: ClearedOf<"episode">) {
   return postRestore(
     `/api/v1/me/episodes/${cleared.episodeId}/restore`,
@@ -100,7 +117,11 @@ export function putSeasonWatched(
   );
 }
 
-/** `POST …/seasons/{n}/watched/restore`: the Undo of a season write. */
+/**
+ * `POST …/seasons/{n}/watched/restore`: the Undo of a season write, bound to
+ * that season by `seasonNumber` (spec 0035, Undo). Ratings are never touched
+ * by a season write or its Undo (AGENTS.md section 7).
+ */
 export function restoreSeason(cleared: ClearedOf<"season">) {
   return postRestore(
     `/api/v1/me/shows/${cleared.showId}/seasons/${cleared.seasonNumber}/watched/restore`,

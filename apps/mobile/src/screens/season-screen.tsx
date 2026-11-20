@@ -8,44 +8,54 @@ import { adjacentSeasons, orderSeasons } from "@bestats/core/catalog/seasons";
 import {
   formatAirDate,
   formatPersonalScore,
-  formatRuntime,
   seasonMetaParts,
 } from "@bestats/core/format";
 import {
   applyEpisodeIntent,
   type EpisodeIntent,
+  episodeRowView,
 } from "@bestats/core/tracking/episode-intent";
 import {
+  EPISODE_MARK_MESSAGES,
   EPISODE_TRACKING_MESSAGES,
   SEASON_MESSAGES,
+  SEASON_PAGE_COPY,
 } from "@bestats/core/tracking/messages";
-import { EMPTY_EPISODE_TRACKING } from "@bestats/core/tracking/types";
+import {
+  EMPTY_EPISODE_TRACKING,
+  type SeasonUndo,
+} from "@bestats/core/tracking/types";
 import { airStatus, todayUtc } from "@bestats/core/tv/air-status";
-import { seasonRating } from "@bestats/core/tv/ratings";
 import {
   airedEpisodesForMarking,
+  listedSeasonRating,
   seasonWatchSummary,
 } from "@bestats/core/tv/season-watch";
 import { useQuery } from "@tanstack/react-query";
-import { Image } from "expo-image";
-import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { Stack, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 
 import { CatalogNotice } from "@/components/catalog-notice";
-import { LoadingState, StatePanel } from "@/components/centered-state";
+import { StatePanel } from "@/components/centered-state";
+import {
+  EpisodeRow,
+  type SeasonEpisodeDetail,
+  SeasonSkeleton,
+} from "@/components/episode-row";
 import { GlassButton } from "@/components/glass-button";
 import { RatingLine, ratedCount } from "@/components/rating-line";
 import { ScoreSheet } from "@/components/score-sheet";
+import { SeasonNav } from "@/components/season-nav";
 import { useToast } from "@/components/toast";
 import { TrackingGate } from "@/components/tracking-gate";
 import { catalogKeys, fetchSeason, fetchShow } from "@/lib/catalog";
-import { sizedImageUri } from "@/lib/images";
 import { useSession } from "@/lib/session";
 import {
   putEpisodeRating,
   putEpisodeWatched,
   putSeasonWatched,
+  restoreEpisode,
   restoreSeason,
 } from "@/lib/shows";
 import {
@@ -58,10 +68,6 @@ import {
 
 import { TitleReadError } from "./title-states";
 
-const STILL_WIDTH = 120;
-
-type Episode = V1Season["episodes"][number];
-
 /**
  * A season's page, the web's `/shows/{id}/season/{number}`
  * (prompts/mobile-title-tracking.md, decision 7): the header with Mark season
@@ -70,8 +76,10 @@ type Episode = V1Season["episodes"][number];
  *
  * Every rule is core's or the server's: the aired set and the summary come
  * from `seasonWatchSummary` and `airedEpisodesForMarking` with today as a UTC
- * day, the optimistic rows from `applyEpisodeIntent`, and the season rating
- * from `seasonRating` over the rows shown (AGENTS.md sections 7 and 9).
+ * day, each row's gate from `episodeRowView`, the optimistic rows from
+ * `applyEpisodeIntent`, and the season rating from `listedSeasonRating` over
+ * the rows shown, the same call the web's season header makes (AGENTS.md
+ * sections 7 and 9).
  */
 export function SeasonScreen() {
   const params = useLocalSearchParams<{ id: string; number: string }>();
@@ -102,7 +110,7 @@ export function SeasonScreen() {
   if (!valid) {
     return <StatePanel tone="error" title={V1_ERROR_MESSAGES.not_found} />;
   }
-  if (season.isPending) return <LoadingState label="Loading the season" />;
+  if (season.isPending) return <SeasonSkeleton label="Loading the season" />;
   if (season.isError) {
     return (
       <TitleReadError error={season.error} retry={() => season.refetch()} />
@@ -142,8 +150,8 @@ export function SeasonScreen() {
 
       {detail.episodes.length === 0 ? (
         <StatePanel
-          title="No episodes yet"
-          description="TMDB lists no episodes for this season yet."
+          title={SEASON_PAGE_COPY.noEpisodes}
+          description={SEASON_PAGE_COPY.noEpisodesDescription}
         />
       ) : (
         <TrackingGate signedIn={session !== null} state={state}>
@@ -172,7 +180,9 @@ export function SeasonScreen() {
 /**
  * The season's tracking: the season button and rating, then the episode rows
  * with their controls. One score sheet serves every row, so only one is ever
- * open.
+ * open. A season write and a new single mark offer Undo; unmarking an
+ * episode or changing a score does not, as nothing is lost (AGENTS.md
+ * section 7: unmarking keeps the score).
  */
 function SeasonTracking({
   season,
@@ -187,9 +197,10 @@ function SeasonTracking({
   const seasonNumber = season.seasonNumber;
   const key = trackingKeys.season(showId, seasonNumber);
   const alsoInvalidate = [trackingKeys.title("tv", showId)];
+  const control = `season-${showId}-${seasonNumber}`;
   const offerUndo = useUndoToast();
   const toast = useToast();
-  const [scoring, setScoring] = useState<Episode | null>(null);
+  const [scoring, setScoring] = useState<SeasonEpisodeDetail | null>(null);
 
   const apply = (current: SeasonState, intent: EpisodeIntent) => ({
     ...current,
@@ -198,6 +209,7 @@ function SeasonTracking({
 
   const restore = useTrackingWrite({
     stateKey: key,
+    control: `${control}-undo`,
     alsoInvalidate,
     apply: (current: SeasonState, undo: SeasonUndo) =>
       apply(current, undoIntent(undo)),
@@ -209,6 +221,7 @@ function SeasonTracking({
 
   const seasonWrite = useTrackingWrite({
     stateKey: key,
+    control,
     alsoInvalidate,
     apply,
     write: (intent: EpisodeIntent) =>
@@ -223,7 +236,7 @@ function SeasonTracking({
       const undo = result.undo;
       if (undo === null) {
         if (intent.kind === "season_mark") {
-          toast.show({ message: SEASON_MESSAGES.nothingToMark });
+          toast.show({ id: control, message: SEASON_MESSAGES.nothingToMark });
         }
         return;
       }
@@ -233,48 +246,91 @@ function SeasonTracking({
         intent.kind === "season_mark"
           ? SEASON_MESSAGES.marked(count)
           : SEASON_MESSAGES.unmarked(count);
-      offerUndo(message, (done) => restore.mutate(undo, { onSuccess: done }));
+      offerUndo(message, control, (done) =>
+        restore.mutate(undo, { onSettled: done }),
+      );
     },
   });
 
-  const episodeWrite = useTrackingWrite({
+  const unmarkEpisode = useTrackingWrite({
     stateKey: key,
+    control: (mark: { episodeId: number }) =>
+      `${control}-episode-${mark.episodeId}-undo`,
+    alsoInvalidate,
+    apply: (current: SeasonState, mark: { episodeId: number }) =>
+      apply(current, {
+        kind: "watched",
+        episodeId: mark.episodeId,
+        value: false,
+      }),
+    write: (mark: { episodeId: number; markedAt: string }) =>
+      restoreEpisode({ kind: "episode", showId, ...mark }),
+    failure: EPISODE_TRACKING_MESSAGES.write_failed,
+    expired: EPISODE_TRACKING_MESSAGES.undo_expired,
+  });
+
+  const markEpisode = useTrackingWrite({
+    stateKey: key,
+    control: (intent: WatchedIntent) =>
+      `${control}-episode-${intent.episodeId}-watched`,
     alsoInvalidate,
     apply,
-    write: (intent: EpisodeIntent) => {
-      if (intent.kind === "watched") {
-        return putEpisodeWatched(intent.episodeId, {
-          showId,
-          season: seasonNumber,
-          watched: intent.value,
-        });
-      }
-      const rated = intent as Extract<EpisodeIntent, { kind: "rating" }>;
-      return putEpisodeRating(rated.episodeId, {
+    write: (intent: WatchedIntent) =>
+      putEpisodeWatched(intent.episodeId, {
         showId,
         season: seasonNumber,
-        rating: rated.value,
-      });
+        watched: intent.value,
+      }),
+    failure: EPISODE_TRACKING_MESSAGES.write_failed,
+    onSuccess: (result, intent) => {
+      const markedAt = result.markedAt;
+      if (!result.newlyMarked || markedAt === null) return;
+      const episode = season.episodes.find(({ id }) => id === intent.episodeId);
+      const name = episode
+        ? SEASON_PAGE_COPY.episodeName(episode.name, episode.episodeNumber)
+        : null;
+      if (name === null) return;
+      offerUndo(
+        EPISODE_MARK_MESSAGES.marked(name),
+        `${control}-episode-${intent.episodeId}-watched`,
+        (done) =>
+          unmarkEpisode.mutate(
+            { episodeId: intent.episodeId, markedAt },
+            { onSettled: done },
+          ),
+      );
     },
+  });
+
+  const rateEpisode = useTrackingWrite({
+    stateKey: key,
+    control: (intent: RatingIntent) =>
+      `${control}-episode-${intent.episodeId}-rating`,
+    alsoInvalidate,
+    apply,
+    write: (intent: RatingIntent) =>
+      putEpisodeRating(intent.episodeId, {
+        showId,
+        season: seasonNumber,
+        rating: intent.value,
+      }),
     failure: EPISODE_TRACKING_MESSAGES.write_failed,
   });
 
   const summary = seasonWatchSummary(season.episodes, state.states, today);
-  const ratings: number[] = [];
-  const seen = new Set<number>();
-  for (const { id } of season.episodes) {
-    if (seen.has(id)) continue;
-    seen.add(id);
-    const rating = state.states[id]?.rating;
-    if (rating != null) ratings.push(rating);
-  }
-  const rating = seasonRating(ratings);
+  const rating = listedSeasonRating(season.episodes, state.states);
   const seasonWatched = summary.state === "season_watched";
   const scoringState = scoring
     ? (state.states[scoring.id] ?? EMPTY_EPISODE_TRACKING)
     : null;
   const scoringUpcoming =
     scoring !== null && airStatus(scoring.airDate, today) === "upcoming";
+  const scoreEpisode = (value: number | null) => {
+    if (scoring) {
+      rateEpisode.mutate({ kind: "rating", episodeId: scoring.id, value });
+    }
+    setScoring(null);
+  };
 
   return (
     <View className="gap-5">
@@ -282,14 +338,18 @@ function SeasonTracking({
         <View className="flex-row flex-wrap items-center gap-3">
           {summary.state === "none_aired" ? (
             <GlassButton
-              label="Nothing aired yet"
-              accessibilityLabel={`Mark ${season.name} watched: nothing aired yet`}
+              label={SEASON_PAGE_COPY.nothingAired}
+              accessibilityLabel={`Mark ${season.name} watched: ${SEASON_PAGE_COPY.nothingAired.toLowerCase()}`}
               disabled
               onPress={() => {}}
             />
           ) : (
             <GlassButton
-              label={seasonWatched ? "Season watched" : "Mark season watched"}
+              label={
+                seasonWatched
+                  ? SEASON_PAGE_COPY.seasonWatched
+                  : SEASON_PAGE_COPY.markSeason
+              }
               accessibilityLabel={`Mark ${season.name} watched`}
               pressed={seasonWatched}
               onPress={() =>
@@ -314,12 +374,15 @@ function SeasonTracking({
           )}
           {summary.state !== "none_aired" ? (
             <Text className="text-sm text-text-secondary">
-              {summary.watchedAired} of {summary.aired} watched
+              {SEASON_PAGE_COPY.watchedCount(
+                summary.watchedAired,
+                summary.aired,
+              )}
             </Text>
           ) : null}
         </View>
         <RatingLine
-          label="Your season rating"
+          label={SEASON_PAGE_COPY.ratingLabel}
           value={rating?.mean ?? null}
           basis={
             rating
@@ -331,24 +394,34 @@ function SeasonTracking({
 
       {season.episodes.map((episode) => {
         const stored = state.states[episode.id];
-        const hasState =
-          stored !== undefined && (stored.watched || stored.rating !== null);
         const shown = stored ?? EMPTY_EPISODE_TRACKING;
-        const upcoming = airStatus(episode.airDate, today) === "upcoming";
-        const label = episode.name ?? `Episode ${episode.episodeNumber}`;
+        const view = episodeRowView(
+          airStatus(episode.airDate, today) === "upcoming",
+          stored,
+        );
+        const label = SEASON_PAGE_COPY.episodeName(
+          episode.name,
+          episode.episodeNumber,
+        );
         return (
           <EpisodeRow key={episode.id} episode={episode}>
-            {upcoming && !hasState ? (
-              <Text className="text-sm text-text-secondary">Upcoming</Text>
+            {view.kind === "upcoming" ? (
+              <Text className="text-sm text-text-secondary">
+                {upcomingNote(episode)}
+              </Text>
             ) : (
               <View className="flex-row flex-wrap gap-2">
                 <GlassButton
-                  label={shown.watched ? "Watched" : "Mark watched"}
+                  label={
+                    shown.watched
+                      ? SEASON_PAGE_COPY.watched
+                      : SEASON_PAGE_COPY.markWatched
+                  }
                   accessibilityLabel={`Mark ${label} watched`}
                   pressed={shown.watched}
-                  disabled={upcoming && !shown.watched}
+                  disabled={!view.canMark}
                   onPress={() =>
-                    episodeWrite.mutate({
+                    markEpisode.mutate({
                       kind: "watched",
                       episodeId: episode.id,
                       value: !shown.watched,
@@ -369,43 +442,34 @@ function SeasonTracking({
       <ScoreSheet
         visible={scoring !== null}
         title={
-          scoring ? (scoring.name ?? `Episode ${scoring.episodeNumber}`) : ""
+          scoring
+            ? SEASON_PAGE_COPY.episodeName(scoring.name, scoring.episodeNumber)
+            : ""
         }
         rating={scoringState?.rating ?? null}
         unavailableNote={
-          scoringUpcoming && scoring
-            ? `Airs ${formatAirDate(scoring.airDate) ?? ""}`.trim()
-            : null
+          scoringUpcoming && scoring ? upcomingNote(scoring) : null
         }
         onClose={() => setScoring(null)}
-        onPick={(value) => {
-          if (scoring) {
-            episodeWrite.mutate({
-              kind: "rating",
-              episodeId: scoring.id,
-              value,
-            });
-          }
-          setScoring(null);
-        }}
-        onClear={() => {
-          if (scoring) {
-            episodeWrite.mutate({
-              kind: "rating",
-              episodeId: scoring.id,
-              value: null,
-            });
-          }
-          setScoring(null);
-        }}
+        onPick={scoreEpisode}
+        onClear={() => scoreEpisode(null)}
       />
     </View>
   );
 }
 
-type SeasonUndo =
-  | { kind: "unmark"; episodeIds: number[] }
-  | { kind: "restore"; entries: { episodeId: number; watchedAt: string }[] };
+type WatchedIntent = Extract<EpisodeIntent, { kind: "watched" }>;
+type RatingIntent = Extract<EpisodeIntent, { kind: "rating" }>;
+
+/**
+ * What a future episode says in place of its controls: "Airs Mar 3, 2027",
+ * or "Upcoming" should the date not format. The date is TMDB's UTC day, with
+ * no local time implied (AGENTS.md section 9).
+ */
+function upcomingNote(episode: SeasonEpisodeDetail): string {
+  const date = formatAirDate(episode.airDate);
+  return date ? SEASON_PAGE_COPY.airs(date) : SEASON_PAGE_COPY.upcoming;
+}
 
 /** The optimistic guess for an Undo: the reverse of the write it takes back. */
 function undoIntent(undo: SeasonUndo): EpisodeIntent {
@@ -415,111 +479,4 @@ function undoIntent(undo: SeasonUndo): EpisodeIntent {
         kind: "season_mark",
         episodeIds: undo.entries.map((entry) => entry.episodeId),
       };
-}
-
-/**
- * One episode as the web's episode row reads: the still (or a plate), the
- * number and name, the UTC air date or "Air date not announced", runtime and
- * TMDB's rating labelled TMDB, then the row's controls.
- */
-function EpisodeRow({
-  episode,
-  children,
-}: {
-  episode: Episode;
-  children?: React.ReactNode;
-}) {
-  const airDate = formatAirDate(episode.airDate);
-  const label = episode.name ?? `Episode ${episode.episodeNumber}`;
-  return (
-    <View className="gap-3 rounded-2xl border border-border bg-glass-plate p-3">
-      <View className="flex-row gap-3">
-        {episode.stillUrl ? (
-          <Image
-            source={{ uri: sizedImageUri(episode.stillUrl, STILL_WIDTH) }}
-            accessibilityIgnoresInvertColors
-            contentFit="cover"
-            style={{ width: STILL_WIDTH, aspectRatio: 16 / 9, borderRadius: 8 }}
-          />
-        ) : (
-          <View
-            className="items-center justify-center rounded-lg border border-border bg-card"
-            style={{ width: STILL_WIDTH, aspectRatio: 16 / 9 }}
-          >
-            <Text className="text-xs text-muted-foreground">
-              E{episode.episodeNumber}
-            </Text>
-          </View>
-        )}
-        <View className="flex-1 gap-1">
-          <Text className="text-base font-semibold text-foreground">
-            {episode.episodeNumber}. {label}
-          </Text>
-          <Text className="text-sm text-text-secondary">
-            {[
-              airDate ?? "Air date not announced",
-              episode.runtimeMinutes !== null
-                ? formatRuntime(episode.runtimeMinutes)
-                : null,
-            ]
-              .filter(Boolean)
-              .join(" · ")}
-          </Text>
-          {episode.tmdbRating !== null ? (
-            <Text
-              accessibilityLabel={`TMDB rating ${episode.tmdbRating.toFixed(1)}`}
-              className="text-sm font-semibold text-rating-tmdb"
-            >
-              TMDB {episode.tmdbRating.toFixed(1)}
-            </Text>
-          ) : null}
-        </View>
-      </View>
-      {episode.overview ? (
-        <Text numberOfLines={3} className="text-sm text-text-secondary">
-          {episode.overview}
-        </Text>
-      ) : null}
-      {children}
-    </View>
-  );
-}
-
-/** Previous and Next season, as the web's season nav (spec 0009, AC-12). */
-function SeasonNav({
-  showId,
-  previous,
-  next,
-}: {
-  showId: number;
-  previous: { seasonNumber: number; name: string } | null;
-  next: { seasonNumber: number; name: string } | null;
-}) {
-  const router = useRouter();
-  if (!previous && !next) return null;
-  const go = (seasonNumber: number) =>
-    router.replace({
-      pathname: "/shows/[id]/season/[number]",
-      params: { id: String(showId), number: String(seasonNumber) },
-    });
-  return (
-    <View className="flex-row flex-wrap justify-between gap-2">
-      {previous ? (
-        <GlassButton
-          label={`‹ ${previous.name}`}
-          accessibilityLabel={`Previous season, ${previous.name}`}
-          onPress={() => go(previous.seasonNumber)}
-        />
-      ) : (
-        <View />
-      )}
-      {next ? (
-        <GlassButton
-          label={`${next.name} ›`}
-          accessibilityLabel={`Next season, ${next.name}`}
-          onPress={() => go(next.seasonNumber)}
-        />
-      ) : null}
-    </View>
-  );
 }

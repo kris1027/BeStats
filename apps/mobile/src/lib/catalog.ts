@@ -32,6 +32,7 @@ export const catalogKeys = {
   season: (showId: number, seasonNumber: number) =>
     [CATALOG_QUERY_ROOT, "season", showId, seasonNumber] as const,
   game: (id: number) => [CATALOG_QUERY_ROOT, "game", id] as const,
+  movie: (id: number) => [CATALOG_QUERY_ROOT, "movie", id] as const,
 };
 
 /**
