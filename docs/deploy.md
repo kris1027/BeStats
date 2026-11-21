@@ -126,6 +126,24 @@ Hobby refuses a second rate limit rule ("Rate limiting is not available for this
 
 Set it in the Vercel dashboard (Firewall, the existing rule, Edit), then check it with `vercel firewall overview` (still one active custom rule) and a burst against `/api/v1/config` from one address. Record the checked date here. Spec 0035's Rate limits section records this single rule as the Hobby form of its three rule table.
 
+**Website off, API on** ([prompts/web-off-keep-api.md](../prompts/web-off-keep-api.md)). Decided on 2026-11-21: the owner uses only the mobile app, so the website is switched off to keep the Hobby limits, and `/api/v1` keeps serving the app. The rule denies (`403`, no function runs) every path except these: anything under `/api/` and `/_next/`, plus `/privacy`, `/terms`, `/robots.txt`, `/favicon.ico`, `/tmdb-logo.svg` and `/igdb-logo.svg`. `robots.txt` disallows everything on every deployment (`app/robots.ts`), so crawlers read that and stop.
+
+```sh
+vercel firewall rules add "Website off, API on" \
+  --condition '{"type":"path","op":"pre","value":"/api/","neg":true}' \
+  --condition '{"type":"path","op":"pre","value":"/_next/","neg":true}' \
+  --condition '{"type":"path","op":"eq","value":"/privacy","neg":true}' \
+  --condition '{"type":"path","op":"eq","value":"/terms","neg":true}' \
+  --condition '{"type":"path","op":"eq","value":"/robots.txt","neg":true}' \
+  --condition '{"type":"path","op":"eq","value":"/favicon.ico","neg":true}' \
+  --condition '{"type":"path","op":"eq","value":"/tmdb-logo.svg","neg":true}' \
+  --condition '{"type":"path","op":"eq","value":"/igdb-logo.svg","neg":true}' \
+  --action deny --yes
+vercel firewall publish --yes
+```
+
+Check it: `/movies` answers `403`, while `/privacy` and `/api/v1/lists/tv/trending` (with `X-BeStats-App-Version`) answer `200`. To reopen the website, run `vercel firewall rules disable "Website off, API on" --yes` and `vercel firewall publish --yes`, then restore the production branch of `app/robots.ts` from git history.
+
 ## 6. Which IP address Supabase counts (AC-18)
 
 Sign ins run in a Server Action on Vercel, so Supabase may count the visitor's address or Vercel's outbound address. If it counts Vercel's, the limit is shared by everyone, and one person sending wrong passwords quickly makes sign in fail for every visitor.
