@@ -7,7 +7,10 @@ import {
   titleKey,
   v1TitlesSchema,
 } from "@bestats/core/api/v1/titles";
-import { UNDO_ACTION_LABEL } from "@bestats/core/tracking/messages";
+import {
+  RETRY_ACTION_LABEL,
+  UNDO_ACTION_LABEL,
+} from "@bestats/core/tracking/messages";
 import {
   type QueryKey,
   useMutation,
@@ -20,7 +23,6 @@ import { useToast } from "@/components/toast";
 
 import { ApiError, apiRequest } from "./api";
 import { libraryKeys } from "./library";
-import { RETRY_ACTION_LABEL } from "./offline";
 import { PRIVATE_QUERY_ROOT } from "./query-client";
 
 /**

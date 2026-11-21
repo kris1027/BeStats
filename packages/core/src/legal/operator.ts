@@ -92,6 +92,16 @@ export const PRIVACY_PATH = "/privacy";
 export const TERMS_PATH = "/terms";
 
 /**
+ * The legal pages' link labels, shared by the web footer and the app's About
+ * so the two cannot name the pages apart (apps/mobile/AGENTS.md: copy comes
+ * from core).
+ */
+export const PRIVACY_LABEL = "Privacy Policy";
+
+/** See `PRIVACY_LABEL`. */
+export const TERMS_LABEL = "Terms of Service";
+
+/**
  * The credit IGDB's terms ask for, shown in the footer on every route and on
  * `/terms` (spec 0032, AC-8, AC-9). IGDB's FAQ asks for "fair attribution,
  * i.e. attribution that is visible to your users and located in a static

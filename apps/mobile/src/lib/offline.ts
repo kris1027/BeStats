@@ -6,9 +6,6 @@ import { useSyncExternalStore } from "react";
 export const OFFLINE_BANNER_MESSAGE =
   "You're offline. Pages you opened recently still show.";
 
-/** The action on a write that failed for want of a connection. */
-export const RETRY_ACTION_LABEL = "Retry";
-
 /**
  * Online unless NetInfo knows otherwise: at launch `isConnected` is `null`
  * (not yet known), and that must not flash the banner.
