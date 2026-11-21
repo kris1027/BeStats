@@ -133,9 +133,17 @@ describe("/privacy", () => {
         expect(sentence).toMatch(/\bno\b|\bnever\b|n't|\bnot\b/i);
       }
     }
-    expect(container.textContent).not.toMatch(
-      /delete (my|your) account button|download my data/i,
-    );
+    expect(container.textContent).not.toMatch(/download my data/i);
+  });
+
+  it("describes self serve deletion and the app (spec 0033, AC-12, AC-15)", () => {
+    const { container } = render(<PrivacyPage />);
+    const text = (container.textContent ?? "").replace(/\s+/g, " ");
+
+    expect(text).toContain("delete your account yourself under Account");
+    expect(text).not.toMatch(/deletion works by email request/i);
+    expect(text).toContain("The BeStats app for iPhone and Android");
+    expect(text).toMatch(/loads images straight from TMDB.s and IGDB.s/);
   });
 
   it("places the data in the EU region the constant names (spec 0018, AC-23)", () => {

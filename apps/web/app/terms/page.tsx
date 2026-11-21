@@ -116,10 +116,11 @@ export default function TermsPage() {
 
       <LegalSection title="Ending your account">
         <p>
-          You can stop using BeStats at any time and ask for your account to be
-          deleted by emailing <ContactEmail />. We handle deletion within{" "}
-          {DELETION_DAYS} days. We may suspend an account that breaks these
-          terms.
+          You can stop using BeStats at any time and delete your account
+          yourself under Account, on the website or in the app. Deletion is
+          immediate and cannot be undone. You can also ask for it by emailing{" "}
+          <ContactEmail />, and we handle that within {DELETION_DAYS} days. We
+          may suspend an account that breaks these terms.
         </p>
       </LegalSection>
 
