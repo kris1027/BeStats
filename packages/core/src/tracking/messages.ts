@@ -422,6 +422,27 @@ export const LIBRARY_NOTES = {
     `${titles(n, type)} couldn't be loaded`,
 } as const;
 
+/**
+ * What a library card says when it has no title to show, and the prefixes
+ * that name a personal badge for a screen reader, so the web and the app say
+ * the same thing (spec 0008, AC-11; spec 0027, AC-11; AGENTS.md section 9).
+ */
+export const LIBRARY_CARD_MESSAGES = {
+  /** A title the catalog no longer has: "No longer on TMDB". */
+  missing: (source: string) => `No longer on ${source}`,
+  /** A stored title whose catalog read failed; its history still shows. */
+  failed: "Couldn't load this title",
+  yourScore: "Your score",
+  yourShowRating: "Your show rating",
+} as const;
+
+/** The signed out library: no private request, only the way in. */
+export const LIBRARY_SIGNED_OUT = {
+  title: "Sign in to see your library",
+  description:
+    "Your watchlist, progress and history are private to your account.",
+} as const;
+
 /** The labels a Watched show card carries (spec 0020, AC-12). */
 export const WATCHED_SHOW_LABELS = {
   finished: "Finished",

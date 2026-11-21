@@ -130,6 +130,20 @@ export function libraryPageAt(
 }
 
 /**
+ * A library route read from a URL parameter, or null when it names none, so
+ * a caller never casts an unchecked string to `LibraryPath`
+ * (prompts/mobile-library-review-fixes.md, item 5).
+ */
+export function parseLibraryPathParam(
+  value: string | string[] | null | undefined,
+): LibraryPath | null {
+  if (typeof value !== "string") return null;
+  return (LIBRARY_PATHS as readonly string[]).includes(value)
+    ? (value as LibraryPath)
+    : null;
+}
+
+/**
  * The page and tab a route shows, or null when the tab lacks a page there,
  * which the route answers with the "doesn't exist" panel
  * (prompts/library-page-urls.md).

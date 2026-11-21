@@ -7,8 +7,10 @@ import {
   GAME_STATUS_LABELS,
   GAME_TRACKING_MESSAGES,
   GAME_UNDO_MESSAGES,
+  LIBRARY_CARD_MESSAGES,
   LIBRARY_COPY,
   LIBRARY_NOTES,
+  LIBRARY_SIGNED_OUT,
   libraryCopy,
   MARK_NEXT_MESSAGES,
   MOVIE_TRACKING_LABELS,
@@ -224,6 +226,15 @@ describe("LIBRARY_NOTES, labels and the held section (spec 0020, AC-10, AC-12, A
     expect(LIBRARY_NOTES.failed(3, "movie")).toBe(
       "3 movies couldn't be loaded",
     );
+  });
+
+  it("names a missing or failed library card and the personal badges", () => {
+    expect(LIBRARY_CARD_MESSAGES.missing("TMDB")).toBe("No longer on TMDB");
+    expect(LIBRARY_CARD_MESSAGES.missing("IGDB")).toBe("No longer on IGDB");
+    expect(LIBRARY_CARD_MESSAGES.failed).toBe("Couldn't load this title");
+    expect(LIBRARY_CARD_MESSAGES.yourScore).toBe("Your score");
+    expect(LIBRARY_CARD_MESSAGES.yourShowRating).toBe("Your show rating");
+    expect(LIBRARY_SIGNED_OUT.title).toBe("Sign in to see your library");
   });
 
   it("labels a Watched show Finished or Caught up", () => {
