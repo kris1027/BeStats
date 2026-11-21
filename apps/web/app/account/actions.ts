@@ -1,5 +1,6 @@
 "use server";
 
+import { v1AccountDeleteBodySchema } from "@bestats/core/api/v1/account";
 import {
   type AuthActionState,
   failure,
@@ -10,6 +11,7 @@ import {
 } from "@bestats/core/auth/action-state";
 import {
   AUTH_OUTCOME,
+  DELETE_ACCOUNT_COPY,
   USERNAME_UNCHANGED_MESSAGE,
   USERNAME_UPDATED_MESSAGE,
 } from "@bestats/core/auth/messages";
@@ -18,6 +20,8 @@ import {
   changeUsernameSchema,
 } from "@bestats/core/auth/schemas";
 import { refresh } from "next/cache";
+import { redirect } from "next/navigation";
+import { deleteOwnAccountCommand } from "@/lib/auth/commands/account";
 import { changeUsernameCommand } from "@/lib/auth/commands/username";
 import { AUTH_EVENT, logAuthEvent } from "@/lib/auth/log";
 import { getOwnProfile } from "@/lib/auth/profile";
@@ -180,4 +184,57 @@ export async function changeUsernameAction(
 
   refresh();
   return success(USERNAME_UPDATED_MESSAGE);
+}
+
+/**
+ * Deletes the signed in account from `/account` (spec 0033, child 0036;
+ * AC-12), through the same command as `POST /api/v1/me/account/delete`.
+ *
+ * The typed word is checked again here with the route's own schema, so a
+ * direct post without it deletes nothing. The session is resolved here, never
+ * trusted from the page, and `delete_own_account()` takes no argument, so the
+ * account that goes is always the caller's. Only after Postgres confirms does
+ * it sign out and leave; a failure stays on the page with the "still here"
+ * copy and the session intact (AGENTS.md section 11).
+ */
+export async function deleteAccountAction(
+  _previous: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState> {
+  const parsed = v1AccountDeleteBodySchema.safeParse({
+    confirm: formData.get("confirm"),
+  });
+  if (!parsed.success) {
+    logAuthEvent(
+      AUTH_EVENT.deleteAccount,
+      "refused",
+      AUTH_OUTCOME.invalidInput,
+    );
+    return { status: "error", message: DELETE_ACCOUNT_COPY.confirmLabel };
+  }
+
+  const user = await getOptionalUser();
+  if (!user) {
+    logAuthEvent(
+      AUTH_EVENT.deleteAccount,
+      "refused",
+      AUTH_OUTCOME.sessionExpired,
+    );
+    return failure(AUTH_OUTCOME.sessionExpired);
+  }
+
+  const result = await deleteOwnAccountCommand({
+    userId: user.id,
+    getClient: createClient,
+  });
+  if (!result.ok) {
+    logAuthEvent(AUTH_EVENT.deleteAccount, "error");
+    return { status: "error", message: DELETE_ACCOUNT_COPY.failed };
+  }
+
+  // The auth row is gone, so the server may refuse to end the session; the
+  // local cookies are cleared either way, which is the end state wanted.
+  const supabase = await createClient();
+  await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
+  redirect("/shows");
 }
