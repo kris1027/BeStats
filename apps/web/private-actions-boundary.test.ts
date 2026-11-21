@@ -66,6 +66,13 @@ function passwordForm(): FormData {
   return form;
 }
 
+/** A delete form with the exact confirm word, so only the session refuses. */
+function deleteForm(): FormData {
+  const form = new FormData();
+  form.set("confirm", "DELETE");
+  return form;
+}
+
 function usernameForm(): FormData {
   const form = new FormData();
   form.set("username", "tester_one");
@@ -155,6 +162,8 @@ const PRIVATE_ACTIONS: Record<
         accountActions.changePasswordAction(IDLE_STATE, passwordForm()),
       changeUsernameAction: () =>
         accountActions.changeUsernameAction(IDLE_STATE, usernameForm()),
+      deleteAccountAction: () =>
+        accountActions.deleteAccountAction(IDLE_STATE, deleteForm()),
     },
   },
 };

@@ -1,9 +1,11 @@
 import { hasPasswordIdentity } from "@bestats/core/auth/identity";
 import {
+  ACCOUNT_COPY,
   ACCOUNT_NOTICE,
   ACCOUNT_NOTICES,
   AUTH_OUTCOME,
   authMessage,
+  DELETE_ACCOUNT_COPY,
 } from "@bestats/core/auth/messages";
 import {
   isUsernameLocked,
@@ -18,6 +20,7 @@ import { requireUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
 import { ChangePasswordForm } from "./change-password-form";
 import { ChangeUsernameForm } from "./change-username-form";
+import { DeleteAccountForm } from "./delete-account-form";
 
 /**
  * This route opts out of prerendering (root `AGENTS.md`, `cacheComponents`).
@@ -148,7 +151,7 @@ export default async function AccountPage({
           <p className="text-sm text-muted-foreground">
             {profile
               ? authMessage(AUTH_OUTCOME.usernameLocked)
-              : "Choose a username. You can change it once a week."}
+              : ACCOUNT_COPY.chooseUsername}
           </p>
         </header>
 
@@ -162,6 +165,19 @@ export default async function AccountPage({
           username={profile?.username ?? null}
           unlocksAt={unlocksAt}
         />
+      </section>
+
+      <section className={cn(PANEL, "gap-6")}>
+        <header className="flex flex-col gap-2">
+          <h2 className="text-xl leading-tight font-bold text-destructive">
+            {DELETE_ACCOUNT_COPY.heading}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {DELETE_ACCOUNT_COPY.warning}
+          </p>
+        </header>
+
+        <DeleteAccountForm />
       </section>
 
       {canChangePassword ? (

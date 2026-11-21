@@ -9,8 +9,10 @@ import {
   passwordFieldFor,
   success,
 } from "@bestats/core/auth/action-state";
+import { isAlreadyRegistered } from "@bestats/core/auth/auth-error";
 import { isRecoverySession } from "@bestats/core/auth/identity";
 import {
+  ACCOUNT_COPY,
   ACCOUNT_NOTICE,
   AUTH_OUTCOME,
   RESEND_REQUESTED_MESSAGE,
@@ -201,15 +203,9 @@ export async function signUpAction(
         : undefined,
   });
 
-  // Two ways Supabase reports an address that already has an account.
-  //
-  // `user_already_exists` is what the installed version actually returns: a
-  // plain 422. The empty `identities` array below is the obfuscated form older
-  // and differently configured versions send instead. Both are handled, because
-  // which one arrives is a property of the Auth server, not of this code.
-  const addressAlreadyRegistered =
-    error?.code === "user_already_exists" ||
-    (!error && data.user?.identities?.length === 0);
+  // Both ways Supabase reports an address that already has an account, the
+  // same check the app runs.
+  const addressAlreadyRegistered = isAlreadyRegistered(error, data.user);
 
   if (error && !addressAlreadyRegistered) {
     const outcome = classifyAuthError(error);
@@ -232,7 +228,7 @@ export async function signUpAction(
           ...failure(AUTH_OUTCOME.alreadyRegistered),
           link: {
             href: `/sign-in?next=${encodeURIComponent(nextPath)}`,
-            label: "Sign in instead",
+            label: ACCOUNT_COPY.signInInstead,
           },
         },
         formData,

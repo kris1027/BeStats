@@ -25,6 +25,8 @@ export const AUTH_EVENT = {
   resetPassword: "auth.reset_password",
   changePassword: "auth.change_password",
   changeUsername: "auth.change_username",
+  /** Self serve account deletion (spec 0033, child 0036). */
+  deleteAccount: "auth.delete_account",
   readProfile: "auth.read_profile",
   callback: "auth.callback",
   guard: "auth.guard",

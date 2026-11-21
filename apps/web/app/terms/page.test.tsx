@@ -107,6 +107,17 @@ describe("/terms", () => {
     expectOperatorLinks(container);
   });
 
+  it("describes self serve deletion and the app (spec 0033, AC-12, AC-15)", () => {
+    const { container } = render(<TermsPage />);
+    const text = (container.textContent ?? "").replace(/\s+/g, " ");
+
+    expect(text).toContain(
+      "delete your account yourself under Account, on the website or in the app",
+    );
+    expect(text).toContain("Deletion is immediate and cannot be undone");
+    expect(text).toContain("The BeStats app for iPhone and Android");
+  });
+
   it("builds its metadata through catalogMetadata (AC-12)", () => {
     expect(metadata.title).toBe("Terms of Service");
     expect(metadata.description).toBe(

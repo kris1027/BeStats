@@ -469,7 +469,9 @@ A native app for iOS and Android beside the web app, sharing its rules with it. 
     - [x] 5a shell, home, list screens and search, signed out browsing, read only show and game pages, plan in [prompts/mobile-app-shell-catalog.md](../../prompts/mobile-app-shell-catalog.md) (branch `feat/mobile-app-shell`; checked in the iOS Simulator)
     - [x] 5b title pages and tracking (full movie, show, season and episodes, game, Undo toasts), plan in [prompts/mobile-title-tracking.md](../../prompts/mobile-title-tracking.md) (branch `feat/mobile-title-tracking`; checked signed out and signed in in the iOS Simulator; the failure toast and VoiceOver checks are still owed)
     - [x] 5c library tabs (every page from core) and card badges, plan in [prompts/mobile-library-tabs.md](../../prompts/mobile-library-tabs.md) (branch `feat/mobile-library`, stacked on 5b; checked signed in and signed out in the iOS Simulator; card quick actions left for a follow up)
-    - [ ] 5d account: sign up, account screen, deletion on web and mobile with its migration, offline cache and its wipe, About and attribution
+    - [ ] 5d account, built in two slices (agreed 2026-11-21)
+      - [x] 5d1 sign up, account screen, deletion on web and mobile with its migration (`delete_own_account()`), the self serve deletion text on `/privacy` and `/terms`, plan in [prompts/mobile-account-deletion.md](../../prompts/mobile-account-deletion.md) (branch `feat/mobile-account`; checked in the iOS Simulator and on the local web; the migration is on production (checked 2026-11-21); Expo joins `PROCESSORS` in step 6; change password on the phone left for a follow up)
+      - [ ] 5d2 offline cache and its wipe, the offline banner, About and attribution
     - [ ] 5e deep links (well known files, `/reset-password/app`)
   - [ ] Release (step 6): AC-15, AC-17
 - [ ] Verify it: `/check verify mobile app`

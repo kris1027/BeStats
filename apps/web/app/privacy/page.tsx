@@ -149,6 +149,13 @@ export default function PrivacyPage() {
           which sees your IP address and browser details, and IGDB&rsquo;s own
           privacy policy applies to them.
         </p>
+        <p>
+          The BeStats app for iPhone and Android talks to the same server and
+          the same account store as the website. It keeps your sign in on your
+          phone, encrypted, and loads images straight from TMDB&rsquo;s and
+          IGDB&rsquo;s image services, which see your IP address and device
+          details.
+        </p>
       </LegalSection>
 
       <LegalSection title="Transfers outside the EEA">
@@ -168,9 +175,12 @@ export default function PrivacyPage() {
 
       <LegalSection title="How long we keep it">
         <p>
-          Your account and tracking data stay until you ask us to delete your
-          account. We then delete them within {DELETION_DAYS} days. Logs kept by
-          our providers follow those providers&rsquo; own retention periods.
+          Your account and tracking data stay until you delete your account. You
+          can do that yourself under Account, on the website or in the app: it
+          removes your account and every mark, rating, tracked show, game and
+          your username at once, and cannot be undone. You can also ask us by
+          email, and we then delete them within {DELETION_DAYS} days. Logs kept
+          by our providers follow those providers&rsquo; own retention periods.
         </p>
       </LegalSection>
 
@@ -189,7 +199,8 @@ export default function PrivacyPage() {
         </LegalList>
         <p>
           Email <ContactEmail /> to use any of these rights. We answer within{" "}
-          {RIGHTS_RESPONSE}. Account deletion works by email request today.
+          {RIGHTS_RESPONSE}. You can also delete your account yourself under
+          Account, on the website or in the app.
         </p>
       </LegalSection>
 

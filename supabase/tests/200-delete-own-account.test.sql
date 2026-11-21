@@ -1,15 +1,13 @@
--- Spec 0033, child 0036 (Account deletion): before self serve deletion is
--- built, prove the one assumption it rests on. A `postgres` owned security
--- definer function, called by an ordinary authenticated user, can delete that
--- user's own row from auth.users, and the cascade removes every row of theirs
--- in the five user tables and none of anyone else's.
+-- Spec 0033, child 0036 (Account deletion; AC-12): `delete_own_account()`, a
+-- `postgres` owned security definer function, deletes only the caller's row
+-- from auth.users, and the cascade removes every row of theirs in the five
+-- user tables and none of anyone else's. `anon` cannot execute it, and it
+-- takes no argument, so no caller can name another account.
 --
--- Nothing here survives: the proof function lives in a schema created inside
--- this transaction, which is rolled back. The real `delete_own_account()`
--- ships as a migration in spec 0033 Build plan step 5.
+-- Everything runs inside a transaction that is rolled back.
 
 begin;
-select plan(9);
+select plan(11);
 
 -- User A and user B come from supabase/seed.sql. A profile row for A is added
 -- here so all five tables hold something of A's to cascade.
@@ -17,33 +15,24 @@ insert into public.profiles (user_id, username)
 values ('11111111-1111-1111-1111-111111111111', 'proof_user_a')
 on conflict (user_id) do nothing;
 
-create schema deletion_proof;
-
-create function deletion_proof.delete_own_account()
-returns void
-language plpgsql
-security definer
-set search_path = ''
-as $$
-begin
-  if auth.uid() is null then
-    raise exception 'not signed in' using errcode = '42501';
-  end if;
-  delete from auth.users where id = auth.uid();
-end;
-$$;
-
-alter function deletion_proof.delete_own_account() owner to postgres;
-revoke all on function deletion_proof.delete_own_account() from public, anon;
-grant usage on schema deletion_proof to authenticated;
-grant execute on function deletion_proof.delete_own_account() to authenticated;
-
 select is(
   (select pg_get_userbyid(proowner) from pg_proc
-   where proname = 'delete_own_account'
-     and pronamespace = 'deletion_proof'::regnamespace),
+   where oid = 'public.delete_own_account()'::regprocedure),
   'postgres',
-  'the proof function is owned by postgres, as delete_own_account() will be'
+  'delete_own_account() is owned by postgres'
+);
+
+select is(
+  (select pronargs::int from pg_proc
+   where oid = 'public.delete_own_account()'::regprocedure),
+  0,
+  'it takes no argument, so its effect is fixed to the caller'
+);
+
+select ok(
+  has_function_privilege('authenticated', 'public.delete_own_account()', 'execute')
+  and not has_function_privilege('anon', 'public.delete_own_account()', 'execute'),
+  'authenticated may execute it and anon may not'
 );
 
 select ok(
@@ -56,7 +45,7 @@ set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","r
 set local role authenticated;
 
 select lives_ok(
-  'select deletion_proof.delete_own_account()',
+  'select public.delete_own_account()',
   'an authenticated user can run the security definer delete on themselves'
 );
 
@@ -105,7 +94,7 @@ set local request.jwt.claims = '{"role":"anon"}';
 set local role anon;
 
 select throws_ok(
-  'select deletion_proof.delete_own_account()',
+  'select public.delete_own_account()',
   '42501',
   null,
   'anon cannot execute it'
@@ -118,7 +107,7 @@ set local request.jwt.claims = '{"role":"authenticated"}';
 set local role authenticated;
 
 select throws_ok(
-  'select deletion_proof.delete_own_account()',
+  'select public.delete_own_account()',
   '42501',
   'not signed in',
   'a caller with no user id deletes nothing'

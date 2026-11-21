@@ -1,19 +1,18 @@
-import { AUTH_MESSAGES, AUTH_OUTCOME } from "@bestats/core/auth/messages";
+import {
+  ACCOUNT_COPY,
+  AUTH_MESSAGES,
+  AUTH_OUTCOME,
+} from "@bestats/core/auth/messages";
 import { signInSchema } from "@bestats/core/auth/schemas";
 import { SIGN_IN_ACTION_LABEL } from "@bestats/core/tracking/messages";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { KeyboardAvoidingView, Platform, TextInput, View } from "react-native";
 
+import { FormField, INPUT_CLASS } from "@/components/form-field";
 import { GlassButton } from "@/components/glass-button";
 import { Notice } from "@/components/notice";
-import { signInErrorMessage } from "@/lib/auth-errors";
+import { authErrorMessage } from "@/lib/auth-errors";
 import { useSession } from "@/lib/session";
 import { getSupabase } from "@/lib/supabase";
 import { tokenColor } from "@/theme/token-vars";
@@ -52,17 +51,14 @@ export default function SignIn() {
       const { error: authError } = await getSupabase().auth.signInWithPassword(
         parsed.data,
       );
-      if (authError) setError(signInErrorMessage(authError));
+      if (authError) setError(authErrorMessage(authError));
       else clearNotice();
     } catch {
-      setError(signInErrorMessage({}));
+      setError(authErrorMessage(null));
     } finally {
       setBusy(false);
     }
   }
-
-  const inputClass =
-    "min-h-11 rounded-2xl border border-input bg-glass-plate px-4 text-base text-foreground";
 
   return (
     <KeyboardAvoidingView
@@ -71,8 +67,7 @@ export default function SignIn() {
     >
       <View className="gap-5 px-4 pt-6">
         {notice ? <Notice message={notice} /> : null}
-        <View className="gap-2">
-          <Text className="font-semibold text-text-label">Email</Text>
+        <FormField label="Email">
           <TextInput
             accessibilityLabel="Email"
             value={email}
@@ -82,11 +77,10 @@ export default function SignIn() {
             keyboardType="email-address"
             textContentType="username"
             placeholderTextColor={tokenColor("color-muted-foreground")}
-            className={inputClass}
+            className={INPUT_CLASS}
           />
-        </View>
-        <View className="gap-2">
-          <Text className="font-semibold text-text-label">Password</Text>
+        </FormField>
+        <FormField label="Password">
           <TextInput
             accessibilityLabel="Password"
             value={password}
@@ -96,15 +90,19 @@ export default function SignIn() {
             textContentType="password"
             returnKeyType="go"
             onSubmitEditing={submit}
-            className={inputClass}
+            className={INPUT_CLASS}
           />
-        </View>
+        </FormField>
         {error ? <Notice tone="error" message={error} /> : null}
         <GlassButton
           variant="primary"
           label={SIGN_IN_ACTION_LABEL}
           busy={busy}
           onPress={submit}
+        />
+        <GlassButton
+          label={ACCOUNT_COPY.createAccount}
+          onPress={() => router.replace("/sign-up")}
         />
       </View>
     </KeyboardAvoidingView>

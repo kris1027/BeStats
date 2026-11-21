@@ -171,6 +171,24 @@ export const ACCOUNT_NOTICES: Record<AccountNotice, string> = {
     "Your account is ready, but that username was just taken. Choose another.",
 };
 
+/**
+ * The Account screen's own lines, written once so `/account`, sign up and the
+ * app's Account tab say the same thing (apps/mobile/AGENTS.md, copy comes from
+ * core; AGENTS.md section 3, real copy only).
+ */
+export const ACCOUNT_COPY = {
+  signedOutTitle: "You're not signed in",
+  signedOutTrack: "Sign in to track what you watch and play.",
+  signedOutManage: "Sign in to manage your account.",
+  createAccount: "Create an account",
+  signInInstead: "Sign in instead",
+  loadFailed: "We couldn't load your account",
+  chooseUsername: "Choose a username. You can change it once a week.",
+  saveUsername: "Save username",
+  /** Followed by the local date and time the weekly lock ends, then ".". */
+  usernameUnlocksOn: "You can change it again on",
+} as const;
+
 /** Shown after a username is saved. */
 export const USERNAME_UPDATED_MESSAGE = "Username updated.";
 
@@ -185,3 +203,28 @@ export const USERNAME_UNCHANGED_MESSAGE = "That's already your username.";
 export function signedInAs(email: string | undefined): string {
   return email ? `Signed in as ${email}` : "Signed in";
 }
+
+/**
+ * The word you type to confirm account deletion, on `/account` and in the
+ * app (spec 0033, child 0036; AC-12). Exact and case sensitive, so a stray
+ * tap or autocorrect can never delete an account, and in core so both apps
+ * and the route check the same word (AGENTS.md section 5).
+ */
+export const DELETE_ACCOUNT_CONFIRM_WORD = "DELETE";
+
+/**
+ * The copy of the Delete account section, written once so the web and the
+ * app say the same thing (prompts/mobile-account-deletion.md, decision 4).
+ * The warning names what goes and that it cannot be undone, and the failure
+ * says the account is still there, so nobody leaves believing a delete that
+ * never happened (AGENTS.md section 11).
+ */
+export const DELETE_ACCOUNT_COPY = {
+  heading: "Delete account",
+  warning:
+    "This deletes your account and everything in it: every watched mark, rating, tracked show, game and your username. It can't be undone.",
+  confirmLabel: `Type ${DELETE_ACCOUNT_CONFIRM_WORD} to confirm`,
+  button: "Delete my account",
+  failed: "We couldn't delete your account. It's still here. Please try again.",
+  deleted: "Your account was deleted.",
+} as const;

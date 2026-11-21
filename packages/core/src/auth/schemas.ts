@@ -29,6 +29,12 @@ export const emailSchema = z
   .pipe(z.email("Enter a valid email address."));
 
 /**
+ * The hint under every new password field, on the web and in the app, so it
+ * always states the length `newPasswordSchema` checks (AGENTS.md section 5).
+ */
+export const PASSWORD_HINT = `At least ${MINIMUM_PASSWORD_LENGTH} characters`;
+
+/**
  * A password being set or changed.
  *
  * Length only. Composition rules (a digit, a symbol) push people towards

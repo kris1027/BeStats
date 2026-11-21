@@ -1,3 +1,7 @@
+import { ACCOUNT_COPY } from "@bestats/core/auth/messages";
+import { SIGN_IN_ACTION_LABEL } from "@bestats/core/tracking/messages";
+import { useRouter } from "expo-router";
+import type { ReactNode } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 
 import { GlassButton } from "./glass-button";
@@ -47,6 +51,35 @@ export function StatePanel({
       {action ? (
         <GlassButton label={action.label} onPress={action.onPress} />
       ) : null}
+    </View>
+  );
+}
+
+/**
+ * A whole screen's signed out state: "You're not signed in", one line on what
+ * signing in gives, and Sign in, which opens the modal over this screen
+ * (AGENTS.md section 3, every view has a signed out state). `children` sit
+ * under it, such as the Account tab's Create an account.
+ */
+export function SignedOutState({
+  description,
+  children,
+}: {
+  description: string;
+  children?: ReactNode;
+}) {
+  const router = useRouter();
+  return (
+    <View className="flex-1 gap-3 bg-background">
+      <StatePanel
+        title={ACCOUNT_COPY.signedOutTitle}
+        description={description}
+        action={{
+          label: SIGN_IN_ACTION_LABEL,
+          onPress: () => router.push("/sign-in"),
+        }}
+      />
+      {children}
     </View>
   );
 }
