@@ -176,6 +176,13 @@ export function withV1<S extends V1InputSchemas = Record<never, never>>(
         successCache = options.cache;
       }
       if (outcome.kind === "failure") return fail(outcome);
+      // A 204 may carry no body at all; `Response.json` would write `null`.
+      if (outcome.status === 204) {
+        return new Response(null, {
+          status: 204,
+          headers: { "Cache-Control": successCache },
+        });
+      }
       return Response.json(outcome.body, {
         status: outcome.status ?? 200,
         headers: { "Cache-Control": successCache },
