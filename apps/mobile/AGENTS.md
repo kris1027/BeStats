@@ -41,6 +41,7 @@ Docs: https://docs.expo.dev/eas/index.md
 - The EAS project is `@kris1027dev/bestats` (`extra.eas.projectId` in `app.json`); bundle and package ID `com.kris1027.bestats`, which can never change after the first store upload.
 - `eas.json` profiles: `development` (device dev client), `development-simulator` (iOS Simulator, needs no Apple developer account), `production`.
 - A development build loads its JavaScript from Metro on your Mac, so it reads `.env.local`; a store build needs the `EXPO_PUBLIC_*` values set in EAS.
+- Personal iPhone build (free Apple ID, no EAS): `APP_VARIANT=personal` makes `app.config.ts` swap in "BeStats Personal" and `com.kris1027.bestats.personal`, so a free team never registers the store ID. Production values go in the gitignored `.env.production.local`, which Expo reads only when bundling for production. Run `APP_VARIANT=personal npx expo prebuild --clean -p ios` (with `LANG=en_US.UTF-8`, or `pod install` fails), then `APP_VARIANT=personal npx expo run:ios --configuration Release --device <udid> --no-bundler`. The install stops opening after 7 days; rerun the last command. Plan: `prompts/mobile-personal-release-build.md`.
 
 ## Rules
 
