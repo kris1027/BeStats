@@ -53,7 +53,11 @@ describe("deleteAccountAction", () => {
     "deletes nothing when the field holds %j",
     async (typed) => {
       const state = await deleteAccountAction(IDLE_STATE, form(typed));
-      expect(state.status).toBe("error");
+      expect(state).toMatchObject({
+        status: "error",
+        outcome: AUTH_OUTCOME.invalidInput,
+        message: DELETE_ACCOUNT_COPY.confirmLabel,
+      });
       expect(rpc).not.toHaveBeenCalled();
     },
   );
@@ -68,10 +72,18 @@ describe("deleteAccountAction", () => {
   it("stays signed in and says so when Postgres refuses", async () => {
     rpc.mockResolvedValue({ data: null, error: { code: "XX000" } });
     const state = await deleteAccountAction(IDLE_STATE, form("DELETE"));
-    expect(state).toEqual({
+    expect(state).toMatchObject({
       status: "error",
       message: DELETE_ACCOUNT_COPY.failed,
+      outcome: AUTH_OUTCOME.unexpected,
     });
+    expect(console.warn).toHaveBeenCalledWith(
+      JSON.stringify({
+        event: "auth.delete_account",
+        result: "error",
+        outcome: AUTH_OUTCOME.unexpected,
+      }),
+    );
     expect(auth.signOut).not.toHaveBeenCalled();
     expect(redirect).not.toHaveBeenCalled();
   });

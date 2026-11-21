@@ -21,7 +21,7 @@ export const POST = withV1({
   handler: async ({ user }) => {
     const result = await deleteOwnAccountCommand(bearerDeps(user));
     if (result.ok) return v1Ok(null, 204);
-    logAuthEvent(AUTH_EVENT.deleteAccount, "error");
+    logAuthEvent(AUTH_EVENT.deleteAccount, "error", result.error);
     return v1Fail("internal", { message: DELETE_ACCOUNT_COPY.failed });
   },
 });

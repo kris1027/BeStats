@@ -210,7 +210,10 @@ export async function deleteAccountAction(
       "refused",
       AUTH_OUTCOME.invalidInput,
     );
-    return { status: "error", message: DELETE_ACCOUNT_COPY.confirmLabel };
+    return {
+      ...failure(AUTH_OUTCOME.invalidInput),
+      message: DELETE_ACCOUNT_COPY.confirmLabel,
+    };
   }
 
   const user = await getOptionalUser();
@@ -228,8 +231,8 @@ export async function deleteAccountAction(
     getClient: createClient,
   });
   if (!result.ok) {
-    logAuthEvent(AUTH_EVENT.deleteAccount, "error");
-    return { status: "error", message: DELETE_ACCOUNT_COPY.failed };
+    logAuthEvent(AUTH_EVENT.deleteAccount, "error", result.error);
+    return { ...failure(result.error), message: DELETE_ACCOUNT_COPY.failed };
   }
 
   // The auth row is gone, so the server may refuse to end the session; the

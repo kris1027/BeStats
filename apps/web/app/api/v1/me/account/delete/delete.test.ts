@@ -76,5 +76,12 @@ describe("POST /api/v1/me/account/delete", () => {
     const error = await errorOf(response);
     expect(error.code).toBe("internal");
     expect(error.message).toBe(DELETE_ACCOUNT_COPY.failed);
+    expect(console.warn).toHaveBeenCalledWith(
+      JSON.stringify({
+        event: "auth.delete_account",
+        result: "error",
+        outcome: "session_expired",
+      }),
+    );
   });
 });
