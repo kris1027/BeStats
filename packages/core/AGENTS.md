@@ -20,4 +20,4 @@
 
 ## Legal text
 
-`src/legal/operator.ts` (operator facts, `IGDB_ATTRIBUTION`, `PROCESSORS`, `LEGAL_LAST_UPDATED`) and `src/legal/attribution.ts` (`TMDB_ATTRIBUTION` for the web, `TMDB_APP_ATTRIBUTION` for the app, both from one template sentence) are the only homes of those strings; `apps/web/lib/legal/boundary.test.ts` checks it.
+`src/legal/operator.ts` (operator facts, `IGDB_ATTRIBUTION`, the legal page paths and labels the web footer and the app's About share, `PROCESSORS`, `LEGAL_LAST_UPDATED`) and `src/legal/attribution.ts` (`TMDB_ATTRIBUTION` for the web, `TMDB_APP_ATTRIBUTION` for the app, both from one template sentence) are the only homes of those strings; `apps/web/lib/legal/boundary.test.ts` checks it.
