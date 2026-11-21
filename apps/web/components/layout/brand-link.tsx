@@ -101,4 +101,20 @@ function BrandLinkView({ type }: { type: LibraryType }) {
   );
 }
 
-export { BrandLink, BrandLinkView, LAST_MEDIA_TYPE_KEY, rememberedLibraryType };
+/**
+ * The wordmark as plain text, not a link, for the legal pages: the phone app
+ * links there while every other web page answers 403, so the logo has nowhere
+ * to go (prompts/legal-pages-app-ready.md). The navbar shows it only through
+ * the `legal-page:` variant.
+ */
+function BrandWordmark({ className }: { className?: string }) {
+  return <span className={`${BRAND_CLASS} ${className ?? ""}`}>BeStats</span>;
+}
+
+export {
+  BrandLink,
+  BrandLinkView,
+  BrandWordmark,
+  LAST_MEDIA_TYPE_KEY,
+  rememberedLibraryType,
+};

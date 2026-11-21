@@ -21,7 +21,7 @@ import { catalogMetadata } from "@/lib/seo/metadata";
 export const metadata: Metadata = catalogMetadata({
   title: "Terms of Service",
   description:
-    "The rules for using BeStats, a free movie and TV tracking website.",
+    "The rules for using BeStats, a free app and website for tracking movies, TV shows and games.",
   path: "/terms",
   image: null,
   ogType: "website",
@@ -41,9 +41,10 @@ export default function TermsPage() {
     <LegalDocument title="Terms of Service">
       <LegalSection title="About BeStats">
         <p>
-          BeStats is a free website for tracking the movies and TV shows you
-          watch, run by <OperatorLink /> as a non commercial personal project.
-          It is not a streaming service and hosts no video.
+          BeStats is a free app for iPhone and Android, with a website, for
+          tracking the movies, TV shows and games you watch and play, run by{" "}
+          <OperatorLink /> as a non commercial personal project. It is not a
+          streaming service and hosts no video.
         </p>
         <p>
           By creating an account you accept these terms. The agreement starts

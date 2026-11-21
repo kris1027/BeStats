@@ -118,10 +118,20 @@ describe("/terms", () => {
     expect(text).toContain("The BeStats app for iPhone and Android");
   });
 
+  it("opens with the app, the website and games (prompts/legal-pages-app-ready.md)", () => {
+    const { container } = render(<TermsPage />);
+    const text = (container.textContent ?? "").replace(/\s+/g, " ");
+
+    expect(text).toContain(
+      "BeStats is a free app for iPhone and Android, with a website, for tracking the movies, TV shows and games you watch and play, run by",
+    );
+    expect(container.querySelector("[data-legal-page]")).not.toBeNull();
+  });
+
   it("builds its metadata through catalogMetadata (AC-12)", () => {
     expect(metadata.title).toBe("Terms of Service");
     expect(metadata.description).toBe(
-      "The rules for using BeStats, a free movie and TV tracking website.",
+      "The rules for using BeStats, a free app and website for tracking movies, TV shows and games.",
     );
     expect(metadata.robots).toBeUndefined();
     expect(metadata.openGraph).toMatchObject({ type: "website" });

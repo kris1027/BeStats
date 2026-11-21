@@ -26,6 +26,10 @@ const LAST_UPDATED_LABEL = new Intl.DateTimeFormat("en-GB", {
  * the rest of the app already draws (the auth panel's heading, the movie
  * overview's body text) rather than inventing a look. There is no typography
  * plugin, so lists and links are styled explicitly by the helpers below.
+ *
+ * `data-legal-page` lets the navbar's `legal-page:` variant shrink the bar to
+ * the wordmark, since the phone app links here while every other web page
+ * answers 403 (prompts/legal-pages-app-ready.md).
  */
 export function LegalDocument({
   title,
@@ -35,7 +39,10 @@ export function LegalDocument({
   children: React.ReactNode;
 }) {
   return (
-    <article className="mx-auto flex w-full max-w-[72ch] flex-col gap-10">
+    <article
+      data-legal-page
+      className="mx-auto flex w-full max-w-[72ch] flex-col gap-10"
+    >
       <header className="flex flex-col gap-2">
         <h1 className="text-3xl leading-tight font-bold tracking-[-0.03em] text-foreground md:text-4xl">
           {title}

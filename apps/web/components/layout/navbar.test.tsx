@@ -63,6 +63,30 @@ describe("Navbar", () => {
     );
   });
 
+  it("shrinks to a plain wordmark on the legal pages (prompts/legal-pages-app-ready.md)", () => {
+    const { container } = render(
+      <Navbar
+        mobileAccountSlot={<ACCOUNT_SLOT />}
+        desktopAccountSlot={<ACCOUNT_SLOT />}
+      />,
+    );
+
+    // jsdom applies no CSS, so the `legal-page:` variant is asserted as
+    // classes: the plain wordmark shows only there, and the logo link and
+    // both account slots hide there.
+    const wordmark = screen.getByText("BeStats", { selector: "span" });
+    expect(wordmark).toHaveClass("hidden", "legal-page:inline");
+    expect(
+      screen
+        .getByRole("link", { name: "BeStats" })
+        .closest(".legal-page\\:hidden"),
+    ).not.toBeNull();
+    for (const signIn of screen.getAllByRole("link", { name: "Sign in" })) {
+      expect(signIn.closest(".legal-page\\:hidden")).not.toBeNull();
+    }
+    expect(container.querySelectorAll(".legal-page\\:hidden")).toHaveLength(3);
+  });
+
   it("renders one tab control, not one per layout", () => {
     render(
       <Navbar

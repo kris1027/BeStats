@@ -1,7 +1,11 @@
 import type * as React from "react";
 import { Suspense } from "react";
 
-import { BrandLink, BrandLinkView } from "@/components/layout/brand-link";
+import {
+  BrandLink,
+  BrandLinkView,
+  BrandWordmark,
+} from "@/components/layout/brand-link";
 import {
   MediaTypeTabs,
   MediaTypeTabsView,
@@ -59,11 +63,19 @@ function Navbar({
          * logo-follows-media-type.md), so it reads the pathname and needs
          * the same boundary as the tabs on a dynamic route.
          */}
-        <Suspense fallback={<BrandLinkView type="tv" />}>
-          <BrandLink />
-        </Suspense>
+        <div className="legal-page:hidden">
+          <Suspense fallback={<BrandLinkView type="tv" />}>
+            <BrandLink />
+          </Suspense>
+        </div>
+        {/*
+         * On /privacy and /terms, the only web pages the firewall serves while
+         * the website is off, the bar is the wordmark as plain text: every
+         * link it would carry answers 403 (prompts/legal-pages-app-ready.md).
+         */}
+        <BrandWordmark className="hidden legal-page:inline" />
 
-        <div className="md:hidden">{mobileAccountSlot}</div>
+        <div className="md:hidden legal-page:hidden">{mobileAccountSlot}</div>
 
         {/*
          * The boundary only ever suspends on a route with a dynamic param,
@@ -95,7 +107,7 @@ function Navbar({
           </Suspense>
         </div>
 
-        <div className="hidden md:ml-auto md:flex md:justify-end xl:flex-1">
+        <div className="hidden md:ml-auto md:flex md:justify-end xl:flex-1 legal-page:hidden">
           {desktopAccountSlot}
         </div>
       </div>

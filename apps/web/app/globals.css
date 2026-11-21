@@ -3,6 +3,14 @@
 @import "shadcn/tailwind.css";
 
 /*
+ * `legal-page:` applies on the pages `LegalDocument` marks with
+ * `data-legal-page` (/privacy, /terms). The app links to them while the rest
+ * of the website answers 403, so the navbar shrinks to the wordmark there
+ * without reading the path (prompts/legal-pages-app-ready.md).
+ */
+@custom-variant legal-page (body:has([data-legal-page]) &);
+
+/*
  * One palette, no light theme, no `.dark` variant (spec 0004, AC-1).
  *
  * Every screen is drawn on pure black, so a light palette here would be a
