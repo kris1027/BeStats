@@ -1,17 +1,23 @@
 import "../global.css";
 
-import { QueryClientProvider } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { DarkTheme, Stack, ThemeProvider, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { VariableContextProvider } from "nativewind";
 import { useEffect } from "react";
-import { Appearance } from "react-native";
+import { Appearance, View } from "react-native";
 
+import { OfflineBanner } from "@/components/offline-banner";
 import { ToastProvider } from "@/components/toast";
 import { MediaTypeProvider } from "@/lib/media-type";
-import { queryClient } from "@/lib/query-client";
-import { SessionProvider, useSession } from "@/lib/session";
+import { watchConnection } from "@/lib/offline";
+import { persistOptions, queryClient } from "@/lib/query-client";
+import {
+  SessionProvider,
+  useSession,
+  wipePrivateCacheIfSignedOut,
+} from "@/lib/session";
 import { TOKEN_VARS, tokenColor } from "@/theme/token-vars";
 
 SplashScreen.preventAutoHideAsync();
@@ -21,6 +27,10 @@ SplashScreen.preventAutoHideAsync();
 // system appearance, so pin it to dark or a light phone draws light glass
 // under dark screens.
 Appearance.setColorScheme("dark");
+
+// Queries pause offline and resume when NetInfo reports a connection again
+// (spec 0033, AC-13).
+watchConnection();
 
 /**
  * BeStats is dark only, as the shipped web UI is (spec 0004), so the
@@ -81,24 +91,33 @@ function Navigator() {
 }
 
 /**
- * The app's providers: tokens, the query cache, the session, the media type
- * Home and Search share, and the one toast tracking writes report through.
+ * The app's providers: tokens, the query cache persisted for offline reads
+ * (wiped of private entries at once when no session is stored), the session,
+ * the media type Home and Search share, the one toast tracking writes report
+ * through, and the offline banner above the stack (spec 0033, AC-13).
  */
 export default function RootLayout() {
   return (
     <VariableContextProvider value={TOKEN_VARS}>
-      <QueryClientProvider client={queryClient}>
+      <PersistQueryClientProvider
+        client={queryClient}
+        persistOptions={persistOptions}
+        onSuccess={wipePrivateCacheIfSignedOut}
+      >
         <SessionProvider>
           <MediaTypeProvider>
             <ThemeProvider value={NAV_THEME}>
               <ToastProvider>
                 <StatusBar style="light" />
-                <Navigator />
+                <View className="flex-1 bg-background">
+                  <OfflineBanner />
+                  <Navigator />
+                </View>
               </ToastProvider>
             </ThemeProvider>
           </MediaTypeProvider>
         </SessionProvider>
-      </QueryClientProvider>
+      </PersistQueryClientProvider>
     </VariableContextProvider>
   );
 }

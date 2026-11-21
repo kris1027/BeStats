@@ -13,12 +13,14 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
 import type { z } from "zod";
 
 import { useToast } from "@/components/toast";
 
 import { ApiError, apiRequest } from "./api";
 import { libraryKeys } from "./library";
+import { RETRY_ACTION_LABEL } from "./offline";
 import { PRIVATE_QUERY_ROOT } from "./query-client";
 
 /**
@@ -146,6 +148,11 @@ type WriteOptions<TState, TVars, TResult> = {
  * the old state is not put back: that would bring private data back after
  * sign out (spec 0033, AC-13). The refetch waits for the last write on the
  * same state, so two quick taps never flash the first answer.
+ *
+ * A write that never reached the server (the `network` error, offline say)
+ * fails like any other and its toast offers Retry, which sends the same
+ * write again; nothing is queued for later (AC-13). A refusal the server
+ * meant gets no Retry: sending it again would only be refused again.
  */
 export function useTrackingWrite<TState, TVars, TResult>({
   stateKey,
@@ -160,7 +167,8 @@ export function useTrackingWrite<TState, TVars, TResult>({
 }: WriteOptions<TState, TVars, TResult>) {
   const queries = useQueryClient();
   const toast = useToast();
-  return useMutation({
+  const retry = useRef<(vars: TVars) => void>(() => {});
+  const mutation = useMutation({
     mutationKey: stateKey,
     mutationFn: write,
     onMutate: async (vars: TVars) => {
@@ -181,10 +189,20 @@ export function useTrackingWrite<TState, TVars, TResult>({
         expired !== undefined &&
         error instanceof ApiError &&
         error.code === "conflict";
-      toast.show({
+      const offline = error instanceof ApiError && error.code === "network";
+      const key = toast.show({
         id: typeof control === "function" ? control(vars) : control,
         message: stale ? expired : writeErrorMessage(error, failure),
         tone: "error",
+        action: offline
+          ? {
+              label: RETRY_ACTION_LABEL,
+              onPress: () => {
+                toast.dismiss(key);
+                retry.current(vars);
+              },
+            }
+          : undefined,
       });
       onFailure?.();
     },
@@ -200,6 +218,11 @@ export function useTrackingWrite<TState, TVars, TResult>({
       );
     },
   });
+  const { mutate } = mutation;
+  useEffect(() => {
+    retry.current = mutate;
+  }, [mutate]);
+  return mutation;
 }
 
 /**

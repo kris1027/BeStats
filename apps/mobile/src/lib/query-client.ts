@@ -1,6 +1,12 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 import { QueryClient } from "@tanstack/react-query";
+import type {
+  Persister,
+  PersistQueryClientProviderProps,
+} from "@tanstack/react-query-persist-client";
 
-import { ApiError } from "./api";
+import { ApiError, appVersion } from "./api";
 
 /**
  * The first segment of every private query key. `clearPrivateQueries` wipes
@@ -9,18 +15,31 @@ import { ApiError } from "./api";
  */
 export const PRIVATE_QUERY_ROOT = "me";
 
+/** The AsyncStorage entry that holds the persisted query cache. */
+export const QUERY_CACHE_STORAGE_KEY = "bestats-query-cache";
+
 /**
- * The app's one query cache. In the tracer it lives in memory only, so no
- * private data is written to disk; the persisted offline cache arrives with
- * spec 0033 Build plan step 5, wiped on every sign out (AC-13).
+ * How long a persisted page stays readable offline: 24 hours, as child 0036
+ * says. Queries keep the same `gcTime`, or a restored page would be garbage
+ * collected before it could be shown.
+ */
+export const PERSIST_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * The app's one query cache (spec 0033, child 0036, Offline cache).
  *
  * A refusal the server meant (any 4xx) is not retried; a network failure or
- * a 5xx is retried once.
+ * a 5xx is retried once. Offline, queries pause rather than fail
+ * (`onlineManager` follows NetInfo, `lib/offline.ts`), so a page already
+ * loaded keeps showing. Writes use `networkMode: "always"`: an offline write
+ * runs, fails with the `network` error and shows it with Retry, and nothing
+ * is ever queued (AC-13).
  */
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 60_000,
+      gcTime: PERSIST_MAX_AGE_MS,
       retry: (failureCount, error) =>
         failureCount < 1 &&
         !(
@@ -29,18 +48,51 @@ export const queryClient = new QueryClient({
           error.status < 500
         ),
     },
-    mutations: { retry: false },
+    mutations: { retry: false, networkMode: "always" },
   },
 });
 
 /**
- * Wipes everything private from the cache on sign out: every `"me"` query
- * and every mutation, whose input can be private (spec 0033, AC-13; AGENTS.md
- * section 11). Public catalog queries stay on purpose. `clear()` would also
- * remove the movie an open screen is showing and cancel its reload, which
- * left that screen on a spinner for good (prompts/mobile-sign-out-spinner.md).
+ * Writes the query cache to AsyncStorage so the last loaded pages show
+ * offline (AC-13). Only the cache goes here; the session keeps its own
+ * encrypted entry (`session-storage.ts`) and never enters this one.
  */
-export function clearPrivateQueries(client: QueryClient = queryClient): void {
+export const queryPersister = createAsyncStoragePersister({
+  storage: AsyncStorage,
+  key: QUERY_CACHE_STORAGE_KEY,
+});
+
+/**
+ * The persistence rules from child 0036: 24 hours, dropped by an app update
+ * (`buster` is the app version, so an old answer shape is never read), and
+ * only successful queries. Mutations are never written: their input can be
+ * private, and an offline write fails rather than waiting to be replayed.
+ */
+export const persistOptions: PersistQueryClientProviderProps["persistOptions"] =
+  {
+    persister: queryPersister,
+    maxAge: PERSIST_MAX_AGE_MS,
+    buster: appVersion(),
+    dehydrateOptions: { shouldDehydrateMutation: () => false },
+  };
+
+/**
+ * Wipes everything private on sign out, an expired session and account
+ * deletion: every `"me"` query and every mutation, whose input can be
+ * private, in memory and on disk (spec 0033, AC-13; AGENTS.md section 11).
+ * The persisted entry is removed outright; the persister's next save then
+ * holds only the public catalog, so the next person on a shared phone never
+ * sees the previous library.
+ *
+ * Public catalog queries stay on purpose. `clear()` would also remove the
+ * movie an open screen is showing and cancel its reload, which left that
+ * screen on a spinner for good (prompts/mobile-sign-out-spinner.md).
+ */
+export function clearPrivateQueries(
+  client: QueryClient = queryClient,
+  storage: Pick<Persister, "removeClient"> = queryPersister,
+): Promise<void> {
   client.removeQueries({ queryKey: [PRIVATE_QUERY_ROOT] });
   client.getMutationCache().clear();
+  return Promise.resolve(storage.removeClient()).catch(() => undefined);
 }
