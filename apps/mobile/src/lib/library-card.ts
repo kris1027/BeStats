@@ -1,18 +1,29 @@
 import type { V1LibraryEntry } from "@bestats/core/api/v1/library";
+import {
+  type CardPillText,
+  gameDateLine,
+  libraryCardBadge,
+  releasePillText,
+  upcomingEpisodePill,
+} from "@bestats/core/catalog/library-card";
 import type { LibraryPageKey } from "@bestats/core/catalog/library-list";
 import { CATALOG_SOURCES } from "@bestats/core/catalog/media-type";
 import {
-  formatAirDate,
   formatCalculatedRating,
   formatPersonalScore,
   formatReleaseDate,
-  formatShortDate,
 } from "@bestats/core/format";
 import {
+  LIBRARY_CARD_MESSAGES,
   NEXT_EPISODE_MESSAGES,
   UPCOMING_MESSAGES,
   WATCHED_SHOW_LABELS,
 } from "@bestats/core/tracking/messages";
+
+import {
+  communityRatingLabel,
+  communityRatingText,
+} from "@/components/poster-card";
 
 /**
  * The badge in a card's top left corner: a community rating named by its
@@ -49,55 +60,56 @@ export type LibraryCardView =
   | { kind: "failed"; name: string };
 
 /** The text a failed card shows in place of a name it could not read. */
-export const FAILED_CARD_NAME = "Couldn't load this title";
+export const FAILED_CARD_NAME = LIBRARY_CARD_MESSAGES.failed;
 
+/**
+ * The amber community badge, worded by the catalog cards' own helpers so a
+ * game reads "IGDB community rating" everywhere (AGENTS.md section 9).
+ */
 function community(
   type: V1LibraryEntry["type"],
   value: number | null,
 ): CardBadge | null {
-  if (value === null) return null;
-  const source = CATALOG_SOURCES[type];
-  return {
-    tone: "community",
-    // Named by its catalog, as `communityRatingText` prints it on the
-    // catalog cards, so it never reads as the user's own.
-    text: `${source} ${value.toFixed(1)}`,
-    label: `${source} rating ${value.toFixed(1)}`,
-  };
+  const text = communityRatingText(type, value);
+  const label = communityRatingLabel(type, value);
+  return text === null || label === null
+    ? null
+    : { tone: "community", text, label };
 }
 
 function personalScore(value: number | null): CardBadge | null {
   if (value === null) return null;
   const text = formatPersonalScore(value);
-  return { tone: "personal", text, label: `Your score ${text}` };
-}
-
-/** A release date pill, or Date TBA, as the web's `ReleasePill`. */
-function releasePill(date: string | null, today: string): CardPill {
-  const release = formatReleaseDate(date, today);
-  if (release === null) {
-    return {
-      text: UPCOMING_MESSAGES.dateTba,
-      label: UPCOMING_MESSAGES.releaseTba,
-    };
-  }
   return {
-    text: release.shortDate,
-    label: UPCOMING_MESSAGES.releases(release.fullDate),
+    tone: "personal",
+    text,
+    label: `${LIBRARY_CARD_MESSAGES.yourScore} ${text}`,
   };
 }
 
+/** Core's pill words as the card draws them: Date TBA prints its own text. */
+function cardPill(pill: CardPillText): CardPill {
+  return pill.kind === "tba"
+    ? { text: UPCOMING_MESSAGES.dateTba, label: pill.label }
+    : { text: pill.text, label: pill.label };
+}
+
 /**
- * A library card as the web's cards draw it on each page
- * (prompts/mobile-library-tabs.md, decision 4):
+ * A library card as the web's cards draw it on each page. The badge per page
+ * is core's `libraryCardBadge`, the pills core's `releasePillText` and
+ * `upcomingEpisodePill`, and a game's month line core's `gameDateLine`, the
+ * same rules the web reads (prompts/mobile-library-review-fixes.md), so the
+ * app adds no data the server did not send and no rule of its own (AGENTS.md
+ * section 14; apps/mobile/AGENTS.md, BeStats rules):
  *
  * - Movies: Watchlist the TMDB rating; Coming soon the release date; Watched
  *   the user's score when there is one.
  * - Shows: Up next the next episode; Upcoming the next episode with its air
  *   date, or Date TBA; Watched the calculated show rating when a season is
  *   rated, and Finished or Caught up.
- * - Games: the user's score when there is one, else the IGDB rating; Coming
- *   soon also the release date.
+ * - Games: Coming soon and Want to play the IGDB rating, Coming soon also the
+ *   release date; Playing and Finished the user's score, else the IGDB
+ *   rating, and the Started or Finished month.
  *
  * Dates are UTC days (AGENTS.md section 9).
  *
@@ -113,9 +125,10 @@ export function libraryCardView(
   if (entry.card.kind === "missing") {
     return {
       kind: "missing",
-      name: `No longer on ${CATALOG_SOURCES[entry.type]}`,
+      name: LIBRARY_CARD_MESSAGES.missing(CATALOG_SOURCES[entry.type]),
     };
   }
+  const badge = libraryCardBadge(entry.type, page);
 
   if (entry.type === "movie") {
     const card = entry.card;
@@ -124,28 +137,39 @@ export function libraryCardView(
       name: card.name,
       imageUrl: card.posterUrl,
       badge:
-        page === "watchlist"
+        badge === "community"
           ? community("movie", card.tmdbRating)
-          : page === "watched"
+          : badge === "personal"
             ? personalScore(entry.user.rating)
             : null,
-      pill: page === "upcoming" ? releasePill(card.releaseDate, today) : null,
+      pill:
+        page === "upcoming"
+          ? cardPill(
+              releasePillText(formatReleaseDate(card.releaseDate, today)),
+            )
+          : null,
       meta: null,
     };
   }
 
   if (entry.type === "game") {
     const card = entry.card;
+    const rating = community("game", card.communityRating);
     return {
       kind: "title",
       name: card.name,
       imageUrl: card.coverUrl,
       badge:
-        personalScore(entry.user.rating) ??
-        community("game", card.communityRating),
+        badge === "personal-else-community"
+          ? (personalScore(entry.user.rating) ?? rating)
+          : rating,
       pill:
-        page === "coming-soon" ? releasePill(card.releaseDate, today) : null,
-      meta: null,
+        page === "coming-soon"
+          ? cardPill(
+              releasePillText(formatReleaseDate(card.releaseDate, today)),
+            )
+          : null,
+      meta: gameDateLine(page, card),
     };
   }
 
@@ -172,7 +196,7 @@ export function libraryCardView(
     return {
       ...base,
       badge: null,
-      pill: upcomingShowPill(place, today),
+      pill: cardPill(upcomingEpisodePill(place.airDate, place.next, today)),
       meta: null,
     };
   }
@@ -180,43 +204,14 @@ export function libraryCardView(
   return {
     ...base,
     badge:
-      rating === null
-        ? null
-        : {
+      badge === "show-rating" && rating !== null
+        ? {
             tone: "personal",
             text: formatCalculatedRating(rating),
-            label: `Your show rating ${formatCalculatedRating(rating)}`,
-          },
+            label: `${LIBRARY_CARD_MESSAGES.yourShowRating} ${formatCalculatedRating(rating)}`,
+          }
+        : null,
     pill: null,
     meta: WATCHED_SHOW_LABELS[place.label],
-  };
-}
-
-/**
- * The next episode and its short date, "S2E1 · Oct 20", or Date TBA, as the
- * web's `UpcomingShowPill` words it.
- */
-function upcomingShowPill(
-  place: {
-    airDate: string | null;
-    next: { season: number; episode: number } | null;
-  },
-  today: string,
-): CardPill {
-  const { airDate, next } = place;
-  if (airDate !== null && next !== null) {
-    const fullDate = formatAirDate(airDate) ?? airDate;
-    const shortDate = formatShortDate(airDate, today) ?? fullDate;
-    return {
-      text: UPCOMING_MESSAGES.datedPill(next.season, next.episode, shortDate),
-      label: UPCOMING_MESSAGES.episodeAirs(next.season, next.episode, fullDate),
-    };
-  }
-  return {
-    text: UPCOMING_MESSAGES.dateTba,
-    label:
-      next === null
-        ? UPCOMING_MESSAGES.showDateTba
-        : UPCOMING_MESSAGES.episodeDateTba(next.season, next.episode),
   };
 }

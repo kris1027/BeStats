@@ -9,6 +9,7 @@ import {
   seasonMetaParts,
 } from "@bestats/core/format";
 import {
+  LIBRARY_CARD_MESSAGES,
   NEXT_EPISODE_MESSAGES,
   SHOW_PROGRESS_MESSAGES,
   SHOW_TRACKING_COPY,
@@ -292,7 +293,7 @@ function Seasons({
       </Text>
       {state ? (
         <RatingLine
-          label="Your show rating"
+          label={LIBRARY_CARD_MESSAGES.yourShowRating}
           value={state.showRating}
           basis={
             state.showRating === null

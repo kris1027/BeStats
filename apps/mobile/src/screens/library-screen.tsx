@@ -7,6 +7,7 @@ import {
   libraryPageName,
   libraryPages,
   libraryPath,
+  parseLibraryPathParam,
 } from "@bestats/core/catalog/library-list";
 import {
   type LibraryType,
@@ -16,6 +17,7 @@ import {
   LIBRARY_LIST_FAILED,
   LIBRARY_LIST_FAILED_TITLE,
   LIBRARY_NOTES,
+  LIBRARY_SIGNED_OUT,
   libraryCopy,
 } from "@bestats/core/tracking/messages";
 import { todayUtc } from "@bestats/core/tv/air-status";
@@ -43,24 +45,59 @@ import { tokenColor } from "@/theme/token-vars";
 const COLUMNS = 3;
 const GUTTER = 16;
 const GAP = 12;
+/** The skeleton's tiles, one id per column, so each keeps a stable key. */
+const SKELETON_COLUMNS = Array.from({ length: COLUMNS }, (_, i) => i);
 
 /**
- * The type and page the params name, or the defaults: Shows, and a type's
- * Watchlist slot (Up next, Watchlist, Want to play) for a route the type has
- * no page at, as core's `libraryPath` falls back (prompts/mobile-library-tabs.md,
- * decision 2). The page always comes from core's `libraryPageAt`, never from
- * a key read off the params (spec 0033, AC-10).
+ * The type and page the params name, or the defaults: Shows, and the type's
+ * first page (Up next, Watchlist, Coming soon on games) for a route the type
+ * has no page at (prompts/mobile-library-tabs.md, decision 2). The page
+ * always comes from core's `libraryPageAt`, never from a key read off the
+ * params (spec 0033, AC-10).
  */
 export function resolveLibraryParams(params: {
   type?: string | string[];
   path?: string | string[];
 }): { type: LibraryType; path: LibraryPath; page: LibraryPageKey } {
   const type = parseLibraryTypeParam(params.type) ?? "tv";
-  const asked = typeof params.path === "string" ? params.path : null;
+  const asked = parseLibraryPathParam(params.path);
   const page =
-    (asked === null ? null : libraryPageAt(asked as LibraryPath, type)) ??
-    "watchlist";
+    (asked === null ? null : libraryPageAt(asked, type)) ??
+    libraryPages(type)[0];
   return { type, path: libraryPath(page, type), page };
+}
+
+/**
+ * Two rows of empty poster tiles under the pills while the first page loads
+ * (prompts/mobile-library-tabs.md, decision 7), at the cards' own size so
+ * nothing shifts when they arrive. The missing poster tile's look, with no
+ * text: there is no real metadata to show yet (AGENTS.md section 3).
+ */
+function LibrarySkeleton({ width, label }: { width: number; label: string }) {
+  return (
+    <View
+      accessible
+      accessibilityLabel={label}
+      accessibilityRole="progressbar"
+      className="gap-5"
+    >
+      {[0, 1].map((row) => (
+        <View
+          key={row}
+          style={{ gap: GAP, paddingHorizontal: GUTTER }}
+          className="flex-row"
+        >
+          {SKELETON_COLUMNS.map((column) => (
+            <View
+              key={column}
+              style={{ width, aspectRatio: 2 / 3 }}
+              className="rounded-xl border border-border bg-glass-plate"
+            />
+          ))}
+        </View>
+      ))}
+    </View>
+  );
 }
 
 /** The row of page pills: core's pages for the type, by core's names. */
@@ -134,8 +171,8 @@ export function LibraryScreen() {
     return (
       <View className="flex-1 bg-background">
         <StatePanel
-          title="Sign in to see your library"
-          description="Your watchlist, progress and history are private to your account."
+          title={LIBRARY_SIGNED_OUT.title}
+          description={LIBRARY_SIGNED_OUT.description}
           action={{ label: "Sign in", onPress: () => router.push("/sign-in") }}
         />
       </View>
@@ -143,9 +180,16 @@ export function LibraryScreen() {
   }
 
   const name = libraryPageName(page, type);
-  const first = query.data?.pages[0];
-  const entries: V1LibraryEntry[] =
-    query.data?.pages.flatMap((loaded) => loaded.entries) ?? [];
+  // A failed first read and a failed refresh both fail the list: the old
+  // cards never stand in for a page that could not be loaded, and an empty
+  // page never reads as empty (AGENTS.md section 11, no false success). A
+  // failed next page keeps its own footer, since TanStack keeps
+  // `isRefetchError` false for it.
+  const listFailed = query.isLoadingError || query.isRefetchError;
+  const first = listFailed ? undefined : query.data?.pages[0];
+  const entries: V1LibraryEntry[] = listFailed
+    ? []
+    : (query.data?.pages.flatMap((loaded) => loaded.entries) ?? []);
   const nextFailed = query.isFetchNextPageError;
   const copy = libraryCopy(page, type);
 
@@ -184,11 +228,8 @@ export function LibraryScreen() {
   );
 
   const empty = query.isPending ? (
-    <ActivityIndicator
-      className="py-12"
-      accessibilityLabel={`Loading ${name}`}
-    />
-  ) : query.isLoadingError || !first ? (
+    <LibrarySkeleton width={cardWidth} label={`Loading ${name}`} />
+  ) : listFailed || !first ? (
     <StatePanel
       tone="error"
       title={LIBRARY_LIST_FAILED_TITLE}

@@ -29,7 +29,8 @@ import {
 } from "@/test-utils/title-harness";
 
 /**
- * covers: prompts/mobile-library-tabs.md decisions 1 to 4 and 7; spec 0033,
+ * covers: prompts/mobile-library-tabs.md decisions 1 to 4 and 7;
+ * prompts/mobile-library-review-fixes.md items 1, 4, 8, 9, 11 and 12; spec 0033,
  * AC-10 (pages, routes and names from core, the route sent and never a page
  * key), AC-14 (a personal score stays apart from TMDB's); AGENTS.md section
  * 11 (signed out sends no private request; a failed read is never the empty
@@ -285,13 +286,58 @@ test("scrolling to the end asks for the next page", async () => {
   );
 });
 
-test("an invalid page falls back to the type's Watchlist slot", async () => {
+test("an invalid page falls back to the type's first page", async () => {
   await openLibrary("/library?type=tv&path=/playing");
   await waitFor(() =>
     expect(mockApi.callsTo("GET", libraryPath("tv", "/up-next"))).toHaveLength(
       1,
     ),
   );
+});
+
+test("an invalid games page falls back to Coming soon", async () => {
+  await openLibrary("/library?type=game&path=/up-next");
+  await waitFor(() =>
+    expect(
+      mockApi.callsTo("GET", libraryPath("game", "/coming-soon")),
+    ).toHaveLength(1),
+  );
+  expect(screen.getByRole("tab", { name: "Coming soon" })).toBeSelected();
+});
+
+test("skeleton tiles show while the first page loads", async () => {
+  mockApi.on("GET", libraryPath("tv", "/up-next"), () => new Promise(() => {}));
+  await openLibrary();
+  expect(await screen.findByLabelText("Loading Up next")).toBeOnTheScreen();
+});
+
+test("a failed refresh replaces the cards with the failed panel", async () => {
+  let fail = false;
+  mockApi.on("GET", libraryPath("tv", "/up-next"), () => {
+    if (fail) throw new ApiError(502, "catalog_unavailable", "TMDB is down.");
+    return answer("tv", "/up-next", [UP_NEXT_SHOW]);
+  });
+  await openLibrary();
+  await screen.findByText("S2E3");
+  fail = true;
+  await client.refetchQueries();
+  expect(await screen.findByText(LIBRARY_LIST_FAILED_TITLE)).toBeOnTheScreen();
+  expect(screen.queryByText("S2E3")).toBeNull();
+});
+
+test("a failed refresh of an empty page is never the empty copy", async () => {
+  let fail = false;
+  mockApi.on("GET", libraryPath("tv", "/upcoming"), () => {
+    if (fail) throw new ApiError(502, "catalog_unavailable", "TMDB is down.");
+    return answer("tv", "/upcoming", []);
+  });
+  await openLibrary("/library?type=tv&path=/upcoming");
+  const empty = libraryCopy("upcoming", "tv").empty.title;
+  await screen.findByText(empty);
+  fail = true;
+  await client.refetchQueries();
+  expect(await screen.findByText(LIBRARY_LIST_FAILED_TITLE)).toBeOnTheScreen();
+  expect(screen.queryByText(empty)).toBeNull();
 });
 
 test("signed out, the tab offers Sign in and sends no private request", async () => {
@@ -338,31 +384,54 @@ describe("libraryCardView", () => {
     expect(view).toMatchObject({ badge: null, meta: "Finished" });
   });
 
+  const GAME = {
+    type: "game",
+    id: 1942,
+    path: "/games/1942",
+    user: { status: "want_to_play", rating: null },
+    card: {
+      kind: "title",
+      name: "Hades II",
+      coverUrl: null,
+      communityRating: 9.1,
+      releaseDate: null,
+      startedAt: "2026-02-10T12:00:00+00:00",
+      finishedAt: "2026-10-01T08:00:00+00:00",
+    },
+  };
+
   test("a game shows the user's score before IGDB's, and Coming soon its date", () => {
-    const game = {
-      type: "game",
-      id: 1942,
-      path: "/games/1942",
-      user: { status: "want_to_play", rating: null },
-      card: {
-        kind: "title",
-        name: "Hades II",
-        coverUrl: null,
-        communityRating: 9.1,
-        releaseDate: null,
+    expect(libraryCardView(GAME as never, "coming-soon", TODAY)).toMatchObject({
+      badge: {
+        tone: "community",
+        text: "IGDB 9.1",
+        label: "IGDB community rating 9.1",
       },
-    } as never;
-    expect(libraryCardView(game, "coming-soon", TODAY)).toMatchObject({
-      badge: { tone: "community", text: "IGDB 9.1" },
       pill: { text: "Date TBA" },
+      meta: null,
     });
-    const scored = {
-      ...(game as object),
-      user: { status: "finished", rating: 9 },
-    } as never;
-    expect(libraryCardView(scored, "watched", TODAY)).toMatchObject({
-      badge: { tone: "personal", text: "9" },
+    const scored = { ...GAME, user: { status: "finished", rating: 9 } };
+    expect(libraryCardView(scored as never, "watched", TODAY)).toMatchObject({
+      badge: { tone: "personal", text: "9", label: "Your score 9" },
       pill: null,
+    });
+  });
+
+  test("Want to play shows IGDB's rating only, never a score", () => {
+    const rated = { ...GAME, user: { status: "want_to_play", rating: 9 } };
+    expect(libraryCardView(rated as never, "watchlist", TODAY)).toMatchObject({
+      badge: { tone: "community", text: "IGDB 9.1" },
+    });
+  });
+
+  test("Playing and Finished games show the web's month line", () => {
+    const playing = { ...GAME, user: { status: "playing", rating: null } };
+    expect(libraryCardView(playing as never, "upcoming", TODAY)).toMatchObject({
+      meta: "Started Feb 2026",
+    });
+    const finished = { ...GAME, user: { status: "finished", rating: null } };
+    expect(libraryCardView(finished as never, "watched", TODAY)).toMatchObject({
+      meta: "Finished Oct 2026",
     });
   });
 
