@@ -1,3 +1,4 @@
+import { releasePillText } from "@bestats/core/catalog/library-card";
 import type { ReleaseDate } from "@bestats/core/format";
 import { UPCOMING_MESSAGES } from "@bestats/core/tracking/messages";
 import { cn } from "cn";
@@ -76,18 +77,14 @@ function DateTbaPill({ label }: { label: string }) {
   );
 }
 
-/** The release date on an Upcoming movie card, or Date TBA (AC-13). */
+/**
+ * The release date on an Upcoming movie card, or Date TBA (AC-13), in the
+ * words of core's `releasePillText`, which the app reads too.
+ */
 function ReleasePill({ release }: { release: ReleaseDate }) {
-  if (release === null) {
-    return <DateTbaPill label={UPCOMING_MESSAGES.releaseTba} />;
-  }
-  return (
-    <DatedPill
-      slot="release-date"
-      label={UPCOMING_MESSAGES.releases(release.fullDate)}
-      text={release.shortDate}
-    />
-  );
+  const pill = releasePillText(release);
+  if (pill.kind === "tba") return <DateTbaPill label={pill.label} />;
+  return <DatedPill slot="release-date" label={pill.label} text={pill.text} />;
 }
 
 export { DatedPill, DateTbaPill, ReleasePill };

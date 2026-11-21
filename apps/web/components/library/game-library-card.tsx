@@ -3,6 +3,7 @@ import {
   libraryPageName,
 } from "@bestats/core/catalog/library-list";
 import { gameHref } from "@bestats/core/catalog/media-type";
+import { LIBRARY_CARD_MESSAGES } from "@bestats/core/tracking/messages";
 import { isStartedGame } from "@bestats/core/tracking/types";
 import { XIcon } from "lucide-react";
 import type { ReactNode } from "react";
@@ -22,7 +23,7 @@ import type { LibraryGameItem } from "./types";
  * The caption and fallback tile text for a game IGDB no longer has (spec
  * 0027, AC-11). Never an invented name or a placeholder cover.
  */
-const MISSING_GAME = "No longer on IGDB";
+const MISSING_GAME = LIBRARY_CARD_MESSAGES.missing("IGDB");
 
 /**
  * One game card on a games tab (spec 0027, AC-8 to AC-12), built on

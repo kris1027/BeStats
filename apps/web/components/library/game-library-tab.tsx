@@ -1,8 +1,12 @@
 import { isGameReleased } from "@bestats/core/catalog/game-page";
+import {
+  gameDateLine,
+  libraryCardBadge,
+} from "@bestats/core/catalog/library-card";
 import type { LibraryPageKey } from "@bestats/core/catalog/library-list";
 import { libraryHref } from "@bestats/core/catalog/media-type";
-import { formatMonthYear, formatReleaseDate } from "@bestats/core/format";
-import { GAME_DATE_LINES, libraryCopy } from "@bestats/core/tracking/messages";
+import { formatReleaseDate } from "@bestats/core/format";
+import { libraryCopy } from "@bestats/core/tracking/messages";
 import { redirect } from "next/navigation";
 import { PaginationLinks } from "@/components/pagination-links";
 import type { GameSummary } from "@/lib/igdb";
@@ -207,38 +211,11 @@ function GamePageGrid({
 }
 
 /**
- * What each games tab's card carries (spec 0027, AC-8, AC-9), the one place
- * a tab decides it, so `GameLibraryCard` only renders its item. Coming soon
- * shows the release pill, Want to play none, since every game there is out
- * (prompts/game-coming-soon.md), and neither a score, which their rows
- * cannot hold (spec 0024, AC-2); Playing and Finished show the score and the month of
- * the date their tab orders by.
- */
-const GAME_CARDS: Record<
-  LibraryPageKey,
-  {
-    scored: boolean;
-    releasePill: boolean;
-    dateLine: (row: GameLibraryRow) => string | null;
-  }
-> = {
-  "coming-soon": { scored: false, releasePill: true, dateLine: () => null },
-  watchlist: { scored: false, releasePill: false, dateLine: () => null },
-  upcoming: {
-    scored: true,
-    releasePill: false,
-    dateLine: (row) => monthLine(row.startedAt, GAME_DATE_LINES.started),
-  },
-  watched: {
-    scored: true,
-    releasePill: false,
-    dateLine: (row) => monthLine(row.finishedAt, GAME_DATE_LINES.finished),
-  },
-};
-
-/**
  * A game card's plain data, with its release pill and date line formatted
- * here, beside the `today` that decided them. A game IGDB did not return is
+ * here, beside the `today` that decided them. Only Coming soon, where no game
+ * is out yet, shows the release pill; the score and the month line follow
+ * core's `libraryCardBadge` and `gameDateLine`, which the app reads too
+ * (spec 0027, AC-8, AC-9; prompts/mobile-library-review-fixes.md). A game IGDB did not return is
  * a missing card at its place in the order (AC-11): no name, cover, badge
  * or date is invented for it.
  */
@@ -263,28 +240,19 @@ function gameItem(
     };
   }
 
-  const card = GAME_CARDS[list];
+  const scored = libraryCardBadge("game", list) === "personal-else-community";
   return {
     gameId: row.gameId,
     name: game.name,
     status,
     coverUrl: game.coverUrl,
     communityRating: game.communityRating,
-    rating: card.scored ? row.rating : null,
+    rating: scored ? row.rating : null,
     hidden: game.hidden,
     unreleased:
-      card.releasePill && !isGameReleased(game.releaseDate, today)
+      list === "coming-soon" && !isGameReleased(game.releaseDate, today)
         ? { date: formatReleaseDate(game.releaseDate, today) }
         : null,
-    dateLine: card.dateLine(row),
+    dateLine: gameDateLine(list, row),
   };
-}
-
-/** `Started Oct 2026` or `Finished Oct 2026`, or none without the date. */
-function monthLine(
-  iso: string | null,
-  line: (month: string) => string,
-): string | null {
-  const month = iso === null ? null : formatMonthYear(iso);
-  return month === null ? null : line(month);
 }
