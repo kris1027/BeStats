@@ -2,16 +2,19 @@
 
 [![Checks](https://github.com/kris1027/BeStats/actions/workflows/checks.yml/badge.svg?branch=main)](https://github.com/kris1027/BeStats/actions/workflows/checks.yml)
 
-A tracker for TV shows, movies and games, inspired by TV Time. BeStats is an iPhone app: you browse and search the catalog, keep a private list of what you plan to watch or play, mark movies and episodes watched, and rate what you finish. BeStats tracks what you watch and play; it does not stream anything.
+A tracker for TV shows, movies and games, inspired by TV Time, as a web app and a mobile app. You browse and search the catalog, keep a private list of what you plan to watch or play, mark movies and episodes watched, and rate what you finish. BeStats tracks what you watch and play; it does not stream anything.
 
-The app is built with Expo. It gets the catalog and your data through the API of the Next.js project in this repository, which runs on Vercel. TMDB supplies movie and TV metadata, IGDB supplies game metadata, and Supabase stores accounts and your private data. The stack and product rules live in [AGENTS.md](AGENTS.md); installed versions live in each `package.json`.
+- **Web:** [bestats-app.vercel.app](https://bestats-app.vercel.app), built with Next.js. It also serves the API the mobile app uses.
+- **Mobile:** an Expo app for iPhone, reading the catalog and your data through that API.
 
-**The public website is switched off.** Since 2026-11-21 every web page on [bestats-app.vercel.app](https://bestats-app.vercel.app) answers `403`, so crawlers no longer use up the Vercel Hobby plan. Only the API (`/api/v1`), `/privacy` and `/terms` stay up. The web pages still build and run locally, and [docs/deploy.md](docs/deploy.md), section 5, explains how to turn them back on.
+TMDB supplies movie and TV metadata, IGDB supplies game metadata, and Supabase stores accounts and your private data, so both apps show the same library. The stack and product rules live in [AGENTS.md](AGENTS.md); installed versions live in each `package.json`.
+
+> **The website is temporarily paused** (since 2026-11-21) to stay within the Vercel Hobby plan: its pages answer `403`, while the API, `/privacy` and `/terms` stay up and the mobile app works as usual. Everything still runs locally, and [docs/deploy.md](docs/deploy.md), section 5, explains how to switch it back on.
 
 ## What it does
 
-- **Catalog:** shows, movies and games, each with a home screen of rows and paged lists (trending, popular, top rated and more), plus title screens with cast, seasons and episodes.
-- **Search:** title search with genre, year and minimum community rating filters, for all three media types.
+- **Catalog:** shows, movies and games, each with a home page of rows and paged lists (trending, popular, top rated and more), plus title pages with cast, seasons and episodes.
+- **Search:** title search with genre, year and minimum community rating filters, for all three media types; shareable URLs on the web.
 - **Accounts:** email and password sign in. Google sign in is planned but not built yet.
 - **Shows:** mark single episodes or whole seasons watched (only episodes that already aired), rate episodes from 1 to 10, and see season and show ratings calculated from your episode scores. Tracking a show is separate from your history, so stopping it keeps every mark and rating.
 - **Movies:** plan a movie, or mark it watched and rate it from its release day.
@@ -20,11 +23,11 @@ The app is built with Expo. It gets the catalog and your data through the API of
 
 Every personal rating is kept apart from the TMDB or IGDB community rating, and is labelled that way.
 
-**Platforms:** iOS is the tested platform. Android is configured in `app.json` but has not been run yet.
+**Platforms:** the web app runs in any modern browser. On mobile, iOS is the tested platform; Android is configured in `app.json` but has not been run yet.
 
 ## Screenshots
 
-Captured on 2026-11-21 in the iOS Simulator, with live TMDB and IGDB content and the local test account. Catalog titles and ratings change over time.
+The mobile app, captured on 2026-11-21 in the iOS Simulator with live TMDB and IGDB content and the local test account. Catalog titles and ratings change over time.
 
 | Shows home | Show page | Search | Library |
 | --- | --- | --- | --- |
@@ -32,7 +35,7 @@ Captured on 2026-11-21 in the iOS Simulator, with live TMDB and IGDB content and
 
 ## Development status
 
-Every planned web feature has shipped: features 1 to 25 in the [movie and TV scope](docs/scope/scope.md) and G1 to G10 in the [games scope](docs/scope/games.md). The mobile app follows [spec 0033](docs/specs/0033-mobile-app-expo/index.md); its store release is still to come. The decisions behind each feature are in [docs/specs/](docs/specs/), and the plans for smaller changes in [prompts/](prompts/).
+Every planned feature of the web app has shipped: features 1 to 25 in the [movie and TV scope](docs/scope/scope.md) and G1 to G10 in the [games scope](docs/scope/games.md). The mobile app follows [spec 0033](docs/specs/0033-mobile-app-expo/index.md); its store release is still to come. The decisions behind each feature are in [docs/specs/](docs/specs/), and the plans for smaller changes in [prompts/](prompts/).
 
 ## Local setup
 
@@ -70,9 +73,9 @@ To rebuild the database from the migrations and seed, run `pnpm exec supabase db
 
 See the [Supabase local development guide](https://supabase.com/docs/guides/local-development/cli/getting-started) for container runtime setup. These commands start local services only; they never touch the cloud project.
 
-### Start the API (the web project)
+### Start the web app and API
 
-The app needs the API running:
+The web app and the API run together, and the mobile app needs the API running:
 
 ```sh
 pnpm dev:docker
@@ -80,9 +83,9 @@ pnpm dev:docker
 
 This runs the Next.js development server against the local Supabase stack, starting the stack first if it is not running. It sets the local URL, the publishable key and a site URL of `http://localhost:3000` for this process only, and those win over `.env.local`; everything else, such as the TMDB and IGDB credentials, still comes from `.env.local`. A port other than 3000 is refused, because the local auth redirect allow list in `supabase/config.toml` only covers that origin.
 
-The API answers at `http://localhost:3000/api/v1`. The web pages run there too: `/` redirects to `/shows`, and `/showcase` shows the UI components and their states.
+Open [localhost:3000](http://localhost:3000): `/` redirects to `/shows`; movies are at `/movies` and games at `/games`, and `/showcase` shows the UI components and their states. The API answers at `http://localhost:3000/api/v1`.
 
-### Run the app
+### Run the mobile app
 
 Three ways, from `apps/mobile`. The details are in [apps/mobile/AGENTS.md](apps/mobile/AGENTS.md).
 
@@ -132,7 +135,7 @@ From the repository root unless noted.
 
 | Command | Purpose |
 | --- | --- |
-| `pnpm dev:docker` | Start the API and web pages against the local Supabase stack. |
+| `pnpm dev:docker` | Start the web app and API against the local Supabase stack. |
 | `pnpm dev` | Start them with the settings in `apps/web/.env.local`. |
 | `npx expo start --dev-client` | Start Metro for the development app (in `apps/mobile`). |
 | `pnpm typecheck` | Check TypeScript in every package. |
@@ -156,7 +159,7 @@ The live checks read their credentials from the environment or `apps/web/.env.lo
 
 ## Deployment
 
-Vercel hosts the web project in Frankfurt (`fra1`), next to the Supabase project in `eu-central-1`. Only its API is public while the website is off. Schema and auth settings reach the cloud only from this repo, through `supabase db push` and `supabase config push`. The runbook, including the firewall rules, is [docs/deploy.md](docs/deploy.md). The app is not in the App Store yet; EAS builds and store release are planned in [spec 0033](docs/specs/0033-mobile-app-expo/index.md).
+Vercel hosts the web app and its API in Frankfurt (`fra1`), next to the Supabase project in `eu-central-1`. Schema and auth settings reach the cloud only from this repo, through `supabase db push` and `supabase config push`. The runbook, including the firewall rules, is [docs/deploy.md](docs/deploy.md). The app is not in the App Store yet; EAS builds and store release are planned in [spec 0033](docs/specs/0033-mobile-app-expo/index.md).
 
 ## Repository map
 
