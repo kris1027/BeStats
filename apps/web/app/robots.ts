@@ -1,29 +1,17 @@
 import type { MetadataRoute } from "next";
 
-import { CRAWL_BUDGET_DISALLOW } from "@/lib/seo/crawl";
-import { isIndexableDeployment, siteUrl } from "@/lib/seo/site";
-
 /**
- * `/robots.txt` (spec 0016, AC-4, AC-5).
+ * `/robots.txt` (spec 0016, AC-5; prompts/web-off-keep-api.md).
  *
- * Production allows everything except the Route Handlers, the auth callbacks
- * and `CRAWL_BUDGET_DISALLOW`. Private and sign in pages are deliberately not
- * disallowed: a crawler that cannot fetch them never sees the `noindex` they
- * carry, and a disallowed URL can still be indexed from links. Every other
- * deployment shuts crawlers out entirely. Prerendered, so the build decides.
+ * Every deployment, production included, shuts crawlers out and names no
+ * sitemap. Since 2026-11-21 the website is off: a Vercel Firewall rule answers
+ * `403` to every page except `/api/`, `/privacy`, `/terms` and this file, so
+ * crawler renders can no longer spend the Hobby plan's Active CPU
+ * (docs/deploy.md, section 5) while `/api/v1` keeps serving the mobile app.
+ * This file stays reachable so crawlers read the disallow and stop asking.
+ * Reopening the website restores the production branch from git history
+ * together with `CRAWL_BUDGET_DISALLOW` (`lib/seo/crawl.ts`).
  */
 export default function robots(): MetadataRoute.Robots {
-  const origin = siteUrl();
-  if (!isIndexableDeployment() || origin === null) {
-    return { rules: { userAgent: "*", disallow: "/" } };
-  }
-
-  return {
-    rules: {
-      userAgent: "*",
-      allow: "/",
-      disallow: ["/api/", "/auth/", ...CRAWL_BUDGET_DISALLOW],
-    },
-    sitemap: `${origin}/sitemap.xml`,
-  };
+  return { rules: { userAgent: "*", disallow: "/" } };
 }
