@@ -177,6 +177,7 @@ export type Database = {
       }
     }
     Functions: {
+      delete_own_account: { Args: never; Returns: undefined }
       mark_episode_watched: {
         Args: {
           p_episode_id: number

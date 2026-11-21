@@ -921,3 +921,32 @@ $$;
 
 revoke all on function public.username_available(text) from public, anon, authenticated;
 grant execute on function public.username_available(text) to anon, authenticated;
+
+-- Self serve account deletion, for both apps (spec 0033, child 0036; AC-12).
+--
+-- The second SECURITY DEFINER function in `public`, beside
+-- `username_available`: only the owner can delete from `auth.users`, and the
+-- project never uses the service role key (spec 0001, AC-15). It takes no
+-- argument, so its whole effect is fixed to `auth.uid()` from the caller's
+-- verified JWT, and no caller can name another account. The five user tables
+-- reference `auth.users (id) on delete cascade`, so every mark, rating,
+-- tracked show, game row and the profile go with it. `anon` cannot execute it;
+-- a caller with no subject is refused by the body. `140-security-sweep` names
+-- this exact signature as an exception.
+create or replace function public.delete_own_account()
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if auth.uid() is null then
+    raise exception 'not signed in' using errcode = '42501';
+  end if;
+  delete from auth.users where id = auth.uid();
+end;
+$$;
+
+alter function public.delete_own_account() owner to postgres;
+revoke all on function public.delete_own_account() from public, anon, authenticated;
+grant execute on function public.delete_own_account() to authenticated;
