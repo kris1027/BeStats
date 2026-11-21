@@ -1,19 +1,21 @@
 import {
+  ACCOUNT_COPY,
   DELETE_ACCOUNT_CONFIRM_WORD,
   DELETE_ACCOUNT_COPY,
 } from "@bestats/core/auth/messages";
 import { Stack, useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
+  BackHandler,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   Text,
   TextInput,
-  View,
 } from "react-native";
 
-import { LoadingState, StatePanel } from "@/components/centered-state";
+import { LoadingState, SignedOutState } from "@/components/centered-state";
+import { FormField, INPUT_CLASS } from "@/components/form-field";
 import { GlassButton } from "@/components/glass-button";
 import { Notice } from "@/components/notice";
 import { useToast } from "@/components/toast";
@@ -26,8 +28,9 @@ import { useSession } from "@/lib/session";
  * prompts/mobile-account-deletion.md, decision 6).
  *
  * The button stays disabled until the field holds exactly `DELETE`, the rule
- * the server checks again. While the call runs, Back is hidden and the swipe
- * back is off, so nobody leaves wondering whether it happened. Only the
+ * the server checks again. While the call runs the screen ignores Back: the
+ * header button is hidden, the swipe back is off and Android's hardware Back
+ * is swallowed, so nobody leaves wondering whether it happened. Only the
  * server's 204 ends the session on this phone, wipes every private query and
  * returns to the Account tab with a toast; any failure stays here with the
  * "still here" copy and the session kept (AGENTS.md section 11). An expired
@@ -41,17 +44,18 @@ export function DeleteAccountScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!busy) return;
+    const subscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => true,
+    );
+    return () => subscription.remove();
+  }, [busy]);
+
   if (loading) return <LoadingState label="Loading" />;
   if (!session && !busy) {
-    return (
-      <View className="flex-1 bg-background">
-        <StatePanel
-          title="You're not signed in"
-          description="Sign in to manage your account."
-          action={{ label: "Sign in", onPress: () => router.push("/sign-in") }}
-        />
-      </View>
-    );
+    return <SignedOutState description={ACCOUNT_COPY.signedOutManage} />;
   }
 
   async function confirm() {
@@ -96,10 +100,7 @@ export function DeleteAccountScreen() {
         <Text className="text-base text-text-secondary">
           {DELETE_ACCOUNT_COPY.warning}
         </Text>
-        <View className="gap-2">
-          <Text className="font-semibold text-text-label">
-            {DELETE_ACCOUNT_COPY.confirmLabel}
-          </Text>
+        <FormField label={DELETE_ACCOUNT_COPY.confirmLabel}>
           <TextInput
             accessibilityLabel={DELETE_ACCOUNT_COPY.confirmLabel}
             value={typed}
@@ -109,9 +110,9 @@ export function DeleteAccountScreen() {
             autoCorrect={false}
             autoComplete="off"
             spellCheck={false}
-            className="min-h-11 rounded-2xl border border-input bg-glass-plate px-4 text-base text-foreground"
+            className={INPUT_CLASS}
           />
-        </View>
+        </FormField>
         {error ? <Notice tone="error" message={error} /> : null}
         <GlassButton
           variant="destructive"

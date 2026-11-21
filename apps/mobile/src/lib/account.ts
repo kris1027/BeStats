@@ -13,7 +13,8 @@ import { PRIVATE_QUERY_ROOT } from "./query-client";
 /**
  * The caller's profile key. It sits under the private root, so sign out, an
  * expired session and account deletion wipe it with every other `me` query
- * (spec 0033, AC-13).
+ * (spec 0033, AC-13), and private state never outlives its session (AGENTS.md
+ * section 11).
  */
 export const profileKey = [PRIVATE_QUERY_ROOT, "profile"] as const;
 
@@ -35,7 +36,7 @@ export function useProfile(enabled: boolean) {
  * `PUT /api/v1/me/profile` with a username, the one route that claims or
  * changes it, the same command as the web (spec 0035, Mapping to actions).
  * The profile reloads after a confirmed write, so the lock line comes from the
- * server, never from a guess here.
+ * server, never from a guess here (AGENTS.md section 11, no false success).
  */
 export function useSaveUsername() {
   const client = useQueryClient();
@@ -45,7 +46,11 @@ export function useSaveUsername() {
   });
 }
 
-/** Claims or changes the username; used by sign up and the Account tab. */
+/**
+ * Claims or changes the username through `/api/v1`, the only way the app
+ * reaches user state (AGENTS.md section 5); shared by sign up, which has no
+ * mutation hook to hang it on, and `useSaveUsername`.
+ */
 export function putUsername(username: string) {
   return apiRequest("/api/v1/me/profile", v1ProfileWriteOkSchema, {
     method: "PUT",

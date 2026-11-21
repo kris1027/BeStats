@@ -1,47 +1,27 @@
+import { classifyAuthFailure } from "@bestats/core/auth/auth-error";
+import { AUTH_MESSAGES, AUTH_OUTCOME } from "@bestats/core/auth/messages";
 import {
-  AUTH_MESSAGES,
-  AUTH_OUTCOME,
-  type AuthOutcome,
-} from "@bestats/core/auth/messages";
+  type AuthError,
+  isAuthSessionMissingError,
+  isAuthWeakPasswordError,
+} from "@supabase/supabase-js";
 
 /**
- * Maps a Supabase Auth sign in error to the web's outcome words, so the app
- * shows the same English copy as `/sign-in` (spec 0033, shared contracts).
- * Never shows the raw error text (AGENTS.md section 11).
+ * The words for a Supabase Auth error on sign in or sign up, through core's
+ * `classifyAuthFailure`, the rule the web's `classifyAuthError` runs, so the
+ * app and `/sign-in` say the same thing (AGENTS.md section 5; spec 0035, Sign
+ * up on mobile). Only the facts the rule reads leave the raw error, never its
+ * message (AGENTS.md section 11). `null`, a thrown network failure, reads as
+ * unexpected.
  */
-export function signInErrorMessage(error: {
-  code?: string;
-  status?: number;
-}): string {
-  let outcome: AuthOutcome = AUTH_OUTCOME.unexpected;
-  if (error.code === "invalid_credentials") {
-    outcome = AUTH_OUTCOME.invalidCredentials;
-  } else if (error.code === "email_not_confirmed") {
-    outcome = AUTH_OUTCOME.emailNotConfirmed;
-  } else if (error.status === 429 || error.code === "over_request_rate_limit") {
-    outcome = AUTH_OUTCOME.rateLimited;
-  }
-  return AUTH_MESSAGES[outcome];
-}
-
-/**
- * Maps a Supabase Auth sign up error to the web's outcome words, the same
- * cases `classifyAuthError` reads on the web (spec 0035, Sign up on mobile):
- * a weak password says too short, or breached when auth-js lists `pwned`, and
- * a rate limit says so. Never the raw error text (AGENTS.md section 11).
- */
-export function signUpErrorMessage(error: {
-  code?: string;
-  status?: number;
-  reasons?: string[];
-}): string {
-  let outcome: AuthOutcome = AUTH_OUTCOME.unexpected;
-  if (error.status === 429 || error.code === "over_email_send_rate_limit") {
-    outcome = AUTH_OUTCOME.rateLimited;
-  } else if (error.code === "weak_password") {
-    outcome = error.reasons?.includes("pwned")
-      ? AUTH_OUTCOME.passwordBreached
-      : AUTH_OUTCOME.passwordTooShort;
-  }
-  return AUTH_MESSAGES[outcome];
+export function authErrorMessage(error: AuthError | null): string {
+  if (!error) return AUTH_MESSAGES[AUTH_OUTCOME.unexpected];
+  return AUTH_MESSAGES[
+    classifyAuthFailure({
+      code: error.code,
+      status: error.status,
+      reasons: isAuthWeakPasswordError(error) ? error.reasons : undefined,
+      sessionMissing: isAuthSessionMissingError(error),
+    })
+  ];
 }

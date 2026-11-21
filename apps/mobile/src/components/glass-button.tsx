@@ -11,6 +11,23 @@ type Props = {
   busy?: boolean;
 };
 
+/** Plate and label classes per look, one table both halves of the pill read. */
+const LOOK = {
+  primary: { plate: "bg-primary", text: "text-primary-foreground" },
+  destructive: {
+    plate: "border border-destructive bg-glass-plate",
+    text: "text-destructive",
+  },
+  pressed: {
+    plate: "border border-score-personal bg-glass-plate-score",
+    text: "text-foreground",
+  },
+  glass: {
+    plate: "border border-border bg-glass-plate",
+    text: "text-foreground",
+  },
+} as const;
+
 /**
  * The pill button of the shipped web UI (glass plate, round, 44pt tall so it
  * meets the touch target rule in AGENTS.md section 3). `primary` is the light
@@ -26,8 +43,7 @@ export function GlassButton({
   disabled,
   busy,
 }: Props) {
-  const primary = variant === "primary";
-  const destructive = variant === "destructive";
+  const look = LOOK[variant === "glass" && pressed ? "pressed" : variant];
   return (
     <Pressable
       accessibilityRole="button"
@@ -36,27 +52,11 @@ export function GlassButton({
       disabled={disabled || busy}
       onPress={onPress}
       className={`min-h-11 flex-row items-center justify-center gap-2 rounded-full px-5 ${
-        primary
-          ? "bg-primary"
-          : destructive
-            ? "border border-destructive bg-glass-plate"
-            : pressed
-              ? "border border-score-personal bg-glass-plate-score"
-              : "border border-border bg-glass-plate"
+        look.plate
       } ${disabled ? "opacity-50" : ""}`}
     >
       {busy ? <ActivityIndicator size="small" /> : null}
-      <Text
-        className={`text-base font-semibold ${
-          primary
-            ? "text-primary-foreground"
-            : destructive
-              ? "text-destructive"
-              : "text-foreground"
-        }`}
-      >
-        {label}
-      </Text>
+      <Text className={`text-base font-semibold ${look.text}`}>{label}</Text>
     </Pressable>
   );
 }

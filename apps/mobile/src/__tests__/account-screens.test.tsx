@@ -8,7 +8,7 @@ import {
 import type { QueryClient } from "@tanstack/react-query";
 import { screen, userEvent, waitFor } from "@testing-library/react-native";
 import { renderRouter } from "expo-router/testing-library";
-import { Text } from "react-native";
+import { BackHandler, Text } from "react-native";
 
 import SignUp from "@/app/sign-up";
 import { ApiError } from "@/lib/api";
@@ -109,7 +109,9 @@ describe("Account tab", () => {
       usernameChangeableAt: "2026-11-25T12:00:00Z",
     }));
     await openAccount();
-    expect(await screen.findByText(/a@example\.test/)).toBeOnTheScreen();
+    // The name in bold with the email on its own line under it (decision 5).
+    expect(await screen.findByText("tester_one")).toBeOnTheScreen();
+    expect(screen.getByText("a@example.test")).toBeOnTheScreen();
     expect(screen.getByText(/You can change it again on/)).toBeOnTheScreen();
     expect(
       screen.getByRole("button", { name: "Save username" }),
@@ -218,6 +220,41 @@ describe("Delete account", () => {
       confirm: "DELETE",
     });
     expect(mockEndLocalSession).toHaveBeenCalledTimes(1);
+  });
+
+  it("swallows Android's hardware Back while the delete runs", async () => {
+    const listeners: (() => boolean)[] = [];
+    const spy = jest
+      .spyOn(BackHandler, "addEventListener")
+      .mockImplementation((_event, handler) => {
+        listeners.push(handler as () => boolean);
+        return { remove: () => {} };
+      });
+    let finish: (value: null) => void = () => {};
+    mockApi.on(
+      "POST",
+      DELETE,
+      () => new Promise<null>((resolve) => (finish = resolve)),
+    );
+    await openAccount("/account/delete");
+    await userEvent.type(
+      screen.getByLabelText(DELETE_ACCOUNT_COPY.confirmLabel),
+      "DELETE",
+    );
+    const before = listeners.length;
+    await userEvent.press(
+      screen.getByRole("button", { name: DELETE_ACCOUNT_COPY.button }),
+    );
+    // Android asks the newest listener first and stops at the first `true`,
+    // so the screen's own handler, added once busy, must claim the press
+    // before the navigator's.
+    await waitFor(() => expect(listeners.length).toBeGreaterThan(before));
+    expect(listeners.at(-1)?.()).toBe(true);
+    finish(null);
+    expect(
+      await screen.findByText(DELETE_ACCOUNT_COPY.deleted),
+    ).toBeOnTheScreen();
+    spy.mockRestore();
   });
 
   it("keeps you signed in and says the account is still there on failure", async () => {

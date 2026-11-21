@@ -1,4 +1,5 @@
 import {
+  ACCOUNT_COPY,
   ACCOUNT_NOTICE,
   ACCOUNT_NOTICES,
   AUTH_MESSAGES,
@@ -16,7 +17,12 @@ import { useRouter } from "expo-router";
 import { type ReactNode, useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
-import { LoadingState, StatePanel } from "@/components/centered-state";
+import {
+  LoadingState,
+  SignedOutState,
+  StatePanel,
+} from "@/components/centered-state";
+import { INPUT_CLASS } from "@/components/form-field";
 import { GlassButton } from "@/components/glass-button";
 import { Notice } from "@/components/notice";
 import { useProfile, useSaveUsername } from "@/lib/account";
@@ -33,9 +39,10 @@ const LOCK_FORMAT: Intl.DateTimeFormatOptions = {
 
 /**
  * The Account tab (spec 0035, Account screen; prompts/mobile-account-deletion.md,
- * decision 5). Signed out: Sign in or Create account. Signed in, one column of
- * glass panels: who you are with Sign out, your username, then Delete
- * account. While the username is unclaimed its panel comes first, with the
+ * decision 5), private state shown only once the server confirms it (AGENTS.md
+ * section 11). Signed out: Sign in or Create account. Signed in, one column of
+ * glass panels: your username in bold with your email under it and Sign out,
+ * your username field, then Delete account. While the username is unclaimed its panel comes first, with the
  * taken notice when sign up lost the name in between (`notice` param, only a
  * known key shows anything, as on the web).
  */
@@ -47,19 +54,14 @@ export function AccountScreen({ notice }: { notice?: string }) {
   if (loading) return <LoadingState label="Loading" />;
   if (!session) {
     return (
-      <View className="flex-1 gap-3 bg-background">
-        <StatePanel
-          title="You're not signed in"
-          description="Sign in to track what you watch and play."
-          action={{ label: "Sign in", onPress: () => router.push("/sign-in") }}
-        />
+      <SignedOutState description={ACCOUNT_COPY.signedOutTrack}>
         <View className="-mt-6 items-center px-6">
           <GlassButton
-            label="Create an account"
+            label={ACCOUNT_COPY.createAccount}
             onPress={() => router.push("/sign-up")}
           />
         </View>
-      </View>
+      </SignedOutState>
     );
   }
 
@@ -69,7 +71,7 @@ export function AccountScreen({ notice }: { notice?: string }) {
       <View className="flex-1 bg-background">
         <StatePanel
           tone="error"
-          title="We couldn't load your account"
+          title={ACCOUNT_COPY.loadFailed}
           description={profile.error.message}
           action={{ label: "Retry", onPress: () => profile.refetch() }}
         />
@@ -86,13 +88,14 @@ export function AccountScreen({ notice }: { notice?: string }) {
   const header = (
     <Panel key="header">
       <Text className="text-3xl font-bold text-foreground">Account</Text>
-      <Text className="text-text-secondary">
-        You are signed in as{" "}
-        <Text className="font-semibold text-foreground">
+      <View className="gap-1">
+        <Text className="text-lg font-bold text-foreground">
           {username ?? session.user.email}
         </Text>
-        {username && session.user.email ? ` (${session.user.email})` : ""}.
-      </Text>
+        {username && session.user.email ? (
+          <Text className="text-text-secondary">{session.user.email}</Text>
+        ) : null}
+      </View>
       <GlassButton label="Sign out" onPress={signOut} />
     </Panel>
   );
@@ -192,7 +195,7 @@ function UsernamePanel({
       <Text className="text-text-secondary">
         {username
           ? AUTH_MESSAGES[AUTH_OUTCOME.usernameLocked]
-          : "Choose a username. You can change it once a week."}
+          : ACCOUNT_COPY.chooseUsername}
       </Text>
       {notice ? <Notice message={notice} /> : null}
       <TextInput
@@ -207,13 +210,11 @@ function UsernamePanel({
         maxLength={USERNAME_MAX_LENGTH}
         returnKeyType="done"
         onSubmitEditing={submit}
-        className={`min-h-11 rounded-2xl border border-input bg-glass-plate px-4 text-base text-foreground ${
-          locked ? "opacity-50" : ""
-        }`}
+        className={`${INPUT_CLASS} ${locked ? "opacity-50" : ""}`}
       />
       {locked ? (
         <Text className="text-sm text-text-secondary">
-          You can change it again on{" "}
+          {ACCOUNT_COPY.usernameUnlocksOn}{" "}
           {new Intl.DateTimeFormat("en", LOCK_FORMAT).format(
             new Date(changeableAt),
           )}
@@ -225,7 +226,7 @@ function UsernamePanel({
       {message ? <Notice tone={message.tone} message={message.text} /> : null}
       <GlassButton
         variant="primary"
-        label="Save username"
+        label={ACCOUNT_COPY.saveUsername}
         busy={save.isPending}
         disabled={locked}
         onPress={submit}

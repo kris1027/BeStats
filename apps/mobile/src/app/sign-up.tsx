@@ -1,44 +1,40 @@
+import { isAlreadyRegistered } from "@bestats/core/auth/auth-error";
 import {
+  ACCOUNT_COPY,
   ACCOUNT_NOTICE,
   AUTH_MESSAGES,
   AUTH_OUTCOME,
 } from "@bestats/core/auth/messages";
-import {
-  MINIMUM_PASSWORD_LENGTH,
-  signUpSchema,
-} from "@bestats/core/auth/schemas";
+import { PASSWORD_HINT, signUpSchema } from "@bestats/core/auth/schemas";
 import {
   USERNAME_HINT,
   USERNAME_MAX_LENGTH,
 } from "@bestats/core/auth/username";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { type ReactNode, useState } from "react";
+import { useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Text,
   TextInput,
-  View,
 } from "react-native";
 
+import { FormField, INPUT_CLASS } from "@/components/form-field";
 import { GlassButton } from "@/components/glass-button";
 import { Notice } from "@/components/notice";
 import { profileKey, putUsername } from "@/lib/account";
 import { ApiError } from "@/lib/api";
-import { signUpErrorMessage } from "@/lib/auth-errors";
+import { authErrorMessage } from "@/lib/auth-errors";
 import { useSession } from "@/lib/session";
 import { getSupabase } from "@/lib/supabase";
 import { tokenColor } from "@/theme/token-vars";
 
-const INPUT_CLASS =
-  "min-h-11 rounded-2xl border border-input bg-glass-plate px-4 text-base text-foreground";
-
 /**
  * Create an account on the phone (spec 0035, Sign up on mobile;
  * prompts/mobile-account-deletion.md, decision 8), the web action's steps
- * with the password going only to Supabase Auth:
+ * with the password going only to Supabase Auth, its rules and copy from core
+ * (AGENTS.md sections 5 and 7):
  *
  * 1. `signUpSchema` from core, the web's rules and copy.
  * 2. `username_available` as anon, so a taken name never leaves behind an
@@ -95,16 +91,13 @@ export default function SignUp() {
         email: parsed.data.email,
         password: parsed.data.password,
       });
-      const alreadyRegistered =
-        authError?.code === "user_already_exists" ||
-        (!authError && data.user?.identities?.length === 0);
-      if (alreadyRegistered) {
+      if (isAlreadyRegistered(authError, data.user)) {
         setError(AUTH_MESSAGES[AUTH_OUTCOME.alreadyRegistered]);
         setRegistered(true);
         return;
       }
       if (authError) {
-        setError(signUpErrorMessage(authError as never));
+        setError(authErrorMessage(authError));
         return;
       }
       if (!data.session) {
@@ -139,7 +132,7 @@ export default function SignUp() {
         contentContainerClassName="gap-5 px-4 py-6"
         keyboardShouldPersistTaps="handled"
       >
-        <Field label="Username" hint={USERNAME_HINT}>
+        <FormField label="Username" hint={USERNAME_HINT}>
           <TextInput
             accessibilityLabel="Username"
             accessibilityHint={USERNAME_HINT}
@@ -153,8 +146,8 @@ export default function SignUp() {
             placeholderTextColor={tokenColor("color-muted-foreground")}
             className={INPUT_CLASS}
           />
-        </Field>
-        <Field label="Email">
+        </FormField>
+        <FormField label="Email">
           <TextInput
             accessibilityLabel="Email"
             value={email}
@@ -165,11 +158,8 @@ export default function SignUp() {
             textContentType="username"
             className={INPUT_CLASS}
           />
-        </Field>
-        <Field
-          label="Password"
-          hint={`At least ${MINIMUM_PASSWORD_LENGTH} characters.`}
-        >
+        </FormField>
+        <FormField label="Password" hint={`${PASSWORD_HINT}.`}>
           <TextInput
             accessibilityLabel="Password"
             value={password}
@@ -181,11 +171,11 @@ export default function SignUp() {
             onSubmitEditing={submit}
             className={INPUT_CLASS}
           />
-        </Field>
+        </FormField>
         {error ? <Notice tone="error" message={error} /> : null}
         {registered ? (
           <GlassButton
-            label="Sign in instead"
+            label={ACCOUNT_COPY.signInInstead}
             onPress={() => router.replace("/sign-in")}
           />
         ) : null}
@@ -215,24 +205,4 @@ async function claimName(username: string): Promise<string | null> {
       ? ACCOUNT_NOTICE.usernameTaken
       : null;
   }
-}
-
-function Field({
-  label,
-  hint,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  children: ReactNode;
-}) {
-  return (
-    <View className="gap-2">
-      <Text className="font-semibold text-text-label">{label}</Text>
-      {children}
-      {hint ? (
-        <Text className="text-sm text-text-secondary">{hint}</Text>
-      ) : null}
-    </View>
-  );
 }
