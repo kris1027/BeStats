@@ -75,13 +75,20 @@ const movieCardSchema = z.object({
   releaseDate: z.string().nullable(),
 });
 
-/** What a game card shows; `communityRating` is IGDB's. */
+/**
+ * What a game card shows; `communityRating` is IGDB's. `startedAt` and
+ * `finishedAt` are the user's stored timestamps, for the Started and Finished
+ * month line core's `gameDateLine` prints (spec 0027, AC-9;
+ * prompts/mobile-library-review-fixes.md, item 8).
+ */
 const gameCardSchema = z.object({
   kind: z.literal("title"),
   name: z.string(),
   coverUrl: z.string().nullable(),
   communityRating: z.number().nullable(),
   releaseDate: z.string().nullable(),
+  startedAt: z.string().nullable(),
+  finishedAt: z.string().nullable(),
 });
 
 const entryBase = {

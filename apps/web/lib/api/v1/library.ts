@@ -334,6 +334,8 @@ function gameEntry(
             coverUrl: game.coverUrl,
             communityRating: game.communityRating,
             releaseDate: game.releaseDate,
+            startedAt: row.startedAt,
+            finishedAt: row.finishedAt,
           },
   };
 }
