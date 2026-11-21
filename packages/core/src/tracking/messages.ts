@@ -91,6 +91,13 @@ export const UNDO_EXPIRED_MESSAGES = {
 export const UNDO_ACTION_LABEL = "Undo";
 
 /**
+ * The label on a failed write's toast action when the phone had no
+ * connection (spec 0033, AC-13). Beside `UNDO_ACTION_LABEL` because both are
+ * tracking toast actions, so the apps never word them apart.
+ */
+export const RETRY_ACTION_LABEL = "Retry";
+
+/**
  * How long a toast carrying Undo stays up, in milliseconds, in both apps:
  * long enough for a keyboard or screen reader user to reach the action. The
  * server allows 10 minutes, so the toast is the limit (spec 0033, shared

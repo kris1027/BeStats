@@ -15,13 +15,14 @@ import {
 } from "@bestats/core/auth/username";
 import { useRouter } from "expo-router";
 import { type ReactNode, useEffect, useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { ScrollView, Text, TextInput, View } from "react-native";
 
 import {
   LoadingState,
   SignedOutState,
   StatePanel,
 } from "@/components/centered-state";
+import { ChevronRow } from "@/components/chevron-row";
 import { INPUT_CLASS } from "@/components/form-field";
 import { GlassButton } from "@/components/glass-button";
 import { Notice } from "@/components/notice";
@@ -42,7 +43,7 @@ const LOCK_FORMAT: Intl.DateTimeFormatOptions = {
  * decision 5), private state shown only once the server confirms it (AGENTS.md
  * section 11). Signed out: Sign in or Create account. Signed in, one column of
  * glass panels: your username in bold with your email under it and Sign out,
- * your username field, then Delete account. While the username is unclaimed its panel comes first, with the
+ * your username field, then Delete account and About. While the username is unclaimed its panel comes first, with the
  * taken notice when sign up lost the name in between (`notice` param, only a
  * known key shows anything, as on the web).
  */
@@ -60,6 +61,9 @@ export function AccountScreen({ notice }: { notice?: string }) {
             label={ACCOUNT_COPY.createAccount}
             onPress={() => router.push("/sign-up")}
           />
+        </View>
+        <View className="mt-6 self-stretch px-4">
+          <AboutRow />
         </View>
       </SignedOutState>
     );
@@ -115,20 +119,26 @@ export function AccountScreen({ notice }: { notice?: string }) {
       keyboardShouldPersistTaps="handled"
     >
       {username ? [header, usernamePanel] : [usernamePanel, header]}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={DELETE_ACCOUNT_COPY.heading}
+      <ChevronRow
+        label={DELETE_ACCOUNT_COPY.heading}
+        tone="destructive"
         onPress={() => router.push("/account/delete")}
-        className="min-h-11 flex-row items-center justify-between rounded-3xl border border-border bg-glass-plate-panel px-5 py-4"
-      >
-        <Text className="text-base font-semibold text-destructive">
-          {DELETE_ACCOUNT_COPY.heading}
-        </Text>
-        <Text aria-hidden className="text-lg text-text-secondary">
-          ›
-        </Text>
-      </Pressable>
+      />
+      <AboutRow />
     </ScrollView>
+  );
+}
+
+/**
+ * The row to About, where TMDB's and IGDB's logos and attribution live (spec
+ * 0033, AC-14), shown signed in and signed out alike, so both states open it
+ * through this one route (AGENTS.md section 12: attribution follows the
+ * providers' terms).
+ */
+function AboutRow() {
+  const router = useRouter();
+  return (
+    <ChevronRow label="About" onPress={() => router.push("/account/about")} />
   );
 }
 

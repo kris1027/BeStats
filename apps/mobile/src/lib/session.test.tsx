@@ -12,11 +12,12 @@ const mockSignOut = jest.fn();
 const mockClearPrivate = jest.fn();
 let mockExpiredHandler: () => Promise<void> = async () => {};
 const SESSION = { access_token: "t", user: { email: "a@example.test" } };
+let mockStoredSession: typeof SESSION | null = SESSION;
 
 jest.mock("./supabase", () => ({
   getSupabase: () => ({
     auth: {
-      getSession: async () => ({ data: { session: SESSION } }),
+      getSession: async () => ({ data: { session: mockStoredSession } }),
       onAuthStateChange: () => ({
         data: { subscription: { unsubscribe: () => {} } },
       }),
@@ -35,7 +36,7 @@ jest.mock("./query-client", () => ({
   clearPrivateQueries: () => mockClearPrivate(),
 }));
 
-const { SessionProvider, useSession } =
+const { SessionProvider, useSession, wipePrivateCacheIfSignedOut } =
   require("./session") as typeof import("./session");
 
 let signOut: () => Promise<void> = async () => {};
@@ -90,4 +91,27 @@ test("an accepted global sign out needs no local fallback", async () => {
   await act(() => signOut());
   expect(mockSignOutLocally).not.toHaveBeenCalled();
   expect(screen.getByText("signed out")).toBeOnTheScreen();
+});
+
+/**
+ * covers: spec 0033, AC-13 (a persisted cache restored with no stored
+ * session is wiped at once, prompts/mobile-offline-about.md, decision 3)
+ */
+describe("after the persisted cache is restored", () => {
+  afterEach(() => {
+    mockStoredSession = SESSION;
+  });
+
+  test("wipes the private entries when no session is stored", async () => {
+    mockClearPrivate.mockClear();
+    mockStoredSession = null;
+    await wipePrivateCacheIfSignedOut();
+    expect(mockClearPrivate).toHaveBeenCalledTimes(1);
+  });
+
+  test("keeps them for the signed in user", async () => {
+    mockClearPrivate.mockClear();
+    await wipePrivateCacheIfSignedOut();
+    expect(mockClearPrivate).not.toHaveBeenCalled();
+  });
 });

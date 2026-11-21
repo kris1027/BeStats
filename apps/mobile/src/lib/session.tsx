@@ -64,7 +64,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, next) => {
         setSession(next);
-        if (!next) clearPrivateQueries();
+        if (!next) void clearPrivateQueries();
       },
     );
     const stopWatching = watchAppStateForRefresh();
@@ -73,7 +73,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
       // signed out state is set here, not left to the listener.
       await signOutLocally();
       setSession(null);
-      clearPrivateQueries();
+      void clearPrivateQueries();
       setNotice(V1_ERROR_MESSAGES.unauthenticated);
     });
     return () => {
@@ -91,13 +91,13 @@ export function SessionProvider({ children }: PropsWithChildren) {
       .catch((caught: unknown) => ({ error: caught }));
     if (error) await signOutLocally();
     setSession(null);
-    clearPrivateQueries();
+    void clearPrivateQueries();
   }, []);
 
   const endLocalSession = useCallback(async () => {
     await signOutLocally();
     setSession(null);
-    clearPrivateQueries();
+    void clearPrivateQueries();
   }, []);
 
   const clearNotice = useCallback(() => setNotice(null), []);
@@ -116,6 +116,20 @@ export function SessionProvider({ children }: PropsWithChildren) {
   return (
     <SessionContext.Provider value={value}>{children}</SessionContext.Provider>
   );
+}
+
+/**
+ * Runs once the persisted query cache is back from disk: with no stored
+ * session, every private entry it brought back is wiped at once (spec 0033,
+ * AC-13). That covers a session that ended while the app was not running to
+ * wipe, so a signed out phone never shows someone's library (AGENTS.md
+ * section 11: private data stays private to its owner).
+ */
+export async function wipePrivateCacheIfSignedOut(): Promise<void> {
+  const { data } = await getSupabase()
+    .auth.getSession()
+    .catch(() => ({ data: { session: null } }));
+  if (!data.session) await clearPrivateQueries();
 }
 
 /**

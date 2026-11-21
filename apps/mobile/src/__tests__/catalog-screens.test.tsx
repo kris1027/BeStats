@@ -1,5 +1,5 @@
 import { catalogList } from "@bestats/core/catalog/lists";
-import { TMDB_ATTRIBUTION } from "@bestats/core/legal/attribution";
+import { TMDB_APP_ATTRIBUTION } from "@bestats/core/legal/attribution";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { screen, userEvent, waitFor } from "@testing-library/react-native";
 import { renderRouter } from "expo-router/testing-library";
@@ -100,7 +100,7 @@ test("Home shows every landing section of Shows, with the TMDB notice", async ()
     ).toBeOnTheScreen();
   }
   expect(screen.getByText("On TV today")).toBeOnTheScreen();
-  expect(screen.getByText(TMDB_ATTRIBUTION)).toBeOnTheScreen();
+  expect(screen.getByText(TMDB_APP_ATTRIBUTION)).toBeOnTheScreen();
   expect(mockFetchList).toHaveBeenCalledWith("tv", "airing-today", 1);
 });
 

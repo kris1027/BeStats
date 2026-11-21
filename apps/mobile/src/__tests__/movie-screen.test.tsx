@@ -1,3 +1,4 @@
+import { V1_NETWORK_MESSAGE } from "@bestats/core/api/v1/errors";
 import { formatAirDate } from "@bestats/core/format";
 import {
   MOVIE_CLEARED_MESSAGES,
@@ -250,6 +251,33 @@ test("puts the pill back and says why when the server refuses", async () => {
     await screen.findByText("This movie hasn't been released yet."),
   ).toBeOnTheScreen();
   expect(screen.getByText("Mark watched")).toBeOnTheScreen();
+  // A refusal the server meant is not worth sending again.
+  expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
+});
+
+/** covers: spec 0033, AC-13 (an offline write fails visibly with Retry) */
+test("an offline write goes back, says so, and Retry sends it again", async () => {
+  let attempts = 0;
+  mockApi.on("PUT", "/api/v1/me/movies/603/watched", () => {
+    attempts += 1;
+    if (attempts === 1) {
+      throw new ApiError(0, "network", V1_NETWORK_MESSAGE);
+    }
+    serveState({ planned: false, watchedAt: WATCHED_AT, rating: null });
+    return { watchedAt: WATCHED_AT, cleared: null };
+  });
+  const user = userEvent.setup();
+  await open();
+  await user.press(await pill("Mark The Matrix watched"));
+  expect(await screen.findByText(V1_NETWORK_MESSAGE)).toBeOnTheScreen();
+  expect(screen.getByText("Mark watched")).toBeOnTheScreen();
+
+  await user.press(screen.getByRole("button", { name: "Retry" }));
+  expect(await screen.findByText("Watched")).toBeOnTheScreen();
+  expect(mockApi.callsTo("PUT", "/api/v1/me/movies/603/watched")).toHaveLength(
+    2,
+  );
+  expect(screen.queryByText(V1_NETWORK_MESSAGE)).toBeNull();
 });
 
 test("offers only Plan and the release line before release day", async () => {

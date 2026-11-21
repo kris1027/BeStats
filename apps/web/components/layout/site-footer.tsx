@@ -4,6 +4,8 @@ import {
   IGDB_HOME_URL,
   OPERATOR_GITHUB_URL,
   OPERATOR_HANDLE,
+  PRIVACY_LABEL,
+  TERMS_LABEL,
   TMDB_HOME_URL,
 } from "@bestats/core/legal/operator";
 import { cn } from "cn";
@@ -95,8 +97,8 @@ export function SiteFooter() {
          */}
         <div className="flex flex-col gap-1 md:flex-row md:items-center md:gap-6">
           <nav aria-label="Legal" className="flex flex-wrap gap-x-6">
-            <FooterLink href="/privacy">Privacy Policy</FooterLink>
-            <FooterLink href="/terms">Terms of Service</FooterLink>
+            <FooterLink href="/privacy">{PRIVACY_LABEL}</FooterLink>
+            <FooterLink href="/terms">{TERMS_LABEL}</FooterLink>
           </nav>
           {/*
            * The credit link is drawn as 16px of `text-xs` line, so its tap

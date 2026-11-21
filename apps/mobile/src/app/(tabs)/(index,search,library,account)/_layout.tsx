@@ -38,6 +38,7 @@ export default function TabStack() {
         name="account/delete"
         options={{ title: "Delete account" }}
       />
+      <Stack.Screen name="account/about" options={{ title: "About" }} />
       <Stack.Screen name="movies/[id]" options={{ title: "" }} />
       <Stack.Screen name="shows/[id]" options={{ title: "" }} />
       <Stack.Screen name="shows/[id]/season/[number]" options={{ title: "" }} />
