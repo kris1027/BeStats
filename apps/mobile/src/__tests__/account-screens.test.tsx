@@ -289,6 +289,24 @@ describe("Sign up", () => {
     });
   });
 
+  it("reloads a profile read that landed before the claim", async () => {
+    mockRpc.mockResolvedValue({ data: true, error: null });
+    mockSignUp.mockResolvedValue({
+      data: { session: { access_token: "t" }, user: { identities: [{}] } },
+      error: null,
+    });
+    mockApi.on("PUT", PROFILE, () => ({ ok: true, changed: true }));
+    client.setQueryData(["me", "profile"], {
+      username: null,
+      usernameChangeableAt: null,
+    });
+    await open("/sign-up");
+    await fill();
+    await waitFor(() =>
+      expect(client.getQueryState(["me", "profile"])?.isInvalidated).toBe(true),
+    );
+  });
+
   it("offers Sign in instead for an address that already has an account", async () => {
     mockRpc.mockResolvedValue({ data: true, error: null });
     mockSignUp.mockResolvedValue({

@@ -11,6 +11,7 @@ import {
   USERNAME_HINT,
   USERNAME_MAX_LENGTH,
 } from "@bestats/core/auth/username";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { type ReactNode, useState } from "react";
 import {
@@ -24,7 +25,7 @@ import {
 
 import { GlassButton } from "@/components/glass-button";
 import { Notice } from "@/components/notice";
-import { putUsername } from "@/lib/account";
+import { profileKey, putUsername } from "@/lib/account";
 import { ApiError } from "@/lib/api";
 import { signUpErrorMessage } from "@/lib/auth-errors";
 import { useSession } from "@/lib/session";
@@ -54,6 +55,7 @@ const INPUT_CLASS =
  */
 export default function SignUp() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { clearNotice } = useSession();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -112,6 +114,9 @@ export default function SignUp() {
 
       clearNotice();
       const notice = await claimName(parsed.data.username);
+      // The Account tab under this modal reads the profile as soon as the
+      // session appears, before the claim lands, so read it again now.
+      await queryClient.invalidateQueries({ queryKey: profileKey });
       if (router.canDismiss()) router.dismissAll();
       router.navigate(
         notice

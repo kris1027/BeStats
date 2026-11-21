@@ -53,7 +53,7 @@ export function AccountScreen({ notice }: { notice?: string }) {
           description="Sign in to track what you watch and play."
           action={{ label: "Sign in", onPress: () => router.push("/sign-in") }}
         />
-        <View className="px-6">
+        <View className="-mt-6 items-center px-6">
           <GlassButton
             label="Create an account"
             onPress={() => router.push("/sign-up")}
