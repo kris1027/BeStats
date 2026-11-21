@@ -92,6 +92,7 @@ const seasonRestore = await import(
 const tracking = await import("./me/shows/[id]/tracking/route");
 const trackingRestore = await import("./me/shows/[id]/tracking/restore/route");
 const profile = await import("./me/profile/route");
+const accountDelete = await import("./me/account/delete/route");
 
 // Set by `scripts/api-local.sh` from `supabase status`, never from a file.
 const API_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -609,5 +610,44 @@ describe("user B against user A's profile", () => {
     );
     expect(response.status).toBe(400);
     expect(await usernameOf(tokenB)).toBeNull();
+  });
+});
+
+describe("a throwaway user deleting their own account", () => {
+  // A fresh account rather than a seeded one, so the seed pgTAP needs stays
+  // whole; the deletion itself is the clean up. Confirmations are off in the
+  // local stack, so sign up returns a session at once.
+  it("removes only the caller, through the route, and never A's rows", async () => {
+    const email = `delete-${Date.now()}@example.test`;
+    const password = "a-throwaway-Passw0rd-for-tests";
+    const signUp = await createClient(API_URL, KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    }).auth.signUp({ email, password });
+    const token = signUp.data.session?.access_token;
+    if (!token) throw new Error("sign up returned no session");
+
+    const before = await titlesOf(tokenA);
+
+    const refused = await accountDelete.POST(
+      req("/api/v1/me/account/delete", auth(token), {
+        method: "POST",
+        body: { confirm: "delete" },
+      }),
+      ctx(),
+    );
+    expect(refused.status).toBe(400);
+
+    const deleted = await accountDelete.POST(
+      req("/api/v1/me/account/delete", auth(token), {
+        method: "POST",
+        body: { confirm: "DELETE" },
+      }),
+      ctx(),
+    );
+    expect(deleted.status).toBe(204);
+
+    await expect(tokenFor(email, password)).rejects.toThrow();
+    expect(await titlesOf(tokenA)).toEqual(before);
+    expect(await tokenFor("user-a@example.test", "password-a")).toBeTruthy();
   });
 });
