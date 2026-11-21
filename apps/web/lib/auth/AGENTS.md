@@ -11,12 +11,13 @@ Since spec 0034 the pure files below (`private-paths.ts`, `next-path.ts`, `actio
 - `next-path.ts`: `isSafeNextPath()` / `safeNextPath()`. Call it at every read of a `next` value (query string, hidden field, header, email link), not once per journey.
 - `action-state.ts`: `AuthActionState`, the shape every auth Server Action returns.
 - `messages.ts`: every message an auth surface shows, keyed by `AUTH_OUTCOME`.
-- `supabase-error.ts`: `classifyAuthError()` and `classifyProfileWriteError()`, the only code that touches a raw Supabase error. They match on `error.code` (and `reasons` for weak passwords), never message text; the weekly username lock raises its own SQLSTATE, `BS002`, for that reason.
+- `supabase-error.ts`: `classifyAuthError()` and `classifyProfileWriteError()`, the only code that touches a raw Supabase error. `classifyAuthError()` passes the error's code, status, weak password `reasons` and the missing session flag to core's `classifyAuthFailure()` (`@bestats/core/auth/auth-error`, with `isAlreadyRegistered()`), the rule the app runs too. Matching is on `code`, never message text; the weekly username lock raises its own SQLSTATE, `BS002`, for that reason.
 - `log.ts`: `logAuthEvent()`, the only way an auth path writes to the log.
 - `schemas.ts`: the email and password Zod rules. `MINIMUM_PASSWORD_LENGTH` must equal `minimum_password_length` in `supabase/config.toml`.
 - `identity.ts`: pure display derivations (name, avatar letter). The username, when there is one, is passed in; otherwise the email name is used.
 - `username.ts`: the username Zod rule, reserved list and weekly lock helpers. Must match the `profiles` checks in `supabase/schemas/02-tables.sql` (`username.test.ts` checks). The database is the judge: the trigger `guard_username_change` owns the lock and the timestamp.
 - `profile.ts`: `getOwnProfile()`, the `cache()`d read of the signed in account's `profiles` row, used by the navbar slot, `/account` and `changeUsernameAction`. A failed read returns null so the navbar falls back, never breaks.
+- `commands/account.ts`: `deleteOwnAccountCommand`, shared by `deleteAccountAction` and `POST /api/v1/me/account/delete`; it calls `delete_own_account()` with no argument and returns the outcome class of a refusal for the caller to log.
 - `commands/username.ts`: `readProfileRow`, `claimUsernameCommand` and `changeUsernameCommand`, the username read and writes shared by sign up, `/account` and `GET`/`PUT /api/v1/me/profile` (spec 0035). Like the tracking commands, they take `{ userId, getClient }` and never read cookies or the session.
 
 ## Rules

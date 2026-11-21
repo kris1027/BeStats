@@ -10,7 +10,8 @@ The database: declarative schema in `schemas/` (`schema_paths` in `config.toml`)
 - `user_show_state`: `user_id`, `show_id`, `tracked_at` and timestamps, nothing more. The spec 0020 contract migration (`20261010120000_show_tracking_contract.sql`) dropped the status columns, the `tv_status`, `status_source` and `show_hold` enums and every status function; `user_tracked_shows` is the one view.
 - `user_game_state`: one row per user and game with `status` (`game_status` enum), `rating`, and `added_at`, `started_at`, `finished_at`. Checks: a rating only on Playing or Finished, and each of those has its timestamp.
 - No catalog metadata and no season or show rating is stored; both are derived at read time.
-- `profiles` holds only the username ([prompts/account-username.md](../prompts/account-username.md)): unique ignoring case, changeable once per rolling week, both enforced in the database (trigger `guard_username_change`, SQLSTATE `BS002`). Only its owner sees it. `public.username_available(text)` is the one `security definer` function and the one `anon` may call, a named exception in `tests/140-security-sweep.test.sql`.
+- `profiles` holds only the username ([prompts/account-username.md](../prompts/account-username.md)): unique ignoring case, changeable once per rolling week, both enforced in the database (trigger `guard_username_change`, SQLSTATE `BS002`). Only its owner sees it. `public.username_available(text)` is a `security definer` function and the one `anon` may call, a named exception in `tests/140-security-sweep.test.sql`.
+- `public.delete_own_account()` is the other `security definer` function (spec 0033, child 0036): no argument, it deletes `auth.uid()`'s auth user and the cascade removes every row of theirs. Only `authenticated` may execute it; it is the second named exception in `140-security-sweep` and is proven by `tests/200-delete-own-account.test.sql`. The project still never uses the service role key.
 
 ## Security
 

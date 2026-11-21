@@ -1,9 +1,10 @@
 -- Self serve account deletion (spec 0033, child 0036; AC-12).
 --
--- Written by hand from `supabase/schemas/05-functions.sql`, which stays the
--- source of truth. The grants are written out because the declarative diff
--- does not track them. The function body is the one
--- `tests/200-delete-own-account-proof.test.sql` proved in step 3.
+-- Copied from `supabase/schemas/05-functions.sql`, which stays the source of
+-- truth: the installed CLI's `db diff` no longer reads `schema_paths` (it
+-- compares migrations with the database), so it cannot generate this file.
+-- The grants are written out because the declarative diff never tracked them.
+-- `tests/200-delete-own-account.test.sql` proves the function.
 create or replace function public.delete_own_account()
 returns void
 language plpgsql
