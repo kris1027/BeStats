@@ -69,22 +69,24 @@ Run against the local stack (`pnpm dev:docker`) with `npx expo start --dev-clien
 
 ## UI / manual
 - [ ] Signed out, open Library → "Sign in to see your library" with Sign in, and no `/api/v1/me/library` request → AC-11
-- [ ] Signed in, Library opens on Shows, Up next; the pills read Up next, Upcoming, Watched → AC-10
+- [ ] Signed in, Library opens on Shows, Up next, with skeleton tiles under the pills until the cards arrive; the pills read Up next, Upcoming, Watched → AC-10
 - [ ] Movies reads Watchlist, Coming soon, Watched; Games reads Coming soon, Want to play, Playing, Finished, the four pills scrolling sideways on a narrow phone → AC-10
 - [ ] On Movies, Watched, switch to Games → Finished is selected (the same page key); from Games, Playing, switch to Movies → Coming soon → AC-10
 - [ ] Each page lists the same titles in the same order as the web page for the same user (`localhost:3000/up-next`, `/watched?type=movie`, `/playing`, …) → AC-10
 - [ ] Up next cards show the next episode (`S1E3`); Upcoming cards the episode and its date, or Date TBA; Watched shows your show rating when a season is rated, and Finished or Caught up → AC-10, AC-14
 - [ ] Movies Watchlist shows the amber TMDB rating; Watched shows your score as ★ 9 in the personal colour and no TMDB rating → AC-14
-- [ ] Games show your score when set, else the IGDB rating; Coming soon shows the release date or Date TBA → AC-14
+- [ ] Games: Coming soon and Want to play show the IGDB rating only; Playing and Finished show your score when set, else the IGDB rating, and "Started Feb 2026" or "Finished Oct 2026" under the name, as the web; Coming soon shows the release date or Date TBA → AC-14
+- [ ] VoiceOver on a game card reads "IGDB community rating …" → AC-14
+- [ ] Open `/library?type=game&path=/up-next` (a route games lack) → Games, Coming soon → AC-10
 - [ ] A page with nothing on it shows its own empty copy (for example "Nothing in progress") and a Browse button that opens Home on that catalog → AC-10
 - [ ] Open a game from Playing, tap Finished, go back → Playing no longer lists it, and Finished does → AC-10
 - [ ] Scroll a page with more than 24 titles → the next page loads under the first → AC-10
-- [ ] Stop the web server and pull to refresh on a date placed page (Up next) → "Couldn't load your list" with Retry, never the empty copy; start it and tap Retry → the page comes back → AC-10
+- [ ] Stop the web server and pull to refresh on a date placed page (Up next) with titles on it → "Couldn't load your list" with Retry replaces the cards; on an empty page, the same panel, never the empty copy; start it and tap Retry → the page comes back → AC-10
 - [ ] Sign out from Account, open Library → the Sign in panel shows and no old titles flash → AC-13
 - [ ] VoiceOver: the media switch and pills read their selected state; a card reads its name, pill and badge with whose rating it is → AC-14
 
 ## Commands
-- [ ] `pnpm --filter @bestats/mobile test -- library-screen` → the library suite passes (pages and names from core, routes sent, empty and failed states, card badges, signed out) → AC-10, AC-11, AC-14
+- [ ] `pnpm --filter @bestats/mobile test -- library-screen` → the library suite passes (pages and names from core, routes sent, skeleton, empty and failed states including a failed refresh, the games fallback, card badges and game month lines, signed out) → AC-10, AC-11, AC-14
 
 ## Acceptance-criteria coverage
 - AC-10: pages, routes and names from core on all three tabs, the route sent and never a page key, placement drawn from the server
