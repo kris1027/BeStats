@@ -65,7 +65,7 @@ Run against the local stack (`pnpm dev:docker`) with `npx expo start --dev-clien
 
 ## Slice 5c: library tabs (prompts/mobile-library-tabs.md)
 
-Run against the local stack (`pnpm dev:docker`) with `npx expo start --dev-client` in `apps/mobile`, signed in as a user with tracked shows, planned and watched movies, and games in several statuses. The same sign in note as 5b applies: the form refuses a `.test` email.
+Run against the local stack (`pnpm dev:docker`) with `npx expo start --dev-client` in `apps/mobile`, signed in as a user with tracked shows, planned and watched movies, and games in several statuses. The same sign in note as 5b applies: the form refuses a `.test` email. Review fixes pass run 2026-11-21 in the iPhone 18 Pro simulator, as a throwaway local account holding user A's games plus one Want to play (deleted afterwards): Games pills, Want to play IGDB only, Playing "Started Sep 2026" with the score, Finished "Finished Aug 2026" with the IGDB rating, all matching `localhost:3000`, and a pull to refresh with the web stopped showing the failed panel in place of the cards, then Retry bringing them back.
 
 ## UI / manual
 - [ ] Signed out, open Library → "Sign in to see your library" with Sign in, and no `/api/v1/me/library` request → AC-11
