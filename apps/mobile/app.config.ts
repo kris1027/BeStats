@@ -1,0 +1,27 @@
+import type { ConfigContext, ExpoConfig } from "expo/config";
+
+/** The bundle ID a free Apple ID signs for the owner's own phone. */
+const PERSONAL_BUNDLE_ID = "com.kris1027.bestats.personal";
+
+/**
+ * Starts from `app.json` and, only when `APP_VARIANT=personal`, renames the
+ * app and swaps its iOS bundle ID for a personal one.
+ *
+ * Why: `com.kris1027.bestats` is permanent once it reaches the store
+ * (apps/mobile/AGENTS.md, Building with EAS), and a free personal team that
+ * registers it could keep the paid team from claiming it. A separate ID lets a
+ * personal Release build sit beside the store app (prompts/
+ * mobile-personal-release-build.md). Without the variable the config is
+ * exactly `app.json`, so the simulator, EAS and the tests are unchanged.
+ * `APP_VARIANT` is not a secret and never reaches the bundle (AGENTS.md
+ * section 11).
+ */
+export default ({ config }: ConfigContext): ExpoConfig => {
+  const base = config as ExpoConfig;
+  if (process.env.APP_VARIANT !== "personal") return base;
+  return {
+    ...base,
+    name: "BeStats Personal",
+    ios: { ...base.ios, bundleIdentifier: PERSONAL_BUNDLE_ID },
+  };
+};
