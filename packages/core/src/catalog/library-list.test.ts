@@ -11,6 +11,7 @@ import {
   libraryPages,
   libraryPath,
   libraryPathName,
+  parseLibraryPathParam,
   shownLibraryPage,
 } from "./library-list";
 
@@ -139,5 +140,21 @@ describe("the library routes", () => {
       { source: "/upcoming", type: "game", destination: "/playing" },
       { source: "/watched", type: "game", destination: "/finished" },
     ]);
+  });
+});
+
+describe("parseLibraryPathParam", () => {
+  it("accepts every library route", () => {
+    for (const path of LIBRARY_PATHS) {
+      expect(parseLibraryPathParam(path)).toBe(path);
+    }
+  });
+
+  it("refuses anything else", () => {
+    expect(parseLibraryPathParam("/nope")).toBeNull();
+    expect(parseLibraryPathParam("up-next")).toBeNull();
+    expect(parseLibraryPathParam(["/up-next"])).toBeNull();
+    expect(parseLibraryPathParam(undefined)).toBeNull();
+    expect(parseLibraryPathParam(null)).toBeNull();
   });
 });

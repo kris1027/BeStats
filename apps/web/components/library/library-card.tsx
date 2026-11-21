@@ -1,4 +1,6 @@
+import { libraryCardBadge } from "@bestats/core/catalog/library-card";
 import { libraryPageName } from "@bestats/core/catalog/library-list";
+import { LIBRARY_CARD_MESSAGES } from "@bestats/core/tracking/messages";
 import type { ReactNode } from "react";
 import { PosterCard } from "@/components/poster-card";
 import {
@@ -15,7 +17,7 @@ import type { LibraryList, LibraryMovieItem } from "./types";
  * The caption and fallback tile text for a title TMDB no longer has
  * (spec 0008, AC-11). Never an invented title or a placeholder poster.
  */
-const MISSING_TITLE = "No longer on TMDB";
+const MISSING_TITLE = LIBRARY_CARD_MESSAGES.missing("TMDB");
 
 /**
  * One movie card on a library page (spec 0008, AC-1, AC-2; spec 0020,
@@ -62,12 +64,14 @@ function LibraryCard({
 }
 
 /**
- * The badge a card carries: the amber TMDB rating on Watchlist, the cyan
- * personal score on Watched when there is one, and none on Upcoming.
+ * The badge a card carries, as core's `libraryCardBadge` sets it for the page
+ * (the app reads the same table): the amber TMDB rating on Watchlist, the
+ * cyan personal score on Watched when there is one, and none on Upcoming.
  */
 function cardBadge(list: LibraryList, item: LibraryMovieItem): ReactNode {
-  if (list === "watchlist") return <TmdbRatingBadge value={item.tmdbRating} />;
-  if (list === "watched" && item.rating !== null) {
+  const badge = libraryCardBadge("movie", list);
+  if (badge === "community") return <TmdbRatingBadge value={item.tmdbRating} />;
+  if (badge === "personal" && item.rating !== null) {
     return <PersonalScoreBadge value={item.rating} />;
   }
   return undefined;

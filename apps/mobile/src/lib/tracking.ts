@@ -18,6 +18,7 @@ import type { z } from "zod";
 import { useToast } from "@/components/toast";
 
 import { ApiError, apiRequest } from "./api";
+import { libraryKeys } from "./library";
 import { PRIVATE_QUERY_ROOT } from "./query-client";
 
 /**
@@ -191,7 +192,9 @@ export function useTrackingWrite<TState, TVars, TResult>({
     onSettled: async () => {
       if (queries.isMutating({ mutationKey: stateKey }) > 1) return;
       await Promise.all(
-        [stateKey, ...alsoInvalidate].map((queryKey) =>
+        // Every write can move a title between library pages, so the pages
+        // reload when the Library tab is opened again (AGENTS.md section 9).
+        [stateKey, ...alsoInvalidate, libraryKeys.all].map((queryKey) =>
           queries.invalidateQueries({ queryKey }),
         ),
       );

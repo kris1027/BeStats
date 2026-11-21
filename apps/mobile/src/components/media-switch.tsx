@@ -12,25 +12,40 @@ const OPTIONS: readonly { type: LibraryType; label: string }[] = [
 
 /**
  * The Shows, Movies, Games switch Home and Search share
- * (prompts/mobile-app-shell-catalog.md, decision 3): a segmented glass
- * control, each segment 44pt tall for the touch rule (AGENTS.md section 3)
- * and announced as a tab with its selected state.
+ * (prompts/mobile-app-shell-catalog.md, decision 3), reading their shared
+ * choice from `useMediaType()`.
  */
 export function MediaSwitch() {
   const { mediaType, setMediaType } = useMediaType();
+  return <MediaSwitchView value={mediaType} onChange={setMediaType} />;
+}
+
+/**
+ * The switch itself: a segmented glass control, each segment 44pt tall for
+ * the touch rule (AGENTS.md section 3) and announced as a tab with its
+ * selected state. The Library tab drives it with its own type, which is not
+ * Home's (prompts/mobile-library-tabs.md, decision 3).
+ */
+export function MediaSwitchView({
+  value,
+  onChange,
+}: {
+  value: LibraryType;
+  onChange: (next: LibraryType) => void;
+}) {
   return (
     <View
       accessibilityRole="tablist"
       className="mx-4 my-3 flex-row rounded-full border border-border bg-glass-plate p-1"
     >
       {OPTIONS.map((option) => {
-        const selected = option.type === mediaType;
+        const selected = option.type === value;
         return (
           <Pressable
             key={option.type}
             accessibilityRole="tab"
             accessibilityState={{ selected }}
-            onPress={() => setMediaType(option.type)}
+            onPress={() => onChange(option.type)}
             className={`min-h-11 flex-1 items-center justify-center rounded-full ${
               selected ? "bg-primary" : ""
             }`}

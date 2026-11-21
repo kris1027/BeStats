@@ -1,6 +1,6 @@
-import { formatAirDate, formatShortDate } from "@bestats/core/format";
+import { upcomingEpisodePill } from "@bestats/core/catalog/library-card";
 import {
-  UPCOMING_MESSAGES,
+  LIBRARY_CARD_MESSAGES,
   WATCHED_SHOW_LABELS,
 } from "@bestats/core/tracking/messages";
 import type { EpisodePlace } from "@bestats/core/tv/library-page";
@@ -50,6 +50,7 @@ function UpcomingShowCard({
 /**
  * The next episode and its short date, or Date TBA, on an Upcoming show card
  * and on a catalog card for a show on Upcoming (prompts/catalog-card-status.md).
+ * The words are core's `upcomingEpisodePill`, which the app reads too.
  */
 function UpcomingShowPill({
   airDate,
@@ -60,29 +61,14 @@ function UpcomingShowPill({
   next: EpisodePlace | null;
   today: string;
 }) {
-  if (airDate !== null && next !== null) {
-    const fullDate = formatAirDate(airDate) ?? airDate;
-    const shortDate = formatShortDate(airDate, today) ?? fullDate;
-    return (
-      <DatedPill
-        slot="upcoming-date"
-        longText
-        label={UPCOMING_MESSAGES.episodeAirs(
-          next.season,
-          next.episode,
-          fullDate,
-        )}
-        text={UPCOMING_MESSAGES.datedPill(next.season, next.episode, shortDate)}
-      />
-    );
-  }
+  const pill = upcomingEpisodePill(airDate, next, today);
+  if (pill.kind === "tba") return <DateTbaPill label={pill.label} />;
   return (
-    <DateTbaPill
-      label={
-        next === null
-          ? UPCOMING_MESSAGES.showDateTba
-          : UPCOMING_MESSAGES.episodeDateTba(next.season, next.episode)
-      }
+    <DatedPill
+      slot="upcoming-date"
+      longText
+      label={pill.label}
+      text={pill.text}
     />
   );
 }
@@ -116,7 +102,10 @@ function WatchedShowCard({
       {...showCardLink(showId)}
       badge={
         showRating === null ? undefined : (
-          <CalculatedRatingBadge value={showRating} label="Your show rating" />
+          <CalculatedRatingBadge
+            value={showRating}
+            label={LIBRARY_CARD_MESSAGES.yourShowRating}
+          />
         )
       }
       meta={WATCHED_SHOW_LABELS[label]}

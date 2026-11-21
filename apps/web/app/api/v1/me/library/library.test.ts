@@ -282,7 +282,10 @@ describe("games", () => {
   it("reads /coming-soon as the games Coming soon split", async () => {
     getWantToPlayTab.mockResolvedValue({
       kind: "ok",
-      rows: [{ gameId: 1942 }, { gameId: 7 }],
+      rows: [
+        { gameId: 1942, startedAt: null, finishedAt: null },
+        { gameId: 7, startedAt: null, finishedAt: null },
+      ],
       games: new Map([[1942, GAME]]),
       total: 2,
       capped: false,
@@ -298,6 +301,8 @@ describe("games", () => {
         coverUrl: GAME.coverUrl,
         communityRating: 93,
         releaseDate: "2015-05-19",
+        startedAt: null,
+        finishedAt: null,
       },
       { kind: "missing" },
     ]);
@@ -317,6 +322,22 @@ describe("games", () => {
     );
     expect(body.entries[0]).toMatchObject({ user: GAME_STATE, card: null });
     expect(body.nextPage).toBe(2);
+  });
+
+  it("sends the stored dates for the Started and Finished month line", async () => {
+    const startedAt = "2026-02-10T12:00:00+00:00";
+    const finishedAt = "2026-10-01T08:00:00+00:00";
+    getGameLibraryPage.mockResolvedValue({
+      kind: "ok",
+      rows: [{ gameId: 1942, startedAt, finishedAt }],
+      total: 1,
+    });
+    getLibraryGames.mockResolvedValue({
+      kind: "ok",
+      games: new Map([[1942, GAME]]),
+    });
+    const body = await bodyOf(await library("type=game&path=/finished"));
+    expect(body.entries[0].card).toMatchObject({ startedAt, finishedAt });
   });
 
   it("answers an IGDB outage on Want to play with 502", async () => {

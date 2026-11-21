@@ -1,7 +1,10 @@
 import "server-only";
 
 import { GRID_PAGE_SIZE } from "@bestats/core/catalog/grid-page";
-import type { LibraryList } from "@bestats/core/catalog/library-list";
+import {
+  LIBRARY_CLASSIFY_LIMIT,
+  type LibraryList,
+} from "@bestats/core/catalog/library-list";
 import {
   classifyMovie,
   type MoviePage,
@@ -49,15 +52,6 @@ import { logTrackingEvent, TRACKING_EVENT } from "./log";
  * full page fills every row (spec 0022, AC-21).
  */
 export const LIBRARY_PAGE_SIZE = GRID_PAGE_SIZE;
-
-/**
- * How many titles one request classifies per media type (AC-16). Each is a
- * TMDB read, cached but cold for a new heavy user, so the most recently
- * active are checked and every tab says so when there are more. The ceiling
- * is taken in SQL, before any TMDB read, in one order every tab of the media
- * type inherits.
- */
-export const LIBRARY_CLASSIFY_LIMIT = 500;
 
 /**
  * The last page of a list of `total` cards: at least 1, so an empty list
