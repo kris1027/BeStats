@@ -106,6 +106,10 @@ export default function SignIn() {
           busy={busy}
           onPress={submit}
         />
+        <GlassButton
+          label="Create an account"
+          onPress={() => router.replace("/sign-up")}
+        />
       </View>
     </KeyboardAvoidingView>
   );

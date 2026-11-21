@@ -39,9 +39,10 @@ const NAV_THEME = {
 };
 
 /**
- * The root stack: the tabs, with Sign in as a modal over them, so a signed
- * out visitor browses and signs in from where they are
- * (prompts/mobile-app-shell-catalog.md, decisions 1 and 3).
+ * The root stack: the tabs, with Sign in and Create account as modals over
+ * them, so a signed out visitor browses and signs in from where they are
+ * (prompts/mobile-app-shell-catalog.md, decisions 1 and 3;
+ * prompts/mobile-account-deletion.md, decision 8).
  */
 function Navigator() {
   const { loading, notice } = useSession();
@@ -70,6 +71,10 @@ function Navigator() {
       <Stack.Screen
         name="sign-in"
         options={{ title: "Sign in", presentation: "modal" }}
+      />
+      <Stack.Screen
+        name="sign-up"
+        options={{ title: "Create account", presentation: "modal" }}
       />
     </Stack>
   );
