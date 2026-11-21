@@ -306,9 +306,21 @@ test("an invalid games page falls back to Coming soon", async () => {
 });
 
 test("skeleton tiles show while the first page loads", async () => {
-  mockApi.on("GET", libraryPath("tv", "/up-next"), () => new Promise(() => {}));
+  let release: () => void = () => {};
+  mockApi.on(
+    "GET",
+    libraryPath("tv", "/up-next"),
+    () =>
+      new Promise((resolve) => {
+        release = () => resolve(answer("tv", "/up-next", []));
+      }),
+  );
   await openLibrary();
   expect(await screen.findByLabelText("Loading Up next")).toBeOnTheScreen();
+  release();
+  expect(
+    await screen.findByText(libraryCopy("watchlist", "tv").empty.title),
+  ).toBeOnTheScreen();
 });
 
 test("a failed refresh replaces the cards with the failed panel", async () => {
