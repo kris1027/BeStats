@@ -26,6 +26,11 @@ type SessionState = {
   notice: string | null;
   clearNotice: () => void;
   signOut: () => Promise<void>;
+  /**
+   * Ends the session on this phone only, after the account was deleted:
+   * the auth user is gone, so there is nothing to revoke on the server.
+   */
+  endLocalSession: () => Promise<void>;
 };
 
 const SessionContext = createContext<SessionState | null>(null);
@@ -89,11 +94,24 @@ export function SessionProvider({ children }: PropsWithChildren) {
     clearPrivateQueries();
   }, []);
 
+  const endLocalSession = useCallback(async () => {
+    await signOutLocally();
+    setSession(null);
+    clearPrivateQueries();
+  }, []);
+
   const clearNotice = useCallback(() => setNotice(null), []);
 
   const value = useMemo(
-    () => ({ session, loading, notice, clearNotice, signOut }),
-    [session, loading, notice, clearNotice, signOut],
+    () => ({
+      session,
+      loading,
+      notice,
+      clearNotice,
+      signOut,
+      endLocalSession,
+    }),
+    [session, loading, notice, clearNotice, signOut, endLocalSession],
   );
   return (
     <SessionContext.Provider value={value}>{children}</SessionContext.Provider>
