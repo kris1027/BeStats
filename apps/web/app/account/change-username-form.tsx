@@ -4,6 +4,7 @@ import {
   type AuthActionState,
   IDLE_STATE,
 } from "@bestats/core/auth/action-state";
+import { ACCOUNT_COPY } from "@bestats/core/auth/messages";
 import {
   USERNAME_HINT,
   USERNAME_MAX_LENGTH,
@@ -64,14 +65,14 @@ function ChangeUsernameForm({
 
       {locked ? (
         <p className="text-sm text-muted-foreground">
-          You can change it again on <LocalDateTime iso={unlocksAt} />.
+          {ACCOUNT_COPY.usernameUnlocksOn} <LocalDateTime iso={unlocksAt} />.
         </p>
       ) : null}
 
       {/* Bottom of the card, level with Change password beside it. */}
       <div className="mt-auto">
         <AuthSubmitButton pendingLabel="Saving…" disabled={locked}>
-          Save username
+          {ACCOUNT_COPY.saveUsername}
         </AuthSubmitButton>
       </div>
     </form>

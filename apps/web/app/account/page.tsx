@@ -1,5 +1,6 @@
 import { hasPasswordIdentity } from "@bestats/core/auth/identity";
 import {
+  ACCOUNT_COPY,
   ACCOUNT_NOTICE,
   ACCOUNT_NOTICES,
   AUTH_OUTCOME,
@@ -150,7 +151,7 @@ export default async function AccountPage({
           <p className="text-sm text-muted-foreground">
             {profile
               ? authMessage(AUTH_OUTCOME.usernameLocked)
-              : "Choose a username. You can change it once a week."}
+              : ACCOUNT_COPY.chooseUsername}
           </p>
         </header>
 

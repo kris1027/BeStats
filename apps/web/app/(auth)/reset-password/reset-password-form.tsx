@@ -5,6 +5,7 @@ import {
   IDLE_STATE,
 } from "@bestats/core/auth/action-state";
 import { AUTH_OUTCOME } from "@bestats/core/auth/messages";
+import { PASSWORD_HINT } from "@bestats/core/auth/schemas";
 import Link from "next/link";
 import { useActionState } from "react";
 import {
@@ -47,7 +48,7 @@ function ResetPasswordForm() {
         name="password"
         type="password"
         autoComplete="new-password"
-        placeholder="At least 8 characters"
+        placeholder={PASSWORD_HINT}
         error={state.fieldErrors?.password}
       />
 

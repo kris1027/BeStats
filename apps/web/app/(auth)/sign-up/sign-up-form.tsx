@@ -4,6 +4,7 @@ import {
   type AuthActionState,
   IDLE_STATE,
 } from "@bestats/core/auth/action-state";
+import { PASSWORD_HINT } from "@bestats/core/auth/schemas";
 import {
   USERNAME_HINT,
   USERNAME_MAX_LENGTH,
@@ -82,7 +83,7 @@ function SignUpForm({ next }: { next?: string }) {
         name="password"
         type="password"
         autoComplete="new-password"
-        placeholder="At least 8 characters"
+        placeholder={PASSWORD_HINT}
         error={state.fieldErrors?.password}
       />
 
