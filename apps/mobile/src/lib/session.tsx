@@ -122,7 +122,8 @@ export function SessionProvider({ children }: PropsWithChildren) {
  * Runs once the persisted query cache is back from disk: with no stored
  * session, every private entry it brought back is wiped at once (spec 0033,
  * AC-13). That covers a session that ended while the app was not running to
- * wipe, so a signed out phone never shows someone's library.
+ * wipe, so a signed out phone never shows someone's library (AGENTS.md
+ * section 11: private data stays private to its owner).
  */
 export async function wipePrivateCacheIfSignedOut(): Promise<void> {
   const { data } = await getSupabase()

@@ -105,7 +105,9 @@ function BrandLinkView({ type }: { type: LibraryType }) {
  * The wordmark as plain text, not a link, for the legal pages: the phone app
  * links there while every other web page answers 403, so the logo has nowhere
  * to go (prompts/legal-pages-app-ready.md). The navbar shows it only through
- * the `legal-page:` variant.
+ * the `legal-page:` variant, a CSS switch rather than a new client boundary
+ * in the shell (components/AGENTS.md; AGENTS.md section 3: reuse the shell's
+ * patterns). It shares `BRAND_CLASS` with `BrandLink`, so it lives here.
  */
 function BrandWordmark({ className }: { className?: string }) {
   return <span className={`${BRAND_CLASS} ${className ?? ""}`}>BeStats</span>;

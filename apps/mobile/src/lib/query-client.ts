@@ -94,5 +94,10 @@ export function clearPrivateQueries(
 ): Promise<void> {
   client.removeQueries({ queryKey: [PRIVATE_QUERY_ROOT] });
   client.getMutationCache().clear();
+  // A failed removal is not surfaced: removing the queries above already
+  // changed the cache, so the persister's next save (within its throttle,
+  // one second) writes a snapshot without them, and a kill inside that
+  // window is caught by `wipePrivateCacheIfSignedOut` at the next launch.
+  // Sign out must still finish, so the error cannot be allowed to throw.
   return Promise.resolve(storage.removeClient()).catch(() => undefined);
 }
