@@ -45,6 +45,10 @@ const FORBIDDEN_KEY_PREFIX = ["sb", "secret"].join("_");
  * ours to police; documentation, design references and fixtures are prose and
  * sample data that never reach a request. Everything else in the repository is
  * scanned, including directories that do not exist yet.
+ *
+ * Expo's generated native folders (`apps/mobile/ios`, `apps/mobile/android`)
+ * are skipped by the walker itself, by path rather than by name, as
+ * `GENERATED_DIRS` in `workspace-files.ts` explains.
  */
 const EXCLUDED_DIRS = new Set([
   "node_modules",

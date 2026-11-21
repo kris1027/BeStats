@@ -33,6 +33,10 @@ import {
  * Directories skipped at any depth. Dependencies and build output are not ours
  * to police; documentation and the design references are where the raw hex
  * values legitimately live, being the source these tokens were read from.
+ *
+ * Expo's generated native folders (`apps/mobile/ios`, `apps/mobile/android`)
+ * are skipped by the walker itself, by path rather than by name, as
+ * `GENERATED_DIRS` in `workspace-files.ts` explains.
  */
 const EXCLUDED_DIRS = new Set([
   "node_modules",
