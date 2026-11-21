@@ -73,7 +73,9 @@ Docs: https://docs.expo.dev/eas/index.md
 - Copy comes from core's message files (`tracking/messages.ts`, `auth/messages.ts`, `search/messages.ts`) so both apps say the same thing.
 - The catalog is public: no screen requires a session. Sign in is a modal that closes back to the screen that asked, and a session notice (an expired session) opens it from the root layout. Navigate from an effect with the `useRouter()` hook, never the global `router`: the global one is bound in a parent layout effect, so it throws on the first commit.
 - The app is dark only: `Appearance.setColorScheme("dark")` in the root layout plus `userInterfaceStyle: "dark"` in `app.json`, so native chrome (glass tab bar, sheets, keyboard) never draws light.
-- The query cache is in memory only until the persisted offline cache lands (spec 0033 step 5, AC-13); when it does, it must be wiped on every sign out.
+- The query cache is persisted to AsyncStorage (`persistOptions` in `src/lib/query-client.ts`: 24 hours, `buster` the app version, never mutations), so the last loaded pages show offline. `clearPrivateQueries()` removes every `"me"` query from memory and the persisted entry from disk; sign out, an expired session, account deletion and a restore with no stored session (`wipePrivateCacheIfSignedOut`) all call it (AC-13).
+- Offline: `src/lib/offline.ts` feeds NetInfo into `onlineManager`, so queries pause rather than fail, and `OfflineBanner` sits above the root stack. Writes use `networkMode: "always"`: an offline write fails, reverts, and its toast offers Retry (`network` errors only); nothing is queued.
+- About (`account/about`, `screens/about-screen.tsx`) shows TMDB's and IGDB's logos from `assets/legal/`, byte for byte the web's files (`lib/legal-logos.test.ts`), with core's attribution text.
 
 ## Styling
 
