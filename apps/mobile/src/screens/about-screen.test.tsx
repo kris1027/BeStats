@@ -5,6 +5,8 @@ import {
 import {
   IGDB_ATTRIBUTION,
   IGDB_HOME_URL,
+  PRIVACY_PATH,
+  TERMS_PATH,
   TMDB_HOME_URL,
 } from "@bestats/core/legal/operator";
 import { render, screen, userEvent } from "@testing-library/react-native";
@@ -19,6 +21,9 @@ import { AboutScreen } from "./about-screen";
  * each logo opening its site)
  */
 jest.mock("expo-linking", () => ({ openURL: jest.fn() }));
+jest.mock("@/lib/env", () => ({
+  getPublicEnv: () => ({ EXPO_PUBLIC_API_BASE_URL: "https://api.test" }),
+}));
 
 test("credits TMDB and IGDB with their logos and the app's wording", async () => {
   await render(<AboutScreen />);
@@ -33,4 +38,17 @@ test("credits TMDB and IGDB with their logos and the app's wording", async () =>
   await user.press(screen.getByRole("link", { name: "IGDB" }));
   expect(Linking.openURL).toHaveBeenNthCalledWith(1, TMDB_HOME_URL);
   expect(Linking.openURL).toHaveBeenNthCalledWith(2, IGDB_HOME_URL);
+});
+
+test("links the Privacy Policy and Terms of Service on the API's origin", async () => {
+  await render(<AboutScreen />);
+  const user = userEvent.setup();
+  await user.press(screen.getByRole("link", { name: "Privacy Policy" }));
+  await user.press(screen.getByRole("link", { name: "Terms of Service" }));
+  expect(Linking.openURL).toHaveBeenCalledWith(
+    `https://api.test${PRIVACY_PATH}`,
+  );
+  expect(Linking.openURL).toHaveBeenLastCalledWith(
+    `https://api.test${TERMS_PATH}`,
+  );
 });

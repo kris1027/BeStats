@@ -142,6 +142,8 @@ vercel firewall rules add "Website off, API on" \
 vercel firewall publish --yes
 ```
 
+Keep `/privacy` and `/terms` in that allow list: the app's About links to both on the API's origin ([prompts/mobile-about-legal-links.md](../prompts/mobile-about-legal-links.md)), and the store listings will link to them too.
+
 Check it: `/movies` answers `403`, while `/privacy` and `/api/v1/lists/tv/trending` (with `X-BeStats-App-Version`) answer `200`. To reopen the website, run `vercel firewall rules disable "Website off, API on" --yes` and `vercel firewall publish --yes`, then restore the production branch of `app/robots.ts` from git history.
 
 ## 6. Which IP address Supabase counts (AC-18)

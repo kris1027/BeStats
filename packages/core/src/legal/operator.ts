@@ -81,6 +81,17 @@ export const TMDB_HOME_URL = "https://www.themoviedb.org";
 export const IGDB_HOME_URL = "https://www.igdb.com";
 
 /**
+ * The legal pages' paths on the deployment. The phone app's About links to
+ * them on the same origin as `/api/v1`, since the website and the API ship as
+ * one deployment, and the "Website off, API on" firewall rule keeps both pages
+ * reachable (prompts/mobile-about-legal-links.md; docs/deploy.md section 5).
+ */
+export const PRIVACY_PATH = "/privacy";
+
+/** See `PRIVACY_PATH`. */
+export const TERMS_PATH = "/terms";
+
+/**
  * The credit IGDB's terms ask for, shown in the footer on every route and on
  * `/terms` (spec 0032, AC-8, AC-9). IGDB's FAQ asks for "fair attribution,
  * i.e. attribution that is visible to your users and located in a static
