@@ -14,6 +14,7 @@
       "!design",
       "!supabase",
       "!apps/web/public",
+      "!apps/mobile/assets/legal",
       "!packages/core/src/supabase/database.types.ts",
       "!packages/core/src/tokens.generated.ts"
     ]
