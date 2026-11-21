@@ -72,6 +72,10 @@ export default function TermsPage() {
           You need a current web browser with JavaScript and cookies enabled, an
           internet connection, and an email address for an account.
         </p>
+        <p>
+          The BeStats app for iPhone and Android uses the same account and the
+          same terms as the website, and needs an internet connection too.
+        </p>
       </LegalSection>
 
       <LegalSection title="Acceptable use">
