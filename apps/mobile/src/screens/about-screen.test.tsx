@@ -52,3 +52,19 @@ test("links the Privacy Policy and Terms of Service on the API's origin", async 
     `https://api.test${TERMS_PATH}`,
   );
 });
+
+/**
+ * covers: prompts/mobile-about-legal-links.md, decision 4 (each link's hint
+ * names its page, and says browser rather than one platform's)
+ */
+test("hints name the page each legal link opens", async () => {
+  await render(<AboutScreen />);
+  expect(
+    screen.getByRole("link", { name: "Privacy Policy" }).props
+      .accessibilityHint,
+  ).toBe("Opens the Privacy Policy in your browser");
+  expect(
+    screen.getByRole("link", { name: "Terms of Service" }).props
+      .accessibilityHint,
+  ).toBe("Opens the Terms of Service in your browser");
+});

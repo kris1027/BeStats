@@ -15,13 +15,14 @@ import {
 } from "@bestats/core/auth/username";
 import { useRouter } from "expo-router";
 import { type ReactNode, useEffect, useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { ScrollView, Text, TextInput, View } from "react-native";
 
 import {
   LoadingState,
   SignedOutState,
   StatePanel,
 } from "@/components/centered-state";
+import { ChevronRow } from "@/components/chevron-row";
 import { INPUT_CLASS } from "@/components/form-field";
 import { GlassButton } from "@/components/glass-button";
 import { Notice } from "@/components/notice";
@@ -62,7 +63,7 @@ export function AccountScreen({ notice }: { notice?: string }) {
           />
         </View>
         <View className="mt-6 self-stretch px-4">
-          <AboutRow onPress={() => router.push("/account/about")} />
+          <AboutRow />
         </View>
       </SignedOutState>
     );
@@ -118,41 +119,26 @@ export function AccountScreen({ notice }: { notice?: string }) {
       keyboardShouldPersistTaps="handled"
     >
       {username ? [header, usernamePanel] : [usernamePanel, header]}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={DELETE_ACCOUNT_COPY.heading}
+      <ChevronRow
+        label={DELETE_ACCOUNT_COPY.heading}
+        tone="destructive"
         onPress={() => router.push("/account/delete")}
-        className="min-h-11 flex-row items-center justify-between rounded-3xl border border-border bg-glass-plate-panel px-5 py-4"
-      >
-        <Text className="text-base font-semibold text-destructive">
-          {DELETE_ACCOUNT_COPY.heading}
-        </Text>
-        <Text aria-hidden className="text-lg text-text-secondary">
-          ›
-        </Text>
-      </Pressable>
-      <AboutRow onPress={() => router.push("/account/about")} />
+      />
+      <AboutRow />
     </ScrollView>
   );
 }
 
 /**
  * The row to About, where TMDB's and IGDB's logos and attribution live (spec
- * 0033, AC-14), shown signed in and signed out alike.
+ * 0033, AC-14), shown signed in and signed out alike, so both states open it
+ * through this one route (AGENTS.md section 12: attribution follows the
+ * providers' terms).
  */
-function AboutRow({ onPress }: { onPress: () => void }) {
+function AboutRow() {
+  const router = useRouter();
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel="About"
-      onPress={onPress}
-      className="min-h-11 flex-row items-center justify-between rounded-3xl border border-border bg-glass-plate-panel px-5 py-4"
-    >
-      <Text className="text-base font-semibold text-foreground">About</Text>
-      <Text aria-hidden className="text-lg text-text-secondary">
-        ›
-      </Text>
-    </Pressable>
+    <ChevronRow label="About" onPress={() => router.push("/account/about")} />
   );
 }
 

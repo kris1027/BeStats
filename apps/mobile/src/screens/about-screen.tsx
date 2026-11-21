@@ -2,7 +2,9 @@ import { TMDB_APP_ATTRIBUTION } from "@bestats/core/legal/attribution";
 import {
   IGDB_ATTRIBUTION,
   IGDB_HOME_URL,
+  PRIVACY_LABEL,
   PRIVACY_PATH,
+  TERMS_LABEL,
   TERMS_PATH,
   TMDB_HOME_URL,
 } from "@bestats/core/legal/operator";
@@ -11,6 +13,7 @@ import * as Linking from "expo-linking";
 import type { ReactNode } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
+import { ChevronRow } from "@/components/chevron-row";
 import { appVersion } from "@/lib/api";
 import { getPublicEnv } from "@/lib/env";
 
@@ -35,7 +38,8 @@ const IGDB_LOGO_SIZE = { height: 14, width: (14 * 114) / 55 };
  * 9): the app name and version, then TMDB's logo and the notice its API
  * terms require (worded for an application), then IGDB's logo and credit,
  * all from core. Each logo opens its site. Below them, the Privacy Policy and
- * Terms of Service open in Safari (prompts/mobile-about-legal-links.md).
+ * Terms of Service open in the phone's browser
+ * (prompts/mobile-about-legal-links.md).
  * Public, like the catalog it credits, so it needs no session.
  */
 export function AboutScreen() {
@@ -70,33 +74,28 @@ export function AboutScreen() {
           {IGDB_ATTRIBUTION}
         </Text>
       </Panel>
-      <LegalLink path={PRIVACY_PATH} label="Privacy Policy" />
-      <LegalLink path={TERMS_PATH} label="Terms of Service" />
+      <LegalLink path={PRIVACY_PATH} label={PRIVACY_LABEL} />
+      <LegalLink path={TERMS_PATH} label={TERMS_LABEL} />
     </ScrollView>
   );
 }
 
 /**
- * A row to one of the website's legal pages, styled like Account's About row.
- * The URL is built on press from the API's origin, which also serves the
- * pages, so a missing config fails only when tapped, never while rendering.
+ * A row to one of the website's legal pages, Account's row look
+ * (`ChevronRow`). The URL is built on press from the API's origin, which also
+ * serves the pages, so a missing config fails only when tapped, never while
+ * rendering. The hint names the page, as the plan asks (decision 4).
  */
 function LegalLink({ path, label }: { path: string; label: string }) {
   return (
-    <Pressable
-      accessibilityRole="link"
-      accessibilityLabel={label}
-      accessibilityHint="Opens in Safari"
+    <ChevronRow
+      role="link"
+      label={label}
+      hint={`Opens the ${label} in your browser`}
       onPress={() =>
         Linking.openURL(`${getPublicEnv().EXPO_PUBLIC_API_BASE_URL}${path}`)
       }
-      className="min-h-11 flex-row items-center justify-between rounded-3xl border border-border bg-glass-plate-panel px-5 py-4"
-    >
-      <Text className="text-base font-semibold text-foreground">{label}</Text>
-      <Text aria-hidden className="text-lg text-text-secondary">
-        ›
-      </Text>
-    </Pressable>
+    />
   );
 }
 
