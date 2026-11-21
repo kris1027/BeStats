@@ -1,4 +1,4 @@
-import { TMDB_ATTRIBUTION } from "@bestats/core/legal/attribution";
+import { TMDB_APP_ATTRIBUTION } from "@bestats/core/legal/attribution";
 import {
   IGDB_ATTRIBUTION,
   IGDB_HOME_URL,
@@ -30,8 +30,8 @@ const IGDB_LOGO_SIZE = { height: 14, width: (14 * 114) / 55 };
 /**
  * About (spec 0033, AC-14; prompts/mobile-offline-about.md, decisions 7 to
  * 9): the app name and version, then TMDB's logo and the notice its API
- * terms require, then IGDB's logo and credit, the same text the web footer
- * prints, from core. Each logo opens its site. Public, like the catalog it
+ * terms require (worded for an application), then IGDB's logo and credit,
+ * all from core. Each logo opens its site. Public, like the catalog it
  * credits, so it needs no session.
  */
 export function AboutScreen() {
@@ -52,7 +52,7 @@ export function AboutScreen() {
           size={TMDB_LOGO_SIZE}
         />
         <Text className="text-sm text-muted-foreground">
-          {TMDB_ATTRIBUTION}
+          {TMDB_APP_ATTRIBUTION}
         </Text>
       </Panel>
       <Panel>

@@ -1,4 +1,7 @@
-import { TMDB_ATTRIBUTION } from "@bestats/core/legal/attribution";
+import {
+  TMDB_APP_ATTRIBUTION,
+  TMDB_ATTRIBUTION,
+} from "@bestats/core/legal/attribution";
 import {
   IGDB_ATTRIBUTION,
   IGDB_HOME_URL,
@@ -17,11 +20,12 @@ import { AboutScreen } from "./about-screen";
  */
 jest.mock("expo-linking", () => ({ openURL: jest.fn() }));
 
-test("credits TMDB and IGDB with their logos and the web's text", async () => {
+test("credits TMDB and IGDB with their logos and the app's wording", async () => {
   await render(<AboutScreen />);
   expect(screen.getByText("BeStats")).toBeOnTheScreen();
   expect(screen.getByText(`Version ${appVersion()}`)).toBeOnTheScreen();
-  expect(screen.getByText(TMDB_ATTRIBUTION)).toBeOnTheScreen();
+  expect(screen.getByText(TMDB_APP_ATTRIBUTION)).toBeOnTheScreen();
+  expect(screen.queryByText(TMDB_ATTRIBUTION)).toBeNull();
   expect(screen.getByText(IGDB_ATTRIBUTION)).toBeOnTheScreen();
 
   const user = userEvent.setup();
