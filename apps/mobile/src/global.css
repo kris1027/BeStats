@@ -17,6 +17,7 @@
   --color-accent-foreground: var(--bs-color-accent-foreground);
   --color-background: var(--bs-color-background);
   --color-border: var(--bs-color-border);
+  --color-brand-mark: var(--bs-color-brand-mark);
   --color-card: var(--bs-color-card);
   --color-card-foreground: var(--bs-color-card-foreground);
   --color-destructive: var(--bs-color-destructive);

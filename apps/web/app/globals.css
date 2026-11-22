@@ -106,6 +106,14 @@
   --color-page-glow: #dc9646;
   --color-page-orb: #f5c882;
 
+  /*
+   * The app icon's and launch lockup's bars and wordmark, white on the black
+   * background (prompts/mobile-app-icon-launch.md, decision 5). The design is
+   * pure black and white, so this is not the near white foreground. Brand
+   * mark only: no text or surface may borrow it.
+   */
+  --color-brand-mark: #ffffff;
+
   /* Text greys, beyond the shadcn semantic set. */
   --color-text-label: #e2e5ef;
   --color-text-link: #d7d9e0;

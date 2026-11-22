@@ -5,9 +5,10 @@ import { DarkTheme, Stack, ThemeProvider, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { VariableContextProvider } from "nativewind";
-import { useEffect } from "react";
+import { type ReactNode, useEffect } from "react";
 import { Appearance, View } from "react-native";
 
+import { LaunchOverlay } from "@/components/launch-overlay";
 import { OfflineBanner } from "@/components/offline-banner";
 import { ToastProvider } from "@/components/toast";
 import { MediaTypeProvider } from "@/lib/media-type";
@@ -55,10 +56,7 @@ const NAV_THEME = {
  * prompts/mobile-account-deletion.md, decision 8).
  */
 function Navigator() {
-  const { loading, notice } = useSession();
-  useEffect(() => {
-    if (!loading) SplashScreen.hideAsync();
-  }, [loading]);
+  const { notice } = useSession();
   // An expired session is never silent (AGENTS.md section 11): with no
   // screen gated on the session any more, its notice opens Sign in, which
   // shows it. The router comes from the hook, not the global `router`: the
@@ -99,10 +97,20 @@ function Navigator() {
 }
 
 /**
+ * The launch animation over the app until the session has loaded; it hides
+ * the native splash itself (prompts/mobile-app-icon-launch.md, decision 9).
+ */
+function LaunchGate({ children }: { children: ReactNode }) {
+  const { loading } = useSession();
+  return <LaunchOverlay ready={!loading}>{children}</LaunchOverlay>;
+}
+
+/**
  * The app's providers: tokens, the query cache persisted for offline reads
  * (wiped of private entries at once when no session is stored), the session,
  * the media type Home and Search share, the one toast tracking writes report
- * through, and the offline banner above the stack (spec 0033, AC-13).
+ * through, the offline banner above the stack (spec 0033, AC-13), and the
+ * launch animation over all of it on cold start.
  */
 export default function RootLayout() {
   return (
@@ -117,10 +125,12 @@ export default function RootLayout() {
             <ThemeProvider value={NAV_THEME}>
               <ToastProvider>
                 <StatusBar style="light" />
-                <View className="flex-1 bg-background">
-                  <OfflineBanner />
-                  <Navigator />
-                </View>
+                <LaunchGate>
+                  <View className="flex-1 bg-background">
+                    <OfflineBanner />
+                    <Navigator />
+                  </View>
+                </LaunchGate>
               </ToastProvider>
             </ThemeProvider>
           </MediaTypeProvider>
