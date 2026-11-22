@@ -1,4 +1,4 @@
-# Verify: Mobile app (iOS and Android) · spec 0033 · updated 2026-11-19
+# Verify: Mobile app (iOS and Android) · spec 0033 · updated 2026-11-22
 _Steps derived from spec 0033 acceptance criteria. `/check verify` runs these; `/test` locks the durable ones._
 
 ## Slice 5a: shell, home, lists, search (prompts/mobile-app-shell-catalog.md)
@@ -22,9 +22,9 @@ Run against the local stack (`pnpm dev:docker`) with `npx expo start --dev-clien
 - [ ] VoiceOver on Home and Search → every card, tab, chip and button reads a label
 
 ## Commands
-- [ ] `pnpm typecheck` → passes in every package
-- [ ] `pnpm lint` → no errors
-- [ ] `pnpm test` → core, web and mobile suites pass, including `apps/mobile/src/lib/search-results.test.ts` and `apps/mobile/src/__tests__/catalog-screens.test.tsx`
+- [x] `pnpm typecheck` → passes in every package (2026-11-22, `/check verify`)
+- [x] `pnpm lint` → no errors (2026-11-22)
+- [x] `pnpm test` → core, web and mobile suites pass, including `apps/mobile/src/lib/search-results.test.ts` and `apps/mobile/src/__tests__/catalog-screens.test.tsx` (2026-11-22)
 
 ## Acceptance-criteria coverage
 - AC-10: partly (shared list paths and the Library tab placeholder); the library pages come in slice 5c
@@ -86,7 +86,7 @@ Run against the local stack (`pnpm dev:docker`) with `npx expo start --dev-clien
 - [ ] VoiceOver: the media switch and pills read their selected state; a card reads its name, pill and badge with whose rating it is → AC-14
 
 ## Commands
-- [ ] `pnpm --filter @bestats/mobile test -- library-screen` → the library suite passes (pages and names from core, routes sent, skeleton, empty and failed states including a failed refresh, the games fallback, card badges and game month lines, signed out) → AC-10, AC-11, AC-14
+- [x] `pnpm --filter @bestats/mobile test -- library-screen` → the library suite passes (pages and names from core, routes sent, skeleton, empty and failed states including a failed refresh, the games fallback, card badges and game month lines, signed out) → AC-10, AC-11, AC-14 (2026-11-22)
 
 ## Acceptance-criteria coverage
 - AC-10: pages, routes and names from core on all three tabs, the route sent and never a page key, placement drawn from the server
