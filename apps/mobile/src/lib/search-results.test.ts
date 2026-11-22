@@ -67,6 +67,16 @@ test("a filtered search counts matches over every range read", () => {
       page({
         mode: "filtered_search",
         page: 6,
+        results: [
+          {
+            id: 2,
+            title: "Dune: Part Two",
+            year: 2024,
+            releaseDate: "2024-03-01",
+            posterUrl: null,
+            communityRating: 8.2,
+          },
+        ],
         total: 300,
         totalIsExact: false,
         scanned: { fromIndex: 101, toIndex: 200 },
@@ -77,6 +87,34 @@ test("a filtered search counts matches over every range read", () => {
   expect(view).toEqual({
     kind: "results",
     countLine: "2 matches in TMDB results 1–200 of 300 for “dune”",
+  });
+});
+
+test("a filtered search counts a title two pages share once", () => {
+  const params = { ...dune, rating: 7 as const };
+  // Both pages carry the same Dune (id 1), as the screen shows it once.
+  const view = searchView(
+    params,
+    [
+      page({
+        mode: "filtered_search",
+        total: 300,
+        totalIsExact: false,
+        scanned: { fromIndex: 1, toIndex: 100 },
+      }),
+      page({
+        mode: "filtered_search",
+        page: 6,
+        total: 300,
+        totalIsExact: false,
+        scanned: { fromIndex: 101, toIndex: 200 },
+      }),
+    ],
+    true,
+  );
+  expect(view).toEqual({
+    kind: "results",
+    countLine: "1 match in TMDB results 1–200 of 300 for “dune”",
   });
 });
 

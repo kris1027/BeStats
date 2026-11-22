@@ -11,6 +11,8 @@ import {
 } from "@bestats/core/search/messages";
 import type { SearchParams } from "@bestats/core/search/params";
 
+import { joinPageResults } from "./page-results";
+
 /**
  * What the search screen shows for the pages loaded so far, in the one form
  * that is true for the mode, as the web's results do (AGENTS.md section 10;
@@ -33,7 +35,9 @@ export type SearchView =
  * The view for `pages` (every page loaded, in order) of a search for
  * `params`. Pure, so the branching is tested apart from the screen; every
  * string comes from core's `search/messages`, so the phone says what the web
- * says (apps/mobile/AGENTS.md, copy comes from core).
+ * says (apps/mobile/AGENTS.md, copy comes from core). It counts the titles
+ * `joinPageResults` keeps, the list the screen draws, so a title two pages
+ * share counts once and the count matches the cards (AGENTS.md section 10).
  */
 export function searchView(
   params: SearchParams,
@@ -41,7 +45,7 @@ export function searchView(
   hasMore: boolean,
 ): SearchView {
   const first = pages[0];
-  const results = pages.flatMap((page) => page.results);
+  const results = joinPageResults(pages);
   const noMatches = (): SearchView => ({
     kind: "no_matches",
     ...noMatchesMessage(params),
