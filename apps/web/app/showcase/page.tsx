@@ -288,6 +288,15 @@ export default function ShowcasePage() {
       </Section>
 
       <Section
+        title="Brand mark"
+        note="The mobile app icon's and launch animation's bars: pure white, not the near white foreground. Brand mark only; no text or surface may borrow it (prompts/mobile-app-icon-launch.md)."
+      >
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <Swatch name="--color-brand-mark" className="bg-brand-mark" />
+        </div>
+      </Section>
+
+      <Section
         title="Glass surfaces"
         note="The rim follows the radius at every shape, which is what the two layer background technique buys over border-image."
       >
