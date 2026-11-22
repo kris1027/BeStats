@@ -2,7 +2,7 @@
 
 This is the runbook for production, written for you, the operator. Every step is a recommendation you may run or skip. It follows spec [0018](specs/0018-deploy-and-provider-setup/index.md): Vercel hosts the app, the existing Supabase Free project holds the data, and everything Supabase knows comes from this repo.
 
-Steps that change Vercel, GitHub or the Supabase project are marked **remote**. Run them yourself from your own terminal. The Supabase CLI applies `db push` and `config push` without asking when an agent shell runs it, so never ask an agent to run one "just to see the diff".
+Steps that change Vercel, GitHub or the Supabase project are marked **remote**. Run them yourself from your own terminal. Since CLI v3, `db push --remote` and `config push` ask before they change the hosted project, and an agent can still answer for you or pass `--yes`, so never ask an agent to run one "just to see the diff".
 
 ## The facts
 
