@@ -86,3 +86,14 @@ Jest tests: each page renders the right button and label (and none on Upcoming a
 6. Turn off Wi-Fi on the Mac and tap an action: the card comes back with an offline toast and Retry.
 7. VoiceOver: each card reads as a link, then its button with the web's label.
 8. Open a title you changed from the library: its screen shows the new state.
+
+## Changes after the build
+
+Recorded after the branch review (2026-11-22), so this plan matches what shipped.
+
+- **Toast timer pauses while its action is held** (`components/toast.tsx`). An Undo or Retry pressed near the end of `UNDO_TOAST_MS` was lost when the toast closed under the finger. Found on the simulator; applies to every toast with an action, not only the library's.
+- **One library refetch per write** (`lib/tracking.ts`). `useTrackingWrite` now skips any `alsoInvalidate` key that `libraryKeys.all` already covers, because invalidating a page twice fetched it twice. This changes every tracking write in the app, and only removes duplicate fetches.
+- **Card labels live in core.** Decision 1 asked for core copy, but the build copied the web's button labels. They are now `LIBRARY_CARD_ACTION_LABELS` in `tracking/messages.ts`, read by the web's `library-card.tsx` and `game-library-card.tsx` and by the app, so decision 7's "no core change and no web change" no longer holds. A card with no title says "missing title" or "missing game" on both apps (the app had "this title"). The started test is core's `isStartedGame`. Which button each page gets stays per app: the web picks it through its card components, the app through `cardActionFor`.
+- **Mark next failure copy.** `MARK_NEXT_MESSAGES.unavailable` shows only when the season read can't name the episode; a failed episode write shows `EPISODE_TRACKING_MESSAGES.write_failed`. `useTrackingWrite`'s `failure` may be a function of the error for this.
+- **Planned bookmark.** The planned look draws a green bookmark with a dark check from views (no icon dependency), not a ✓ like the Watched and Mark buttons.
+- Names: the hook is `useLibraryCardActions(type, path, page)` and the season read uses `ensureQueryData`.
