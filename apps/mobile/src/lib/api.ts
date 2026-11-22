@@ -52,6 +52,14 @@ export function appVersion(): string {
   return Constants.expoConfig?.version ?? "0.0.0";
 }
 
+/**
+ * How long one request may wait for an answer before it fails as `network`
+ * (root AGENTS.md section 11: a failure shows visibly). Without it an
+ * unreachable API waits for the system's own timeout, about a minute on iOS,
+ * twice over with the query's one retry, behind a spinner.
+ */
+export const API_TIMEOUT_MS = 15_000;
+
 type RequestOptions = {
   method?: "GET" | "PUT" | "POST" | "DELETE";
   body?: unknown;
@@ -126,14 +134,19 @@ async function send(
   if (options.body !== undefined) headers["Content-Type"] = "application/json";
   if (token) headers.Authorization = `Bearer ${token}`;
 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
   try {
     return await fetch(`${getPublicEnv().EXPO_PUBLIC_API_BASE_URL}${path}`, {
       method: options.method ?? "GET",
       headers,
       body:
         options.body === undefined ? undefined : JSON.stringify(options.body),
+      signal: controller.signal,
     });
   } catch {
     throw new ApiError(0, "network", V1_NETWORK_MESSAGE);
+  } finally {
+    clearTimeout(timer);
   }
 }
