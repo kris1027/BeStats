@@ -4,8 +4,9 @@ import type { ConfigContext, ExpoConfig } from "expo/config";
 const PERSONAL_BUNDLE_ID = "com.kris1027.bestats.personal";
 
 /**
- * Starts from `app.json` and, only when `APP_VARIANT=personal`, renames the
- * app and swaps its iOS bundle ID for a personal one.
+ * Starts from `app.json` and, only when `APP_VARIANT=personal`, swaps its iOS
+ * bundle ID for a personal one. The home screen name stays "BeStats", since
+ * the owner wants the app named as the product; only the hidden ID differs.
  *
  * Why: `com.kris1027.bestats` is permanent once it reaches the store
  * (apps/mobile/AGENTS.md, Building with EAS), and a free personal team that
@@ -30,7 +31,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   if (process.env.APP_VARIANT !== "personal") return base;
   return {
     ...base,
-    name: "BeStats Personal",
     ios: {
       ...base.ios,
       bundleIdentifier: PERSONAL_BUNDLE_ID,
