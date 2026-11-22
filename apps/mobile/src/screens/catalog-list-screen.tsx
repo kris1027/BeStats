@@ -13,6 +13,7 @@ import { GlassButton } from "@/components/glass-button";
 import { PosterGrid } from "@/components/poster-grid";
 import { ApiError } from "@/lib/api";
 import { catalogKeys, fetchList } from "@/lib/catalog";
+import { joinPageResults } from "@/lib/page-results";
 
 /** True for the 404 a page past the last one answers: the list's end. */
 function isPastEnd(error: unknown): boolean {
@@ -62,7 +63,7 @@ export function CatalogListScreen({ list }: { list: CatalogList }) {
     );
   }
 
-  const items = query.data.pages.flatMap((page) => page.results);
+  const items = joinPageResults(query.data.pages);
   const ended =
     !query.hasNextPage ||
     (query.isFetchNextPageError && isPastEnd(query.error));
