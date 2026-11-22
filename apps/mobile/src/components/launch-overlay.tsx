@@ -45,6 +45,12 @@ const {
 const HOLD_UNTIL = APP.delay;
 const BAR_GROUP_WIDTH = barGroupWidth(LAUNCH_BARS);
 const BAR_GROUP_HEIGHT = barGroupHeight(LAUNCH_BARS);
+/**
+ * How long the native splash waits for the lockup's first layout. Layout
+ * normally lands in the first frame; past this the animation is dropped, so
+ * a lost layout event can never keep the app behind the splash.
+ */
+const LAYOUT_TIMEOUT_MS = 1000;
 
 /**
  * Where one step of the timeline is, 0 to 1 (or past 1 for an overshooting
@@ -139,6 +145,20 @@ export function LaunchOverlay({
       live = false;
     };
   }, [phase, laidOut, reduceMotion, clock]);
+
+  // If layout never comes, the native splash goes anyway and the overlay
+  // waits, blank, only for the session (the plan's "never waits longer"
+  // requirement), so nothing can leave the app stuck behind the splash.
+  useEffect(() => {
+    if (phase !== "measuring" || laidOut) return;
+    const timer = setTimeout(() => {
+      SplashScreen.hideAsync().catch(() => {});
+      clock.value = HOLD_UNTIL;
+      setPhase("playing");
+      setHeld(true);
+    }, LAYOUT_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [phase, laidOut, clock]);
 
   // Leave once the sequence is done and the app is ready behind it.
   useEffect(() => {

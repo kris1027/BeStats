@@ -73,6 +73,18 @@ test("keeps the native splash up until the lockup is measured", async () => {
   expect(hideAsync).toHaveBeenCalledTimes(1);
 });
 
+test("hides the splash and lets the app through if layout never comes", async () => {
+  await renderOverlay(true);
+  await advance(999);
+  expect(hideAsync).not.toHaveBeenCalled();
+  await advance(1);
+  expect(hideAsync).toHaveBeenCalledTimes(1);
+  // Only the app's own fade is left.
+  await advance(600);
+  expect(screen.queryByTestId("launch-overlay", HIDDEN)).toBeNull();
+  expect(screen.getByText("Home")).toBeTruthy();
+});
+
 test("leaves after the sequence once the session is ready", async () => {
   await renderOverlay(true);
   await layOut();
