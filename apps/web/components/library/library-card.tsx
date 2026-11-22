@@ -1,6 +1,8 @@
 import { libraryCardBadge } from "@bestats/core/catalog/library-card";
-import { libraryPageName } from "@bestats/core/catalog/library-list";
-import { LIBRARY_CARD_MESSAGES } from "@bestats/core/tracking/messages";
+import {
+  LIBRARY_CARD_ACTION_LABELS,
+  LIBRARY_CARD_MESSAGES,
+} from "@bestats/core/tracking/messages";
 import type { ReactNode } from "react";
 import { PosterCard } from "@/components/poster-card";
 import {
@@ -108,12 +110,12 @@ function RemoveButton({
   title: string | null;
   onRemove: () => void;
 }) {
-  const name = title ?? "missing title";
+  const name = title ?? LIBRARY_CARD_ACTION_LABELS.missingTitle;
 
   if (list === "watched") {
     return (
       <CardRoundButton
-        label={`Unmark ${name} as watched`}
+        label={LIBRARY_CARD_ACTION_LABELS.unmarkMovie(name)}
         onClick={onRemove}
         className="ml-auto"
       >
@@ -124,7 +126,7 @@ function RemoveButton({
 
   return (
     <CardRoundButton
-      label={`Remove ${name} from ${libraryPageName(list, "movie")}`}
+      label={LIBRARY_CARD_ACTION_LABELS.removeFromPage(name, list, "movie")}
       onClick={onRemove}
       corner
     >
