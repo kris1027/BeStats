@@ -7,6 +7,7 @@ import {
 import type { ConfigContext, ExpoConfig } from "expo/config";
 import appConfig from "../../app.config";
 import appJson from "../../app.json";
+import easJson from "../../eas.json";
 import { redirectSystemPath } from "../app/+native-intent";
 
 /** covers: spec 0033, AC-16 */
@@ -97,5 +98,26 @@ describe("app.config.ts variants", () => {
     const config = resolve();
     expect(config.ios?.associatedDomains).toBeUndefined();
     expect(config.ios?.bundleIdentifier).not.toBe(APP_BUNDLE_ID);
+  });
+
+  /** covers: prompts/mobile-release-prep.md, AC-1 and AC-2 */
+  it("checks EAS Update in the store build only", () => {
+    delete process.env.APP_VARIANT;
+    const store = resolve();
+    expect(store.updates?.url).toMatch(/^https:\/\/u\.expo\.dev\//);
+    expect(store.updates?.enabled).not.toBe(false);
+    expect(store.runtimeVersion).toEqual({ policy: "appVersion" });
+
+    process.env.APP_VARIANT = "personal";
+    expect(resolve().updates?.enabled).toBe(false);
+  });
+
+  it("gives every EAS build profile its own update channel", () => {
+    for (const [name, profile] of Object.entries(easJson.build)) {
+      expect({ name, channel: profile.channel }).toEqual({
+        name,
+        channel: name,
+      });
+    }
   });
 });
