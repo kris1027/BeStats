@@ -89,6 +89,7 @@ test("an accepted global sign out needs no local fallback", async () => {
   mockSignOut.mockResolvedValue({ error: null });
   await renderSignedIn();
   await act(() => signOut());
+  expect(mockSignOut).toHaveBeenCalledWith({ scope: "global" });
   expect(mockSignOutLocally).not.toHaveBeenCalled();
   expect(screen.getByText("signed out")).toBeOnTheScreen();
 });
