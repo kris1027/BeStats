@@ -124,19 +124,32 @@ export const LAUNCH_TIMELINE = {
 export const LAUNCH_TOTAL_MS =
   LAUNCH_TIMELINE.app.delay + LAUNCH_TIMELINE.app.duration;
 
-/** The bar group's width: three bars and two gaps. */
+/**
+ * The bar group's width. The icon script centres the PNG bars and the launch
+ * overlay centres its lockup by this one number, so the native splash and the
+ * overlay's first frame line up to the point (AGENTS.md section 3: follow the
+ * design; section 5: one pure rule, never a copy).
+ */
 export function barGroupWidth(spec: BrandBarSpec): number {
   return (
     spec.width * spec.heights.length + spec.gap * (spec.heights.length - 1)
   );
 }
 
-/** The bar group's height: its tallest bar. */
+/**
+ * The bar group's height, its tallest bar. The splash image is a square this
+ * tall, which is what puts the native splash's bars exactly where the overlay
+ * draws them (AGENTS.md section 3).
+ */
 export function barGroupHeight(spec: BrandBarSpec): number {
   return Math.max(...spec.heights);
 }
 
-/** Each bar's left edge and size, in the spec's own units. */
+/**
+ * Each bar's left edge and size, in the spec's own units. The rendered PNGs
+ * and the animated views both draw from this one layout, so the icon, the
+ * splash and the lockup can never show different bars (AGENTS.md section 3).
+ */
 export function barLayout(spec: BrandBarSpec): BrandBar[] {
   return spec.heights.map((height, i) => ({
     x: i * (spec.width + spec.gap),
@@ -148,7 +161,8 @@ export function barLayout(spec: BrandBarSpec): BrandBar[] {
 
 /**
  * The lockup's final scale: the design's 1.3, shrunk on a narrow phone so
- * the lockup never spans more than 230/300 of the screen.
+ * the lockup never spans more than 230/300 of the screen, the design's share
+ * (AGENTS.md section 3: every view works at phone width).
  */
 export function finalLockupScale(
   lockupWidth: number,
@@ -180,7 +194,8 @@ export interface BrandSvgOptions {
  * The icon variant is the design's 120 unit icon scaled to `size`; the splash
  * variant fills a square as tall as the bars, centred, so its `imageWidth` is
  * `SPLASH_IMAGE_POINTS`. The iOS icon gets a square background (iOS rounds
- * the corners itself and refuses transparency).
+ * the corners itself and refuses transparency). It builds on `barLayout`, so
+ * the PNGs match the bars the overlay animates (AGENTS.md section 3).
  */
 export function brandMarkSvg({
   size,

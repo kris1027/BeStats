@@ -87,6 +87,11 @@ interface WordLine {
  * `ready` (the session has loaded), so the app never shows half loaded; a
  * tap jumps to the end, and Reduce Motion shows the final lockup and fades.
  * It mounts once in the root layout, so it plays on cold start only.
+ *
+ * It is hidden from screen readers and honours Reduce Motion because every
+ * view must stay usable without sight or motion (AGENTS.md section 3), and it
+ * waits for the session rather than flashing a half loaded app
+ * (AGENTS.md section 11: never a false state).
  */
 export function LaunchOverlay({
   ready,
