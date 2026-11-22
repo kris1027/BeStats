@@ -12,6 +12,7 @@
       "!.claude",
       "!docs",
       "!design",
+      "!prompts/design",
       "!supabase",
       "!apps/web/public",
       "!apps/mobile/assets/legal",

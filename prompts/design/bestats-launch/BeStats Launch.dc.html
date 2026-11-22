@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas"><style>body{margin:0;background:#f0eee9;font-family:-apple-system,"SF Pro Display","Helvetica Neue",Helvetica,sans-serif}a{color:#1a1a1a}a:hover{color:#000}.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(0,0,0,.08);scroll-margin-top:16px}.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 8px}.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none}.dv-tname{font:600 13px/1.2 system-ui,sans-serif;color:#1a1a1a}.dv-opts{display:flex;flex-wrap:wrap;gap:36px;align-items:flex-start}.dv-opt{flex:none;display:flex;flex-direction:column;gap:12px;scroll-margin-top:16px}.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none}.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 12px/1.3 system-ui,sans-serif;color:rgba(0,0,0,.6)}.dv-opt:target .dv-oid{background:#2a78d6;color:#fff}.dv-next{margin:28px 0 0;font:12px/1.5 system-ui,sans-serif;color:rgba(0,0,0,.5)}</style></helmet>
+<section class="dv-turn" id="t3">
+<div class="dv-thd"><a class="dv-tid" href="#t3">3</a><span class="dv-tname">BeStats app icon + launch animation</span></div>
+<p style="margin:0 0 28px;font:13px/1.5 system-ui,sans-serif;color:rgba(0,0,0,.55);max-width:640px;text-wrap:pretty">The whole lockup is laid out from the start and moved with transforms only, so nothing reflows: the bars scale up centered, then glide into place while the letters wipe in.</p>
+<div class="dv-opts">
+<div class="dv-opt" id="3a">
+<div class="dv-olabel"><a class="dv-oid" href="#3a">3a</a>Inline, smooth · bars grow center-stage, glide left as BeStats wipes in</div>
+<div style="display:flex;align-items:center;gap:16px">
+<div style="width:120px;height:120px;border-radius:27px;background:#000;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(0,0,0,.18)"><div style="display:flex;align-items:flex-end;gap:9px;height:64px"><div style="width:15px;height:26px;border-radius:4px;background:#fff"></div><div style="width:15px;height:43px;border-radius:4px;background:#fff"></div><div style="width:15px;height:64px;border-radius:4px;background:#fff"></div></div></div>
+<button onClick="{{ h.replay8 }}" style="font:500 12px system-ui;padding:8px 12px;border-radius:8px;border:1px solid rgba(0,0,0,.15);background:#fff;cursor:pointer">Replay</button>
+</div>
+<div style="width:316px;height:636px;border-radius:52px;background:#0b0b0b;padding:8px;box-sizing:border-box;box-shadow:0 20px 50px rgba(0,0,0,.25)">
+<div data-phone="8" onClick="{{ h.tap8 }}" style="position:relative;width:300px;height:620px;border-radius:44px;overflow:hidden;background:linear-gradient(160deg,#ececea,#9a9a98);cursor:pointer">
+<div data-r="home" style="position:absolute;inset:0">
+<div style="position:absolute;top:14px;left:34px;font:600 14px -apple-system,Helvetica,sans-serif;color:#000">9:41</div>
+<div style="position:absolute;top:10px;left:50%;margin-left:-44px;width:88px;height:26px;border-radius:13px;background:#000"></div>
+<div style="position:absolute;top:70px;left:17px;width:266px;display:flex;flex-wrap:wrap;column-gap:14px;row-gap:16px">
+<sc-for list="{{ before }}" as="s" hint-placeholder-count="5"><div style="width:56px;display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:56px;height:56px;border-radius:14px;background:rgba(255,255,255,.55)"></div><div style="width:30px;height:6px;margin:3px 0;border-radius:3px;background:rgba(0,0,0,.18)"></div></div></sc-for>
+<div style="width:56px;display:flex;flex-direction:column;align-items:center;gap:6px"><div data-r="icon" style="width:56px;height:56px;border-radius:14px;background:#000;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.2)"><div style="display:flex;align-items:flex-end;gap:4px;height:30px"><div style="width:7px;height:12px;border-radius:2px;background:#fff"></div><div style="width:7px;height:20px;border-radius:2px;background:#fff"></div><div style="width:7px;height:30px;border-radius:2px;background:#fff"></div></div></div><div style="font:500 11px/12px -apple-system,Helvetica,sans-serif;color:#111">BeStats</div></div>
+<sc-for list="{{ after }}" as="s" hint-placeholder-count="6"><div style="width:56px;display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:56px;height:56px;border-radius:14px;background:rgba(255,255,255,.55)"></div><div style="width:30px;height:6px;margin:3px 0;border-radius:3px;background:rgba(0,0,0,.18)"></div></div></sc-for>
+</div>
+<div style="position:absolute;left:10px;right:10px;bottom:12px;height:80px;border-radius:30px;background:rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;gap:14px"><sc-for list="{{ dock }}" as="s" hint-placeholder-count="4"><div style="width:56px;height:56px;border-radius:14px;background:rgba(255,255,255,.6)"></div></sc-for></div>
+</div>
+<div data-r="overlay" style="position:absolute;left:87px;top:160px;width:56px;height:56px;border-radius:14px;background:#000;overflow:hidden;opacity:0;pointer-events:none;z-index:5">
+<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><div data-r="mark" style="display:flex;align-items:flex-end;white-space:nowrap">
+<div data-r="bars" style="flex:none;display:flex;align-items:flex-end;gap:4px;height:30px"><div data-r="bar" style="width:7px;height:12px;border-radius:2px;background:#fff;transform-origin:bottom"></div><div data-r="bar" style="width:7px;height:20px;border-radius:2px;background:#fff;transform-origin:bottom"></div><div data-r="bar" style="width:7px;height:30px;border-radius:2px;background:#fff;transform-origin:bottom"></div></div>
+<div data-r="be" style="flex:none;display:block;clip-path:inset(0 100% 0 0);opacity:0"><span data-r="betext" style="display:inline-block;padding-left:10px;font:700 34px/26px -apple-system,'Helvetica Neue',Helvetica,sans-serif;color:#fff;letter-spacing:-1px">Be</span></div>
+<div data-r="tail" style="flex:none;display:block;clip-path:inset(0 100% 0 0);opacity:0"><span data-r="tailtext" style="display:inline-block;font:700 34px/26px -apple-system,'Helvetica Neue',Helvetica,sans-serif;color:#fff;letter-spacing:-1px">Stats</span></div>
+</div></div>
+<div data-r="app" style="position:absolute;left:0;top:0;width:300px;height:620px;background:#000;color:#fff;opacity:0;padding:56px 20px 0;box-sizing:border-box;display:flex;flex-direction:column;gap:18px">
+<div style="font:700 30px/1 -apple-system,'Helvetica Neue',Helvetica,sans-serif;letter-spacing:-.5px">BeStats</div>
+<div style="display:flex;gap:8px;font:600 13px -apple-system,Helvetica,sans-serif"><div style="padding:7px 12px;border-radius:16px;background:#fff;color:#000">Series</div><div style="padding:7px 12px;border-radius:16px;background:#1c1c1e">Movies</div><div style="padding:7px 12px;border-radius:16px;background:#1c1c1e">Games</div></div>
+<div style="font:600 15px -apple-system,Helvetica,sans-serif;color:#8e8e93">Continue watching</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><sc-for list="{{ posters }}" as="s" hint-placeholder-count="4"><div style="aspect-ratio:2/3;border-radius:12px;background:repeating-linear-gradient(135deg,#161616 0 6px,#1f1f1f 6px 12px);display:flex;align-items:flex-end;padding:8px;box-sizing:border-box;font:10px ui-monospace,Menlo,monospace;color:#6b6b6b">poster</div></sc-for></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+</section>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;autoplay&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;speed&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;0.5&quot;,&quot;1&quot;,&quot;1.5&quot;],&quot;default&quot;:&quot;1&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  anims = {};
+  q(p, r) { return document.querySelector(`[data-phone="${p}"] [data-r="${r}"]`); }
+  qa(p, r) { return [...document.querySelectorAll(`[data-phone="${p}"] [data-r="${r}"]`)]; }
+  reset(p) { (this.anims[p] || []).forEach(a => a.cancel()); this.anims[p] = []; }
+  launch(p) {
+    this.reset(p);
+    const A = [], rate = Number(this.props.speed ?? 1);
+    const ease = 'cubic-bezier(.2,.8,.2,1)';
+    const an = (el, kf, o) => { if (!el) return; const a = el.animate(kf, { fill: 'both', easing: ease, ...o }); a.playbackRate = rate; A.push(a); };
+    const T = 500;
+    an(this.q(p, 'icon'), [{ opacity: 0 }, { opacity: 0 }], { duration: 1 });
+    an(this.q(p, 'overlay'), [
+      { left: '87px', top: '160px', width: '56px', height: '56px', borderRadius: '14px', opacity: 1 },
+      { left: '0px', top: '0px', width: '300px', height: '620px', borderRadius: '44px', opacity: 1 }
+    ], { duration: 480 });
+    an(this.q(p, 'home'), [{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(1.15)', opacity: 0.3 }], { duration: 480 });
+    const mark = this.q(p, 'mark'), word = this.q(p, 'word');
+    const wordIn = d => an(word, [{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'translateY(0)' }], { duration: 420, delay: d });
+    if (p === 1) {
+      an(mark, [{ transform: 'scale(1)' }, { transform: 'scale(2)', offset: .5 }, { transform: 'translateY(-6px) scale(1.7)' }], { duration: 850, delay: T });
+      wordIn(T + 500);
+    }
+    if (p === 2) {
+      an(mark, [{ transform: 'scale(1)' }, { transform: 'scale(1.8)' }], { duration: 420, delay: T });
+      this.qa(p, 'bar').forEach((b, i) => an(b, [{ transform: 'scaleY(1)' }, { transform: 'scaleY(.12)', offset: .3 }, { transform: 'scaleY(1)' }], { duration: 700, delay: T + 100 + i * 120, easing: 'cubic-bezier(.3,1.5,.5,1)' }));
+      wordIn(T + 750);
+    }
+    if (p === 3) {
+      an(mark, [{ transform: 'scale(1) rotate(0deg)' }, { transform: 'scale(1.8) rotate(360deg)' }], { duration: 1000, delay: T, easing: 'cubic-bezier(.5,0,.2,1)' });
+      an(this.q(p, 'arc'), [{ strokeDashoffset: 26.7 }, { strokeDashoffset: 106.8, offset: .3 }, { strokeDashoffset: 0 }], { duration: 1000, delay: T, easing: 'cubic-bezier(.5,0,.2,1)' });
+      an(this.q(p, 'dot'), [{ transform: 'scale(1)', transformOrigin: '28px 28px' }, { transform: 'scale(1.6)', transformOrigin: '28px 28px', offset: .85 }, { transform: 'scale(1)', transformOrigin: '28px 28px' }], { duration: 1000, delay: T });
+      wordIn(T + 850);
+    }
+    if (p === 4) {
+      const w = this.q(p, 'tailtext').offsetWidth;
+      an(mark, [{ transform: 'scale(1)' }, { transform: 'scale(1.5)' }], { duration: 450, delay: T });
+      an(this.q(p, 'tail'), [{ width: '0px' }, { width: w + 'px' }], { duration: 600, delay: T + 380, easing: 'cubic-bezier(.65,0,.25,1)' });
+      an(this.q(p, 'tailtext'), [{ opacity: 0, transform: 'translateX(-8px)' }, { opacity: 1, transform: 'translateX(0)' }], { duration: 500, delay: T + 450 });
+    }
+    if (p === 5) {
+      an(this.q(p, 'slit'), [
+        { width: '4px', height: '34px', borderRadius: '2px' },
+        { width: '4px', height: '660px', borderRadius: '2px', offset: .35 },
+        { width: '320px', height: '660px', borderRadius: '0px' }
+      ], { duration: 900, delay: T, easing: 'cubic-bezier(.7,0,.2,1)' });
+      an(word, [{ opacity: 0, letterSpacing: '6px' }, { opacity: 1, letterSpacing: '-0.5px' }], { duration: 600, delay: T + 800 });
+    }
+    if (p === 6 || p === 7) {
+      const bars = this.qa(p, 'bar');
+      bars.forEach((b, i) => an(b, [{ transform: 'scaleY(1)' }, { transform: 'scaleY(.12)', offset: .3 }, { transform: 'scaleY(1)' }], { duration: 700, delay: T + 100 + i * 120, easing: 'cubic-bezier(.3,1.5,.5,1)' }));
+      const tw = this.q(p, 'tailtext').offsetWidth;
+      if (p === 6) {
+        an(mark, [{ transform: 'scale(1)' }, { transform: 'scale(1.8)', offset: .5 }, { transform: 'translateY(-22px) scale(1.8)' }], { duration: 1000, delay: T });
+        an(word, [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'translateY(0)' }], { duration: 380, delay: T + 750 });
+        an(this.q(p, 'tail'), [{ width: '0px' }, { width: tw + 'px' }], { duration: 600, delay: T + 1050, easing: 'cubic-bezier(.65,0,.25,1)' });
+      } else {
+        const bw = this.q(p, 'betext').offsetWidth;
+        an(this.q(p, 'be'), [{ width: '0px' }, { width: bw + 'px' }], { duration: 500, delay: T + 750, easing: 'cubic-bezier(.65,0,.25,1)' });
+        an(this.q(p, 'betext'), [{ opacity: 0 }, { opacity: 1 }], { duration: 400, delay: T + 800 });
+        an(this.q(p, 'tail'), [{ width: '0px' }, { width: tw + 'px' }], { duration: 600, delay: T + 1150, easing: 'cubic-bezier(.65,0,.25,1)' });
+      }
+      an(this.q(p, 'tailtext'), [{ opacity: 0, transform: 'translateX(-8px)' }, { opacity: 1, transform: 'translateX(0)' }], { duration: 500, delay: p === 6 ? T + 1120 : T + 1220 });
+    }
+    if (p === 8) {
+      this.qa(p, 'bar').forEach((b, i) => an(b, [{ transform: 'scaleY(1)' }, { transform: 'scaleY(.12)', offset: .3 }, { transform: 'scaleY(1)' }], { duration: 700, delay: T + 100 + i * 120, easing: 'cubic-bezier(.3,1.5,.5,1)' }));
+      const rw = mark.offsetWidth, bw = this.q(p, 'bars').offsetWidth, dx = (rw - bw) / 2, sf = Math.min(1.3, 230 / rw), sb = 1.8;
+      an(mark, [
+        { transform: `translateX(${dx}px) scale(1)` },
+        { transform: `translateX(${dx * sb}px) scale(${sb})`, offset: .35 },
+        { transform: `translateX(${dx * sb}px) scale(${sb})`, offset: .5 },
+        { transform: `translateX(0px) scale(${sf})` }
+      ], { duration: 1600, delay: T, easing: 'cubic-bezier(.45,0,.2,1)' });
+      const wipe = (el, d, dur) => an(el, [{ clipPath: 'inset(0 100% 0 0)', opacity: 0 }, { clipPath: 'inset(0 0% 0 0)', opacity: 1 }], { duration: dur, delay: d, easing: 'cubic-bezier(.4,0,.2,1)' });
+      wipe(this.q(p, 'be'), T + 900, 450);
+      wipe(this.q(p, 'tail'), T + 1150, 600);
+    }
+    an(this.q(p, 'app'), [{ opacity: 0, transform: 'scale(1.04)' }, { opacity: 1, transform: 'scale(1)' }], { duration: 420, delay: (p >= 6 ? T + 2400 : T + 1700) });
+    this.anims[p] = A;
+  }
+  tap(p, e) {
+    if ((this.anims[p] || []).length) return this.reset(p);
+    if (e.target.closest('[data-r="icon"]')) this.launch(p);
+  }
+  playAll() { [8].forEach((p, i) => setTimeout(() => this.launch(p), i * 250)); }
+  componentDidMount() {
+    if (this.props.autoplay ?? true) {
+      this.t0 = setTimeout(() => this.playAll(), 900);
+      this.iv = setInterval(() => { [8].forEach(p => this.reset(p)); setTimeout(() => this.playAll(), 700); }, 6500 / Number(this.props.speed ?? 1));
+    }
+  }
+  componentWillUnmount() { clearTimeout(this.t0); clearInterval(this.iv); }
+  renderVals() {
+    const h = {};
+    [8].forEach(p => {
+      h['tap' + p] = e => this.tap(p, e);
+      h['replay' + p] = () => this.launch(p);
+    });
+    return { h, before: [1, 2, 3, 4, 5], after: [1, 2, 3, 4, 5, 6], dock: [1, 2, 3, 4], posters: [1, 2, 3, 4] };
+  }
+}
+</script>
+</body>
+</html>
