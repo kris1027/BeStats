@@ -16,6 +16,7 @@ export const TOKENS = {
   "color-accent-foreground": "#f6f7f8",
   "color-background": "#000000",
   "color-border": "rgb(255 255 255 / 12%)",
+  "color-brand-mark": "#ffffff",
   "color-card": "#101416",
   "color-card-foreground": "#f6f7f8",
   "color-destructive": "#fb8a8a",
