@@ -11,6 +11,11 @@ import RootLayout from "@/app/_layout";
  * still opens Sign in once the root navigator is ready.
  */
 jest.mock("../global.css", () => ({}));
+// expo-router's test helper swaps in its own Reanimated mock, which the
+// launch animation cannot run on; this test is about the notice, not it.
+jest.mock("@/components/launch-overlay", () => ({
+  LaunchOverlay: ({ children }: PropsWithChildren) => children,
+}));
 jest.mock("@/lib/session", () => ({
   SessionProvider: ({ children }: PropsWithChildren) => children,
   useSession: () => ({
