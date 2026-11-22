@@ -116,6 +116,7 @@ describe("/terms", () => {
     );
     expect(text).toContain("Deletion is immediate and cannot be undone");
     expect(text).toContain("The BeStats app for iPhone and Android");
+    expect(text).toContain("It may download updates to itself automatically");
   });
 
   it("opens with the app, the website and games (prompts/legal-pages-app-ready.md)", () => {

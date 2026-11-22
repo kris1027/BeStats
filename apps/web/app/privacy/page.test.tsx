@@ -144,6 +144,10 @@ describe("/privacy", () => {
     expect(text).not.toMatch(/deletion works by email request/i);
     expect(text).toContain("The BeStats app for iPhone and Android");
     expect(text).toMatch(/loads images straight from TMDB.s and IGDB.s/);
+    expect(text).toContain("it asks Expo’s update service");
+    expect(
+      PROCESSORS.find((processor) => processor.name === "Expo")?.transfer,
+    ).toMatch(/outside the EEA/);
   });
 
   it("places the data in the EU region the constant names (spec 0018, AC-23)", () => {

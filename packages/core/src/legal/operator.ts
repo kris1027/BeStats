@@ -42,7 +42,7 @@ export const MINIMUM_AGE = 16;
  * whenever the text changes materially. Pages format it in UTC and never read
  * the clock (spec 0017, AC-7).
  */
-export const LEGAL_LAST_UPDATED = "2026-11-21";
+export const LEGAL_LAST_UPDATED = "2026-11-22";
 
 /**
  * Where the production Supabase project stores your data, read from
@@ -141,6 +141,10 @@ export type Processor = {
  * YouTube joined with the title page trailers (spec 0022, AC-19): its player
  * loads only after you press Trailer. TMDB joined when images moved off
  * Vercel's optimizer onto TMDB's own CDN (prompts/tmdb-image-loader.md).
+ * Expo joined with EAS Update in the phone app (spec 0033, AC-15): every store
+ * build asks Expo's update service for a newer bundle when it starts. Its
+ * transfer line claims no contract clauses, since none was checked
+ * (prompts/mobile-release-prep.md, decision 5).
  */
 export const PROCESSORS: readonly Processor[] = [
   {
@@ -170,5 +174,13 @@ export const PROCESSORS: readonly Processor[] = [
     purpose:
       "Plays a title's trailer, only after you press Trailer on its page.",
     url: "https://www.youtube.com",
+  },
+  {
+    name: "Expo",
+    purpose:
+      "Delivers updates to the BeStats app, which checks for them when it starts and shares your IP address and device details with it.",
+    url: "https://expo.dev",
+    transfer:
+      "Expo is a United States company. The update checks the app makes reach its update service, which may serve them from outside the EEA.",
   },
 ];
