@@ -4,9 +4,11 @@ import {
   IGDB_ATTRIBUTION,
   IGDB_HOME_URL,
   JUSTWATCH_ATTRIBUTION,
+  LEGAL_LAST_UPDATED,
   OPERATOR_COUNTRY,
   OPERATOR_GITHUB_URL,
   OPERATOR_HANDLE,
+  PROCESSORS,
   SUPERVISORY_AUTHORITY,
   TMDB_HOME_URL,
 } from "@bestats/core/legal/operator";
@@ -127,6 +129,27 @@ describe("the legal pages stay static Server Components (AC-6)", () => {
   it("keeps the operator module pure, with no server-only guard (AC-10)", () => {
     expect(read(`${CORE}/legal/operator.ts`)).not.toMatch(
       /import\s+["']server-only["']/,
+    );
+  });
+});
+
+/**
+ * covers: spec 0033, AC-15
+ *
+ * The store answers are typed into two consoles by hand, so nothing renders
+ * them. Tying the file to the processors and the policy date makes any legal
+ * change fail here until someone rereads the answers.
+ */
+describe("the store privacy labels follow the policy", () => {
+  const labels = read("docs/store-privacy-labels.md");
+
+  it.each(PROCESSORS.map((processor) => processor.name))("names %s", (name) => {
+    expect(labels).toContain(name);
+  });
+
+  it("was recorded against the current LEGAL_LAST_UPDATED", () => {
+    expect(labels).toMatch(
+      new RegExp(`against \`LEGAL_LAST_UPDATED\` ${LEGAL_LAST_UPDATED}\\.`),
     );
   });
 });

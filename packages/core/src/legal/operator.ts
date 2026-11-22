@@ -178,7 +178,7 @@ export const PROCESSORS: readonly Processor[] = [
   {
     name: "Expo",
     purpose:
-      "Delivers updates to the BeStats app, which checks for them when it starts and shares your IP address and device details with it.",
+      "Delivers updates to the BeStats app, which checks for them when it starts and shares your IP address, device details and a random install ID with it.",
     url: "https://expo.dev",
     transfer:
       "Expo is a United States company. The update checks the app makes reach its update service, which may serve them from outside the EEA.",
