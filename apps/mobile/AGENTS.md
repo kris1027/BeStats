@@ -23,6 +23,7 @@ pnpm typecheck              # tsc --noEmit
 pnpm test                   # jest-expo + React Native Testing Library v14
 npx expo-doctor             # diagnose dependency and config issues
 npx expo install --fix      # fix incompatible package versions
+pnpm brand-icons            # rewrite the icon and splash PNGs from core's brand/mark.ts
 ```
 
 From the repo root, `pnpm typecheck`, `pnpm test` and `pnpm lint` cover this app too. Run them before declaring any task done.
@@ -63,6 +64,7 @@ Docs: https://docs.expo.dev/eas/index.md
 - `src/lib/movies.ts`, `shows.ts`, `games.ts`: the writes and restores per media type (`movies.ts` also reads the movie detail, keyed by `catalogKeys.movie`); `writeMovieIntent` and `writeGameIntent` pick the request for one core intent. `src/lib/tracking.ts`: `trackingKeys` (every private key starts with `PRIVATE_QUERY_ROOT`, `"me"`, defined in `query-client.ts` beside `clearPrivateQueries()`, so they are wiped together), the title and season state reads, `postRestore`, `useTrackingWrite` and `useUndoToast`.
 - `src/lib/library.ts`: `libraryKeys` (under `PRIVATE_QUERY_ROOT`, invalidated by every tracking write; `useTrackingWrite` leaves a key under it to that one invalidation, since invalidating a page twice fetches it twice) and `useLibraryPage`, the infinite `/api/v1/me/library` read sent by route and type, never a page key. `src/screens/library-screen.tsx`: the Library tab, its page from the `type` and `path` params (`parseLibraryPathParam`, falling back to the type's first page); a failed first load or refresh shows the failed panel, never stale cards or the empty copy. `src/lib/library-card.ts`: `libraryCardView`, which takes every badge, date pill and game month line from core's `catalog/library-card.ts` (the web cards read the same rules), drawn by `components/library-card.tsx`. `src/lib/library-actions.ts`: `cardActionFor` (each card's quick action per library page, as the web's, its label from core's `LIBRARY_CARD_ACTION_LABELS`, which the web cards read too) and `useLibraryCardActions`, whose writes and Undos go through `useTrackingWrite` with the page's cached query as their state; `components/card-action-button.tsx` draws the button as its own pressable beside the card link, never inside it, with a 44 point tap area (prompts/mobile-card-quick-actions.md).
 - `src/theme/token-vars.ts` and `src/global.css`: colour tokens (see Styling).
+- `src/components/launch-overlay.tsx`: `LaunchOverlay`, the cold start animation the root layout wraps around the app (`LaunchGate`, ready once the session has loaded). It alone calls `SplashScreen.hideAsync()`: one frame after its lockup is measured, or after 1000 ms if layout never comes, so never hide the splash anywhere else. Its sizes and times come from core's `brand/mark.ts`, which `scripts/brand-icons.mts` also renders the icon and splash PNGs from (with `sharp`), so after changing the mark run `pnpm brand-icons` and rebuild the native app (prompts/mobile-app-icon-launch.md).
 
 ## BeStats rules
 
@@ -89,6 +91,7 @@ Docs: https://docs.expo.dev/eas/index.md
 
 - Jest with the `jest-expo` preset and React Native Testing Library v14 (always `await render(...)`), set up in `jest.setup.ts` (native module stand ins such as AsyncStorage). Screens render through `renderRouter` from `expo-router/testing-library`.
 - `jest.mock` factories may only reference variables named `mock…`.
+- Reanimated and `react-native-worklets` are replaced in `jest.setup.ts` by `src/test-utils/reanimated-mock.ts`, since Reanimated's own mock loads a runtime jest-expo cannot run; animation durations follow Jest's fake timers. A `renderRouter` test that mounts the root layout stubs `@/components/launch-overlay`, because expo-router's helper swaps in its own Reanimated mock.
 - Title screen tests use `src/test-utils/title-harness.tsx`: `createApiMock()` answers `apiRequest` by method and path and records each call, so a test asserts the exact route and body a write sends; an unexpected call rejects. Wire it with `jest.mock("@/lib/api", …)` calling `mockApi.handle`.
 - A test that imports the root `_layout.tsx` mocks `../global.css` (`jest.mock("../global.css", () => ({}))`), since Jest cannot parse it.
 - TypeScript 6 loads no global types by default, so `tsconfig.json` lists `jest` and `node` in `types`.
