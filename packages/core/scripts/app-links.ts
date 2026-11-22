@@ -22,7 +22,12 @@ export const WELL_KNOWN_DIR = fileURLToPath(
 export const AASA_FILE = "apple-app-site-association";
 export const ASSET_LINKS_FILE = "assetlinks.json";
 
-/** Both files' text, two space JSON with a final newline. */
+/**
+ * Both files' text, exactly as committed. The drift test compares the
+ * committed files with this output byte for byte, so the script and the
+ * test share one renderer rather than two formatting choices
+ * (packages/core/AGENTS.md, a rule lives in one package).
+ */
 export function renderAppLinkFiles(
   teamId: string,
   fingerprints: readonly string[],

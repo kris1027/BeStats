@@ -25,7 +25,8 @@ export const APP_LINK_TITLE_PREFIXES = ["/movies/", "/shows/", "/games/"];
  * Whether a path belongs in the app: a title path or the reset path, and
  * nothing else (spec 0033, AC-16). Both the app's incoming link rewrite and
  * the two verification files read this one list, so the OS and the router can
- * never disagree about which links the app owns.
+ * never disagree about which links the app owns (packages/core/AGENTS.md, a
+ * rule lives in one package).
  */
 export function isAppLinkPath(path: string): boolean {
   if (path === APP_RESET_PATH) return true;
@@ -72,7 +73,8 @@ export function appleAppSiteAssociation(teamId: string) {
  * The Android `assetlinks.json` document (spec 0033, child 0036), for the
  * SHA-256 fingerprints of the app signing key (Play's, plus the upload key's
  * while testing builds outside Play). Same reasoning as
- * `appleAppSiteAssociation`: built from real IDs, never committed blank.
+ * `appleAppSiteAssociation`: built from real IDs, never committed blank
+ * (AGENTS.md section 14).
  *
  * @param fingerprints Colon separated uppercase hex, as `eas credentials`
  * and the Play Console print them.
@@ -104,7 +106,7 @@ export function assetLinks(fingerprints: readonly string[]) {
  *
  * The origin comes from the app's validated config, never from input, and the
  * path is fixed, so no caller can point a reset elsewhere; Supabase's
- * redirect allow list is the second check.
+ * redirect allow list is the second check (AGENTS.md section 11).
  *
  * @param siteOrigin The web project's URL; only its origin is used.
  * @returns The absolute URL, or null when the value is not http(s).

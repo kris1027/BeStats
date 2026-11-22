@@ -27,7 +27,8 @@ import { tokenColor } from "@/theme/token-vars";
  * code stays on this phone (prompts/mobile-deep-links.md, decisions 6 and 7).
  * Like the web, any answer but a rate limit reads as "on its way", so the
  * screen never tells whether an address has an account. While the build
- * sends no email it shows the same notice as the web and no form.
+ * sends no email it shows the same notice as the web and no form, never a
+ * false success (AGENTS.md section 11).
  */
 export default function ForgotPassword() {
   const env = getPublicEnv();

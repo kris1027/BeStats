@@ -8,6 +8,7 @@ import { isAppLinkPath } from "@bestats/core/links/app-links";
  * decides here: a title path or `/reset-password/app` passes through with its
  * query (the reset code rides in it), and anything else opens Home rather than
  * a half matched route. Never throws, since a throw here crashes the app.
+ * Only known paths pass, the input validation AGENTS.md section 11 asks for.
  */
 export function redirectSystemPath({ path }: { path: string }): string {
   try {
