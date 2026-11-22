@@ -86,6 +86,14 @@ function Navigator() {
         name="sign-up"
         options={{ title: "Create account", presentation: "modal" }}
       />
+      <Stack.Screen
+        name="forgot-password"
+        options={{ title: "Forgot password", presentation: "modal" }}
+      />
+      <Stack.Screen
+        name="reset-password/app"
+        options={{ title: "Set a new password", presentation: "modal" }}
+      />
     </Stack>
   );
 }
