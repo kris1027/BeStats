@@ -38,6 +38,7 @@ import { GlassButton } from "@/components/glass-button";
 import { LibraryCard } from "@/components/library-card";
 import { MediaSwitchView } from "@/components/media-switch";
 import { useLibraryPage } from "@/lib/library";
+import { cardActionFor, useLibraryCardActions } from "@/lib/library-actions";
 import { useMediaType } from "@/lib/media-type";
 import { useSession } from "@/lib/session";
 import { tokenColor } from "@/theme/token-vars";
@@ -159,6 +160,7 @@ export function LibraryScreen() {
   const params = useLocalSearchParams<{ type?: string; path?: string }>();
   const { type, path, page } = resolveLibraryParams(params);
   const query = useLibraryPage(type, path, Boolean(session));
+  const actions = useLibraryCardActions(type, path, page);
   const { setMediaType } = useMediaType();
   const { width } = useWindowDimensions();
   const cardWidth = Math.floor(
@@ -290,16 +292,30 @@ export function LibraryScreen() {
           tintColor={tokenColor("color-foreground")}
         />
       }
-      renderItem={({ item }) => (
-        <View>
-          <LibraryCard
-            entry={item}
-            page={page}
-            today={today}
-            width={cardWidth}
-          />
-        </View>
-      )}
+      renderItem={({ item }) => {
+        // The web card's quick action for this page, if it has one
+        // (prompts/mobile-card-quick-actions.md, decision 1).
+        const action = cardActionFor(item, page);
+        return (
+          <View>
+            <LibraryCard
+              entry={item}
+              page={page}
+              today={today}
+              width={cardWidth}
+              quick={
+                action
+                  ? {
+                      action,
+                      disabled: actions.isPending(item),
+                      onPress: () => actions.run(item, action),
+                    }
+                  : undefined
+              }
+            />
+          </View>
+        );
+      }}
     />
   );
 }
