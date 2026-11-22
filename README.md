@@ -159,7 +159,7 @@ The live checks read their credentials from the environment or `apps/web/.env.lo
 
 ## Deployment
 
-Vercel hosts the web app and its API in Frankfurt (`fra1`), next to the Supabase project in `eu-central-1`. Schema and auth settings reach the cloud only from this repo, through `supabase db push` and `supabase config push`. The runbook, including the firewall rules, is [docs/deploy.md](docs/deploy.md). The app is not in the App Store yet; EAS builds and store release are planned in [spec 0033](docs/specs/0033-mobile-app-expo/index.md).
+Vercel hosts the web app and its API in Frankfurt (`fra1`), next to the Supabase project in `eu-central-1`. Schema and auth settings reach the cloud only from this repo, through `supabase db push --remote` and `supabase config push`. The runbook, including the firewall rules, is [docs/deploy.md](docs/deploy.md). The app is not in the App Store yet; EAS builds and store release are planned in [spec 0033](docs/specs/0033-mobile-app-expo/index.md).
 
 ## Repository map
 

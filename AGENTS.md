@@ -128,7 +128,7 @@ Planned in [docs/scope/games.md](docs/scope/games.md) (G1 to G10, all shipped). 
 - Supabase clients: `lib/supabase/client.ts` (browser) and the async `lib/supabase/server.ts`, created per request.
 - A colour value lives only in `app/globals.css` (Tailwind v4 is CSS first; there is no `tailwind.config.*`); `design-tokens-boundary.test.ts` enforces it. Its one copy, `packages/core/src/tokens.generated.ts` for the mobile app, is written by `pnpm tokens` after any token change (`tokens.test.ts` fails while it is stale).
 - Legal facts live only in `packages/core/src/legal/operator.ts` (with `IGDB_ATTRIBUTION`) and `packages/core/src/legal/attribution.ts` (`TMDB_ATTRIBUTION`), checked by `apps/web/lib/legal/boundary.test.ts`. A change that adds a processor, email provider or analytics updates `PROCESSORS`, `/privacy`, `/terms`, `LEGAL_LAST_UPDATED` and the store answers in `docs/store-privacy-labels.md` in the same PR. Never edit `public/tmdb-logo.svg` or `public/igdb-logo.svg` (hash checked).
-- Production: push a migration with `supabase db push` before merging its PR; auth settings reach the cloud only through `supabase config push`. Both run from an agent shell without a prompt, so run them only once approved. Functions are pinned to `fra1` beside Supabase `eu-central-1`.
+- Production: push a migration with `supabase db push --remote` before merging its PR (CLI v3 targets the local stack without `--remote`); auth settings reach the cloud only through `supabase config push`. Both ask first and refuse to run unattended without `--yes`, so pass `--yes` only once approved. Functions are pinned to `fra1` beside Supabase `eu-central-1`.
 
 ## Code conventions
 
