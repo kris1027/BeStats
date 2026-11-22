@@ -3,6 +3,8 @@
  * holds the release gate), AC-7 (Undo of a removal or a cleared score), and
  * AGENTS.md "Games" (a status and a score are separate requests).
  */
+import type { ClearedOf } from "@bestats/core/api/v1/cleared";
+
 const mockApiRequest = jest.fn();
 jest.mock("./api", () => ({
   ApiError: class ApiError extends Error {},
@@ -17,6 +19,8 @@ const {
   restoreGame,
   writeGameIntent,
 } = require("./games") as typeof import("./games");
+const { restoreBodySchema } =
+  require("@bestats/core/api/v1/cleared") as typeof import("@bestats/core/api/v1/cleared");
 const { v1GameWriteOkSchema } =
   require("@bestats/core/api/v1/game") as typeof import("@bestats/core/api/v1/game");
 
@@ -90,14 +94,26 @@ describe("writeGameIntent", () => {
 });
 
 describe("restoreGame", () => {
+  // A full Undo as the write returned it, so each body these tests pin is one
+  // the restore route accepts (`restoreBodySchema`), never a cast stand in.
+  const previous = {
+    status: "finished",
+    rating: 9,
+    addedAt: "2026-10-01T08:00:00+00:00",
+    startedAt: "2026-10-02T08:00:00+00:00",
+    finishedAt: "2026-11-20T21:00:00+00:00",
+  } as const;
+  const restoreBody = restoreBodySchema("game_status", "game_removed");
+
   test("posts the removal Undo with its removedAt to the game's restore route", async () => {
-    const cleared = {
+    const cleared: ClearedOf<"game_removed"> = {
       kind: "game_removed",
       gameId: 1942,
-      previous: { status: "finished", rating: 9 },
+      previous,
       removedAt: "2026-11-21T10:00:00+00:00",
-    } as const;
-    await restoreGame(cleared as never);
+    };
+    expect(restoreBody.safeParse({ cleared }).success).toBe(true);
+    await restoreGame(cleared);
     expect(lastCall()).toEqual({
       path: "/api/v1/me/games/1942/restore",
       schema: v1GameWriteOkSchema,
@@ -106,12 +122,13 @@ describe("restoreGame", () => {
   });
 
   test("posts a cleared score Undo to the same route", async () => {
-    const cleared = {
+    const cleared: ClearedOf<"game_status"> = {
       kind: "game_status",
       gameId: 1942,
-      previous: { status: "finished", rating: 9 },
-    } as const;
-    await restoreGame(cleared as never);
+      previous,
+    };
+    expect(restoreBody.safeParse({ cleared }).success).toBe(true);
+    await restoreGame(cleared);
     expect(lastCall().path).toBe("/api/v1/me/games/1942/restore");
     expect(lastCall().options?.body).toEqual({ cleared });
   });
