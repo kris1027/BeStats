@@ -15,7 +15,7 @@ jest.mock("./env", () => ({
 }));
 jest.mock("expo-constants", () => ({ expoConfig: { version: "1.0.0" } }));
 
-const { ApiError, apiRequest, setSessionExpiredHandler } =
+const { API_TIMEOUT_MS, ApiError, apiRequest, setSessionExpiredHandler } =
   require("./api") as typeof import("./api");
 const { V1_ERROR_MESSAGES, V1_NETWORK_MESSAGE } =
   require("@bestats/core/api/v1/errors") as typeof import("@bestats/core/api/v1/errors");
@@ -147,4 +147,73 @@ test("says offline when the request never leaves", async () => {
     code: "network",
     message: V1_NETWORK_MESSAGE,
   });
+});
+
+test("gives up on a request with no answer and says offline", async () => {
+  jest.useFakeTimers();
+  try {
+    // An unreachable server: fetch never settles until its signal aborts.
+    fetchMock.mockImplementation(
+      (_url: string, init: { signal?: AbortSignal }) =>
+        new Promise((_resolve, reject) => {
+          init.signal?.addEventListener("abort", () =>
+            reject(new DOMException("Aborted", "AbortError")),
+          );
+        }),
+    );
+    const settled = apiRequest("/api/v1/movies/1", schema).catch(
+      (caught) => caught,
+    );
+    await jest.advanceTimersByTimeAsync(API_TIMEOUT_MS);
+    await expect(settled).resolves.toMatchObject({
+      status: 0,
+      code: "network",
+      message: V1_NETWORK_MESSAGE,
+    });
+  } finally {
+    jest.useRealTimers();
+  }
+});
+
+test("gives up on an answer whose body stalls and says offline", async () => {
+  jest.useFakeTimers();
+  try {
+    // Headers arrive, then the body never finishes until the signal aborts.
+    fetchMock.mockImplementation(
+      async (_url: string, init: { signal?: AbortSignal }) => ({
+        ok: true,
+        status: 200,
+        json: () =>
+          new Promise((_resolve, reject) => {
+            init.signal?.addEventListener("abort", () =>
+              reject(new DOMException("Aborted", "AbortError")),
+            );
+          }),
+      }),
+    );
+    const settled = apiRequest("/api/v1/movies/1", schema).catch(
+      (caught) => caught,
+    );
+    await jest.advanceTimersByTimeAsync(API_TIMEOUT_MS);
+    await expect(settled).resolves.toMatchObject({
+      status: 0,
+      code: "network",
+      message: V1_NETWORK_MESSAGE,
+    });
+  } finally {
+    jest.useRealTimers();
+  }
+});
+
+test("clears its timer once the answer is read", async () => {
+  jest.useFakeTimers();
+  try {
+    fetchMock.mockResolvedValue(respond(200, { ok: true }));
+    await expect(apiRequest("/api/v1/movies/1", schema)).resolves.toEqual({
+      ok: true,
+    });
+    expect(jest.getTimerCount()).toBe(0);
+  } finally {
+    jest.useRealTimers();
+  }
 });

@@ -28,6 +28,7 @@ import { PosterGrid } from "@/components/poster-grid";
 import { ApiError } from "@/lib/api";
 import { catalogKeys, fetchSearch } from "@/lib/catalog";
 import { useMediaType } from "@/lib/media-type";
+import { joinPageResults } from "@/lib/page-results";
 import { searchView } from "@/lib/search-results";
 import { tokenColor } from "@/theme/token-vars";
 
@@ -180,7 +181,7 @@ export function SearchScreen() {
   const nextFailed = query.isFetchNextPageError && !isPastEnd(query.error);
   const view = pages.length > 0 ? searchView(params, pages, !ended) : null;
   const filteredSearch = pages[0]?.mode === "filtered_search";
-  const items = pages.flatMap((page) => page.results);
+  const items = joinPageResults(pages);
 
   const more = query.isFetchingNextPage ? (
     <ActivityIndicator className="py-6" accessibilityLabel="Loading more" />
