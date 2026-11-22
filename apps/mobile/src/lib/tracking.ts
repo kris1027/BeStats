@@ -12,6 +12,7 @@ import {
   UNDO_ACTION_LABEL,
 } from "@bestats/core/tracking/messages";
 import {
+  partialMatchKey,
   type QueryKey,
   useMutation,
   useQueryClient,
@@ -211,10 +212,15 @@ export function useTrackingWrite<TState, TVars, TResult>({
     onSuccess: (result, vars) => onSuccess?.(result, vars),
     onSettled: async () => {
       if (queries.isMutating({ mutationKey: stateKey }) > 1) return;
+      // Every write can move a title between library pages, so the pages
+      // reload when the Library tab is opened again (AGENTS.md section 9).
+      // A key `libraryKeys.all` already covers (a library card's own page)
+      // is left to it: invalidating it twice fetches the page twice.
+      const keys = [stateKey, ...alsoInvalidate].filter(
+        (queryKey) => !partialMatchKey(queryKey, libraryKeys.all),
+      );
       await Promise.all(
-        // Every write can move a title between library pages, so the pages
-        // reload when the Library tab is opened again (AGENTS.md section 9).
-        [stateKey, ...alsoInvalidate, libraryKeys.all].map((queryKey) =>
+        [...keys, libraryKeys.all].map((queryKey) =>
           queries.invalidateQueries({ queryKey }),
         ),
       );
