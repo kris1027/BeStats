@@ -1,6 +1,6 @@
 /**
  * The BeStats mark: three bars rising left to right, white on black
- * (Claude Design option 3a, prompts/design/bestats-launch/).
+ * (Claude Design project c4d98c23, option 3a; prompts/mobile-app-icon-launch.md).
  *
  * Every size and time the app icon, the native splash and the launch
  * animation use lives here, as plain numbers, so the PNGs the icon script

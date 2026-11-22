@@ -4,7 +4,7 @@
 
 Replace Expo's template icon (the blue "A" on a grid) and the static blue splash with the BeStats mark from Claude Design option 3a, and play the design's launch animation on cold start: the bars breathe and grow centre stage, then glide left while "Be" and "Stats" wipe in, and the app fades in over it.
 
-Design reference: `prompts/design/bestats-launch/BeStats Launch.dc.html` (exported 2026-11-22 from claude.ai/design project c4d98c23, option 3a, `launch(8)`). `support.js` beside it is only the design tool's runtime.
+Design reference: claude.ai/design project c4d98c23, option 3a, `launch(8)`. Its export was committed under `prompts/design/bestats-launch/` while building and removed afterwards; every number it set now lives in `packages/core/src/brand/mark.ts`.
 
 ## Inspected code
 
@@ -56,7 +56,7 @@ Agreed in the grilling session on 2026-11-22.
 - `apps/mobile/src/components/launch-overlay.tsx` (new)
 - `apps/mobile/src/app/_layout.tsx` (mount the overlay, move `hideAsync`)
 - `apps/mobile/src/__tests__/launch-overlay.test.tsx`, `apps/mobile/src/__tests__/brand-assets.test.ts` (new); `jest.setup.ts` if Reanimated needs its mock
-- `prompts/design/bestats-launch/` (the design export, committed as the reference)
+- `prompts/design/bestats-launch/` (the design export, committed as the reference; removed after the build)
 - `apps/mobile/AGENTS.md` and `docs/scope/scope.md` through `/sync` afterwards.
 
 ## Requirements
@@ -114,5 +114,5 @@ Recorded after the build (2026-11-22), so this plan matches what shipped.
 - **The words' baseline comes from the laid out text.** The design sets it on the bars' bottom edge. A fixed 40 point word box made Yoga shrink the text to 51 points and push the glyphs 3 points down, so each word takes its measured line height and drops by `height - ascender` (`onTextLayout`). Measured on the simulator: bars and the "B" end within a pixel.
 - **Jest uses a small Reanimated stand in** (`src/test-utils/reanimated-mock.ts`, wired in `jest.setup.ts`). Reanimated 4.7's own mock and its Jest resolver both load its native or web runtime, which does not run under jest-expo. The stand in keeps animation durations on Jest's timers. `session-notice.test.tsx` stubs the overlay, because expo-router's test helper replaces Reanimated with its own mock.
 - **A layout timeout backs up the hand-over.** The native splash hides only once the lockup is measured, so a layout event that never arrived would keep it up for good. After 1000 ms without layout the overlay hides the splash, drops the animation and leaves as soon as the session has loaded (found in code review).
-- **Biome skips `prompts/design/`**, the vendored design export.
+- **The design export was removed after the build**, along with the Biome ignore it needed. The shipped app and `brand/mark.ts` are the reference now, as for the web since the `design/` artboards went (2026-10-06).
 - **Not checked: Android** (decision 10). No Android emulator was run, so the adaptive icon, the monochrome icon and the Android 12+ splash handoff still need a look.
