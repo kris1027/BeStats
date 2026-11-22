@@ -65,9 +65,8 @@ describe("/reset-password/app", () => {
       ).toBeInTheDocument();
       expect(screen.getByText(/only works in the BeStats app/)).toBeVisible();
       expect(container.querySelector("form")).toBeNull();
-      expect(
-        screen.getByRole("link", { name: "Back to sign in" }),
-      ).toHaveAttribute("href", "/sign-in");
+      // No link out: while the website is off, every other page is a 403.
+      expect(screen.queryByRole("link")).toBeNull();
     },
   );
 });
