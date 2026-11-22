@@ -2,12 +2,11 @@ import {
   ACCOUNT_COPY,
   AUTH_MESSAGES,
   AUTH_OUTCOME,
-  SIGN_IN_NOTICES,
-  type SignInNotice,
+  signInNoticeCopy,
 } from "@bestats/core/auth/messages";
 import { signInSchema } from "@bestats/core/auth/schemas";
 import { SIGN_IN_ACTION_LABEL } from "@bestats/core/tracking/messages";
-import { router, useIsFocused, useLocalSearchParams } from "expo-router";
+import { useIsFocused, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { KeyboardAvoidingView, Platform, TextInput, View } from "react-native";
 
@@ -34,11 +33,9 @@ import { tokenColor } from "@/theme/token-vars";
  */
 export default function SignIn() {
   const { session, notice, clearNotice } = useSession();
+  const router = useRouter();
   const params = useLocalSearchParams<{ notice?: string }>();
-  const linkNotice =
-    params.notice && params.notice in SIGN_IN_NOTICES
-      ? SIGN_IN_NOTICES[params.notice as SignInNotice]
-      : null;
+  const linkNotice = signInNoticeCopy(params.notice);
   const emailDelivery = getPublicEnv().EXPO_PUBLIC_AUTH_EMAIL_DELIVERY;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -137,10 +134,11 @@ export default function SignIn() {
  */
 function CloseSignIn() {
   const focused = useIsFocused();
+  const router = useRouter();
   useEffect(() => {
     if (!focused) return;
     if (router.canGoBack()) router.back();
     else router.replace("/");
-  }, [focused]);
+  }, [focused, router]);
   return null;
 }

@@ -10,6 +10,7 @@ import {
   SIGN_IN_NOTICE,
   SIGN_IN_NOTICES,
   signedInAs,
+  signInNoticeCopy,
 } from "./messages";
 import { signInSchema } from "./schemas";
 
@@ -117,6 +118,24 @@ describe("sign in notices (AC-8)", () => {
     const copy = SIGN_IN_NOTICES[SIGN_IN_NOTICE.passwordReset];
     expect(copy).toMatch(/new password/i);
     expect(copy).toMatch(/sign in/i);
+  });
+
+  it("looks up a known key from the query string", () => {
+    expect(signInNoticeCopy(SIGN_IN_NOTICE.passwordReset)).toBe(
+      SIGN_IN_NOTICES[SIGN_IN_NOTICE.passwordReset],
+    );
+  });
+
+  it.each([
+    undefined,
+    "",
+    "nope",
+    "toString",
+    "constructor",
+    "__proto__",
+    ["password-reset"],
+  ])("refuses %j, including inherited names", (code) => {
+    expect(signInNoticeCopy(code)).toBeNull();
   });
 });
 
