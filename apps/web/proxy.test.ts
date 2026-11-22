@@ -400,9 +400,19 @@ describe("the proxy matcher", () => {
     expect(matches(url)).toBe(false);
   });
 
+  // covers: spec 0033, AC-16. The app link files are fetched and cached by
+  // Apple's and Google's CDNs, so no refresh may attach Set-Cookie to them.
+  it.each([
+    "/.well-known/apple-app-site-association",
+    "/.well-known/assetlinks.json",
+  ])("skips the app link file %s", (url) => {
+    expect(matches(url)).toBe(false);
+  });
+
   it.each([
     "/search",
     "/search?q=api/",
+    "/reset-password/app",
     "/movies/robots.txt",
     "/robots.txt.bak",
   ])("still runs for %s", (url) => {

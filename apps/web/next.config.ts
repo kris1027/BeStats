@@ -88,6 +88,25 @@ const nextConfig: NextConfig = {
     ];
   },
   /**
+   * The two link verification files are JSON, and Apple's has no extension,
+   * so without this it would be served as `application/octet-stream` and the
+   * app's Universal Links would never verify (spec 0033, child 0036). The
+   * files themselves come from `pnpm app-links` once the Apple Team ID and
+   * the Android signing fingerprint exist (prompts/mobile-deep-links.md).
+   */
+  async headers() {
+    return [
+      {
+        source: "/.well-known/apple-app-site-association",
+        headers: [{ key: "Content-Type", value: "application/json" }],
+      },
+      {
+        source: "/.well-known/assetlinks.json",
+        headers: [{ key: "Content-Type", value: "application/json" }],
+      },
+    ];
+  },
+  /**
    * A custom loader points every `next/image` at its host's own pre-sized
    * files, so the browser loads from TMDB's or IGDB's CDN and Vercel's
    * optimizer, whose Hobby quota a catalog this size outgrows, never runs
