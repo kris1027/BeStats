@@ -74,6 +74,12 @@
         "projectId": "87727533-e590-47f5-bc93-3670ce25d07f"
       }
     },
-    "owner": "kris1027dev"
+    "owner": "kris1027dev",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/87727533-e590-47f5-bc93-3670ce25d07f"
+    }
   }
 }

@@ -75,7 +75,8 @@ export default function TermsPage() {
         </p>
         <p>
           The BeStats app for iPhone and Android uses the same account and the
-          same terms as the website, and needs an internet connection too.
+          same terms as the website, and needs an internet connection too. It
+          may download updates to itself automatically.
         </p>
       </LegalSection>
 

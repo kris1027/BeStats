@@ -7,6 +7,7 @@ import {
 import type { ConfigContext, ExpoConfig } from "expo/config";
 import appConfig from "../../app.config";
 import appJson from "../../app.json";
+import easJson from "../../eas.json";
 import { redirectSystemPath } from "../app/+native-intent";
 
 /** covers: spec 0033, AC-16 */
@@ -69,33 +70,64 @@ describe("app.json link config", () => {
 });
 
 /**
+ * Both config suites set `APP_VARIANT`, so each test gets back whatever the
+ * shell started with.
+ */
+const startingVariant = process.env.APP_VARIANT;
+afterEach(() => {
+  if (startingVariant === undefined) delete process.env.APP_VARIANT;
+  else process.env.APP_VARIANT = startingVariant;
+});
+
+/** The config `app.config.ts` returns for a variant, or for none. */
+function configForVariant(variant?: "personal"): ExpoConfig {
+  if (variant === undefined) delete process.env.APP_VARIANT;
+  else process.env.APP_VARIANT = variant;
+  return appConfig({ config: appJson.expo } as unknown as ConfigContext);
+}
+
+/**
  * covers: prompts/mobile-deep-links.md, AC-1
  *
  * A free Apple team cannot sign the associated domains entitlement, so the
  * personal build must drop it while the store build keeps it.
  */
 describe("app.config.ts variants", () => {
-  const original = process.env.APP_VARIANT;
-  afterEach(() => {
-    if (original === undefined) delete process.env.APP_VARIANT;
-    else process.env.APP_VARIANT = original;
-  });
-
-  function resolve(): ExpoConfig {
-    return appConfig({ config: appJson.expo } as unknown as ConfigContext);
-  }
-
   it("keeps the associated domains without a variant", () => {
-    delete process.env.APP_VARIANT;
-    expect(resolve().ios?.associatedDomains).toEqual([
+    expect(configForVariant().ios?.associatedDomains).toEqual([
       `applinks:${APP_LINK_HOST}`,
     ]);
   });
 
   it("has no associated domains in the personal variant", () => {
-    process.env.APP_VARIANT = "personal";
-    const config = resolve();
+    const config = configForVariant("personal");
     expect(config.ios?.associatedDomains).toBeUndefined();
     expect(config.ios?.bundleIdentifier).not.toBe(APP_BUNDLE_ID);
+  });
+});
+
+/**
+ * covers: prompts/mobile-release-prep.md, AC-1 and AC-2
+ *
+ * An update reaches a build only through its channel, and only the store build
+ * may call Expo, since the personal build has no channel and no EAS project.
+ */
+describe("EAS Update config", () => {
+  it("checks EAS Update in the store build only", () => {
+    const store = configForVariant();
+    expect(store.updates?.url).toMatch(/^https:\/\/u\.expo\.dev\//);
+    expect(store.updates?.enabled).not.toBe(false);
+    expect(store.runtimeVersion).toEqual({ policy: "appVersion" });
+
+    expect(configForVariant("personal").updates?.enabled).toBe(false);
+  });
+
+  it("gives every EAS build profile its own update channel", () => {
+    for (const [name, profile] of Object.entries(easJson.build)) {
+      expect({ name, channel: profile.channel }).toEqual({
+        name,
+        channel: name,
+      });
+    }
   });
 });

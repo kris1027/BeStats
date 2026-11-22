@@ -20,6 +20,10 @@ const PERSONAL_BUNDLE_ID = "com.kris1027.bestats.personal";
  * cannot sign that entitlement, so the build would fail, and Universal Links
  * only verify for the store app ID anyway (prompts/mobile-deep-links.md,
  * decision 4).
+ *
+ * It also turns EAS Update off: Xcode builds it, not EAS, so it carries no
+ * channel and could never receive an update, and with updates off it never
+ * calls Expo's servers at all (prompts/mobile-release-prep.md, decision 4).
  */
 export default ({ config }: ConfigContext): ExpoConfig => {
   const base = config as ExpoConfig;
@@ -32,5 +36,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       bundleIdentifier: PERSONAL_BUNDLE_ID,
       associatedDomains: undefined,
     },
+    updates: { ...base.updates, enabled: false },
   };
 };

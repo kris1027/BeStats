@@ -154,7 +154,9 @@ export default function PrivacyPage() {
           the same account store as the website. It keeps your sign in on your
           phone, encrypted, and loads images straight from TMDB&rsquo;s and
           IGDB&rsquo;s image services, which see your IP address and device
-          details.
+          details. When it starts, it asks Expo&rsquo;s update service whether a
+          newer version of the app is ready, sending a random install ID the app
+          makes on first launch. That ID is not linked to your account.
         </p>
       </LegalSection>
 
