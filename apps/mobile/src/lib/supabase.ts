@@ -4,6 +4,7 @@ import { AppState } from "react-native";
 
 import { getPublicEnv } from "./env";
 import { encryptedSessionStorage } from "./session-storage";
+import { installWebCrypto } from "./web-crypto";
 
 let client: SupabaseClient<Database> | null = null;
 
@@ -22,6 +23,9 @@ export const SESSION_STORAGE_KEY = "bestats-auth";
  */
 export function getSupabase(): SupabaseClient<Database> {
   if (client) return client;
+  // Before the client exists, so its PKCE flow finds SHA-256 and a secure
+  // random source (prompts/mobile-deep-links.md, decision 7).
+  installWebCrypto();
   const env = getPublicEnv();
   client = createClient<Database>(
     env.EXPO_PUBLIC_SUPABASE_URL,
@@ -33,6 +37,7 @@ export function getSupabase(): SupabaseClient<Database> {
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: false,
+        flowType: "pkce",
       },
     },
   );
