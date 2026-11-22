@@ -11,7 +11,8 @@
       "bundleIdentifier": "com.kris1027.bestats",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "associatedDomains": ["applinks:bestats-app.vercel.app"]
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +22,36 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.kris1027.bestats"
+      "package": "com.kris1027.bestats",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "bestats-app.vercel.app",
+              "pathPrefix": "/movies/"
+            },
+            {
+              "scheme": "https",
+              "host": "bestats-app.vercel.app",
+              "pathPrefix": "/shows/"
+            },
+            {
+              "scheme": "https",
+              "host": "bestats-app.vercel.app",
+              "pathPrefix": "/games/"
+            },
+            {
+              "scheme": "https",
+              "host": "bestats-app.vercel.app",
+              "path": "/reset-password/app"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "plugins": [
       "expo-router",
