@@ -2,6 +2,7 @@ import { RECOVERY_UNAVAILABLE_MESSAGE } from "@bestats/core/auth/messages";
 import { render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import ForgotPasswordPage from "./forgot-password/page";
+import AppResetPasswordPage from "./reset-password/app/page";
 import ResetPasswordPage from "./reset-password/page";
 
 vi.mock("./actions", () => ({
@@ -43,4 +44,29 @@ describe.each([
       screen.queryByText(RECOVERY_UNAVAILABLE_MESSAGE),
     ).not.toBeInTheDocument();
   });
+});
+
+/**
+ * covers: spec 0033, child 0036 (Password reset and deep links)
+ *
+ * A reset asked in the app can only be redeemed on that phone (PKCE), so the
+ * browser fallback offers no form, whatever the email flag says, and points
+ * the visitor back to the app.
+ */
+describe("/reset-password/app", () => {
+  it.each(["on", "off"])(
+    "says to open the link in the app and shows no form (email %s)",
+    (delivery) => {
+      vi.stubEnv("NEXT_PUBLIC_AUTH_EMAIL_DELIVERY", delivery);
+      const { container } = render(<AppResetPasswordPage />);
+
+      expect(
+        screen.getByRole("heading", { name: "Open the link on your phone" }),
+      ).toBeInTheDocument();
+      expect(screen.getByText(/only works in the BeStats app/)).toBeVisible();
+      expect(container.querySelector("form")).toBeNull();
+      // No link out: while the website is off, every other page is a 403.
+      expect(screen.queryByRole("link")).toBeNull();
+    },
+  );
 });

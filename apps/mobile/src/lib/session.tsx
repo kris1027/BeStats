@@ -84,10 +84,12 @@ export function SessionProvider({ children }: PropsWithChildren) {
   }, []);
 
   const signOut = useCallback(async () => {
-    // A refused global sign out returns its error rather than throwing, so
-    // both outcomes fall back to the local one.
+    // Global, said out loud like the web's action: a password reset relies
+    // on it to end every other session. A refused global sign out returns
+    // its error rather than throwing, so both outcomes fall back to the
+    // local one.
     const { error } = await getSupabase()
-      .auth.signOut()
+      .auth.signOut({ scope: "global" })
       .catch((caught: unknown) => ({ error: caught }));
     if (error) await signOutLocally();
     setSession(null);

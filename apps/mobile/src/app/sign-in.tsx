@@ -2,10 +2,11 @@ import {
   ACCOUNT_COPY,
   AUTH_MESSAGES,
   AUTH_OUTCOME,
+  signInNoticeCopy,
 } from "@bestats/core/auth/messages";
 import { signInSchema } from "@bestats/core/auth/schemas";
 import { SIGN_IN_ACTION_LABEL } from "@bestats/core/tracking/messages";
-import { router } from "expo-router";
+import { useIsFocused, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { KeyboardAvoidingView, Platform, TextInput, View } from "react-native";
 
@@ -13,6 +14,7 @@ import { FormField, INPUT_CLASS } from "@/components/form-field";
 import { GlassButton } from "@/components/glass-button";
 import { Notice } from "@/components/notice";
 import { authErrorMessage } from "@/lib/auth-errors";
+import { getPublicEnv } from "@/lib/env";
 import { useSession } from "@/lib/session";
 import { getSupabase } from "@/lib/supabase";
 import { tokenColor } from "@/theme/token-vars";
@@ -21,14 +23,20 @@ import { tokenColor } from "@/theme/token-vars";
  * Email and password sign in (spec 0033, AC-11; child 0036), straight to
  * Supabase Auth with the same rules (`signInSchema`) and copy as the web.
  * The password never passes through BeStats' own server. Forgot password
- * stays hidden while production sends no email
- * (`EXPO_PUBLIC_AUTH_EMAIL_DELIVERY`), exactly as on the web.
+ * shows only while the build can send email
+ * (`EXPO_PUBLIC_AUTH_EMAIL_DELIVERY`), exactly as on the web, and a finished
+ * reset arrives with core's `?notice=` value, the web's sign in notice
+ * (prompts/mobile-deep-links.md, decisions 6 and 8).
  *
  * It opens as a modal over the tabs, so signing in closes it and leaves you
  * on the screen that asked (prompts/mobile-app-shell-catalog.md, decision 3).
  */
 export default function SignIn() {
   const { session, notice, clearNotice } = useSession();
+  const router = useRouter();
+  const params = useLocalSearchParams<{ notice?: string }>();
+  const linkNotice = signInNoticeCopy(params.notice);
+  const emailDelivery = getPublicEnv().EXPO_PUBLIC_AUTH_EMAIL_DELIVERY;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -67,6 +75,7 @@ export default function SignIn() {
     >
       <View className="gap-5 px-4 pt-6">
         {notice ? <Notice message={notice} /> : null}
+        {linkNotice ? <Notice message={linkNotice} /> : null}
         <FormField label="Email">
           <TextInput
             accessibilityLabel="Email"
@@ -93,6 +102,12 @@ export default function SignIn() {
             className={INPUT_CLASS}
           />
         </FormField>
+        {emailDelivery === "on" ? (
+          <GlassButton
+            label="Forgot password?"
+            onPress={() => router.push("/forgot-password")}
+          />
+        ) : null}
         {error ? <Notice tone="error" message={error} /> : null}
         <GlassButton
           variant="primary"
@@ -109,11 +124,21 @@ export default function SignIn() {
   );
 }
 
-/** Closes the modal once signed in, or opens Home when nothing is under it. */
+/**
+ * Closes the modal once signed in, or opens Home when nothing is under it.
+ *
+ * Only while Sign in is the screen in front: a reset link opened from the
+ * mail app lands on top of an open Sign in, and its code exchange signs in,
+ * so closing then would pop the reset screen instead of this one
+ * (prompts/mobile-deep-links.md, simulator check).
+ */
 function CloseSignIn() {
+  const focused = useIsFocused();
+  const router = useRouter();
   useEffect(() => {
+    if (!focused) return;
     if (router.canGoBack()) router.back();
     else router.replace("/");
-  }, []);
+  }, [focused, router]);
   return null;
 }

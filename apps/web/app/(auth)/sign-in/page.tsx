@@ -2,8 +2,7 @@ import {
   AUTH_MESSAGES,
   type AuthOutcome,
   authMessage,
-  SIGN_IN_NOTICES,
-  type SignInNotice,
+  signInNoticeCopy,
 } from "@bestats/core/auth/messages";
 import { isSafeNextPath } from "@bestats/core/auth/next-path";
 import type { Metadata } from "next";
@@ -91,12 +90,7 @@ async function SignInFormSlot({
     errorCode && Object.hasOwn(AUTH_MESSAGES, errorCode)
       ? authMessage(errorCode as AuthOutcome)
       : undefined;
-  const noticeCode =
-    typeof params.notice === "string" ? params.notice : undefined;
-  const initialNotice =
-    noticeCode && Object.hasOwn(SIGN_IN_NOTICES, noticeCode)
-      ? SIGN_IN_NOTICES[noticeCode as SignInNotice]
-      : undefined;
+  const initialNotice = signInNoticeCopy(params.notice) ?? undefined;
 
   return (
     <SignInForm

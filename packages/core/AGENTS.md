@@ -17,6 +17,7 @@
 
 - `src/supabase/database.types.ts`: written by `pnpm db:types` from the local schema and checked by `pnpm db:types:check`. Never edit it; Biome skips it.
 - `src/tokens.generated.ts`: written by `pnpm tokens` (`scripts/tokens.ts`) from the `@theme` and `:root` blocks of `apps/web/app/globals.css`, which stays the one place a colour is written. Run `pnpm tokens` after changing a token; `src/tokens.test.ts` fails while the copy is stale. Biome skips it and the colour boundary test allows exactly this file.
+- `apps/web/public/.well-known/apple-app-site-association` and `assetlinks.json`: written by `pnpm app-links --apple-team-id <id> --android-sha256 <fp>` (`scripts/app-links.ts`) from the builders in `src/links/app-links.ts`, whose `isAppLinkPath` is also the app's incoming link rule and whose `APP_BUNDLE_ID` must equal `app.json`. `src/links/app-links.test.ts` fails when a committed file drifts from the builders. The script imports `.ts` paths, hence `allowImportingTsExtensions`.
 
 ## Legal text
 

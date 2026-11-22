@@ -30,6 +30,8 @@ Since spec 0034 the pure files below (`private-paths.ts`, `next-path.ts`, `actio
 - `NEXT_PUBLIC_AUTH_EMAIL_DELIVERY` (`on` or `off`, unset meaning `off`) is read only through `getAuthEmailDelivery()` in `lib/env.ts`, kept apart from `getPublicEnv()` so previews with no Supabase variables still build. Being `NEXT_PUBLIC_`, a change takes a redeploy.
 - Auth redirect URLs and providers are set per environment in `supabase/config.toml` and reach production through `supabase config push` ([docs/deploy.md](../../../../docs/deploy.md)). Before turning email delivery `on`, verify confirmation and password recovery mail end to end.
 - While `getAuthEmailDelivery()` is `off` (production today), sign up does say when an address already has an account, with a link to sign in (spec 0018 AC-12), and every email surface (resend, recovery, `/check-email`) shows a notice or refuses on the server instead of calling Supabase. Write `on` and `off` tests for any new auth surface that mentions email.
+- `?notice=` on `/sign-in` is read only through core's `signInNoticeCopy`, which both apps use, so a query string can never put its own text on the page.
+- `/reset-password/app` is where a reset asked from the phone lands in a browser: static, no form, and it never exchanges the code, because the app's PKCE proof stays on the phone. Web resets keep `/auth/callback`.
 - Logs carry an event and an outcome class only: no address, password, token, cookie or link.
 - The browser never calls Supabase Auth. Session cookies are `HttpOnly` through `sessionCookieOptions()` in `lib/supabase/cookie-options.ts`, shared by the server client and the proxy.
 - When a form links to another auth page, carry the typed email and `next` along; the receiving page validates both again.

@@ -283,7 +283,10 @@ export const config = {
      * `robots.txt`, `sitemap.xml` and `opengraph-image` are skipped for the
      * same reason: each is prerendered and shared by every visitor, so no
      * refresh may ever attach a cookie to one (spec 0016, AC-25).
+     *
+     * `.well-known/` holds the app link files Apple's and Google's CDNs fetch
+     * and cache, so the same rule applies (spec 0033, child 0036).
      */
-    "/((?!api/|robots\\.txt$|sitemap\\.xml$|opengraph-image|_next/static|_next/image|favicon.ico|(?!movies/|shows/|games/).*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)",
+    "/((?!api/|\\.well-known/|robots\\.txt$|sitemap\\.xml$|opengraph-image|_next/static|_next/image|favicon.ico|(?!movies/|shows/|games/).*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)",
   ],
 };

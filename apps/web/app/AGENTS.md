@@ -25,7 +25,8 @@ Routes, plus the root files that shape them: `proxy.ts` and `next.config.ts`. Th
 
 - It answers a malformed title ID, season number or list slug under `/movies/`, `/shows/` and `/games/` with a real 404 before its auth check, using the pages' own parsers in `packages/core/src/catalog/ids.ts` and `packages/core/src/catalog/lists.ts`. A streamed page has already sent 200, so an unknown or adult ID is a soft 404 (`noindex`).
 - The `matcher` skips image extensions everywhere except under those three prefixes, so `/movies/550.jpg` still reaches that rule; a new ID checked route needs the same exception.
-- The `matcher` also skips `api/`, `robots.txt`, `sitemap.xml` and `opengraph-image`, each shared or prerendered, so no session refresh attaches `Set-Cookie` to them. A new metadata route needs the same exclusion and a case in `proxy.test.ts`.
+- The `matcher` also skips `api/`, `.well-known/`, `robots.txt`, `sitemap.xml` and `opengraph-image`, each shared or prerendered, so no session refresh attaches `Set-Cookie` to them. A new metadata route needs the same exclusion and a case in `proxy.test.ts`.
+- `public/.well-known/` holds the app link files, written only by `pnpm app-links` (never by hand); `next.config.ts` `headers()` serves both as `application/json`, since Apple's file has no extension and would otherwise verify nothing (prompts/mobile-deep-links.md).
 
 ## Images
 

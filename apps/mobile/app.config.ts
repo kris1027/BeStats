@@ -15,6 +15,11 @@ const PERSONAL_BUNDLE_ID = "com.kris1027.bestats.personal";
  * exactly `app.json`, so the simulator, EAS and the tests are unchanged.
  * `APP_VARIANT` is not a secret and never reaches the bundle (AGENTS.md
  * section 11).
+ *
+ * The personal variant also drops `associatedDomains`: a free Apple team
+ * cannot sign that entitlement, so the build would fail, and Universal Links
+ * only verify for the store app ID anyway (prompts/mobile-deep-links.md,
+ * decision 4).
  */
 export default ({ config }: ConfigContext): ExpoConfig => {
   const base = config as ExpoConfig;
@@ -22,6 +27,10 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   return {
     ...base,
     name: "BeStats Personal",
-    ios: { ...base.ios, bundleIdentifier: PERSONAL_BUNDLE_ID },
+    ios: {
+      ...base.ios,
+      bundleIdentifier: PERSONAL_BUNDLE_ID,
+      associatedDomains: undefined,
+    },
   };
 };

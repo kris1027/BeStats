@@ -148,6 +148,21 @@ export const SIGN_IN_NOTICES: Record<SignInNotice, string> = {
     "Your new password is saved and every session has been signed out. Sign in with your new password.",
 };
 
+/**
+ * The sign in notice for an untrusted `?notice=` value, or `null`.
+ *
+ * Both apps read the same query value, so the lookup lives here once
+ * (packages/core/AGENTS.md, one rule in one package). It accepts own keys
+ * only: an `in` check would also accept inherited names such as `toString`
+ * and put a function where copy belongs (AGENTS.md section 11, validate
+ * input).
+ */
+export function signInNoticeCopy(code: unknown): string | null {
+  return typeof code === "string" && Object.hasOwn(SIGN_IN_NOTICES, code)
+    ? SIGN_IN_NOTICES[code as SignInNotice]
+    : null;
+}
+
 /** Looks up the copy for an outcome. */
 export function authMessage(outcome: AuthOutcome): string {
   return AUTH_MESSAGES[outcome];

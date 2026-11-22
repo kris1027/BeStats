@@ -142,6 +142,8 @@ vercel firewall rules add "Website off, API on" \
 vercel firewall publish --yes
 ```
 
+**When the app link files ship (release step 6, [prompts/mobile-deep-links.md](../prompts/mobile-deep-links.md)).** Universal Links and App Links only verify if Apple's and Google's fetchers can read the two files, and a reset link must reach `/reset-password/app` when the app is missing. Run `pnpm app-links --apple-team-id <TEAMID> --android-sha256 <FINGERPRINT>`, commit `apps/web/public/.well-known/`, then add two conditions to the rule above, `--condition '{"type":"path","op":"pre","value":"/.well-known/","neg":true}'` and `--condition '{"type":"path","op":"eq","value":"/reset-password/app","neg":true}'`, and publish. Check that `curl -sI https://bestats-app.vercel.app/.well-known/apple-app-site-association` answers `200` with `Content-Type: application/json` and no `Set-Cookie`.
+
 Keep `/privacy` and `/terms` in that allow list: the app's About links to both on the API's origin ([prompts/mobile-about-legal-links.md](../prompts/mobile-about-legal-links.md)), and the store listings will link to them too.
 
 Check it: `/movies` answers `403`, while `/privacy` and `/api/v1/lists/tv/trending` (with `X-BeStats-App-Version`) answer `200`. To reopen the website, run `vercel firewall rules disable "Website off, API on" --yes` and `vercel firewall publish --yes`, then restore the production branch of `app/robots.ts` from git history.
