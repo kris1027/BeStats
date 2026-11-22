@@ -1,5 +1,7 @@
+import { V1_NETWORK_MESSAGE } from "@bestats/core/api/v1/errors";
 import type { V1LibraryEntry } from "@bestats/core/api/v1/library";
 import {
+  EPISODE_TRACKING_MESSAGES,
   GAME_UNDO_MESSAGES,
   LIBRARY_MESSAGES,
   MARK_NEXT_MESSAGES,
@@ -350,6 +352,48 @@ test("a refused removal brings the card back with the server's reason", async ()
   ).toBeOnTheScreen();
 });
 
+/** covers: acceptance 4 (offline) and spec 0033, AC-13: Retry, nothing queued */
+test("an offline removal brings the card back, and Retry sends it again", async () => {
+  const user = userEvent.setup();
+  let attempts = 0;
+  mockApi.on("PUT", "/api/v1/me/movies/603/watchlist", () => {
+    attempts += 1;
+    if (attempts === 1) throw new ApiError(0, "network", V1_NETWORK_MESSAGE);
+    return { ok: true };
+  });
+  await openPage("movie", "/watchlist", [PLANNED_MOVIE]);
+  // Offline the write changed nothing, so the refetch still lists the movie.
+  mockApi.on("GET", libraryPath("movie", "/watchlist"), () =>
+    answer("movie", "/watchlist", attempts > 1 ? [] : [PLANNED_MOVIE]),
+  );
+  const name = "Remove The Matrix from Watchlist";
+  await user.press(await screen.findByRole("button", { name }));
+  expect(await screen.findByText(V1_NETWORK_MESSAGE)).toBeOnTheScreen();
+  expect(await screen.findByRole("button", { name })).toBeOnTheScreen();
+
+  await user.press(screen.getByRole("button", { name: "Retry" }));
+  expect(
+    await screen.findByText(LIBRARY_MESSAGES.watchlist.removed),
+  ).toBeOnTheScreen();
+  expect(
+    mockApi.callsTo("PUT", "/api/v1/me/movies/603/watchlist"),
+  ).toHaveLength(2);
+  await waitFor(() =>
+    expect(screen.queryByRole("button", { name })).toBeNull(),
+  );
+});
+
+/** covers: decision 3: the button is its own element beside the card's link */
+test("a screen reader reads the card's link, then its button with the web's label", async () => {
+  await openPage("movie", "/watchlist", [PLANNED_MOVIE]);
+  const button = await screen.findByRole("button", {
+    name: "Remove The Matrix from Watchlist",
+  });
+  const link = screen.getByRole("link", { name: /The Matrix/ });
+  expect(button).toBeEnabled();
+  expect(link).not.toContainElement(button);
+});
+
 test("removing a game sends DELETE, and Undo restores the row it returned", async () => {
   const user = userEvent.setup();
   const undo = {
@@ -452,6 +496,24 @@ test("a failed season read marks nothing and says the episode is unavailable", a
     await screen.findByText(MARK_NEXT_MESSAGES.unavailable),
   ).toBeOnTheScreen();
   expect(mockApi.calls.filter((call) => call.method === "PUT")).toHaveLength(0);
+});
+
+test("a failed episode write reads as an episode write, not an unavailable episode", async () => {
+  const user = userEvent.setup();
+  mockApi.on("GET", "/api/v1/shows/1399/seasons/2", () => SEASON_2);
+  mockApi.on("PUT", "/api/v1/me/episodes/63003", () => {
+    throw new Error("unparsable answer");
+  });
+  await openPage("tv", "/up-next", [UP_NEXT_SHOW]);
+  await user.press(
+    await screen.findByRole("button", {
+      name: MARK_NEXT_MESSAGES.markLabel("Game of Thrones", 2, 3),
+    }),
+  );
+  expect(
+    await screen.findByText(EPISODE_TRACKING_MESSAGES.write_failed),
+  ).toBeOnTheScreen();
+  expect(screen.queryByText(MARK_NEXT_MESSAGES.unavailable)).toBeNull();
 });
 
 test("a double tap on Mark next watched sends one write", async () => {

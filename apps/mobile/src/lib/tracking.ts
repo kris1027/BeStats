@@ -127,8 +127,12 @@ type WriteOptions<TState, TVars, TResult> = {
   write: (vars: TVars) => Promise<TResult>;
   /** Other private queries the write changes (progress, ratings). */
   alsoInvalidate?: QueryKey[];
-  /** The fallback copy when the error carries no server message. */
-  failure: string;
+  /**
+   * The fallback copy when the error carries no server message, or a function
+   * that picks it from the error, for a write whose own client step can fail
+   * apart from the server (Mark next's season read).
+   */
+  failure: string | ((error: unknown) => string);
   /**
    * For an Undo: the web's "Couldn't undo" line, shown when the server says
    * the Undo no longer applies (`undo_expired`, or `conflict` when the state
@@ -195,7 +199,12 @@ export function useTrackingWrite<TState, TVars, TResult>({
       const offline = error instanceof ApiError && error.code === "network";
       const key = toast.show({
         id: typeof control === "function" ? control(vars) : control,
-        message: stale ? expired : writeErrorMessage(error, failure),
+        message: stale
+          ? expired
+          : writeErrorMessage(
+              error,
+              typeof failure === "function" ? failure(error) : failure,
+            ),
         tone: "error",
         action: offline
           ? {

@@ -1,15 +1,15 @@
 import type { ClearedOf } from "@bestats/core/api/v1/cleared";
 import type { V1Library, V1LibraryEntry } from "@bestats/core/api/v1/library";
-import {
-  type LibraryPageKey,
-  type LibraryPath,
-  libraryPageName,
+import type {
+  LibraryPageKey,
+  LibraryPath,
 } from "@bestats/core/catalog/library-list";
 import type { LibraryType } from "@bestats/core/catalog/media-type";
 import {
   EPISODE_TRACKING_MESSAGES,
   GAME_TRACKING_MESSAGES,
   GAME_UNDO_MESSAGES,
+  LIBRARY_CARD_ACTION_LABELS,
   LIBRARY_MESSAGES,
   MARK_NEXT_MESSAGES,
   MISSING_SHOW_COPY,
@@ -18,6 +18,7 @@ import {
   TRACKING_MESSAGES,
   UNDO_EXPIRED_MESSAGES,
 } from "@bestats/core/tracking/messages";
+import { isStartedGame } from "@bestats/core/tracking/types";
 import {
   type InfiniteData,
   useMutationState,
@@ -68,9 +69,12 @@ export type CardAction = {
   next?: { season: number; episode: number };
 };
 
+/**
+ * The name a card's button speaks: the title, or core's stand in when the
+ * catalog no longer has it or its read failed, as the web's cards do.
+ */
 function cardName(entry: V1LibraryEntry, missing: string): string {
-  if (entry.card === null) return "this title";
-  return entry.card.kind === "missing" ? missing : entry.card.name;
+  return entry.card?.kind === "title" ? entry.card.name : missing;
 }
 
 /**
@@ -89,38 +93,42 @@ export function cardActionFor(
 ): CardAction | null {
   switch (entry.type) {
     case "movie": {
-      const name = cardName(entry, "missing title");
+      const name = cardName(entry, LIBRARY_CARD_ACTION_LABELS.missingTitle);
       if (page === "watched") {
         return {
           kind: "unmark_movie",
           look: "watched",
           corner: false,
-          label: `Unmark ${name} as watched`,
+          label: LIBRARY_CARD_ACTION_LABELS.unmarkMovie(name),
         };
       }
       return {
         kind: "unplan_movie",
         look: "planned",
         corner: true,
-        label: `Remove ${name} from ${libraryPageName(page, "movie")}`,
+        label: LIBRARY_CARD_ACTION_LABELS.removeFromPage(name, page, "movie"),
       };
     }
     case "game": {
-      const started =
-        entry.user.status === "playing" || entry.user.status === "finished";
-      if (entry.card?.kind === "title" && !started) {
+      if (entry.card?.kind === "title" && !isStartedGame(entry.user)) {
         return {
           kind: "remove_game",
           look: "planned",
           corner: true,
-          label: `Remove ${entry.card.name} from ${libraryPageName(page, "game")}`,
+          label: LIBRARY_CARD_ACTION_LABELS.removeFromPage(
+            entry.card.name,
+            page,
+            "game",
+          ),
         };
       }
       return {
         kind: "remove_game",
         look: "remove",
         corner: false,
-        label: `Remove ${cardName(entry, "missing game")} from your games`,
+        label: LIBRARY_CARD_ACTION_LABELS.removeGame(
+          cardName(entry, LIBRARY_CARD_ACTION_LABELS.missingGame),
+        ),
       };
     }
     case "tv": {
@@ -412,7 +420,12 @@ export function useLibraryCardActions(
       return { ...result, episodeId };
     },
     alsoInvalidate: TITLE_STATE_KEYS,
-    failure: MARK_NEXT_MESSAGES.unavailable,
+    // "Next episode unavailable" only when the season read can't name it;
+    // a failed episode write reads as any other episode write.
+    failure: (error) =>
+      error instanceof NextEpisodeUnavailable
+        ? MARK_NEXT_MESSAGES.unavailable
+        : EPISODE_TRACKING_MESSAGES.write_failed,
     onSuccess: (result, vars) => {
       const next = vars.action.next;
       if (next === undefined || vars.entry.card?.kind !== "title") return;
