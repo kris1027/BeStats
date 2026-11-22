@@ -46,7 +46,8 @@ jobs:
   # Spec 0003 gates this on supabase/** so it stays quiet, and cannot fail, on a
   # change that touches no database file. The gate is per job rather than on the
   # trigger, because a workflow level `paths:` filter would silence the fast
-  # checks too. The pgtap extension is enabled by a migration feature 3 owns.
+  # checks too. This workflow file also counts, since it pins the Supabase CLI
+  # the job runs on. The pgtap extension is enabled by a migration feature 3 owns.
   database:
     runs-on: ubuntu-latest
     steps:
@@ -58,11 +59,12 @@ jobs:
           filters: |
             supabase:
               - 'supabase/**'
+              - '.github/workflows/checks.yml'
 
       - uses: supabase/setup-cli@v3
         if: steps.changes.outputs.supabase == 'true'
         with:
-          version: 2.117.0
+          version: 3.2.0
 
       - name: Start the local Supabase stack
         if: steps.changes.outputs.supabase == 'true'

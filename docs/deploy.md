@@ -2,7 +2,7 @@
 
 This is the runbook for production, written for you, the operator. Every step is a recommendation you may run or skip. It follows spec [0018](specs/0018-deploy-and-provider-setup/index.md): Vercel hosts the app, the existing Supabase Free project holds the data, and everything Supabase knows comes from this repo.
 
-Steps that change Vercel, GitHub or the Supabase project are marked **remote**. Run them yourself from your own terminal. The Supabase CLI applies `db push` and `config push` without asking when an agent shell runs it, so never ask an agent to run one "just to see the diff".
+Steps that change Vercel, GitHub or the Supabase project are marked **remote**. Run them yourself from your own terminal. Since CLI v3, `db push --remote` and `config push` ask before they change the hosted project, and an agent can still answer for you or pass `--yes`, so never ask an agent to run one "just to see the diff".
 
 ## The facts
 
@@ -13,7 +13,7 @@ Steps that change Vercel, GitHub or the Supabase project are marked **remote**. 
 | Supabase region | `eu-central-1`, Frankfurt | `SUPABASE_REGION` in `apps/web/lib/legal/operator.ts` |
 | Vercel function region | `fra1`, Frankfurt | `regions` in `apps/web/vercel.json` |
 | Vercel Root Directory | `apps/web`, with files outside the root directory included | the Vercel project settings (spec 0034) |
-| Supabase CLI | `2.117.0`, run as `pnpm exec supabase` | the root `package.json`, and the `database` job in `.github/workflows/checks.yml` |
+| Supabase CLI | `3.2.0`, run as `pnpm exec supabase` | the root `package.json`, and the `database` job in `.github/workflows/checks.yml` |
 | Node | 22 | the Vercel project settings, and CI |
 | Access token signing | ES256 (asymmetric) | Supabase dashboard, JWT Keys |
 
@@ -30,9 +30,9 @@ Checked on 2026-10-04: region `eu-central-1`, one `ES256` key served.
 
 A pull request that adds a file to `supabase/migrations/` should merge only after the migration is on the cloud project. Migrations stay backward compatible with the code that is live, so "push, then merge" never breaks production.
 
-1. Check what is pending: `pnpm exec supabase migration list --linked`. Local and remote columns should match apart from your new file.
-2. Push: `pnpm exec supabase db push`. Never add `--include-seed`. The seed users `user-a@example.test` and `user-b@example.test` exist only on your local stack.
-3. Run `migration list --linked` again. Every row should show the same version on both sides.
+1. Check what is pending: `pnpm exec supabase migration list --remote`. Since CLI v3, the `db` and `migration` commands target your local stack unless you pass `--remote`. Local and remote columns should match apart from your new file.
+2. Push: `pnpm exec supabase db push --remote`, and answer `y` after reading what it will apply (pressing Enter answers No). Never add `--include-seed`. The seed users `user-a@example.test` and `user-b@example.test` exist only on your local stack.
+3. Run `migration list --remote` again. Every row should show the same version on both sides.
 4. Merge the pull request.
 
 Checked on 2026-10-04: all 20 migrations applied, local and remote identical.
@@ -44,7 +44,7 @@ Auth settings reach the cloud only through `pnpm exec supabase config push`. Nev
 **How the production values get in.** The local stack and production share every setting in `supabase/config.toml` except two: `site_url` and `additional_redirect_urls`. Those live in the `[remotes.production.auth]` table, which the CLI merges in when the linked ref matches `[remotes.production] project_id`. This is the path in use (spec 0018 AC-8, first option). If a push diff ever shows `localhost` for either value, the CLI ignored the block: cancel, swap the two values in `[auth]` for the production ones, push, then restore the local values without committing the swap, and note it here.
 
 **Routine.**
-1. Run `pnpm exec supabase config push` in your own terminal and read the diff before you answer.
+1. Run `pnpm exec supabase config push` in your own terminal and read the diff before you answer `y` (pressing Enter answers No; unattended it refuses unless you pass `--yes`). Since CLI v3, a `SUPABASE_*` variable in your shell or in a `.env` file in the repo root or `supabase/` beats `config.toml` and is pushed too, so keep none there.
 2. Accept only changes you made in `config.toml` on purpose. Anything else, cancel and investigate.
 3. Run it a second time. It should report no differences, except the accepted ones below.
 
