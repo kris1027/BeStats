@@ -443,6 +443,21 @@ export const LIBRARY_CARD_MESSAGES = {
   yourShowRating: "Your show rating",
 } as const;
 
+/**
+ * The accessible names of a library card's quick action buttons, so the web's
+ * cards and the app's say the same thing to a screen reader (AGENTS.md
+ * section 3; prompts/mobile-card-quick-actions.md, decision 3). A card with
+ * no title to name stands in with `missingTitle` or `missingGame`.
+ */
+export const LIBRARY_CARD_ACTION_LABELS = {
+  missingTitle: "missing title",
+  missingGame: "missing game",
+  unmarkMovie: (name: string) => `Unmark ${name} as watched`,
+  removeFromPage: (name: string, page: LibraryPageKey, type: LibraryType) =>
+    `Remove ${name} from ${libraryPageName(page, type)}`,
+  removeGame: (name: string) => `Remove ${name} from your games`,
+} as const;
+
 /** The signed out library: no private request, only the way in. */
 export const LIBRARY_SIGNED_OUT = {
   title: "Sign in to see your library",

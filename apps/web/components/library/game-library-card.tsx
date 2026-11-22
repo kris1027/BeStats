@@ -1,9 +1,9 @@
-import {
-  type LibraryPageKey,
-  libraryPageName,
-} from "@bestats/core/catalog/library-list";
+import type { LibraryPageKey } from "@bestats/core/catalog/library-list";
 import { gameHref } from "@bestats/core/catalog/media-type";
-import { LIBRARY_CARD_MESSAGES } from "@bestats/core/tracking/messages";
+import {
+  LIBRARY_CARD_ACTION_LABELS,
+  LIBRARY_CARD_MESSAGES,
+} from "@bestats/core/tracking/messages";
 import { isStartedGame } from "@bestats/core/tracking/types";
 import { XIcon } from "lucide-react";
 import type { ReactNode } from "react";
@@ -85,7 +85,11 @@ function GameLibraryCard({
             </>
           ) : (
             <CardRoundButton
-              label={`Remove ${item.name} from ${libraryPageName(list, "game")}`}
+              label={LIBRARY_CARD_ACTION_LABELS.removeFromPage(
+                item.name,
+                list,
+                "game",
+              )}
               onClick={onRemove}
               corner
             >
@@ -126,7 +130,9 @@ function RemoveButton({
 }) {
   return (
     <CardRoundButton
-      label={`Remove ${name ?? "missing game"} from your games`}
+      label={LIBRARY_CARD_ACTION_LABELS.removeGame(
+        name ?? LIBRARY_CARD_ACTION_LABELS.missingGame,
+      )}
       onClick={onRemove}
       className={className}
     >

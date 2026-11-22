@@ -44,7 +44,7 @@ _2026-10-06: the `design/` artboards were removed. The UI built from them carrie
 | 25 | Consistent card size and richer title pages | Slice 12 | done |
 | 26 | Library page names per media type | Slice 13 | done |
 | 27 | Library page URLs follow their names | Slice 13 | done |
-| 28 | Mobile app (iOS and Android) | Slice 14 | in-progress |
+| 28 | Mobile app (iOS and Android) | Slice 14 | done |
 
 ## Foundations
 
@@ -453,11 +453,11 @@ plan [prompts/library-page-urls.md](../../prompts/library-page-urls.md) · code 
 
 ## Slice 14: Mobile
 
-### 28. Mobile app (iOS and Android) · in-progress · GA
+### 28. Mobile app (iOS and Android) · done · GA
 A native app for iOS and Android beside the web app, sharing its rules with it. v1 covers sign in and account (email and password, self serve deletion on both apps), browse and search, all tracking with Undo, and every library page, with a read only offline cache. The phone never holds a catalog key, so the release gate and every rule stay on the server. Designed on 2026-11-18.
 **Done when:** both store builds sign in, browse, search, track and show every library page with the same rules and names as the web; the web still deploys unchanged from `apps/web`; no TMDB or IGDB secret or service role key is reachable from the app or the repo; account deletion works on both apps; and the attribution, privacy text and store privacy labels are in place.
 - [x] Design it (spec): `/architect mobile app`
-- [ ] Build it: `/develop mobile app`
+- [x] Build it: `/develop mobile app` (done 2026-11-22; the store release and change password on the phone moved to Deferred by your call)
   - [x] Monorepo move and shared core (spec 0033 Build plan steps 1 and 2): AC-1, AC-2, AC-3 (step 1 in PR #74; step 2 in [prompts/shared-core.md](../../prompts/shared-core.md))
   - [x] Tracer: sign in, open a movie, mark it watched (step 3): AC-4, AC-5, AC-6, AC-11 (PR #79, plan in [prompts/mobile-tracer.md](../../prompts/mobile-tracer.md); checked in the iOS Simulator from an EAS development build; real iPhone and Android builds wait for the Apple developer account and an Android SDK)
   - [x] Settle the image contract before step 4: full CDN URLs at the ceiling size, stepped down by `imageUrlForWidth` in core, shared with the web loaders (spec 0035, Images, settled 2026-11-19)
@@ -465,7 +465,7 @@ A native app for iOS and Android beside the web app, sharing its rules with it. 
     - [x] 4a movies and images, 4b shows (first PR, branch `feat/mobile-api`)
     - [x] 4c games and profile (branch `feat/mobile-api-games-browse`, second PR)
     - [x] 4d browse and library: `/genres`, `/search`, `/lists`, `/me/library`, the per route cache test, the cross user check (`pnpm api:local`), the firewall note (branch `feat/mobile-api-games-browse`, second PR); next `/develop mobile app` starts at step 5
-  - [ ] App thickened (step 5): AC-10, AC-12, AC-13, AC-14, AC-16, built in five slices (agreed 2026-11-19)
+  - [x] App thickened (step 5): AC-10, AC-12, AC-13, AC-14, AC-16, built in five slices (agreed 2026-11-19)
     - [x] 5a shell, home, list screens and search, signed out browsing, read only show and game pages, plan in [prompts/mobile-app-shell-catalog.md](../../prompts/mobile-app-shell-catalog.md) (branch `feat/mobile-app-shell`; checked in the iOS Simulator)
     - [x] 5b title pages and tracking (full movie, show, season and episodes, game, Undo toasts), plan in [prompts/mobile-title-tracking.md](../../prompts/mobile-title-tracking.md) (branch `feat/mobile-title-tracking`; checked signed out and signed in in the iOS Simulator; the failure toast and VoiceOver checks are still owed)
     - [x] 5c library tabs (every page from core) and card badges, plan in [prompts/mobile-library-tabs.md](../../prompts/mobile-library-tabs.md) (branch `feat/mobile-library`, stacked on 5b; checked signed in and signed out in the iOS Simulator; card quick actions left for a follow up)
@@ -473,9 +473,8 @@ A native app for iOS and Android beside the web app, sharing its rules with it. 
       - [x] 5d1 sign up, account screen, deletion on web and mobile with its migration (`delete_own_account()`), the self serve deletion text on `/privacy` and `/terms`, plan in [prompts/mobile-account-deletion.md](../../prompts/mobile-account-deletion.md) (branch `feat/mobile-account`; checked in the iOS Simulator and on the local web; the migration is on production (checked 2026-11-21); Expo joins `PROCESSORS` in step 6; change password on the phone left for a follow up)
       - [x] 5d2 offline cache and its wipe, the offline banner, Retry on an offline write, About and attribution, plan in [prompts/mobile-offline-about.md](../../prompts/mobile-offline-about.md) (branch `feat/mobile-offline-about`; About and the persisted cache checked in the iOS Simulator; the offline banner and Retry checked by Jest only, the airplane mode run is still owed)
     - [x] 5e deep links and in app password reset, plan in [prompts/mobile-deep-links.md](../../prompts/mobile-deep-links.md) (branch `feat/mobile-deep-links`; `bestats://` title links, the Home fallback and the full reset with email on checked in the iOS Simulator on the local stack; the two well known files are built by `pnpm app-links` and wait for the IDs in step 6)
-  - [ ] Release (step 6): AC-15, AC-17; also `pnpm app-links` with the Apple Team ID and Android signing fingerprint, the firewall allowing `/.well-known/` and `/reset-password/app` (`docs/deploy.md` section 5), and an https link opening a signed build (AC-16)
-    - [x] 6a release prep with no store account: EAS Update (`expo-updates`, a channel per build profile, a `preview` profile, off in the personal variant), Expo in `PROCESSORS` with `/privacy`, `/terms` and `LEGAL_LAST_UPDATED` 2026-11-22, the store label answers in [docs/store-privacy-labels.md](../store-privacy-labels.md), the runbook in `docs/deploy.md` section 12, plan in [prompts/mobile-release-prep.md](../../prompts/mobile-release-prep.md) (branch `feat/mobile-release-prep`; nothing published or built on EAS)
-    - [ ] 6b store release once the Apple and Google developer accounts exist: `docs/deploy.md` section 12 (EAS env values, TestFlight, Play internal testing, the labels typed in, `pnpm app-links`, the firewall conditions, the AC-16 and AC-17 checks)
+    - [x] 5f card quick actions on library cards (the 5c follow up): the web's unplan, unmark, remove, Mark next watched and missing show Stop tracking, each with Undo, plan in [prompts/mobile-card-quick-actions.md](../../prompts/mobile-card-quick-actions.md) (branch `feat/mobile-card-actions`; Mark next, unplan, unmark and game removal with their Undo checked in the iOS Simulator on the local stack; Stop tracking, the offline Retry and VoiceOver checked by Jest only)
+  - [x] 6a release prep with no store account: EAS Update (`expo-updates`, a channel per build profile, a `preview` profile, off in the personal variant), Expo in `PROCESSORS` with `/privacy`, `/terms` and `LEGAL_LAST_UPDATED` 2026-11-22, the store label answers in [docs/store-privacy-labels.md](../store-privacy-labels.md), the runbook in `docs/deploy.md` section 12, plan in [prompts/mobile-release-prep.md](../../prompts/mobile-release-prep.md) (branch `feat/mobile-release-prep`; nothing published or built on EAS)
 - [ ] Verify it: `/check verify mobile app`
 - [ ] Test it: `/test mobile app`
 - [x] Review it (fresh model): `/check review mobile app`
@@ -490,6 +489,8 @@ Out of scope for the current build pass, kept so the plan stays honest.
 - **Error monitoring and product analytics**: not selected for this pass
 - **Self serve account deletion and data export** (from specs 0005 and 0017): GDPR requests are handled by email for now. Undesigned; a `/account` flow needs the Supabase admin API or a security definer function, an elevated call nothing else in the app uses, so it deserves its own decision, including what happens to the cascading tracking data. _2026-11-18: deletion is now designed in spec 0036 (`delete_own_account()`) and ships with feature 28; data export stays deferred._
 - **Push notifications** (from spec 0033): a new episode aired for a tracked show. Needs a device token table, a scheduled air date check and Expo Push as a new processor, so it gets its own spec after the mobile app ships
+- **Mobile store release** (feature 28, step 6b; deferred 2026-11-22 by your call): AC-15 and AC-17: TestFlight and Play internal testing once the Apple and Google developer accounts exist, the EAS env values, the privacy labels typed in, `pnpm app-links` with the Apple Team ID and Android signing fingerprint, the firewall allowing `/.well-known/` and `/reset-password/app` (`docs/deploy.md` section 5), and an https link opening a signed build (AC-16) with the AC-16 and AC-17 checks. The runbook is `docs/deploy.md` section 12; 6a (release prep) shipped.
+- **Change password on the phone** (feature 28, from 5d1; deferred 2026-11-22 by your call): the web's change password flow in the app's Account screen.
 - **Sign in with Apple** (from spec 0033): required on iOS once Google sign in ships there, so it comes with the Google item below
 - **Rate limit on sign in and sign up** (from spec 0018): Supabase counts Vercel's addresses, so its auth limit is shared by every visitor ([docs/deploy.md](../deploy.md) section 6). If it bites, add a second Vercel Firewall rule on sign in and sign up posts per IP. (The `/api/search` limit from spec 0010 shipped as a firewall rule in feature 20.)
 - **A paid Supabase plan** (from spec 0018): the Free project pauses after about a week idle and has no automatic backups; revisit if that bites, or before inviting more than a handful of users

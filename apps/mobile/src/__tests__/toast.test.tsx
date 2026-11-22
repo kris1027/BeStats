@@ -1,5 +1,5 @@
 import { UNDO_TOAST_MS } from "@bestats/core/tracking/messages";
-import { act, render, screen } from "@testing-library/react-native";
+import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { Text } from "react-native";
 
 import { useToast } from "@/components/toast";
@@ -8,8 +8,9 @@ import { testQueryClient, titleWrapper } from "@/test-utils/title-harness";
 /**
  * covers: prompts/mobile-title-tracking.md decision 3: a new toast replaces
  * the earlier one of the same control and stacks beside another control's,
- * a toast with Undo stays `UNDO_TOAST_MS` (the web's 10 seconds), and a
- * running action keeps it up until its outcome.
+ * a toast with Undo stays `UNDO_TOAST_MS` (the web's 10 seconds), a finger
+ * on Undo holds it past that deadline, and a running action keeps it up
+ * until its outcome.
  */
 let api: ReturnType<typeof useToast>;
 function Probe() {
@@ -65,6 +66,57 @@ test("an Undo toast stays ten seconds, then closes", async () => {
   });
   await act(async () => {
     jest.advanceTimersByTime(UNDO_TOAST_MS - 1);
+  });
+  expect(screen.getByText("Removed")).toBeOnTheScreen();
+  await act(async () => {
+    jest.advanceTimersByTime(1);
+  });
+  expect(screen.queryByText("Removed")).toBeNull();
+});
+
+test("an Undo pressed just before the deadline still runs", async () => {
+  await mount();
+  const onPress = jest.fn();
+  await act(async () => {
+    api.show({ message: "Removed", action: { label: "Undo", onPress } });
+  });
+  await act(async () => {
+    jest.advanceTimersByTime(UNDO_TOAST_MS - 50);
+  });
+  const undo = screen.getByRole("button", { name: "Undo" });
+  await act(async () => {
+    fireEvent(undo, "pressIn");
+  });
+  await act(async () => {
+    jest.advanceTimersByTime(100);
+  });
+  expect(screen.getByText("Removed")).toBeOnTheScreen();
+  await act(async () => {
+    fireEvent.press(undo);
+  });
+  expect(onPress).toHaveBeenCalledTimes(1);
+});
+
+test("letting go of Undo resumes the time that was left", async () => {
+  await mount();
+  await act(async () => {
+    api.show({ message: "Removed", action: { label: "Undo", onPress() {} } });
+  });
+  await act(async () => {
+    jest.advanceTimersByTime(UNDO_TOAST_MS - 50);
+  });
+  const undo = screen.getByRole("button", { name: "Undo" });
+  await act(async () => {
+    fireEvent(undo, "pressIn");
+  });
+  await act(async () => {
+    jest.advanceTimersByTime(5_000);
+  });
+  await act(async () => {
+    fireEvent(undo, "pressOut");
+  });
+  await act(async () => {
+    jest.advanceTimersByTime(49);
   });
   expect(screen.getByText("Removed")).toBeOnTheScreen();
   await act(async () => {

@@ -7,6 +7,7 @@ import {
   GAME_STATUS_LABELS,
   GAME_TRACKING_MESSAGES,
   GAME_UNDO_MESSAGES,
+  LIBRARY_CARD_ACTION_LABELS,
   LIBRARY_CARD_MESSAGES,
   LIBRARY_COPY,
   LIBRARY_NOTES,
@@ -235,6 +236,23 @@ describe("LIBRARY_NOTES, labels and the held section (spec 0020, AC-10, AC-12, A
     expect(LIBRARY_CARD_MESSAGES.yourScore).toBe("Your score");
     expect(LIBRARY_CARD_MESSAGES.yourShowRating).toBe("Your show rating");
     expect(LIBRARY_SIGNED_OUT.title).toBe("Sign in to see your library");
+  });
+
+  it("names a library card's quick action as both apps' cards do", () => {
+    const labels = LIBRARY_CARD_ACTION_LABELS;
+    expect(labels.unmarkMovie("Dune")).toBe("Unmark Dune as watched");
+    expect(labels.removeFromPage("Dune", "watchlist", "movie")).toBe(
+      "Remove Dune from Watchlist",
+    );
+    expect(labels.removeFromPage("Hades", "watchlist", "game")).toBe(
+      "Remove Hades from Want to play",
+    );
+    expect(labels.removeGame(labels.missingGame)).toBe(
+      "Remove missing game from your games",
+    );
+    expect(labels.unmarkMovie(labels.missingTitle)).toBe(
+      "Unmark missing title as watched",
+    );
   });
 
   it("labels a Watched show Finished or Caught up", () => {

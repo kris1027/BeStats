@@ -1,9 +1,9 @@
 # 0033. Mobile app: an Expo client beside the web app, sharing one core and one API
 
 **Date**: 2026-11-18
-**Status**: In Progress
+**Status**: Accepted
 
-Scope feature: [28. Mobile app (iOS and Android)](../../scope/scope.md#28-mobile-app-ios-and-android--in-progress--ga) · GA tier
+Scope feature: [28. Mobile app (iOS and Android)](../../scope/scope.md#28-mobile-app-ios-and-android--done--ga) · GA tier
 
 ## Summary
 

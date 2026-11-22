@@ -128,7 +128,13 @@ function ToastStack({
   );
 }
 
-/** One toast with its own timer; a running action holds the timer off. */
+/**
+ * One toast with its own timer. A running action holds the timer off, and so
+ * does a finger on the action: the toast would otherwise close under a press
+ * that began before its deadline, and the Undo would be lost without a word.
+ * Letting go resumes the time that was left, as the web's toasts resume
+ * after a hover (AGENTS.md section 11: never a silent failure).
+ */
 function TimedToast({
   toast,
   dismiss,
@@ -136,22 +142,33 @@ function TimedToast({
   toast: ShownToast;
   dismiss: (key: number) => void;
 }) {
+  const [held, setHeld] = useState(false);
+  const left = useRef(toast.action ? UNDO_TOAST_MS : PLAIN_TOAST_MS);
   useEffect(() => {
-    if (toast.busy) return;
-    const timer = setTimeout(
-      () => dismiss(toast.key),
-      toast.action ? UNDO_TOAST_MS : PLAIN_TOAST_MS,
-    );
-    return () => clearTimeout(timer);
-  }, [toast, dismiss]);
-  return <ToastView toast={toast} onClose={() => dismiss(toast.key)} />;
+    if (toast.busy || held) return;
+    const started = Date.now();
+    const timer = setTimeout(() => dismiss(toast.key), left.current);
+    return () => {
+      clearTimeout(timer);
+      left.current -= Date.now() - started;
+    };
+  }, [toast, held, dismiss]);
+  return (
+    <ToastView
+      toast={toast}
+      onHold={setHeld}
+      onClose={() => dismiss(toast.key)}
+    />
+  );
 }
 
 function ToastView({
   toast,
+  onHold,
   onClose,
 }: {
   toast: ShownToast;
+  onHold: (held: boolean) => void;
   onClose: () => void;
 }) {
   return (
@@ -177,6 +194,8 @@ function ToastView({
       ) : toast.action ? (
         <Pressable
           accessibilityRole="button"
+          onPressIn={() => onHold(true)}
+          onPressOut={() => onHold(false)}
           onPress={toast.action.onPress}
           className="min-h-11 min-w-11 items-center justify-center rounded-full px-3"
         >
