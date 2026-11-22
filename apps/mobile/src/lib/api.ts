@@ -53,8 +53,9 @@ export function appVersion(): string {
 }
 
 /**
- * How long one request may wait for an answer before it fails as `network`
- * (root AGENTS.md section 11: a failure shows visibly). Without it an
+ * How long one request may wait for its whole answer, headers and body,
+ * before it fails as `network` (root AGENTS.md section 11: a failure shows
+ * visibly). Without it an
  * unreachable API waits for the system's own timeout, about a minute on iOS,
  * twice over with the query's one retry, behind a spinner.
  */
@@ -94,7 +95,7 @@ export async function apiRequest<T>(
     if (response.status === 401) return sessionExpired();
   }
 
-  const body: unknown = await response.json().catch(() => null);
+  const { body } = response;
   if (response.ok) {
     const parsed = schema.safeParse(body);
     if (parsed.success) return parsed.data;
@@ -122,11 +123,14 @@ function unreadable(status: number): ApiError {
   return new ApiError(status, "internal", V1_ERROR_MESSAGES.internal);
 }
 
+/** One answer, its body already read (`null` when it is not JSON). */
+type Answer = { status: number; ok: boolean; body: unknown };
+
 async function send(
   path: string,
   options: RequestOptions,
   token: string | null,
-): Promise<Response> {
+): Promise<Answer> {
   const headers: Record<string, string> = {
     Accept: "application/json",
     [APP_VERSION_HEADER]: appVersion(),
@@ -134,16 +138,26 @@ async function send(
   if (options.body !== undefined) headers["Content-Type"] = "application/json";
   if (token) headers.Authorization = `Bearer ${token}`;
 
+  // One timer spans the headers and the body, so an answer that stalls
+  // halfway fails as `network` too rather than spinning on.
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
   try {
-    return await fetch(`${getPublicEnv().EXPO_PUBLIC_API_BASE_URL}${path}`, {
-      method: options.method ?? "GET",
-      headers,
-      body:
-        options.body === undefined ? undefined : JSON.stringify(options.body),
-      signal: controller.signal,
+    const response = await fetch(
+      `${getPublicEnv().EXPO_PUBLIC_API_BASE_URL}${path}`,
+      {
+        method: options.method ?? "GET",
+        headers,
+        body:
+          options.body === undefined ? undefined : JSON.stringify(options.body),
+        signal: controller.signal,
+      },
+    );
+    const body: unknown = await response.json().catch((error: unknown) => {
+      if (controller.signal.aborted) throw error;
+      return null;
     });
+    return { status: response.status, ok: response.ok, body };
   } catch {
     throw new ApiError(0, "network", V1_NETWORK_MESSAGE);
   } finally {

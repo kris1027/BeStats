@@ -174,3 +174,46 @@ test("gives up on a request with no answer and says offline", async () => {
     jest.useRealTimers();
   }
 });
+
+test("gives up on an answer whose body stalls and says offline", async () => {
+  jest.useFakeTimers();
+  try {
+    // Headers arrive, then the body never finishes until the signal aborts.
+    fetchMock.mockImplementation(
+      async (_url: string, init: { signal?: AbortSignal }) => ({
+        ok: true,
+        status: 200,
+        json: () =>
+          new Promise((_resolve, reject) => {
+            init.signal?.addEventListener("abort", () =>
+              reject(new DOMException("Aborted", "AbortError")),
+            );
+          }),
+      }),
+    );
+    const settled = apiRequest("/api/v1/movies/1", schema).catch(
+      (caught) => caught,
+    );
+    await jest.advanceTimersByTimeAsync(API_TIMEOUT_MS);
+    await expect(settled).resolves.toMatchObject({
+      status: 0,
+      code: "network",
+      message: V1_NETWORK_MESSAGE,
+    });
+  } finally {
+    jest.useRealTimers();
+  }
+});
+
+test("clears its timer once the answer is read", async () => {
+  jest.useFakeTimers();
+  try {
+    fetchMock.mockResolvedValue(respond(200, { ok: true }));
+    await expect(apiRequest("/api/v1/movies/1", schema)).resolves.toEqual({
+      ok: true,
+    });
+    expect(jest.getTimerCount()).toBe(0);
+  } finally {
+    jest.useRealTimers();
+  }
+});
