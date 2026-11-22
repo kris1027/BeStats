@@ -13,7 +13,7 @@ TYPES_FILE="packages/core/src/supabase/database.types.ts"
 TMP_FILE="$(mktemp)"
 trap 'rm -f "$TMP_FILE"' EXIT
 
-pnpm exec supabase gen types typescript --local --schema public > "$TMP_FILE"
+pnpm exec supabase gen types typescript --schema public > "$TMP_FILE"
 
 if ! diff -u "$TYPES_FILE" "$TMP_FILE"; then
   echo
