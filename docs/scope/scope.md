@@ -472,8 +472,8 @@ A native app for iOS and Android beside the web app, sharing its rules with it. 
     - [x] 5d account, built in two slices (agreed 2026-11-21)
       - [x] 5d1 sign up, account screen, deletion on web and mobile with its migration (`delete_own_account()`), the self serve deletion text on `/privacy` and `/terms`, plan in [prompts/mobile-account-deletion.md](../../prompts/mobile-account-deletion.md) (branch `feat/mobile-account`; checked in the iOS Simulator and on the local web; the migration is on production (checked 2026-11-21); Expo joins `PROCESSORS` in step 6; change password on the phone left for a follow up)
       - [x] 5d2 offline cache and its wipe, the offline banner, Retry on an offline write, About and attribution, plan in [prompts/mobile-offline-about.md](../../prompts/mobile-offline-about.md) (branch `feat/mobile-offline-about`; About and the persisted cache checked in the iOS Simulator; the offline banner and Retry checked by Jest only, the airplane mode run is still owed)
-    - [ ] 5e deep links (well known files, `/reset-password/app`)
-  - [ ] Release (step 6): AC-15, AC-17
+    - [x] 5e deep links and in app password reset, plan in [prompts/mobile-deep-links.md](../../prompts/mobile-deep-links.md) (branch `feat/mobile-deep-links`; `bestats://` title links, the Home fallback and the full reset with email on checked in the iOS Simulator on the local stack; the two well known files are built by `pnpm app-links` and wait for the IDs in step 6)
+  - [ ] Release (step 6): AC-15, AC-17; also `pnpm app-links` with the Apple Team ID and Android signing fingerprint, the firewall allowing `/.well-known/` and `/reset-password/app` (`docs/deploy.md` section 5), and an https link opening a signed build (AC-16)
 - [ ] Verify it: `/check verify mobile app`
 - [ ] Test it: `/test mobile app`
 - [x] Review it (fresh model): `/check review mobile app`
