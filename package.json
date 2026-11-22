@@ -11,6 +11,7 @@
     "lint:ci": "biome ci --error-on-warnings",
     "format": "biome check --write",
     "tokens": "node packages/core/scripts/tokens.ts",
+    "app-links": "node packages/core/scripts/app-links.ts",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test",
     "test:watch": "pnpm --filter @bestats/web test:watch",
