@@ -44,3 +44,16 @@ test("only components/text.tsx imports Text or TextInput from react-native", () 
   }).map(({ path }) => path);
   expect(offenders).toEqual([]);
 });
+
+/**
+ * covers: decision 10. A screen that buzzes on its own would buzz on the
+ * optimistic step or twice for one write; `lib/haptics.ts`, fired from
+ * `useTrackingWrite`, is the one caller.
+ */
+test("only lib/haptics.ts imports expo-haptics", () => {
+  const offenders = FILES.filter(
+    ({ path, text }) =>
+      path !== "lib/haptics.ts" && /from "expo-haptics"/.test(text),
+  ).map(({ path }) => path);
+  expect(offenders).toEqual([]);
+});

@@ -23,6 +23,7 @@ import type { z } from "zod";
 import { useToast } from "@/components/toast";
 
 import { ApiError, apiRequest } from "./api";
+import { confirmedWriteHaptic, refusedWriteHaptic } from "./haptics";
 import { libraryKeys } from "./library";
 import { PRIVATE_QUERY_ROOT } from "./query-client";
 
@@ -156,6 +157,10 @@ type WriteOptions<TState, TVars, TResult> = {
  * sign out (spec 0033, AC-13). The refetch waits for the last write on the
  * same state, so two quick taps never flash the first answer.
  *
+ * The haptics fire here and only here, after the server's answer: a light
+ * tap on a confirmed write (an Undo's restore included, since it is one of
+ * these writes) and the error buzz on a refused one (decision 10).
+ *
  * A write that never reached the server (the `network` error, offline say)
  * fails like any other and its toast offers Retry, which sends the same
  * write again; nothing is queued for later (AC-13). A refusal the server
@@ -192,6 +197,9 @@ export function useTrackingWrite<TState, TVars, TResult>({
       if (context?.previous !== undefined && !signedOut) {
         queries.setQueryData(stateKey, context.previous);
       }
+      // A 401 ended the session: the write was cut short by the sign out,
+      // not refused, so it gets no buzz (requirement 10).
+      if (!signedOut) refusedWriteHaptic();
       const stale =
         expired !== undefined &&
         error instanceof ApiError &&
@@ -218,7 +226,10 @@ export function useTrackingWrite<TState, TVars, TResult>({
       });
       onFailure?.();
     },
-    onSuccess: (result, vars) => onSuccess?.(result, vars),
+    onSuccess: (result, vars) => {
+      confirmedWriteHaptic();
+      onSuccess?.(result, vars);
+    },
     onSettled: async () => {
       if (queries.isMutating({ mutationKey: stateKey }) > 1) return;
       // Every write can move a title between library pages, so the pages
