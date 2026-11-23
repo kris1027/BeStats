@@ -8,7 +8,7 @@ Governing decisions: [prompts/mobile-web-parity-foundation.md](mobile-web-parity
 
 ## Progress (2026-11-23)
 
-On `feat/mobile-look-title-pages`, everything is built, tested and committed; not pushed. Every automated check passes. Left: the simulator pass (Manual test steps). Settled: the swipe's action is hidden from VoiceOver, which reaches the same action through the row's Watched button (your call, 2026-11-23; this replaces the custom row action in decision 10 and requirement 7).
+On `feat/mobile-look-title-pages`, everything is built, tested and committed; not pushed. Every automated check passes. The simulator pass (Manual test steps) passed, checked by you on 2026-11-23. Settled: the swipe's action is hidden from VoiceOver, which reaches the same action through the row's Watched button (your call, 2026-11-23; this replaces the custom row action in decision 10 and requirement 7).
 
 ## Inspected
 
