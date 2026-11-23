@@ -15,6 +15,7 @@ import Animated, {
 import { Text } from "@/components/text";
 import { artworkHeight, sizedImageUri } from "@/lib/images";
 import { useReduceMotion } from "@/lib/reduce-motion";
+import { useReduceTransparency } from "@/lib/reduce-transparency";
 import { HEADER_BACKGROUND } from "@/theme/stack-options";
 import { fractionToken, tokenColorAlpha } from "@/theme/token-vars";
 
@@ -64,8 +65,8 @@ type Props = {
  * screen keeps the stack's solid header and its title.
  *
  * The scroll handler and both styles run on the UI thread, so scrolling
- * renders no React frame. Reduce Motion keeps the header usable without the
- * effect (AGENTS.md section 3, accessibility).
+ * renders no React frame. Reduce Motion and Reduce Transparency both keep
+ * the header usable without the effect (AGENTS.md section 3, accessibility).
  */
 export function TitleScroll({ title, backdropUrl, children }: Props) {
   const scrollY = useSharedValue(0);
@@ -78,8 +79,31 @@ export function TitleScroll({ title, backdropUrl, children }: Props) {
   const headerHeight = use(HeaderHeightContext) ?? 0;
   const { width } = useWindowDimensions();
   const reduceMotion = useReduceMotion();
+  const reduceTransparency = useReduceTransparency();
   const height = backdropHeight(width, headerHeight);
   const solidAt = height - headerHeight;
+
+  if (backdropUrl && reduceTransparency) {
+    // Reduce Transparency keeps the solid header: the artwork starts under
+    // it, nothing shows through the bar, and nothing stretches (decision 4,
+    // requirement 6).
+    return (
+      <Animated.ScrollView
+        style={styles.fill}
+        contentContainerStyle={styles.content}
+      >
+        <Stack.Screen options={{ title, headerTransparent: false }} />
+        <Backdrop
+          uri={sizedImageUri(backdropUrl, width)}
+          height={backdropHeight(width, 0)}
+          headerHeight={0}
+          scrollY={scrollY}
+          stretch={false}
+        />
+        <OverBackdrop value>{children}</OverBackdrop>
+      </Animated.ScrollView>
+    );
+  }
 
   if (!backdropUrl) {
     return (

@@ -1,10 +1,25 @@
 import { screen } from "@testing-library/react-native";
 import { Stack } from "expo-router";
 import { renderRouter } from "expo-router/testing-library";
+import { Dimensions } from "react-native";
 
 import { Text } from "@/components/text";
 
-import { backdropHeight, TitleScroll } from "./title-header";
+import {
+  backdropHeight,
+  solidness,
+  stretchTransform,
+  TitleScroll,
+} from "./title-header";
+
+let mockReduceTransparency = false;
+jest.mock("@/lib/reduce-transparency", () => ({
+  useReduceTransparency: () => mockReduceTransparency,
+}));
+
+afterEach(() => {
+  mockReduceTransparency = false;
+});
 
 /**
  * covers: prompts/mobile-look-title-pages.md, decision 4 and AC-1 (a
@@ -53,4 +68,39 @@ test("a title with no backdrop draws no artwork", async () => {
   expect(
     screen.queryByTestId("title-backdrop", { includeHiddenElements: true }),
   ).toBeNull();
+});
+
+/**
+ * covers: prompts/mobile-look-title-pages.md, requirement 6 and AC-1:
+ * Reduce Motion stops the stretch and makes the header switch at once.
+ */
+test("Reduce Motion: the backdrop never stretches when pulled", () => {
+  expect(stretchTransform(-80, 300, false)).toEqual([]);
+  expect(stretchTransform(-80, 300, true)).not.toEqual([]);
+  expect(stretchTransform(40, 300, true)).toEqual([]);
+});
+
+test("Reduce Motion: the header switches at once instead of fading", () => {
+  // The fade itself is Reanimated's `interpolate`, which the Jest stand-in
+  // does not compute; the step under Reduce Motion is this file's own.
+  const solidAt = 200;
+  expect(solidness(solidAt - 1, solidAt, true)).toBe(0);
+  expect(solidness(solidAt, solidAt, true)).toBe(1);
+  expect(solidness(solidAt + 300, solidAt, true)).toBe(1);
+});
+
+/**
+ * covers: prompts/mobile-look-title-pages.md, requirement 6: Reduce
+ * Transparency keeps the solid header, so the artwork starts under it and
+ * fills only its own 16:9, not the bar's height too.
+ */
+test("Reduce Transparency: the artwork starts under the solid header", async () => {
+  mockReduceTransparency = true;
+  await open("https://image.tmdb.org/t/p/original/backdrop.jpg");
+  expect(await screen.findByText("Hero")).toBeOnTheScreen();
+  const backdrop = screen.getByTestId("title-backdrop", {
+    includeHiddenElements: true,
+  });
+  const { width } = Dimensions.get("window");
+  expect(backdrop).toHaveStyle({ height: backdropHeight(width, 0) });
 });
