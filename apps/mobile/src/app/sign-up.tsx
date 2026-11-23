@@ -13,16 +13,11 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  TextInput,
-} from "react-native";
-
+import { KeyboardAvoidingView, Platform, ScrollView } from "react-native";
 import { FormField, INPUT_CLASS } from "@/components/form-field";
 import { GlassButton } from "@/components/glass-button";
 import { Notice } from "@/components/notice";
+import { TextInput } from "@/components/text";
 import { profileKey, putUsername } from "@/lib/account";
 import { ApiError } from "@/lib/api";
 import { authErrorMessage } from "@/lib/auth-errors";

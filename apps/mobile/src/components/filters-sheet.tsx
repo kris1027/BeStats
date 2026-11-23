@@ -15,10 +15,10 @@ import {
   Modal,
   Pressable,
   ScrollView,
-  Text,
   View,
 } from "react-native";
 
+import { Text } from "@/components/text";
 import { catalogKeys, fetchGenres } from "@/lib/catalog";
 
 import { GlassButton } from "./glass-button";

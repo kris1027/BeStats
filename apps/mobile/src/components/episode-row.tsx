@@ -3,8 +3,9 @@ import { formatAirDate, formatRuntime } from "@bestats/core/format";
 import { SEASON_PAGE_COPY } from "@bestats/core/tracking/messages";
 import { Image } from "expo-image";
 import type { ReactNode } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
 
+import { Text } from "@/components/text";
 import { sizedImageUri } from "@/lib/images";
 
 import { communityRatingLabel, communityRatingText } from "./poster-card";

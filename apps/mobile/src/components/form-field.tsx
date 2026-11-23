@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { Text } from "@/components/text";
 
 /**
  * The glass text field every form in the app uses: 44pt tall, so it meets the

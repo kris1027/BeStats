@@ -3,14 +3,9 @@ import { type CatalogList, listPath } from "@bestats/core/catalog/lists";
 import { todayUtc } from "@bestats/core/tv/air-status";
 import { useQuery } from "@tanstack/react-query";
 import { type Href, Link } from "expo-router";
-import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, FlatList, Pressable, View } from "react-native";
 
+import { Text } from "@/components/text";
 import { catalogKeys, fetchList } from "@/lib/catalog";
 
 import { cardDateLabel } from "./dated-card";

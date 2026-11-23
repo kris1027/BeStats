@@ -4,8 +4,7 @@ import {
   useQuery,
 } from "@tanstack/react-query";
 import { act, render, waitFor } from "@testing-library/react-native";
-import { Text } from "react-native";
-
+import { Text } from "@/components/text";
 import { ToastProvider } from "@/components/toast";
 
 import { libraryKeys } from "./library";

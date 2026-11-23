@@ -2,8 +2,9 @@ import type { V1LibraryEntry } from "@bestats/core/api/v1/library";
 import type { LibraryPageKey } from "@bestats/core/catalog/library-list";
 import { Image } from "expo-image";
 import { type Href, Link } from "expo-router";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, View } from "react-native";
 
+import { Text } from "@/components/text";
 import { sizedImageUri } from "@/lib/images";
 import type { CardAction } from "@/lib/library-actions";
 import { type CardBadge, libraryCardView } from "@/lib/library-card";

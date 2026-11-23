@@ -13,10 +13,10 @@ import {
   AccessibilityInfo,
   ActivityIndicator,
   Pressable,
-  Text,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Text } from "@/components/text";
 
 /** How long a toast with no action stays up. */
 const PLAIN_TOAST_MS = 4_000;

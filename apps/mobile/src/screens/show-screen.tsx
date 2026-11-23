@@ -18,8 +18,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { Link, Stack, useLocalSearchParams } from "expo-router";
-import { Pressable, ScrollView, Text, View } from "react-native";
-
+import { Pressable, ScrollView, View } from "react-native";
 import { CatalogNotice } from "@/components/catalog-notice";
 import { LoadingState, StatePanel } from "@/components/centered-state";
 import { DetailHeader, DetailSection } from "@/components/detail-header";
@@ -29,6 +28,7 @@ import {
   communityRatingText,
 } from "@/components/poster-card";
 import { RatingLine, ratedCount } from "@/components/rating-line";
+import { Text } from "@/components/text";
 import { useToast } from "@/components/toast";
 import { TrackingGate } from "@/components/tracking-gate";
 import { catalogKeys, fetchShow } from "@/lib/catalog";

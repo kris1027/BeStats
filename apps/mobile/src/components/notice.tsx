@@ -1,4 +1,5 @@
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { Text } from "@/components/text";
 
 /**
  * A message the screen must not hide: an error is announced right away to a

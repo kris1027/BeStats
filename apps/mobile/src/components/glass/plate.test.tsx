@@ -1,6 +1,7 @@
 import { act, render, screen } from "@testing-library/react-native";
-import { AccessibilityInfo, Platform, Text } from "react-native";
+import { AccessibilityInfo, Platform } from "react-native";
 
+import { Text } from "@/components/text";
 import { GlassPlate, gradientCss, PlateSolid } from "./plate";
 import { gradientLine } from "./rim";
 

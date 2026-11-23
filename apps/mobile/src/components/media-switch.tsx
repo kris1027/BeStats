@@ -1,6 +1,7 @@
 import type { LibraryType } from "@bestats/core/catalog/media-type";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, View } from "react-native";
 
+import { Text } from "@/components/text";
 import { useMediaType } from "@/lib/media-type";
 
 /** The web's media tabs, in their order and with their names. */

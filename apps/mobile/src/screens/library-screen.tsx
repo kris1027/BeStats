@@ -28,15 +28,14 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
-  Text,
   useWindowDimensions,
   View,
 } from "react-native";
-
 import { LoadingState, StatePanel } from "@/components/centered-state";
 import { GlassButton } from "@/components/glass-button";
 import { LibraryCard } from "@/components/library-card";
 import { MediaSwitchView } from "@/components/media-switch";
+import { Text } from "@/components/text";
 import { useLibraryPage } from "@/lib/library";
 import { cardActionFor, useLibraryCardActions } from "@/lib/library-actions";
 import { useMediaType } from "@/lib/media-type";

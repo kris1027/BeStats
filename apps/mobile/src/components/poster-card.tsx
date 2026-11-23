@@ -7,8 +7,9 @@ import {
 } from "@bestats/core/catalog/media-type";
 import { Image } from "expo-image";
 import { type Href, Link } from "expo-router";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, View } from "react-native";
 
+import { Text } from "@/components/text";
 import { sizedImageUri } from "@/lib/images";
 
 /**

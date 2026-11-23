@@ -2,8 +2,9 @@ import { ACCOUNT_COPY } from "@bestats/core/auth/messages";
 import { SIGN_IN_ACTION_LABEL } from "@bestats/core/tracking/messages";
 import { useRouter } from "expo-router";
 import type { ReactNode } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import { ActivityIndicator, View } from "react-native";
 
+import { Text } from "@/components/text";
 import { GlassButton } from "./glass-button";
 
 /**

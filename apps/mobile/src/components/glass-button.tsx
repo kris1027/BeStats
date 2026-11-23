@@ -1,4 +1,5 @@
-import { ActivityIndicator, Pressable, Text } from "react-native";
+import { ActivityIndicator, Pressable } from "react-native";
+import { Text } from "@/components/text";
 
 type Props = {
   label: string;

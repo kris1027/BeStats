@@ -1,7 +1,8 @@
 import type { V1Movie } from "@bestats/core/api/v1/movie";
 import { Image } from "expo-image";
-import { FlatList, Text, View } from "react-native";
+import { FlatList, View } from "react-native";
 
+import { Text } from "@/components/text";
 import { sizedImageUri } from "@/lib/images";
 
 const PHOTO_WIDTH = 96;

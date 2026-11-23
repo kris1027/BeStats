@@ -25,8 +25,7 @@ import { todayUtc } from "@bestats/core/tv/air-status";
 import { useQuery } from "@tanstack/react-query";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { ScrollView, Text, View } from "react-native";
-
+import { ScrollView, View } from "react-native";
 import { CastRow } from "@/components/cast-row";
 import { CatalogNotice } from "@/components/catalog-notice";
 import { LoadingState, StatePanel } from "@/components/centered-state";
@@ -37,6 +36,7 @@ import {
   communityRatingText,
 } from "@/components/poster-card";
 import { ScoreSheet } from "@/components/score-sheet";
+import { Text } from "@/components/text";
 import { TrackingGate } from "@/components/tracking-gate";
 import { catalogKeys } from "@/lib/catalog";
 import { fetchMovie, restoreMovie, writeMovieIntent } from "@/lib/movies";

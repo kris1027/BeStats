@@ -1,7 +1,6 @@
 import { UNDO_TOAST_MS } from "@bestats/core/tracking/messages";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
-import { Text } from "react-native";
-
+import { Text } from "@/components/text";
 import { useToast } from "@/components/toast";
 import { testQueryClient, titleWrapper } from "@/test-utils/title-harness";
 

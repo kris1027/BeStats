@@ -1,5 +1,6 @@
-import { Pressable, Text, View } from "react-native";
+import { Pressable, View } from "react-native";
 
+import { Text } from "@/components/text";
 import type { CardActionLook } from "@/lib/library-actions";
 
 /** The smallest tap area a control gets (AGENTS.md section 3). */

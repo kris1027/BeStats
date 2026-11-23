@@ -34,8 +34,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { ScrollView, Text, View } from "react-native";
-
+import { ScrollView, View } from "react-native";
 import { CatalogNotice } from "@/components/catalog-notice";
 import { StatePanel } from "@/components/centered-state";
 import {
@@ -47,6 +46,7 @@ import { GlassButton } from "@/components/glass-button";
 import { RatingLine, ratedCount } from "@/components/rating-line";
 import { ScoreSheet } from "@/components/score-sheet";
 import { SeasonNav } from "@/components/season-nav";
+import { Text } from "@/components/text";
 import { useToast } from "@/components/toast";
 import { TrackingGate } from "@/components/tracking-gate";
 import { catalogKeys, fetchSeason, fetchShow } from "@/lib/catalog";

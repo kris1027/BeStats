@@ -1,6 +1,7 @@
 import { Image } from "expo-image";
-import { Text, useWindowDimensions, View } from "react-native";
+import { useWindowDimensions, View } from "react-native";
 
+import { Text } from "@/components/text";
 import { DETAIL_POSTER_WIDTH, sizedImageUri } from "@/lib/images";
 
 type Props = {

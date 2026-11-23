@@ -1,5 +1,6 @@
 import { formatCalculatedRating } from "@bestats/core/format";
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { Text } from "@/components/text";
 
 /**
  * "1 rated episode", "5 rated seasons", as the web words it: the basis a

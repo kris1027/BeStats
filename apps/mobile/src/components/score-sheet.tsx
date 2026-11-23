@@ -1,5 +1,6 @@
-import { Modal, Pressable, Text, View } from "react-native";
+import { Modal, Pressable, View } from "react-native";
 
+import { Text } from "@/components/text";
 import { GlassButton } from "./glass-button";
 
 const SCORES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;

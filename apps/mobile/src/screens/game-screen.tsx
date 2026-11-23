@@ -31,8 +31,7 @@ import { todayUtc } from "@bestats/core/tv/air-status";
 import { useQuery } from "@tanstack/react-query";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { ScrollView, Text, View } from "react-native";
-
+import { ScrollView, View } from "react-native";
 import { CatalogNotice } from "@/components/catalog-notice";
 import { LoadingState, StatePanel } from "@/components/centered-state";
 import { DetailHeader, DetailSection } from "@/components/detail-header";
@@ -43,6 +42,7 @@ import {
 } from "@/components/poster-card";
 import { ScoreSheet } from "@/components/score-sheet";
 import { ScreenshotRow } from "@/components/screenshot-row";
+import { Text } from "@/components/text";
 import { TrackingGate } from "@/components/tracking-gate";
 import { catalogKeys, fetchGame } from "@/lib/catalog";
 import { restoreGame, writeGameIntent } from "@/lib/games";

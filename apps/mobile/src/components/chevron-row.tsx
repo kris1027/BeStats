@@ -1,4 +1,5 @@
-import { Pressable, Text } from "react-native";
+import { Pressable } from "react-native";
+import { Text } from "@/components/text";
 
 /**
  * A full width glass row with a `›` chevron that opens another screen or a

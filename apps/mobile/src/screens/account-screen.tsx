@@ -15,7 +15,7 @@ import {
 } from "@bestats/core/auth/username";
 import { useRouter } from "expo-router";
 import { type ReactNode, useEffect, useState } from "react";
-import { ScrollView, Text, TextInput, View } from "react-native";
+import { ScrollView, View } from "react-native";
 
 import {
   LoadingState,
@@ -26,6 +26,7 @@ import { ChevronRow } from "@/components/chevron-row";
 import { INPUT_CLASS } from "@/components/form-field";
 import { GlassButton } from "@/components/glass-button";
 import { Notice } from "@/components/notice";
+import { Text, TextInput } from "@/components/text";
 import { useProfile, useSaveUsername } from "@/lib/account";
 import { ApiError } from "@/lib/api";
 import { useSession } from "@/lib/session";

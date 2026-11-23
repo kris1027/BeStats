@@ -11,9 +11,9 @@ import {
 import { Image } from "expo-image";
 import * as Linking from "expo-linking";
 import type { ReactNode } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
-
+import { Pressable, ScrollView, View } from "react-native";
 import { ChevronRow } from "@/components/chevron-row";
+import { Text } from "@/components/text";
 import { appVersion } from "@/lib/api";
 import { getPublicEnv } from "@/lib/env";
 
