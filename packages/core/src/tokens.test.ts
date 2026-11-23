@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   GLOBALS_CSS,
+  oklchToHex,
   readTokens,
   renderTokens,
   TOKENS_FILE,
@@ -42,5 +43,22 @@ describe("generated design tokens", () => {
     const css =
       ":root { /* --gone: 1; */ --a: 1; }\n@theme inline { }\n@theme { }\n@media (x) { :root { --a: 2; } }";
     expect(readTokens(css)).toEqual({ a: "1" });
+  });
+
+  it("converts oklch to sRGB hex", () => {
+    expect(oklchToHex("oklch(1 0 0)")).toBe("#ffffff");
+    expect(oklchToHex("oklch(0 0 0)")).toBe("#000000");
+    // CSS Color 4's own example: oklch(62.8% 0.2577 29.23) is sRGB red.
+    expect(oklchToHex("oklch(62.8% 0.2577 29.23)")).toBe("#ff0000");
+    expect(oklchToHex("#123456")).toBeNull();
+  });
+
+  it("gives every oklch token an sRGB copy", async () => {
+    const { TOKENS_SRGB } = await import("./tokens.generated");
+    const oklch = Object.entries(TOKENS)
+      .filter(([, value]) => value.startsWith("oklch("))
+      .map(([name]) => name);
+    expect(oklch.length).toBeGreaterThan(0);
+    expect(Object.keys(TOKENS_SRGB).sort()).toEqual(oklch.sort());
   });
 });

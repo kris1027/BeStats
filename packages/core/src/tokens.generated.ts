@@ -101,3 +101,13 @@ export const TOKENS = {
 } as const;
 
 export type TokenName = keyof typeof TOKENS;
+
+// The oklch tokens as sRGB hex, for React Native, which cannot draw oklch.
+export const TOKENS_SRGB = {
+  "color-page-blob-amber": "#eba941",
+  "color-page-blob-deep": "#650018",
+  "color-page-blob-red": "#a20519",
+  "color-page-deep": "#050302",
+  "color-page-mid": "#1e0305",
+  "color-page-top": "#5c010f",
+} as const;

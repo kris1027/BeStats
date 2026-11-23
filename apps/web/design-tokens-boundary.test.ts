@@ -62,10 +62,13 @@ const SCANNED_EXTENSIONS = new Set([".ts", ".tsx", ".css", ".mjs", ".js"]);
  * written (AGENTS.md, the Tailwind v4 note). The one other exemption is
  * core's `tokens.generated.ts`, a copy `pnpm tokens` writes from
  * `globals.css` for the mobile app; core's `tokens.test.ts` fails if it ever
- * holds anything `globals.css` does not (spec 0034, Design tokens).
+ * holds anything `globals.css` does not (spec 0034, Design tokens). The
+ * script that writes it and its test are exempt too: converting the oklch
+ * tokens to sRGB for React Native means parsing oklch and checking the hex it
+ * gives (prompts/mobile-web-parity-foundation.md, decision 6).
  */
 const EXEMPT_FROM_COLOUR_RULE =
-  /^(apps\/web\/(design-tokens-boundary\.test\.ts|app\/globals\.css)|packages\/core\/src\/tokens\.generated\.ts)$/;
+  /^(apps\/web\/(design-tokens-boundary\.test\.ts|app\/globals\.css)|packages\/core\/(src\/tokens\.generated\.ts|src\/tokens\.test\.ts|scripts\/tokens\.ts))$/;
 
 const SOURCE_FILES = workspaceFiles({
   skipDirs: EXCLUDED_DIRS,
