@@ -7,8 +7,10 @@ import {
   MOVIE_ERROR_TO_V1,
   movieErrorFromReason,
   movieIdParamSchema,
+  v1MovieSchema,
   v1MovieWriteOkSchema,
 } from "./movie";
+import { v1ShowSchema } from "./show";
 
 describe("movieIdParamSchema", () => {
   it("accepts a positive integer id", () => {
@@ -45,5 +47,46 @@ describe("v1MovieWriteOkSchema", () => {
     };
     expect(v1MovieWriteOkSchema.parse(plain)).toEqual(plain);
     expect(v1MovieWriteOkSchema.parse(cleared)).toEqual(cleared);
+  });
+});
+
+/**
+ * covers: prompts/mobile-look-title-pages.md, decisions 2 and 3: the Facts,
+ * crew and cast fields are part of the contract, a value the catalog lacks
+ * travels as null rather than 0, and a failed show cast is null.
+ */
+describe("the title reads' Facts and crew fields", () => {
+  const company = { id: 1, name: "Fox 2000 Pictures", logoUrl: null };
+
+  it("carries the movie's Facts and writers, budget and revenue nullable", () => {
+    const shape = v1MovieSchema.shape;
+    expect(shape.originalLanguage.safeParse("en").success).toBe(true);
+    expect(shape.budget.safeParse(null).success).toBe(true);
+    expect(shape.revenue.safeParse(null).success).toBe(true);
+    expect(shape.budget.safeParse(63_000_000).success).toBe(true);
+    expect(shape.productionCompanies.safeParse([company]).success).toBe(true);
+    expect(shape.writers.safeParse(["Jim Uhls"]).success).toBe(true);
+  });
+
+  it("carries the show's Facts, and a cast that is null when its read failed", () => {
+    const shape = v1ShowSchema.shape;
+    expect(shape.networks.safeParse([company]).success).toBe(true);
+    expect(shape.productionCompanies.safeParse([]).success).toBe(true);
+    expect(shape.cast.safeParse(null).success).toBe(true);
+  });
+
+  it("requires every new field, so a route that drops one fails its parse", () => {
+    for (const key of [
+      "originalLanguage",
+      "budget",
+      "revenue",
+      "productionCompanies",
+      "writers",
+    ] as const) {
+      expect(v1MovieSchema.shape[key].safeParse(undefined).success).toBe(false);
+    }
+    for (const key of ["networks", "productionCompanies", "cast"] as const) {
+      expect(v1ShowSchema.shape[key].safeParse(undefined).success).toBe(false);
+    }
   });
 });
