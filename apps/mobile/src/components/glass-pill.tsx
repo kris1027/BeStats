@@ -4,9 +4,11 @@ import {
 } from "@bestats/core/format";
 import type { ReactNode } from "react";
 import { View } from "react-native";
+
 import { StarIcon } from "@/components/icons";
 import { PILL_FONT_SCALE_CAP, PILL_RADIUS } from "@/theme/pill";
 import { tokenColor } from "@/theme/token-vars";
+
 import { GlassPlate } from "./glass/plate";
 import { Text } from "./text";
 

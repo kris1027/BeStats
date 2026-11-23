@@ -2,6 +2,7 @@ import type { V1CatalogItem } from "@bestats/core/api/v1/browse";
 import type { LibraryType } from "@bestats/core/catalog/media-type";
 import type { ReactElement } from "react";
 import { FlatList, useWindowDimensions, View } from "react-native";
+
 import { GRID, gridCardWidth } from "./grid-layout";
 import { PosterCard } from "./poster-card";
 

@@ -4,6 +4,7 @@ import { Pressable, View } from "react-native";
 import { Text } from "@/components/text";
 import { useMediaType } from "@/lib/media-type";
 import { PILL_FONT_SCALE_CAP, PILL_RADIUS } from "@/theme/pill";
+
 import { GlassPlate } from "./glass/plate";
 
 /** The web's media tabs, in their order and with their names. */

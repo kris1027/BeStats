@@ -21,6 +21,7 @@ import {
 import { Text } from "@/components/text";
 import { catalogKeys, fetchGenres } from "@/lib/catalog";
 import { PILL_RADIUS } from "@/theme/pill";
+
 import { GlassPlate } from "./glass/plate";
 import { GlassButton } from "./glass-button";
 import { PageBackground } from "./page-background";
