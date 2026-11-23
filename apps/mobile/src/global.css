@@ -9,8 +9,8 @@
  * apps/web/app/globals.css and reach the app through
  * `@bestats/core/tokens.generated` at runtime (src/theme/token-vars.ts), so
  * this file holds no colour (design-tokens-boundary.test.ts; spec 0034,
- * Design tokens). The oklch page wash tokens are left out: React Native
- * cannot draw oklch.
+ * Design tokens). The oklch page tokens arrive as their sRGB conversion,
+ * since React Native cannot draw oklch.
  */
 @theme {
   --color-accent: var(--bs-color-accent);
@@ -29,10 +29,16 @@
   --color-input: var(--bs-color-input);
   --color-muted: var(--bs-color-muted);
   --color-muted-foreground: var(--bs-color-muted-foreground);
+  --color-page-blob-amber: var(--bs-color-page-blob-amber);
+  --color-page-blob-deep: var(--bs-color-page-blob-deep);
+  --color-page-blob-red: var(--bs-color-page-blob-red);
+  --color-page-deep: var(--bs-color-page-deep);
   --color-page-glow: var(--bs-color-page-glow);
+  --color-page-mid: var(--bs-color-page-mid);
   --color-page-orb: var(--bs-color-page-orb);
   --color-page-shade: var(--bs-color-page-shade);
   --color-page-stripe: var(--bs-color-page-stripe);
+  --color-page-top: var(--bs-color-page-top);
   --color-page-wash: var(--bs-color-page-wash);
   --color-popover: var(--bs-color-popover);
   --color-popover-foreground: var(--bs-color-popover-foreground);
@@ -50,4 +56,23 @@
   --color-text-link: var(--bs-color-text-link);
   --color-text-on-personal: var(--bs-color-text-on-personal);
   --color-text-secondary: var(--bs-color-text-secondary);
+}
+
+/*
+ * The web's radius scale (`--radius` 12pt, `rounded-panel` 24pt), worked out
+ * from the generated tokens in `token-vars.ts`, and Inter, embedded in the
+ * native build by the expo-font plugin in `app.json`
+ * (prompts/mobile-web-parity-foundation.md, decisions 8 and 11).
+ */
+@theme {
+  --radius: var(--bs-radius);
+  --radius-sm: var(--bs-radius-sm);
+  --radius-md: var(--bs-radius-md);
+  --radius-lg: var(--bs-radius-lg);
+  --radius-xl: var(--bs-radius-xl);
+  --radius-2xl: var(--bs-radius-2xl);
+  --radius-3xl: var(--bs-radius-3xl);
+  --radius-4xl: var(--bs-radius-4xl);
+  --radius-panel: var(--bs-radius-panel);
+  --font-sans: "Inter";
 }
