@@ -1,6 +1,11 @@
+import {
+  CATALOG_SOURCES,
+  type LibraryType,
+} from "@bestats/core/catalog/media-type";
 import { Image } from "expo-image";
 import { useWindowDimensions, View } from "react-native";
 
+import { CommunityRatingBadge } from "@/components/glass-pill";
 import { Text } from "@/components/text";
 import { DETAIL_POSTER_WIDTH, sizedImageUri } from "@/lib/images";
 
@@ -10,25 +15,27 @@ type Props = {
   backdropUrl: string | null;
   /** The meta line parts (dates, genres); empty parts are left out. */
   meta: (string | null)[];
-  /** The community rating named by its catalog (`TMDB 7.4`), or null. */
-  rating: string | null;
-  /** What a screen reader says for the rating (`TMDB rating 7.4`). */
-  ratingLabel: string | null;
+  /** Which catalog the community rating comes from (TMDB or IGDB). */
+  type: LibraryType;
+  /** The catalog's community rating, or null when it has none. */
+  communityRating: number | null;
 };
 
 /**
  * The top of a title screen, as the movie screen draws it: the backdrop, the
  * poster (or the title on the glass plate when there is none), the title,
- * one meta line and the community rating, labelled with its catalog so it is
- * never read as a personal score (AGENTS.md sections 3 and 9).
+ * one meta line and the community rating as the amber `GlassPill`, named by
+ * its catalog for screen readers so it is never read as a personal score
+ * (AGENTS.md sections 3 and 9; prompts/mobile-web-parity-foundation.md,
+ * AC-4).
  */
 export function DetailHeader({
   title,
   posterUrl,
   backdropUrl,
   meta,
-  rating,
-  ratingLabel,
+  type,
+  communityRating,
 }: Props) {
   const { width } = useWindowDimensions();
   const line = meta.filter(Boolean).join(" · ");
@@ -74,14 +81,10 @@ export function DetailHeader({
             {title}
           </Text>
           {line ? <Text className="text-text-secondary">{line}</Text> : null}
-          {rating ? (
-            <Text
-              accessibilityLabel={ratingLabel ?? rating}
-              className="font-semibold text-rating-tmdb"
-            >
-              {rating}
-            </Text>
-          ) : null}
+          <CommunityRatingBadge
+            source={CATALOG_SOURCES[type]}
+            value={communityRating}
+          />
         </View>
       </View>
     </View>

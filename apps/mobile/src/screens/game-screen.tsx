@@ -37,10 +37,6 @@ import { LoadingState, StatePanel } from "@/components/centered-state";
 import { DetailHeader, DetailSection } from "@/components/detail-header";
 import { GlassButton } from "@/components/glass-button";
 import { RatingStar } from "@/components/glass-pill";
-import {
-  communityRatingLabel,
-  communityRatingText,
-} from "@/components/poster-card";
 import { ScoreSheet } from "@/components/score-sheet";
 import { ScreenshotRow } from "@/components/screenshot-row";
 import { Text } from "@/components/text";
@@ -97,8 +93,8 @@ export function GameScreen() {
         title={detail.name}
         posterUrl={detail.coverUrl}
         backdropUrl={detail.artUrl}
-        rating={communityRatingText("game", detail.communityRating)}
-        ratingLabel={communityRatingLabel("game", detail.communityRating)}
+        type="game"
+        communityRating={detail.communityRating}
         meta={[
           formatAirDate(detail.releaseDate) ??
             (detail.releaseYear ? String(detail.releaseYear) : null),

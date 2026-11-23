@@ -24,10 +24,6 @@ import { LoadingState, StatePanel } from "@/components/centered-state";
 import { DetailHeader, DetailSection } from "@/components/detail-header";
 import { GlassButton } from "@/components/glass-button";
 import { RatingStar } from "@/components/glass-pill";
-import {
-  communityRatingLabel,
-  communityRatingText,
-} from "@/components/poster-card";
 import { RatingLine, ratedCount } from "@/components/rating-line";
 import { Text } from "@/components/text";
 import { useToast } from "@/components/toast";
@@ -90,8 +86,8 @@ export function ShowScreen() {
         title={detail.name}
         posterUrl={detail.posterUrl}
         backdropUrl={detail.backdropUrl}
-        rating={communityRatingText("tv", detail.tmdbRating)}
-        ratingLabel={communityRatingLabel("tv", detail.tmdbRating)}
+        type="tv"
+        communityRating={detail.tmdbRating}
         meta={[
           formatAirSpan({
             firstAirYear: detail.firstAirYear,

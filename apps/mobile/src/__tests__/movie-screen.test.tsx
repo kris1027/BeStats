@@ -116,7 +116,7 @@ beforeEach(() => {
 test("shows the movie with TMDB's rating labelled, crew and cast", async () => {
   await open();
   expect(await screen.findByText("Mark watched")).toBeOnTheScreen();
-  expect(screen.getByText("TMDB 8.2")).toBeOnTheScreen();
+  expect(screen.getByLabelText("TMDB rating 8.2")).toBeOnTheScreen();
   expect(
     screen.getByText(`${formatAirDate("1999-03-31")} · 2h 16m · Action`),
   ).toBeOnTheScreen();
@@ -326,7 +326,7 @@ test("a forced sign out keeps the movie and asks to sign in", async () => {
     clearPrivateQueries(client);
   });
   expect(await screen.findByText("Sign in to track")).toBeOnTheScreen();
-  expect(screen.getByText("TMDB 8.2")).toBeOnTheScreen();
+  expect(screen.getByLabelText("TMDB rating 8.2")).toBeOnTheScreen();
   expect(client.getQueryData(["me", "titles", "movie:603"])).toBeUndefined();
 });
 

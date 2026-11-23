@@ -32,10 +32,6 @@ import { LoadingState, StatePanel } from "@/components/centered-state";
 import { DetailHeader, DetailSection } from "@/components/detail-header";
 import { GlassButton } from "@/components/glass-button";
 import { RatingStar } from "@/components/glass-pill";
-import {
-  communityRatingLabel,
-  communityRatingText,
-} from "@/components/poster-card";
 import { ScoreSheet } from "@/components/score-sheet";
 import { Text } from "@/components/text";
 import { TrackingGate } from "@/components/tracking-gate";
@@ -90,8 +86,8 @@ export function MovieScreen() {
         title={detail.title}
         posterUrl={detail.posterUrl}
         backdropUrl={detail.backdropUrl}
-        rating={communityRatingText("movie", detail.tmdbRating)}
-        ratingLabel={communityRatingLabel("movie", detail.tmdbRating)}
+        type="movie"
+        communityRating={detail.tmdbRating}
         meta={[
           formatAirDate(detail.releaseDate) ??
             (detail.releaseYear ? String(detail.releaseYear) : null),

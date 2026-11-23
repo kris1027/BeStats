@@ -8,7 +8,7 @@ import { View } from "react-native";
 import { Text } from "@/components/text";
 import { sizedImageUri } from "@/lib/images";
 
-import { communityRatingLabel, communityRatingText } from "./poster-card";
+import { CommunityRatingBadge } from "./glass-pill";
 
 const STILL_WIDTH = 120;
 
@@ -34,7 +34,6 @@ export function EpisodeRow({
     episode.name,
     episode.episodeNumber,
   );
-  const rating = communityRatingText("tv", episode.tmdbRating);
   return (
     <View className="gap-3 rounded-2xl border border-border bg-glass-plate p-3">
       <View className="flex-row gap-3">
@@ -69,16 +68,7 @@ export function EpisodeRow({
               .filter(Boolean)
               .join(" · ")}
           </Text>
-          {rating ? (
-            <Text
-              accessibilityLabel={
-                communityRatingLabel("tv", episode.tmdbRating) ?? undefined
-              }
-              className="text-sm font-semibold text-rating-tmdb"
-            >
-              {rating}
-            </Text>
-          ) : null}
+          <CommunityRatingBadge source="TMDB" value={episode.tmdbRating} />
         </View>
       </View>
       {episode.overview ? (
