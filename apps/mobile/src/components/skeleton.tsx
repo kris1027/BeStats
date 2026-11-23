@@ -1,13 +1,12 @@
 import { useEffect, useRef } from "react";
 import {
-  AccessibilityInfo,
   Animated,
   useWindowDimensions,
   View,
   type ViewStyle,
 } from "react-native";
 
-import { createAccessibilityFlag } from "@/lib/accessibility-flag";
+import { useReduceMotion } from "@/lib/reduce-motion";
 import { PILL_RADIUS } from "@/theme/pill";
 import { lengthToken } from "@/theme/token-vars";
 
@@ -79,16 +78,6 @@ export function Skeleton({
   );
 }
 
-/**
- * Whether the system asks for reduced motion. React Native's own
- * `AccessibilityInfo`, not Reanimated's hook, so the pulse is a plain
- * `Animated` loop that every screen renders.
- */
-const useReduceMotion = createAccessibilityFlag({
-  event: "reduceMotionChanged",
-  read: () => AccessibilityInfo.isReduceMotionEnabled(),
-});
-
 /** A poster card's footprint: the poster and its title line. */
 export function PosterCardSkeleton({ width }: { width: number }) {
   return (
@@ -152,6 +141,36 @@ export function PageSkeleton() {
         {slotKeys("page", 3).map((key) => (
           <PosterCardSkeleton key={key} width={100} />
         ))}
+      </View>
+    </View>
+  );
+}
+
+/**
+ * A title screen's footprint while it loads (feature 29, slice 2,
+ * decision 12): the backdrop, the poster beside two lines, and the action
+ * row, so the hero does not jump when the detail arrives, as the web's
+ * detail skeletons do.
+ */
+export function TitleSkeleton() {
+  const { width } = useWindowDimensions();
+  return (
+    <View className="gap-4">
+      <Skeleton shape="line" style={{ width, height: (width * 9) / 16 }} />
+      <View className="flex-row gap-4 px-4">
+        <Skeleton shape="poster" style={{ width: 110 }} />
+        <View className="flex-1 gap-3 pt-2">
+          <Skeleton shape="line" style={{ width: "80%", height: 24 }} />
+          <Skeleton shape="line" style={{ width: "60%" }} />
+          <View className="flex-row gap-2">
+            <Skeleton shape="pill" />
+            <Skeleton shape="pill" />
+          </View>
+        </View>
+      </View>
+      <View className="flex-row gap-2 px-4">
+        <Skeleton shape="pill" style={{ width: 110, height: 44 }} />
+        <Skeleton shape="pill" style={{ width: 140, height: 44 }} />
       </View>
     </View>
   );

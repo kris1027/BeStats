@@ -31,3 +31,12 @@ test("grid cards fill three columns inside the gutters", () => {
   // 375pt phone: 375 minus two 16pt gutters and two 12pt gaps, over three.
   expect(gridCardWidth(375)).toBe(106);
 });
+
+test("a title screen loads behind its hero shaped skeleton, not a spinner", async () => {
+  await render(<LoadingState layout="title" label="Loading the movie" />);
+  expect(screen.getByLabelText("Loading the movie")).toBeOnTheScreen();
+  // Backdrop, poster, two lines, two genre pills, and two action pills.
+  expect(
+    screen.getAllByTestId("skeleton", { includeHiddenElements: true }),
+  ).toHaveLength(8);
+});

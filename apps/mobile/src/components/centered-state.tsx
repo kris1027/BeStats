@@ -14,7 +14,7 @@ import { lengthToken, tokenColor } from "@/theme/token-vars";
 
 import { GlassPlate } from "./glass/plate";
 import { GlassButton } from "./glass-button";
-import { PageSkeleton, PosterGridSkeleton } from "./skeleton";
+import { PageSkeleton, PosterGridSkeleton, TitleSkeleton } from "./skeleton";
 
 /**
  * A whole screen's loading state: skeletons in the shape of what is coming,
@@ -28,7 +28,7 @@ export function LoadingState({
   layout = "page",
 }: {
   label: string;
-  layout?: "page" | "grid";
+  layout?: "page" | "grid" | "title";
 }) {
   return (
     <View
@@ -37,7 +37,13 @@ export function LoadingState({
       accessibilityLabel={label}
       className="flex-1"
     >
-      {layout === "grid" ? <PosterGridSkeleton /> : <PageSkeleton />}
+      {layout === "grid" ? (
+        <PosterGridSkeleton />
+      ) : layout === "title" ? (
+        <TitleSkeleton />
+      ) : (
+        <PageSkeleton />
+      )}
     </View>
   );
 }
