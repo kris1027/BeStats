@@ -91,6 +91,8 @@ Docs: https://docs.expo.dev/eas/index.md
 - Every stack draws `PageBackground` (the web's layers, still, never animated) under each screen through `screenLayout` and `STACK_SCREEN_OPTIONS` in `src/theme/stack-options.tsx`; screens stay transparent, so never give a screen root `bg-background`. A React Native `Modal` gets no `screenLayout` and draws `PageBackground` itself (`filters-sheet.tsx`). The grain is `assets/images/grain.png`, written by `pnpm grain`.
 - Text is Inter, embedded by the `expo-font` plugin in `app.json` (`assets/fonts/`, with `OFL.txt`), so a font change needs a native rebuild. React Native text inherits no font: import `Text` and `TextInput` from `@/components/text`, never from `react-native` (`ui-boundary.test.ts`). Cap Dynamic Type with `maxFontSizeMultiplier` only on fixed height controls.
 - Icons come only from `@/components/icons`: the lucide icons the web uses, re-exported, and the web's tracking icons ported as `react-native-svg` (`icons/tracking-icons.tsx`). Never import `lucide-react-native` elsewhere (`ui-boundary.test.ts`); add a new icon to the barrel.
+- Fully rounded controls take `PILL_RADIUS` and cap their labels with `PILL_FONT_SCALE_CAP`, both from `src/theme/pill.ts`, never a literal. The personal score's plate and cyan rim travel together as `SURFACES.score` (`glass/plate.tsx`); a score control spreads it (`GlassButton score`) rather than picking plate and rim one by one.
+- A system accessibility setting (Reduce Transparency, Reduce Motion) is read through `createAccessibilityFlag` (`src/lib/accessibility-flag.ts`): read once, then followed live with one listener for the whole app.
 - Metro rewrites `tsconfig.json` to include `nativewind-env.d.ts` on start; keep that change.
 
 ## Tests
@@ -100,6 +102,7 @@ Docs: https://docs.expo.dev/eas/index.md
 - Reanimated and `react-native-worklets` are replaced in `jest.setup.ts` by `src/test-utils/reanimated-mock.ts`, since Reanimated's own mock loads a runtime jest-expo cannot run; animation durations follow Jest's fake timers. A `renderRouter` test that mounts the root layout stubs `@/components/launch-overlay`, because expo-router's helper swaps in its own Reanimated mock.
 - Title screen tests use `src/test-utils/title-harness.tsx`: `createApiMock()` answers `apiRequest` by method and path and records each call, so a test asserts the exact route and body a write sends; an unexpected call rejects. Wire it with `jest.mock("@/lib/api", …)` calling `mockApi.handle`.
 - A test that imports the root `_layout.tsx` mocks `../global.css` (`jest.mock("../global.css", () => ({}))`), since Jest cannot parse it.
+- Jest loads lucide's CommonJS build through `moduleNameMapper` in `package.json`; keep that mapping (and its path) when you upgrade lucide.
 - TypeScript 6 loads no global types by default, so `tsconfig.json` lists `jest` and `node` in `types`.
 
 ## Agent skills
@@ -116,6 +119,8 @@ Docs: https://docs.expo.dev/eas/index.md
 - [react-native-testing](../../.agents/skills/react-native-testing/): `callstack/react-native-testing-library`, RNTL v14 tests.
 - [debug-nw](../../.agents/skills/debug-nw/): `nativewind/nativewind`, debugging a NativeWind v5 RC setup (dependencies, Metro, PostCSS, CSS, runtime).
 - [nativewind-preview-to-rc](../../.agents/skills/nativewind-preview-to-rc/): `nativewind/nativewind`, moving between NativeWind v5 preview and RC releases.
+- [expo-animation](../../.agents/skills/expo-animation/): `expo/skills`, animation, gestures, press feedback and `expo-haptics`.
+- [lucide-icons](../../.agents/skills/lucide-icons/): `sandi763009/lucide-icons-skill`, picking lucide icons and `lucide-react-native` imports (add them to `@/components/icons`).
 - MCP servers: Expo MCP `https://mcp.expo.dev/mcp` (recommended; live EAS builds and Expo docs)
 
 _Drafted by /sync from the introducing change, worth a quick human pass._
