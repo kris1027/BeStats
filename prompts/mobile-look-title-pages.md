@@ -8,7 +8,7 @@ Governing decisions: [prompts/mobile-web-parity-foundation.md](mobile-web-parity
 
 ## Progress (2026-11-23)
 
-On `feat/mobile-look-title-pages`, everything is built, tested and committed; not pushed. Every automated check passes. Left: the simulator pass (Manual test steps) and one open point: the swipe's action is hidden from VoiceOver, which reaches the same action through the row's Watched button (requirement 7 asked for a custom action on the row).
+On `feat/mobile-look-title-pages`, everything is built, tested and committed; not pushed. Every automated check passes. Left: the simulator pass (Manual test steps). Settled: the swipe's action is hidden from VoiceOver, which reaches the same action through the row's Watched button (your call, 2026-11-23; this replaces the custom row action in decision 10 and requirement 7).
 
 ## Inspected
 
@@ -34,7 +34,7 @@ On `feat/mobile-look-title-pages`, everything is built, tested and committed; no
 7. **Crew and Facts.** "Directed by" and "Written by" (movie) and "Created by" (show) as the web's crew lines under the overview. A Facts glass panel at the end, with the web's facts and order, each only when it has a value, and no panel at all when none does. Networks are names only (the web's logo tiles need a white or dark tile decision for the app; names are what always read, so the logos are left out).
 8. **Section order** follows the web's minus the slice 3 extras: hero, actions, overview, crew, (show) rating and seasons, cast, Facts, catalog notice. The game keeps its current order with its hero restyled the same way.
 9. **Season screen.** Gains a compact header: the season poster beside the show name kicker, the season name and its meta, under the solid header (no backdrop: TMDB seasons have none). Episode rows follow the web's row in a phone layout: a full width 16:9 still with the rim (or the icon tile), an `S1 · E3` kicker, the bold title, the date and runtime line, the TMDB pill, and three lines of overview, then the Watched toggle and score pill in one row. Specials keep their place and rules.
-10. **Swipe to toggle watched.** A trailing swipe on an episode row (`ReanimatedSwipeable` from Gesture Handler 3) reveals one action, "Watched" or "Unwatch", and a full swipe fires it through the same `useTrackingWrite` path as the button, so the optimistic step, the revert toast, Undo and the haptic stay exactly as they are. The button stays. Unaired or undated episodes cannot be swiped. VoiceOver gets the same action as a custom accessibility action on the row. The root layout gains `GestureHandlerRootView`.
+10. **Swipe to toggle watched.** A trailing swipe on an episode row (`ReanimatedSwipeable` from Gesture Handler 3) reveals one action, "Watched" or "Unwatch", and a full swipe fires it through the same `useTrackingWrite` path as the button, so the optimistic step, the revert toast, Undo and the haptic stay exactly as they are. The button stays. Unaired or undated episodes cannot be swiped. VoiceOver reaches the same action through the row's Watched button; the swipe is hidden from screen readers (changed on 2026-11-23, your call: a row level action would group the row and hide its buttons). The root layout gains `GestureHandlerRootView`.
 11. **"Clear rating" from core.** A `SCORE_SHEET_COPY` (or a `CLEAR_RATING_LABEL`) constant in `packages/core/src/tracking/messages.ts`; the web's `score-picker.tsx` and the app's `score-sheet.tsx` both read it, so the app's button says "Clear rating" like the web. Its accessibility label keeps naming the title.
 12. **Skeletons.** The movie, show and game loading states become a hero shaped skeleton (backdrop, poster, two lines, an action row) instead of the spinner, as the web's detail skeletons do; the season keeps `SeasonSkeleton`, restyled to the new row.
 
@@ -69,7 +69,7 @@ No migration, no new dependency, no native rebuild (Gesture Handler and Reanimat
 4. A swipe and the button send the same request and produce the same toast, Undo and haptic; an unaired episode offers neither.
 5. A failed show cast read leaves the rest of the show screen intact, with the cast error line.
 6. Reduce Motion turns the stretch off and makes the header switch instantly; Reduce Transparency keeps the solid header path.
-7. Every new control is 44pt, labelled, reachable by VoiceOver (swipe included, as a custom action); decorative artwork is hidden from screen readers.
+7. Every new control is 44pt, labelled, reachable by VoiceOver (the swipe's action through the Watched button); decorative artwork is hidden from screen readers.
 8. Old app builds keep working against the new API answers (additive fields only).
 9. No colour literal, no `react-native` `Text` import, no `expo-blur` outside `components/glass/` (the existing boundary tests).
 
@@ -84,7 +84,7 @@ The two routes stay public, anonymous and cached as now; the new fields are publ
 - **AC-3**: Genres and status show as glass pills, the community pill has its vote count, and the crew lines show under the overview when TMDB has names.
 - **AC-4**: The Facts panel lists the web's facts for a movie and a show, omits each missing one, and is absent when none has a value.
 - **AC-5**: The show screen has a Cast row; when only the cast read fails it shows the error line and the rest of the screen.
-- **AC-6**: The season screen has its poster header and the new episode rows; swiping an aired episode marks or unmarks it with the same toast, Undo and haptic as the button; an unaired one cannot be swiped; VoiceOver offers the action.
+- **AC-6**: The season screen has its poster header and the new episode rows; swiping an aired episode marks or unmarks it with the same toast, Undo and haptic as the button; an unaired one cannot be swiped; VoiceOver reaches the same action through the Watched button.
 - **AC-7**: The score sheet's clear button reads "Clear rating" on the app and the web, from core.
 - **AC-8**: Movie, show and game loading show a hero skeleton, not a spinner.
 - **AC-9**: `pnpm typecheck`, `pnpm lint`, `pnpm test` and `pnpm build` pass.
@@ -102,5 +102,5 @@ From the repo root: `pnpm typecheck`, `pnpm lint`, `pnpm test` (core contracts, 
 5. Open a movie with no backdrop and a game with no art: the header starts solid and nothing is blank.
 6. Sign in, open a season: swipe an aired episode left to mark it watched, see the toast, press Undo; swipe an unaired one and nothing reveals. Mark another with the button and compare.
 7. Score an episode, open the sheet again: the button reads "Clear rating" and clears it. Check the same button on the web at `http://localhost:3000`.
-8. Turn on Reduce Motion: no stretch, the header switches at once. Turn on VoiceOver on a season: the episode row offers the watched action.
+8. Turn on Reduce Motion: no stretch, the header switches at once. Turn on VoiceOver on a season: each aired episode's Watched button is read and works, and the hidden swipe action is never read.
 9. Compare a movie and a show with the web at 375px in the browser pane for material, colour, radius and type.

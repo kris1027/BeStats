@@ -513,7 +513,7 @@ The app takes the web's visual language (warm still page background, frosted gla
     - [x] Mobile build: `TitleScroll` (stretchy backdrop, header fade), the new hero, `CrewLines` and `FactsPanel`, show cast, the season header and episode rows, `SwipeRow`, `TitleSkeleton`, `GestureHandlerRootView`; committed (2026-11-23)
     - [x] Tests and checks: screen test data carries the new v1 fields; new tests for `TitleScroll`, `TitleSkeleton`, the crew lines and Facts, the show cast and its failure line, and the swipe. `pnpm typecheck`, `pnpm lint:ci`, `pnpm test` (core 922, web 3311, mobile 367), `pnpm build` and `npx expo-doctor` pass (2026-11-23)
     - [ ] Simulator pass (manual steps in the plan): the header fade and stretch, Reduce Motion, the swipe's feel and haptic, thumb reach at 375 by 812
-    - [ ] Open: VoiceOver reaches the swipe's action only through the row's Watched button, not as a custom action on the row as the plan says; confirm or add it
+    - [x] VoiceOver reaches the swipe's action through the row's Watched button; the swipe itself stays hidden from screen readers, with no custom row action (your call, 2026-11-23)
   - [ ] 3 Title extras: `/develop mobile look title extras`: trailer, Where to watch, More like this and the age rating pill (moved from slice 2), through new `/api/v1` reads, with one region rule for Where to watch and the age pill
   - [ ] 4 Catalog card actions: `/develop mobile look card actions`: Plan and Watched in a long-press `Link.Menu` with `Link.Preview`, 3 columns on phones (added in the plan, needs per card tracking state; confirm or fold into Search)
   - [ ] 5 Search: `/develop mobile look search`: large title header, the new cards, the games Platforms filter
