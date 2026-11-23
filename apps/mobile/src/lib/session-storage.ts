@@ -7,9 +7,10 @@ import * as SecureStore from "expo-secure-store";
  * Decodes UTF-8 bytes as the exact inverse of `aesjs.utils.utf8.toBytes`
  * (which percent encodes through `encodeURI`). aes-js's own `fromBytes`
  * stops at 3 byte characters, so an emoji in a display name came back as
- * broken JSON and the stored session was lost (AGENTS.md section 11, a
- * failed restore must never look like a sign out the user chose). Pure JS,
- * since Hermes's `TextDecoder` support varies by version.
+ * broken JSON and the stored session was lost: the next launch was signed
+ * out with nothing shown, where AGENTS.md section 11 asks that an expired
+ * session show visibly and a valid one is never dropped. Pure JS, since
+ * Hermes's `TextDecoder` support varies by version.
  */
 function utf8FromBytes(bytes: Uint8Array): string {
   let encoded = "";
