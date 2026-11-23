@@ -5,7 +5,9 @@ import {
   fractionToken,
   lengthToken,
   TOKEN_VARS,
+  tokenColor,
   tokenColorAlpha,
+  tokenColorOver,
 } from "./token-vars";
 
 /**
@@ -55,4 +57,16 @@ test("the radius scale follows the web's calc() steps", () => {
 test("percentages and alpha colours read from the tokens", () => {
   expect(fractionToken("frost-panel")).toBeCloseTo(0.6);
   expect(tokenColorAlpha("color-page-top", 0.5)).toMatch(/^.{7}80$/);
+});
+
+test("a token over another flattens to the mix, ends included", () => {
+  expect(tokenColorOver("color-page-top", "color-page-wash", 0)).toBe(
+    tokenColor("color-page-top"),
+  );
+  expect(tokenColorOver("color-page-top", "color-page-wash", 1)).toBe(
+    tokenColor("color-page-wash"),
+  );
+  expect(tokenColorOver("color-page-top", "color-page-wash", 0.6)).toMatch(
+    /^#[0-9a-f]{6}$/,
+  );
 });

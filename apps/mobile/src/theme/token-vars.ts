@@ -89,3 +89,32 @@ export function tokenColorAlpha(
   const channel = Math.round(Math.min(1, Math.max(0, alpha)) * 255);
   return `${hex}${channel.toString(16).padStart(2, "0")}`;
 }
+
+/**
+ * One colour token laid over another at an opacity, flattened to an opaque
+ * six digit hex. A surface that cannot hold the page's layers (the native
+ * header bar) takes the colour they settle to, so bar and page meet without
+ * a seam (prompts/mobile-web-parity-foundation.md, requirement 1).
+ */
+export function tokenColorOver(
+  base: keyof typeof TOKENS,
+  overlay: keyof typeof TOKENS,
+  alpha: number,
+): string {
+  const channels = [base, overlay].map((name) => {
+    const hex = tokenColor(name);
+    if (!/^#[0-9a-f]{6}$/i.test(hex)) {
+      throw new Error(`${name} is not a six digit hex colour: ${hex}`);
+    }
+    return [1, 3, 5].map((at) => Number.parseInt(hex.slice(at, at + 2), 16));
+  });
+  const [under, over] = channels as [number[], number[]];
+  const a = Math.min(1, Math.max(0, alpha));
+  return `#${under
+    .map((value, i) =>
+      Math.round(value * (1 - a) + (over[i] ?? 0) * a)
+        .toString(16)
+        .padStart(2, "0"),
+    )
+    .join("")}`;
+}
