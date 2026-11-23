@@ -32,6 +32,7 @@ import {
   seasonWatchSummary,
 } from "@bestats/core/tv/season-watch";
 import { useQuery } from "@tanstack/react-query";
+import { Image } from "expo-image";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { ScrollView, View } from "react-native";
@@ -39,18 +40,23 @@ import { CatalogNotice } from "@/components/catalog-notice";
 import { StatePanel } from "@/components/centered-state";
 import {
   EpisodeRow,
+  SEASON_POSTER_WIDTH,
   type SeasonEpisodeDetail,
   SeasonSkeleton,
 } from "@/components/episode-row";
+import { Rim } from "@/components/glass/rim";
 import { GlassButton } from "@/components/glass-button";
 import { RatingStar } from "@/components/glass-pill";
+import { WatchedIcon } from "@/components/icons";
 import { RatingLine, ratedCount } from "@/components/rating-line";
 import { ScoreSheet } from "@/components/score-sheet";
 import { SeasonNav } from "@/components/season-nav";
+import { SwipeRow } from "@/components/swipe-row";
 import { Text } from "@/components/text";
 import { useToast } from "@/components/toast";
 import { TrackingGate } from "@/components/tracking-gate";
 import { catalogKeys, fetchSeason, fetchShow } from "@/lib/catalog";
+import { sizedImageUri } from "@/lib/images";
 import { useSession } from "@/lib/session";
 import {
   putEpisodeRating,
@@ -66,6 +72,7 @@ import {
   useTrackingWrite,
   useUndoToast,
 } from "@/lib/tracking";
+import { lengthToken } from "@/theme/token-vars";
 
 import { TitleReadError } from "./title-states";
 
@@ -131,18 +138,12 @@ export function SeasonScreen() {
       contentContainerClassName="gap-5 px-4 pb-24 pt-4"
     >
       <Stack.Screen options={{ title: detail.name }} />
-      <View className="gap-1">
-        <Text className="text-sm text-text-secondary">{detail.show.name}</Text>
-        <Text
-          accessibilityRole="header"
-          className="text-2xl font-bold text-foreground"
-        >
-          {detail.name}
-        </Text>
-        {meta.length > 0 ? (
-          <Text className="text-text-secondary">{meta.join(" · ")}</Text>
-        ) : null}
-      </View>
+      <SeasonHeader
+        showName={detail.show.name}
+        name={detail.name}
+        posterUrl={detail.posterUrl}
+        meta={meta}
+      />
       {detail.overview ? (
         <Text className="text-base leading-6 text-text-secondary">
           {detail.overview}
@@ -404,41 +405,53 @@ function SeasonTracking({
           episode.name,
           episode.episodeNumber,
         );
+        const toggleWatched = () =>
+          markEpisode.mutate({
+            kind: "watched",
+            episodeId: episode.id,
+            value: !shown.watched,
+          });
         return (
-          <EpisodeRow key={episode.id} episode={episode}>
-            {view.kind === "upcoming" ? (
-              <Text className="text-sm text-text-secondary">
-                {upcomingNote(episode)}
-              </Text>
-            ) : (
-              <View className="flex-row flex-wrap gap-2">
-                <GlassButton
-                  label={
-                    shown.watched
-                      ? SEASON_PAGE_COPY.watched
-                      : SEASON_PAGE_COPY.markWatched
-                  }
-                  accessibilityLabel={`Mark ${label} watched`}
-                  pressed={shown.watched}
-                  disabled={!view.canMark}
-                  onPress={() =>
-                    markEpisode.mutate({
-                      kind: "watched",
-                      episodeId: episode.id,
-                      value: !shown.watched,
-                    })
-                  }
-                />
-                <GlassButton
-                  label={formatPersonalScore(shown.rating)}
-                  score
-                  icon={<RatingStar tone="personal" />}
-                  accessibilityLabel={`Your score for ${label}: ${formatPersonalScore(shown.rating)}`}
-                  onPress={() => setScoring(episode)}
-                />
-              </View>
-            )}
-          </EpisodeRow>
+          <SwipeRow
+            key={episode.id}
+            enabled={view.kind !== "upcoming" && view.canMark}
+            label={
+              shown.watched
+                ? SEASON_PAGE_COPY.markUnwatched
+                : SEASON_PAGE_COPY.markWatched
+            }
+            icon={<WatchedIcon filled={!shown.watched} size={20} />}
+            onAction={toggleWatched}
+          >
+            <EpisodeRow episode={episode}>
+              {view.kind === "upcoming" ? (
+                <Text className="text-sm text-text-secondary">
+                  {upcomingNote(episode)}
+                </Text>
+              ) : (
+                <View className="flex-row flex-wrap gap-2">
+                  <GlassButton
+                    label={
+                      shown.watched
+                        ? SEASON_PAGE_COPY.watched
+                        : SEASON_PAGE_COPY.markWatched
+                    }
+                    accessibilityLabel={`Mark ${label} watched`}
+                    pressed={shown.watched}
+                    disabled={!view.canMark}
+                    onPress={toggleWatched}
+                  />
+                  <GlassButton
+                    label={formatPersonalScore(shown.rating)}
+                    score
+                    icon={<RatingStar tone="personal" />}
+                    accessibilityLabel={`Your score for ${label}: ${formatPersonalScore(shown.rating)}`}
+                    onPress={() => setScoring(episode)}
+                  />
+                </View>
+              )}
+            </EpisodeRow>
+          </SwipeRow>
         );
       })}
 
@@ -482,4 +495,52 @@ function undoIntent(undo: SeasonUndo): EpisodeIntent {
         kind: "season_mark",
         episodeIds: undo.entries.map((entry) => entry.episodeId),
       };
+}
+
+/**
+ * The season's header under the solid stack header (feature 29, slice 2,
+ * decision 9): the season poster beside the show's name as a kicker, the
+ * season name and its meta. TMDB seasons have no backdrop, so there is none.
+ */
+function SeasonHeader({
+  showName,
+  name,
+  posterUrl,
+  meta,
+}: {
+  showName: string;
+  name: string;
+  posterUrl: string | null;
+  meta: string[];
+}) {
+  const radius = lengthToken("radius-lg");
+  return (
+    <View className="flex-row items-center gap-4">
+      {posterUrl ? (
+        <View style={{ width: SEASON_POSTER_WIDTH, aspectRatio: 2 / 3 }}>
+          <Image
+            source={{ uri: sizedImageUri(posterUrl, SEASON_POSTER_WIDTH) }}
+            accessibilityLabel={`${name} poster`}
+            contentFit="cover"
+            style={{ flex: 1, borderRadius: radius }}
+          />
+          <Rim radius={radius} />
+        </View>
+      ) : null}
+      <View className="flex-1 gap-1">
+        <Text className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          {showName}
+        </Text>
+        <Text
+          accessibilityRole="header"
+          className="text-2xl font-bold leading-tight text-foreground"
+        >
+          {name}
+        </Text>
+        {meta.length > 0 ? (
+          <Text className="text-text-secondary">{meta.join(" · ")}</Text>
+        ) : null}
+      </View>
+    </View>
+  );
 }

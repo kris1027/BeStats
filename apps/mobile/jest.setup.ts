@@ -12,6 +12,40 @@ jest.mock("@react-native-community/netinfo", () =>
 jest.mock("react-native-reanimated", () =>
   require("./src/test-utils/reanimated-mock"),
 );
+// Gesture Handler's swipe runs on Reanimated, which is stubbed above, so the
+// root view is a plain view and the swipeable renders its row with its
+// actions beside it, letting a test press the revealed action
+// (src/components/swipe-row.tsx).
+jest.mock("react-native-gesture-handler", () => {
+  const { View } = require("react-native");
+  return { GestureHandlerRootView: View };
+});
+jest.mock("react-native-gesture-handler/ReanimatedSwipeable", () => {
+  const { View } = require("react-native");
+  const React = require("react");
+  return {
+    __esModule: true,
+    default: ({
+      children,
+      renderRightActions,
+    }: {
+      children: unknown;
+      renderRightActions?: (...args: unknown[]) => unknown;
+    }) =>
+      React.createElement(
+        View,
+        null,
+        children,
+        renderRightActions?.(
+          { value: 1 },
+          { value: 0 },
+          {
+            close: () => {},
+          },
+        ),
+      ),
+  };
+});
 jest.mock("react-native-worklets", () => ({
   scheduleOnRN: (fn: (...args: unknown[]) => void, ...args: unknown[]) =>
     fn(...args),

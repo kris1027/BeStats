@@ -184,6 +184,8 @@ export const SEASON_PAGE_COPY = {
   airs: (date: string) => `Airs ${date}`,
   markWatched: "Mark watched",
   watched: "Watched",
+  /** The app's swipe action on a watched episode (feature 29, slice 2). */
+  markUnwatched: "Mark unwatched",
 } as const;
 
 /**
