@@ -53,16 +53,18 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
-  // True while this app signs out on purpose, so its own SIGNED_OUT event
-  // is not taken for a session the library ended.
-  const signingOut = useRef(false);
+  // How many sign outs this app has under way on purpose, so their own
+  // SIGNED_OUT events are not taken for a session supabase-js ended. A
+  // count, not a flag: a 401 sign out finishing during a chosen one must
+  // not lift the guard the chosen one still needs.
+  const signingOut = useRef(0);
 
   const signOutQuietly = useCallback(async (run: () => Promise<void>) => {
-    signingOut.current = true;
+    signingOut.current += 1;
     try {
       await run();
     } finally {
-      signingOut.current = false;
+      signingOut.current -= 1;
     }
   }, []);
 
@@ -81,7 +83,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
       (event, next) => {
         setSession(next);
         if (!next) void clearPrivateQueries();
-        if (event === "SIGNED_OUT" && !signingOut.current) {
+        if (event === "SIGNED_OUT" && signingOut.current === 0) {
           setNotice(V1_ERROR_MESSAGES.unauthenticated);
         }
       },

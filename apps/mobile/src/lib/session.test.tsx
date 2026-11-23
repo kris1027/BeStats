@@ -176,6 +176,27 @@ describe("which sign outs show the expired notice", () => {
     expect(screen.getByText(EXPIRED)).toBeOnTheScreen();
   });
 
+  test("a sign out finishing during a chosen one leaves it quiet", async () => {
+    let finishChosen: (value: { error: null }) => void = () => {};
+    mockSignOut.mockReturnValueOnce(
+      new Promise((resolve) => {
+        finishChosen = resolve;
+      }),
+    );
+    await renderSignedIn();
+    let chosen: Promise<void> = Promise.resolve();
+    await act(async () => {
+      chosen = signOut();
+    });
+    await act(() => current?.endLocalSession() ?? Promise.resolve());
+    await act(async () => {
+      finishChosen({ error: null });
+      await chosen;
+    });
+    expect(screen.getByText("signed out")).toBeOnTheScreen();
+    expect(screen.queryByText(EXPIRED)).not.toBeOnTheScreen();
+  });
+
   test("a token refresh keeps the user signed in with no notice", async () => {
     await renderSignedIn();
     await act(() => mockAuthListener("TOKEN_REFRESHED", SESSION));
