@@ -1,10 +1,17 @@
-import { Modal, Pressable, View } from "react-native";
+import { Modal, Pressable, StyleSheet, View } from "react-native";
 
 import { Text } from "@/components/text";
 import { lengthToken } from "@/theme/token-vars";
 
 import { GlassPlate, PlateSolid } from "./glass/plate";
 import { GlassButton } from "./glass-button";
+
+/**
+ * How far the backdrop dims the whole screen, the sheet's footprint too, so
+ * bright artwork under the frosted sheet never costs its text 4.5:1, as the
+ * web's dialog backdrop does (`src/theme/glass-contrast.test.ts`).
+ */
+export const SHEET_DIM = 0.6;
 
 const SCORES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
 
@@ -52,8 +59,10 @@ export function ScoreSheet({
       <Pressable
         accessibilityLabel="Close score"
         onPress={onClose}
-        className="flex-1 bg-background opacity-60"
+        style={[StyleSheet.absoluteFill, { opacity: SHEET_DIM }]}
+        className="bg-background"
       />
+      <View pointerEvents="box-none" className="flex-1" />
       <GlassPlate
         plate="sheet"
         shadow
