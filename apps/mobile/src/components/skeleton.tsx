@@ -8,15 +8,15 @@ import {
 } from "react-native";
 
 import { createAccessibilityFlag } from "@/lib/accessibility-flag";
+import { PILL_RADIUS } from "@/theme/pill";
 import { lengthToken } from "@/theme/token-vars";
-
 import { GlassPlate, PlateSolid } from "./glass/plate";
 import { GRID, gridCardWidth } from "./grid-layout";
 
 /** The web's skeleton shapes: a 2:3 poster, a pill and a text line. */
 const SHAPES = {
   poster: { aspectRatio: 2 / 3, borderRadius: lengthToken("radius-lg") },
-  pill: { height: 28, width: 64, borderRadius: 999 },
+  pill: { height: 28, width: 64, borderRadius: PILL_RADIUS },
   line: { height: 16, borderRadius: lengthToken("radius-sm") },
 } as const satisfies Record<string, ViewStyle>;
 

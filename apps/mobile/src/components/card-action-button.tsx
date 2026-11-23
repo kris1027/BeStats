@@ -3,8 +3,8 @@ import { Pressable, View } from "react-native";
 import { PlannedIcon, WatchedIcon, XIcon } from "@/components/icons";
 
 import type { CardActionLook } from "@/lib/library-actions";
+import { PILL_RADIUS } from "@/theme/pill";
 import { tokenColor } from "@/theme/token-vars";
-
 import { GlassPlate } from "./glass/plate";
 
 /** The smallest tap area a control gets (AGENTS.md section 3). */
@@ -80,7 +80,7 @@ export function CardActionButton({
       <GlassPlate
         sheen={style.sheen}
         shadow
-        radius={999}
+        radius={PILL_RADIUS}
         className="flex-1 items-center justify-center"
       >
         <View

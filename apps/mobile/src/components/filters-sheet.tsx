@@ -20,7 +20,7 @@ import {
 
 import { Text } from "@/components/text";
 import { catalogKeys, fetchGenres } from "@/lib/catalog";
-
+import { PILL_RADIUS } from "@/theme/pill";
 import { GlassPlate } from "./glass/plate";
 import { GlassButton } from "./glass-button";
 import { PageBackground } from "./page-background";
@@ -228,7 +228,7 @@ function Chip({
     >
       <GlassPlate
         sheen={selected ? "selected" : "glass"}
-        radius={999}
+        radius={PILL_RADIUS}
         className="min-h-11 justify-center px-4"
       >
         <Text className="text-sm font-semibold text-foreground">{label}</Text>

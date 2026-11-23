@@ -34,7 +34,6 @@ import {
 import { LoadingState, StatePanel } from "@/components/centered-state";
 import { GlassPlate } from "@/components/glass/plate";
 import { GlassButton } from "@/components/glass-button";
-import { PILL_FONT_SCALE_CAP } from "@/components/glass-pill";
 import { LibraryCard } from "@/components/library-card";
 import { MediaSwitchView } from "@/components/media-switch";
 import { Text } from "@/components/text";
@@ -42,6 +41,7 @@ import { useLibraryPage } from "@/lib/library";
 import { cardActionFor, useLibraryCardActions } from "@/lib/library-actions";
 import { useMediaType } from "@/lib/media-type";
 import { useSession } from "@/lib/session";
+import { PILL_FONT_SCALE_CAP, PILL_RADIUS } from "@/theme/pill";
 import { tokenColor } from "@/theme/token-vars";
 
 const COLUMNS = 3;
@@ -132,7 +132,7 @@ function PagePills({
                 (prompts/mobile-web-parity-foundation.md, decision 12). */}
             <GlassPlate
               sheen={selected ? "selected" : "glass"}
-              radius={999}
+              radius={PILL_RADIUS}
               className="min-h-11 justify-center px-4"
             >
               <Text

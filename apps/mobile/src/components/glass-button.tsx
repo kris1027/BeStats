@@ -1,10 +1,9 @@
 import type { ReactNode } from "react";
 import { ActivityIndicator, Pressable, View } from "react-native";
 
-import { PILL_FONT_SCALE_CAP } from "@/components/glass-pill";
 import { Text } from "@/components/text";
+import { PILL_FONT_SCALE_CAP, PILL_RADIUS } from "@/theme/pill";
 import { tokenColor } from "@/theme/token-vars";
-
 import { GlassPlate } from "./glass/plate";
 
 type Props = {
@@ -71,7 +70,7 @@ export function GlassButton({
       <GlassPlate
         sheen={look.sheen}
         shadow={look.shadow}
-        radius={999}
+        radius={PILL_RADIUS}
         className="min-h-11 flex-row items-center justify-center gap-2 px-5"
       >
         {busy ? (

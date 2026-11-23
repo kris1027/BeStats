@@ -5,18 +5,10 @@ import {
 import type { ReactNode } from "react";
 import { View } from "react-native";
 import { StarIcon } from "@/components/icons";
-
+import { PILL_FONT_SCALE_CAP, PILL_RADIUS } from "@/theme/pill";
 import { tokenColor } from "@/theme/token-vars";
-
 import { GlassPlate } from "./glass/plate";
 import { Text } from "./text";
-
-/**
- * Pill labels sit in a fixed 28pt shell, so Dynamic Type may grow them only
- * this far before they would clip (prompts/mobile-web-parity-foundation.md,
- * requirement 8).
- */
-export const PILL_FONT_SCALE_CAP = 1.4;
 
 type PillProps = {
   icon?: ReactNode;
@@ -48,7 +40,7 @@ export function GlassPill({
       plate={tone === "score" ? "score" : "control"}
       rim={tone === "score" ? "score" : "default"}
       shadow
-      radius={999}
+      radius={PILL_RADIUS}
       accessible={accessibilityLabel !== undefined}
       accessibilityLabel={accessibilityLabel}
       className="h-7 max-w-full flex-row items-center gap-1.5 self-start px-2.5"

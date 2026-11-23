@@ -1,10 +1,9 @@
 import type { LibraryType } from "@bestats/core/catalog/media-type";
 import { Pressable, View } from "react-native";
 
-import { PILL_FONT_SCALE_CAP } from "@/components/glass-pill";
 import { Text } from "@/components/text";
 import { useMediaType } from "@/lib/media-type";
-
+import { PILL_FONT_SCALE_CAP, PILL_RADIUS } from "@/theme/pill";
 import { GlassPlate } from "./glass/plate";
 
 /** The web's media tabs, in their order and with their names. */
@@ -45,7 +44,7 @@ export function MediaSwitchView({
     <GlassPlate
       accessibilityRole="tablist"
       shadow
-      radius={999}
+      radius={PILL_RADIUS}
       className="mx-4 my-3 flex-row p-1"
     >
       {OPTIONS.map((option) => {
@@ -61,7 +60,7 @@ export function MediaSwitchView({
             {selected ? (
               <GlassPlate
                 sheen="personal"
-                radius={999}
+                radius={PILL_RADIUS}
                 className="min-h-11 items-center justify-center"
               >
                 <Text
