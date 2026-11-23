@@ -4,6 +4,8 @@ import { Pressable, View } from "react-native";
 import { Text } from "@/components/text";
 import { useMediaType } from "@/lib/media-type";
 
+import { GlassPlate } from "./glass/plate";
+
 /** The web's media tabs, in their order and with their names. */
 const OPTIONS: readonly { type: LibraryType; label: string }[] = [
   { type: "tv", label: "Shows" },
@@ -22,7 +24,9 @@ export function MediaSwitch() {
 }
 
 /**
- * The switch itself: a segmented glass control, each segment 44pt tall for
+ * The switch itself: a segmented glass control whose lit segment is the
+ * web's cyan `glass-selected-personal` tab with its dark `text-on-personal`
+ * label (prompts/mobile-web-parity-foundation.md, decision 12), each segment 44pt tall for
  * the touch rule (AGENTS.md section 3) and announced as a tab with its
  * selected state. The Library tab drives it with its own type, which is not
  * Home's (prompts/mobile-library-tabs.md, decision 3).
@@ -35,9 +39,11 @@ export function MediaSwitchView({
   onChange: (next: LibraryType) => void;
 }) {
   return (
-    <View
+    <GlassPlate
       accessibilityRole="tablist"
-      className="mx-4 my-3 flex-row rounded-full border border-border bg-glass-plate p-1"
+      shadow
+      radius={999}
+      className="mx-4 my-3 flex-row p-1"
     >
       {OPTIONS.map((option) => {
         const selected = option.type === value;
@@ -47,20 +53,28 @@ export function MediaSwitchView({
             accessibilityRole="tab"
             accessibilityState={{ selected }}
             onPress={() => onChange(option.type)}
-            className={`min-h-11 flex-1 items-center justify-center rounded-full ${
-              selected ? "bg-primary" : ""
-            }`}
+            className="flex-1"
           >
-            <Text
-              className={`text-base font-semibold ${
-                selected ? "text-primary-foreground" : "text-foreground"
-              }`}
-            >
-              {option.label}
-            </Text>
+            {selected ? (
+              <GlassPlate
+                sheen="personal"
+                radius={999}
+                className="min-h-11 items-center justify-center"
+              >
+                <Text className="text-base font-semibold text-text-on-personal">
+                  {option.label}
+                </Text>
+              </GlassPlate>
+            ) : (
+              <View className="min-h-11 items-center justify-center">
+                <Text className="text-base font-semibold text-foreground">
+                  {option.label}
+                </Text>
+              </View>
+            )}
           </Pressable>
         );
       })}
-    </View>
+    </GlassPlate>
   );
 }

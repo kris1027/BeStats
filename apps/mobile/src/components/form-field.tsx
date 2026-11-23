@@ -8,7 +8,7 @@ import { Text } from "@/components/text";
  * inputs. Written once so sign in, sign up, Search and Account never drift.
  */
 export const INPUT_CLASS =
-  "min-h-11 rounded-2xl border border-input bg-glass-plate px-4 text-base text-foreground";
+  "min-h-11 rounded-2xl border-[1.5px] border-input bg-glass-plate px-4 text-base text-foreground";
 
 /**
  * A label above its field and an optional hint under it, the layout of the

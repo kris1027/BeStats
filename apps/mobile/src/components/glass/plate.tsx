@@ -70,11 +70,21 @@ export function gradientCss(gradient: {
   return `linear-gradient(${gradient.angle}deg, ${stops})`;
 }
 
+/** Each sheen's gradient in the generated copy of the web's utilities. */
+const SHEENS = {
+  glass: "glass",
+  selected: "glass-selected",
+  personal: "glass-selected-personal",
+} as const;
+
 type Props = ViewProps & {
   /** Which plate: controls and badges, panels, sheets, floating, score. */
   plate?: PlateRole;
-  /** The sheen over the plate: the glass gradient, the brighter selected one, or none. */
-  sheen?: "glass" | "selected" | "none";
+  /**
+   * The sheen over the plate: the glass gradient, the brighter selected one,
+   * the personal cyan selected tab's, or none.
+   */
+  sheen?: "glass" | "selected" | "personal" | "none";
   /** The 1.5px gradient rim, the personal score's cyan rim, or none. */
   rim?: "default" | "score" | "none";
   /** The web's `glass-shadow`. */
@@ -91,8 +101,9 @@ type Props = ViewProps & {
  * plate rule. On iOS the plate is a `BlurView` under the plate colour at its
  * frost opacity; on Android, under Reduce Transparency and inside a
  * `PlateSolid`, it is the opaque colour with no blur, the web's own fallback
- * (decision 3). The selected sheen always sits on the solid plate, as the
- * web's `glass-selected` does, so its near white text keeps 4.5:1.
+ * (decision 3). The selected sheens always sit on the solid plate, as the
+ * web's `glass-selected` and `glass-selected-personal` do, so their text
+ * keeps 4.5:1.
  */
 export function GlassPlate({
   plate: role = "control",
@@ -104,7 +115,8 @@ export function GlassPlate({
   children,
   ...rest
 }: Props) {
-  const frosted = useFrosted() && sheen !== "selected";
+  const lit = sheen === "selected" || sheen === "personal";
+  const frosted = useFrosted() && !lit;
   const plate = PLATE_ROLES[role];
   const fill = frosted
     ? tokenColorAlpha(plate.color, fractionToken(plate.frost))
@@ -137,11 +149,7 @@ export function GlassPlate({
           style={[
             StyleSheet.absoluteFill,
             {
-              backgroundImage: gradientCss(
-                GLASS.gradients[
-                  sheen === "selected" ? "glass-selected" : "glass"
-                ],
-              ),
+              backgroundImage: gradientCss(GLASS.gradients[SHEENS[sheen]]),
             },
           ]}
         />
