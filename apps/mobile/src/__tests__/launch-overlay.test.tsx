@@ -1,10 +1,9 @@
 import { LAUNCH_TOTAL_MS } from "@bestats/core/brand/mark";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import * as SplashScreen from "expo-splash-screen";
-import { Text } from "react-native";
 import * as Reanimated from "react-native-reanimated";
-
 import { LaunchOverlay } from "@/components/launch-overlay";
+import { Text } from "@/components/text";
 
 /**
  * prompts/mobile-app-icon-launch.md, decision 9: the overlay hides the

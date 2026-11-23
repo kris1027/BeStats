@@ -1,9 +1,8 @@
 import { screen } from "@testing-library/react-native";
 import { renderRouter } from "expo-router/testing-library";
 import type { PropsWithChildren } from "react";
-import { Text } from "react-native";
-
 import RootLayout from "@/app/_layout";
+import { Text } from "@/components/text";
 
 /**
  * covers: AGENTS.md section 11 (an expired session is never silent): a

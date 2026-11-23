@@ -24,6 +24,7 @@ pnpm test                   # jest-expo + React Native Testing Library v14
 npx expo-doctor             # diagnose dependency and config issues
 npx expo install --fix      # fix incompatible package versions
 pnpm brand-icons            # rewrite the icon and splash PNGs from core's brand/mark.ts
+pnpm grain                  # rewrite the page background's grain tile (seeded, so the same bytes)
 ```
 
 From the repo root, `pnpm typecheck`, `pnpm test` and `pnpm lint` cover this app too. Run them before declaring any task done.
@@ -72,7 +73,7 @@ Docs: https://docs.expo.dev/eas/index.md
 - The phone never holds a catalog key and never runs a rule the server owns: the release gate, library placement and every write go through `/api/v1`. Pure rules come from `@bestats/core`, never a copy (spec 0033, shared contracts).
 - An optimistic tracking state is computed by core's intent rules (`applyTrackingIntent` in `tracking/intent.ts`), mapped to and from the v1 title state; only the timestamp is the app's own.
 - The UI only shows the server's confirmed state or an optimistic one it reverts with the error message; never a false success (root section 11). A screen covers loading, error with Retry, empty, missing image and signed out states.
-- Every tracking write goes through `useTrackingWrite`: optimistic by core's intent rule, put back with the server's message on refusal (not after a 401, whose sign out already wiped the cache), then refetched. An Undo goes through `useUndoToast` and `postRestore`, its body the earlier write's own `cleared` answer.
+- Every tracking write goes through `useTrackingWrite`: optimistic by core's intent rule, put back with the server's message on refusal (not after a 401, whose sign out already wiped the cache), then refetched. An Undo goes through `useUndoToast` and `postRestore`, its body the earlier write's own `cleared` answer. Both fire the haptics in `src/lib/haptics.ts` (a light impact on a confirmed write, the error buzz on a refused one, none after a 401), the only importer of `expo-haptics` (`ui-boundary.test.ts`).
 - Outcomes show through `useToast()` (`components/toast.tsx`): each control keeps one toast of its own, replaced by its next one, and other controls' toasts stack (at most three), so a failure never wipes a pending Undo; a toast with Undo stays core's `UNDO_TOAST_MS`, and its timer pauses while the action is held, so an Undo or Retry pressed near the deadline is never lost.
 - Copy comes from core's message files (`tracking/messages.ts`, `auth/messages.ts`, `search/messages.ts`) so both apps say the same thing.
 - Password reset from the phone: `redirectTo` is `appResetRedirectUrl` of the `EXPO_PUBLIC_API_BASE_URL` origin, and the local Supabase allow list has only `localhost:3000/**`, so locally a reset works only from the simulator; a LAN IP build is refused (prompts/mobile-deep-links.md, decision 6).
@@ -85,7 +86,13 @@ Docs: https://docs.expo.dev/eas/index.md
 ## Styling
 
 - NativeWind `5.0.0-rc.1` with `react-native-css` `3.1.0-rc.1`, pinned exactly, with this app's own Tailwind `4.1.12`, `@tailwindcss/postcss` `4.1.12` and `lightningcss` `1.30.1` as NativeWind's setup asks. The web keeps its own Tailwind; don't unify them. rc.1 was tested by NativeWind on Expo 57; it runs on our Expo 58 (checked in the simulator), but recheck on every SDK or RC bump. Uniwind is the spec's named fallback.
-- No colour literal here (`design-tokens-boundary.test.ts`). `global.css` names each colour token as `--color-x: var(--bs-color-x)`, and `TOKEN_VARS` supplies the values from `@bestats/core/tokens.generated` through `VariableContextProvider` in the root layout. After `pnpm tokens` adds a colour, add its line to `global.css` (`token-vars.test.ts` fails until you do). oklch tokens are left out, since React Native cannot draw them.
+- No colour literal here (`design-tokens-boundary.test.ts`; build a translucent token colour with `tokenColorAlpha`, never `rgba(`). `global.css` names each colour token as `--color-x: var(--bs-color-x)`, and `TOKEN_VARS` supplies the values from `@bestats/core/tokens.generated` through `VariableContextProvider` in the root layout. After `pnpm tokens` adds a colour, add its line to `global.css` (`token-vars.test.ts` fails until you do). React Native cannot draw oklch, so `pnpm tokens` also writes each oklch token as sRGB hex (`TOKENS_SRGB`), which `TOKEN_VARS` and `tokenColor` prefer. The radius scale reaches `global.css` the same way, worked out from the web's `calc()` by `lengthToken`.
+- The look is the web's visual language with a native layout (feature 29, [prompts/mobile-web-parity-foundation.md](../../prompts/mobile-web-parity-foundation.md)). Every glass surface is `GlassPlate` (`components/glass/plate.tsx`): blur only on iOS, opaque on Android, under Reduce Transparency (`use-frosted.ts`, live) and inside `PlateSolid`; its sheen, the SVG `Rim` and the shadow come from `GLASS`, which `pnpm tokens` copies from the web's `@utility` rules. Only `components/glass/` imports `expo-blur` (`src/theme/ui-boundary.test.ts`).
+- Every stack draws `PageBackground` (the web's layers, still, never animated) under each screen through `screenLayout` and `STACK_SCREEN_OPTIONS` in `src/theme/stack-options.tsx`; screens stay transparent, so never give a screen root `bg-background`. A React Native `Modal` gets no `screenLayout` and draws `PageBackground` itself (`filters-sheet.tsx`). The grain is `assets/images/grain.png`, written by `pnpm grain`.
+- Text is Inter, embedded by the `expo-font` plugin in `app.json` (`assets/fonts/`, with `OFL.txt`), so a font change needs a native rebuild. React Native text inherits no font: import `Text` and `TextInput` from `@/components/text`, never from `react-native` (`ui-boundary.test.ts`). Cap Dynamic Type with `maxFontSizeMultiplier` only on fixed height controls.
+- Icons come only from `@/components/icons`: the lucide icons the web uses, re-exported, and the web's tracking icons ported as `react-native-svg` (`icons/tracking-icons.tsx`). Never import `lucide-react-native` elsewhere (`ui-boundary.test.ts`); add a new icon to the barrel.
+- Fully rounded controls take `PILL_RADIUS` and cap their labels with `PILL_FONT_SCALE_CAP`, both from `src/theme/pill.ts`, never a literal. The personal score's plate and cyan rim travel together as `SURFACES.score` (`glass/plate.tsx`); a score control spreads it (`GlassButton score`) rather than picking plate and rim one by one.
+- A system accessibility setting (Reduce Transparency, Reduce Motion) is read through `createAccessibilityFlag` (`src/lib/accessibility-flag.ts`): read once, then followed live with one listener for the whole app.
 - Metro rewrites `tsconfig.json` to include `nativewind-env.d.ts` on start; keep that change.
 
 ## Tests
@@ -95,6 +102,7 @@ Docs: https://docs.expo.dev/eas/index.md
 - Reanimated and `react-native-worklets` are replaced in `jest.setup.ts` by `src/test-utils/reanimated-mock.ts`, since Reanimated's own mock loads a runtime jest-expo cannot run; animation durations follow Jest's fake timers. A `renderRouter` test that mounts the root layout stubs `@/components/launch-overlay`, because expo-router's helper swaps in its own Reanimated mock.
 - Title screen tests use `src/test-utils/title-harness.tsx`: `createApiMock()` answers `apiRequest` by method and path and records each call, so a test asserts the exact route and body a write sends; an unexpected call rejects. Wire it with `jest.mock("@/lib/api", …)` calling `mockApi.handle`.
 - A test that imports the root `_layout.tsx` mocks `../global.css` (`jest.mock("../global.css", () => ({}))`), since Jest cannot parse it.
+- Jest loads lucide's CommonJS build through `moduleNameMapper` in `package.json`; keep that mapping (and its path) when you upgrade lucide.
 - TypeScript 6 loads no global types by default, so `tsconfig.json` lists `jest` and `node` in `types`.
 
 ## Agent skills
@@ -111,6 +119,8 @@ Docs: https://docs.expo.dev/eas/index.md
 - [react-native-testing](../../.agents/skills/react-native-testing/): `callstack/react-native-testing-library`, RNTL v14 tests.
 - [debug-nw](../../.agents/skills/debug-nw/): `nativewind/nativewind`, debugging a NativeWind v5 RC setup (dependencies, Metro, PostCSS, CSS, runtime).
 - [nativewind-preview-to-rc](../../.agents/skills/nativewind-preview-to-rc/): `nativewind/nativewind`, moving between NativeWind v5 preview and RC releases.
+- [expo-animation](../../.agents/skills/expo-animation/): `expo/skills`, animation, gestures, press feedback and `expo-haptics`.
+- [lucide-icons](../../.agents/skills/lucide-icons/): `sandi763009/lucide-icons-skill`, picking lucide icons and `lucide-react-native` imports (add them to `@/components/icons`).
 - MCP servers: Expo MCP `https://mcp.expo.dev/mcp` (recommended; live EAS builds and Expo docs)
 
 _Drafted by /sync from the introducing change, worth a quick human pass._

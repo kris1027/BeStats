@@ -4,8 +4,7 @@ import {
 } from "@bestats/core/catalog/media-type";
 import { TMDB_APP_ATTRIBUTION } from "@bestats/core/legal/attribution";
 import { IGDB_ATTRIBUTION } from "@bestats/core/legal/operator";
-import { Text } from "react-native";
-
+import { Text } from "@/components/text";
 /**
  * The catalog notice under every screen that shows catalog data (spec 0033,
  * AC-14): TMDB's required notice for shows and movies, worded for an

@@ -1,5 +1,8 @@
 import { formatCalculatedRating } from "@bestats/core/format";
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { Text } from "@/components/text";
+
+import { RatingStar } from "./glass-pill";
 
 /**
  * "1 rated episode", "5 rated seasons", as the web words it: the basis a
@@ -34,13 +37,18 @@ export function RatingLine({
       className="flex-row flex-wrap items-center gap-2"
     >
       <Text className="text-sm text-text-secondary">{label}</Text>
-      <Text
-        className={`text-sm font-semibold ${
-          value === null ? "text-text-secondary" : "text-score-personal"
-        }`}
-      >
-        {value === null ? shown : `★ ${shown}`}
-      </Text>
+      {value === null ? (
+        <Text className="text-sm font-semibold text-text-secondary">
+          {shown}
+        </Text>
+      ) : (
+        <View className="flex-row items-center gap-1">
+          <RatingStar tone="personal" />
+          <Text className="text-sm font-semibold text-score-personal">
+            {shown}
+          </Text>
+        </View>
+      )}
       {basis ? (
         <Text className="text-sm text-text-secondary">{basis}</Text>
       ) : null}

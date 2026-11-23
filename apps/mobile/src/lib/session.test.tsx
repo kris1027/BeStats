@@ -1,6 +1,6 @@
 import type { AuthChangeEvent } from "@supabase/supabase-js";
 import { act, render, screen } from "@testing-library/react-native";
-import { Text } from "react-native";
+import { Text } from "@/components/text";
 
 /**
  * covers: spec 0033, AC-13 and child 0036 (an expired session and a chosen

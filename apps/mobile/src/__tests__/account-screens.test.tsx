@@ -8,9 +8,9 @@ import {
 import type { QueryClient } from "@tanstack/react-query";
 import { screen, userEvent, waitFor } from "@testing-library/react-native";
 import { renderRouter } from "expo-router/testing-library";
-import { BackHandler, Text } from "react-native";
-
+import { BackHandler } from "react-native";
 import SignUp from "@/app/sign-up";
+import { Text } from "@/components/text";
 import { ApiError } from "@/lib/api";
 import { AccountScreen } from "@/screens/account-screen";
 import { DeleteAccountScreen } from "@/screens/delete-account-screen";

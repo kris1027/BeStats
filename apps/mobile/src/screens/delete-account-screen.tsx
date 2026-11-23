@@ -10,14 +10,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Text,
-  TextInput,
 } from "react-native";
-
 import { LoadingState, SignedOutState } from "@/components/centered-state";
 import { FormField, INPUT_CLASS } from "@/components/form-field";
 import { GlassButton } from "@/components/glass-button";
 import { Notice } from "@/components/notice";
+import { Text, TextInput } from "@/components/text";
 import { useToast } from "@/components/toast";
 import { deleteOwnAccount } from "@/lib/account";
 import { ApiError } from "@/lib/api";
@@ -84,7 +82,7 @@ export function DeleteAccountScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      className="flex-1 bg-background"
+      className="flex-1"
     >
       <Stack.Screen
         options={{

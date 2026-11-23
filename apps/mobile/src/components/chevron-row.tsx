@@ -1,7 +1,13 @@
-import { Pressable, Text } from "react-native";
+import { Pressable, View } from "react-native";
+import { ChevronRightIcon } from "@/components/icons";
+
+import { Text } from "@/components/text";
+import { lengthToken, tokenColor } from "@/theme/token-vars";
+
+import { GlassPlate } from "./glass/plate";
 
 /**
- * A full width glass row with a `›` chevron that opens another screen or a
+ * A full width glass row with a chevron that opens another screen or a
  * page: Account's Delete account and About, and About's legal links. One
  * component so the three keep one look and one 44pt tap area (AGENTS.md
  * section 3: reuse existing patterns, 44px touch targets).
@@ -27,18 +33,30 @@ export function ChevronRow({
       accessibilityLabel={label}
       accessibilityHint={hint}
       onPress={onPress}
-      className="min-h-11 flex-row items-center justify-between rounded-3xl border border-border bg-glass-plate-panel px-5 py-4"
+      style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
     >
-      <Text
-        className={`text-base font-semibold ${
-          tone === "destructive" ? "text-destructive" : "text-foreground"
-        }`}
+      <GlassPlate
+        plate="panel"
+        radius={lengthToken("radius-panel")}
+        className="min-h-11 flex-row items-center justify-between px-5 py-4"
       >
-        {label}
-      </Text>
-      <Text aria-hidden className="text-lg text-text-secondary">
-        ›
-      </Text>
+        <Text
+          className={`text-base font-semibold ${
+            tone === "destructive" ? "text-destructive" : "text-foreground"
+          }`}
+        >
+          {label}
+        </Text>
+        <View
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        >
+          <ChevronRightIcon
+            size={20}
+            color={tokenColor("color-text-secondary")}
+          />
+        </View>
+      </GlassPlate>
     </Pressable>
   );
 }

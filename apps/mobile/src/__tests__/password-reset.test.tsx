@@ -8,11 +8,10 @@ import {
 } from "@bestats/core/auth/messages";
 import { screen, userEvent, waitFor } from "@testing-library/react-native";
 import { renderRouter } from "expo-router/testing-library";
-import { Text } from "react-native";
-
 import ForgotPassword from "@/app/forgot-password";
 import AppResetPassword from "@/app/reset-password/app";
 import SignIn from "@/app/sign-in";
+import { Text } from "@/components/text";
 
 /**
  * covers: spec 0033, AC-16 and child 0036 (Password reset and deep links);

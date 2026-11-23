@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   GLOBALS_CSS,
+  oklchToHex,
+  readGradient,
   readTokens,
   renderTokens,
   TOKENS_FILE,
@@ -42,5 +44,52 @@ describe("generated design tokens", () => {
     const css =
       ":root { /* --gone: 1; */ --a: 1; }\n@theme inline { }\n@theme { }\n@media (x) { :root { --a: 2; } }";
     expect(readTokens(css)).toEqual({ a: "1" });
+  });
+
+  it("converts oklch to sRGB hex", () => {
+    expect(oklchToHex("oklch(1 0 0)")).toBe("#ffffff");
+    expect(oklchToHex("oklch(0 0 0)")).toBe("#000000");
+    // CSS Color 4's own example: oklch(62.8% 0.2577 29.23) is sRGB red.
+    expect(oklchToHex("oklch(62.8% 0.2577 29.23)")).toBe("#ff0000");
+    expect(oklchToHex("#123456")).toBeNull();
+  });
+
+  it("gives every oklch token an sRGB copy", async () => {
+    const { TOKENS_SRGB } = await import("./tokens.generated");
+    const oklch = Object.entries(TOKENS)
+      .filter(([, value]) => value.startsWith("oklch("))
+      .map(([name]) => name);
+    expect(oklch.length).toBeGreaterThan(0);
+    expect(Object.keys(TOKENS_SRGB).sort()).toEqual(oklch.sort());
+  });
+
+  it("reads a glass utility's angle and stops", () => {
+    const css =
+      "@utility glass { background: linear-gradient( 169deg, rgb(1 2 3 / 0.5) 0%, rgb(4 5 6 / 0.1) 100% ) padding-box; }";
+    expect(readGradient(css, "glass")).toEqual({
+      angle: 169,
+      stops: [
+        { color: "rgb(1 2 3 / 0.5)", at: 0 },
+        { color: "rgb(4 5 6 / 0.1)", at: 1 },
+      ],
+    });
+  });
+
+  it("resolves a color-mix stop from a token, as CSS mixes it", () => {
+    const css = `:root { --cyan: #50c6e5; }
+@theme inline { --color-cyan: var(--cyan); }
+@theme { --radius: 1rem; }
+@utility glass-selected-personal { background: linear-gradient(
+  172deg,
+  color-mix(in srgb, color-mix(in srgb, var(--color-cyan) 70%, white) 95%, transparent) 0%,
+  color-mix(in srgb, var(--color-cyan) 80%, transparent) 52%
+) padding-box; }`;
+    expect(readGradient(css, "glass-selected-personal")).toEqual({
+      angle: 172,
+      stops: [
+        { color: "rgb(133 215 237 / 0.95)", at: 0 },
+        { color: "rgb(80 198 229 / 0.8)", at: 0.52 },
+      ],
+    });
   });
 });

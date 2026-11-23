@@ -7,11 +7,11 @@ import {
 import { emailOnlySchema } from "@bestats/core/auth/schemas";
 import { appResetRedirectUrl } from "@bestats/core/links/app-links";
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, TextInput, View } from "react-native";
-
+import { KeyboardAvoidingView, Platform, View } from "react-native";
 import { FormField, INPUT_CLASS } from "@/components/form-field";
 import { GlassButton } from "@/components/glass-button";
 import { Notice } from "@/components/notice";
+import { TextInput } from "@/components/text";
 import { authErrorMessage } from "@/lib/auth-errors";
 import { getPublicEnv } from "@/lib/env";
 import { getSupabase } from "@/lib/supabase";
@@ -39,7 +39,7 @@ export default function ForgotPassword() {
 
   if (env.EXPO_PUBLIC_AUTH_EMAIL_DELIVERY === "off") {
     return (
-      <View className="flex-1 gap-5 bg-background px-4 pt-6">
+      <View className="flex-1 gap-5 px-4 pt-6">
         <Notice message={RECOVERY_UNAVAILABLE_MESSAGE} />
       </View>
     );
@@ -83,7 +83,7 @@ export default function ForgotPassword() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      className="flex-1 bg-background"
+      className="flex-1"
     >
       <View className="gap-5 px-4 pt-6">
         <Notice message="Enter your address and we will send you a link to set a new password. Open it on this phone." />

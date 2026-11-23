@@ -22,6 +22,13 @@
       "skillPath": "plugins/expo/skills/eas-update/SKILL.md",
       "computedHash": "c09f10dbadbc8799f868a8782e158a7853d60efe438a9822bd6639bdae863950"
     },
+    "expo-animation": {
+      "source": "expo/skills",
+      "commit": "88d9bd79f3fa8452a778fbac65bae162c0b32ce4",
+      "sourceType": "github",
+      "skillPath": "plugins/expo/skills/expo-animation/SKILL.md",
+      "computedHash": "7f28a298611a9440484836c2d02366bff5cdbe4c1c4cc2a1965ffe2eb075ffae"
+    },
     "expo-design-system": {
       "source": "expo/skills",
       "commit": "dfdebcc6c4c1bf7a9471cefd6b6f39c7ba6c884d",
@@ -49,6 +56,13 @@
       "sourceType": "github",
       "skillPath": "plugins/expo/skills/expo-upgrade/SKILL.md",
       "computedHash": "e7963891b55078eec241470f30ebd45afe0d3b7f1363d62e26f5af1b32382f7e"
+    },
+    "lucide-icons": {
+      "source": "sandi763009/lucide-icons-skill",
+      "commit": "cf345c364af85c88a271a6e99ea2743493d35fdd",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "87691d5367c03d5dab8af92e68fa64a727c0cd082707d02ba1bf2308e85a1e8c"
     },
     "nativewind-preview-to-rc": {
       "source": "nativewind/nativewind",

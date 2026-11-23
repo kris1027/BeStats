@@ -3,19 +3,15 @@ import { type CatalogList, listPath } from "@bestats/core/catalog/lists";
 import { todayUtc } from "@bestats/core/tv/air-status";
 import { useQuery } from "@tanstack/react-query";
 import { type Href, Link } from "expo-router";
-import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  Text,
-  View,
-} from "react-native";
+import { FlatList, Pressable, View } from "react-native";
 
+import { Text } from "@/components/text";
 import { catalogKeys, fetchList } from "@/lib/catalog";
 
 import { cardDateLabel } from "./dated-card";
 import { GlassButton } from "./glass-button";
 import { cardHref, communityRatingText, PosterCard } from "./poster-card";
+import { PosterRowSkeleton } from "./skeleton";
 
 /** Card widths in points: Trending is the large row, as on the web. */
 const LARGE_CARD = 150;
@@ -79,8 +75,12 @@ export function LandingSection({ list, count, variant, label, blurb }: Props) {
       </View>
 
       {query.isPending ? (
-        <View className="h-40 items-center justify-center">
-          <ActivityIndicator accessibilityLabel={`Loading ${list.rowTitle}`} />
+        <View
+          accessible
+          accessibilityRole="progressbar"
+          accessibilityLabel={`Loading ${list.rowTitle}`}
+        >
+          <PosterRowSkeleton width={variant === "large" ? LARGE_CARD : CARD} />
         </View>
       ) : query.isError ? (
         <View accessibilityRole="alert" className="items-start gap-3 px-4">

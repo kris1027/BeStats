@@ -1,19 +1,43 @@
 import { ACCOUNT_COPY } from "@bestats/core/auth/messages";
 import { SIGN_IN_ACTION_LABEL } from "@bestats/core/tracking/messages";
-import { useRouter } from "expo-router";
+import { useCanGoBack, useRouter } from "expo-router";
 import type { ReactNode } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import { View } from "react-native";
+import {
+  InboxIcon,
+  TriangleAlertIcon,
+  UserRoundIcon,
+} from "@/components/icons";
 
+import { Text } from "@/components/text";
+import { lengthToken, tokenColor } from "@/theme/token-vars";
+
+import { GlassPlate } from "./glass/plate";
 import { GlassButton } from "./glass-button";
+import { PageSkeleton, PosterGridSkeleton } from "./skeleton";
 
 /**
- * A whole screen's loading state: a spinner a screen reader names, so the
- * wait is never silent (AGENTS.md section 3).
+ * A whole screen's loading state: skeletons in the shape of what is coming,
+ * a grid of posters for a list or search, a page for a title or account
+ * (prompts/mobile-web-parity-foundation.md, AC-5). The skeletons are hidden
+ * from screen readers; this view announces the wait once by its label, so it
+ * is never silent (AGENTS.md section 3).
  */
-export function LoadingState({ label }: { label: string }) {
+export function LoadingState({
+  label,
+  layout = "page",
+}: {
+  label: string;
+  layout?: "page" | "grid";
+}) {
   return (
-    <View className="flex-1 items-center justify-center bg-background py-12">
-      <ActivityIndicator accessibilityLabel={label} />
+    <View
+      accessible
+      accessibilityRole="progressbar"
+      accessibilityLabel={label}
+      className="flex-1"
+    >
+      {layout === "grid" ? <PosterGridSkeleton /> : <PageSkeleton />}
     </View>
   );
 }
@@ -23,13 +47,29 @@ type StateProps = {
   description?: string;
   /** The button under the text: Retry, Sign in, Clear filters. */
   action?: { label: string; onPress: () => void };
-  tone?: "empty" | "error";
+  tone?: "empty" | "error" | "signed-out";
 };
 
+/** Each tone's icon, as the web's `StatePanel`. */
+const ICONS = {
+  empty: InboxIcon,
+  error: TriangleAlertIcon,
+  "signed-out": UserRoundIcon,
+} as const;
+
+/** The way out an error panel offers when its screen gives none. */
+export const GO_BACK_LABEL = "Go back";
+
+/** The way out when there is no screen to go back to, as after a deep link. */
+export const GO_HOME_LABEL = "Go to Home";
+
 /**
- * The web's `StatePanel` natively: a title, one line, and at most one way
- * out. An error is announced as an alert, so a failed read is never silent
- * (AGENTS.md section 11).
+ * The web's `StatePanel` natively: a glass panel with the tone's icon in a
+ * muted circle, a title, one line, and one way out. An error is announced as
+ * an alert, so a failed read is never silent (AGENTS.md section 11), and it
+ * is never a dead end (components/AGENTS.md, a dead end is a bug): with no
+ * action of its own it offers Go back, or Go to Home when it was opened with
+ * nothing under it, such as from a deep link.
  */
 export function StatePanel({
   title,
@@ -37,20 +77,45 @@ export function StatePanel({
   action,
   tone = "empty",
 }: StateProps) {
+  const router = useRouter();
+  const canGoBack = useCanGoBack();
+  const Icon = ICONS[tone];
+  const way =
+    action ??
+    (tone === "error"
+      ? canGoBack
+        ? { label: GO_BACK_LABEL, onPress: () => router.back() }
+        : { label: GO_HOME_LABEL, onPress: () => router.replace("/") }
+      : undefined);
+
   return (
-    <View
-      accessibilityRole={tone === "error" ? "alert" : undefined}
-      className="items-center gap-3 px-6 py-10"
-    >
-      <Text className="text-center text-lg font-semibold text-foreground">
-        {title}
-      </Text>
-      {description ? (
-        <Text className="text-center text-text-secondary">{description}</Text>
-      ) : null}
-      {action ? (
-        <GlassButton label={action.label} onPress={action.onPress} />
-      ) : null}
+    <View className="px-4 py-6">
+      <GlassPlate
+        plate="panel"
+        shadow
+        radius={lengthToken("radius-panel")}
+        accessibilityRole={tone === "error" ? "alert" : undefined}
+        className="items-center gap-4 px-6 py-10"
+      >
+        <View className="size-16 items-center justify-center rounded-full bg-muted">
+          <Icon size={32} color={tokenColor("color-muted-foreground")} />
+        </View>
+        <View className="items-center gap-2">
+          <Text className="text-center text-lg font-semibold leading-tight text-foreground">
+            {title}
+          </Text>
+          {description ? (
+            <Text className="text-center text-[15px] leading-relaxed text-muted-foreground">
+              {description}
+            </Text>
+          ) : null}
+        </View>
+        {way ? (
+          <View className="pt-1">
+            <GlassButton label={way.label} onPress={way.onPress} />
+          </View>
+        ) : null}
+      </GlassPlate>
     </View>
   );
 }
@@ -70,8 +135,9 @@ export function SignedOutState({
 }) {
   const router = useRouter();
   return (
-    <View className="flex-1 gap-3 bg-background">
+    <View className="flex-1 gap-3">
       <StatePanel
+        tone="signed-out"
         title={ACCOUNT_COPY.signedOutTitle}
         description={description}
         action={{

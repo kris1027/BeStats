@@ -15,13 +15,16 @@ import {
   Modal,
   Pressable,
   ScrollView,
-  Text,
   View,
 } from "react-native";
 
+import { Text } from "@/components/text";
 import { catalogKeys, fetchGenres } from "@/lib/catalog";
+import { PILL_RADIUS } from "@/theme/pill";
 
+import { GlassPlate } from "./glass/plate";
 import { GlassButton } from "./glass-button";
+import { PageBackground } from "./page-background";
 
 type Filters = Pick<SearchParams, "genreIds" | "year" | "rating">;
 
@@ -83,7 +86,8 @@ export function FiltersSheet({
       allowSwipeDismissal
       onRequestClose={onClose}
     >
-      <View className="flex-1 bg-background">
+      <View className="flex-1">
+        <PageBackground />
         <View className="flex-row items-center justify-between px-4 pt-4">
           <Text
             accessibilityRole="header"
@@ -221,17 +225,15 @@ function Chip({
       accessibilityState={{ checked: selected, disabled }}
       disabled={disabled}
       onPress={onPress}
-      className={`min-h-11 justify-center rounded-full border px-4 ${
-        selected ? "border-primary bg-primary" : "border-border bg-glass-plate"
-      } ${disabled ? "opacity-50" : ""}`}
+      style={{ opacity: disabled ? 0.5 : 1 }}
     >
-      <Text
-        className={`text-sm font-semibold ${
-          selected ? "text-primary-foreground" : "text-foreground"
-        }`}
+      <GlassPlate
+        sheen={selected ? "selected" : "glass"}
+        radius={PILL_RADIUS}
+        className="min-h-11 justify-center px-4"
       >
-        {label}
-      </Text>
+        <Text className="text-sm font-semibold text-foreground">{label}</Text>
+      </GlassPlate>
     </Pressable>
   );
 }

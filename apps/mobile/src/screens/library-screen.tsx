@@ -28,19 +28,20 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
-  Text,
   useWindowDimensions,
   View,
 } from "react-native";
-
 import { LoadingState, StatePanel } from "@/components/centered-state";
+import { GlassPlate } from "@/components/glass/plate";
 import { GlassButton } from "@/components/glass-button";
 import { LibraryCard } from "@/components/library-card";
 import { MediaSwitchView } from "@/components/media-switch";
+import { Text } from "@/components/text";
 import { useLibraryPage } from "@/lib/library";
 import { cardActionFor, useLibraryCardActions } from "@/lib/library-actions";
 import { useMediaType } from "@/lib/media-type";
 import { useSession } from "@/lib/session";
+import { PILL_FONT_SCALE_CAP, PILL_RADIUS } from "@/theme/pill";
 import { tokenColor } from "@/theme/token-vars";
 
 const COLUMNS = 3;
@@ -126,19 +127,22 @@ function PagePills({
             accessibilityRole="tab"
             accessibilityState={{ selected }}
             onPress={() => onSelect(key)}
-            className={`min-h-11 justify-center rounded-full border px-4 ${
-              selected
-                ? "border-primary bg-primary"
-                : "border-border bg-glass-plate"
-            }`}
           >
-            <Text
-              className={`text-sm font-semibold ${
-                selected ? "text-primary-foreground" : "text-foreground"
-              }`}
+            {/* The web's selected glass, never a solid white fill
+                (prompts/mobile-web-parity-foundation.md, decision 12). */}
+            <GlassPlate
+              sheen={selected ? "selected" : "glass"}
+              radius={PILL_RADIUS}
+              className="min-h-11 justify-center px-4"
             >
-              {libraryPageName(key, type)}
-            </Text>
+              <Text
+                numberOfLines={1}
+                maxFontSizeMultiplier={PILL_FONT_SCALE_CAP}
+                className="text-sm font-semibold text-foreground"
+              >
+                {libraryPageName(key, type)}
+              </Text>
+            </GlassPlate>
           </Pressable>
         );
       })}
@@ -171,7 +175,7 @@ export function LibraryScreen() {
   if (loading) return <LoadingState label="Loading" />;
   if (!session) {
     return (
-      <View className="flex-1 bg-background">
+      <View className="flex-1">
         <StatePanel
           title={LIBRARY_SIGNED_OUT.title}
           description={LIBRARY_SIGNED_OUT.description}
@@ -255,7 +259,7 @@ export function LibraryScreen() {
   return (
     <FlatList
       accessibilityLabel={name}
-      className="flex-1 bg-background"
+      className="flex-1"
       contentInsetAdjustmentBehavior="automatic"
       data={entries}
       numColumns={COLUMNS}

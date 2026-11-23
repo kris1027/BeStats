@@ -169,7 +169,7 @@ test("shows progress, an unrated show as Not rated, and Specials last", async ()
     await screen.findByText(SHOW_PROGRESS_MESSAGES.counted(1, 2)),
   ).toBeOnTheScreen();
   expect(screen.getByLabelText("Your show rating Not rated")).toBeOnTheScreen();
-  expect(screen.getByText("TMDB 8.4")).toBeOnTheScreen();
+  expect(screen.getByLabelText("TMDB rating 8.4")).toBeOnTheScreen();
   const rows = screen.getAllByLabelText(/^(Season \d|Specials),/);
   expect(
     rows.map((row) => String(row.props.accessibilityLabel).split(",")[0]),

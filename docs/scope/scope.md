@@ -45,6 +45,7 @@ _2026-10-06: the `design/` artboards were removed. The UI built from them carrie
 | 26 | Library page names per media type | Slice 13 | done |
 | 27 | Library page URLs follow their names | Slice 13 | done |
 | 28 | Mobile app (iOS and Android) | Slice 14 | done |
+| 29 | Mobile look: the web's visual language, a native feel | Slice 15 | in-progress |
 
 ## Foundations
 
@@ -488,6 +489,36 @@ A native app for iOS and Android beside the web app, sharing its rules with it. 
 - [x] Document it: `/document mobile app`
 spec [0033](../specs/0033-mobile-app-expo/index.md) · code in `apps/mobile/`, `packages/core/`, `apps/web/app/api/v1/`, `apps/web/lib/tracking/commands/`, `apps/web/lib/supabase/bearer.ts`, `supabase/schemas/` (`delete_own_account`)
 
+## Slice 15: Mobile look
+
+### 29. Mobile look: the web's visual language, a native feel · in-progress
+The app takes the web's visual language (warm still page background, frosted glass with gradient rims and sheen, Inter, lucide and the tracking icons, `GlassPill` badges, skeletons, glass state panels) while layout and interaction follow iOS and Android conventions. It is not a 1:1 copy of the web. Home keeps its layout and loses the parallax for good; the web is not changed. Decided with you in a design interview on 2026-11-23; every decision is in the plan.
+**Done when:** every app screen reads as the web's brand beside the web at 375px (materials, colours, radii, type; not layout), the missing web features are in the app, and each slice below is merged with its screenshot check.
+- [x] Design it (spec): the 2026-11-23 design interview, captured in [prompts/mobile-web-parity-foundation.md](../../prompts/mobile-web-parity-foundation.md) (decisions, requirements, acceptance criteria and the slice roadmap)
+- [ ] Build it: `/develop mobile look` (one plan and PR per slice, each plan approved before it is built; next run starts at slice 1, the unticked foundation boxes)
+  - [ ] 1 Foundation: `/develop mobile look foundation`, plan in [prompts/mobile-web-parity-foundation.md](../../prompts/mobile-web-parity-foundation.md) (branch `feat/mobile-web-parity-foundation`, [PR #99](https://github.com/kris1027/BeStats/pull/99); code review fixes landed 2026-11-23, not yet run in the simulator)
+    - [x] oklch tokens as sRGB, and the glass gradients and shadow copied from `globals.css` by `pnpm tokens` (`TOKENS_SRGB`, `GLASS`)
+    - [x] Native dependencies: `react-native-svg`, `lucide-react-native`, `expo-haptics`; Inter's five weights embedded by the `expo-font` plugin (`assets/fonts/`, OFL); `version` 1.1.0, so a new development build is needed
+    - [x] Theme: page colours, the web's radius scale and Inter in `global.css` and `token-vars.ts`
+    - [x] `GlassPlate` (blur on iOS only; opaque on Android, under Reduce Transparency and inside `PlateSolid`), the SVG `Rim`, the still `PageBackground` with the `pnpm grain` tile, drawn under every stack screen by `screenLayout`; screen roots no longer paint black
+    - [x] Every text in Inter through `components/text.tsx`; `ui-boundary.test.ts` guards it and the `expo-blur` import
+    - [x] Icons, `GlassPill` badges, skeletons and the glass `StatePanel` (the `wip/mobile-parity-components` commit folded into the foundation branch; the skeleton pulse is React Native `Animated`, with one app wide Reduce Motion listener)
+    - [x] Restyle the existing components in place (`GlassButton` with `glass-selected`, `Notice`, `PosterCard` and the library card on a shared `PosterFrame` with rating pills and the image rim, toast, score and filters sheets, `ChevronRow`, `FormField`, the cyan `MediaSwitch` from `glass-selected-personal`, which `pnpm tokens` now resolves from its `color-mix`, card action button, rating line); every text glyph is now an icon. `FormField` keeps its height until slice 7
+    - [x] Haptics through `src/lib/haptics.ts`, fired only from `useTrackingWrite` after the server answers (an Undo's restore is one of those writes, so `useUndoToast` needs none); none after a 401
+    - [x] The contrast test over the background's brightest still pixel (requirement 5, `src/theme/glass-contrast.test.ts`); it caught the frosted score sheet over bright artwork, so its backdrop now dims the whole screen (`SHEET_DIM`)
+    - [ ] Checks and the runtime pass: `pnpm typecheck`, `pnpm lint`, `pnpm test` and `npx expo-doctor` pass (2026-11-23). Simulator pass on 2026-11-23 (iPhone 18 Pro, new development build, local stack, beside the web at 375px) found and fixed: pill rims drawn as ellipses (`rimRadius`), rims drawn solid because react-native-svg drops the `/ alpha` of the generated stops (`svgStop`), the header brighter than the page under it (now `color-page-top` under the wash, `tokenColorOver`), the title header and episode rows still showing the rating as text (now `CommunityRatingBadge`, AC-4), and the media switch and `GlassButton` labels breaking at the largest text size (capped at `PILL_FONT_SCALE_CAP`). Blur tuned to `systemUltraThinMaterialDark` at 4 per px. Second simulator pass on 2026-11-23, after the code review fixes (local stack, signed in as a fresh local account): the glass Library page tabs, Go back on a warm deep link to a missing title, the personal score set and shown in cyan apart from the amber TMDB pill, and Reduce Transparency turned on and off while the app was open (plates go opaque with no restart, text stays readable). It found the movie, game and episode score buttons on the plain grey rim, now drawn with the score plate and cyan rim like the web's score pill. Not seen on screen: the tracking skeletons (the state loads too fast locally) and Go to Home (a development build cannot cold open a route link); Jest covers both. Left: haptics on a real iPhone and Android (step 10; this Mac has no Android SDK)
+  - [ ] 2 Title pages: `/develop mobile look title pages`: stretchy backdrop that collapses into the native header (no scroll parallax), actions in thumb reach, genre, status and age pills, vote counts, Facts, show cast, season and episode layout, swipe to toggle watched (button kept), "Clear rating" from core
+  - [ ] 3 Title extras: `/develop mobile look title extras`: trailer, Where to watch, More like this, through new `/api/v1` reads
+  - [ ] 4 Catalog card actions: `/develop mobile look card actions`: Plan and Watched in a long-press `Link.Menu` with `Link.Preview`, 3 columns on phones (added in the plan, needs per card tracking state; confirm or fold into Search)
+  - [ ] 5 Search: `/develop mobile look search`: large title header, the new cards, the games Platforms filter
+  - [ ] 6 Library: `/develop mobile look library`: the new cards, the visible quick action kept
+  - [ ] 7 Account, auth and About: `/develop mobile look account`: the auth panel content in the existing modals, Change password (brings back the deferred item), the Delete account screen restyled, the icon key and credit on About
+- [ ] Verify it: `/check verify mobile look`
+- [ ] Test it: `/test mobile look`
+- [ ] Review it (fresh model): `/check review mobile look`
+- [ ] Document it: `/document mobile look`
+spec: none (decisions in [prompts/mobile-web-parity-foundation.md](../../prompts/mobile-web-parity-foundation.md)) · code in `apps/mobile/src/components/glass/`, `apps/mobile/src/components/page-background.tsx`, `apps/mobile/src/components/text.tsx`, `apps/mobile/src/theme/`, `packages/core/scripts/tokens.ts`
+
 ## Deferred
 Out of scope for the current build pass, kept so the plan stays honest.
 - **Public profiles and social features**: ruled out of the MVP by `AGENTS.md`
@@ -497,7 +528,7 @@ Out of scope for the current build pass, kept so the plan stays honest.
 - **Self serve account deletion and data export** (from specs 0005 and 0017): GDPR requests are handled by email for now. Undesigned; a `/account` flow needs the Supabase admin API or a security definer function, an elevated call nothing else in the app uses, so it deserves its own decision, including what happens to the cascading tracking data. _2026-11-18: deletion is now designed in spec 0036 (`delete_own_account()`) and ships with feature 28; data export stays deferred._
 - **Push notifications** (from spec 0033): a new episode aired for a tracked show. Needs a device token table, a scheduled air date check and Expo Push as a new processor, so it gets its own spec after the mobile app ships
 - **Mobile store release** (feature 28, step 6b; deferred 2026-11-22 by your call): AC-15 and AC-17: TestFlight and Play internal testing once the Apple and Google developer accounts exist, the EAS env values, the privacy labels typed in, `pnpm app-links` with the Apple Team ID and Android signing fingerprint, the firewall allowing `/.well-known/` and `/reset-password/app` (`docs/deploy.md` section 5), and an https link opening a signed build (AC-16) with the AC-16 and AC-17 checks. The runbook is `docs/deploy.md` section 12; 6a (release prep) shipped.
-- **Change password on the phone** (feature 28, from 5d1; deferred 2026-11-22 by your call): the web's change password flow in the app's Account screen.
+- **Change password on the phone** (feature 28, from 5d1; deferred 2026-11-22 by your call): the web's change password flow in the app's Account screen. _2026-11-23: pulled into feature 29, slice 7._
 - **Sign in with Apple** (from spec 0033): required on iOS once Google sign in ships there, so it comes with the Google item below
 - **Rate limit on sign in and sign up** (from spec 0018): Supabase counts Vercel's addresses, so its auth limit is shared by every visitor ([docs/deploy.md](../deploy.md) section 6). If it bites, add a second Vercel Firewall rule on sign in and sign up posts per IP. (The `/api/search` limit from spec 0010 shipped as a firewall rule in feature 20.)
 - **A paid Supabase plan** (from spec 0018): the Free project pauses after about a week idle and has no automatic backups; revisit if that bites, or before inviting more than a handful of users

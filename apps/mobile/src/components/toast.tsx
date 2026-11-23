@@ -13,10 +13,15 @@ import {
   AccessibilityInfo,
   ActivityIndicator,
   Pressable,
-  Text,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { XIcon } from "@/components/icons";
+
+import { Text } from "@/components/text";
+import { tokenColor } from "@/theme/token-vars";
+
+import { GlassPlate } from "./glass/plate";
 
 /** How long a toast with no action stays up. */
 const PLAIN_TOAST_MS = 4_000;
@@ -172,12 +177,13 @@ function ToastView({
   onClose: () => void;
 }) {
   return (
-    <View
+    <GlassPlate
+      plate="float"
+      shadow
+      radius={16}
       accessibilityRole={toast.tone === "error" ? "alert" : undefined}
       accessibilityLiveRegion="polite"
-      className={`flex-row items-center gap-2 rounded-2xl border bg-glass-plate-panel py-1 pl-4 pr-1 ${
-        toast.tone === "error" ? "border-destructive" : "border-border"
-      }`}
+      className="flex-row items-center gap-2 py-1 pl-4 pr-1"
     >
       <Text
         className={`flex-1 py-2 ${
@@ -189,6 +195,7 @@ function ToastView({
       {toast.busy ? (
         <ActivityIndicator
           accessibilityLabel="Working"
+          color={tokenColor("color-foreground")}
           className="min-h-11 min-w-11"
         />
       ) : toast.action ? (
@@ -210,11 +217,14 @@ function ToastView({
         onPress={onClose}
         className="min-h-11 min-w-11 items-center justify-center"
       >
-        <Text aria-hidden className="text-lg text-text-secondary">
-          ×
-        </Text>
+        <View
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        >
+          <XIcon size={18} color={tokenColor("color-text-secondary")} />
+        </View>
       </Pressable>
-    </View>
+    </GlassPlate>
   );
 }
 

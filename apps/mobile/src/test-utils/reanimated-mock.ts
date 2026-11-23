@@ -1,4 +1,5 @@
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { Text } from "@/components/text";
 
 /**
  * A stand in for the slice of Reanimated the app uses, for Jest. Reanimated

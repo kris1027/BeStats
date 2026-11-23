@@ -241,7 +241,7 @@ test("a watched movie shows the personal score apart from TMDB's", async () => {
   expect(
     await screen.findByLabelText("The Matrix, Your score 8"),
   ).toBeOnTheScreen();
-  expect(screen.getByText("★ 8")).toBeOnTheScreen();
+  expect(screen.getByText("8")).toBeOnTheScreen();
   expect(screen.queryByText("TMDB 8.2")).toBeNull();
 });
 

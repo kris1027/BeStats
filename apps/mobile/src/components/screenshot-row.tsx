@@ -4,11 +4,11 @@ import {
   FlatList,
   Modal,
   Pressable,
-  Text,
   useWindowDimensions,
   View,
 } from "react-native";
 
+import { Text } from "@/components/text";
 import { sizedImageUri } from "@/lib/images";
 
 import { GlassButton } from "./glass-button";

@@ -15,7 +15,7 @@ import {
 } from "@bestats/core/auth/username";
 import { useRouter } from "expo-router";
 import { type ReactNode, useEffect, useState } from "react";
-import { ScrollView, Text, TextInput, View } from "react-native";
+import { ScrollView, View } from "react-native";
 
 import {
   LoadingState,
@@ -26,6 +26,7 @@ import { ChevronRow } from "@/components/chevron-row";
 import { INPUT_CLASS } from "@/components/form-field";
 import { GlassButton } from "@/components/glass-button";
 import { Notice } from "@/components/notice";
+import { Text, TextInput } from "@/components/text";
 import { useProfile, useSaveUsername } from "@/lib/account";
 import { ApiError } from "@/lib/api";
 import { useSession } from "@/lib/session";
@@ -72,7 +73,7 @@ export function AccountScreen({ notice }: { notice?: string }) {
   if (profile.isPending) return <LoadingState label="Loading your account" />;
   if (profile.isError) {
     return (
-      <View className="flex-1 bg-background">
+      <View className="flex-1">
         <StatePanel
           tone="error"
           title={ACCOUNT_COPY.loadFailed}
@@ -114,7 +115,7 @@ export function AccountScreen({ notice }: { notice?: string }) {
 
   return (
     <ScrollView
-      className="flex-1 bg-background"
+      className="flex-1"
       contentContainerClassName="gap-4 px-4 py-6"
       keyboardShouldPersistTaps="handled"
     >

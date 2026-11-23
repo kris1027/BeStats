@@ -18,17 +18,14 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { Link, Stack, useLocalSearchParams } from "expo-router";
-import { Pressable, ScrollView, Text, View } from "react-native";
-
+import { Pressable, ScrollView, View } from "react-native";
 import { CatalogNotice } from "@/components/catalog-notice";
 import { LoadingState, StatePanel } from "@/components/centered-state";
 import { DetailHeader, DetailSection } from "@/components/detail-header";
 import { GlassButton } from "@/components/glass-button";
-import {
-  communityRatingLabel,
-  communityRatingText,
-} from "@/components/poster-card";
+import { RatingStar } from "@/components/glass-pill";
 import { RatingLine, ratedCount } from "@/components/rating-line";
+import { Text } from "@/components/text";
 import { useToast } from "@/components/toast";
 import { TrackingGate } from "@/components/tracking-gate";
 import { catalogKeys, fetchShow } from "@/lib/catalog";
@@ -83,17 +80,14 @@ export function ShowScreen() {
   const regularSeasons = detail.seasons.filter((season) => !season.isSpecials);
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="pb-24"
-    >
+    <ScrollView className="flex-1" contentContainerClassName="pb-24">
       <Stack.Screen options={{ title: detail.name }} />
       <DetailHeader
         title={detail.name}
         posterUrl={detail.posterUrl}
         backdropUrl={detail.backdropUrl}
-        rating={communityRatingText("tv", detail.tmdbRating)}
-        ratingLabel={communityRatingLabel("tv", detail.tmdbRating)}
+        type="tv"
+        communityRating={detail.tmdbRating}
         meta={[
           formatAirSpan({
             firstAirYear: detail.firstAirYear,
@@ -372,9 +366,12 @@ function Seasons({
                   ) : null}
                 </View>
                 {rating ? (
-                  <Text className="pr-2 text-sm font-semibold text-score-personal">
-                    ★ {formatCalculatedRating(rating.mean)}
-                  </Text>
+                  <View className="flex-row items-center gap-1 pr-2">
+                    <RatingStar tone="personal" />
+                    <Text className="text-sm font-semibold text-score-personal">
+                      {formatCalculatedRating(rating.mean)}
+                    </Text>
+                  </View>
                 ) : null}
               </Pressable>
             </Link>

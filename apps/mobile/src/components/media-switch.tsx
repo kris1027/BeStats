@@ -1,7 +1,11 @@
 import type { LibraryType } from "@bestats/core/catalog/media-type";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, View } from "react-native";
 
+import { Text } from "@/components/text";
 import { useMediaType } from "@/lib/media-type";
+import { PILL_FONT_SCALE_CAP, PILL_RADIUS } from "@/theme/pill";
+
+import { GlassPlate } from "./glass/plate";
 
 /** The web's media tabs, in their order and with their names. */
 const OPTIONS: readonly { type: LibraryType; label: string }[] = [
@@ -13,7 +17,9 @@ const OPTIONS: readonly { type: LibraryType; label: string }[] = [
 /**
  * The Shows, Movies, Games switch Home and Search share
  * (prompts/mobile-app-shell-catalog.md, decision 3), reading their shared
- * choice from `useMediaType()`.
+ * choice from `useMediaType()`. Its labels are a tab-like toggle, so they
+ * grow with Dynamic Type only to the pill cap and stay on one line, never
+ * breaking a word (prompts/mobile-web-parity-foundation.md, requirement 8).
  */
 export function MediaSwitch() {
   const { mediaType, setMediaType } = useMediaType();
@@ -21,9 +27,11 @@ export function MediaSwitch() {
 }
 
 /**
- * The switch itself: a segmented glass control, each segment 44pt tall for
- * the touch rule (AGENTS.md section 3) and announced as a tab with its
- * selected state. The Library tab drives it with its own type, which is not
+ * The switch itself: a segmented glass control whose lit segment is the
+ * web's cyan `glass-selected-personal` tab with its dark `text-on-personal`
+ * label (prompts/mobile-web-parity-foundation.md, decision 12), each
+ * segment 44pt tall for the touch rule (AGENTS.md section 3) and announced
+ * as a tab with its selected state. The Library tab drives it with its own type, which is not
  * Home's (prompts/mobile-library-tabs.md, decision 3).
  */
 export function MediaSwitchView({
@@ -34,9 +42,11 @@ export function MediaSwitchView({
   onChange: (next: LibraryType) => void;
 }) {
   return (
-    <View
+    <GlassPlate
       accessibilityRole="tablist"
-      className="mx-4 my-3 flex-row rounded-full border border-border bg-glass-plate p-1"
+      shadow
+      radius={PILL_RADIUS}
+      className="mx-4 my-3 flex-row p-1"
     >
       {OPTIONS.map((option) => {
         const selected = option.type === value;
@@ -46,20 +56,49 @@ export function MediaSwitchView({
             accessibilityRole="tab"
             accessibilityState={{ selected }}
             onPress={() => onChange(option.type)}
-            className={`min-h-11 flex-1 items-center justify-center rounded-full ${
-              selected ? "bg-primary" : ""
-            }`}
+            className="flex-1"
           >
-            <Text
-              className={`text-base font-semibold ${
-                selected ? "text-primary-foreground" : "text-foreground"
-              }`}
-            >
-              {option.label}
-            </Text>
+            {selected ? (
+              <GlassPlate
+                sheen="personal"
+                radius={PILL_RADIUS}
+                className="min-h-11 items-center justify-center"
+              >
+                <SegmentLabel label={option.label} selected />
+              </GlassPlate>
+            ) : (
+              <View className="min-h-11 items-center justify-center">
+                <SegmentLabel label={option.label} selected={false} />
+              </View>
+            )}
           </Pressable>
         );
       })}
-    </View>
+    </GlassPlate>
+  );
+}
+
+/**
+ * A segment's label: one line, grown by Dynamic Type only to the pill cap,
+ * dark on the lit cyan segment for its 4.5:1 and the page foreground
+ * elsewhere (the plan's decision 12).
+ */
+function SegmentLabel({
+  label,
+  selected,
+}: {
+  label: string;
+  selected: boolean;
+}) {
+  return (
+    <Text
+      numberOfLines={1}
+      maxFontSizeMultiplier={PILL_FONT_SCALE_CAP}
+      className={`text-base font-semibold ${
+        selected ? "text-text-on-personal" : "text-foreground"
+      }`}
+    >
+      {label}
+    </Text>
   );
 }

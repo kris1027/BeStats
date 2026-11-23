@@ -1,7 +1,8 @@
 import { useEffect } from "react";
-import { AccessibilityInfo, Text, View } from "react-native";
+import { AccessibilityInfo, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { Text } from "@/components/text";
 import { OFFLINE_BANNER_MESSAGE, useIsOffline } from "@/lib/offline";
 
 /**

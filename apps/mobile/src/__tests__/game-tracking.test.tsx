@@ -94,7 +94,7 @@ beforeEach(() => {
 test("shows IGDB's rating labelled, Facts, and no score before a start", async () => {
   await open();
   expect(await button("Want to play: The Witcher 3")).toBeOnTheScreen();
-  expect(screen.getByText("IGDB 9.1")).toBeOnTheScreen();
+  expect(screen.getByLabelText("IGDB community rating 9.1")).toBeOnTheScreen();
   expect(screen.getByText("Single player")).toBeOnTheScreen();
   expect(screen.queryByRole("button", { name: /^Your score for/ })).toBeNull();
 });

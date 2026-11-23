@@ -31,18 +31,15 @@ import { todayUtc } from "@bestats/core/tv/air-status";
 import { useQuery } from "@tanstack/react-query";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { ScrollView, Text, View } from "react-native";
-
+import { ScrollView, View } from "react-native";
 import { CatalogNotice } from "@/components/catalog-notice";
 import { LoadingState, StatePanel } from "@/components/centered-state";
 import { DetailHeader, DetailSection } from "@/components/detail-header";
 import { GlassButton } from "@/components/glass-button";
-import {
-  communityRatingLabel,
-  communityRatingText,
-} from "@/components/poster-card";
+import { RatingStar } from "@/components/glass-pill";
 import { ScoreSheet } from "@/components/score-sheet";
 import { ScreenshotRow } from "@/components/screenshot-row";
+import { Text } from "@/components/text";
 import { TrackingGate } from "@/components/tracking-gate";
 import { catalogKeys, fetchGame } from "@/lib/catalog";
 import { restoreGame, writeGameIntent } from "@/lib/games";
@@ -90,17 +87,14 @@ export function GameScreen() {
 
   const detail = game.data;
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="pb-24"
-    >
+    <ScrollView className="flex-1" contentContainerClassName="pb-24">
       <Stack.Screen options={{ title: detail.name }} />
       <DetailHeader
         title={detail.name}
         posterUrl={detail.coverUrl}
         backdropUrl={detail.artUrl}
-        rating={communityRatingText("game", detail.communityRating)}
-        ratingLabel={communityRatingLabel("game", detail.communityRating)}
+        type="game"
+        communityRating={detail.communityRating}
         meta={[
           formatAirDate(detail.releaseDate) ??
             (detail.releaseYear ? String(detail.releaseYear) : null),
@@ -233,7 +227,9 @@ function GameTracking({
         ))}
         {canScore ? (
           <GlassButton
-            label={state.rating === null ? "★ Rate" : `★ ${scoreText}`}
+            label={state.rating === null ? "Rate" : scoreText}
+            score
+            icon={<RatingStar tone="personal" />}
             accessibilityLabel={`Your score for ${game.name}: ${scoreText}`}
             onPress={() => setSheetOpen(true)}
           />

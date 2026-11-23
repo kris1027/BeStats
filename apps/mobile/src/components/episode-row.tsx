@@ -3,11 +3,12 @@ import { formatAirDate, formatRuntime } from "@bestats/core/format";
 import { SEASON_PAGE_COPY } from "@bestats/core/tracking/messages";
 import { Image } from "expo-image";
 import type { ReactNode } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
 
+import { Text } from "@/components/text";
 import { sizedImageUri } from "@/lib/images";
 
-import { communityRatingLabel, communityRatingText } from "./poster-card";
+import { CommunityRatingBadge } from "./glass-pill";
 
 const STILL_WIDTH = 120;
 
@@ -33,7 +34,6 @@ export function EpisodeRow({
     episode.name,
     episode.episodeNumber,
   );
-  const rating = communityRatingText("tv", episode.tmdbRating);
   return (
     <View className="gap-3 rounded-2xl border border-border bg-glass-plate p-3">
       <View className="flex-row gap-3">
@@ -68,16 +68,7 @@ export function EpisodeRow({
               .filter(Boolean)
               .join(" · ")}
           </Text>
-          {rating ? (
-            <Text
-              accessibilityLabel={
-                communityRatingLabel("tv", episode.tmdbRating) ?? undefined
-              }
-              className="text-sm font-semibold text-rating-tmdb"
-            >
-              {rating}
-            </Text>
-          ) : null}
+          <CommunityRatingBadge source="TMDB" value={episode.tmdbRating} />
         </View>
       </View>
       {episode.overview ? (
@@ -102,7 +93,7 @@ export function SeasonSkeleton({ label }: { label: string }) {
       accessible
       accessibilityLabel={label}
       accessibilityRole="progressbar"
-      className="flex-1 gap-5 bg-background px-4 pt-4"
+      className="flex-1 gap-5 px-4 pt-4"
     >
       <View className="gap-2">
         <View className="h-4 w-32 rounded bg-card" />

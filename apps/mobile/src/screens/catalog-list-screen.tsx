@@ -4,13 +4,13 @@ import { CATALOG_SOURCES } from "@bestats/core/catalog/media-type";
 import { todayUtc } from "@bestats/core/tv/air-status";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Stack } from "expo-router";
-import { ActivityIndicator, Text, View } from "react-native";
-
+import { ActivityIndicator, View } from "react-native";
 import { CatalogNotice } from "@/components/catalog-notice";
 import { LoadingState, StatePanel } from "@/components/centered-state";
 import { cardDateLabel } from "@/components/dated-card";
 import { GlassButton } from "@/components/glass-button";
 import { PosterGrid } from "@/components/poster-grid";
+import { Text } from "@/components/text";
 import { ApiError } from "@/lib/api";
 import { catalogKeys, fetchList } from "@/lib/catalog";
 import { joinPageResults } from "@/lib/page-results";
@@ -43,7 +43,7 @@ export function CatalogListScreen({ list }: { list: CatalogList }) {
     return (
       <>
         {title}
-        <LoadingState label={`Loading ${list.heading}`} />
+        <LoadingState layout="grid" label={`Loading ${list.heading}`} />
       </>
     );
   }
@@ -51,7 +51,7 @@ export function CatalogListScreen({ list }: { list: CatalogList }) {
   // keeps what loaded (TanStack also sets `isError` then).
   if (query.isLoadingError || !query.data) {
     return (
-      <View className="flex-1 bg-background">
+      <View className="flex-1">
         {title}
         <StatePanel
           tone="error"
@@ -70,7 +70,7 @@ export function CatalogListScreen({ list }: { list: CatalogList }) {
   const nextFailed = query.isFetchNextPageError && !isPastEnd(query.error);
 
   return (
-    <View className="flex-1 bg-background">
+    <View className="flex-1">
       {title}
       <PosterGrid
         accessibilityLabel={list.heading}

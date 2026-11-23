@@ -8,11 +8,11 @@ import { signInSchema } from "@bestats/core/auth/schemas";
 import { SIGN_IN_ACTION_LABEL } from "@bestats/core/tracking/messages";
 import { useIsFocused, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { KeyboardAvoidingView, Platform, TextInput, View } from "react-native";
-
+import { KeyboardAvoidingView, Platform, View } from "react-native";
 import { FormField, INPUT_CLASS } from "@/components/form-field";
 import { GlassButton } from "@/components/glass-button";
 import { Notice } from "@/components/notice";
+import { TextInput } from "@/components/text";
 import { authErrorMessage } from "@/lib/auth-errors";
 import { getPublicEnv } from "@/lib/env";
 import { useSession } from "@/lib/session";
@@ -71,7 +71,7 @@ export default function SignIn() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      className="flex-1 bg-background"
+      className="flex-1"
     >
       <View className="gap-5 px-4 pt-6">
         {notice ? <Notice message={notice} /> : null}

@@ -25,18 +25,15 @@ import { todayUtc } from "@bestats/core/tv/air-status";
 import { useQuery } from "@tanstack/react-query";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { ScrollView, Text, View } from "react-native";
-
+import { ScrollView, View } from "react-native";
 import { CastRow } from "@/components/cast-row";
 import { CatalogNotice } from "@/components/catalog-notice";
 import { LoadingState, StatePanel } from "@/components/centered-state";
 import { DetailHeader, DetailSection } from "@/components/detail-header";
 import { GlassButton } from "@/components/glass-button";
-import {
-  communityRatingLabel,
-  communityRatingText,
-} from "@/components/poster-card";
+import { RatingStar } from "@/components/glass-pill";
 import { ScoreSheet } from "@/components/score-sheet";
+import { Text } from "@/components/text";
 import { TrackingGate } from "@/components/tracking-gate";
 import { catalogKeys } from "@/lib/catalog";
 import { fetchMovie, restoreMovie, writeMovieIntent } from "@/lib/movies";
@@ -83,17 +80,14 @@ export function MovieScreen() {
 
   const detail = movie.data;
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="pb-24"
-    >
+    <ScrollView className="flex-1" contentContainerClassName="pb-24">
       <Stack.Screen options={{ title: detail.title }} />
       <DetailHeader
         title={detail.title}
         posterUrl={detail.posterUrl}
         backdropUrl={detail.backdropUrl}
-        rating={communityRatingText("movie", detail.tmdbRating)}
-        ratingLabel={communityRatingLabel("movie", detail.tmdbRating)}
+        type="movie"
+        communityRating={detail.tmdbRating}
         meta={[
           formatAirDate(detail.releaseDate) ??
             (detail.releaseYear ? String(detail.releaseYear) : null),
@@ -261,7 +255,9 @@ function MovieTracking({
         )}
         {watched ? (
           <GlassButton
-            label={`★ ${formatPersonalScore(state.rating)}`}
+            label={formatPersonalScore(state.rating)}
+            score
+            icon={<RatingStar tone="personal" />}
             accessibilityLabel={`Your score for ${movie.title}: ${formatPersonalScore(state.rating)}`}
             onPress={() => setSheetOpen(true)}
           />

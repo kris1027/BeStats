@@ -11,20 +11,14 @@ import {
 } from "@bestats/core/search/params";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { type ReactNode, useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
-
+import { ActivityIndicator, Pressable, View } from "react-native";
 import { CatalogNotice } from "@/components/catalog-notice";
 import { LoadingState, StatePanel } from "@/components/centered-state";
 import { FiltersSheet } from "@/components/filters-sheet";
 import { GlassButton } from "@/components/glass-button";
 import { MediaSwitch } from "@/components/media-switch";
 import { PosterGrid } from "@/components/poster-grid";
+import { Text, TextInput } from "@/components/text";
 import { ApiError } from "@/lib/api";
 import { catalogKeys, fetchSearch } from "@/lib/catalog";
 import { useMediaType } from "@/lib/media-type";
@@ -140,7 +134,7 @@ export function SearchScreen() {
   // keyboard stays up while a new search loads.
   let status: ReactNode = null;
   if (query.isPending) {
-    status = <LoadingState label="Loading results" />;
+    status = <LoadingState layout="grid" label="Loading results" />;
   } else if (query.isLoadingError) {
     const invalid =
       query.error instanceof ApiError && query.error.code === "invalid_input";
@@ -199,7 +193,7 @@ export function SearchScreen() {
   ) : null;
 
   return (
-    <View className="flex-1 bg-background">
+    <View className="flex-1">
       <PosterGrid
         accessibilityLabel="Search results"
         items={view?.kind === "results" ? items : []}
