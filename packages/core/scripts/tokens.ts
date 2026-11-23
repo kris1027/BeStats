@@ -30,24 +30,40 @@ export const TOKENS_FILE = fileURLToPath(
   new URL("../src/tokens.generated.ts", import.meta.url),
 );
 
+/**
+ * The index of the bracket that closes the one at `open`, or -1 when it never
+ * closes. Every reader below needs the balanced end, so a nested rule or a
+ * nested `var()` cannot cut a block, a utility or a function short.
+ */
+function closing(text: string, open: number): number {
+  const opener = text[open];
+  const closer = opener === "{" ? "}" : ")";
+  let depth = 0;
+  for (let i = open; i < text.length; i++) {
+    if (text[i] === opener) depth++;
+    else if (text[i] === closer && --depth === 0) return i;
+  }
+  return -1;
+}
+
+/** `css` with its comments removed, so a commented out rule is never read. */
+function stripComments(css: string): string {
+  return css.replace(/\/\*[\s\S]*?\*\//g, "");
+}
+
 /** The custom properties declared directly inside the first matching block. */
 function block(css: string, opener: RegExp): [string, string][] {
   const start = css.search(opener);
   if (start < 0) throw new Error(`globals.css has no ${opener} block`);
   const open = css.indexOf("{", start);
-  // Match the brace that closes this block, so a nested rule cannot cut the
-  // token list short; only declarations at the block's own depth are kept.
-  let depth = 0;
+  const close = closing(css, open);
+  if (close < 0) throw new Error(`globals.css has an unclosed ${opener} block`);
+  // Only declarations at the block's own depth are tokens: skip nested rules.
   let body = "";
-  let close = open;
-  for (; close < css.length; close++) {
-    const char = css[close];
-    if (char === "{") depth++;
-    else if (char === "}" && --depth === 0) break;
-    else if (depth === 1) body += char;
+  for (let i = open + 1; i < close; i++) {
+    if (css[i] === "{") i = closing(css, i);
+    else body += css[i];
   }
-  if (depth !== 0)
-    throw new Error(`globals.css has an unclosed ${opener} block`);
   return [...body.matchAll(/--([a-z0-9-]+)\s*:\s*([^;]+);/g)].map((m) => [
     m[1],
     m[2].replace(/\s+/g, " ").trim(),
@@ -62,7 +78,7 @@ function block(css: string, opener: RegExp): [string, string][] {
  * Commands and repo facts).
  */
 export function readTokens(css: string): Record<string, string> {
-  const source = css.replace(/\/\*[\s\S]*?\*\//g, "");
+  const source = stripComments(css);
   const entries = [
     ...block(source, /:root\s*\{/),
     ...block(source, /@theme\s+inline\s*\{/),
@@ -107,12 +123,10 @@ function utilityBody(css: string, name: string): string {
   const start = css.indexOf(`@utility ${name} {`);
   if (start < 0) throw new Error(`globals.css has no @utility ${name}`);
   const open = css.indexOf("{", start);
-  let depth = 0;
-  for (let i = open; i < css.length; i++) {
-    if (css[i] === "{") depth++;
-    else if (css[i] === "}" && --depth === 0) return css.slice(open + 1, i);
-  }
-  throw new Error(`globals.css has an unclosed @utility ${name}`);
+  const close = closing(css, open);
+  if (close < 0)
+    throw new Error(`globals.css has an unclosed @utility ${name}`);
+  return css.slice(open + 1, close);
 }
 
 /** `text` split on the commas outside any parentheses. */
@@ -134,12 +148,9 @@ function splitTopLevel(text: string): string[] {
 
 /** The text inside the parentheses that open at `open`, balanced. */
 function insideParens(text: string, open: number): string {
-  let depth = 0;
-  for (let i = open; i < text.length; i++) {
-    if (text[i] === "(") depth++;
-    else if (text[i] === ")" && --depth === 0) return text.slice(open + 1, i);
-  }
-  throw new Error(`unbalanced parentheses in ${text}`);
+  const close = closing(text, open);
+  if (close < 0) throw new Error(`unbalanced parentheses in ${text}`);
+  return text.slice(open + 1, close);
 }
 
 type Rgba = { r: number; g: number; b: number; a: number };
@@ -215,7 +226,7 @@ function rgbaCss({ r, g, b, a }: Rgba): string {
 
 /** The first `linear-gradient` in a utility, its angle and its stops. */
 export function readGradient(css: string, name: string): GlassGradient {
-  const body = utilityBody(css.replace(/\/\*[\s\S]*?\*\//g, ""), name);
+  const body = utilityBody(stripComments(css), name);
   const start = body.indexOf("linear-gradient(");
   if (start < 0) throw new Error(`@utility ${name} has no angled gradient`);
   const [angle, ...rest] = splitTopLevel(
