@@ -34,10 +34,10 @@ The icons, `GlassPill`, skeletons and the glass `StatePanel` are half built on t
 2. **Still background.** It has the web's layers in paint order (gradient, three blobs, stripes, wash, vignette, grain) at their still positions, with no motion of any kind. The owner dropped parallax for good.
 3. **Frosted glass on iOS only.** Plates are `BlurView` (`expo-blur`) at the web's frost opacity and blur per role (control, panel, sheet, float, score). Android, and iOS with Reduce Transparency on (`AccessibilityInfo.isReduceTransparencyEnabled` plus its change event), get the web's fallback: opaque plates, no blur. This is the same rule the web applies to `prefers-reduced-transparency`.
 4. **Only the outermost large surface blurs**, as on the web: a row inside a panel takes no plate of its own. Poster card badges use `plate-solid` (opaque) because they sit over artwork, so a grid of cards never stacks blur views.
-5. **The rim is drawn with SVG** (`react-native-svg`, a rounded `Rect` stroked with the 166deg `linearGradient`, absolutely placed and sized by `onLayout`), because React Native has no gradient border. The sheen and the background gradients use React Native's `backgroundImage`. The shadow is `boxShadow` with the web's value.
+5. **The rim is drawn with SVG** (`react-native-svg`, a rounded `Rect` stroked with the 166deg `linearGradient`, absolutely placed and sized by `onLayout`), because React Native has no gradient border. The plate sheen uses React Native's `backgroundImage`. The page background is one SVG (amended after review): `backgroundImage` has no repeating pattern for the pinstripe and no elliptical radial gradient for the vignette, so its layers are drawn with `react-native-svg` too. The shadow is `boxShadow` with the web's value.
 6. **oklch becomes sRGB in the generated copy.** `pnpm tokens` also writes each oklch colour converted to sRGB hex (a pure conversion in `packages/core/scripts/tokens.ts`, no new dependency), so the app draws the page colours without holding a colour literal. `globals.css` stays the one source.
 7. **Grain is a PNG tile** rendered once by a script with `sharp` (already a devDependency, as `brand-icons` does), since React Native cannot run `feTurbulence`. It is drawn at the web's `--page-grain-alpha` with `mixBlendMode: "overlay"`.
-8. **Inter, scaling with the system text size.** `@expo-google-fonts/inter` loaded with `expo-font` before the launch overlay is ready; the weights the web uses (400, 500, 600, 700, 800). Text keeps `allowFontScaling` and gets a `maxFontSizeMultiplier` cap on fixed-height controls (pills, tab-like toggles) only, so Dynamic Type never clips them.
+8. **Inter, scaling with the system text size.** `@expo-google-fonts/inter` loaded with `expo-font` before the launch overlay is ready; the weights the web uses (400, 500, 600, 700, 800). Text keeps `allowFontScaling` and gets a `maxFontSizeMultiplier` cap on fixed-height controls (pills, tab-like toggles) and on the fully rounded `GlassButton` (amended after the largest text pass in the simulator: a wrapped label cut into the round ends), so Dynamic Type never clips them.
 9. **Icons**: `lucide-react-native` for the lucide set the web uses, and the web's custom tracking icons (Plan, Planned, Watched, Next episode) ported as `react-native-svg` components in `src/components/icons/`, path for path from the web's SVGs. Text glyphs (★ ✓ × › ‹) go.
 10. **Haptics** through one wrapper, `src/lib/haptics.ts` (`expo-haptics`): a light impact on a confirmed tracking write (watched, planned, score set, Undo) and the error notification on a failed one. It fires from `useTrackingWrite` and `useUndoToast`, so no screen calls Haptics directly, and it fires after the server confirms or refuses, never on the optimistic step alone.
 11. **Radius scale** mirrors the web: the `radius*` tokens (`--radius` 0.75rem = 12pt, `radius-panel` 24pt) read from the generated copy into NativeWind's `@theme`, replacing Tailwind defaults and the `borderRadius: 12` literal.
@@ -72,7 +72,8 @@ Changed:
 - `apps/mobile/src/components/glass-button.tsx`, `centered-state.tsx`, `notice.tsx`, `poster-card.tsx`, `toast.tsx`, `score-sheet.tsx`, `filters-sheet.tsx`, `chevron-row.tsx`, `form-field.tsx`, `media-switch.tsx`, `library-card.tsx`, `card-action-button.tsx`, `rating-line.tsx`, and their tests.
 - `apps/mobile/src/lib/tracking.ts` (haptics in `useTrackingWrite` and `useUndoToast`).
 - `apps/mobile/package.json`, `pnpm-lock.yaml`, `app.json` (`version`).
-- `apps/mobile/AGENTS.md` (the glass, background, icon, font and haptics rules), through `/sync` after merge.
+- `apps/mobile/AGENTS.md` (the glass, background, icon, font and haptics rules), written on the branch as each piece landed rather than through `/sync` after merge.
+- `apps/web/design-tokens-boundary.test.ts`: its colour exemption covers `packages/core/scripts/tokens.ts` and `tokens.test.ts`, which hold the oklch to sRGB conversion decision 6 needs. The web's pages are not changed.
 
 ## Requirements
 
@@ -89,6 +90,14 @@ Changed:
 11. Loading states that are a whole screen keep an accessible label; skeletons are hidden from screen readers and the screen announces loading once.
 12. Existing behaviour is unchanged: every current test keeps passing, apart from assertions on class names this plan replaces.
 
+## Review deviations (2026-11-23)
+
+Kept after the code review, by the owner's call:
+
+- `StatePanel` gives an error panel with no action of its own Go back, or Go to Home when there is nothing to go back to (a deep link), so no error panel is a dead end (AC-5, components/AGENTS.md).
+- `SHEET_DIM` in `score-sheet.tsx` (the dim behind the score sheet) and the native header's flattened page colour (`tokenColorOver` in `theme/stack-options.tsx`) came out of the simulator pass and are recorded in docs/scope/scope.md.
+- Decisions 5 and 8 and AC-4 are amended in place above.
+
 ## Security considerations
 
 None new: no data, route, request or secret changes. The fonts ship inside the app bundle (no runtime font fetch, so no new processor and no change to `PROCESSORS`, `/privacy` or the store answers). The new packages are installed through `npx expo install` at SDK-pinned versions.
@@ -98,7 +107,7 @@ None new: no data, route, request or secret changes. The fonts ship inside the a
 - **AC-1**: On the iOS Simulator, every screen shows the warm background, and its panels, pills and buttons are frosted with the gradient rim and sheen. Compared side by side with the web at 375px, the materials, colours, radii and type read as the same brand.
 - **AC-2**: On an Android emulator, and on iOS with Reduce Transparency on, the plates are opaque with no blur, and the text contrast test passes for both modes.
 - **AC-3**: Inter renders everywhere; at the largest accessibility text size no control label is clipped.
-- **AC-4**: Ratings render as `GlassPill` badges (community amber with its source name, personal cyan with the score rim) on the poster cards, title screens and episode rows; the text glyphs are gone.
+- **AC-4**: Ratings render as `GlassPill` badges (community amber with its source name announced to screen readers, as the web's `sr-only` text, personal cyan with the score rim) on the poster cards, title screens and episode rows; the text glyphs are gone.
 - **AC-5**: Whole-screen and list loading show skeletons, not spinners; error and signed-out panels are glass with an icon and always an action.
 - **AC-6**: Marking an episode watched gives a light haptic once the server confirms; a refused write gives the error haptic and the existing reverting toast.
 - **AC-7**: Home's layout is unchanged apart from the shared background, cards and pills.
