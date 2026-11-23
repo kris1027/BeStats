@@ -4,7 +4,7 @@ import { Text } from "@/components/text";
 import { PILL_RADIUS } from "@/theme/pill";
 import { lengthToken } from "@/theme/token-vars";
 
-import { GlassPlate, PlateSolid } from "./glass/plate";
+import { GlassPlate, PlateSolid, SURFACES } from "./glass/plate";
 import { GlassButton } from "./glass-button";
 
 /**
@@ -101,8 +101,7 @@ export function ScoreSheet({
                   className="w-[18%]"
                 >
                   <GlassPlate
-                    plate={pressed ? "score" : "control"}
-                    rim={pressed ? "score" : "default"}
+                    {...SURFACES[pressed ? "score" : "neutral"]}
                     radius={PILL_RADIUS}
                     className="h-12 items-center justify-center"
                   >

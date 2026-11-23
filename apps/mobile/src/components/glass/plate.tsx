@@ -53,6 +53,20 @@ export const PLATE_ROLES = {
 export type PlateRole = keyof typeof PLATE_ROLES;
 
 /**
+ * The plate and rim that travel together: a control's, and the personal
+ * score's darker plate with the cyan rim, the only coloured rim, so a
+ * personal score is never mistaken for a community rating (AGENTS.md
+ * section 9). Spread one into `GlassPlate` rather than picking each prop.
+ */
+export const SURFACES = {
+  neutral: { plate: "control", rim: "default" },
+  score: { plate: "score", rim: "score" },
+} as const satisfies Record<
+  string,
+  { plate: PlateRole; rim: "default" | "score" }
+>;
+
+/**
  * UIKit's blur intensity for a web blur radius. `expo-blur` takes 1 to 100
  * rather than pixels, so the web's 12, 20 and 24px map onto it by one factor,
  * tuned by eye in the simulator against the web at 375px.

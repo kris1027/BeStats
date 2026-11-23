@@ -9,7 +9,7 @@ import { StarIcon } from "@/components/icons";
 import { PILL_FONT_SCALE_CAP, PILL_RADIUS } from "@/theme/pill";
 import { tokenColor } from "@/theme/token-vars";
 
-import { GlassPlate } from "./glass/plate";
+import { GlassPlate, SURFACES } from "./glass/plate";
 import { Text } from "./text";
 
 type PillProps = {
@@ -39,8 +39,7 @@ export function GlassPill({
 }: PillProps) {
   return (
     <GlassPlate
-      plate={tone === "score" ? "score" : "control"}
-      rim={tone === "score" ? "score" : "default"}
+      {...SURFACES[tone]}
       shadow
       radius={PILL_RADIUS}
       accessible={accessibilityLabel !== undefined}
