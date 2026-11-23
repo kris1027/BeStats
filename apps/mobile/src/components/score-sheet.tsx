@@ -1,3 +1,4 @@
+import { CLEAR_RATING_LABEL } from "@bestats/core/tracking/messages";
 import { Modal, Pressable, StyleSheet, View } from "react-native";
 
 import { Text } from "@/components/text";
@@ -35,8 +36,9 @@ type Props = {
 /**
  * The web's score popover as a bottom sheet (prompts/mobile-title-tracking.md,
  * decision 4): "Your score", the 1 to 10 grid with the current score pressed,
- * and Clear score, on the sheet plate with its controls opaque inside, since
- * only the outermost surface blurs (decision 4). The picked score is cyan on
+ * and Clear rating (core's `CLEAR_RATING_LABEL`, the web's words), on the
+ * sheet plate with its controls opaque inside, since only the outermost
+ * surface blurs (decision 4). The picked score is cyan on
  * the score plate and rim, the personal look. Every button is 44 points and names what it scores, so it
  * is never read as TMDB's or IGDB's rating (AGENTS.md sections 3 and 9).
  */
@@ -119,8 +121,8 @@ export function ScoreSheet({
           </View>
           {rating !== null ? (
             <GlassButton
-              label="Clear score"
-              accessibilityLabel={`Clear your score for ${title}`}
+              label={CLEAR_RATING_LABEL}
+              accessibilityLabel={`${CLEAR_RATING_LABEL} for ${title}`}
               onPress={onClear}
             />
           ) : null}
