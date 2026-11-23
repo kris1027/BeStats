@@ -1,12 +1,19 @@
+import { FILTER_DEBOUNCE_MS } from "@bestats/core/search/constants";
 import {
   type CatalogRef,
   emptySearchParams,
   type GameSearchParams,
   type SearchParams,
 } from "@bestats/core/search/params";
-import { render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import { FilterBar } from "./filter-bar";
 
@@ -300,39 +307,47 @@ describe("FilterBar for games (spec 0029)", () => {
 
   // The text pause and the list pause run on separate timers. Whichever
   // fires first carries both changes, and the other finds the URL already
-  // applied, so the pair always makes one read.
+  // applied, so the pair always makes one read. Fake timers hold the clock
+  // still while both edits are made: on the real clock a busy machine let
+  // the first pause pass mid toggle, a real second change and a flaky run.
+  // The edits use fireEvent, since user-event's wrapper waits on a timer
+  // Testing Library only advances under Jest, never under Vitest.
   it.each([
     ["the text pause fires first", "text"],
     ["the list pause fires first", "list"],
   ] as const)("makes one navigation when %s (AC-9)", async (_, first) => {
-    const user = userEvent.setup();
+    vi.useFakeTimers();
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
     render(gameBar());
     const title = screen.getByRole("searchbox", { name: "Title" });
 
-    async function toggle() {
-      await user.click(screen.getByRole("button", { name: /^Platforms/ }));
-      await user.click(
-        await screen.findByRole("checkbox", { name: "Nintendo Switch" }),
+    function toggle() {
+      fireEvent.click(screen.getByRole("button", { name: /^Platforms/ }));
+      fireEvent.click(
+        screen.getByRole("checkbox", { name: "Nintendo Switch" }),
       );
-      await user.keyboard("{Escape}");
+    }
+    function type() {
+      fireEvent.change(title, { target: { value: "zelda" } });
     }
 
     if (first === "text") {
-      await user.type(title, "zelda");
-      await toggle();
+      type();
+      toggle();
     } else {
-      await toggle();
-      await user.type(title, "zelda");
+      toggle();
+      type();
     }
+    expect(replace).not.toHaveBeenCalled();
 
-    await waitFor(() =>
-      expect(replace).toHaveBeenCalledWith(
-        "/search?type=game&q=zelda&platform=130",
-        { scroll: false },
-      ),
-    );
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await act(() => vi.advanceTimersByTimeAsync(FILTER_DEBOUNCE_MS * 2));
     expect(replace).toHaveBeenCalledTimes(1);
+    expect(replace).toHaveBeenCalledWith(
+      "/search?type=game&q=zelda&platform=130",
+      { scroll: false },
+    );
   });
 
   it("stops at 20 genres, disabling the rest (AC-10)", async () => {

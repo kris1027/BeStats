@@ -4,6 +4,23 @@ import { getRandomBytes } from "expo-crypto";
 import * as SecureStore from "expo-secure-store";
 
 /**
+ * Decodes UTF-8 bytes as the exact inverse of `aesjs.utils.utf8.toBytes`
+ * (which percent encodes through `encodeURI`). aes-js's own `fromBytes`
+ * stops at 3 byte characters, so an emoji in a display name came back as
+ * broken JSON and the stored session was lost: the next launch was signed
+ * out with nothing shown, where AGENTS.md section 11 asks that an expired
+ * session show visibly and a valid one is never dropped. Pure JS, since
+ * Hermes's `TextDecoder` support varies by version.
+ */
+function utf8FromBytes(bytes: Uint8Array): string {
+  let encoded = "";
+  for (const byte of bytes) {
+    encoded += `%${byte.toString(16).padStart(2, "0")}`;
+  }
+  return decodeURIComponent(encoded);
+}
+
+/**
  * The storage adapter `supabase-js` keeps the session in (spec 0033, AC-11;
  * child 0036, Session storage), after Supabase's Expo guide.
  *
@@ -23,9 +40,13 @@ export const encryptedSessionStorage = {
       aesjs.utils.hex.toBytes(keyHex),
       new aesjs.Counter(1),
     );
-    return aesjs.utils.utf8.fromBytes(
-      cipher.decrypt(aesjs.utils.hex.toBytes(encrypted)),
-    );
+    try {
+      return utf8FromBytes(cipher.decrypt(aesjs.utils.hex.toBytes(encrypted)));
+    } catch {
+      // A key that no longer matches its ciphertext decrypts to bytes that
+      // are not UTF-8: no session, as when the key is missing.
+      return null;
+    }
   },
 
   async setItem(key: string, value: string): Promise<void> {
