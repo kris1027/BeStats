@@ -51,10 +51,11 @@ export function GlassPill({
       radius={999}
       accessible={accessibilityLabel !== undefined}
       accessibilityLabel={accessibilityLabel}
-      className="h-7 flex-row items-center gap-1.5 self-start px-2.5"
+      className="h-7 max-w-full flex-row items-center gap-1.5 self-start px-2.5"
     >
       {icon ? <View className="shrink-0">{icon}</View> : null}
       <Text
+        numberOfLines={1}
         maxFontSizeMultiplier={PILL_FONT_SCALE_CAP}
         className="text-[13px] leading-none font-bold text-foreground"
       >
@@ -64,7 +65,8 @@ export function GlassPill({
   );
 }
 
-function Star({ tone }: { tone: "community" | "personal" }) {
+/** The filled star a rating pill leads with, amber or cyan by whose it is. */
+export function RatingStar({ tone }: { tone: "community" | "personal" }) {
   const color = tokenColor(
     tone === "community" ? "color-rating-tmdb" : "color-score-personal",
   );
@@ -88,7 +90,7 @@ export function CommunityRatingBadge({
   const noun = source === "IGDB" ? "community rating" : "rating";
   return (
     <GlassPill
-      icon={<Star tone="community" />}
+      icon={<RatingStar tone="community" />}
       accessibilityLabel={`${source} ${noun} ${value.toFixed(1)}`}
     >
       {value.toFixed(1)}
@@ -105,7 +107,7 @@ export function PersonalScoreBadge({ value }: { value: number | null }) {
   return (
     <GlassPill
       tone="score"
-      icon={<Star tone="personal" />}
+      icon={<RatingStar tone="personal" />}
       accessibilityLabel={`Your score ${text}`}
     >
       {text}
@@ -129,7 +131,7 @@ export function CalculatedRatingBadge({
   return (
     <GlassPill
       tone="score"
-      icon={<Star tone="personal" />}
+      icon={<RatingStar tone="personal" />}
       accessibilityLabel={label ? `${label} ${text}` : text}
     >
       {text}

@@ -1,7 +1,12 @@
+import { XIcon } from "lucide-react-native";
+import type { ReactNode } from "react";
 import { Pressable, View } from "react-native";
 
-import { Text } from "@/components/text";
 import type { CardActionLook } from "@/lib/library-actions";
+import { tokenColor } from "@/theme/token-vars";
+
+import { GlassPlate } from "./glass/plate";
+import { PlannedIcon, WatchedIcon } from "./icons/tracking-icons";
 
 /** The smallest tap area a control gets (AGENTS.md section 3). */
 const MIN_TOUCH_TARGET = 44;
@@ -11,52 +16,34 @@ export const CARD_ACTION_SIZE = 36;
 const HIT_SLOP = (MIN_TOUCH_TARGET - CARD_ACTION_SIZE) / 2;
 
 /**
- * Plate, rim and glyph per look. The green is only ever the Planned
- * bookmark (components/AGENTS.md, three colours carry meaning); the others
- * stay neutral, never the personal cyan or the community amber.
+ * Icon and sheen per look, the web's tracking marks in place of text glyphs
+ * (prompts/mobile-web-parity-foundation.md, decision 9). The green is only
+ * ever the Planned bookmark (components/AGENTS.md, three colours carry
+ * meaning); the others stay neutral, never the personal cyan or the
+ * community amber. Watched takes the brighter selected glass, as the web's
+ * pressed toggle does.
  */
 const LOOKS: Record<
   CardActionLook,
-  { glyph: string; box: string; text: string }
+  { icon: () => ReactNode; sheen: "glass" | "selected" }
 > = {
-  planned: {
-    glyph: "bookmark",
-    box: "border-status-planned bg-glass-plate-panel",
-    text: "text-status-planned",
-  },
-  watched: {
-    glyph: "✓",
-    box: "border-primary bg-primary",
-    text: "text-primary-foreground",
-  },
+  planned: { icon: () => <PlannedIcon size={18} />, sheen: "glass" },
+  watched: { icon: () => <WatchedIcon filled size={18} />, sheen: "selected" },
   remove: {
-    glyph: "×",
-    box: "border-border bg-glass-plate-panel",
-    text: "text-foreground",
+    icon: () => (
+      <XIcon
+        size={18}
+        color={tokenColor("color-foreground")}
+        strokeWidth={2.5}
+      />
+    ),
+    sheen: "glass",
   },
   mark: {
-    glyph: "✓",
-    box: "border-border bg-glass-plate-panel",
-    text: "text-foreground",
+    icon: () => <WatchedIcon filled={false} size={18} />,
+    sheen: "glass",
   },
 };
-
-/**
- * The web's Planned mark (components/tracking/tracking-icons.tsx): a green
- * bookmark with a dark check, drawn from views since the app adds no icon
- * dependency (prompts/mobile-card-quick-actions.md, decision 3). The notch is
- * a square turned 45 degrees in the plate's own solid colour.
- */
-function PlannedBookmark() {
-  return (
-    <View className="h-4 w-3 items-center overflow-hidden rounded-t-sm bg-status-planned">
-      <Text className="text-[9px] font-bold leading-3 text-status-planned-mark">
-        ✓
-      </Text>
-      <View className="absolute -bottom-1 h-2 w-2 rotate-45 bg-glass-plate-panel" />
-    </View>
-  );
-}
 
 /**
  * A library card's round quick action button, the app's `CardRoundButton`
@@ -85,18 +72,25 @@ export function CardActionButton({
       disabled={disabled}
       hitSlop={HIT_SLOP}
       onPress={onPress}
-      style={{ width: CARD_ACTION_SIZE, height: CARD_ACTION_SIZE }}
-      className={`items-center justify-center rounded-full border ${style.box} ${
-        disabled ? "opacity-60" : ""
-      }`}
+      style={{
+        width: CARD_ACTION_SIZE,
+        height: CARD_ACTION_SIZE,
+        opacity: disabled ? 0.6 : 1,
+      }}
     >
-      {style.glyph === "bookmark" ? (
-        <PlannedBookmark />
-      ) : (
-        <Text className={`text-base font-bold ${style.text}`}>
-          {style.glyph}
-        </Text>
-      )}
+      <GlassPlate
+        sheen={style.sheen}
+        shadow
+        radius={999}
+        className="flex-1 items-center justify-center"
+      >
+        <View
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        >
+          {style.icon()}
+        </View>
+      </GlassPlate>
     </Pressable>
   );
 }

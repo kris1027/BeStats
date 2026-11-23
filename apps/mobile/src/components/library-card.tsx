@@ -1,18 +1,22 @@
 import type { V1LibraryEntry } from "@bestats/core/api/v1/library";
 import type { LibraryPageKey } from "@bestats/core/catalog/library-list";
-import { Image } from "expo-image";
 import { type Href, Link } from "expo-router";
 import { Pressable, View } from "react-native";
 
 import { Text } from "@/components/text";
-import { sizedImageUri } from "@/lib/images";
 import type { CardAction } from "@/lib/library-actions";
 import { type CardBadge, libraryCardView } from "@/lib/library-card";
 
 import { CARD_ACTION_SIZE, CardActionButton } from "./card-action-button";
+import { PlateSolid } from "./glass/plate";
+import { GlassPill, RatingStar } from "./glass-pill";
+import { PosterFrame } from "./poster-card";
 
-/** The inset of the badge, the pill and the action from the poster's edge. */
-const INSET = 6;
+/**
+ * The inset of the badge, the pill and the action from the poster's edge,
+ * the web's 10px card corners (components/AGENTS.md, Card corners).
+ */
+const INSET = 10;
 
 /** A card's quick action, wired by the library screen. */
 export type CardActionSlot = {
@@ -21,24 +25,21 @@ export type CardActionSlot = {
   onPress: () => void;
 };
 
-/** The badge over the poster's top left corner, in its meaning's colour. */
+/**
+ * The badge over the poster's top left corner as the web's pill: the user's
+ * own score on the cyan score plate, a community rating in amber, never the
+ * same tone (AGENTS.md section 9).
+ */
 function Badge({ badge }: { badge: CardBadge }) {
   const personal = badge.tone === "personal";
   return (
-    <View
-      className={`absolute top-1.5 left-1.5 rounded-full border px-2 py-0.5 ${
-        personal
-          ? "border-score-personal bg-glass-plate-score"
-          : "border-border bg-glass-plate-panel"
-      }`}
-    >
-      <Text
-        className={`text-xs font-semibold ${
-          personal ? "text-score-personal" : "text-rating-tmdb"
-        }`}
+    <View style={{ position: "absolute", top: INSET, left: INSET }}>
+      <GlassPill
+        tone={personal ? "score" : "neutral"}
+        icon={<RatingStar tone={personal ? "personal" : "community"} />}
       >
-        {personal ? `★ ${badge.text}` : badge.text}
-      </Text>
+        {badge.text}
+      </GlassPill>
     </View>
   );
 }
@@ -78,45 +79,29 @@ export function LibraryCard({
 
   const body = (
     <>
-      <View style={{ width, aspectRatio: 2 / 3 }}>
-        {title && view.imageUrl ? (
-          <Image
-            source={{ uri: sizedImageUri(view.imageUrl, width) }}
-            contentFit="cover"
-            recyclingKey={`${entry.type}:${entry.id}`}
-            transition={150}
-            style={{ width: "100%", height: "100%", borderRadius: 12 }}
-          />
-        ) : (
-          <View className="h-full w-full items-center justify-center rounded-xl border border-border bg-glass-plate">
-            <Text
-              numberOfLines={4}
-              className="px-2 text-center text-xs text-muted-foreground"
-            >
-              {view.name}
-            </Text>
-          </View>
-        )}
+      <PosterFrame
+        width={width}
+        imageUrl={title ? view.imageUrl : null}
+        recyclingKey={`${entry.type}:${entry.id}`}
+        name={view.name}
+      >
         {title && view.badge ? <Badge badge={view.badge} /> : null}
         {title && view.pill ? (
           <View
             style={{
+              position: "absolute",
+              bottom: INSET,
+              left: INSET,
               maxWidth:
                 quick && !quick.action.corner
                   ? width - INSET * 3 - CARD_ACTION_SIZE
                   : width - INSET * 2,
             }}
-            className="absolute bottom-1.5 left-1.5 rounded-full border border-border bg-glass-plate-panel px-2 py-0.5"
           >
-            <Text
-              numberOfLines={1}
-              className="text-xs font-semibold text-foreground"
-            >
-              {view.pill.text}
-            </Text>
+            <GlassPill>{view.pill.text}</GlassPill>
           </View>
         ) : null}
-      </View>
+      </PosterFrame>
       {title ? (
         <Text
           numberOfLines={2}
@@ -137,7 +122,7 @@ export function LibraryCard({
         accessible
         accessibilityLabel={label}
         style={{ width }}
-        className="gap-1.5"
+        className="gap-2.5"
       >
         {body}
       </View>
@@ -147,7 +132,7 @@ export function LibraryCard({
           accessibilityRole="link"
           accessibilityLabel={label}
           style={{ width }}
-          className="gap-1.5"
+          className="gap-2.5"
         >
           {body}
         </Pressable>
@@ -169,12 +154,14 @@ export function LibraryCard({
             : posterHeight - INSET - CARD_ACTION_SIZE,
         }}
       >
-        <CardActionButton
-          look={quick.action.look}
-          label={quick.action.label}
-          disabled={quick.disabled}
-          onPress={quick.onPress}
-        />
+        <PlateSolid>
+          <CardActionButton
+            look={quick.action.look}
+            label={quick.action.label}
+            disabled={quick.disabled}
+            onPress={quick.onPress}
+          />
+        </PlateSolid>
       </View>
     </View>
   );
