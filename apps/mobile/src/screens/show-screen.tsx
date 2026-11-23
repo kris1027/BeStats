@@ -23,6 +23,7 @@ import { CatalogNotice } from "@/components/catalog-notice";
 import { LoadingState, StatePanel } from "@/components/centered-state";
 import { DetailHeader, DetailSection } from "@/components/detail-header";
 import { GlassButton } from "@/components/glass-button";
+import { RatingStar } from "@/components/glass-pill";
 import {
   communityRatingLabel,
   communityRatingText,
@@ -369,9 +370,12 @@ function Seasons({
                   ) : null}
                 </View>
                 {rating ? (
-                  <Text className="pr-2 text-sm font-semibold text-score-personal">
-                    ★ {formatCalculatedRating(rating.mean)}
-                  </Text>
+                  <View className="flex-row items-center gap-1 pr-2">
+                    <RatingStar tone="personal" />
+                    <Text className="text-sm font-semibold text-score-personal">
+                      {formatCalculatedRating(rating.mean)}
+                    </Text>
+                  </View>
                 ) : null}
               </Pressable>
             </Link>

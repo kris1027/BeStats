@@ -36,6 +36,7 @@ import { CatalogNotice } from "@/components/catalog-notice";
 import { LoadingState, StatePanel } from "@/components/centered-state";
 import { DetailHeader, DetailSection } from "@/components/detail-header";
 import { GlassButton } from "@/components/glass-button";
+import { RatingStar } from "@/components/glass-pill";
 import {
   communityRatingLabel,
   communityRatingText,
@@ -230,7 +231,8 @@ function GameTracking({
         ))}
         {canScore ? (
           <GlassButton
-            label={state.rating === null ? "★ Rate" : `★ ${scoreText}`}
+            label={state.rating === null ? "Rate" : scoreText}
+            icon={<RatingStar tone="personal" />}
             accessibilityLabel={`Your score for ${game.name}: ${scoreText}`}
             onPress={() => setSheetOpen(true)}
           />

@@ -1,5 +1,8 @@
 import { useRouter } from "expo-router";
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react-native";
 import { View } from "react-native";
+
+import { tokenColor } from "@/theme/token-vars";
 
 import { GlassButton } from "./glass-button";
 
@@ -30,7 +33,10 @@ export function SeasonNav({
     <View className="flex-row flex-wrap justify-between gap-2">
       {previous ? (
         <GlassButton
-          label={`‹ ${previous.name}`}
+          label={previous.name}
+          icon={
+            <ChevronLeftIcon size={18} color={tokenColor("color-foreground")} />
+          }
           accessibilityLabel={`Previous season, ${previous.name}`}
           onPress={() => go(previous.seasonNumber)}
         />
@@ -39,7 +45,14 @@ export function SeasonNav({
       )}
       {next ? (
         <GlassButton
-          label={`${next.name} ›`}
+          label={next.name}
+          icon={
+            <ChevronRightIcon
+              size={18}
+              color={tokenColor("color-foreground")}
+            />
+          }
+          iconAfter
           accessibilityLabel={`Next season, ${next.name}`}
           onPress={() => go(next.seasonNumber)}
         />

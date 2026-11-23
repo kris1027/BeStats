@@ -43,6 +43,7 @@ import {
   SeasonSkeleton,
 } from "@/components/episode-row";
 import { GlassButton } from "@/components/glass-button";
+import { RatingStar } from "@/components/glass-pill";
 import { RatingLine, ratedCount } from "@/components/rating-line";
 import { ScoreSheet } from "@/components/score-sheet";
 import { SeasonNav } from "@/components/season-nav";
@@ -429,7 +430,8 @@ function SeasonTracking({
                   }
                 />
                 <GlassButton
-                  label={`★ ${formatPersonalScore(shown.rating)}`}
+                  label={formatPersonalScore(shown.rating)}
+                  icon={<RatingStar tone="personal" />}
                   accessibilityLabel={`Your score for ${label}: ${formatPersonalScore(shown.rating)}`}
                   onPress={() => setScoring(episode)}
                 />
