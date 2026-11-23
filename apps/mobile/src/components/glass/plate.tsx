@@ -57,7 +57,7 @@ export type PlateRole = keyof typeof PLATE_ROLES;
  * rather than pixels, so the web's 12, 20 and 24px map onto it by one factor,
  * tuned by eye in the simulator against the web at 375px.
  */
-export const BLUR_INTENSITY_PER_PX = 3;
+export const BLUR_INTENSITY_PER_PX = 4;
 
 /** A gradient as React Native's `backgroundImage` CSS string. */
 export function gradientCss(gradient: {
@@ -134,7 +134,7 @@ export function GlassPlate({
       {frosted ? (
         <BlurView
           testID="glass-blur"
-          tint="dark"
+          tint="systemUltraThinMaterialDark"
           intensity={lengthToken(plate.blur) * BLUR_INTENSITY_PER_PX}
           style={StyleSheet.absoluteFill}
         />
