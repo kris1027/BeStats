@@ -43,7 +43,7 @@ export function CatalogListScreen({ list }: { list: CatalogList }) {
     return (
       <>
         {title}
-        <LoadingState label={`Loading ${list.heading}`} />
+        <LoadingState layout="grid" label={`Loading ${list.heading}`} />
       </>
     );
   }

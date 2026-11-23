@@ -134,7 +134,7 @@ export function SearchScreen() {
   // keyboard stays up while a new search loads.
   let status: ReactNode = null;
   if (query.isPending) {
-    status = <LoadingState label="Loading results" />;
+    status = <LoadingState layout="grid" label="Loading results" />;
   } else if (query.isLoadingError) {
     const invalid =
       query.error instanceof ApiError && query.error.code === "invalid_input";

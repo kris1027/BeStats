@@ -4,10 +4,7 @@ import type { ReactElement } from "react";
 import { FlatList, useWindowDimensions, View } from "react-native";
 
 import { PosterCard } from "./poster-card";
-
-const COLUMNS = 3;
-const GUTTER = 16;
-const GAP = 12;
+import { GRID, gridCardWidth } from "./skeleton";
 
 type Props = {
   items: V1CatalogItem[];
@@ -34,9 +31,7 @@ export function PosterGrid({
   accessibilityLabel,
 }: Props) {
   const { width } = useWindowDimensions();
-  const cardWidth = Math.floor(
-    (width - GUTTER * 2 - GAP * (COLUMNS - 1)) / COLUMNS,
-  );
+  const cardWidth = gridCardWidth(width);
 
   return (
     <FlatList
@@ -44,9 +39,9 @@ export function PosterGrid({
       className="flex-1"
       contentInsetAdjustmentBehavior="automatic"
       data={items}
-      numColumns={COLUMNS}
+      numColumns={GRID.columns}
       keyExtractor={(item) => String(item.id)}
-      columnWrapperStyle={{ gap: GAP, paddingHorizontal: GUTTER }}
+      columnWrapperStyle={{ gap: GRID.gap, paddingHorizontal: GRID.gutter }}
       contentContainerStyle={{ gap: 20, paddingBottom: 24 }}
       ListHeaderComponent={header}
       ListFooterComponent={footer}
