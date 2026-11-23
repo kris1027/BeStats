@@ -105,6 +105,12 @@ export const RETRY_ACTION_LABEL = "Retry";
  */
 export const UNDO_TOAST_MS = 10_000;
 
+/**
+ * The score picker's clear button, the same words in both apps (feature 29,
+ * slice 2): the web's score picker and the app's score sheet read it here.
+ */
+export const CLEAR_RATING_LABEL = "Clear rating";
+
 /** The label on the session expired toast's action. */
 export const SIGN_IN_ACTION_LABEL = "Sign in";
 
