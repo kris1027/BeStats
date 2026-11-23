@@ -1,4 +1,4 @@
-import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useEffect, useRef } from "react";
 import {
   AccessibilityInfo,
   Animated,
@@ -7,6 +7,7 @@ import {
   type ViewStyle,
 } from "react-native";
 
+import { createAccessibilityFlag } from "@/lib/accessibility-flag";
 import { lengthToken } from "@/theme/token-vars";
 
 import { GlassPlate, PlateSolid } from "./glass/plate";
@@ -77,41 +78,14 @@ export function Skeleton({
 }
 
 /**
- * Whether the system asks for reduced motion, read once and then followed,
- * with one listener for the whole app rather than one per skeleton (a grid
- * draws a dozen). React Native's own `AccessibilityInfo`, not Reanimated's
- * hook, so the pulse is a plain `Animated` loop that every screen renders.
+ * Whether the system asks for reduced motion. React Native's own
+ * `AccessibilityInfo`, not Reanimated's hook, so the pulse is a plain
+ * `Animated` loop that every screen renders.
  */
-let reduceMotion = false;
-const motionListeners = new Set<() => void>();
-let watchingMotion = false;
-
-function setReduceMotion(value: boolean) {
-  if (value === reduceMotion) return;
-  reduceMotion = value;
-  for (const listener of motionListeners) listener();
-}
-
-function subscribeMotion(listener: () => void) {
-  if (!watchingMotion) {
-    watchingMotion = true;
-    Promise.resolve()
-      .then(() => AccessibilityInfo.isReduceMotionEnabled())
-      .then((value) => setReduceMotion(value === true))
-      .catch(() => {});
-    AccessibilityInfo.addEventListener("reduceMotionChanged", setReduceMotion);
-  }
-  motionListeners.add(listener);
-  return () => motionListeners.delete(listener);
-}
-
-function useReduceMotion(): boolean {
-  return useSyncExternalStore(
-    subscribeMotion,
-    () => reduceMotion,
-    () => false,
-  );
-}
+const useReduceMotion = createAccessibilityFlag({
+  event: "reduceMotionChanged",
+  read: () => AccessibilityInfo.isReduceMotionEnabled(),
+});
 
 /** A poster card's footprint: the poster and its title line. */
 export function PosterCardSkeleton({ width }: { width: number }) {

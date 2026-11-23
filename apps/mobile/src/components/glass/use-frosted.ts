@@ -1,36 +1,18 @@
-import { createContext, useContext, useSyncExternalStore } from "react";
+import { createContext, useContext } from "react";
 import { AccessibilityInfo, Platform } from "react-native";
 
+import { createAccessibilityFlag } from "@/lib/accessibility-flag";
+
 /**
- * Whether iOS's Reduce Transparency is on, read once and then followed, so a
- * change in Settings reaches every plate without a restart
- * (prompts/mobile-web-parity-foundation.md, requirement 4). One listener for
- * the whole app rather than one per plate.
+ * Whether iOS's Reduce Transparency is on, followed live so toggling it in
+ * Settings reaches every plate without a restart (apps/mobile/AGENTS.md,
+ * Styling). Android has no such setting and always draws opaque plates.
  */
-let reduceTransparency = false;
-const listeners = new Set<() => void>();
-
-function set(value: boolean) {
-  if (value === reduceTransparency) return;
-  reduceTransparency = value;
-  for (const listener of listeners) listener();
-}
-
-let watching = false;
-function watch() {
-  if (watching || Platform.OS !== "ios") return;
-  watching = true;
-  AccessibilityInfo.isReduceTransparencyEnabled()
-    .then(set)
-    .catch(() => {});
-  AccessibilityInfo.addEventListener("reduceTransparencyChanged", set);
-}
-
-function subscribe(listener: () => void) {
-  watch();
-  listeners.add(listener);
-  return () => listeners.delete(listener);
-}
+const useReduceTransparency = createAccessibilityFlag({
+  event: "reduceTransparencyChanged",
+  read: () => AccessibilityInfo.isReduceTransparencyEnabled(),
+  iosOnly: true,
+});
 
 /**
  * Plates inside a `PlateSolid` are opaque, as the web's `plate-solid` makes
@@ -46,11 +28,7 @@ export const SolidPlates = createContext(false);
  * opaque plates, since its blur is slow on a scrolling list.
  */
 export function useFrosted(): boolean {
-  const reduced = useSyncExternalStore(
-    subscribe,
-    () => reduceTransparency,
-    () => false,
-  );
+  const reduced = useReduceTransparency();
   const solid = useContext(SolidPlates);
   return Platform.OS === "ios" && !reduced && !solid;
 }
