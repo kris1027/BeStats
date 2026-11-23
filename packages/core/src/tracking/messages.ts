@@ -105,6 +105,12 @@ export const RETRY_ACTION_LABEL = "Retry";
  */
 export const UNDO_TOAST_MS = 10_000;
 
+/**
+ * The score picker's clear button, the same words in both apps (feature 29,
+ * slice 2): the web's score picker and the app's score sheet read it here.
+ */
+export const CLEAR_RATING_LABEL = "Clear rating";
+
 /** The label on the session expired toast's action. */
 export const SIGN_IN_ACTION_LABEL = "Sign in";
 
@@ -178,6 +184,15 @@ export const SEASON_PAGE_COPY = {
   airs: (date: string) => `Airs ${date}`,
   markWatched: "Mark watched",
   watched: "Watched",
+  /** The app's swipe action on a watched episode (feature 29, slice 2). */
+  markUnwatched: "Mark unwatched",
+  /**
+   * The row's Watched button as a screen reader announces it: what a tap
+   * does now, so a watched episode never reads "Mark … watched" while the
+   * tap unmarks it (AGENTS.md section 11, no false success).
+   */
+  toggleWatchedLabel: (episode: string, watched: boolean) =>
+    watched ? `Mark ${episode} unwatched` : `Mark ${episode} watched`,
 } as const;
 
 /**

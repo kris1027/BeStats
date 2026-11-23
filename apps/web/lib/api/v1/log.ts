@@ -17,3 +17,24 @@ import type { V1ErrorCode } from "@bestats/core/api/v1/errors";
 export function logV1Failure(name: string, code: V1ErrorCode): void {
   console.warn(JSON.stringify({ event: `api_v1.${name}`, outcome: code }));
 }
+
+/**
+ * Records a part of a v1 answer that failed while the answer itself was
+ * served, such as a show's cast (feature 29, slice 2): otherwise that
+ * failure leaves no trace once its cached result is reused. Same rule as
+ * `logV1Failure`: a route name, the part and a closed error kind, never an
+ * id or anything a person sent (AGENTS.md section 11).
+ *
+ * @param name The route name `withV1` was given, such as `shows.get`.
+ * @param part The part left out of the answer, such as `cast`.
+ * @param kind The catalog error's closed kind, such as `timeout`.
+ */
+export function logV1PartFailure(
+  name: string,
+  part: string,
+  kind: string,
+): void {
+  console.warn(
+    JSON.stringify({ event: `api_v1.${name}.${part}`, outcome: kind }),
+  );
+}

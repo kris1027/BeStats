@@ -111,6 +111,13 @@ describe("GET /api/v1/movies/{id}", () => {
     const body = v1MovieSchema.parse(await response.json());
     expect(body.id).toBe(MOVIE.id);
     expect(body.releaseDate).toBe(MOVIE.releaseDate);
+    // The Facts and crew fields the app's title screen reads (feature 29,
+    // slice 2), straight from the same normalized movie the web page reads.
+    expect(body.originalLanguage).toBe(MOVIE.originalLanguage);
+    expect(body.budget).toBe(MOVIE.budget);
+    expect(body.revenue).toBe(MOVIE.revenue);
+    expect(body.productionCompanies).toEqual(MOVIE.productionCompanies);
+    expect(body.writers).toEqual(MOVIE.writers);
     expect(response.headers.get("Cache-Control")).toBe(
       "public, s-maxage=300, stale-while-revalidate=600",
     );

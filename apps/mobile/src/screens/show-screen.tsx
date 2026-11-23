@@ -17,19 +17,27 @@ import {
 } from "@bestats/core/tracking/messages";
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
-import { Link, Stack, useLocalSearchParams } from "expo-router";
-import { Pressable, ScrollView, View } from "react-native";
+import { Link, useLocalSearchParams } from "expo-router";
+import { Pressable, View } from "react-native";
+import { CastRow } from "@/components/cast-row";
 import { CatalogNotice } from "@/components/catalog-notice";
 import { LoadingState, StatePanel } from "@/components/centered-state";
-import { DetailHeader, DetailSection } from "@/components/detail-header";
+import { DetailHeader } from "@/components/detail-header";
 import { GlassButton } from "@/components/glass-button";
 import { RatingStar } from "@/components/glass-pill";
 import { RatingLine, ratedCount } from "@/components/rating-line";
 import { Text } from "@/components/text";
+import {
+  CrewLines,
+  FactsPanel,
+  Overview,
+  showFacts,
+} from "@/components/title-details";
+import { TitleScroll } from "@/components/title-header";
 import { useToast } from "@/components/toast";
 import { TrackingGate } from "@/components/tracking-gate";
 import { catalogKeys, fetchShow } from "@/lib/catalog";
-import { sizedImageUri } from "@/lib/images";
+import { SEASON_ROW_POSTER_WIDTH, sizedImageUri } from "@/lib/images";
 import { useSession } from "@/lib/session";
 import { restoreShowTracking, trackShow, untrackShow } from "@/lib/shows";
 import {
@@ -41,16 +49,14 @@ import {
 
 import { TitleReadError } from "./title-states";
 
-const SEASON_POSTER_WIDTH = 56;
-
 /**
  * A show's page (prompts/mobile-title-tracking.md, decision 6): the public
  * detail from `/api/v1/shows/{id}`, the Plan to watch / Tracking toggle, the
  * progress line and the user's show rating, then the seasons, each with its
  * calculated rating and a link to its season screen. TMDB's rating stays
- * labelled TMDB, apart from every personal one (AGENTS.md section 9). The v1
- * show answer has no cast, trailer or similar titles, so none is shown
- * rather than invented (AGENTS.md section 3).
+ * labelled TMDB, apart from every personal one (AGENTS.md section 9). Then
+ * the cast row and Facts (prompts/mobile-look-title-pages.md); the trailer
+ * and similar titles wait for slice 3's reads rather than being invented.
  */
 export function ShowScreen() {
   const params = useLocalSearchParams<{ id: string }>();
@@ -71,7 +77,9 @@ export function ShowScreen() {
   if (!parsed.success) {
     return <StatePanel tone="error" title={V1_ERROR_MESSAGES.not_found} />;
   }
-  if (show.isPending) return <LoadingState label="Loading the show" />;
+  if (show.isPending) {
+    return <LoadingState label="Loading the show" layout="title" />;
+  }
   if (show.isError) {
     return <TitleReadError error={show.error} retry={() => show.refetch()} />;
   }
@@ -80,14 +88,15 @@ export function ShowScreen() {
   const regularSeasons = detail.seasons.filter((season) => !season.isSpecials);
 
   return (
-    <ScrollView className="flex-1" contentContainerClassName="pb-24">
-      <Stack.Screen options={{ title: detail.name }} />
+    <TitleScroll title={detail.name} backdropUrl={detail.backdropUrl}>
       <DetailHeader
         title={detail.name}
         posterUrl={detail.posterUrl}
-        backdropUrl={detail.backdropUrl}
         type="tv"
         communityRating={detail.tmdbRating}
+        voteCount={detail.tmdbVoteCount}
+        genres={detail.genres}
+        status={detail.status}
         meta={[
           formatAirSpan({
             firstAirYear: detail.firstAirYear,
@@ -96,35 +105,36 @@ export function ShowScreen() {
               : null,
             status: detail.status,
           }),
-          detail.status || null,
           regularSeasons.length > 0
             ? `${regularSeasons.length} ${regularSeasons.length === 1 ? "season" : "seasons"}`
             : null,
           detail.numberOfEpisodes > 0
             ? formatEpisodeCount(detail.numberOfEpisodes)
             : null,
-          detail.genres
-            .slice(0, 3)
-            .map((genre) => genre.name)
-            .join(", ") || null,
         ]}
       />
       <View className="gap-5 px-4 pt-5">
         <TrackingGate signedIn={session !== null} state={state}>
           {(data) => <ShowTracking show={detail} state={data} />}
         </TrackingGate>
-        <DetailSection heading="Overview" text={detail.overview} />
-        <DetailSection
-          heading="Created by"
-          text={detail.createdBy.join(", ") || null}
-        />
+        <Overview text={detail.overview} />
+        <CrewLines lines={[{ label: "Created by", names: detail.createdBy }]} />
         <Seasons
           show={detail}
           state={session !== null ? (state.data ?? null) : null}
         />
       </View>
+      <View className="pt-6">
+        <CastRow
+          cast={detail.cast}
+          emptyMessage="TMDB lists no cast for this show."
+        />
+      </View>
+      <View className="pt-6">
+        <FactsPanel facts={showFacts(detail)} />
+      </View>
       <CatalogNotice type="tv" />
-    </ScrollView>
+    </TitleScroll>
   );
 }
 
@@ -334,11 +344,14 @@ function Seasons({
                 {season.posterUrl ? (
                   <Image
                     source={{
-                      uri: sizedImageUri(season.posterUrl, SEASON_POSTER_WIDTH),
+                      uri: sizedImageUri(
+                        season.posterUrl,
+                        SEASON_ROW_POSTER_WIDTH,
+                      ),
                     }}
                     contentFit="cover"
                     style={{
-                      width: SEASON_POSTER_WIDTH,
+                      width: SEASON_ROW_POSTER_WIDTH,
                       aspectRatio: 2 / 3,
                       borderRadius: 8,
                     }}
@@ -346,7 +359,10 @@ function Seasons({
                 ) : (
                   <View
                     className="items-center justify-center rounded-lg border border-border bg-card"
-                    style={{ width: SEASON_POSTER_WIDTH, aspectRatio: 2 / 3 }}
+                    style={{
+                      width: SEASON_ROW_POSTER_WIDTH,
+                      aspectRatio: 2 / 3,
+                    }}
                   >
                     <Text className="text-xs text-muted-foreground">
                       {season.seasonNumber === 0

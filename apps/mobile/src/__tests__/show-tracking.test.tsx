@@ -10,6 +10,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import { screen, userEvent, within } from "@testing-library/react-native";
 import { renderRouter } from "expo-router/testing-library";
 
+import { CAST_UNAVAILABLE } from "@/components/cast-row";
 import { ApiError } from "@/lib/api";
 import { SeasonScreen } from "@/screens/season-screen";
 import { ShowScreen } from "@/screens/show-screen";
@@ -88,6 +89,20 @@ const SHOW = {
   ],
   lastEpisodeToAir: null,
   nextEpisodeToAir: null,
+  originalLanguage: "en",
+  type: "Scripted",
+  networks: [{ id: 49, name: "HBO", logoUrl: null }],
+  productionCompanies: [],
+  cast: [
+    {
+      personId: 2,
+      creditId: "c2",
+      name: "Emilia Clarke",
+      character: "Daenerys Targaryen",
+      profileUrl: null,
+      order: 0,
+    },
+  ],
 };
 
 const episode = (id: number, number: number, airDate: string | null) => ({
@@ -388,8 +403,9 @@ test("a score on an unwatched episode marks it too", async () => {
     season: 1,
     rating: 8,
   });
+  // Now watched, its button says what a tap does next: unmark it.
   const row = screen.getByRole("button", {
-    name: "Mark Episode name 2 watched",
+    name: "Mark Episode name 2 unwatched",
   });
   expect(within(row).getByText(SEASON_PAGE_COPY.watched)).toBeOnTheScreen();
   expect(screen.getByText("1 of 2 watched")).toBeOnTheScreen();
@@ -430,7 +446,9 @@ test("unmarking an episode keeps its score", async () => {
   const user = userEvent.setup();
   await openSeason();
   await user.press(
-    await screen.findByRole("button", { name: "Mark Episode name 1 watched" }),
+    await screen.findByRole("button", {
+      name: "Mark Episode name 1 unwatched",
+    }),
   );
   expect(mockApi.callsTo("PUT", "/api/v1/me/episodes/11")[0].body).toEqual({
     showId: 1399,
@@ -461,6 +479,54 @@ test("a refused episode mark rolls back and says why", async () => {
   expect(within(row).getByText("Mark watched")).toBeOnTheScreen();
 });
 
+test("the show lists its cast, Created by and the Facts", async () => {
+  await openShow();
+  expect(
+    await screen.findByLabelText("Emilia Clarke as Daenerys Targaryen"),
+  ).toBeOnTheScreen();
+  expect(screen.getByLabelText("Networks: HBO")).toBeOnTheScreen();
+  expect(screen.getByLabelText("Type: Scripted")).toBeOnTheScreen();
+  expect(screen.queryByLabelText(/^Production companies/)).toBeNull();
+  // No creator from TMDB, so no Created by line rather than an empty one.
+  expect(screen.queryByText(/Created by/)).toBeNull();
+});
+
+test("a failed cast read keeps the show and says so under Cast", async () => {
+  mockApi.on("GET", "/api/v1/shows/1399", () => ({ ...SHOW, cast: null }));
+  await openShow();
+  expect(await screen.findByText(CAST_UNAVAILABLE)).toBeOnTheScreen();
+  expect(screen.getByText("Nine noble families fight.")).toBeOnTheScreen();
+  expect(screen.getByLabelText("Networks: HBO")).toBeOnTheScreen();
+});
+
+test("swiping an aired episode sends the button's request and toast", async () => {
+  mockApi.on("PUT", "/api/v1/me/episodes/11", () => ({
+    ok: true,
+    showTracked: false,
+    newlyMarked: true,
+    markedAt: TRACKED_AT,
+  }));
+  const user = userEvent.setup();
+  await openSeason();
+  await screen.findByRole("button", { name: "Mark Episode name 1 watched" });
+  // Episodes 1, 2 and the undated 4 can be marked; the upcoming 3 cannot.
+  // The revealed action is hidden from screen readers, which use the button.
+  const actions = screen.getAllByTestId("swipe-action", {
+    includeHiddenElements: true,
+  });
+  expect(actions).toHaveLength(3);
+  await user.press(actions[0]);
+  expect(mockApi.callsTo("PUT", "/api/v1/me/episodes/11")[0].body).toEqual({
+    showId: 1399,
+    season: 1,
+    watched: true,
+  });
+  expect(
+    await screen.findByText(EPISODE_MARK_MESSAGES.marked("Episode name 1")),
+  ).toBeOnTheScreen();
+  expect(screen.getByRole("button", { name: "Undo" })).toBeOnTheScreen();
+});
+
 test("signed out, the show sends no private request", async () => {
   mockSession = null;
   await openShow();
@@ -473,8 +539,12 @@ test("signed out, the show sends no private request", async () => {
 test("signed out, the season lists its episodes and sends no private request", async () => {
   mockSession = null;
   await openSeason();
-  expect(await screen.findByText("1. Episode name 1")).toBeOnTheScreen();
+  expect(await screen.findByText("Episode name 1")).toBeOnTheScreen();
+  expect(screen.getByText("S1 · E1")).toBeOnTheScreen();
   expect(screen.getByText("Sign in to track")).toBeOnTheScreen();
+  expect(
+    screen.queryByTestId("swipe-action", { includeHiddenElements: true }),
+  ).toBeNull();
   expect(
     mockApi.calls.filter((call) => call.path.startsWith("/api/v1/me/")),
   ).toEqual([]);

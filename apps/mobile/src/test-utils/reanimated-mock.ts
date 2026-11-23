@@ -1,4 +1,4 @@
-import { View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { Text } from "@/components/text";
 
 /**
@@ -40,6 +40,9 @@ export const interpolate = (
 
 export const cancelAnimation = () => {};
 
+/** A scroll handler that does nothing: Jest never scrolls a title screen. */
+export const useAnimatedScrollHandler = () => undefined;
+
 export function withTiming<T>(
   toValue: T,
   config?: { duration?: number },
@@ -49,5 +52,5 @@ export function withTiming<T>(
   return toValue;
 }
 
-const Animated = { View, Text };
+const Animated = { View, Text, ScrollView };
 export default Animated;

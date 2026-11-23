@@ -11,6 +11,7 @@ import type {
   ShowTrackingError,
 } from "../../tracking/types";
 import type { V1ErrorCode } from "./errors";
+import { v1CastMemberSchema, v1CompanySchema } from "./movie";
 
 /**
  * The show contracts of `/api/v1` (spec 0035, API surface): the public show
@@ -77,6 +78,20 @@ export const v1ShowSchema = z.object({
   seasons: z.array(seasonSummarySchema),
   lastEpisodeToAir: episodeToAirSchema,
   nextEpisodeToAir: episodeToAirSchema,
+  /**
+   * The Facts fields of the web's show page (spec 0022, AC-16), added for the
+   * app (feature 29, slice 2); additive, so older apps drop them.
+   */
+  originalLanguage: z.string(),
+  type: z.string().nullable(),
+  networks: z.array(v1CompanySchema),
+  productionCompanies: z.array(v1CompanySchema),
+  /**
+   * The series cast, read beside the show. Null when only the cast read
+   * failed, so the screen shows its cast error line and everything else, as
+   * the web's separate cast boundary does (spec 0009, AC-8).
+   */
+  cast: z.array(v1CastMemberSchema).nullable(),
 });
 
 export type V1Show = z.infer<typeof v1ShowSchema>;

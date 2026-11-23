@@ -1,4 +1,4 @@
-import type { ComponentProps, Ref } from "react";
+import type { ComponentProps, ReactNode, Ref } from "react";
 import { Text as NativeText, TextInput as NativeTextInput } from "react-native";
 
 /**
@@ -18,6 +18,19 @@ export const FONT_FAMILY = "Inter";
  */
 export function Text({ style, ...props }: ComponentProps<typeof NativeText>) {
   return <NativeText {...props} style={[{ fontFamily: FONT_FAMILY }, style]} />;
+}
+
+/**
+ * The small uppercase line above a heading (`S1 · E3`, a season's show
+ * name), the web's kicker style in one place so every kicker matches
+ * (AGENTS.md section 3, reuse existing patterns).
+ */
+export function Kicker({ children }: { children: ReactNode }) {
+  return (
+    <Text className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+      {children}
+    </Text>
+  );
 }
 
 /** React Native's TextInput in Inter, for the same reason as `Text`. */

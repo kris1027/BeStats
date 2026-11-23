@@ -40,11 +40,15 @@ vi.mock("@/lib/tmdb/load-show", () => ({ loadShow }));
 const loadSeason = vi.fn();
 vi.mock("@/lib/tmdb/load-season", () => ({ loadSeason }));
 const getShowEpisodes = vi.fn();
+const getShowCast = vi.fn();
 // The real capped batch over a mocked single show read, so the tests see the
 // same concurrency and per show failures the route does.
 vi.mock("@/lib/tmdb", async () => {
   const { readEachSettled } = await import("@/lib/tmdb/batch");
+  const { TmdbError } = await import("@/lib/tmdb/errors");
   return {
+    getShowCast,
+    TmdbError,
     getShowEpisodesSettled: (ids: readonly number[]) =>
       readEachSettled(ids, getShowEpisodes),
   };
@@ -70,6 +74,16 @@ const { POST: restoreTracking } = await import("./[id]/tracking/restore/route");
 const { GET: getTitles } = await import("../titles/route");
 
 const SHOW = normalizeTvShow(showFixture as never);
+const CAST = [
+  {
+    personId: 17419,
+    creditId: "52542282760ee313280017f9",
+    name: "Bryan Cranston",
+    character: "Walter White",
+    profileUrl: null,
+    order: 0,
+  },
+];
 const SEASON = normalizeSeasonDetail(seasonFixture as never, 1396);
 const FOUND_SEASON = { kind: "found", show: SHOW, season: SEASON };
 
@@ -79,6 +93,7 @@ beforeEach(() => {
   resetDb();
   verifyBearer.mockResolvedValue({ userId: "user-a", client: fakeClient() });
   loadShow.mockResolvedValue({ kind: "found", show: SHOW });
+  getShowCast.mockResolvedValue(CAST);
   loadSeason.mockResolvedValue(FOUND_SEASON);
   vi.spyOn(console, "warn").mockImplementation(() => {});
 });
@@ -118,8 +133,33 @@ describe("GET /api/v1/shows/{id} and /seasons/{n}", () => {
     const body = v1ShowSchema.parse(await response.json());
     expect(body.id).toBe(1396);
     expect(body.seasons.length).toBe(SHOW.seasons.length);
+    expect(body.cast).toEqual(CAST);
+    expect(body.originalLanguage).toBe(SHOW.originalLanguage);
+    expect(body.networks).toEqual(SHOW.networks);
+    expect(body.type).toBe(SHOW.type);
+    expect(body.productionCompanies).toEqual(SHOW.productionCompanies);
     expect(response.headers.get("Cache-Control")).toBe("public, s-maxage=60");
     expect(verifyBearer).not.toHaveBeenCalled();
+  });
+
+  it("answers the show with a null cast when only the cast read fails", async () => {
+    const { TmdbError } = await import("@/lib/tmdb/errors");
+    getShowCast.mockRejectedValueOnce(
+      new TmdbError("timeout", "/tv/1396/aggregate_credits", "slow"),
+    );
+    const response = await send(
+      getShow,
+      "/api/v1/shows/1396",
+      { id: "1396" },
+      { headers: VERSION },
+    );
+    expect(response.status).toBe(200);
+    const body = v1ShowSchema.parse(await response.json());
+    expect(body.cast).toBeNull();
+    expect(body.name).toBe(SHOW.name);
+    expect(console.warn).toHaveBeenCalledWith(
+      JSON.stringify({ event: "api_v1.shows.get.cast", outcome: "timeout" }),
+    );
   });
 
   it("answers the season with its episodes", async () => {

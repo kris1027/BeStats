@@ -1,5 +1,10 @@
 import { V1_NETWORK_MESSAGE } from "@bestats/core/api/v1/errors";
-import { formatAirDate } from "@bestats/core/format";
+import {
+  formatAirDate,
+  formatUsdCompact,
+  formatVoteCount,
+  languageName,
+} from "@bestats/core/format";
 import {
   MOVIE_CLEARED_MESSAGES,
   MOVIE_OVERVIEW_MISSING,
@@ -69,6 +74,11 @@ const MOVIE = {
   tmdbRating: 8.2,
   tmdbVoteCount: 1000,
   directors: ["Lana Wachowski"],
+  writers: ["Lilly Wachowski"],
+  originalLanguage: "en",
+  budget: 63_000_000,
+  revenue: 463_517_383,
+  productionCompanies: [{ id: 79, name: "Village Roadshow", logoUrl: null }],
   cast: [
     {
       personId: 1,
@@ -118,10 +128,55 @@ test("shows the movie with TMDB's rating labelled, crew and cast", async () => {
   expect(await screen.findByText("Mark watched")).toBeOnTheScreen();
   expect(screen.getByLabelText("TMDB rating 8.2")).toBeOnTheScreen();
   expect(
-    screen.getByText(`${formatAirDate("1999-03-31")} · 2h 16m · Action`),
+    screen.getByText(`${formatAirDate("1999-03-31")} · 2h 16m`),
   ).toBeOnTheScreen();
+  expect(screen.getByLabelText("Action, Released")).toBeOnTheScreen();
+  expect(screen.getByText(formatVoteCount(1000))).toBeOnTheScreen();
   expect(screen.getByText("Lana Wachowski")).toBeOnTheScreen();
+  expect(screen.getByText("Lilly Wachowski")).toBeOnTheScreen();
+  expect(
+    screen.getByLabelText(`Original language: ${languageName("en")}`),
+  ).toBeOnTheScreen();
+  expect(
+    screen.getByLabelText(`Budget: ${formatUsdCompact(63_000_000)}`),
+  ).toBeOnTheScreen();
+  expect(
+    screen.getByLabelText("Production companies: Village Roadshow"),
+  ).toBeOnTheScreen();
+  // The original title matches the title, so it is no fact of its own.
+  expect(screen.queryByLabelText(/^Original title/)).toBeNull();
   expect(screen.getByLabelText("Keanu Reeves as Neo")).toBeOnTheScreen();
+});
+
+test("shows every genre, as the web does, then the status", async () => {
+  const genres = ["Action", "Science Fiction", "Thriller", "Adventure"];
+  mockApi.on("GET", MOVIE_PATH, () => ({
+    ...MOVIE,
+    genres: genres.map((name, index) => ({ id: index + 1, name })),
+  }));
+  await open();
+  expect(
+    await screen.findByLabelText(`${genres.join(", ")}, Released`),
+  ).toBeOnTheScreen();
+});
+
+test("leaves out the crew lines and Facts TMDB has no value for", async () => {
+  mockApi.on("GET", MOVIE_PATH, () => ({
+    ...MOVIE,
+    status: "",
+    originalLanguage: "",
+    directors: [],
+    writers: [],
+    budget: null,
+    revenue: null,
+    productionCompanies: [],
+    tmdbVoteCount: 0,
+  }));
+  await open();
+  expect(await screen.findByText("Mark watched")).toBeOnTheScreen();
+  expect(screen.queryByText(/Directed by|Written by/)).toBeNull();
+  expect(screen.queryByText("Facts")).toBeNull();
+  expect(screen.queryByText(formatVoteCount(0))).toBeNull();
 });
 
 test("says so when the movie has no overview or cast", async () => {

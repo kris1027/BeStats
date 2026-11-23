@@ -7,6 +7,7 @@ import { StatusBar } from "expo-status-bar";
 import { VariableContextProvider } from "nativewind";
 import { type ReactNode, useEffect } from "react";
 import { Appearance, View } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { LaunchOverlay } from "@/components/launch-overlay";
 import { OfflineBanner } from "@/components/offline-banner";
@@ -109,28 +110,30 @@ function LaunchGate({ children }: { children: ReactNode }) {
  */
 export default function RootLayout() {
   return (
-    <VariableContextProvider value={TOKEN_VARS}>
-      <PersistQueryClientProvider
-        client={queryClient}
-        persistOptions={persistOptions}
-        onSuccess={wipePrivateCacheIfSignedOut}
-      >
-        <SessionProvider>
-          <MediaTypeProvider>
-            <ThemeProvider value={NAV_THEME}>
-              <ToastProvider>
-                <StatusBar style="light" />
-                <LaunchGate>
-                  <View className="flex-1 bg-background">
-                    <OfflineBanner />
-                    <Navigator />
-                  </View>
-                </LaunchGate>
-              </ToastProvider>
-            </ThemeProvider>
-          </MediaTypeProvider>
-        </SessionProvider>
-      </PersistQueryClientProvider>
-    </VariableContextProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <VariableContextProvider value={TOKEN_VARS}>
+        <PersistQueryClientProvider
+          client={queryClient}
+          persistOptions={persistOptions}
+          onSuccess={wipePrivateCacheIfSignedOut}
+        >
+          <SessionProvider>
+            <MediaTypeProvider>
+              <ThemeProvider value={NAV_THEME}>
+                <ToastProvider>
+                  <StatusBar style="light" />
+                  <LaunchGate>
+                    <View className="flex-1 bg-background">
+                      <OfflineBanner />
+                      <Navigator />
+                    </View>
+                  </LaunchGate>
+                </ToastProvider>
+              </ThemeProvider>
+            </MediaTypeProvider>
+          </SessionProvider>
+        </PersistQueryClientProvider>
+      </VariableContextProvider>
+    </GestureHandlerRootView>
   );
 }

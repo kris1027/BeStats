@@ -1,18 +1,7 @@
 import { createContext, useContext } from "react";
-import { AccessibilityInfo, Platform } from "react-native";
+import { Platform } from "react-native";
 
-import { createAccessibilityFlag } from "@/lib/accessibility-flag";
-
-/**
- * Whether iOS's Reduce Transparency is on, followed live so toggling it in
- * Settings reaches every plate without a restart (apps/mobile/AGENTS.md,
- * Styling). Android has no such setting and always draws opaque plates.
- */
-const useReduceTransparency = createAccessibilityFlag({
-  event: "reduceTransparencyChanged",
-  read: () => AccessibilityInfo.isReduceTransparencyEnabled(),
-  iosOnly: true,
-});
+import { useReduceTransparency } from "@/lib/reduce-transparency";
 
 /**
  * Plates inside a `PlateSolid` are opaque, as the web's `plate-solid` makes

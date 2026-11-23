@@ -1,5 +1,6 @@
 "use client";
 
+import { CLEAR_RATING_LABEL } from "@bestats/core/tracking/messages";
 import { cn } from "cn";
 import { useId, useRef, useState } from "react";
 
@@ -122,7 +123,7 @@ function ScorePicker({
           onClick={onClear}
           className="self-center px-3 md:h-9"
         >
-          Clear rating
+          {CLEAR_RATING_LABEL}
         </Button>
       )}
     </div>

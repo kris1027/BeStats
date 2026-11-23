@@ -8,16 +8,25 @@ import { sizedImageUri } from "@/lib/images";
 const PHOTO_WIDTH = 96;
 
 /**
+ * What the show screen says when TMDB's cast read failed but the show
+ * loaded: the web's "Cast unavailable" panel copy (spec 0009, AC-8), as a
+ * line under the heading, since the rest of the screen still stands.
+ */
+export const CAST_UNAVAILABLE =
+  "TMDB's cast listing for this show couldn't be read.";
+
+/**
  * The web's cast row natively (prompts/mobile-title-tracking.md, decision 5):
  * a horizontal list of photos with name and character, the initials plate
  * when TMDB has no photo, and the web's empty line when it lists no cast, so
- * nothing is invented (AGENTS.md section 3).
+ * nothing is invented (AGENTS.md section 3). A null cast is a failed cast
+ * read (the show's, feature 29 slice 2) and shows `CAST_UNAVAILABLE`.
  */
 export function CastRow({
   cast,
   emptyMessage,
 }: {
-  cast: V1Movie["cast"];
+  cast: V1Movie["cast"] | null;
   emptyMessage: string;
 }) {
   return (
@@ -28,8 +37,10 @@ export function CastRow({
       >
         Cast
       </Text>
-      {cast.length === 0 ? (
-        <Text className="px-4 text-muted-foreground">{emptyMessage}</Text>
+      {cast === null || cast.length === 0 ? (
+        <Text className="px-4 text-muted-foreground">
+          {cast === null ? CAST_UNAVAILABLE : emptyMessage}
+        </Text>
       ) : (
         <FlatList
           horizontal
