@@ -496,7 +496,7 @@ The app takes the web's visual language (warm still page background, frosted gla
 **Done when:** every app screen reads as the web's brand beside the web at 375px (materials, colours, radii, type; not layout), the missing web features are in the app, and each slice below is merged with its screenshot check.
 - [x] Design it (spec): the 2026-11-23 design interview, captured in [prompts/mobile-web-parity-foundation.md](../../prompts/mobile-web-parity-foundation.md) (decisions, requirements, acceptance criteria and the slice roadmap)
 - [ ] Build it: `/develop mobile look` (one plan and PR per slice, each plan approved before it is built; next run starts at slice 1, the unticked foundation boxes)
-  - [ ] 1 Foundation: `/develop mobile look foundation`, plan in [prompts/mobile-web-parity-foundation.md](../../prompts/mobile-web-parity-foundation.md) (branch `feat/mobile-web-parity-foundation`, not pushed, no PR yet)
+  - [ ] 1 Foundation: `/develop mobile look foundation`, plan in [prompts/mobile-web-parity-foundation.md](../../prompts/mobile-web-parity-foundation.md) (branch `feat/mobile-web-parity-foundation`, [PR #99](https://github.com/kris1027/BeStats/pull/99); code review fixes landed 2026-11-23, not yet run in the simulator)
     - [x] oklch tokens as sRGB, and the glass gradients and shadow copied from `globals.css` by `pnpm tokens` (`TOKENS_SRGB`, `GLASS`)
     - [x] Native dependencies: `react-native-svg`, `lucide-react-native`, `expo-haptics`; Inter's five weights embedded by the `expo-font` plugin (`assets/fonts/`, OFL); `version` 1.1.0, so a new development build is needed
     - [x] Theme: page colours, the web's radius scale and Inter in `global.css` and `token-vars.ts`
