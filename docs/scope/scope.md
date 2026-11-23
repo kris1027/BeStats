@@ -495,8 +495,8 @@ spec [0033](../specs/0033-mobile-app-expo/index.md) · code in `apps/mobile/`, `
 The app takes the web's visual language (warm still page background, frosted glass with gradient rims and sheen, Inter, lucide and the tracking icons, `GlassPill` badges, skeletons, glass state panels) while layout and interaction follow iOS and Android conventions. It is not a 1:1 copy of the web. Home keeps its layout and loses the parallax for good; the web is not changed. Decided with you in a design interview on 2026-11-23; every decision is in the plan.
 **Done when:** every app screen reads as the web's brand beside the web at 375px (materials, colours, radii, type; not layout), the missing web features are in the app, and each slice below is merged with its screenshot check.
 - [x] Design it (spec): the 2026-11-23 design interview, captured in [prompts/mobile-web-parity-foundation.md](../../prompts/mobile-web-parity-foundation.md) (decisions, requirements, acceptance criteria and the slice roadmap)
-- [ ] Build it: one plan and PR per slice, each plan approved before it is built
-  - [ ] 1 Foundation, plan in [prompts/mobile-web-parity-foundation.md](../../prompts/mobile-web-parity-foundation.md) (branch `feat/mobile-web-parity-foundation`, not pushed, no PR yet)
+- [ ] Build it: `/develop mobile look` (one plan and PR per slice, each plan approved before it is built; next run starts at slice 1, the unticked foundation boxes)
+  - [ ] 1 Foundation: `/develop mobile look foundation`, plan in [prompts/mobile-web-parity-foundation.md](../../prompts/mobile-web-parity-foundation.md) (branch `feat/mobile-web-parity-foundation`, not pushed, no PR yet)
     - [x] oklch tokens as sRGB, and the glass gradients and shadow copied from `globals.css` by `pnpm tokens` (`TOKENS_SRGB`, `GLASS`)
     - [x] Native dependencies: `react-native-svg`, `lucide-react-native`, `expo-haptics`; Inter's five weights embedded by the `expo-font` plugin (`assets/fonts/`, OFL); `version` 1.1.0, so a new development build is needed
     - [x] Theme: page colours, the web's radius scale and Inter in `global.css` and `token-vars.ts`
@@ -507,14 +507,16 @@ The app takes the web's visual language (warm still page background, frosted gla
     - [ ] Haptics through `src/lib/haptics.ts`, fired from `useTrackingWrite` and `useUndoToast` after the server answers
     - [ ] The contrast test over the background's brightest still pixel (requirement 5)
     - [ ] Checks and the runtime pass: `pnpm typecheck`, `pnpm lint`, `pnpm test`, `npx expo-doctor`, a new development build (`npx expo run:ios`), tune `BLUR_INTENSITY_PER_PX` and the header colour by eye against the web at 375px, the manual steps in the plan, then the PR
-  - [ ] 2 Title pages: stretchy backdrop that collapses into the native header (no scroll parallax), actions in thumb reach, genre, status and age pills, vote counts, Facts, show cast, season and episode layout, swipe to toggle watched (button kept), "Clear rating" from core
-  - [ ] 3 Title extras: trailer, Where to watch, More like this, through new `/api/v1` reads
-  - [ ] 4 Catalog card actions: Plan and Watched in a long-press `Link.Menu` with `Link.Preview`, 3 columns on phones (added in the plan, needs per card tracking state; confirm or fold into Search)
-  - [ ] 5 Search: large title header, the new cards, the games Platforms filter
-  - [ ] 6 Library: the new cards, the visible quick action kept
-  - [ ] 7 Account, auth and About: the auth panel content in the existing modals, Change password (brings back the deferred item), the Delete account screen restyled, the icon key and credit on About
+  - [ ] 2 Title pages: `/develop mobile look title pages`: stretchy backdrop that collapses into the native header (no scroll parallax), actions in thumb reach, genre, status and age pills, vote counts, Facts, show cast, season and episode layout, swipe to toggle watched (button kept), "Clear rating" from core
+  - [ ] 3 Title extras: `/develop mobile look title extras`: trailer, Where to watch, More like this, through new `/api/v1` reads
+  - [ ] 4 Catalog card actions: `/develop mobile look card actions`: Plan and Watched in a long-press `Link.Menu` with `Link.Preview`, 3 columns on phones (added in the plan, needs per card tracking state; confirm or fold into Search)
+  - [ ] 5 Search: `/develop mobile look search`: large title header, the new cards, the games Platforms filter
+  - [ ] 6 Library: `/develop mobile look library`: the new cards, the visible quick action kept
+  - [ ] 7 Account, auth and About: `/develop mobile look account`: the auth panel content in the existing modals, Change password (brings back the deferred item), the Delete account screen restyled, the icon key and credit on About
 - [ ] Verify it: `/check verify mobile look`
 - [ ] Test it: `/test mobile look`
+- [ ] Review it (fresh model): `/check review mobile look`
+- [ ] Document it: `/document mobile look`
 spec: none (decisions in [prompts/mobile-web-parity-foundation.md](../../prompts/mobile-web-parity-foundation.md)) · code in `apps/mobile/src/components/glass/`, `apps/mobile/src/components/page-background.tsx`, `apps/mobile/src/components/text.tsx`, `apps/mobile/src/theme/`, `packages/core/scripts/tokens.ts`
 
 ## Deferred
