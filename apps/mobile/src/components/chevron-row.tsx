@@ -1,5 +1,5 @@
-import { ChevronRightIcon } from "lucide-react-native";
 import { Pressable, View } from "react-native";
+import { ChevronRightIcon } from "@/components/icons";
 
 import { Text } from "@/components/text";
 import { lengthToken, tokenColor } from "@/theme/token-vars";

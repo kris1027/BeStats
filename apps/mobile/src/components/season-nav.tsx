@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react-native";
 import { View } from "react-native";
+import { ChevronLeftIcon, ChevronRightIcon } from "@/components/icons";
 
 import { tokenColor } from "@/theme/token-vars";
 

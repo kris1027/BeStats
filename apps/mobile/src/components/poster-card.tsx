@@ -7,9 +7,9 @@ import {
 } from "@bestats/core/catalog/media-type";
 import { Image } from "expo-image";
 import { type Href, Link } from "expo-router";
-import { FilmIcon } from "lucide-react-native";
 import type { ReactNode } from "react";
 import { Pressable, View } from "react-native";
+import { FilmIcon } from "@/components/icons";
 
 import { Text } from "@/components/text";
 import { sizedImageUri } from "@/lib/images";

@@ -2,9 +2,9 @@ import {
   formatCalculatedRating,
   formatPersonalScore,
 } from "@bestats/core/format";
-import { StarIcon } from "lucide-react-native";
 import type { ReactNode } from "react";
 import { View } from "react-native";
+import { StarIcon } from "@/components/icons";
 
 import { tokenColor } from "@/theme/token-vars";
 

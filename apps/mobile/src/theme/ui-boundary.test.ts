@@ -57,3 +57,16 @@ test("only lib/haptics.ts imports expo-haptics", () => {
   ).map(({ path }) => path);
   expect(offenders).toEqual([]);
 });
+
+/**
+ * covers: decision 9. The app draws the web's icon set; `components/icons`
+ * is the one place an icon enters, so a stray lucide import is caught here.
+ */
+test("only components/icons imports lucide-react-native", () => {
+  const offenders = FILES.filter(
+    ({ path, text }) =>
+      !path.startsWith("components/icons/") &&
+      /from "lucide-react-native"/.test(text),
+  ).map(({ path }) => path);
+  expect(offenders).toEqual([]);
+});

@@ -1,12 +1,11 @@
-import { XIcon } from "lucide-react-native";
 import type { ReactNode } from "react";
 import { Pressable, View } from "react-native";
+import { PlannedIcon, WatchedIcon, XIcon } from "@/components/icons";
 
 import type { CardActionLook } from "@/lib/library-actions";
 import { tokenColor } from "@/theme/token-vars";
 
 import { GlassPlate } from "./glass/plate";
-import { PlannedIcon, WatchedIcon } from "./icons/tracking-icons";
 
 /** The smallest tap area a control gets (AGENTS.md section 3). */
 const MIN_TOUCH_TARGET = 44;

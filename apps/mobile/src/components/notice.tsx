@@ -1,5 +1,5 @@
-import { CircleAlertIcon, InfoIcon } from "lucide-react-native";
 import { View } from "react-native";
+import { CircleAlertIcon, InfoIcon } from "@/components/icons";
 
 import { Text } from "@/components/text";
 import { tokenColor } from "@/theme/token-vars";

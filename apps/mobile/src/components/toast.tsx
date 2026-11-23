@@ -1,5 +1,4 @@
 import { UNDO_TOAST_MS } from "@bestats/core/tracking/messages";
-import { XIcon } from "lucide-react-native";
 import {
   createContext,
   type PropsWithChildren,
@@ -17,6 +16,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { XIcon } from "@/components/icons";
 
 import { Text } from "@/components/text";
 import { tokenColor } from "@/theme/token-vars";

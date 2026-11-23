@@ -1,13 +1,13 @@
 import { ACCOUNT_COPY } from "@bestats/core/auth/messages";
 import { SIGN_IN_ACTION_LABEL } from "@bestats/core/tracking/messages";
 import { useCanGoBack, useRouter } from "expo-router";
+import type { ReactNode } from "react";
+import { View } from "react-native";
 import {
   InboxIcon,
   TriangleAlertIcon,
   UserRoundIcon,
-} from "lucide-react-native";
-import type { ReactNode } from "react";
-import { View } from "react-native";
+} from "@/components/icons";
 
 import { Text } from "@/components/text";
 import { lengthToken, tokenColor } from "@/theme/token-vars";
