@@ -52,9 +52,11 @@ const { SessionProvider, useSession, wipePrivateCacheIfSignedOut } =
   require("./session") as typeof import("./session");
 
 let signOut: () => Promise<void> = async () => {};
+let current: ReturnType<typeof useSession> | null = null;
 function Probe() {
   const state = useSession();
   signOut = state.signOut;
+  current = state;
   return (
     <>
       <Text>{state.session ? "signed in" : "signed out"}</Text>
@@ -126,6 +128,77 @@ test("an accepted global sign out needs no local fallback", async () => {
   expect(mockSignOut).toHaveBeenCalledWith({ scope: "global" });
   expect(mockSignOutLocally).not.toHaveBeenCalled();
   expect(screen.getByText("signed out")).toBeOnTheScreen();
+});
+
+/**
+ * covers: spec 0033, AC-13 and child 0036 (only a sign out the app did not
+ * start shows the expired notice; every sign out the app starts on purpose
+ * stays quiet, and the quiet guard never outlives that sign out)
+ */
+describe("which sign outs show the expired notice", () => {
+  const EXPIRED = "Your session expired, sign in again.";
+
+  test("ending the session after an account deletion shows no notice", async () => {
+    await renderSignedIn();
+    await act(() => current?.endLocalSession() ?? Promise.resolve());
+    expect(mockSignOutLocally).toHaveBeenCalledTimes(1);
+    expect(mockSignOut).not.toHaveBeenCalled();
+    expect(mockClearPrivate).toHaveBeenCalled();
+    expect(screen.getByText("signed out")).toBeOnTheScreen();
+    expect(screen.queryByText(EXPIRED)).not.toBeOnTheScreen();
+  });
+
+  test("a global sign out that throws falls back to a local one, quietly", async () => {
+    mockSignOut.mockRejectedValueOnce(new Error("offline"));
+    await renderSignedIn();
+    await act(() => signOut());
+    expect(mockSignOutLocally).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("signed out")).toBeOnTheScreen();
+    expect(screen.queryByText(EXPIRED)).not.toBeOnTheScreen();
+  });
+
+  test("after a chosen sign out, a later library sign out still shows the notice", async () => {
+    mockSignOut.mockResolvedValue({ error: null });
+    await renderSignedIn();
+    await act(() => signOut());
+    await act(() => mockAuthListener("SIGNED_IN", SESSION));
+    await act(() => mockAuthListener("SIGNED_OUT", null));
+    expect(screen.getByText(EXPIRED)).toBeOnTheScreen();
+  });
+
+  test("a local sign out that throws does not leave the quiet guard on", async () => {
+    mockSignOutLocally.mockRejectedValueOnce(new Error("storage"));
+    await renderSignedIn();
+    await act(async () => {
+      await expect(current?.endLocalSession()).rejects.toThrow("storage");
+    });
+    await act(() => mockAuthListener("SIGNED_OUT", null));
+    expect(screen.getByText(EXPIRED)).toBeOnTheScreen();
+  });
+
+  test("a token refresh keeps the user signed in with no notice", async () => {
+    await renderSignedIn();
+    await act(() => mockAuthListener("TOKEN_REFRESHED", SESSION));
+    expect(screen.getByText("signed in")).toBeOnTheScreen();
+    expect(screen.queryByText(EXPIRED)).not.toBeOnTheScreen();
+    expect(mockClearPrivate).not.toHaveBeenCalled();
+  });
+
+  test("clearing the notice removes it", async () => {
+    await renderSignedIn();
+    await act(() => mockAuthListener("SIGNED_OUT", null));
+    expect(screen.getByText(EXPIRED)).toBeOnTheScreen();
+    await act(async () => current?.clearNotice());
+    expect(screen.queryByText(EXPIRED)).not.toBeOnTheScreen();
+  });
+});
+
+test("useSession outside SessionProvider throws a clear error", async () => {
+  const spy = jest.spyOn(console, "error").mockImplementation(() => {});
+  await expect(render(<Probe />)).rejects.toThrow(
+    "useSession must be used inside SessionProvider",
+  );
+  spy.mockRestore();
 });
 
 /**
