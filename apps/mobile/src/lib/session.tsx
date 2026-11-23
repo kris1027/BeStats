@@ -59,6 +59,9 @@ export function SessionProvider({ children }: PropsWithChildren) {
   // not lift the guard the chosen one still needs.
   const signingOut = useRef(0);
 
+  // Every sign out the app starts goes through here. It ends signed out
+  // itself rather than waiting for SIGNED_OUT, which a refused sign out
+  // never sends.
   const signOutQuietly = useCallback(async (run: () => Promise<void>) => {
     signingOut.current += 1;
     try {
@@ -66,6 +69,8 @@ export function SessionProvider({ children }: PropsWithChildren) {
     } finally {
       signingOut.current -= 1;
     }
+    setSession(null);
+    void clearPrivateQueries();
   }, []);
 
   useEffect(() => {
@@ -90,11 +95,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
     );
     const stopWatching = watchAppStateForRefresh();
     setSessionExpiredHandler(async () => {
-      // The library may refuse the sign out and send no event, so the
-      // signed out state is set here, not left to the listener.
       await signOutQuietly(signOutLocally);
-      setSession(null);
-      void clearPrivateQueries();
       setNotice(V1_ERROR_MESSAGES.unauthenticated);
     });
     return () => {
@@ -115,15 +116,12 @@ export function SessionProvider({ children }: PropsWithChildren) {
         .catch((caught: unknown) => ({ error: caught }));
       if (error) await signOutLocally();
     });
-    setSession(null);
-    void clearPrivateQueries();
   }, [signOutQuietly]);
 
-  const endLocalSession = useCallback(async () => {
-    await signOutQuietly(signOutLocally);
-    setSession(null);
-    void clearPrivateQueries();
-  }, [signOutQuietly]);
+  const endLocalSession = useCallback(
+    () => signOutQuietly(signOutLocally),
+    [signOutQuietly],
+  );
 
   const clearNotice = useCallback(() => setNotice(null), []);
 
