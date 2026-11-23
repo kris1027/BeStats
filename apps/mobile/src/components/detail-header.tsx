@@ -55,7 +55,7 @@ export function DetailHeader({
   // `TitleScroll` says whether it drew a backdrop the poster should overlap.
   const overBackdrop = use(OverBackdrop);
   const pills = [
-    ...genres.slice(0, 3).map((genre) => genre.name),
+    ...genres.map((genre) => genre.name),
     ...(status ? [status] : []),
   ];
 

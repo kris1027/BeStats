@@ -148,6 +148,18 @@ test("shows the movie with TMDB's rating labelled, crew and cast", async () => {
   expect(screen.getByLabelText("Keanu Reeves as Neo")).toBeOnTheScreen();
 });
 
+test("shows every genre, as the web does, then the status", async () => {
+  const genres = ["Action", "Science Fiction", "Thriller", "Adventure"];
+  mockApi.on("GET", MOVIE_PATH, () => ({
+    ...MOVIE,
+    genres: genres.map((name, index) => ({ id: index + 1, name })),
+  }));
+  await open();
+  expect(
+    await screen.findByLabelText(`${genres.join(", ")}, Released`),
+  ).toBeOnTheScreen();
+});
+
 test("leaves out the crew lines and Facts TMDB has no value for", async () => {
   mockApi.on("GET", MOVIE_PATH, () => ({
     ...MOVIE,
