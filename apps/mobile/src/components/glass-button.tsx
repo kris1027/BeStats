@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { ActivityIndicator, Pressable, View } from "react-native";
 
+import { PILL_FONT_SCALE_CAP } from "@/components/glass-pill";
 import { Text } from "@/components/text";
 import { tokenColor } from "@/theme/token-vars";
 
@@ -80,7 +81,14 @@ export function GlassButton({
           />
         ) : null}
         {icon && !iconAfter ? <Decorative>{icon}</Decorative> : null}
-        <Text className={`text-base font-semibold ${look.text}`}>{label}</Text>
+        {/* Capped like a pill: past it the fully rounded ends would cut into
+            a wrapped label (requirement 8). */}
+        <Text
+          maxFontSizeMultiplier={PILL_FONT_SCALE_CAP}
+          className={`text-base font-semibold ${look.text}`}
+        >
+          {label}
+        </Text>
         {icon && iconAfter ? <Decorative>{icon}</Decorative> : null}
       </GlassPlate>
     </Pressable>

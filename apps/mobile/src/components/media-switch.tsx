@@ -1,6 +1,7 @@
 import type { LibraryType } from "@bestats/core/catalog/media-type";
 import { Pressable, View } from "react-native";
 
+import { PILL_FONT_SCALE_CAP } from "@/components/glass-pill";
 import { Text } from "@/components/text";
 import { useMediaType } from "@/lib/media-type";
 
@@ -16,7 +17,9 @@ const OPTIONS: readonly { type: LibraryType; label: string }[] = [
 /**
  * The Shows, Movies, Games switch Home and Search share
  * (prompts/mobile-app-shell-catalog.md, decision 3), reading their shared
- * choice from `useMediaType()`.
+ * choice from `useMediaType()`. Its labels are a tab-like toggle, so they
+ * grow with Dynamic Type only to the pill cap and stay on one line, never
+ * breaking a word (prompts/mobile-web-parity-foundation.md, requirement 8).
  */
 export function MediaSwitch() {
   const { mediaType, setMediaType } = useMediaType();
@@ -61,13 +64,21 @@ export function MediaSwitchView({
                 radius={999}
                 className="min-h-11 items-center justify-center"
               >
-                <Text className="text-base font-semibold text-text-on-personal">
+                <Text
+                  numberOfLines={1}
+                  maxFontSizeMultiplier={PILL_FONT_SCALE_CAP}
+                  className="text-base font-semibold text-text-on-personal"
+                >
                   {option.label}
                 </Text>
               </GlassPlate>
             ) : (
               <View className="min-h-11 items-center justify-center">
-                <Text className="text-base font-semibold text-foreground">
+                <Text
+                  numberOfLines={1}
+                  maxFontSizeMultiplier={PILL_FONT_SCALE_CAP}
+                  className="text-base font-semibold text-foreground"
+                >
                   {option.label}
                 </Text>
               </View>
