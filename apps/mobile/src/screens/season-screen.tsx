@@ -126,7 +126,7 @@ export function SeasonScreen() {
 
   return (
     <ScrollView
-      className="flex-1 bg-background"
+      className="flex-1"
       contentContainerClassName="gap-5 px-4 pb-24 pt-4"
     >
       <Stack.Screen options={{ title: detail.name }} />

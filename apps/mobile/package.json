@@ -61,7 +61,8 @@
     "android": "expo run:android",
     "typecheck": "tsc --noEmit",
     "test": "jest",
-    "brand-icons": "node scripts/brand-icons.mts"
+    "brand-icons": "node scripts/brand-icons.mts",
+    "grain": "node scripts/grain.mts"
   },
   "private": true,
   "jest": {

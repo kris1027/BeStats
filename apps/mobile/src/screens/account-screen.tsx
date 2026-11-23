@@ -72,7 +72,7 @@ export function AccountScreen({ notice }: { notice?: string }) {
   if (profile.isPending) return <LoadingState label="Loading your account" />;
   if (profile.isError) {
     return (
-      <View className="flex-1 bg-background">
+      <View className="flex-1">
         <StatePanel
           tone="error"
           title={ACCOUNT_COPY.loadFailed}
@@ -114,7 +114,7 @@ export function AccountScreen({ notice }: { notice?: string }) {
 
   return (
     <ScrollView
-      className="flex-1 bg-background"
+      className="flex-1"
       contentContainerClassName="gap-4 px-4 py-6"
       keyboardShouldPersistTaps="handled"
     >

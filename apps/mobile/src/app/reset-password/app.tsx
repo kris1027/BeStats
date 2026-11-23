@@ -59,7 +59,7 @@ export default function AppResetPassword() {
 
   if (delivery === "off") {
     return (
-      <View className="flex-1 gap-5 bg-background px-4 pt-6">
+      <View className="flex-1 gap-5 px-4 pt-6">
         <Notice message={RECOVERY_UNAVAILABLE_MESSAGE} />
       </View>
     );
@@ -69,7 +69,7 @@ export default function AppResetPassword() {
 
   if (link === "invalid") {
     return (
-      <View className="flex-1 gap-5 bg-background px-4 pt-6">
+      <View className="flex-1 gap-5 px-4 pt-6">
         <Notice
           tone="error"
           message={AUTH_MESSAGES[AUTH_OUTCOME.invalidLink]}
@@ -120,7 +120,7 @@ export default function AppResetPassword() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      className="flex-1 bg-background"
+      className="flex-1"
     >
       <View className="gap-5 px-4 pt-6">
         <Notice message="Choose a new password for your account. Saving it signs you out everywhere, then you sign in with the new one." />

@@ -39,7 +39,7 @@ export default function ForgotPassword() {
 
   if (env.EXPO_PUBLIC_AUTH_EMAIL_DELIVERY === "off") {
     return (
-      <View className="flex-1 gap-5 bg-background px-4 pt-6">
+      <View className="flex-1 gap-5 px-4 pt-6">
         <Notice message={RECOVERY_UNAVAILABLE_MESSAGE} />
       </View>
     );
@@ -83,7 +83,7 @@ export default function ForgotPassword() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      className="flex-1 bg-background"
+      className="flex-1"
     >
       <View className="gap-5 px-4 pt-6">
         <Notice message="Enter your address and we will send you a link to set a new password. Open it on this phone." />

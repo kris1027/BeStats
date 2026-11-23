@@ -199,7 +199,7 @@ export function SearchScreen() {
   ) : null;
 
   return (
-    <View className="flex-1 bg-background">
+    <View className="flex-1">
       <PosterGrid
         accessibilityLabel="Search results"
         items={view?.kind === "results" ? items : []}

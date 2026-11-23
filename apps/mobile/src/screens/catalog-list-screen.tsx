@@ -51,7 +51,7 @@ export function CatalogListScreen({ list }: { list: CatalogList }) {
   // keeps what loaded (TanStack also sets `isError` then).
   if (query.isLoadingError || !query.data) {
     return (
-      <View className="flex-1 bg-background">
+      <View className="flex-1">
         {title}
         <StatePanel
           tone="error"
@@ -70,7 +70,7 @@ export function CatalogListScreen({ list }: { list: CatalogList }) {
   const nextFailed = query.isFetchNextPageError && !isPastEnd(query.error);
 
   return (
-    <View className="flex-1 bg-background">
+    <View className="flex-1">
       {title}
       <PosterGrid
         accessibilityLabel={list.heading}

@@ -90,10 +90,7 @@ export function GameScreen() {
 
   const detail = game.data;
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="pb-24"
-    >
+    <ScrollView className="flex-1" contentContainerClassName="pb-24">
       <Stack.Screen options={{ title: detail.name }} />
       <DetailHeader
         title={detail.name}

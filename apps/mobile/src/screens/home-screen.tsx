@@ -38,7 +38,7 @@ export function HomeScreen() {
 
   return (
     <ScrollView
-      className="flex-1 bg-background"
+      className="flex-1"
       contentContainerClassName="pb-6"
       contentInsetAdjustmentBehavior="automatic"
       refreshControl={

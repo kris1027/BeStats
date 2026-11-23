@@ -12,7 +12,7 @@ import { GlassButton } from "./glass-button";
  */
 export function LoadingState({ label }: { label: string }) {
   return (
-    <View className="flex-1 items-center justify-center bg-background py-12">
+    <View className="flex-1 items-center justify-center py-12">
       <ActivityIndicator accessibilityLabel={label} />
     </View>
   );
@@ -70,7 +70,7 @@ export function SignedOutState({
 }) {
   const router = useRouter();
   return (
-    <View className="flex-1 gap-3 bg-background">
+    <View className="flex-1 gap-3">
       <StatePanel
         title={ACCOUNT_COPY.signedOutTitle}
         description={description}

@@ -102,7 +102,7 @@ export function SeasonSkeleton({ label }: { label: string }) {
       accessible
       accessibilityLabel={label}
       accessibilityRole="progressbar"
-      className="flex-1 gap-5 bg-background px-4 pt-4"
+      className="flex-1 gap-5 px-4 pt-4"
     >
       <View className="gap-2">
         <View className="h-4 w-32 rounded bg-card" />

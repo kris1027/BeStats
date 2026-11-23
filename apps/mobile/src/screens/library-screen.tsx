@@ -171,7 +171,7 @@ export function LibraryScreen() {
   if (loading) return <LoadingState label="Loading" />;
   if (!session) {
     return (
-      <View className="flex-1 bg-background">
+      <View className="flex-1">
         <StatePanel
           title={LIBRARY_SIGNED_OUT.title}
           description={LIBRARY_SIGNED_OUT.description}
@@ -255,7 +255,7 @@ export function LibraryScreen() {
   return (
     <FlatList
       accessibilityLabel={name}
-      className="flex-1 bg-background"
+      className="flex-1"
       contentInsetAdjustmentBehavior="automatic"
       data={entries}
       numColumns={COLUMNS}

@@ -1,6 +1,6 @@
 import { Stack } from "expo-router";
 
-import { tokenColor } from "@/theme/token-vars";
+import { STACK_SCREEN_OPTIONS, screenLayout } from "@/theme/stack-options";
 
 /**
  * Each tab's first screen. The four tabs share this folder, so a movie,
@@ -24,11 +24,10 @@ export default function TabStack() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: tokenColor("color-background") },
-        headerTintColor: tokenColor("color-foreground"),
-        contentStyle: { backgroundColor: tokenColor("color-background") },
+        ...STACK_SCREEN_OPTIONS,
         headerBackButtonDisplayMode: "minimal",
       }}
+      screenLayout={screenLayout}
     >
       <Stack.Screen name="index" options={{ title: "BeStats" }} />
       <Stack.Screen name="search" options={{ title: "Search" }} />

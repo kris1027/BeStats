@@ -19,6 +19,7 @@ import {
   useSession,
   wipePrivateCacheIfSignedOut,
 } from "@/lib/session";
+import { STACK_SCREEN_OPTIONS, screenLayout } from "@/theme/stack-options";
 import { TOKEN_VARS, tokenColor } from "@/theme/token-vars";
 
 SplashScreen.preventAutoHideAsync();
@@ -68,13 +69,7 @@ function Navigator() {
   }, [notice, router]);
 
   return (
-    <Stack
-      screenOptions={{
-        headerStyle: { backgroundColor: tokenColor("color-background") },
-        headerTintColor: tokenColor("color-foreground"),
-        contentStyle: { backgroundColor: tokenColor("color-background") },
-      }}
-    >
+    <Stack screenOptions={STACK_SCREEN_OPTIONS} screenLayout={screenLayout}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen
         name="sign-in"

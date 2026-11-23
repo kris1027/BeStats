@@ -41,7 +41,7 @@ export function PosterGrid({
   return (
     <FlatList
       accessibilityLabel={accessibilityLabel}
-      className="flex-1 bg-background"
+      className="flex-1"
       contentInsetAdjustmentBehavior="automatic"
       data={items}
       numColumns={COLUMNS}

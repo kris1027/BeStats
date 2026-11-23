@@ -22,6 +22,7 @@ import {
 import { catalogKeys, fetchGenres } from "@/lib/catalog";
 
 import { GlassButton } from "./glass-button";
+import { PageBackground } from "./page-background";
 
 type Filters = Pick<SearchParams, "genreIds" | "year" | "rating">;
 
@@ -83,7 +84,8 @@ export function FiltersSheet({
       allowSwipeDismissal
       onRequestClose={onClose}
     >
-      <View className="flex-1 bg-background">
+      <View className="flex-1">
+        <PageBackground />
         <View className="flex-row items-center justify-between px-4 pt-4">
           <Text
             accessibilityRole="header"
