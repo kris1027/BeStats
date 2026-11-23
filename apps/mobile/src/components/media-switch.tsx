@@ -29,9 +29,9 @@ export function MediaSwitch() {
 /**
  * The switch itself: a segmented glass control whose lit segment is the
  * web's cyan `glass-selected-personal` tab with its dark `text-on-personal`
- * label (prompts/mobile-web-parity-foundation.md, decision 12), each segment 44pt tall for
- * the touch rule (AGENTS.md section 3) and announced as a tab with its
- * selected state. The Library tab drives it with its own type, which is not
+ * label (prompts/mobile-web-parity-foundation.md, decision 12), each
+ * segment 44pt tall for the touch rule (AGENTS.md section 3) and announced
+ * as a tab with its selected state. The Library tab drives it with its own type, which is not
  * Home's (prompts/mobile-library-tabs.md, decision 3).
  */
 export function MediaSwitchView({
@@ -64,28 +64,41 @@ export function MediaSwitchView({
                 radius={PILL_RADIUS}
                 className="min-h-11 items-center justify-center"
               >
-                <Text
-                  numberOfLines={1}
-                  maxFontSizeMultiplier={PILL_FONT_SCALE_CAP}
-                  className="text-base font-semibold text-text-on-personal"
-                >
-                  {option.label}
-                </Text>
+                <SegmentLabel label={option.label} selected />
               </GlassPlate>
             ) : (
               <View className="min-h-11 items-center justify-center">
-                <Text
-                  numberOfLines={1}
-                  maxFontSizeMultiplier={PILL_FONT_SCALE_CAP}
-                  className="text-base font-semibold text-foreground"
-                >
-                  {option.label}
-                </Text>
+                <SegmentLabel label={option.label} selected={false} />
               </View>
             )}
           </Pressable>
         );
       })}
     </GlassPlate>
+  );
+}
+
+/**
+ * A segment's label: one line, grown by Dynamic Type only to the pill cap,
+ * dark on the lit cyan segment for its 4.5:1 and the page foreground
+ * elsewhere (the plan's decision 12).
+ */
+function SegmentLabel({
+  label,
+  selected,
+}: {
+  label: string;
+  selected: boolean;
+}) {
+  return (
+    <Text
+      numberOfLines={1}
+      maxFontSizeMultiplier={PILL_FONT_SCALE_CAP}
+      className={`text-base font-semibold ${
+        selected ? "text-text-on-personal" : "text-foreground"
+      }`}
+    >
+      {label}
+    </Text>
   );
 }
