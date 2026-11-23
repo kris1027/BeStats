@@ -11,6 +11,8 @@ const mockSignOutLocally = jest.fn(async () => {});
 const mockSignOut = jest.fn();
 const mockClearPrivate = jest.fn();
 let mockExpiredHandler: () => Promise<void> = async () => {};
+type AuthListener = (event: string, session: unknown) => void | Promise<void>;
+let mockAuthListener: AuthListener = () => {};
 const SESSION = { access_token: "t", user: { email: "a@example.test" } };
 let mockStoredSession: typeof SESSION | null = SESSION;
 
@@ -18,13 +20,23 @@ jest.mock("./supabase", () => ({
   getSupabase: () => ({
     auth: {
       getSession: async () => ({ data: { session: mockStoredSession } }),
-      onAuthStateChange: () => ({
-        data: { subscription: { unsubscribe: () => {} } },
-      }),
-      signOut: (options?: unknown) => mockSignOut(options),
+      onAuthStateChange: (listener: AuthListener) => {
+        mockAuthListener = listener;
+        return { data: { subscription: { unsubscribe: () => {} } } };
+      },
+      signOut: async (options?: unknown) => {
+        // Like supabase-js: a sign out it accepts removes the session and
+        // tells every listener before it returns.
+        const result = await mockSignOut(options);
+        if (!result?.error) await mockAuthListener("SIGNED_OUT", null);
+        return result;
+      },
     },
   }),
-  signOutLocally: () => mockSignOutLocally(),
+  signOutLocally: async () => {
+    await mockSignOutLocally();
+    await mockAuthListener("SIGNED_OUT", null);
+  },
   watchAppStateForRefresh: () => () => {},
 }));
 jest.mock("./api", () => ({
@@ -73,6 +85,28 @@ test("an expired session ends signed out with the notice, with no event", async 
   expect(
     screen.getByText("Your session expired, sign in again."),
   ).toBeOnTheScreen();
+});
+
+test("a session supabase-js ends on its own shows the notice", async () => {
+  // A refused background refresh (account deleted, password reset or a
+  // global sign out elsewhere) removes the session with no 401 from the API.
+  await renderSignedIn();
+  await act(() => mockAuthListener("SIGNED_OUT", null));
+  expect(mockClearPrivate).toHaveBeenCalled();
+  expect(screen.getByText("signed out")).toBeOnTheScreen();
+  expect(
+    screen.getByText("Your session expired, sign in again."),
+  ).toBeOnTheScreen();
+});
+
+test("a chosen sign out shows no notice", async () => {
+  mockSignOut.mockResolvedValue({ error: null });
+  await renderSignedIn();
+  await act(() => signOut());
+  expect(screen.getByText("signed out")).toBeOnTheScreen();
+  expect(
+    screen.queryByText("Your session expired, sign in again."),
+  ).not.toBeOnTheScreen();
 });
 
 test("a refused global sign out falls back to a local one", async () => {

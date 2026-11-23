@@ -7,6 +7,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -43,12 +44,27 @@ const SessionContext = createContext<SessionState | null>(null);
  * choice or because a `me` call was refused twice, wipes the private part of
  * the query cache (`clearPrivateQueries`), so no private data stays on the
  * phone for the next person (AC-13). An expired
- * session is never silent: it leaves a notice for the sign in screen.
+ * session is never silent: it leaves a notice for the sign in screen, also
+ * when supabase-js ends it by itself (a refused background refresh after the
+ * account was deleted, the password reset or a global sign out elsewhere),
+ * since the API then never answers 401 (AGENTS.md section 11).
  */
 export function SessionProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
+  // True while this app signs out on purpose, so its own SIGNED_OUT event
+  // is not taken for a session the library ended.
+  const signingOut = useRef(false);
+
+  const signOutQuietly = useCallback(async (run: () => Promise<void>) => {
+    signingOut.current = true;
+    try {
+      await run();
+    } finally {
+      signingOut.current = false;
+    }
+  }, []);
 
   useEffect(() => {
     const supabase = getSupabase();
@@ -62,16 +78,19 @@ export function SessionProvider({ children }: PropsWithChildren) {
         if (active) setLoading(false);
       });
     const { data: listener } = supabase.auth.onAuthStateChange(
-      (_event, next) => {
+      (event, next) => {
         setSession(next);
         if (!next) void clearPrivateQueries();
+        if (event === "SIGNED_OUT" && !signingOut.current) {
+          setNotice(V1_ERROR_MESSAGES.unauthenticated);
+        }
       },
     );
     const stopWatching = watchAppStateForRefresh();
     setSessionExpiredHandler(async () => {
       // The library may refuse the sign out and send no event, so the
       // signed out state is set here, not left to the listener.
-      await signOutLocally();
+      await signOutQuietly(signOutLocally);
       setSession(null);
       void clearPrivateQueries();
       setNotice(V1_ERROR_MESSAGES.unauthenticated);
@@ -81,26 +100,28 @@ export function SessionProvider({ children }: PropsWithChildren) {
       listener.subscription.unsubscribe();
       stopWatching();
     };
-  }, []);
+  }, [signOutQuietly]);
 
   const signOut = useCallback(async () => {
     // Global, said out loud like the web's action: a password reset relies
     // on it to end every other session. A refused global sign out returns
     // its error rather than throwing, so both outcomes fall back to the
     // local one.
-    const { error } = await getSupabase()
-      .auth.signOut({ scope: "global" })
-      .catch((caught: unknown) => ({ error: caught }));
-    if (error) await signOutLocally();
+    await signOutQuietly(async () => {
+      const { error } = await getSupabase()
+        .auth.signOut({ scope: "global" })
+        .catch((caught: unknown) => ({ error: caught }));
+      if (error) await signOutLocally();
+    });
     setSession(null);
     void clearPrivateQueries();
-  }, []);
+  }, [signOutQuietly]);
 
   const endLocalSession = useCallback(async () => {
-    await signOutLocally();
+    await signOutQuietly(signOutLocally);
     setSession(null);
     void clearPrivateQueries();
-  }, []);
+  }, [signOutQuietly]);
 
   const clearNotice = useCallback(() => setNotice(null), []);
 
