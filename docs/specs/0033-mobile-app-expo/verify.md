@@ -1,4 +1,4 @@
-# Verify: Mobile app (iOS and Android) · spec 0033 · updated 2026-11-22
+# Verify: Mobile app (iOS and Android) · spec 0033 · updated 2026-11-23
 _Steps derived from spec 0033 acceptance criteria. `/check verify` runs these; `/test` locks the durable ones._
 
 ## Slice 5a: shell, home, lists, search (prompts/mobile-app-shell-catalog.md)
@@ -18,6 +18,7 @@ Run against the local stack (`pnpm dev:docker`) with `npx expo start --dev-clien
 - [ ] Signed out, browse Home, lists and Search → the web log shows no `/api/v1/me` request → AC-13, AGENTS.md section 11
 - [ ] Library tab: signed out offers Sign in; signed in shows "Your library pages are on their way" with no rows → AC-10 (rest in slice 5c)
 - [ ] Account tab: signed in shows "Signed in as …" and Sign out; after Sign out, Home still shows its lists → AC-13
+- [x] Signed in on the app and the web as the same user, delete the account on the web's `/account` and wait past `jwt_expiry` (600 seconds locally) → supabase-js's refresh is refused, and the app moves to Sign in with "Your session expired, sign in again."; a chosen Sign out shows no notice → AC-11, AGENTS.md section 11 (2026-11-23, `/check verify` run 3 in the iOS Simulator)
 - [ ] Open a show and a game from Home → read only pages with poster, rating labelled TMDB or IGDB, overview, and the catalog notice; a missing field is left out → AC-14
 - [x] VoiceOver on Home and Search → every card, tab, chip and button reads a label (2026-11-23, run by you on a real phone)
 
