@@ -111,3 +111,74 @@ export const TOKENS_SRGB = {
   "color-page-mid": "#1e0305",
   "color-page-top": "#5c010f",
 } as const;
+
+// The glass utilities' gradients and shadow, redrawn natively by the app.
+export const GLASS = {
+  "gradients": {
+    "glass": {
+      "angle": 169,
+      "stops": [
+        {
+          "color": "rgb(255 255 255 / 0.12)",
+          "at": 0
+        },
+        {
+          "color": "rgb(213 217 241 / 0.037)",
+          "at": 0.45
+        },
+        {
+          "color": "rgb(179 188 216 / 0.067)",
+          "at": 1
+        }
+      ]
+    },
+    "glass-selected": {
+      "angle": 172,
+      "stops": [
+        {
+          "color": "rgb(255 255 255 / 0.38)",
+          "at": 0
+        },
+        {
+          "color": "rgb(239 242 255 / 0.18)",
+          "at": 0.52
+        },
+        {
+          "color": "rgb(255 255 255 / 0.26)",
+          "at": 1
+        }
+      ]
+    },
+    "glass-rim": {
+      "angle": 166,
+      "stops": [
+        {
+          "color": "rgb(255 255 255 / 0.62)",
+          "at": 0
+        },
+        {
+          "color": "rgb(255 255 255 / 0.1)",
+          "at": 0.42
+        },
+        {
+          "color": "rgb(226 233 255 / 0.26)",
+          "at": 1
+        }
+      ]
+    },
+    "glass-rim-score": {
+      "angle": 166,
+      "stops": [
+        {
+          "color": "rgb(80 198 229 / 0.65)",
+          "at": 0
+        },
+        {
+          "color": "rgb(80 198 229 / 0.65)",
+          "at": 1
+        }
+      ]
+    }
+  },
+  "shadow": "0 5px 10px rgb(6 10 25 / 0.22)"
+} as const;

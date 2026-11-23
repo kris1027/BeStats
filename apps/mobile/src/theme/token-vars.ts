@@ -72,16 +72,20 @@ export function fractionToken(name: keyof typeof TOKENS): number {
   return Number(match[1]) / 100;
 }
 
-/** A colour token at an opacity, as `rgba()`, for a plate or a gradient stop. */
+/**
+ * A colour token at an opacity, as an eight digit hex (`RRGGBBAA`), for a
+ * plate or a gradient stop. React Native reads that form, and building it
+ * from the token keeps the app free of colour literals (AGENTS.md, the token
+ * rule).
+ */
 export function tokenColorAlpha(
   name: keyof typeof TOKENS,
   alpha: number,
 ): string {
   const hex = tokenColor(name);
-  const match = /^#([0-9a-f]{6})$/i.exec(hex);
-  if (!match) throw new Error(`${name} is not a hex colour: ${hex}`);
-  const [r, g, b] = [0, 2, 4].map((i) =>
-    Number.parseInt(match[1].slice(i, i + 2), 16),
-  );
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  if (!/^#[0-9a-f]{6}$/i.test(hex)) {
+    throw new Error(`${name} is not a six digit hex colour: ${hex}`);
+  }
+  const channel = Math.round(Math.min(1, Math.max(0, alpha)) * 255);
+  return `${hex}${channel.toString(16).padStart(2, "0")}`;
 }

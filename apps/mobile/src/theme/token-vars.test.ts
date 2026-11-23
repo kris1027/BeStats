@@ -54,7 +54,5 @@ test("the radius scale follows the web's calc() steps", () => {
 
 test("percentages and alpha colours read from the tokens", () => {
   expect(fractionToken("frost-panel")).toBeCloseTo(0.6);
-  expect(tokenColorAlpha("color-page-top", 0.5)).toMatch(
-    /^rgba\(\d+, \d+, \d+, 0\.5\)$/,
-  );
+  expect(tokenColorAlpha("color-page-top", 0.5)).toMatch(/^.{7}80$/);
 });

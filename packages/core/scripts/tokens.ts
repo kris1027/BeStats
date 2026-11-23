@@ -81,6 +81,61 @@ export function readTokens(css: string): Record<string, string> {
   );
 }
 
+/** A gradient a glass utility paints: its CSS angle and its stops. */
+export type GlassGradient = {
+  angle: number;
+  stops: { color: string; at: number }[];
+};
+
+/**
+ * The utilities whose first gradient the app redraws natively: the glass
+ * sheen, the selected sheen and the two rims
+ * (prompts/mobile-web-parity-foundation.md, decision 5). They live in
+ * `@utility` rules rather than tokens, so they are read from there and
+ * `globals.css` stays the one place they are written.
+ */
+export const GLASS_UTILITIES = [
+  "glass",
+  "glass-selected",
+  "glass-rim",
+  "glass-rim-score",
+] as const;
+
+/** The body of `@utility name { ... }`, braces balanced. */
+function utilityBody(css: string, name: string): string {
+  const start = css.indexOf(`@utility ${name} {`);
+  if (start < 0) throw new Error(`globals.css has no @utility ${name}`);
+  const open = css.indexOf("{", start);
+  let depth = 0;
+  for (let i = open; i < css.length; i++) {
+    if (css[i] === "{") depth++;
+    else if (css[i] === "}" && --depth === 0) return css.slice(open + 1, i);
+  }
+  throw new Error(`globals.css has an unclosed @utility ${name}`);
+}
+
+/** The first `linear-gradient` in a utility, its angle and its stops. */
+export function readGradient(css: string, name: string): GlassGradient {
+  const body = utilityBody(css.replace(/\/\*[\s\S]*?\*\//g, ""), name);
+  const match = /linear-gradient\(\s*(\d+)deg,([\s\S]*?%)\s*\)/.exec(body);
+  if (!match) throw new Error(`@utility ${name} has no angled gradient`);
+  const stops = [...match[2].matchAll(/(rgb\([^)]*\))\s+([\d.]+)%/g)].map(
+    (stop) => ({
+      color: stop[1].replace(/\s+/g, " "),
+      at: Number(stop[2]) / 100,
+    }),
+  );
+  if (stops.length < 2) throw new Error(`@utility ${name} has no rgb stops`);
+  return { angle: Number(match[1]), stops };
+}
+
+/** `glass-shadow`'s offset, blur and colour, for React Native's `boxShadow`. */
+export function readShadow(css: string): string {
+  const match = /box-shadow:\s*([^;]+);/.exec(utilityBody(css, "glass-shadow"));
+  if (!match) throw new Error("@utility glass-shadow has no box-shadow");
+  return match[1].trim();
+}
+
 /**
  * An `oklch(L C H)` colour as sRGB hex, or null when the value is not one.
  * React Native cannot draw oklch, so the page background's colours reach the
@@ -147,6 +202,18 @@ export function renderTokens(css: string): string {
     "export const TOKENS_SRGB = {",
     ...srgb,
     "} as const;",
+    "",
+    "// The glass utilities' gradients and shadow, redrawn natively by the app.",
+    `export const GLASS = ${JSON.stringify(
+      {
+        gradients: Object.fromEntries(
+          GLASS_UTILITIES.map((name) => [name, readGradient(css, name)]),
+        ),
+        shadow: readShadow(css),
+      },
+      null,
+      2,
+    )} as const;`,
     "",
   ].join("\n");
 }

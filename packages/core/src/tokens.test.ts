@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   GLOBALS_CSS,
   oklchToHex,
+  readGradient,
   readTokens,
   renderTokens,
   TOKENS_FILE,
@@ -60,5 +61,17 @@ describe("generated design tokens", () => {
       .map(([name]) => name);
     expect(oklch.length).toBeGreaterThan(0);
     expect(Object.keys(TOKENS_SRGB).sort()).toEqual(oklch.sort());
+  });
+
+  it("reads a glass utility's angle and stops", () => {
+    const css =
+      "@utility glass { background: linear-gradient( 169deg, rgb(1 2 3 / 0.5) 0%, rgb(4 5 6 / 0.1) 100% ) padding-box; }";
+    expect(readGradient(css, "glass")).toEqual({
+      angle: 169,
+      stops: [
+        { color: "rgb(1 2 3 / 0.5)", at: 0 },
+        { color: "rgb(4 5 6 / 0.1)", at: 1 },
+      ],
+    });
   });
 });
