@@ -9,12 +9,9 @@ import { TOKENS, TOKENS_SRGB } from "@bestats/core/tokens.generated";
  * sRGB conversion, `TOKENS_SRGB` (prompts/mobile-web-parity-foundation.md,
  * decision 6); `token-vars.test.ts` checks `global.css` names every one.
  */
-const COLOUR_VARS = Object.entries(TOKENS)
-  .filter(([name]) => name.startsWith("color-"))
-  .map(([name, value]) => [
-    `--bs-${name}`,
-    (TOKENS_SRGB as Record<string, string>)[name] ?? value,
-  ]);
+const COLOUR_VARS = (Object.keys(TOKENS) as (keyof typeof TOKENS)[])
+  .filter((name) => name.startsWith("color-"))
+  .map((name) => [`--bs-${name}`, tokenColor(name)]);
 
 /** One rem in points, the web's 16px root size. */
 const REM = 16;
@@ -82,12 +79,7 @@ export function tokenColorAlpha(
   name: keyof typeof TOKENS,
   alpha: number,
 ): string {
-  const hex = tokenColor(name);
-  if (!/^#[0-9a-f]{6}$/i.test(hex)) {
-    throw new Error(`${name} is not a six digit hex colour: ${hex}`);
-  }
-  const channel = Math.round(Math.min(1, Math.max(0, alpha)) * 255);
-  return `${hex}${channel.toString(16).padStart(2, "0")}`;
+  return `${hexColor(name)}${hexByte(unit(alpha) * 255)}`;
 }
 
 /**
@@ -102,20 +94,39 @@ export function tokenColorOver(
   overlay: keyof typeof TOKENS,
   alpha: number,
 ): string {
-  const channels = [base, overlay].map((name) => {
-    const hex = tokenColor(name);
-    if (!/^#[0-9a-f]{6}$/i.test(hex)) {
-      throw new Error(`${name} is not a six digit hex colour: ${hex}`);
-    }
-    return [1, 3, 5].map((at) => Number.parseInt(hex.slice(at, at + 2), 16));
-  });
-  const [under, over] = channels as [number[], number[]];
-  const a = Math.min(1, Math.max(0, alpha));
+  const under = channels(base);
+  const over = channels(overlay);
+  const a = unit(alpha);
   return `#${under
-    .map((value, i) =>
-      Math.round(value * (1 - a) + (over[i] ?? 0) * a)
-        .toString(16)
-        .padStart(2, "0"),
-    )
+    .map((value, i) => hexByte(value * (1 - a) + (over[i] ?? 0) * a))
     .join("")}`;
+}
+
+/**
+ * A colour token as `#RRGGBB`, the only form the alpha helpers can extend.
+ * An oklch token with no sRGB copy, or a named colour, fails loudly here
+ * rather than drawing a wrong colour.
+ */
+function hexColor(name: keyof typeof TOKENS): string {
+  const hex = tokenColor(name);
+  if (!/^#[0-9a-f]{6}$/i.test(hex)) {
+    throw new Error(`${name} is not a six digit hex colour: ${hex}`);
+  }
+  return hex;
+}
+
+/** A token's red, green and blue as 0 to 255. */
+function channels(name: keyof typeof TOKENS): number[] {
+  const hex = hexColor(name);
+  return [1, 3, 5].map((at) => Number.parseInt(hex.slice(at, at + 2), 16));
+}
+
+/** An opacity held to 0 to 1, so a stray value cannot wrap the hex. */
+function unit(alpha: number): number {
+  return Math.min(1, Math.max(0, alpha));
+}
+
+/** A 0 to 255 value as two hex digits. */
+function hexByte(value: number): string {
+  return Math.round(value).toString(16).padStart(2, "0");
 }
