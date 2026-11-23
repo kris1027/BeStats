@@ -19,7 +19,14 @@ export const movieIdParamSchema = z
 
 const genreSchema = z.object({ id: z.number(), name: z.string() });
 
-const castMemberSchema = z.object({
+/** A production company or network, logo at TMDB's `w154` or null. */
+export const v1CompanySchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  logoUrl: z.string().nullable(),
+});
+
+export const v1CastMemberSchema = z.object({
   personId: z.number(),
   creditId: z.string(),
   name: z.string(),
@@ -50,7 +57,17 @@ export const v1MovieSchema = z.object({
   tmdbRating: z.number().nullable(),
   tmdbVoteCount: z.number(),
   directors: z.array(z.string()),
-  cast: z.array(castMemberSchema),
+  cast: z.array(v1CastMemberSchema),
+  /**
+   * The Facts and crew fields of the web's movie page (spec 0022, AC-15 and
+   * AC-16), added for the app's title screen (feature 29, slice 2). Additive:
+   * an older app parses with its own schema, which drops them.
+   */
+  originalLanguage: z.string(),
+  budget: z.number().nullable(),
+  revenue: z.number().nullable(),
+  productionCompanies: z.array(v1CompanySchema),
+  writers: z.array(z.string()),
 });
 
 export type V1Movie = z.infer<typeof v1MovieSchema>;

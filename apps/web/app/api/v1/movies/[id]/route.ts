@@ -43,6 +43,11 @@ export const GET = withV1({
       tmdbVoteCount: movie.tmdbVoteCount,
       directors: movie.directors,
       cast: movie.cast,
+      originalLanguage: movie.originalLanguage,
+      budget: movie.budget,
+      revenue: movie.revenue,
+      productionCompanies: movie.productionCompanies,
+      writers: movie.writers,
     };
     return v1Ok(body);
   },
