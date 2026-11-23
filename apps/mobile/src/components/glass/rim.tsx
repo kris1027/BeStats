@@ -21,11 +21,11 @@ export function gradientLine(angle: number) {
 
 /**
  * A generated stop colour as an SVG colour and opacity. `pnpm tokens` writes
- * every stop as `rgb(r g b / a)` (`rgbaCss` in packages/core/scripts/
- * tokens.ts), the CSS form the plate's `backgroundImage` also reads, so only
- * that form is parsed; react-native-svg ignores the `/ a` part and would draw
- * every stop solid, so the alpha moves to `stopOpacity`. Anything else, such
- * as an opaque hex, passes through whole.
+ * every stop in CSS's space separated rgb form with the alpha after a slash
+ * (`rgbaCss` in packages/core/scripts/tokens.ts), which the plate's
+ * `backgroundImage` also reads, so only that form is parsed. react-native-svg
+ * ignores the alpha part and would draw every stop solid, so it moves to
+ * `stopOpacity`. Anything else, such as an opaque hex, passes through whole.
  */
 export function svgStop(color: string): { color: string; opacity: number } {
   const match = /^rgb\((\d+) (\d+) (\d+) \/ ([\d.]+)\)$/.exec(color);
