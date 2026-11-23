@@ -8,6 +8,12 @@ This plan is the **foundation**: the shared pieces every screen draws from, appl
 
 Decided with the owner on 2026-11-23 (design interview, four rounds).
 
+## Progress (2026-11-23, paused here by your call)
+
+Done and committed on `feat/mobile-web-parity-foundation` (not pushed): the sRGB and glass token copies, the native dependencies with Inter embedded (`expo-font` plugin, not `@expo-google-fonts` at runtime: a deviation from decision 8 that removes the load step), the theme, `GlassPlate`, `Rim`, `PageBackground`, the Inter `Text` wrapper and the boundary test. `pnpm typecheck`, `pnpm lint` and `pnpm test` pass there; nothing has run in the simulator yet. One deviation from the expected files: `fonts.ts` is `components/text.tsx`, and `use-reduce-transparency.ts` is `glass/use-frosted.ts`.
+
+The icons, `GlassPill`, skeletons and the glass `StatePanel` are half built on the local branch `wip/mobile-parity-components`, with failing screen tests. What is left, in order, is the feature 29 checklist in [docs/scope/scope.md](../docs/scope/scope.md). Native headers take `color-page-top` for now (no seam with the background); the title and list slices give them large titles or a backdrop.
+
 ## Inspected
 
 - **`apps/mobile/src/components/`**: `glass-button.tsx` (one size; selected is a 1px cyan border, `primary` is solid white), `centered-state.tsx` (`LoadingState` is a spinner, `StatePanel` has no surface or icon), `notice.tsx`, `poster-card.tsx` (ratings as coloured text, a 1px border on the missing poster tile, `borderRadius: 12` literal), `toast.tsx`, `score-sheet.tsx`, `filters-sheet.tsx`, `chevron-row.tsx`, `form-field.tsx`, `library-card.tsx`, `card-action-button.tsx`, `episode-row.tsx`, `season-nav.tsx`, `detail-header.tsx`.
