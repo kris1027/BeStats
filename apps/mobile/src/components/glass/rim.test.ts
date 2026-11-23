@@ -27,6 +27,14 @@ describe("svgStop", () => {
     expect(svgStop(top.color).color).toMatch(/^#[0-9a-f]{6}$/);
   });
 
+  it("parses every stop pnpm tokens writes", () => {
+    for (const gradient of Object.values(GLASS.gradients)) {
+      for (const stop of gradient.stops) {
+        expect(svgStop(stop.color).color).toMatch(/^#[0-9a-f]{6}$/);
+      }
+    }
+  });
+
   it("keeps an opaque hex colour whole", () => {
     const hex = tokenColor("color-page-top");
     expect(svgStop(hex)).toEqual({ color: hex, opacity: 1 });

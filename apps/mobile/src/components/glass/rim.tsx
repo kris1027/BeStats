@@ -20,26 +20,21 @@ export function gradientLine(angle: number) {
 }
 
 /**
- * A generated stop colour (the web's CSS form, alpha after a slash) as
- * an SVG colour and opacity. react-native-svg ignores the `/ alpha` part of
- * that form and would draw every stop solid, so the alpha goes to
- * `stopOpacity` instead.
+ * A generated stop colour as an SVG colour and opacity. `pnpm tokens` writes
+ * every stop as `rgb(r g b / a)` (`rgbaCss` in packages/core/scripts/
+ * tokens.ts), the CSS form the plate's `backgroundImage` also reads, so only
+ * that form is parsed; react-native-svg ignores the `/ a` part and would draw
+ * every stop solid, so the alpha moves to `stopOpacity`. Anything else, such
+ * as an opaque hex, passes through whole.
  */
 export function svgStop(color: string): { color: string; opacity: number } {
-  const match =
-    /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)\s*(?:[/,]\s*([\d.]+)(%?))?\s*\)$/.exec(
-      color,
-    );
+  const match = /^rgb\((\d+) (\d+) (\d+) \/ ([\d.]+)\)$/.exec(color);
   if (!match) return { color, opacity: 1 };
   const hex = match
     .slice(1, 4)
-    .map((channel) => Math.round(Number(channel)).toString(16).padStart(2, "0"))
+    .map((channel) => Number(channel).toString(16).padStart(2, "0"))
     .join("");
-  const alpha =
-    match[4] === undefined
-      ? 1
-      : Number(match[4]) / (match[5] === "%" ? 100 : 1);
-  return { color: `#${hex}`, opacity: alpha };
+  return { color: `#${hex}`, opacity: Number(match[4]) };
 }
 
 /**
