@@ -6,6 +6,7 @@ import { renderRouter } from "expo-router/testing-library";
 
 import GameRoute from "@/app/(tabs)/(index,search,library,account)/games/[id]";
 import ShowRoute from "@/app/(tabs)/(index,search,library,account)/shows/[id]";
+import { GO_HOME_LABEL } from "@/components/centered-state";
 import { ApiError } from "@/lib/api";
 import { testQueryClient, titleWrapper } from "@/test-utils/title-harness";
 
@@ -67,6 +68,8 @@ test("an invalid show id reads as not found without calling the API", async () =
     await screen.findByText(V1_ERROR_MESSAGES.not_found),
   ).toBeOnTheScreen();
   expect(mockFetchShow).not.toHaveBeenCalled();
+  // Opened with nothing under it, as from a deep link: never a dead end.
+  expect(screen.getByRole("button", { name: GO_HOME_LABEL })).toBeOnTheScreen();
 });
 
 test("a missing show ends at not found, with no Retry", async () => {

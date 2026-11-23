@@ -60,12 +60,16 @@ const ICONS = {
 /** The way out an error panel offers when its screen gives none. */
 export const GO_BACK_LABEL = "Go back";
 
+/** The way out when there is no screen to go back to, as after a deep link. */
+export const GO_HOME_LABEL = "Go to Home";
+
 /**
  * The web's `StatePanel` natively: a glass panel with the tone's icon in a
  * muted circle, a title, one line, and one way out. An error is announced as
  * an alert, so a failed read is never silent (AGENTS.md section 11), and it
- * is never a dead end (components/AGENTS.md): with no action of its own it
- * offers Go back when there is a screen to go back to.
+ * is never a dead end (components/AGENTS.md, a dead end is a bug): with no
+ * action of its own it offers Go back, or Go to Home when it was opened with
+ * nothing under it, such as from a deep link.
  */
 export function StatePanel({
   title,
@@ -78,8 +82,10 @@ export function StatePanel({
   const Icon = ICONS[tone];
   const way =
     action ??
-    (tone === "error" && canGoBack
-      ? { label: GO_BACK_LABEL, onPress: () => router.back() }
+    (tone === "error"
+      ? canGoBack
+        ? { label: GO_BACK_LABEL, onPress: () => router.back() }
+        : { label: GO_HOME_LABEL, onPress: () => router.replace("/") }
       : undefined);
 
   return (
