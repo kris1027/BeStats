@@ -403,8 +403,9 @@ test("a score on an unwatched episode marks it too", async () => {
     season: 1,
     rating: 8,
   });
+  // Now watched, its button says what a tap does next: unmark it.
   const row = screen.getByRole("button", {
-    name: "Mark Episode name 2 watched",
+    name: "Mark Episode name 2 unwatched",
   });
   expect(within(row).getByText(SEASON_PAGE_COPY.watched)).toBeOnTheScreen();
   expect(screen.getByText("1 of 2 watched")).toBeOnTheScreen();
@@ -445,7 +446,9 @@ test("unmarking an episode keeps its score", async () => {
   const user = userEvent.setup();
   await openSeason();
   await user.press(
-    await screen.findByRole("button", { name: "Mark Episode name 1 watched" }),
+    await screen.findByRole("button", {
+      name: "Mark Episode name 1 unwatched",
+    }),
   );
   expect(mockApi.callsTo("PUT", "/api/v1/me/episodes/11")[0].body).toEqual({
     showId: 1399,

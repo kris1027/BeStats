@@ -186,6 +186,13 @@ export const SEASON_PAGE_COPY = {
   watched: "Watched",
   /** The app's swipe action on a watched episode (feature 29, slice 2). */
   markUnwatched: "Mark unwatched",
+  /**
+   * The row's Watched button as a screen reader announces it: what a tap
+   * does now, so a watched episode never reads "Mark … watched" while the
+   * tap unmarks it (AGENTS.md section 11, no false success).
+   */
+  toggleWatchedLabel: (episode: string, watched: boolean) =>
+    watched ? `Mark ${episode} unwatched` : `Mark ${episode} watched`,
 } as const;
 
 /**

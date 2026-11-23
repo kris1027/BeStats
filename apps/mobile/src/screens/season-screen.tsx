@@ -435,7 +435,10 @@ function SeasonTracking({
                         ? SEASON_PAGE_COPY.watched
                         : SEASON_PAGE_COPY.markWatched
                     }
-                    accessibilityLabel={`Mark ${label} watched`}
+                    accessibilityLabel={SEASON_PAGE_COPY.toggleWatchedLabel(
+                      label,
+                      shown.watched,
+                    )}
                     pressed={shown.watched}
                     disabled={!view.canMark}
                     onPress={toggleWatched}
