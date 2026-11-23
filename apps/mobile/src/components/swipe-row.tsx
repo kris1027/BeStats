@@ -11,9 +11,11 @@ import Animated, {
 
 import { GlassPlate } from "@/components/glass/plate";
 import { Text } from "@/components/text";
-import { PILL_FONT_SCALE_CAP } from "@/theme/pill";
 
-/** How wide the revealed action is, and how far a swipe must go to fire it. */
+/**
+ * How wide the revealed action is, and how far a swipe must go to fire it:
+ * the whole width, so only a full swipe writes (decision 10).
+ */
 const ACTION_WIDTH = 132;
 
 type Props = {
@@ -28,9 +30,10 @@ type Props = {
 
 /**
  * A row with one trailing swipe action, the app's native shortcut for an
- * episode's Watched toggle (feature 29, slice 2, decision 10). Swiping past
- * the action fires it and the row springs back; the action can also be
- * tapped once revealed. It only calls `onAction`, the same function the
+ * episode's Watched toggle (feature 29, slice 2, decision 10). Only a full
+ * swipe, across the whole action, fires it and the row springs back; a
+ * shorter one springs back without writing, so a stray drag never marks an
+ * episode (AGENTS.md section 11, no false success). It only calls `onAction`, the same function the
  * row's visible button calls, so the request, toast, Undo and haptic are the
  * button's own (apps/mobile/AGENTS.md, every write goes through
  * `useTrackingWrite`). The revealed action is hidden from screen readers,
@@ -52,7 +55,7 @@ export function SwipeRow({ label, icon, enabled, onAction, children }: Props) {
     <ReanimatedSwipeable
       ref={swipeable}
       friction={1.5}
-      rightThreshold={ACTION_WIDTH * 0.6}
+      rightThreshold={ACTION_WIDTH}
       overshootRight={false}
       onSwipeableWillOpen={fire}
       renderRightActions={(progress) => (
@@ -102,10 +105,7 @@ function SwipeAction({
           className="flex-1 items-center justify-center gap-2 px-2"
         >
           {icon}
-          <Text
-            maxFontSizeMultiplier={PILL_FONT_SCALE_CAP}
-            className="text-center text-sm font-semibold text-foreground"
-          >
+          <Text className="text-center text-sm font-semibold text-foreground">
             {label}
           </Text>
         </GlassPlate>
