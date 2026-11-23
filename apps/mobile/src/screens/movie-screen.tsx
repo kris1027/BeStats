@@ -34,7 +34,12 @@ import { GlassButton } from "@/components/glass-button";
 import { RatingStar } from "@/components/glass-pill";
 import { ScoreSheet } from "@/components/score-sheet";
 import { Text } from "@/components/text";
-import { CrewLines, FactsPanel, movieFacts } from "@/components/title-details";
+import {
+  CrewLines,
+  FactsPanel,
+  movieFacts,
+  Overview,
+} from "@/components/title-details";
 import { TitleScroll } from "@/components/title-header";
 import { TrackingGate } from "@/components/tracking-gate";
 import { catalogKeys } from "@/lib/catalog";
@@ -89,11 +94,10 @@ export function MovieScreen() {
       <DetailHeader
         title={detail.title}
         posterUrl={detail.posterUrl}
-        overBackdrop={detail.backdropUrl !== null}
         type="movie"
         communityRating={detail.tmdbRating}
         voteCount={detail.tmdbVoteCount}
-        genres={detail.genres.map((genre) => genre.name)}
+        genres={detail.genres}
         status={detail.status}
         meta={[
           formatAirDate(detail.releaseDate) ??
@@ -108,13 +112,7 @@ export function MovieScreen() {
         {detail.tagline ? (
           <Text className="italic text-text-secondary">{detail.tagline}</Text>
         ) : null}
-        {detail.overview ? (
-          <Text className="text-base leading-6 text-foreground">
-            {detail.overview}
-          </Text>
-        ) : (
-          <Text className="text-text-secondary">{MOVIE_OVERVIEW_MISSING}</Text>
-        )}
+        <Overview text={detail.overview} missing={MOVIE_OVERVIEW_MISSING} />
         <CrewLines
           lines={[
             { label: "Directed by", names: detail.directors },

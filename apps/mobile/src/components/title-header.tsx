@@ -1,7 +1,7 @@
 import { Image } from "expo-image";
 import { Stack } from "expo-router";
 import { HeaderHeightContext } from "expo-router/react-navigation";
-import { type ReactNode, use } from "react";
+import { createContext, type ReactNode, use } from "react";
 import { StyleSheet, useWindowDimensions, View } from "react-native";
 import Animated, {
   Extrapolation,
@@ -13,9 +13,9 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { Text } from "@/components/text";
-import { sizedImageUri } from "@/lib/images";
+import { artworkHeight, sizedImageUri } from "@/lib/images";
 import { useReduceMotion } from "@/lib/reduce-motion";
-import { STACK_SCREEN_OPTIONS } from "@/theme/stack-options";
+import { HEADER_BACKGROUND } from "@/theme/stack-options";
 import { fractionToken, tokenColorAlpha } from "@/theme/token-vars";
 
 /**
@@ -31,10 +31,22 @@ const FADE_DISTANCE = 48;
 /** How much of the poster hangs over the backdrop's lower edge. */
 export const POSTER_OVERLAP = 64;
 
-/** The backdrop's height: the 16:9 artwork plus the header it runs under. */
+/**
+ * The backdrop's height: the 16:9 artwork plus the header it runs under.
+ * Shared with `TitleSkeleton`, so the hero does not jump when the detail
+ * arrives (AGENTS.md section 3, loading states).
+ */
 export function backdropHeight(width: number, headerHeight: number): number {
-  return Math.round((width * 9) / 16 + headerHeight);
+  return Math.round(artworkHeight(width) + headerHeight);
 }
+
+/**
+ * Whether the hero sits under a backdrop, so its poster hangs over the
+ * artwork's lower edge. `TitleScroll` provides it, since it alone knows
+ * whether it drew one, so no screen passes the same fact twice
+ * (feature 29, slice 2, decision 5).
+ */
+export const OverBackdrop = createContext(false);
 
 type Props = {
   title: string;
@@ -52,7 +64,8 @@ type Props = {
  * screen keeps the stack's solid header and its title.
  *
  * The scroll handler and both styles run on the UI thread, so scrolling
- * renders no React frame.
+ * renders no React frame. Reduce Motion keeps the header usable without the
+ * effect (AGENTS.md section 3, accessibility).
  */
 export function TitleScroll({ title, backdropUrl, children }: Props) {
   const scrollY = useSharedValue(0);
@@ -116,7 +129,7 @@ export function TitleScroll({ title, backdropUrl, children }: Props) {
         scrollY={scrollY}
         stretch={!reduceMotion}
       />
-      {children}
+      <OverBackdrop value>{children}</OverBackdrop>
     </Animated.ScrollView>
   );
 }
@@ -127,8 +140,16 @@ type FadeProps = {
   reduceMotion: boolean;
 };
 
-/** 0 while the artwork fills the bar, 1 once it has scrolled under it. */
-function solidness(y: number, solidAt: number, reduceMotion: boolean) {
+/**
+ * 0 while the artwork fills the bar, 1 once it has scrolled under it. Under
+ * Reduce Motion it switches at once instead of fading (decision 4,
+ * requirement 6; AGENTS.md section 3, accessibility).
+ */
+export function solidness(
+  y: number,
+  solidAt: number,
+  reduceMotion: boolean,
+): number {
   "worklet";
   if (reduceMotion) return y >= solidAt ? 1 : 0;
   return interpolate(
@@ -148,7 +169,7 @@ function HeaderFade({ scrollY, solidAt, reduceMotion }: FadeProps) {
     <Animated.View
       style={[
         StyleSheet.absoluteFill,
-        { backgroundColor: STACK_SCREEN_OPTIONS.headerStyle.backgroundColor },
+        { backgroundColor: HEADER_BACKGROUND },
         style,
       ]}
     />
@@ -182,6 +203,22 @@ function HeaderTitle({
 }
 
 /**
+ * The backdrop's transform for a scroll offset: pulled past the top, it
+ * grows from its bottom edge; otherwise, and always under Reduce Motion, it
+ * stays put (decision 4, requirement 6; AGENTS.md section 3, accessibility).
+ */
+export function stretchTransform(
+  y: number,
+  height: number,
+  stretch: boolean,
+): Array<{ translateY: number } | { scale: number }> {
+  "worklet";
+  const pull = Math.min(y, 0);
+  if (!stretch || pull === 0) return [];
+  return [{ translateY: pull / 2 }, { scale: 1 - pull / height }];
+}
+
+/**
  * The full bleed artwork with the web's scrim at its top. Pulled down past
  * the top (iOS bounce), it grows from its bottom edge so its top stays at the
  * screen's top; it never moves at another speed than the content.
@@ -199,13 +236,9 @@ function Backdrop({
   scrollY: SharedValue<number>;
   stretch: boolean;
 }) {
-  const style = useAnimatedStyle(() => {
-    const pull = Math.min(scrollY.value, 0);
-    if (!stretch || pull === 0) return { transform: [] };
-    return {
-      transform: [{ translateY: pull / 2 }, { scale: 1 - pull / height }],
-    };
-  });
+  const style = useAnimatedStyle(() => ({
+    transform: stretchTransform(scrollY.value, height, stretch),
+  }));
   const shade = tokenColorAlpha("color-background", SCRIM_ALPHA);
   return (
     <Animated.View
@@ -220,15 +253,17 @@ function Backdrop({
         contentFit="cover"
         style={StyleSheet.absoluteFill}
       />
-      <View
-        pointerEvents="none"
-        style={[
-          StyleSheet.absoluteFill,
-          {
-            backgroundImage: `linear-gradient(to bottom, ${shade} 0px, ${shade} ${headerHeight}px, ${tokenColorAlpha("color-background", 0)} ${headerHeight + SCRIM_FADE}px)`,
-          },
-        ]}
-      />
+      {headerHeight > 0 ? (
+        <View
+          pointerEvents="none"
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              backgroundImage: `linear-gradient(to bottom, ${shade} 0px, ${shade} ${headerHeight}px, ${tokenColorAlpha("color-background", 0)} ${headerHeight + SCRIM_FADE}px)`,
+            },
+          ]}
+        />
+      ) : null}
       <View
         pointerEvents="none"
         style={[

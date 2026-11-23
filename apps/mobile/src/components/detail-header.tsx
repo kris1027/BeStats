@@ -4,25 +4,24 @@ import {
 } from "@bestats/core/catalog/media-type";
 import { formatVoteCount } from "@bestats/core/format";
 import { Image } from "expo-image";
+import { use } from "react";
 import { View } from "react-native";
 
 import { GlassPlate, PlateSolid } from "@/components/glass/plate";
 import { CommunityRatingBadge, GlassPill } from "@/components/glass-pill";
 import { Text } from "@/components/text";
-import { POSTER_OVERLAP } from "@/components/title-header";
+import { OverBackdrop, POSTER_OVERLAP } from "@/components/title-header";
 import { DETAIL_POSTER_WIDTH, sizedImageUri } from "@/lib/images";
 import { lengthToken } from "@/theme/token-vars";
 
 type Props = {
   title: string;
   posterUrl: string | null;
-  /** True when `TitleScroll` drew a backdrop above, so the poster overlaps it. */
-  overBackdrop: boolean;
   /** The meta line parts (dates, runtime, seasons); empty parts are left out. */
   meta: (string | null)[];
-  /** Genre names, drawn as labels (not controls), as the web's `GenreChips`. */
-  genres: readonly string[];
-  /** TMDB's status word as is, or null. */
+  /** Every genre, drawn as labels (not controls), as the web's `GenreChips`. */
+  genres: readonly { name: string }[];
+  /** The catalog's status word as is; empty or null shows no pill. */
   status: string | null;
   /** Which catalog the community rating comes from (TMDB or IGDB). */
   type: LibraryType;
@@ -45,7 +44,6 @@ type Props = {
 export function DetailHeader({
   title,
   posterUrl,
-  overBackdrop,
   meta,
   genres,
   status,
@@ -54,7 +52,12 @@ export function DetailHeader({
   voteCount,
 }: Props) {
   const line = meta.filter(Boolean).join(" · ");
-  const pills = [...genres.slice(0, 3), ...(status ? [status] : [])];
+  // `TitleScroll` says whether it drew a backdrop the poster should overlap.
+  const overBackdrop = use(OverBackdrop);
+  const pills = [
+    ...genres.slice(0, 3).map((genre) => genre.name),
+    ...(status ? [status] : []),
+  ];
 
   return (
     <View className="flex-row gap-4 px-4 pt-4">

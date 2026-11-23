@@ -27,12 +27,17 @@ import { GlassButton } from "@/components/glass-button";
 import { RatingStar } from "@/components/glass-pill";
 import { RatingLine, ratedCount } from "@/components/rating-line";
 import { Text } from "@/components/text";
-import { CrewLines, FactsPanel, showFacts } from "@/components/title-details";
+import {
+  CrewLines,
+  FactsPanel,
+  Overview,
+  showFacts,
+} from "@/components/title-details";
 import { TitleScroll } from "@/components/title-header";
 import { useToast } from "@/components/toast";
 import { TrackingGate } from "@/components/tracking-gate";
 import { catalogKeys, fetchShow } from "@/lib/catalog";
-import { sizedImageUri } from "@/lib/images";
+import { SEASON_ROW_POSTER_WIDTH, sizedImageUri } from "@/lib/images";
 import { useSession } from "@/lib/session";
 import { restoreShowTracking, trackShow, untrackShow } from "@/lib/shows";
 import {
@@ -43,8 +48,6 @@ import {
 } from "@/lib/tracking";
 
 import { TitleReadError } from "./title-states";
-
-const SEASON_POSTER_WIDTH = 56;
 
 /**
  * A show's page (prompts/mobile-title-tracking.md, decision 6): the public
@@ -89,12 +92,11 @@ export function ShowScreen() {
       <DetailHeader
         title={detail.name}
         posterUrl={detail.posterUrl}
-        overBackdrop={detail.backdropUrl !== null}
         type="tv"
         communityRating={detail.tmdbRating}
         voteCount={detail.tmdbVoteCount}
-        genres={detail.genres.map((genre) => genre.name)}
-        status={detail.status || null}
+        genres={detail.genres}
+        status={detail.status}
         meta={[
           formatAirSpan({
             firstAirYear: detail.firstAirYear,
@@ -115,11 +117,7 @@ export function ShowScreen() {
         <TrackingGate signedIn={session !== null} state={state}>
           {(data) => <ShowTracking show={detail} state={data} />}
         </TrackingGate>
-        {detail.overview ? (
-          <Text className="text-base leading-6 text-foreground">
-            {detail.overview}
-          </Text>
-        ) : null}
+        <Overview text={detail.overview} />
         <CrewLines lines={[{ label: "Created by", names: detail.createdBy }]} />
         <Seasons
           show={detail}
@@ -346,11 +344,14 @@ function Seasons({
                 {season.posterUrl ? (
                   <Image
                     source={{
-                      uri: sizedImageUri(season.posterUrl, SEASON_POSTER_WIDTH),
+                      uri: sizedImageUri(
+                        season.posterUrl,
+                        SEASON_ROW_POSTER_WIDTH,
+                      ),
                     }}
                     contentFit="cover"
                     style={{
-                      width: SEASON_POSTER_WIDTH,
+                      width: SEASON_ROW_POSTER_WIDTH,
                       aspectRatio: 2 / 3,
                       borderRadius: 8,
                     }}
@@ -358,7 +359,10 @@ function Seasons({
                 ) : (
                   <View
                     className="items-center justify-center rounded-lg border border-border bg-card"
-                    style={{ width: SEASON_POSTER_WIDTH, aspectRatio: 2 / 3 }}
+                    style={{
+                      width: SEASON_ROW_POSTER_WIDTH,
+                      aspectRatio: 2 / 3,
+                    }}
                   >
                     <Text className="text-xs text-muted-foreground">
                       {season.seasonNumber === 0

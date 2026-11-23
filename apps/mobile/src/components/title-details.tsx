@@ -15,8 +15,9 @@ type CrewLine = { label: string; names: readonly string[] };
 
 /**
  * The key crew under the overview, the web's `CrewLines` (spec 0022,
- * AC-15): each line only when it has a name, nothing when none does. A
- * line reads as one sentence to VoiceOver, "Directed by Denis Villeneuve".
+ * AC-15): each line only when it has a name, nothing when none does, since
+ * the app shows only real metadata (AGENTS.md sections 3 and 14). A line
+ * reads as one sentence to VoiceOver, "Directed by Denis Villeneuve".
  */
 export function CrewLines({ lines }: { lines: readonly CrewLine[] }) {
   const shown = lines.filter((line) => line.names.length > 0);
@@ -35,9 +36,32 @@ export function CrewLines({ lines }: { lines: readonly CrewLine[] }) {
   );
 }
 
+/**
+ * A title's overview as body text under the actions, or the `missing` line
+ * when the catalog has none and the screen names that, so no title shows an
+ * empty block or invented text (AGENTS.md sections 3 and 14).
+ */
+export function Overview({
+  text,
+  missing,
+}: {
+  text: string | null;
+  missing?: string;
+}) {
+  if (text) {
+    return <Text className="text-base leading-6 text-foreground">{text}</Text>;
+  }
+  return missing ? (
+    <Text className="text-text-secondary">{missing}</Text>
+  ) : null;
+}
+
 export type Fact = { label: string; value: string };
 
-/** A fact with a text value, or null when there is none. */
+/**
+ * A fact with a text value, or null when there is none, so an empty catalog
+ * value is left out rather than shown as blank (AGENTS.md section 14).
+ */
 export function textFact(label: string, value: string | null): Fact | null {
   return value === null || value === "" ? null : { label, value };
 }
@@ -90,7 +114,11 @@ export function FactsPanel({ facts }: { facts: ReadonlyArray<Fact | null> }) {
   );
 }
 
-/** A movie's facts, as the web's `MovieFacts`, from the v1 movie read. */
+/**
+ * A movie's facts, as the web's `MovieFacts`, from the v1 movie read, so both
+ * apps list the same facts in the same order (AGENTS.md section 3); a value
+ * the catalog lacks is dropped, never invented (section 14).
+ */
 export function movieFacts(movie: V1Movie): Array<Fact | null> {
   return [
     textFact("Status", movie.status),
@@ -111,7 +139,8 @@ export function movieFacts(movie: V1Movie): Array<Fact | null> {
 /**
  * A show's facts, as the web's `ShowFacts`. Networks are names only: the
  * web's logo tiles are left out (prompts/mobile-look-title-pages.md,
- * decision 7).
+ * decision 7). Same order as the web (AGENTS.md section 3); air dates are
+ * UTC days (section 9).
  */
 export function showFacts(show: V1Show): Array<Fact | null> {
   return [

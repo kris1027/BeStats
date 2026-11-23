@@ -6,6 +6,7 @@ import {
   type ViewStyle,
 } from "react-native";
 
+import { artworkHeight, DETAIL_POSTER_WIDTH } from "@/lib/images";
 import { useReduceMotion } from "@/lib/reduce-motion";
 import { PILL_RADIUS } from "@/theme/pill";
 import { lengthToken } from "@/theme/token-vars";
@@ -150,15 +151,15 @@ export function PageSkeleton() {
  * A title screen's footprint while it loads (feature 29, slice 2,
  * decision 12): the backdrop, the poster beside two lines, and the action
  * row, so the hero does not jump when the detail arrives, as the web's
- * detail skeletons do.
+ * detail skeletons do (AGENTS.md section 3, every view has a loading state).
  */
 export function TitleSkeleton() {
   const { width } = useWindowDimensions();
   return (
     <View className="gap-4">
-      <Skeleton shape="line" style={{ width, height: (width * 9) / 16 }} />
+      <Skeleton shape="line" style={{ width, height: artworkHeight(width) }} />
       <View className="flex-row gap-4 px-4">
-        <Skeleton shape="poster" style={{ width: 110 }} />
+        <Skeleton shape="poster" style={{ width: DETAIL_POSTER_WIDTH }} />
         <View className="flex-1 gap-3 pt-2">
           <Skeleton shape="line" style={{ width: "80%", height: 24 }} />
           <Skeleton shape="line" style={{ width: "60%" }} />

@@ -40,7 +40,12 @@ import { RatingStar } from "@/components/glass-pill";
 import { ScoreSheet } from "@/components/score-sheet";
 import { ScreenshotRow } from "@/components/screenshot-row";
 import { Text } from "@/components/text";
-import { CrewLines, FactsPanel, textFact } from "@/components/title-details";
+import {
+  CrewLines,
+  FactsPanel,
+  Overview,
+  textFact,
+} from "@/components/title-details";
 import { TitleScroll } from "@/components/title-header";
 import { TrackingGate } from "@/components/tracking-gate";
 import { catalogKeys, fetchGame } from "@/lib/catalog";
@@ -95,11 +100,10 @@ export function GameScreen() {
       <DetailHeader
         title={detail.name}
         posterUrl={detail.coverUrl}
-        overBackdrop={detail.artUrl !== null}
         type="game"
         communityRating={detail.communityRating}
         voteCount={detail.communityRatingCount}
-        genres={detail.genres.map((genre) => genre.name)}
+        genres={detail.genres}
         status={null}
         meta={[
           formatAirDate(detail.releaseDate) ??
@@ -110,11 +114,7 @@ export function GameScreen() {
         <TrackingGate signedIn={session !== null} state={state}>
           {(data) => <GameTracking game={detail} state={data} />}
         </TrackingGate>
-        {detail.summary ? (
-          <Text className="text-base leading-6 text-foreground">
-            {detail.summary}
-          </Text>
-        ) : null}
+        <Overview text={detail.summary} />
         <CrewLines
           lines={[
             { label: "Developed by", names: detail.developers },

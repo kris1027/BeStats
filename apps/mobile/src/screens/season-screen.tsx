@@ -40,7 +40,6 @@ import { CatalogNotice } from "@/components/catalog-notice";
 import { StatePanel } from "@/components/centered-state";
 import {
   EpisodeRow,
-  SEASON_POSTER_WIDTH,
   type SeasonEpisodeDetail,
   SeasonSkeleton,
 } from "@/components/episode-row";
@@ -52,11 +51,11 @@ import { RatingLine, ratedCount } from "@/components/rating-line";
 import { ScoreSheet } from "@/components/score-sheet";
 import { SeasonNav } from "@/components/season-nav";
 import { SwipeRow } from "@/components/swipe-row";
-import { Text } from "@/components/text";
+import { Kicker, Text } from "@/components/text";
 import { useToast } from "@/components/toast";
 import { TrackingGate } from "@/components/tracking-gate";
 import { catalogKeys, fetchSeason, fetchShow } from "@/lib/catalog";
-import { sizedImageUri } from "@/lib/images";
+import { SEASON_HEADER_POSTER_WIDTH, sizedImageUri } from "@/lib/images";
 import { useSession } from "@/lib/session";
 import {
   putEpisodeRating,
@@ -517,9 +516,11 @@ function SeasonHeader({
   return (
     <View className="flex-row items-center gap-4">
       {posterUrl ? (
-        <View style={{ width: SEASON_POSTER_WIDTH, aspectRatio: 2 / 3 }}>
+        <View style={{ width: SEASON_HEADER_POSTER_WIDTH, aspectRatio: 2 / 3 }}>
           <Image
-            source={{ uri: sizedImageUri(posterUrl, SEASON_POSTER_WIDTH) }}
+            source={{
+              uri: sizedImageUri(posterUrl, SEASON_HEADER_POSTER_WIDTH),
+            }}
             accessibilityLabel={`${name} poster`}
             contentFit="cover"
             style={{ flex: 1, borderRadius: radius }}
@@ -528,9 +529,7 @@ function SeasonHeader({
         </View>
       ) : null}
       <View className="flex-1 gap-1">
-        <Text className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          {showName}
-        </Text>
+        <Kicker>{showName}</Kicker>
         <Text
           accessibilityRole="header"
           className="text-2xl font-bold leading-tight text-foreground"

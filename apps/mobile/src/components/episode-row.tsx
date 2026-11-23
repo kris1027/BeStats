@@ -6,17 +6,14 @@ import type { ReactNode } from "react";
 import { useWindowDimensions, View } from "react-native";
 
 import { FilmIcon } from "@/components/icons";
-import { Text } from "@/components/text";
-import { sizedImageUri } from "@/lib/images";
+import { Kicker, Text } from "@/components/text";
+import { SEASON_HEADER_POSTER_WIDTH, sizedImageUri } from "@/lib/images";
 import { lengthToken, tokenColor } from "@/theme/token-vars";
 
 import { GlassPlate, PlateSolid } from "./glass/plate";
 import { Rim } from "./glass/rim";
 import { CommunityRatingBadge } from "./glass-pill";
 import { Skeleton } from "./skeleton";
-
-/** The season poster's width in the season header and its skeleton. */
-export const SEASON_POSTER_WIDTH = 96;
 
 /** Stills are drawn full width, so they are requested at the window's width. */
 const STILL_RATIO = 16 / 9;
@@ -75,9 +72,9 @@ export function EpisodeRow({
         <Rim radius={radius} />
       </View>
       <View className="gap-1.5">
-        <Text className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <Kicker>
           S{episode.seasonNumber} · E{episode.episodeNumber}
-        </Text>
+        </Kicker>
         <Text
           accessibilityRole="header"
           className="text-lg font-bold leading-snug text-foreground"
@@ -124,7 +121,10 @@ export function SeasonSkeleton({ label }: { label: string }) {
       className="flex-1 gap-5 px-4 pt-4"
     >
       <View className="flex-row gap-4">
-        <Skeleton shape="poster" style={{ width: SEASON_POSTER_WIDTH }} />
+        <Skeleton
+          shape="poster"
+          style={{ width: SEASON_HEADER_POSTER_WIDTH }}
+        />
         <View className="flex-1 gap-2 pt-1">
           <Skeleton shape="line" style={{ width: "50%" }} />
           <Skeleton shape="line" style={{ width: "70%", height: 24 }} />
