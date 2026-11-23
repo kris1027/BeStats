@@ -484,7 +484,7 @@ A native app for iOS and Android beside the web app, sharing its rules with it. 
 - [x] Verify it: `/check verify mobile app` (run 3 on 2026-11-23: PASS. In the iOS Simulator on the local stack: after the account was deleted on the web's `/account`, supabase-js's refresh was refused three times (09:10:16 to 09:12:16 UTC) and the app moved from Library to Sign in with "Your session expired, sign in again."; a chosen Sign out showed no notice. VoiceOver on every screen and the airplane mode banner passed, run by you on a real phone. The second 401 notice and Retry on an offline write are covered by Jest only, accepted by your call. Run 2 passed the rest: library pages match the web for the same user, a page past 24 titles loads page 2, a game moved from Playing to Finished, deletion by cascade, the 15 second timeout with Retry, See all paging with no duplicate key warning; `pnpm typecheck`, `pnpm lint`, `pnpm build` and `pnpm test:db` (464) pass. Run it with `apps/mobile/.env.development.local` moved aside, since its LAN address overrides `localhost`.)
 - [x] Test it: `/test mobile app`
 - [x] Review it (fresh model): `/check review mobile app`
-- [ ] Document it: `/document mobile app`
+- [x] Document it: `/document mobile app`
 spec [0033](../specs/0033-mobile-app-expo/index.md) · code in `apps/mobile/`, `packages/core/`, `apps/web/app/api/v1/`, `apps/web/lib/tracking/commands/`, `apps/web/lib/supabase/bearer.ts`, `supabase/schemas/` (`delete_own_account`)
 
 ## Deferred
