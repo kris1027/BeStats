@@ -2,55 +2,63 @@ import {
   CATALOG_SOURCES,
   type LibraryType,
 } from "@bestats/core/catalog/media-type";
+import { formatVoteCount } from "@bestats/core/format";
 import { Image } from "expo-image";
-import { useWindowDimensions, View } from "react-native";
+import { View } from "react-native";
 
-import { CommunityRatingBadge } from "@/components/glass-pill";
+import { GlassPlate, PlateSolid } from "@/components/glass/plate";
+import { CommunityRatingBadge, GlassPill } from "@/components/glass-pill";
 import { Text } from "@/components/text";
+import { POSTER_OVERLAP } from "@/components/title-header";
 import { DETAIL_POSTER_WIDTH, sizedImageUri } from "@/lib/images";
+import { lengthToken } from "@/theme/token-vars";
 
 type Props = {
   title: string;
   posterUrl: string | null;
-  backdropUrl: string | null;
-  /** The meta line parts (dates, genres); empty parts are left out. */
+  /** True when `TitleScroll` drew a backdrop above, so the poster overlaps it. */
+  overBackdrop: boolean;
+  /** The meta line parts (dates, runtime, seasons); empty parts are left out. */
   meta: (string | null)[];
+  /** Genre names, drawn as labels (not controls), as the web's `GenreChips`. */
+  genres: readonly string[];
+  /** TMDB's status word as is, or null. */
+  status: string | null;
   /** Which catalog the community rating comes from (TMDB or IGDB). */
   type: LibraryType;
   /** The catalog's community rating, or null when it has none. */
   communityRating: number | null;
+  /** How many votes the community rating rests on, or null when unknown. */
+  voteCount: number | null;
 };
 
 /**
- * The top of a title screen, as the movie screen draws it: the backdrop, the
- * poster (or the title on the glass plate when there is none), the title,
- * one meta line and the community rating as the amber `GlassPill`, named by
- * its catalog for screen readers so it is never read as a personal score
- * (AGENTS.md sections 3 and 9; prompts/mobile-web-parity-foundation.md,
- * AC-4).
+ * The hero under a title screen's backdrop (feature 29, slice 2, decisions
+ * 5 and 6): the poster hangs over the backdrop's lower edge while the title,
+ * meta line, genre and status pills and the community rating with its vote
+ * count sit below the artwork, on the page, so no text is drawn over
+ * artwork (components/AGENTS.md, the plate rule). Kept short so the tracking
+ * actions under it stay within thumb reach. The community rating is the
+ * amber `GlassPill` named by its catalog, never read as a personal score
+ * (AGENTS.md section 9).
  */
 export function DetailHeader({
   title,
   posterUrl,
-  backdropUrl,
+  overBackdrop,
   meta,
+  genres,
+  status,
   type,
   communityRating,
+  voteCount,
 }: Props) {
-  const { width } = useWindowDimensions();
   const line = meta.filter(Boolean).join(" · ");
+  const pills = [...genres.slice(0, 3), ...(status ? [status] : [])];
 
   return (
-    <View>
-      {backdropUrl ? (
-        <Image
-          source={{ uri: sizedImageUri(backdropUrl, width) }}
-          accessibilityIgnoresInvertColors
-          contentFit="cover"
-          style={{ width: "100%", aspectRatio: 16 / 9 }}
-        />
-      ) : null}
-      <View className="flex-row gap-4 px-4 pt-5">
+    <View className="flex-row gap-4 px-4 pt-4">
+      <View style={overBackdrop ? { marginTop: -POSTER_OVERLAP } : null}>
         {posterUrl ? (
           <Image
             source={{ uri: sizedImageUri(posterUrl, DETAIL_POSTER_WIDTH) }}
@@ -59,33 +67,57 @@ export function DetailHeader({
             style={{
               width: DETAIL_POSTER_WIDTH,
               aspectRatio: 2 / 3,
-              borderRadius: 12,
+              borderRadius: lengthToken("radius-lg"),
             }}
           />
         ) : (
+          <PlateSolid>
+            <GlassPlate
+              sheen="none"
+              radius={lengthToken("radius-lg")}
+              accessibilityLabel="No poster"
+              className="items-center justify-center"
+              style={{ width: DETAIL_POSTER_WIDTH, aspectRatio: 2 / 3 }}
+            >
+              <Text className="px-2 text-center text-xs text-muted-foreground">
+                {title}
+              </Text>
+            </GlassPlate>
+          </PlateSolid>
+        )}
+      </View>
+      <View className="flex-1 gap-2">
+        <Text
+          accessibilityRole="header"
+          className="text-2xl font-bold leading-tight text-foreground"
+        >
+          {title}
+        </Text>
+        {line ? <Text className="text-text-secondary">{line}</Text> : null}
+        {pills.length > 0 ? (
           <View
-            accessibilityLabel="No poster"
-            className="w-[110px] items-center justify-center rounded-xl border border-border bg-card"
-            style={{ aspectRatio: 2 / 3 }}
+            accessible
+            accessibilityLabel={pills.join(", ")}
+            className="flex-row flex-wrap gap-1.5"
           >
-            <Text className="px-2 text-center text-xs text-muted-foreground">
-              {title}
-            </Text>
+            {pills.map((pill) => (
+              <GlassPill key={pill}>{pill}</GlassPill>
+            ))}
+          </View>
+        ) : null}
+        {communityRating === null ? null : (
+          <View className="flex-row flex-wrap items-center gap-2">
+            <CommunityRatingBadge
+              source={CATALOG_SOURCES[type]}
+              value={communityRating}
+            />
+            {voteCount ? (
+              <Text className="text-sm text-muted-foreground">
+                {formatVoteCount(voteCount)}
+              </Text>
+            ) : null}
           </View>
         )}
-        <View className="flex-1 gap-2">
-          <Text
-            accessibilityRole="header"
-            className="text-2xl font-bold text-foreground"
-          >
-            {title}
-          </Text>
-          {line ? <Text className="text-text-secondary">{line}</Text> : null}
-          <CommunityRatingBadge
-            source={CATALOG_SOURCES[type]}
-            value={communityRating}
-          />
-        </View>
       </View>
     </View>
   );

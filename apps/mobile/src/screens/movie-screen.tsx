@@ -23,17 +23,19 @@ import {
 } from "@bestats/core/tracking/messages";
 import { todayUtc } from "@bestats/core/tv/air-status";
 import { useQuery } from "@tanstack/react-query";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { ScrollView, View } from "react-native";
+import { View } from "react-native";
 import { CastRow } from "@/components/cast-row";
 import { CatalogNotice } from "@/components/catalog-notice";
 import { LoadingState, StatePanel } from "@/components/centered-state";
-import { DetailHeader, DetailSection } from "@/components/detail-header";
+import { DetailHeader } from "@/components/detail-header";
 import { GlassButton } from "@/components/glass-button";
 import { RatingStar } from "@/components/glass-pill";
 import { ScoreSheet } from "@/components/score-sheet";
 import { Text } from "@/components/text";
+import { CrewLines, FactsPanel, movieFacts } from "@/components/title-details";
+import { TitleScroll } from "@/components/title-header";
 import { TrackingGate } from "@/components/tracking-gate";
 import { catalogKeys } from "@/lib/catalog";
 import { fetchMovie, restoreMovie, writeMovieIntent } from "@/lib/movies";
@@ -50,7 +52,8 @@ import { TitleReadError } from "./title-states";
 /**
  * A movie's page (prompts/mobile-title-tracking.md, decision 5): the catalog
  * detail from `/api/v1/movies/{id}` in the look of the shipped movie page,
- * the three tracking pills, Directed by, and the cast row. TMDB's score is
+ * the three tracking pills, the crew lines, the cast row and Facts, under
+ * the stretchy backdrop header (prompts/mobile-look-title-pages.md). TMDB's score is
  * labelled TMDB, apart from the user's own score (AGENTS.md section 9).
  */
 export function MovieScreen() {
@@ -73,29 +76,29 @@ export function MovieScreen() {
   if (!parsedId.success) {
     return <StatePanel tone="error" title={V1_ERROR_MESSAGES.not_found} />;
   }
-  if (movie.isPending) return <LoadingState label="Loading the movie" />;
+  if (movie.isPending) {
+    return <LoadingState label="Loading the movie" layout="title" />;
+  }
   if (movie.isError) {
     return <TitleReadError error={movie.error} retry={() => movie.refetch()} />;
   }
 
   const detail = movie.data;
   return (
-    <ScrollView className="flex-1" contentContainerClassName="pb-24">
-      <Stack.Screen options={{ title: detail.title }} />
+    <TitleScroll title={detail.title} backdropUrl={detail.backdropUrl}>
       <DetailHeader
         title={detail.title}
         posterUrl={detail.posterUrl}
-        backdropUrl={detail.backdropUrl}
+        overBackdrop={detail.backdropUrl !== null}
         type="movie"
         communityRating={detail.tmdbRating}
+        voteCount={detail.tmdbVoteCount}
+        genres={detail.genres.map((genre) => genre.name)}
+        status={detail.status}
         meta={[
           formatAirDate(detail.releaseDate) ??
             (detail.releaseYear ? String(detail.releaseYear) : null),
           detail.runtimeMinutes ? formatRuntime(detail.runtimeMinutes) : null,
-          detail.genres
-            .map((genre) => genre.name)
-            .slice(0, 3)
-            .join(", ") || null,
         ]}
       />
       <View className="gap-5 px-4 pt-5">
@@ -112,9 +115,11 @@ export function MovieScreen() {
         ) : (
           <Text className="text-text-secondary">{MOVIE_OVERVIEW_MISSING}</Text>
         )}
-        <DetailSection
-          heading="Directed by"
-          text={detail.directors.join(", ") || null}
+        <CrewLines
+          lines={[
+            { label: "Directed by", names: detail.directors },
+            { label: "Written by", names: detail.writers },
+          ]}
         />
       </View>
       <View className="pt-6">
@@ -123,8 +128,11 @@ export function MovieScreen() {
           emptyMessage="TMDB lists no cast for this movie."
         />
       </View>
+      <View className="pt-6">
+        <FactsPanel facts={movieFacts(detail)} />
+      </View>
       <CatalogNotice type="movie" />
-    </ScrollView>
+    </TitleScroll>
   );
 }
 

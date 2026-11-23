@@ -29,9 +29,9 @@ import {
 } from "@bestats/core/tracking/types";
 import { todayUtc } from "@bestats/core/tv/air-status";
 import { useQuery } from "@tanstack/react-query";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { ScrollView, View } from "react-native";
+import { View } from "react-native";
 import { CatalogNotice } from "@/components/catalog-notice";
 import { LoadingState, StatePanel } from "@/components/centered-state";
 import { DetailHeader, DetailSection } from "@/components/detail-header";
@@ -40,6 +40,8 @@ import { RatingStar } from "@/components/glass-pill";
 import { ScoreSheet } from "@/components/score-sheet";
 import { ScreenshotRow } from "@/components/screenshot-row";
 import { Text } from "@/components/text";
+import { CrewLines, FactsPanel, textFact } from "@/components/title-details";
+import { TitleScroll } from "@/components/title-header";
 import { TrackingGate } from "@/components/tracking-gate";
 import { catalogKeys, fetchGame } from "@/lib/catalog";
 import { restoreGame, writeGameIntent } from "@/lib/games";
@@ -80,51 +82,55 @@ export function GameScreen() {
   if (!parsed.success) {
     return <StatePanel tone="error" title={V1_ERROR_MESSAGES.not_found} />;
   }
-  if (game.isPending) return <LoadingState label="Loading the game" />;
+  if (game.isPending) {
+    return <LoadingState label="Loading the game" layout="title" />;
+  }
   if (game.isError) {
     return <TitleReadError error={game.error} retry={() => game.refetch()} />;
   }
 
   const detail = game.data;
   return (
-    <ScrollView className="flex-1" contentContainerClassName="pb-24">
-      <Stack.Screen options={{ title: detail.name }} />
+    <TitleScroll title={detail.name} backdropUrl={detail.artUrl}>
       <DetailHeader
         title={detail.name}
         posterUrl={detail.coverUrl}
-        backdropUrl={detail.artUrl}
+        overBackdrop={detail.artUrl !== null}
         type="game"
         communityRating={detail.communityRating}
+        voteCount={detail.communityRatingCount}
+        genres={detail.genres.map((genre) => genre.name)}
+        status={null}
         meta={[
           formatAirDate(detail.releaseDate) ??
             (detail.releaseYear ? String(detail.releaseYear) : null),
-          detail.genres
-            .slice(0, 3)
-            .map((genre) => genre.name)
-            .join(", ") || null,
         ]}
       />
       <View className="gap-5 px-4 pt-5">
         <TrackingGate signedIn={session !== null} state={state}>
           {(data) => <GameTracking game={detail} state={data} />}
         </TrackingGate>
-        <DetailSection heading="Overview" text={detail.summary} />
+        {detail.summary ? (
+          <Text className="text-base leading-6 text-foreground">
+            {detail.summary}
+          </Text>
+        ) : null}
+        <CrewLines
+          lines={[
+            { label: "Developed by", names: detail.developers },
+            { label: "Published by", names: detail.publishers },
+          ]}
+        />
         <DetailSection heading="Story" text={detail.storyline} />
-        <DetailSection
-          heading="Developers"
-          text={detail.developers.join(", ") || null}
-        />
-        <DetailSection
-          heading="Publishers"
-          text={detail.publishers.join(", ") || null}
-        />
       </View>
       <View className="pt-6">
         <ScreenshotRow name={detail.name} urls={detail.screenshotUrls} />
       </View>
-      <GameFacts game={detail} />
+      <View className="pt-6">
+        <FactsPanel facts={gameFacts(detail)} />
+      </View>
       <CatalogNotice type="game" />
-    </ScrollView>
+    </TitleScroll>
   );
 }
 
@@ -265,25 +271,25 @@ function names(refs: Ref[]): string | null {
 
 /**
  * The web's game Facts (spec 0031, AC-9): each line only when IGDB has a
- * value, singular or plural as the web labels it, and no panel at all when
- * none has one (AC-11).
+ * value, singular or plural as the web labels it; `FactsPanel` leaves the
+ * panel out when none has one (AC-11).
  */
-function GameFacts({ game }: { game: V1Game }) {
-  const facts = [
-    ["Platforms", names(game.platforms)],
-    ["Game modes", names(game.gameModes)],
-    ["Player perspectives", names(game.playerPerspectives)],
-    ["Themes", names(game.themes)],
-    [
+function gameFacts(game: V1Game) {
+  return [
+    textFact("Platforms", names(game.platforms)),
+    textFact("Game modes", names(game.gameModes)),
+    textFact("Player perspectives", names(game.playerPerspectives)),
+    textFact("Themes", names(game.themes)),
+    textFact(
       game.franchises.length > 1 ? "Franchises" : "Franchise",
       names(game.franchises),
-    ],
-    ["Series", names(game.series)],
-    [
+    ),
+    textFact("Series", names(game.series)),
+    textFact(
       game.gameEngines.length > 1 ? "Game engines" : "Game engine",
       names(game.gameEngines),
-    ],
-    [
+    ),
+    textFact(
       "Release dates",
       game.platformReleases.length === 0
         ? null
@@ -293,23 +299,6 @@ function GameFacts({ game }: { game: V1Game }) {
                 `${platform}: ${formatGameReleaseDate(release)}`,
             )
             .join("\n"),
-    ],
-  ].filter((fact): fact is [string, string] => fact[1] !== null);
-  if (facts.length === 0) return null;
-  return (
-    <View className="gap-3 px-4 pt-6">
-      <Text
-        accessibilityRole="header"
-        className="text-lg font-semibold text-foreground"
-      >
-        Facts
-      </Text>
-      {facts.map(([label, value]) => (
-        <View key={label} className="gap-1">
-          <Text className="text-sm text-text-secondary">{label}</Text>
-          <Text className="text-base text-foreground">{value}</Text>
-        </View>
-      ))}
-    </View>
-  );
+    ),
+  ];
 }
