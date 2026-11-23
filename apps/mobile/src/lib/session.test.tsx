@@ -1,3 +1,4 @@
+import type { AuthChangeEvent } from "@supabase/supabase-js";
 import { act, render, screen } from "@testing-library/react-native";
 import { Text } from "react-native";
 
@@ -11,9 +12,13 @@ const mockSignOutLocally = jest.fn(async () => {});
 const mockSignOut = jest.fn();
 const mockClearPrivate = jest.fn();
 let mockExpiredHandler: () => Promise<void> = async () => {};
-type AuthListener = (event: string, session: unknown) => void | Promise<void>;
+type AuthListener = (
+  event: AuthChangeEvent,
+  session: unknown,
+) => void | Promise<void>;
 let mockAuthListener: AuthListener = () => {};
 const SESSION = { access_token: "t", user: { email: "a@example.test" } };
+const EXPIRED = "Your session expired, sign in again.";
 let mockStoredSession: typeof SESSION | null = SESSION;
 
 jest.mock("./supabase", () => ({
@@ -51,12 +56,15 @@ jest.mock("./query-client", () => ({
 const { SessionProvider, useSession, wipePrivateCacheIfSignedOut } =
   require("./session") as typeof import("./session");
 
-let signOut: () => Promise<void> = async () => {};
-let current: ReturnType<typeof useSession> | null = null;
+let rendered: ReturnType<typeof useSession> | null = null;
+/** The session state the Probe last rendered, for calling its actions. */
+function sessionState() {
+  if (!rendered) throw new Error("Probe has not rendered");
+  return rendered;
+}
 function Probe() {
   const state = useSession();
-  signOut = state.signOut;
-  current = state;
+  rendered = state;
   return (
     <>
       <Text>{state.session ? "signed in" : "signed out"}</Text>
@@ -84,9 +92,7 @@ test("an expired session ends signed out with the notice, with no event", async 
   expect(mockSignOutLocally).toHaveBeenCalledTimes(1);
   expect(mockClearPrivate).toHaveBeenCalled();
   expect(screen.getByText("signed out")).toBeOnTheScreen();
-  expect(
-    screen.getByText("Your session expired, sign in again."),
-  ).toBeOnTheScreen();
+  expect(screen.getByText(EXPIRED)).toBeOnTheScreen();
 });
 
 test("a session supabase-js ends on its own shows the notice", async () => {
@@ -96,25 +102,21 @@ test("a session supabase-js ends on its own shows the notice", async () => {
   await act(() => mockAuthListener("SIGNED_OUT", null));
   expect(mockClearPrivate).toHaveBeenCalled();
   expect(screen.getByText("signed out")).toBeOnTheScreen();
-  expect(
-    screen.getByText("Your session expired, sign in again."),
-  ).toBeOnTheScreen();
+  expect(screen.getByText(EXPIRED)).toBeOnTheScreen();
 });
 
 test("a chosen sign out shows no notice", async () => {
   mockSignOut.mockResolvedValue({ error: null });
   await renderSignedIn();
-  await act(() => signOut());
+  await act(() => sessionState().signOut());
   expect(screen.getByText("signed out")).toBeOnTheScreen();
-  expect(
-    screen.queryByText("Your session expired, sign in again."),
-  ).not.toBeOnTheScreen();
+  expect(screen.queryByText(EXPIRED)).not.toBeOnTheScreen();
 });
 
 test("a refused global sign out falls back to a local one", async () => {
   mockSignOut.mockResolvedValue({ error: new Error("refused") });
   await renderSignedIn();
-  await act(() => signOut());
+  await act(() => sessionState().signOut());
   expect(mockSignOut).toHaveBeenCalledTimes(1);
   expect(mockSignOutLocally).toHaveBeenCalledTimes(1);
   expect(mockClearPrivate).toHaveBeenCalled();
@@ -124,7 +126,7 @@ test("a refused global sign out falls back to a local one", async () => {
 test("an accepted global sign out needs no local fallback", async () => {
   mockSignOut.mockResolvedValue({ error: null });
   await renderSignedIn();
-  await act(() => signOut());
+  await act(() => sessionState().signOut());
   expect(mockSignOut).toHaveBeenCalledWith({ scope: "global" });
   expect(mockSignOutLocally).not.toHaveBeenCalled();
   expect(screen.getByText("signed out")).toBeOnTheScreen();
@@ -136,11 +138,9 @@ test("an accepted global sign out needs no local fallback", async () => {
  * stays quiet, and the quiet guard never outlives that sign out)
  */
 describe("which sign outs show the expired notice", () => {
-  const EXPIRED = "Your session expired, sign in again.";
-
   test("ending the session after an account deletion shows no notice", async () => {
     await renderSignedIn();
-    await act(() => current?.endLocalSession() ?? Promise.resolve());
+    await act(() => sessionState().endLocalSession());
     expect(mockSignOutLocally).toHaveBeenCalledTimes(1);
     expect(mockSignOut).not.toHaveBeenCalled();
     expect(mockClearPrivate).toHaveBeenCalled();
@@ -151,16 +151,16 @@ describe("which sign outs show the expired notice", () => {
   test("a global sign out that throws falls back to a local one, quietly", async () => {
     mockSignOut.mockRejectedValueOnce(new Error("offline"));
     await renderSignedIn();
-    await act(() => signOut());
+    await act(() => sessionState().signOut());
     expect(mockSignOutLocally).toHaveBeenCalledTimes(1);
     expect(screen.getByText("signed out")).toBeOnTheScreen();
     expect(screen.queryByText(EXPIRED)).not.toBeOnTheScreen();
   });
 
-  test("after a chosen sign out, a later library sign out still shows the notice", async () => {
+  test("after a chosen sign out, a later supabase-js sign out still shows the notice", async () => {
     mockSignOut.mockResolvedValue({ error: null });
     await renderSignedIn();
-    await act(() => signOut());
+    await act(() => sessionState().signOut());
     await act(() => mockAuthListener("SIGNED_IN", SESSION));
     await act(() => mockAuthListener("SIGNED_OUT", null));
     expect(screen.getByText(EXPIRED)).toBeOnTheScreen();
@@ -170,7 +170,7 @@ describe("which sign outs show the expired notice", () => {
     mockSignOutLocally.mockRejectedValueOnce(new Error("storage"));
     await renderSignedIn();
     await act(async () => {
-      await expect(current?.endLocalSession()).rejects.toThrow("storage");
+      await expect(sessionState().endLocalSession()).rejects.toThrow("storage");
     });
     await act(() => mockAuthListener("SIGNED_OUT", null));
     expect(screen.getByText(EXPIRED)).toBeOnTheScreen();
@@ -186,15 +186,33 @@ describe("which sign outs show the expired notice", () => {
     await renderSignedIn();
     let chosen: Promise<void> = Promise.resolve();
     await act(async () => {
-      chosen = signOut();
+      chosen = sessionState().signOut();
     });
-    await act(() => current?.endLocalSession() ?? Promise.resolve());
+    await act(() => sessionState().endLocalSession());
     await act(async () => {
       finishChosen({ error: null });
       await chosen;
     });
     expect(screen.getByText("signed out")).toBeOnTheScreen();
     expect(screen.queryByText(EXPIRED)).not.toBeOnTheScreen();
+  });
+
+  test("a refresh refused at launch shows the notice", async () => {
+    // supabase-js restores no session and then reports the refused refresh
+    // of the stored one as SIGNED_OUT.
+    mockStoredSession = null;
+    try {
+      await render(
+        <SessionProvider>
+          <Probe />
+        </SessionProvider>,
+      );
+      expect(await screen.findByText("signed out")).toBeOnTheScreen();
+      await act(() => mockAuthListener("SIGNED_OUT", null));
+      expect(screen.getByText(EXPIRED)).toBeOnTheScreen();
+    } finally {
+      mockStoredSession = SESSION;
+    }
   });
 
   test("a token refresh keeps the user signed in with no notice", async () => {
@@ -209,7 +227,7 @@ describe("which sign outs show the expired notice", () => {
     await renderSignedIn();
     await act(() => mockAuthListener("SIGNED_OUT", null));
     expect(screen.getByText(EXPIRED)).toBeOnTheScreen();
-    await act(async () => current?.clearNotice());
+    await act(async () => sessionState().clearNotice());
     expect(screen.queryByText(EXPIRED)).not.toBeOnTheScreen();
   });
 });
