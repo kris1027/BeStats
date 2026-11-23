@@ -35,6 +35,17 @@ const LOOK = {
 } as const;
 
 /**
+ * Which look each variant draws at rest. `primary` is the web's committed
+ * call to action, so it takes the selected glass, the same as a pressed
+ * toggle, never a solid white fill (decision 12).
+ */
+const LOOK_OF = {
+  primary: "selected",
+  glass: "glass",
+  destructive: "destructive",
+} as const satisfies Record<NonNullable<Props["variant"]>, keyof typeof LOOK>;
+
+/**
  * The pill button of the shipped web UI, round and at least 44pt tall so it
  * meets the touch target rule (AGENTS.md section 3). `primary` and a pressed
  * `glass` toggle take the brighter selected glass, never a solid white fill,
@@ -52,11 +63,7 @@ export function GlassButton({
   iconAfter,
 }: Props) {
   const look =
-    LOOK[
-      variant === "primary" || (variant === "glass" && pressed)
-        ? "selected"
-        : variant
-    ];
+    LOOK[variant === "glass" && pressed ? "selected" : LOOK_OF[variant]];
   return (
     <Pressable
       accessibilityRole="button"
