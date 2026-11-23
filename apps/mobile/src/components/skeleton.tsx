@@ -11,6 +11,7 @@ import { createAccessibilityFlag } from "@/lib/accessibility-flag";
 import { lengthToken } from "@/theme/token-vars";
 
 import { GlassPlate, PlateSolid } from "./glass/plate";
+import { GRID, gridCardWidth } from "./grid-layout";
 
 /** The web's skeleton shapes: a 2:3 poster, a pill and a text line. */
 const SHAPES = {
@@ -94,17 +95,6 @@ export function PosterCardSkeleton({ width }: { width: number }) {
       <Skeleton shape="poster" style={{ width }} />
       <Skeleton shape="line" style={{ width: width * 0.66 }} />
     </View>
-  );
-}
-
-/** Columns and spacing every poster grid shares, with `PosterGrid`. */
-export const GRID = { columns: 3, gutter: 16, gap: 12 } as const;
-
-/** A grid card's width at this window width. */
-export function gridCardWidth(windowWidth: number): number {
-  return Math.floor(
-    (windowWidth - GRID.gutter * 2 - GRID.gap * (GRID.columns - 1)) /
-      GRID.columns,
   );
 }
 

@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react-native";
 
 import { LoadingState } from "./centered-state";
-import { gridCardWidth } from "./skeleton";
+import { gridCardWidth } from "./grid-layout";
 
 jest.mock("expo-router", () => ({
   useRouter: () => ({ push: jest.fn(), back: jest.fn() }),
