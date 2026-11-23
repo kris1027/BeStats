@@ -21,6 +21,7 @@ import {
 import { Text } from "@/components/text";
 import { catalogKeys, fetchGenres } from "@/lib/catalog";
 
+import { GlassPlate } from "./glass/plate";
 import { GlassButton } from "./glass-button";
 import { PageBackground } from "./page-background";
 
@@ -223,17 +224,15 @@ function Chip({
       accessibilityState={{ checked: selected, disabled }}
       disabled={disabled}
       onPress={onPress}
-      className={`min-h-11 justify-center rounded-full border px-4 ${
-        selected ? "border-primary bg-primary" : "border-border bg-glass-plate"
-      } ${disabled ? "opacity-50" : ""}`}
+      style={{ opacity: disabled ? 0.5 : 1 }}
     >
-      <Text
-        className={`text-sm font-semibold ${
-          selected ? "text-primary-foreground" : "text-foreground"
-        }`}
+      <GlassPlate
+        sheen={selected ? "selected" : "glass"}
+        radius={999}
+        className="min-h-11 justify-center px-4"
       >
-        {label}
-      </Text>
+        <Text className="text-sm font-semibold text-foreground">{label}</Text>
+      </GlassPlate>
     </Pressable>
   );
 }
