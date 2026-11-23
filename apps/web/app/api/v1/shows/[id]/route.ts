@@ -1,6 +1,7 @@
 import { showIdParamSchema, type V1Show } from "@bestats/core/api/v1/show";
 import { z } from "zod";
 
+import { logV1PartFailure } from "@/lib/api/v1/log";
 import { v1Fail, v1Ok, withV1 } from "@/lib/api/v1/with-v1";
 import { getShowCast, TmdbError } from "@/lib/tmdb";
 import { loadShow } from "@/lib/tmdb/load-show";
@@ -8,13 +9,17 @@ import { loadShow } from "@/lib/tmdb/load-show";
 /**
  * The series cast, or null when only that read failed: the web shows the
  * show with a cast error line in that case (spec 0009, AC-8), so the app's
- * show must not fail with it either. Any other error is a bug and throws.
+ * show must not fail with it either, and the failure is logged (AGENTS.md
+ * section 11, no personal data). Any other error is a bug and throws.
  */
 async function showCastOrNull(id: number) {
   try {
     return await getShowCast(id);
   } catch (error) {
-    if (error instanceof TmdbError) return null;
+    if (error instanceof TmdbError) {
+      logV1PartFailure("shows.get", "cast", error.kind);
+      return null;
+    }
     throw error;
   }
 }

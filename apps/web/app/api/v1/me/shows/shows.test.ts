@@ -136,6 +136,8 @@ describe("GET /api/v1/shows/{id} and /seasons/{n}", () => {
     expect(body.cast).toEqual(CAST);
     expect(body.originalLanguage).toBe(SHOW.originalLanguage);
     expect(body.networks).toEqual(SHOW.networks);
+    expect(body.type).toBe(SHOW.type);
+    expect(body.productionCompanies).toEqual(SHOW.productionCompanies);
     expect(response.headers.get("Cache-Control")).toBe("public, s-maxage=60");
     expect(verifyBearer).not.toHaveBeenCalled();
   });
@@ -155,6 +157,9 @@ describe("GET /api/v1/shows/{id} and /seasons/{n}", () => {
     const body = v1ShowSchema.parse(await response.json());
     expect(body.cast).toBeNull();
     expect(body.name).toBe(SHOW.name);
+    expect(console.warn).toHaveBeenCalledWith(
+      JSON.stringify({ event: "api_v1.shows.get.cast", outcome: "timeout" }),
+    );
   });
 
   it("answers the season with its episodes", async () => {
