@@ -228,6 +228,7 @@ function GameTracking({
         {canScore ? (
           <GlassButton
             label={state.rating === null ? "Rate" : scoreText}
+            score
             icon={<RatingStar tone="personal" />}
             accessibilityLabel={`Your score for ${game.name}: ${scoreText}`}
             onPress={() => setSheetOpen(true)}

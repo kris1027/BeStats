@@ -431,6 +431,7 @@ function SeasonTracking({
                 />
                 <GlassButton
                   label={formatPersonalScore(shown.rating)}
+                  score
                   icon={<RatingStar tone="personal" />}
                   accessibilityLabel={`Your score for ${label}: ${formatPersonalScore(shown.rating)}`}
                   onPress={() => setScoring(episode)}

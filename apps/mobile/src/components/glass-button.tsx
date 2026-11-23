@@ -5,7 +5,7 @@ import { Text } from "@/components/text";
 import { PILL_FONT_SCALE_CAP, PILL_RADIUS } from "@/theme/pill";
 import { tokenColor } from "@/theme/token-vars";
 
-import { GlassPlate } from "./glass/plate";
+import { GlassPlate, SURFACES } from "./glass/plate";
 
 type Props = {
   label: string;
@@ -19,6 +19,12 @@ type Props = {
   /** A decorative icon beside the label, before it unless `iconAfter`. */
   icon?: ReactNode;
   iconAfter?: boolean;
+  /**
+   * The personal score's trigger: the score plate and its cyan rim, as the
+   * web's `glassPillClassName("score")`, so the user's own score never looks
+   * like a plain control or a community rating (AGENTS.md section 9).
+   */
+  score?: boolean;
 };
 
 /**
@@ -61,6 +67,7 @@ export function GlassButton({
   busy,
   icon,
   iconAfter,
+  score,
 }: Props) {
   const look =
     LOOK[variant === "glass" && pressed ? "selected" : LOOK_OF[variant]];
@@ -76,6 +83,7 @@ export function GlassButton({
       })}
     >
       <GlassPlate
+        {...SURFACES[score ? "score" : "neutral"]}
         sheen={look.sheen}
         shadow={look.shadow}
         radius={PILL_RADIUS}

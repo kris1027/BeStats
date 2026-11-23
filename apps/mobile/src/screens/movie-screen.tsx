@@ -256,6 +256,7 @@ function MovieTracking({
         {watched ? (
           <GlassButton
             label={formatPersonalScore(state.rating)}
+            score
             icon={<RatingStar tone="personal" />}
             accessibilityLabel={`Your score for ${movie.title}: ${formatPersonalScore(state.rating)}`}
             onPress={() => setSheetOpen(true)}
