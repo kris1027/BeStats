@@ -32,7 +32,9 @@ import {
   View,
 } from "react-native";
 import { LoadingState, StatePanel } from "@/components/centered-state";
+import { GlassPlate } from "@/components/glass/plate";
 import { GlassButton } from "@/components/glass-button";
+import { PILL_FONT_SCALE_CAP } from "@/components/glass-pill";
 import { LibraryCard } from "@/components/library-card";
 import { MediaSwitchView } from "@/components/media-switch";
 import { Text } from "@/components/text";
@@ -125,19 +127,22 @@ function PagePills({
             accessibilityRole="tab"
             accessibilityState={{ selected }}
             onPress={() => onSelect(key)}
-            className={`min-h-11 justify-center rounded-full border px-4 ${
-              selected
-                ? "border-primary bg-primary"
-                : "border-border bg-glass-plate"
-            }`}
           >
-            <Text
-              className={`text-sm font-semibold ${
-                selected ? "text-primary-foreground" : "text-foreground"
-              }`}
+            {/* The web's selected glass, never a solid white fill
+                (prompts/mobile-web-parity-foundation.md, decision 12). */}
+            <GlassPlate
+              sheen={selected ? "selected" : "glass"}
+              radius={999}
+              className="min-h-11 justify-center px-4"
             >
-              {libraryPageName(key, type)}
-            </Text>
+              <Text
+                numberOfLines={1}
+                maxFontSizeMultiplier={PILL_FONT_SCALE_CAP}
+                className="text-sm font-semibold text-foreground"
+              >
+                {libraryPageName(key, type)}
+              </Text>
+            </GlassPlate>
           </Pressable>
         );
       })}
