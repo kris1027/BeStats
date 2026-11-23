@@ -42,7 +42,11 @@ export function svgStop(color: string): { color: string; opacity: number } {
   return { color: `#${hex}`, opacity: alpha };
 }
 
-/** A gradient's stops as SVG `Stop`s, each with its own opacity. */
+/**
+ * A gradient's stops as SVG `Stop`s. Each carries its alpha as
+ * `stopOpacity`, because an SVG stop colour drops it and the rim would draw
+ * solid instead of fading the way the web's rim does.
+ */
 export function gradientStops(gradient: Gradient) {
   return gradient.stops.map((stop) => {
     const { color, opacity } = svgStop(stop.color);
@@ -74,8 +78,8 @@ export function rimRadius(radius: number, width: number, height: number) {
 /**
  * The glass rim: the web's 1.5px gradient stroke (`glass-rim`, or the
  * personal score's cyan `glass-rim-score`), drawn as an SVG outline over its
- * parent because React Native has no gradient border
- * (prompts/mobile-web-parity-foundation.md, decision 5). It is decorative,
+ * parent because React Native has no gradient border (apps/mobile/AGENTS.md,
+ * Styling; components/AGENTS.md, the plate rule). It is decorative,
  * takes no touches and is hidden from screen readers.
  */
 export function Rim({

@@ -2,7 +2,7 @@ import * as Haptics from "expo-haptics";
 
 /**
  * The app's one door to `expo-haptics`, so no screen calls it directly
- * (prompts/mobile-web-parity-foundation.md, decision 10). Both fire only once
+ * (apps/mobile/AGENTS.md, BeStats rules). Both fire only once
  * the server has answered a tracking write, never on the optimistic step, a
  * read or a scroll (requirement 10). A device that cannot buzz just stays
  * still: a haptic is a courtesy, never the only sign of an outcome, so a

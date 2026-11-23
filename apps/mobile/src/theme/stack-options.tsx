@@ -6,8 +6,8 @@ import { PageBackground } from "@/components/page-background";
 import { fractionToken, tokenColor, tokenColorOver } from "./token-vars";
 
 /**
- * Every stack's header and screen look (prompts/mobile-web-parity-
- * foundation.md, requirement 1): the screen itself is transparent so the
+ * Every stack's header and screen look (apps/mobile/AGENTS.md, Styling):
+ * the screen itself is transparent so the
  * page background shows, and the native header takes the colour the
  * background settles to at its top edge (its top colour under the wash),
  * with no rule under it, so bar and page meet without a seam. The
@@ -29,7 +29,7 @@ export const STACK_SCREEN_OPTIONS = {
 
 /**
  * Draws the still page background under each screen of a stack, so no
- * screen paints its own (requirement 1).
+ * screen paints its own (apps/mobile/AGENTS.md, Styling).
  */
 export function screenLayout({ children }: { children: ReactNode }) {
   return (

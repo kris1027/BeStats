@@ -59,7 +59,12 @@ export type PlateRole = keyof typeof PLATE_ROLES;
  */
 export const BLUR_INTENSITY_PER_PX = 4;
 
-/** A gradient as React Native's `backgroundImage` CSS string. */
+/**
+ * A generated gradient back in CSS form, because React Native's
+ * `backgroundImage` takes CSS gradients: the sheen keeps the web's exact
+ * angle and stops with no second copy of them (components/AGENTS.md, Tokens
+ * and utilities).
+ */
 export function gradientCss(gradient: {
   angle: number;
   stops: readonly { color: string; at: number }[];

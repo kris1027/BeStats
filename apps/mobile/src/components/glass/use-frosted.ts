@@ -42,8 +42,8 @@ export const SolidPlates = createContext(false);
 /**
  * Whether a plate here frosts: real blur on iOS only, and never under Reduce
  * Transparency or inside a solid slot, where it takes the web's opaque
- * fallback instead (decision 3). Android always draws opaque plates, since
- * its blur is slow on a scrolling list.
+ * fallback instead (apps/mobile/AGENTS.md, Styling). Android always draws
+ * opaque plates, since its blur is slow on a scrolling list.
  */
 export function useFrosted(): boolean {
   const reduced = useSyncExternalStore(

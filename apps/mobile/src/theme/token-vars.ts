@@ -94,7 +94,8 @@ export function tokenColorAlpha(
  * One colour token laid over another at an opacity, flattened to an opaque
  * six digit hex. A surface that cannot hold the page's layers (the native
  * header bar) takes the colour they settle to, so bar and page meet without
- * a seam (prompts/mobile-web-parity-foundation.md, requirement 1).
+ * a seam (apps/mobile/AGENTS.md, Styling: screens stay transparent over the
+ * page background).
  */
 export function tokenColorOver(
   base: keyof typeof TOKENS,
