@@ -89,7 +89,7 @@ export type GlassGradient = {
 
 /**
  * The utilities whose first gradient the app redraws natively: the glass
- * sheen, the selected sheen and the two rims
+ * sheen, the selected sheen (white, and the personal cyan tab's) and the two rims
  * (prompts/mobile-web-parity-foundation.md, decision 5). They live in
  * `@utility` rules rather than tokens, so they are read from there and
  * `globals.css` stays the one place they are written.
@@ -97,6 +97,7 @@ export type GlassGradient = {
 export const GLASS_UTILITIES = [
   "glass",
   "glass-selected",
+  "glass-selected-personal",
   "glass-rim",
   "glass-rim-score",
 ] as const;
@@ -114,19 +115,129 @@ function utilityBody(css: string, name: string): string {
   throw new Error(`globals.css has an unclosed @utility ${name}`);
 }
 
+/** `text` split on the commas outside any parentheses. */
+function splitTopLevel(text: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === "(") depth++;
+    else if (text[i] === ")") depth--;
+    else if (text[i] === "," && depth === 0) {
+      parts.push(text.slice(start, i).trim());
+      start = i + 1;
+    }
+  }
+  parts.push(text.slice(start).trim());
+  return parts;
+}
+
+/** The text inside the parentheses that open at `open`, balanced. */
+function insideParens(text: string, open: number): string {
+  let depth = 0;
+  for (let i = open; i < text.length; i++) {
+    if (text[i] === "(") depth++;
+    else if (text[i] === ")" && --depth === 0) return text.slice(open + 1, i);
+  }
+  throw new Error(`unbalanced parentheses in ${text}`);
+}
+
+type Rgba = { r: number; g: number; b: number; a: number };
+
+/**
+ * A stop colour as straight RGBA: `rgb()`, hex, `white`, `transparent`, a
+ * `var()` of a token, or an sRGB `color-mix()` of those (premultiplied, as
+ * CSS mixes). The selected personal tab tints its sheen from the score cyan
+ * with `color-mix`, so this is how its stops reach the app without the app
+ * restating a percentage (prompts/mobile-web-parity-foundation.md, decision
+ * 12 and requirement 3).
+ */
+function parseColor(value: string, tokens: Record<string, string>): Rgba {
+  const text = value.trim();
+  if (text === "white") return { r: 255, g: 255, b: 255, a: 1 };
+  if (text === "transparent") return { r: 0, g: 0, b: 0, a: 0 };
+  const ref = /^var\(--([a-z0-9-]+)\)$/.exec(text);
+  if (ref) {
+    if (!(ref[1] in tokens)) throw new Error(`unknown token --${ref[1]}`);
+    return parseColor(tokens[ref[1]], tokens);
+  }
+  const hex = /^#([0-9a-f]{6})$/i.exec(text);
+  if (hex) {
+    const n = Number.parseInt(hex[1], 16);
+    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255, a: 1 };
+  }
+  const rgb =
+    /^rgb\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*(?:\/\s*([\d.]+))?\s*\)$/.exec(
+      text,
+    );
+  if (rgb) {
+    return {
+      r: Number(rgb[1]),
+      g: Number(rgb[2]),
+      b: Number(rgb[3]),
+      a: rgb[4] === undefined ? 1 : Number(rgb[4]),
+    };
+  }
+  if (text.startsWith("color-mix(")) {
+    const [space, first, second] = splitTopLevel(
+      insideParens(text, text.indexOf("(")),
+    );
+    if (space !== "in srgb") throw new Error(`only srgb mixes: ${text}`);
+    const part = (arg: string) => {
+      const m = /^(.*?)(?:\s+([\d.]+)%)?$/.exec(arg.trim());
+      if (!m) throw new Error(`bad color-mix argument ${arg}`);
+      return {
+        color: parseColor(m[1], tokens),
+        weight: m[2] === undefined ? null : Number(m[2]) / 100,
+      };
+    };
+    const one = part(first);
+    const two = part(second);
+    const w1 = one.weight ?? 1 - (two.weight ?? 0.5);
+    const w2 = two.weight ?? 1 - w1;
+    const a = one.color.a * w1 + two.color.a * w2;
+    const channel = (key: "r" | "g" | "b") =>
+      a === 0
+        ? 0
+        : (one.color[key] * one.color.a * w1 +
+            two.color[key] * two.color.a * w2) /
+          a;
+    return { r: channel("r"), g: channel("g"), b: channel("b"), a };
+  }
+  throw new Error(`unsupported colour ${text}`);
+}
+
+/** RGBA in the `rgb(r g b / a)` form the other stops are written in. */
+function rgbaCss({ r, g, b, a }: Rgba): string {
+  const alpha = Math.round(a * 1000) / 1000;
+  return `rgb(${Math.round(r)} ${Math.round(g)} ${Math.round(b)} / ${alpha})`;
+}
+
 /** The first `linear-gradient` in a utility, its angle and its stops. */
 export function readGradient(css: string, name: string): GlassGradient {
   const body = utilityBody(css.replace(/\/\*[\s\S]*?\*\//g, ""), name);
-  const match = /linear-gradient\(\s*(\d+)deg,([\s\S]*?%)\s*\)/.exec(body);
-  if (!match) throw new Error(`@utility ${name} has no angled gradient`);
-  const stops = [...match[2].matchAll(/(rgb\([^)]*\))\s+([\d.]+)%/g)].map(
-    (stop) => ({
-      color: stop[1].replace(/\s+/g, " "),
-      at: Number(stop[2]) / 100,
-    }),
+  const start = body.indexOf("linear-gradient(");
+  if (start < 0) throw new Error(`@utility ${name} has no angled gradient`);
+  const [angle, ...rest] = splitTopLevel(
+    insideParens(body, start + "linear-gradient".length),
   );
-  if (stops.length < 2) throw new Error(`@utility ${name} has no rgb stops`);
-  return { angle: Number(match[1]), stops };
+  const degrees = /^(\d+)deg$/.exec(angle);
+  if (!degrees) throw new Error(`@utility ${name} has no angled gradient`);
+  let tokens: Record<string, string> | undefined;
+  const tokenValues = () => {
+    tokens ??= readTokens(css);
+    return tokens;
+  };
+  const stops = rest.map((stop) => {
+    const m = /^([\s\S]*\S)\s+([\d.]+)%$/.exec(stop.replace(/\s+/g, " "));
+    if (!m) throw new Error(`@utility ${name} has a stop with no position`);
+    const color = m[1].startsWith("rgb(")
+      ? m[1]
+      : rgbaCss(parseColor(m[1], tokenValues()));
+    return { color, at: Number(m[2]) / 100 };
+  });
+  if (stops.length < 2) throw new Error(`@utility ${name} has no stops`);
+  return { angle: Number(degrees[1]), stops };
 }
 
 /** `glass-shadow`'s offset, blur and colour, for React Native's `boxShadow`. */

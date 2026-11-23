@@ -149,6 +149,23 @@ export const GLASS = {
         }
       ]
     },
+    "glass-selected-personal": {
+      "angle": 172,
+      "stops": [
+        {
+          "color": "rgb(133 215 237 / 0.95)",
+          "at": 0
+        },
+        {
+          "color": "rgb(80 198 229 / 0.8)",
+          "at": 0.52
+        },
+        {
+          "color": "rgb(106 207 233 / 0.9)",
+          "at": 1
+        }
+      ]
+    },
     "glass-rim": {
       "angle": 166,
       "stops": [

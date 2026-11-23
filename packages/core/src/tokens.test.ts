@@ -74,4 +74,22 @@ describe("generated design tokens", () => {
       ],
     });
   });
+
+  it("resolves a color-mix stop from a token, as CSS mixes it", () => {
+    const css = `:root { --cyan: #50c6e5; }
+@theme inline { --color-cyan: var(--cyan); }
+@theme { --radius: 1rem; }
+@utility glass-selected-personal { background: linear-gradient(
+  172deg,
+  color-mix(in srgb, color-mix(in srgb, var(--color-cyan) 70%, white) 95%, transparent) 0%,
+  color-mix(in srgb, var(--color-cyan) 80%, transparent) 52%
+) padding-box; }`;
+    expect(readGradient(css, "glass-selected-personal")).toEqual({
+      angle: 172,
+      stops: [
+        { color: "rgb(133 215 237 / 0.95)", at: 0 },
+        { color: "rgb(80 198 229 / 0.8)", at: 0.52 },
+      ],
+    });
+  });
 });
