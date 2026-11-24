@@ -1,9 +1,11 @@
+import { hasPasswordIdentity } from "@bestats/core/auth/identity";
 import {
   ACCOUNT_COPY,
   ACCOUNT_NOTICE,
   ACCOUNT_NOTICES,
   AUTH_MESSAGES,
   AUTH_OUTCOME,
+  CHANGE_PASSWORD_COPY,
   DELETE_ACCOUNT_COPY,
   USERNAME_UNCHANGED_MESSAGE,
   USERNAME_UPDATED_MESSAGE,
@@ -23,10 +25,11 @@ import {
   StatePanel,
 } from "@/components/centered-state";
 import { ChevronRow } from "@/components/chevron-row";
-import { INPUT_CLASS } from "@/components/form-field";
+import { FormField } from "@/components/form-field";
 import { GlassButton } from "@/components/glass-button";
+import { GlassPanel } from "@/components/glass-panel";
 import { Notice } from "@/components/notice";
-import { Text, TextInput } from "@/components/text";
+import { Text } from "@/components/text";
 import { useProfile, useSaveUsername } from "@/lib/account";
 import { ApiError } from "@/lib/api";
 import { useSession } from "@/lib/session";
@@ -41,46 +44,64 @@ const LOCK_FORMAT: Intl.DateTimeFormatOptions = {
 
 /**
  * The Account tab (spec 0035, Account screen; prompts/mobile-account-deletion.md,
- * decision 5), private state shown only once the server confirms it (AGENTS.md
- * section 11). Signed out: Sign in or Create account. Signed in, one column of
- * glass panels: your username in bold with your email under it and Sign out,
- * your username field, then Delete account and About. While the username is unclaimed its panel comes first, with the
- * taken notice when sign up lost the name in between (`notice` param, only a
- * known key shows anything, as on the web).
+ * decision 5; prompts/mobile-look-account.md, decisions 3, 7 and 8), private
+ * state shown only once the server confirms it (AGENTS.md section 11). It
+ * takes the large title, so every state sits in one scroll view the
+ * translucent bar lies over. Signed out: Sign in or Create account. Signed
+ * in, one column of glass panels: your username in bold with your email under
+ * it and Sign out, your username field, then the rows Change password (only
+ * for an account with an email password), Delete account and About. While
+ * the username is unclaimed its panel comes first, with the taken notice when
+ * sign up lost the name in between (`notice` param, only a known key shows
+ * anything, as on the web).
  */
 export function AccountScreen({ notice }: { notice?: string }) {
   const router = useRouter();
   const { session, loading, signOut } = useSession();
   const profile = useProfile(Boolean(session));
 
-  if (loading) return <LoadingState label="Loading" />;
+  if (loading) {
+    return (
+      <AccountScroll>
+        <LoadingState label="Loading" />
+      </AccountScroll>
+    );
+  }
   if (!session) {
     return (
-      <SignedOutState description={ACCOUNT_COPY.signedOutTrack}>
-        <View className="-mt-6 items-center px-6">
-          <GlassButton
-            label={ACCOUNT_COPY.createAccount}
-            onPress={() => router.push("/sign-up")}
-          />
-        </View>
-        <View className="mt-6 self-stretch px-4">
-          <AboutRow />
-        </View>
-      </SignedOutState>
+      <AccountScroll>
+        <SignedOutState description={ACCOUNT_COPY.signedOutTrack}>
+          <View className="-mt-6 items-center px-6">
+            <GlassButton
+              label={ACCOUNT_COPY.createAccount}
+              onPress={() => router.push("/sign-up")}
+            />
+          </View>
+          <View className="mt-6 self-stretch px-4">
+            <AboutRow />
+          </View>
+        </SignedOutState>
+      </AccountScroll>
     );
   }
 
-  if (profile.isPending) return <LoadingState label="Loading your account" />;
+  if (profile.isPending) {
+    return (
+      <AccountScroll>
+        <LoadingState label="Loading your account" />
+      </AccountScroll>
+    );
+  }
   if (profile.isError) {
     return (
-      <View className="flex-1">
+      <AccountScroll>
         <StatePanel
           tone="error"
           title={ACCOUNT_COPY.loadFailed}
           description={profile.error.message}
           action={{ label: "Retry", onPress: () => profile.refetch() }}
         />
-      </View>
+      </AccountScroll>
     );
   }
 
@@ -91,8 +112,7 @@ export function AccountScreen({ notice }: { notice?: string }) {
       : null;
 
   const header = (
-    <Panel key="header">
-      <Text className="text-3xl font-bold text-foreground">Account</Text>
+    <GlassPanel key="header">
       <View className="gap-1">
         <Text className="text-lg font-bold text-foreground">
           {username ?? session.user.email}
@@ -102,7 +122,7 @@ export function AccountScreen({ notice }: { notice?: string }) {
         ) : null}
       </View>
       <GlassButton label="Sign out" onPress={signOut} />
-    </Panel>
+    </GlassPanel>
   );
   const usernamePanel = (
     <UsernamePanel
@@ -114,18 +134,44 @@ export function AccountScreen({ notice }: { notice?: string }) {
   );
 
   return (
-    <ScrollView
-      className="flex-1"
-      contentContainerClassName="gap-4 px-4 py-6"
-      keyboardShouldPersistTaps="handled"
-    >
+    <AccountScroll padded>
       {username ? [header, usernamePanel] : [usernamePanel, header]}
+      {hasPasswordIdentity(session.user.identities) ? (
+        <ChevronRow
+          label={CHANGE_PASSWORD_COPY.heading}
+          onPress={() => router.push("/account/password")}
+        />
+      ) : null}
       <ChevronRow
         label={DELETE_ACCOUNT_COPY.heading}
         tone="destructive"
         onPress={() => router.push("/account/delete")}
       />
       <AboutRow />
+    </AccountScroll>
+  );
+}
+
+/**
+ * The one scroll view every Account state sits in, inset by UIKit under the
+ * translucent large title bar, so nothing hides under it and the title
+ * collapses as you scroll (prompts/mobile-look-account.md, decision 7).
+ */
+function AccountScroll({
+  children,
+  padded = false,
+}: {
+  children: ReactNode;
+  padded?: boolean;
+}) {
+  return (
+    <ScrollView
+      className="flex-1"
+      contentInsetAdjustmentBehavior="automatic"
+      contentContainerClassName={padded ? "gap-4 px-4 py-6" : "flex-grow"}
+      keyboardShouldPersistTaps="handled"
+    >
+      {children}
     </ScrollView>
   );
 }
@@ -201,17 +247,30 @@ function UsernamePanel({
   }
 
   return (
-    <Panel>
-      <Text className="text-xl font-bold text-foreground">Username</Text>
+    <GlassPanel>
+      <Text
+        accessibilityRole="header"
+        className="text-xl font-bold text-foreground"
+      >
+        Username
+      </Text>
       <Text className="text-text-secondary">
         {username
           ? AUTH_MESSAGES[AUTH_OUTCOME.usernameLocked]
           : ACCOUNT_COPY.chooseUsername}
       </Text>
       {notice ? <Notice message={notice} /> : null}
-      <TextInput
-        accessibilityLabel="Username"
-        accessibilityHint={locked ? undefined : USERNAME_HINT}
+      <FormField
+        label="Username"
+        hint={
+          locked
+            ? `${ACCOUNT_COPY.usernameUnlocksOn} ${new Intl.DateTimeFormat(
+                "en",
+                LOCK_FORMAT,
+              ).format(new Date(changeableAt))}.`
+            : USERNAME_HINT
+        }
+        error={message?.tone === "error" ? message.text : null}
         value={value}
         onChangeText={setValue}
         editable={!locked}
@@ -221,20 +280,8 @@ function UsernamePanel({
         maxLength={USERNAME_MAX_LENGTH}
         returnKeyType="done"
         onSubmitEditing={submit}
-        className={`${INPUT_CLASS} ${locked ? "opacity-50" : ""}`}
       />
-      {locked ? (
-        <Text className="text-sm text-text-secondary">
-          {ACCOUNT_COPY.usernameUnlocksOn}{" "}
-          {new Intl.DateTimeFormat("en", LOCK_FORMAT).format(
-            new Date(changeableAt),
-          )}
-          .
-        </Text>
-      ) : (
-        <Text className="text-sm text-text-secondary">{USERNAME_HINT}</Text>
-      )}
-      {message ? <Notice tone={message.tone} message={message.text} /> : null}
+      {message?.tone === "info" ? <Notice message={message.text} /> : null}
       <GlassButton
         variant="primary"
         label={ACCOUNT_COPY.saveUsername}
@@ -242,15 +289,6 @@ function UsernamePanel({
         disabled={locked}
         onPress={submit}
       />
-    </Panel>
-  );
-}
-
-/** The glass card every Account section sits on, the web `PANEL`'s look. */
-function Panel({ children }: { children: ReactNode }) {
-  return (
-    <View className="gap-4 rounded-3xl border border-border bg-glass-plate-panel px-5 py-6">
-      {children}
-    </View>
+    </GlassPanel>
   );
 }
