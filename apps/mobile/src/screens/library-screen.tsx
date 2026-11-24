@@ -22,6 +22,7 @@ import {
 } from "@bestats/core/tracking/messages";
 import { todayUtc } from "@bestats/core/tv/air-status";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { type ReactNode, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -34,8 +35,10 @@ import {
 import { LoadingState, StatePanel } from "@/components/centered-state";
 import { GlassPlate } from "@/components/glass/plate";
 import { GlassButton } from "@/components/glass-button";
+import { GRID, gridCardWidth } from "@/components/grid-layout";
 import { LibraryCard } from "@/components/library-card";
 import { MediaSwitchView } from "@/components/media-switch";
+import { PosterCardSkeleton } from "@/components/skeleton";
 import { Text } from "@/components/text";
 import { useLibraryPage } from "@/lib/library";
 import { cardActionFor, useLibraryCardActions } from "@/lib/library-actions";
@@ -44,10 +47,8 @@ import { useSession } from "@/lib/session";
 import { PILL_FONT_SCALE_CAP, PILL_RADIUS } from "@/theme/pill";
 import { tokenColor } from "@/theme/token-vars";
 
-const COLUMNS = 3;
-const GUTTER = 16;
-const GAP = 12;
-/** The skeleton's tiles, one id per column, so each keeps a stable key. */
+const { columns: COLUMNS, gutter: GUTTER, gap: GAP } = GRID;
+/** The skeleton's cards, one id per column, so each keeps a stable key. */
 const SKELETON_COLUMNS = Array.from({ length: COLUMNS }, (_, i) => i);
 
 /**
@@ -70,10 +71,11 @@ export function resolveLibraryParams(params: {
 }
 
 /**
- * Two rows of empty poster tiles under the pills while the first page loads
- * (prompts/mobile-library-tabs.md, decision 7), at the cards' own size so
- * nothing shifts when they arrive. The missing poster tile's look, with no
- * text: there is no real metadata to show yet (AGENTS.md section 3).
+ * Two rows of pulsing poster cards under the pills while the first page
+ * loads (prompts/mobile-library-tabs.md, decision 7;
+ * prompts/mobile-look-library.md, decision 9), at the grid's own size so
+ * nothing shifts when the cards arrive. The skeletons are hidden from screen
+ * readers; this view announces the wait once by its label.
  */
 function LibrarySkeleton({ width, label }: { width: number; label: string }) {
   return (
@@ -90,15 +92,28 @@ function LibrarySkeleton({ width, label }: { width: number; label: string }) {
           className="flex-row"
         >
           {SKELETON_COLUMNS.map((column) => (
-            <View
-              key={column}
-              style={{ width, aspectRatio: 2 / 3 }}
-              className="rounded-xl border border-border bg-glass-plate"
-            />
+            <PosterCardSkeleton key={column} width={width} />
           ))}
         </View>
       ))}
     </View>
+  );
+}
+
+/**
+ * A state drawn before the list exists (the session load, signed out) inside
+ * a scroll view, so the large title's translucent bar never covers it and
+ * UIKit insets it as it does the list (prompts/mobile-look-library.md,
+ * decision 8).
+ */
+function ScrollState({ children }: { children: ReactNode }) {
+  return (
+    <ScrollView
+      contentInsetAdjustmentBehavior="automatic"
+      contentContainerStyle={{ flexGrow: 1 }}
+    >
+      {children}
+    </ScrollView>
   );
 }
 
@@ -167,21 +182,31 @@ export function LibraryScreen() {
   const actions = useLibraryCardActions(type, path, page);
   const { setMediaType } = useMediaType();
   const { width } = useWindowDimensions();
-  const cardWidth = Math.floor(
-    (width - GUTTER * 2 - GAP * (COLUMNS - 1)) / COLUMNS,
-  );
+  const cardWidth = gridCardWidth(width);
   const today = todayUtc(new Date());
+  // The spinner shows only for a pull the user started. Tied to
+  // `isRefetching`, every write's background reload switched it on, and
+  // under the large title's translucent bar iOS then left the list pushed
+  // down by the spinner's height (prompts/mobile-look-library.md, build
+  // deviations).
+  const [pulling, setPulling] = useState(false);
 
-  if (loading) return <LoadingState label="Loading" />;
+  if (loading) {
+    return (
+      <ScrollState>
+        <LoadingState label="Loading" />
+      </ScrollState>
+    );
+  }
   if (!session) {
     return (
-      <View className="flex-1">
+      <ScrollState>
         <StatePanel
           title={LIBRARY_SIGNED_OUT.title}
           description={LIBRARY_SIGNED_OUT.description}
           action={{ label: "Sign in", onPress: () => router.push("/sign-in") }}
         />
-      </View>
+      </ScrollState>
     );
   }
 
@@ -289,9 +314,10 @@ export function LibraryScreen() {
       onEndReachedThreshold={0.6}
       refreshControl={
         <RefreshControl
-          refreshing={query.isRefetching && !query.isFetchingNextPage}
+          refreshing={pulling}
           onRefresh={() => {
-            query.refetch();
+            setPulling(true);
+            query.refetch().finally(() => setPulling(false));
           }}
           tintColor={tokenColor("color-foreground")}
         />

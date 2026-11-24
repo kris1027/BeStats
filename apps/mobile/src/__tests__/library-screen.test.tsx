@@ -242,7 +242,7 @@ test("a watched movie shows the personal score apart from TMDB's", async () => {
     await screen.findByLabelText("The Matrix, Your score 8"),
   ).toBeOnTheScreen();
   expect(screen.getByText("8")).toBeOnTheScreen();
-  expect(screen.queryByText("TMDB 8.2")).toBeNull();
+  expect(screen.queryByText("8.2")).toBeNull();
 });
 
 test("a title whose catalog read failed still shows and opens", async () => {
@@ -305,7 +305,7 @@ test("an invalid games page falls back to Coming soon", async () => {
   expect(screen.getByRole("tab", { name: "Coming soon" })).toBeSelected();
 });
 
-test("skeleton tiles show while the first page loads", async () => {
+test("pulsing poster skeletons show while the first page loads", async () => {
   let release: () => void = () => {};
   mockApi.on(
     "GET",
@@ -317,6 +317,11 @@ test("skeleton tiles show while the first page loads", async () => {
   );
   await openLibrary();
   expect(await screen.findByLabelText("Loading Up next")).toBeOnTheScreen();
+  // Two rows of the grid's poster cards, each a poster and a line, hidden
+  // from screen readers (prompts/mobile-look-library.md, decision 9).
+  expect(
+    screen.getAllByTestId("skeleton", { includeHiddenElements: true }),
+  ).toHaveLength(12);
   release();
   expect(
     await screen.findByText(libraryCopy("watchlist", "tv").empty.title),
@@ -355,9 +360,15 @@ test("a failed refresh of an empty page is never the empty copy", async () => {
 test("signed out, the tab offers Sign in and sends no private request", async () => {
   mockSession = null;
   await openLibrary();
-  expect(
-    await screen.findByText("Sign in to see your library"),
-  ).toBeOnTheScreen();
+  const panel = await screen.findByText("Sign in to see your library");
+  expect(panel).toBeOnTheScreen();
+  // Inside a scroll view the large title's bar insets, never under it
+  // (prompts/mobile-look-library.md, decision 8).
+  let scroll = panel.parent;
+  while (scroll && scroll.props.contentInsetAdjustmentBehavior === undefined) {
+    scroll = scroll.parent;
+  }
+  expect(scroll?.props.contentInsetAdjustmentBehavior).toBe("automatic");
   expect(mockApi.calls).toHaveLength(0);
 });
 
@@ -416,7 +427,7 @@ describe("libraryCardView", () => {
     expect(libraryCardView(GAME as never, "coming-soon", TODAY)).toMatchObject({
       badge: {
         tone: "community",
-        text: "IGDB 9.1",
+        text: "9.1",
         label: "IGDB community rating 9.1",
       },
       pill: { text: "Date TBA" },
@@ -432,7 +443,7 @@ describe("libraryCardView", () => {
   test("Want to play shows IGDB's rating only, never a score", () => {
     const rated = { ...GAME, user: { status: "want_to_play", rating: 9 } };
     expect(libraryCardView(rated as never, "watchlist", TODAY)).toMatchObject({
-      badge: { tone: "community", text: "IGDB 9.1" },
+      badge: { tone: "community", text: "9.1" },
     });
   });
 
