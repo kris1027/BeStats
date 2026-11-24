@@ -33,10 +33,16 @@ import {
   Overview,
   showFacts,
 } from "@/components/title-details";
+import {
+  ageRatingOf,
+  MoreLikeThisSlot,
+  TrailerButton,
+  WhereToWatch,
+} from "@/components/title-extras";
 import { TitleScroll } from "@/components/title-header";
 import { useToast } from "@/components/toast";
 import { TrackingGate } from "@/components/tracking-gate";
-import { catalogKeys, fetchShow } from "@/lib/catalog";
+import { catalogKeys, fetchShow, fetchTitleExtras } from "@/lib/catalog";
 import { SEASON_ROW_POSTER_WIDTH, sizedImageUri } from "@/lib/images";
 import { useSession } from "@/lib/session";
 import { restoreShowTracking, trackShow, untrackShow } from "@/lib/shows";
@@ -55,8 +61,9 @@ import { TitleReadError } from "./title-states";
  * progress line and the user's show rating, then the seasons, each with its
  * calculated rating and a link to its season screen. TMDB's rating stays
  * labelled TMDB, apart from every personal one (AGENTS.md section 9). Then
- * the cast row and Facts (prompts/mobile-look-title-pages.md); the trailer
- * and similar titles wait for slice 3's reads rather than being invented.
+ * the cast row and Facts (prompts/mobile-look-title-pages.md), and the
+ * trailer, age pill, Where to watch and More like this from the extras read
+ * (prompts/mobile-look-title-extras.md).
  */
 export function ShowScreen() {
   const params = useLocalSearchParams<{ id: string }>();
@@ -72,6 +79,13 @@ export function ShowScreen() {
     queryKey: trackingKeys.title("tv", id),
     queryFn: () => fetchTitleState("tv", id),
     enabled: parsed.success && session !== null,
+  });
+  // Its own query, so slow or failed extras never hold up the show
+  // (prompts/mobile-look-title-extras.md, decision 5).
+  const extras = useQuery({
+    queryKey: catalogKeys.extras("show", id),
+    queryFn: () => fetchTitleExtras("show", id),
+    enabled: parsed.success,
   });
 
   if (!parsed.success) {
@@ -97,6 +111,7 @@ export function ShowScreen() {
         voteCount={detail.tmdbVoteCount}
         genres={detail.genres}
         status={detail.status}
+        ageRating={ageRatingOf(extras.data)}
         meta={[
           formatAirSpan({
             firstAirYear: detail.firstAirYear,
@@ -114,6 +129,7 @@ export function ShowScreen() {
         ]}
       />
       <View className="gap-5 px-4 pt-5">
+        <TrailerButton trailer={extras.data?.trailer} title={detail.name} />
         <TrackingGate signedIn={session !== null} state={state}>
           {(data) => <ShowTracking show={detail} state={data} />}
         </TrackingGate>
@@ -125,11 +141,15 @@ export function ShowScreen() {
         />
       </View>
       <View className="pt-6">
+        <WhereToWatch read={extras} />
+      </View>
+      <View className="pt-6">
         <CastRow
           cast={detail.cast}
           emptyMessage="TMDB lists no cast for this show."
         />
       </View>
+      <MoreLikeThisSlot read={extras} type="tv" />
       <View className="pt-6">
         <FactsPanel facts={showFacts(detail)} />
       </View>

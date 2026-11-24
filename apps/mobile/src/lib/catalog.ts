@@ -3,6 +3,10 @@ import {
   v1ListSchema,
   v1SearchSchema,
 } from "@bestats/core/api/v1/browse";
+import {
+  v1SimilarGamesSchema,
+  v1TitleExtrasSchema,
+} from "@bestats/core/api/v1/extras";
 import { v1GameSchema } from "@bestats/core/api/v1/game";
 import { v1SeasonSchema, v1ShowSchema } from "@bestats/core/api/v1/show";
 import type { LibraryType } from "@bestats/core/catalog/media-type";
@@ -33,7 +37,30 @@ export const catalogKeys = {
     [CATALOG_QUERY_ROOT, "season", showId, seasonNumber] as const,
   game: (id: number) => [CATALOG_QUERY_ROOT, "game", id] as const,
   movie: (id: number) => [CATALOG_QUERY_ROOT, "movie", id] as const,
+  extras: (type: "movie" | "show", id: number) =>
+    [CATALOG_QUERY_ROOT, "extras", type, id] as const,
+  similarGames: (id: number) =>
+    [CATALOG_QUERY_ROOT, "similar-games", id] as const,
 };
+
+/**
+ * `GET /api/v1/movies/{id}/extras` or `/shows/{id}/extras`: the trailer, age
+ * rating, Where to watch and More like this, the country already picked by
+ * the server from the connection, the web's rule (prompts/
+ * mobile-look-title-extras.md, decision 1). Kept under the public root: it is
+ * catalog data, not the user's, so sign out keeps it.
+ */
+export function fetchTitleExtras(type: "movie" | "show", id: number) {
+  return apiRequest(`/api/v1/${type}s/${id}/extras`, v1TitleExtrasSchema);
+}
+
+/**
+ * `GET /api/v1/games/{id}/similar`: a game's More like this as cards, built
+ * by the server exactly as the web's section (decision 3).
+ */
+export function fetchSimilarGames(id: number) {
+  return apiRequest(`/api/v1/games/${id}/similar`, v1SimilarGamesSchema);
+}
 
 /**
  * `GET /api/v1/lists/{type}/{list}?page=`: one 24 title page of a catalog

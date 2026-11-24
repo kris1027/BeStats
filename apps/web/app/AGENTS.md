@@ -34,7 +34,7 @@ Every image goes through `next/image` and the one `loaderFile`, `lib/images/load
 
 ## Visitor region
 
-Where to watch and the age rating chip read the country only from `getVisitorRegion()` in `lib/region.ts` (Vercel's `x-vercel-ip-country`, `US` fallback). Call it inside a streamed Suspense boundary only, never in a page shell, cached scope or SEO surface, and never store, log or send it to TMDB.
+Where to watch and the age rating chip read the country only from `getVisitorRegion()` in `lib/region.ts` (Vercel's `x-vercel-ip-country`, `US` fallback). Call it inside a streamed Suspense boundary only, never in a page shell, cached scope or SEO surface, and never store, log or send it to TMDB. A `/api/v1` route has its request in hand and calls `regionFromHeaders(request.headers)` instead, the same rule; its answer is then `private`, never shared cached (the title extras routes, prompts/mobile-look-title-extras.md).
 
 ## Search rate limit
 

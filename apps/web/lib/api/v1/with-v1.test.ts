@@ -387,6 +387,11 @@ describe("every /api/v1 handler", () => {
     "lists/[type]/[list]": "public, s-maxage=300, stale-while-revalidate=600",
     "movies/[id]": "public, s-maxage=300, stale-while-revalidate=600",
     "games/[id]": "public, s-maxage=300, stale-while-revalidate=600",
+    // prompts/mobile-look-title-extras.md: the extras pick the connection's
+    // country, so they never reach a shared cache (decision 1).
+    "movies/[id]/extras": "private, max-age=300",
+    "shows/[id]/extras": "private, max-age=300",
+    "games/[id]/similar": "public, s-maxage=300, stale-while-revalidate=600",
   };
 
   it("sets the cache spec 0035 names for each route", () => {
