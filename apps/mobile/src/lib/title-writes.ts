@@ -163,8 +163,10 @@ export function useShowTrackingWrite(id: number, name: string) {
 
 /**
  * Every game write with its Undo, shared by the game screen and the catalog
- * cards (spec 0026): a removal, and a status change that cleared a score,
- * each offer Undo, which puts the earlier status and score back.
+ * cards (spec 0026), so a card action and the game page say the same thing
+ * (prompts/mobile-look-card-actions.md, decision 11). A removal, and a status
+ * change that cleared a score, each offer Undo, which puts the earlier status
+ * and score back (`lib/tracking/AGENTS.md`, games; AGENTS.md section 7).
  */
 export function useGameWrite(id: number, onFailure?: () => void) {
   const key = trackingKeys.title("game", id);
