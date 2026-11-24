@@ -31,6 +31,7 @@ import {
   useMovieWrite,
   useShowTrackingWrite,
 } from "@/lib/title-writes";
+import { CARD_FONT_SCALE_CAP } from "@/theme/font-scale";
 import { HEADER_BACKGROUND } from "@/theme/stack-options";
 import { lengthToken, tokenColor } from "@/theme/token-vars";
 import { CARD_MARK_SIZE, CardMark } from "./card-action-button";
@@ -370,12 +371,18 @@ function PosterCardView({
       <View className="gap-0.5" style={{ width }}>
         <Text
           numberOfLines={2}
+          maxFontSizeMultiplier={CARD_FONT_SCALE_CAP}
           className="text-sm font-semibold text-foreground"
         >
           {item.title}
         </Text>
         {item.year !== null ? (
-          <Text className="text-xs text-text-secondary">{item.year}</Text>
+          <Text
+            maxFontSizeMultiplier={CARD_FONT_SCALE_CAP}
+            className="text-xs text-text-secondary"
+          >
+            {item.year}
+          </Text>
         ) : null}
       </View>
     </Pressable>

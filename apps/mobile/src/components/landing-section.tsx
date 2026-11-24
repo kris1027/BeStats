@@ -3,10 +3,11 @@ import { type CatalogList, listPath } from "@bestats/core/catalog/lists";
 import { todayUtc } from "@bestats/core/tv/air-status";
 import { useQuery } from "@tanstack/react-query";
 import { type Href, Link } from "expo-router";
-import { FlatList, Pressable, View } from "react-native";
+import { FlatList, Pressable, useWindowDimensions, View } from "react-native";
 import { Text } from "@/components/text";
 import { useCardStates } from "@/lib/card-states";
 import { catalogKeys, fetchList } from "@/lib/catalog";
+import { isAccessibilityTextSize } from "@/theme/font-scale";
 
 import { cardDateLabel } from "./dated-card";
 import { GlassButton } from "./glass-button";
@@ -47,11 +48,21 @@ export function LandingSection({ list, count, variant, label, blurb }: Props) {
     variant === "ranked" ? [] : items.map((item) => item.id),
   );
   const line = query.isSuccess && blurb ? blurb(items.length) : null;
+  // At the accessibility text sizes See all moves under the title, which
+  // then wraps on whole words across the full width (decision 1 of
+  // prompts/mobile-large-text-titles.md).
+  const stacked = isAccessibilityTextSize(useWindowDimensions().fontScale);
 
   return (
     <View className="gap-3 pt-6">
-      <View className="flex-row items-end justify-between gap-3 px-4">
-        <View className="flex-1 gap-0.5">
+      <View
+        className={
+          stacked
+            ? "items-start gap-1 px-4"
+            : "flex-row items-end justify-between gap-3 px-4"
+        }
+      >
+        <View className={stacked ? "gap-0.5" : "flex-1 gap-0.5"}>
           {label ? (
             <Text className="text-xs font-semibold tracking-wide text-text-label uppercase">
               {label}
