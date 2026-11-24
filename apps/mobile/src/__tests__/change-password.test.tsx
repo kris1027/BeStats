@@ -5,7 +5,12 @@ import {
   CHANGE_PASSWORD_COPY,
 } from "@bestats/core/auth/messages";
 import type { QueryClient } from "@tanstack/react-query";
-import { screen, userEvent } from "@testing-library/react-native";
+import {
+  act,
+  fireEvent,
+  screen,
+  userEvent,
+} from "@testing-library/react-native";
 import { renderRouter } from "expo-router/testing-library";
 import { Text } from "@/components/text";
 import { AccountScreen } from "@/screens/account-screen";
@@ -163,6 +168,27 @@ describe("Change password", () => {
     expect(
       await screen.findByText(AUTH_MESSAGES[AUTH_OUTCOME.rateLimited]),
     ).toBeOnTheScreen();
+  });
+
+  it("sends one change when Return and the button land in the same frame", async () => {
+    let settle: (value: unknown) => void = () => {};
+    mockChangePassword.mockReturnValue(
+      new Promise((resolve) => {
+        settle = resolve;
+      }),
+    );
+    await open("/account/password");
+    const confirm = screen.getByLabelText(CHANGE_PASSWORD_COPY.confirmLabel);
+    const button = screen.getByRole("button", {
+      name: CHANGE_PASSWORD_COPY.button,
+    });
+    // Both before React re-renders with `busy`.
+    await act(async () => {
+      fireEvent(confirm, "submitEditing");
+      fireEvent.press(button);
+    });
+    expect(mockChangePassword).toHaveBeenCalledTimes(1);
+    await act(async () => settle(failure(AUTH_OUTCOME.rateLimited)));
   });
 
   it("asks you to sign in when there is no session", async () => {

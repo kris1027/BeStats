@@ -6,9 +6,9 @@ import {
   ACCOUNT_COPY,
   CHANGE_PASSWORD_COPY,
 } from "@bestats/core/auth/messages";
-import { PASSWORD_HINT } from "@bestats/core/auth/schemas";
+import { PASSWORD_HINT_SENTENCE } from "@bestats/core/auth/schemas";
 import { Stack, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   BackHandler,
   KeyboardAvoidingView,
@@ -45,6 +45,9 @@ export function ChangePasswordScreen() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [state, setState] = useState<AuthActionState>(IDLE_STATE);
   const [busy, setBusy] = useState(false);
+  // Set before the first await, so a second submit in the same frame (the
+  // Confirm field's Return and the button) sees it before `busy` re-renders.
+  const submitting = useRef(false);
 
   useEffect(() => {
     if (!busy) return;
@@ -61,15 +64,21 @@ export function ChangePasswordScreen() {
   }
 
   async function submit() {
-    if (busy) return;
+    if (submitting.current) return;
+    submitting.current = true;
     setState(IDLE_STATE);
     setBusy(true);
-    const result = await changePassword({
-      currentPassword,
-      password,
-      confirmPassword,
-    });
-    setBusy(false);
+    let result: AuthActionState;
+    try {
+      result = await changePassword({
+        currentPassword,
+        password,
+        confirmPassword,
+      });
+    } finally {
+      submitting.current = false;
+      setBusy(false);
+    }
     if (result.status !== "success") {
       setState(result);
       return;
@@ -111,7 +120,7 @@ export function ChangePasswordScreen() {
         />
         <FormField
           label={CHANGE_PASSWORD_COPY.newLabel}
-          hint={`${PASSWORD_HINT}.`}
+          hint={PASSWORD_HINT_SENTENCE}
           secure
           value={password}
           onChangeText={setPassword}
