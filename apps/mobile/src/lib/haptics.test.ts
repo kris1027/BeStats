@@ -7,32 +7,50 @@ jest.mock("expo-haptics", () => ({
   notificationAsync: jest.fn(() => Promise.resolve()),
 }));
 
+const flushPromises = () => new Promise((resolve) => setImmediate(resolve));
+
 /**
- * On a real iPhone the light impact could not be felt while the error buzz
- * could (2026-11-24), so a confirmed write takes a medium impact.
+ * covers: prompts/mobile-web-parity-foundation.md, decision 10 and AC-6 (a
+ * medium tap on a confirmed write, since on a real iPhone the light one
+ * could not be felt while the error buzz could, 2026-11-24; the error buzz
+ * on a refused one; a failed haptic never breaks the write and is named in
+ * Metro by a development build)
  */
 describe("haptics", () => {
-  it("taps at medium strength on a confirmed write", () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+    jest.restoreAllMocks();
+  });
+
+  it("taps once at medium strength on a confirmed write", () => {
     confirmedWriteHaptic();
+    expect(Haptics.impactAsync).toHaveBeenCalledTimes(1);
     expect(Haptics.impactAsync).toHaveBeenCalledWith(
       Haptics.ImpactFeedbackStyle.Medium,
     );
+    expect(Haptics.notificationAsync).not.toHaveBeenCalled();
   });
 
-  it("buzzes the error notification on a refused write", () => {
+  it("buzzes the error notification once on a refused write", () => {
     refusedWriteHaptic();
+    expect(Haptics.notificationAsync).toHaveBeenCalledTimes(1);
     expect(Haptics.notificationAsync).toHaveBeenCalledWith(
       Haptics.NotificationFeedbackType.Error,
     );
+    expect(Haptics.impactAsync).not.toHaveBeenCalled();
   });
 
-  it("never throws when the device cannot buzz", async () => {
-    jest.mocked(Haptics.impactAsync).mockRejectedValueOnce(new Error("none"));
+  it("catches a failed haptic and names it in a development build", async () => {
+    const error = new Error("no haptics engine");
+    jest.mocked(Haptics.impactAsync).mockRejectedValueOnce(error);
+    jest.mocked(Haptics.notificationAsync).mockRejectedValueOnce(error);
     const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
-    expect(() => confirmedWriteHaptic()).not.toThrow();
-    await Promise.resolve();
-    await Promise.resolve();
-    expect(warn).toHaveBeenCalledWith("Haptic failed:", expect.any(Error));
-    warn.mockRestore();
+
+    confirmedWriteHaptic();
+    refusedWriteHaptic();
+    await flushPromises();
+
+    expect(warn).toHaveBeenCalledTimes(2);
+    expect(warn).toHaveBeenCalledWith("Haptic failed:", error);
   });
 });

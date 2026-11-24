@@ -10,16 +10,18 @@ import * as Haptics from "expo-haptics";
  * in Metro, so a silent phone can be told apart from a missing native module.
  */
 export function confirmedWriteHaptic(): void {
-  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(reportFailure);
+  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(
+    warnInDevelopment,
+  );
 }
 
 /** The error buzz for a write the server refused or never received. */
 export function refusedWriteHaptic(): void {
   Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(
-    reportFailure,
+    warnInDevelopment,
   );
 }
 
-function reportFailure(error: unknown): void {
+function warnInDevelopment(error: unknown): void {
   if (__DEV__) console.warn("Haptic failed:", error);
 }

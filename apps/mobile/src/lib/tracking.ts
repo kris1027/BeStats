@@ -168,7 +168,7 @@ type WriteOptions<TState, TVars, TResult> = {
  * sign out (spec 0033, AC-13). The refetch waits for the last write on the
  * same state, so two quick taps never flash the first answer.
  *
- * The haptics fire here and only here, after the server's answer: a light
+ * The haptics fire here and only here, after the server's answer: a medium
  * tap on a confirmed write (an Undo's restore included, since it is one of
  * these writes) and the error buzz on a refused one (decision 10).
  *
