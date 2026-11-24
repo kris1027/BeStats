@@ -20,10 +20,7 @@ import {
   WATCHED_SHOW_LABELS,
 } from "@bestats/core/tracking/messages";
 
-import {
-  communityRatingLabel,
-  communityRatingText,
-} from "@/components/poster-card";
+import { communityRatingLabel } from "@/components/poster-card";
 
 /**
  * The badge in a card's top left corner: a community rating named by its
@@ -63,18 +60,20 @@ export type LibraryCardView =
 export const FAILED_CARD_NAME = LIBRARY_CARD_MESSAGES.failed;
 
 /**
- * The amber community badge, worded by the catalog cards' own helpers so a
- * game reads "IGDB community rating" everywhere (AGENTS.md section 9).
+ * The amber community badge, drawn as the catalog cards' `CommunityRatingBadge`:
+ * the amber star and the value, with the source named in what a screen
+ * reader hears, so a game reads "IGDB community rating" everywhere
+ * (AGENTS.md section 9). Printing the source too pushed the value under a
+ * card's corner button (prompts/mobile-look-library.md, build deviations).
  */
 function community(
   type: V1LibraryEntry["type"],
   value: number | null,
 ): CardBadge | null {
-  const text = communityRatingText(type, value);
   const label = communityRatingLabel(type, value);
-  return text === null || label === null
+  return value === null || label === null
     ? null
-    : { tone: "community", text, label };
+    : { tone: "community", text: value.toFixed(1), label };
 }
 
 function personalScore(value: number | null): CardBadge | null {

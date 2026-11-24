@@ -1,13 +1,26 @@
 import type { V1LibraryEntry } from "@bestats/core/api/v1/library";
 import type { LibraryPageKey } from "@bestats/core/catalog/library-list";
-import { type Href, Link } from "expo-router";
-import { Pressable, View } from "react-native";
+import type { Href } from "expo-router";
+import type { ReactNode } from "react";
+import { View } from "react-native";
 
 import { Text } from "@/components/text";
+import {
+  gameCardMenu,
+  movieCardMenu,
+  showCardMenu,
+} from "@/lib/catalog-card-actions";
 import type { CardAction } from "@/lib/library-actions";
 import { type CardBadge, libraryCardView } from "@/lib/library-card";
+import {
+  useGameWrite,
+  useMovieWrite,
+  useShowTrackingWrite,
+} from "@/lib/title-writes";
+import { CARD_FONT_SCALE_CAP } from "@/theme/font-scale";
 
 import { CARD_ACTION_SIZE, CardActionButton } from "./card-action-button";
+import { CardLink, wire } from "./card-link";
 import { PlateSolid } from "./glass/plate";
 import { GlassPill, RatingStar } from "./glass-pill";
 import { CARD_INSET, PosterFrame } from "./poster-card";
@@ -38,6 +51,98 @@ function Badge({ badge }: { badge: CardBadge }) {
   );
 }
 
+type LinkProps = {
+  entry: V1LibraryEntry;
+  name: string;
+  label: string;
+  today: string;
+  width: number;
+  children: ReactNode;
+};
+
+/**
+ * The library card's link with the catalog card's menu for its type
+ * (prompts/mobile-look-library.md, decisions 1 and 3), built from the state
+ * the library page already returned (`entry.user`), so the menu costs no
+ * read. Its writes are the title screen's, whose invalidation of every
+ * library page lets the server move the card (AGENTS.md section 9).
+ */
+function MenuLink(props: LinkProps) {
+  switch (props.entry.type) {
+    case "movie":
+      return <MovieMenuLink {...props} entry={props.entry} />;
+    case "tv":
+      return <ShowMenuLink {...props} entry={props.entry} />;
+    case "game":
+      return <GameMenuLink {...props} entry={props.entry} />;
+  }
+}
+
+type EntryOf<T extends V1LibraryEntry["type"]> = Extract<
+  V1LibraryEntry,
+  { type: T }
+>;
+
+/** The release date of a card the catalog answered, else none. */
+function releaseDateOf(
+  card: { kind: string; releaseDate?: string | null } | null,
+) {
+  return card?.kind === "title" ? (card.releaseDate ?? null) : null;
+}
+
+function MovieMenuLink({
+  entry,
+  name,
+  today,
+  ...rest
+}: LinkProps & { entry: EntryOf<"movie"> }) {
+  const write = useMovieWrite(entry.id);
+  const menu = movieCardMenu(entry.user, releaseDateOf(entry.card), today);
+  return (
+    <CardLink
+      href={entry.path as Href}
+      title={name}
+      menu={wire(menu, write.mutate)}
+      {...rest}
+    />
+  );
+}
+
+function ShowMenuLink({
+  entry,
+  name,
+  today: _today,
+  ...rest
+}: LinkProps & { entry: EntryOf<"tv"> }) {
+  const toggle = useShowTrackingWrite(entry.id, name);
+  return (
+    <CardLink
+      href={entry.path as Href}
+      title={name}
+      menu={wire(showCardMenu(entry.user), toggle.mutate)}
+      {...rest}
+    />
+  );
+}
+
+function GameMenuLink({
+  entry,
+  name,
+  today,
+  ...rest
+}: LinkProps & { entry: EntryOf<"game"> }) {
+  const write = useGameWrite(entry.id);
+  const menu = gameCardMenu(entry.user, releaseDateOf(entry.card), today);
+  return (
+    <CardLink
+      href={entry.path as Href}
+      title={name}
+      menu={wire(menu, write.mutate)}
+      {...rest}
+    />
+  );
+}
+
 /**
  * One title on a library page (prompts/mobile-library-tabs.md, decision 4):
  * the poster, or a tile with the name at the same footprint, the badge and
@@ -49,6 +154,12 @@ function Badge({ badge }: { badge: CardBadge }) {
  * `quick` adds the page's quick action (prompts/mobile-card-quick-actions.md):
  * a button over the poster, top right for a corner one and bottom right
  * otherwise, laid beside the link rather than inside it.
+ *
+ * A long press peeks at the title on iOS and offers the type's menu
+ * (prompts/mobile-look-library.md, decisions 1 and 5): a card the catalog
+ * answered gets both, a failed one only the preview, since its release date
+ * is unknown and the gate could not be shown honestly, and a missing one
+ * neither, since it cannot open.
  */
 export function LibraryCard({
   entry,
@@ -97,15 +208,26 @@ export function LibraryCard({
         ) : null}
       </PosterFrame>
       {title ? (
-        <Text
-          numberOfLines={2}
-          className="text-sm font-semibold text-foreground"
-        >
-          {view.name}
-        </Text>
-      ) : null}
-      {title && view.meta ? (
-        <Text className="text-xs text-text-secondary">{view.meta}</Text>
+        // Its own width, as on `PosterCard`: inside `Link asChild` the
+        // Pressable's function style may not reach layout, and a long title
+        // would widen the card past its column (prompts/mobile-look-search.md).
+        <View className="gap-0.5" style={{ width }}>
+          <Text
+            numberOfLines={2}
+            maxFontSizeMultiplier={CARD_FONT_SCALE_CAP}
+            className="text-sm font-semibold text-foreground"
+          >
+            {view.name}
+          </Text>
+          {view.meta ? (
+            <Text
+              maxFontSizeMultiplier={CARD_FONT_SCALE_CAP}
+              className="text-xs text-text-secondary"
+            >
+              {view.meta}
+            </Text>
+          ) : null}
+        </View>
       ) : null}
     </>
   );
@@ -120,17 +242,25 @@ export function LibraryCard({
       >
         {body}
       </View>
+    ) : view.kind === "title" ? (
+      <MenuLink
+        entry={entry}
+        name={view.name}
+        label={label}
+        today={today}
+        width={width}
+      >
+        {body}
+      </MenuLink>
     ) : (
-      <Link href={entry.path as Href} asChild>
-        <Pressable
-          accessibilityRole="link"
-          accessibilityLabel={label}
-          style={{ width }}
-          className="gap-2.5"
-        >
-          {body}
-        </Pressable>
-      </Link>
+      <CardLink
+        href={entry.path as Href}
+        title={view.name}
+        label={label}
+        width={width}
+      >
+        {body}
+      </CardLink>
     );
 
   if (!quick) return card;
