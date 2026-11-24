@@ -496,6 +496,8 @@ export const CATALOG_CARD_ACTION_LABELS = {
     wantToPlay: GAME_STATUS_LABELS.want_to_play,
     removeGame: "Remove from your games",
   },
+  /** The app's Android menu has no native dismiss, so it names its own. */
+  cancel: "Cancel",
 } as const;
 
 /** The signed out library: no private request, only the way in. */

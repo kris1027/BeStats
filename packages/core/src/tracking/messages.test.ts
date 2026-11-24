@@ -273,6 +273,7 @@ describe("LIBRARY_NOTES, labels and the held section (spec 0020, AC-10, AC-12, A
       wantToPlay: "Want to play",
       removeGame: "Remove from your games",
     });
+    expect(labels.cancel).toBe("Cancel");
   });
 
   it("labels a Watched show Finished or Caught up", () => {
