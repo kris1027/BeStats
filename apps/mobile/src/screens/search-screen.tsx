@@ -10,15 +10,23 @@ import {
   type SearchParams,
 } from "@bestats/core/search/params";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { type ReactNode, useEffect, useState } from "react";
+import { useNavigation } from "expo-router";
+import {
+  type ReactNode,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { ActivityIndicator, Pressable, View } from "react-native";
+import type { SearchBarCommands } from "react-native-screens";
 import { CatalogNotice } from "@/components/catalog-notice";
 import { LoadingState, StatePanel } from "@/components/centered-state";
 import { FiltersSheet } from "@/components/filters-sheet";
 import { GlassButton } from "@/components/glass-button";
 import { MediaSwitch } from "@/components/media-switch";
 import { PosterGrid } from "@/components/poster-grid";
-import { Text, TextInput } from "@/components/text";
+import { Text } from "@/components/text";
 import { ApiError } from "@/lib/api";
 import { catalogKeys, fetchSearch } from "@/lib/catalog";
 import { useMediaType } from "@/lib/media-type";
@@ -34,7 +42,9 @@ function isPastEnd(error: unknown): boolean {
 /**
  * Search (prompts/mobile-app-shell-catalog.md, decision 7): the web's
  * `/search` with the same params, sent through core's `searchHref`, and the
- * same count copy and states (AGENTS.md section 10). Titles load as you
+ * same count copy and states (AGENTS.md section 10). The title field is the
+ * platform's own search bar under the large title (prompts/mobile-look-search.md,
+ * decision 1), so it lives in the header options, not the grid. Titles load as you
  * scroll; a filtered title search loads its next TMDB range on Load more,
  * since each range may keep none. The query and filters live in this
  * screen, which the tab's stack keeps mounted, so they survive opening a
@@ -47,6 +57,8 @@ export function SearchScreen() {
     emptySearchParams(mediaType),
   );
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const searchBar = useRef<SearchBarCommands>(null);
+  const navigation = useNavigation();
   const currentYear = new Date().getUTCFullYear();
 
   // A new catalog keeps the title and drops filters, whose genre ids belong
@@ -67,6 +79,43 @@ export function SearchScreen() {
     return () => clearTimeout(timer);
   }, [text]);
 
+  const placeholder = `Search ${mediaNoun(params.type)} by title`;
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerSearchBarOptions: {
+        ref: searchBar,
+        placeholder,
+        placement: "stacked",
+        hideWhenScrolling: false,
+        hideNavigationBar: false,
+        obscureBackground: false,
+        autoCapitalize: "none",
+        textColor: tokenColor("color-foreground"),
+        hintTextColor: tokenColor("color-muted-foreground"),
+        tintColor: tokenColor("color-foreground"),
+        onChangeText: (event: { nativeEvent: { text: string } }) => {
+          const value = event.nativeEvent.text;
+          // The native bar has no maxLength, so the cap the web's field
+          // keeps is applied here (AGENTS.md section 11, validate input).
+          if (value.length > MAX_QUERY_LENGTH) {
+            const capped = value.slice(0, MAX_QUERY_LENGTH);
+            searchBar.current?.setText(capped);
+            setText(capped);
+          } else {
+            setText(value);
+          }
+        },
+        onCancelButtonPress: () => setText(""),
+      },
+    });
+  }, [navigation, placeholder]);
+
+  function clearAll() {
+    searchBar.current?.clearText();
+    setText("");
+    setParams(emptySearchParams(params.type));
+  }
+
   const query = useInfiniteQuery({
     queryKey: catalogKeys.search(params),
     queryFn: ({ pageParam }) => fetchSearch(params, pageParam),
@@ -76,6 +125,7 @@ export function SearchScreen() {
 
   const filterCount =
     params.genreIds.length +
+    params.platformIds.length +
     (params.year === null ? 0 : 1) +
     (params.rating === null ? 0 : 1);
 
@@ -83,19 +133,6 @@ export function SearchScreen() {
     <View>
       <MediaSwitch />
       <View className="gap-3 px-4 pb-3">
-        <TextInput
-          accessibilityLabel={`Search ${mediaNoun(params.type)} by title`}
-          placeholder={`Search ${mediaNoun(params.type)} by title`}
-          placeholderTextColor={tokenColor("color-muted-foreground")}
-          value={text}
-          onChangeText={setText}
-          maxLength={MAX_QUERY_LENGTH}
-          autoCapitalize="none"
-          autoCorrect={false}
-          returnKeyType="search"
-          clearButtonMode="while-editing"
-          className="min-h-11 rounded-2xl border border-input bg-glass-plate px-4 text-base text-foreground"
-        />
         <View className="flex-row items-center gap-3">
           <GlassButton
             label={filterCount > 0 ? `Filters (${filterCount})` : "Filters"}
@@ -104,10 +141,7 @@ export function SearchScreen() {
           {filterCount > 0 || params.q !== null ? (
             <Pressable
               accessibilityRole="button"
-              onPress={() => {
-                setText("");
-                setParams(emptySearchParams(params.type));
-              }}
+              onPress={clearAll}
               className="min-h-11 justify-center px-2"
             >
               <Text className="text-text-link">Clear filters</Text>
@@ -130,8 +164,8 @@ export function SearchScreen() {
 
   const source = CATALOG_SOURCES[params.type];
 
-  // One tree for every state, so the title field keeps focus and the
-  // keyboard stays up while a new search loads.
+  // One tree for every state, so the grid keeps its scroll position while a
+  // new search loads.
   let status: ReactNode = null;
   if (query.isPending) {
     status = <LoadingState layout="grid" label="Loading results" />;
@@ -144,7 +178,9 @@ export function SearchScreen() {
         description="One of these filters isn't one we can search with."
         action={{
           label: "Clear filters",
-          onPress: () => setParams(emptySearchParams(params.type)),
+          // Keeps the title the header bar still shows.
+          onPress: () =>
+            setParams({ ...emptySearchParams(params.type), q: params.q }),
         }}
       />
     ) : (

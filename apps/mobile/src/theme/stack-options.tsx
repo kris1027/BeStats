@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { View } from "react-native";
 
 import { PageBackground } from "@/components/page-background";
+import { FONT_FAMILY } from "@/components/text";
 
 import { fractionToken, tokenColor, tokenColorOver } from "./token-vars";
 
@@ -30,6 +31,25 @@ export const STACK_SCREEN_OPTIONS = {
   headerTintColor: tokenColor("color-foreground"),
   headerShadowVisible: false,
   contentStyle: { backgroundColor: "transparent" },
+} as const;
+
+/**
+ * Search's header (prompts/mobile-look-search.md, decisions 1 and 7): an iOS
+ * large title in Inter over the same seamless bar colour, collapsing into
+ * the bar as the grid scrolls. Android has no large title and shows the
+ * plain bar; the search field itself is set by the screen, which owns its
+ * text. The other tab roots take theirs in their own slices.
+ */
+export const SEARCH_SCREEN_OPTIONS = {
+  title: "Search",
+  headerLargeTitle: true,
+  headerLargeTitleShadowVisible: false,
+  headerLargeTitleStyle: {
+    fontFamily: FONT_FAMILY,
+    fontWeight: "700",
+    color: tokenColor("color-foreground"),
+  },
+  headerTitleStyle: { fontFamily: FONT_FAMILY, fontWeight: "600" },
 } as const;
 
 /**

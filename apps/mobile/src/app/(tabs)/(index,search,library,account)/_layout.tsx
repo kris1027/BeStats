@@ -1,6 +1,10 @@
 import { Stack } from "expo-router";
 
-import { STACK_SCREEN_OPTIONS, screenLayout } from "@/theme/stack-options";
+import {
+  SEARCH_SCREEN_OPTIONS,
+  STACK_SCREEN_OPTIONS,
+  screenLayout,
+} from "@/theme/stack-options";
 
 /**
  * Each tab's first screen. The four tabs share this folder, so a movie,
@@ -30,7 +34,7 @@ export default function TabStack() {
       screenLayout={screenLayout}
     >
       <Stack.Screen name="index" options={{ title: "BeStats" }} />
-      <Stack.Screen name="search" options={{ title: "Search" }} />
+      <Stack.Screen name="search" options={SEARCH_SCREEN_OPTIONS} />
       <Stack.Screen name="library" options={{ title: "Library" }} />
       <Stack.Screen name="account" options={{ title: "Account" }} />
       <Stack.Screen
