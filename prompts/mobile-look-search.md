@@ -59,6 +59,14 @@ Changed:
 6. No colour literal, no new token, no `BlurView` outside `components/glass/` (the boundary tests keep passing).
 7. Loading, empty, error and signed out states stay as they are; the grid's skeleton shows while results load.
 
+## Build deviations (2026-11-24)
+
+Found in the simulator pass (iPhone 18 Pro, iOS 27.2, local stack) and fixed on the branch:
+
+- The large title never collapsed, as the Assumptions section feared. Two causes. UIKit tracks only a scroll view that is first in the screen's view chain, and `screenLayout` puts `PageBackground` before it (`zIndex` cannot help: React Native reorders native subviews by it). And on iOS 26 and later react-native-screens lays a screen with an opaque header out under the bar and insets it itself, which hid the expanded title. The fix: the tab stacks draw `PageBackground` once behind their screens with a transparent theme background, `tabScreenLayout(["search"])` leaves Search bare, and Search's header is translucent (`headerTransparent`, clear when expanded, the bar colour when collapsed). Decision 7's "the bar keeps `HEADER_BACKGROUND`" now holds only when collapsed; expanded, the page shows through with no seam.
+- A long game title (Cadence of Hyrule) widened its card past the grid column and broke the row. The card's width sits in a function `style` on the Pressable inside `Link asChild`, which did not reach layout; the title block now takes the card width too (`poster-card.tsx`). Slice 4's cards had the same fault wherever a long title showed.
+- The empty platform checkboxes were too faint on the sheet; their border is `muted-foreground`.
+
 ## Security considerations
 
 The new route is public, read only, and takes no input, so there is nothing to validate beyond the method. It reads IGDB through `lib/igdb/` only (credentials stay in `lib/igdb/env.ts`), and its answer holds catalog data only, so a shared CDN cache for a day is safe (AGENTS.md section 11). No user state, no new secret, no change to `/privacy` or `PROCESSORS`.
