@@ -12,6 +12,11 @@ import {
 } from "@bestats/core/search/constants";
 import { mediaNoun } from "@bestats/core/search/count";
 import {
+  PICKER_COPY,
+  pickerCapHint,
+  pickerUnavailable,
+} from "@bestats/core/search/messages";
+import {
   type CatalogRef,
   emptySearchParams,
   minYear,
@@ -19,6 +24,7 @@ import {
   type SearchType,
   searchHref,
 } from "@bestats/core/search/params";
+import { filterByName, isPickerFull } from "@bestats/core/search/picker";
 import { cn } from "cn";
 import {
   ChevronDownIcon,
@@ -336,7 +342,7 @@ function FilterBar({
 }
 
 /** A picker whose list could not be read: disabled, saying so (AC-19). */
-function UnavailablePicker({ label }: { label: string }) {
+function UnavailablePicker({ label }: { label: "Genres" | "Platforms" }) {
   return (
     <div className="flex items-center gap-2">
       <button
@@ -347,7 +353,9 @@ function UnavailablePicker({ label }: { label: string }) {
         <SlidersHorizontalIcon className="size-4" aria-hidden="true" />
         {label}
       </button>
-      <p className="text-xs text-muted-foreground">{label} unavailable</p>
+      <p className="text-xs text-muted-foreground">
+        {pickerUnavailable(label)}
+      </p>
     </div>
   );
 }
@@ -406,7 +414,7 @@ function CheckboxRow({
 
 /** `Up to 20`, shown once a picker is full. */
 function CapHint({ max }: { max: number }) {
-  return <p className="text-xs text-muted-foreground">Up to {max}</p>;
+  return <p className="text-xs text-muted-foreground">{pickerCapHint(max)}</p>;
 }
 
 /**
@@ -427,7 +435,7 @@ function GenrePicker({
   onToggle: (id: number) => void;
 }) {
   if (genres === null) return <UnavailablePicker label="Genres" />;
-  const full = max !== undefined && selected.length >= max;
+  const full = isPickerFull(selected, max);
 
   return (
     <Popover>
@@ -517,27 +525,22 @@ function PlatformList({
   onToggle: (id: number) => void;
   filterBox?: React.Ref<HTMLInputElement>;
 }) {
-  const needle = filter.trim().toLowerCase();
-  const shown = needle
-    ? platforms.filter((platform) =>
-        platform.name.toLowerCase().includes(needle),
-      )
-    : platforms;
+  const shown = filterByName(platforms, filter);
   const max = SEARCH_CATALOGS.game.maxFilterIds;
-  const full = selected.length >= max;
+  const full = isPickerFull(selected, max);
 
   return (
     <fieldset className="flex flex-col gap-3">
       <legend className="mb-3 text-xs font-semibold tracking-[0.1em] text-muted-foreground">
-        ON ANY OF
+        {PICKER_COPY.platformsLegend}
       </legend>
       <input
         ref={filterBox}
         type="search"
         value={filter}
         onChange={(event) => onFilter(event.target.value)}
-        placeholder="Filter platforms"
-        aria-label="Filter platforms"
+        placeholder={PICKER_COPY.filterPlatforms}
+        aria-label={PICKER_COPY.filterPlatforms}
         className={cn(
           CONTROL,
           "w-full px-4 text-base placeholder:text-muted-foreground focus-visible:outline-none md:text-sm",
@@ -545,7 +548,7 @@ function PlatformList({
       />
       {shown.length === 0 ? (
         <p className="px-2 py-3 text-sm text-muted-foreground">
-          No platforms match
+          {PICKER_COPY.noPlatformsMatch}
         </p>
       ) : (
         <div className="grid max-h-[min(22rem,50vh)] grid-cols-1 gap-y-1 overflow-y-auto sm:grid-cols-2 sm:gap-x-4">

@@ -6,7 +6,9 @@ import {
   RATING_STEPS,
   type RatingStep,
 } from "@bestats/core/search/constants";
+import { pickerUnavailable } from "@bestats/core/search/messages";
 import { minYear, type SearchParams } from "@bestats/core/search/params";
+import { isPickerFull } from "@bestats/core/search/picker";
 import { useQuery } from "@tanstack/react-query";
 import { type ReactNode, useEffect, useState } from "react";
 import {
@@ -35,8 +37,12 @@ type Filters = Pick<
   "genreIds" | "platformIds" | "year" | "rating"
 >;
 
-/** No filter beyond the title query, what both Clear filters buttons set. */
-export const NO_FILTERS: Filters = {
+/**
+ * No filter beyond the title query: what the sheet's Clear filters sets.
+ * Counts and clearing include platforms (AGENTS.md section 10;
+ * prompts/mobile-look-search.md, decision 6).
+ */
+const NO_FILTERS: Filters = {
   genreIds: [],
   platformIds: [],
   year: null,
@@ -168,16 +174,14 @@ export function FiltersSheet({
                 <ActivityIndicator accessibilityLabel="Loading genres" />
               ) : genres.isError ? (
                 <Text className="text-sm text-muted-foreground">
-                  Genres unavailable
+                  {pickerUnavailable("Genres")}
                 </Text>
               ) : (
                 <View className="flex-row flex-wrap gap-2">
                   {genres.data.genres.map((genre) => {
                     const selected = current.genreIds.includes(genre.id);
                     const full =
-                      cap !== null &&
-                      !selected &&
-                      current.genreIds.length >= cap;
+                      !selected && isPickerFull(current.genreIds, cap);
                     return (
                       <Chip
                         key={genre.id}
@@ -196,7 +200,7 @@ export function FiltersSheet({
               <Group title="Platforms">
                 {platforms.isError ? (
                   <Text className="text-sm text-muted-foreground">
-                    Platforms unavailable
+                    {pickerUnavailable("Platforms")}
                   </Text>
                 ) : (
                   <ChevronRow

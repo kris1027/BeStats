@@ -1,4 +1,10 @@
+import {
+  PICKER_COPY,
+  pickerCapHint,
+  pickerUnavailable,
+} from "@bestats/core/search/messages";
 import type { CatalogRef } from "@bestats/core/search/params";
+import { filterByName, isPickerFull } from "@bestats/core/search/picker";
 import { useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, View } from "react-native";
 
@@ -40,18 +46,13 @@ export function PlatformPicker({ platforms, selected, max, onToggle }: Props) {
   if (platforms === null) {
     return (
       <Text className="px-4 py-5 text-sm text-muted-foreground">
-        Platforms unavailable
+        {pickerUnavailable("Platforms")}
       </Text>
     );
   }
 
-  const needle = filter.trim().toLowerCase();
-  const shown = needle
-    ? platforms.filter((platform) =>
-        platform.name.toLowerCase().includes(needle),
-      )
-    : platforms;
-  const full = selected.length >= max;
+  const shown = filterByName(platforms, filter);
+  const full = isPickerFull(selected, max);
 
   return (
     <FlatList
@@ -63,11 +64,11 @@ export function PlatformPicker({ platforms, selected, max, onToggle }: Props) {
       ListHeaderComponent={
         <View className="gap-3 pb-3 pt-5">
           <Text className="text-xs font-semibold tracking-widest text-muted-foreground">
-            ON ANY OF
+            {PICKER_COPY.platformsLegend}
           </Text>
           <TextInput
-            accessibilityLabel="Filter platforms"
-            placeholder="Filter platforms"
+            accessibilityLabel={PICKER_COPY.filterPlatforms}
+            placeholder={PICKER_COPY.filterPlatforms}
             placeholderTextColor={tokenColor("color-muted-foreground")}
             value={filter}
             onChangeText={setFilter}
@@ -77,13 +78,15 @@ export function PlatformPicker({ platforms, selected, max, onToggle }: Props) {
             className={INPUT_CLASS}
           />
           {full ? (
-            <Text className="text-xs text-muted-foreground">Up to {max}</Text>
+            <Text className="text-xs text-muted-foreground">
+              {pickerCapHint(max)}
+            </Text>
           ) : null}
         </View>
       }
       ListEmptyComponent={
         <Text className="py-3 text-sm text-muted-foreground">
-          No platforms match
+          {PICKER_COPY.noPlatformsMatch}
         </Text>
       }
       renderItem={({ item }) => (
