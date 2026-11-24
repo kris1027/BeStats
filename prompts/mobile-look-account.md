@@ -71,7 +71,7 @@ Changed:
 - **`INPUT_CLASS` stays** for the filters sheet's platform search, which is a search box in a sheet, not a form field.
 - **Forgot password's line** keeps the app's own ending, "Open it on this phone.", after core's description, since the link only works on the phone that asked.
 - **The username field's server refusal** now shows under the field; a saved name still shows as an info `Notice`.
-- No simulator pass yet: manual steps 2 to 11 are open.
+- Simulator pass on 2026-11-24 (iPhone 18 Pro, local stack): steps 2 to 10 pass; the full record is slice 7 in docs/scope/scope.md. It found two layout faults, fixed on the branch: the end of About, Change password and Delete account sat under the floating tab bar (now `contentInsetAdjustmentBehavior="automatic"`, as Home and the grids), and a wrapped `ChevronRow` label pushed its chevron into the edge at the largest text size (the label now shrinks). Step 11 (the web unchanged) is covered by the web's tests only; the production website is off.
 
 ## Security considerations
 

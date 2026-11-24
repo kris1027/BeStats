@@ -38,10 +38,10 @@ export function ChevronRow({
       <GlassPlate
         plate="panel"
         radius={lengthToken("radius-panel")}
-        className="min-h-11 flex-row items-center justify-between px-5 py-4"
+        className="min-h-11 flex-row items-center justify-between gap-3 px-5 py-4"
       >
         <Text
-          className={`text-base font-semibold ${
+          className={`flex-1 text-base font-semibold ${
             tone === "destructive" ? "text-destructive" : "text-foreground"
           }`}
         >

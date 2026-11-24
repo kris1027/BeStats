@@ -51,7 +51,13 @@ const IGDB_LOGO_SIZE = { height: 14, width: (14 * 114) / 55 };
  */
 export function AboutScreen() {
   return (
-    <ScrollView className="flex-1" contentContainerClassName="gap-4 px-4 py-6">
+    <ScrollView
+      className="flex-1"
+      contentContainerClassName="gap-4 px-4 py-6"
+      // The tab bar floats over the screen, so UIKit insets the end of the
+      // page above it; without this the credit line sits under the bar.
+      contentInsetAdjustmentBehavior="automatic"
+    >
       <Panel>
         <Text className="text-3xl font-bold text-foreground">BeStats</Text>
         <Text className="text-text-secondary">Version {appVersion()}</Text>

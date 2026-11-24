@@ -92,6 +92,7 @@ export function ChangePasswordScreen() {
       />
       <ScrollView
         contentContainerClassName="gap-5 px-4 py-6"
+        contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
       >
         <Text className="text-sm text-muted-foreground">

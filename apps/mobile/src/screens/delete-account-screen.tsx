@@ -99,6 +99,7 @@ export function DeleteAccountScreen() {
       />
       <ScrollView
         contentContainerClassName="gap-5 px-4 py-6"
+        contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
       >
         <GlassPanel>
