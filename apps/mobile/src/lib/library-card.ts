@@ -88,7 +88,14 @@ function personalScore(value: number | null): CardBadge | null {
 }
 
 /** Core's pill words as the card draws them: Date TBA prints its own text. */
-function cardPill(pill: CardPillText): CardPill {
+/**
+ * A core pill as a card draws it: Date TBA prints short and is heard in full.
+ * The library cards and the catalog cards' own marks
+ * (prompts/mobile-look-card-actions.md, decision 9) share it, so the two
+ * never print a different pill for the same date (AGENTS.md section 9, UTC
+ * days).
+ */
+export function cardPill(pill: CardPillText): CardPill {
   return pill.kind === "tba"
     ? { text: UPCOMING_MESSAGES.dateTba, label: pill.label }
     : { text: pill.text, label: pill.label };

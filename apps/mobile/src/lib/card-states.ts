@@ -30,12 +30,18 @@ const CARD_STATE_STALE_MS = 60_000;
 export const cardStatesKey = (type: TitleType, ids: readonly number[]) =>
   [PRIVATE_QUERY_ROOT, "titles", "cards", type, idsKey(ids)] as const;
 
-/** The ids in fixed slices of `CARD_STATE_CHUNK`, in screen order. */
+/**
+ * The ids in fixed slices of `CARD_STATE_CHUNK` by screen position, each
+ * slice without repeats. Slicing before removing repeats keeps every earlier
+ * slice's key the same when a later page brings a title already shown, so
+ * loading a page never reads an earlier one again
+ * (prompts/mobile-look-card-actions.md, R6; AGENTS.md section 12, rate
+ * limits). A title on two pages is read twice, which costs nothing extra.
+ */
 export function cardStateChunks(ids: readonly number[]): number[][] {
-  const unique = [...new Set(ids)];
   const chunks: number[][] = [];
-  for (let start = 0; start < unique.length; start += CARD_STATE_CHUNK) {
-    chunks.push(unique.slice(start, start + CARD_STATE_CHUNK));
+  for (let start = 0; start < ids.length; start += CARD_STATE_CHUNK) {
+    chunks.push([...new Set(ids.slice(start, start + CARD_STATE_CHUNK))]);
   }
   return chunks;
 }
@@ -93,20 +99,19 @@ export function useCardStates(
 
 /**
  * One card's state, read from the title's own key that `useCardStates`
- * seeded. It reads by itself only once its batch has answered (`known`), so
- * a screen of cards never sends one request per card; after a write
- * invalidates the key, this is what reads the confirmed state again.
- * Undefined while unknown, signed out or unreadable.
+ * seeded; a card asks for it only once its batch has answered. The seed
+ * never goes stale for a card (`staleTime: Infinity`), so a card scrolling
+ * back into view, a refocus or a reconnect never reads one title by itself:
+ * the batch read keeps the seeds fresh, one request per page
+ * (prompts/mobile-look-card-actions.md, R6). A write still invalidates the
+ * key, and invalidation refetches a mounted card whatever its `staleTime`,
+ * so the card then shows the confirmed state (AGENTS.md section 11, no false
+ * success). Undefined while signed out or unreadable.
  */
-export function useCardState<T extends TitleType>(
-  type: T,
-  id: number,
-  known: boolean,
-) {
+export function useCardState<T extends TitleType>(type: T, id: number) {
   return useQuery({
     queryKey: trackingKeys.title(type, id),
     queryFn: () => fetchTitleState(type, id),
-    enabled: known,
-    staleTime: CARD_STATE_STALE_MS,
+    staleTime: Number.POSITIVE_INFINITY,
   }).data;
 }

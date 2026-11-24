@@ -190,14 +190,15 @@ export function PosterCard(props: Props) {
 /** Runs the menu's writes against the card's own title key. */
 function MovieCard(props: Props) {
   const { item } = props;
-  const state = useCardState("movie", item.id, true);
+  const state = useCardState("movie", item.id);
   const write = useMovieWrite(item.id);
   if (!state) return <PosterCardView {...props} />;
-  const menu = movieCardMenu(state, item.releaseDate, todayUtc(new Date()));
+  const today = todayUtc(new Date());
+  const menu = movieCardMenu(state, item.releaseDate, today);
   return (
     <PosterCardView
       {...props}
-      marks={movieCardMarks(state)}
+      marks={movieCardMarks(state, item.releaseDate, today)}
       menu={menu.map((entry) => ({
         ...entry,
         onPress: () => write.mutate(entry.write),
@@ -208,7 +209,7 @@ function MovieCard(props: Props) {
 
 function ShowCard(props: Props) {
   const { item } = props;
-  const state = useCardState("tv", item.id, true);
+  const state = useCardState("tv", item.id);
   const toggle = useShowTrackingWrite(item.id, item.title);
   if (!state) return <PosterCardView {...props} />;
   return (
@@ -225,14 +226,15 @@ function ShowCard(props: Props) {
 
 function GameCard(props: Props) {
   const { item } = props;
-  const state = useCardState("game", item.id, true);
+  const state = useCardState("game", item.id);
   const write = useGameWrite(item.id);
   if (!state) return <PosterCardView {...props} />;
-  const menu = gameCardMenu(state, item.releaseDate, todayUtc(new Date()));
+  const today = todayUtc(new Date());
+  const menu = gameCardMenu(state, item.releaseDate, today);
   return (
     <PosterCardView
       {...props}
-      marks={gameCardMarks(state)}
+      marks={gameCardMarks(state, item.releaseDate, today)}
       menu={menu.map((entry) => ({
         ...entry,
         onPress: () => write.mutate(entry.write),
@@ -271,13 +273,16 @@ function PosterCardView({
   menu,
 }: Props & { marks?: CardMarks; menu?: MenuEntry[] }) {
   const rating = communityRatingText(type, item.communityRating);
-  const pill = marks?.pill ?? dateLabel ?? null;
+  // The user's own pill wins: a game's status, or a release date the row's
+  // own date label would only repeat.
+  const pill = marks?.pill?.text ?? dateLabel ?? null;
+  const community = marks?.community ?? true;
   const label = [
     item.title,
     item.year,
-    pill,
-    rating,
-    ...(marks?.words.filter((word) => word !== pill) ?? []),
+    marks?.pill?.label ?? pill,
+    community ? rating : null,
+    ...(marks?.words ?? []),
   ]
     .filter(Boolean)
     .join(", ");
@@ -312,7 +317,7 @@ function PosterCardView({
           <View style={{ position: "absolute", top: INSET, left: INSET }}>
             <PersonalScoreBadge value={marks.score} />
           </View>
-        ) : item.communityRating !== null ? (
+        ) : community && item.communityRating !== null ? (
           <View style={{ position: "absolute", top: INSET, left: INSET }}>
             <CommunityRatingBadge
               source={CATALOG_SOURCES[type]}

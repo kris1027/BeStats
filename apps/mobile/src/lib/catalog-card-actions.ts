@@ -3,11 +3,17 @@ import type {
   V1MovieTitleState,
   V1ShowTitleState,
 } from "@bestats/core/api/v1/titles";
-import { isGameReleased } from "@bestats/core/catalog/game-page";
-import { isMovieReleased } from "@bestats/core/catalog/movie-page";
-import { formatPersonalScore } from "@bestats/core/format";
 import {
-  canHoldScore,
+  gameCardStatus,
+  isGameReleased,
+} from "@bestats/core/catalog/game-page";
+import { releasePillText } from "@bestats/core/catalog/library-card";
+import {
+  isMovieReleased,
+  movieCardStatus,
+} from "@bestats/core/catalog/movie-page";
+import { formatPersonalScore, formatReleaseDate } from "@bestats/core/format";
+import {
   type GameIntent,
   isGameStatusHeldBack,
 } from "@bestats/core/tracking/game-intent";
@@ -20,6 +26,7 @@ import {
   SHOW_TRACKING_COPY,
 } from "@bestats/core/tracking/messages";
 
+import { type CardPill, cardPill } from "./library-card";
 import type { MovieWrite } from "./title-writes";
 
 const MENU = CATALOG_CARD_ACTION_LABELS.menu;
@@ -42,14 +49,18 @@ export type CardMenuItem<TWrite> = {
 /**
  * What a card shows of the user's own state (decision 9), the web card's
  * slots: the green bookmark at the top right, the Watched mark at the bottom
- * right, the cyan score in place of the community pill, and a game's status
- * pill at the bottom. `words` is what a screen reader hears for it.
+ * right, the cyan score in place of the community pill, no community pill on
+ * an Upcoming movie (the web's `CardRatingBadge`), and the pill at the
+ * bottom: a game's status, or the release date of an Upcoming movie or an
+ * unreleased Want to play game. `words` is what a screen reader hears for
+ * the marks besides the pill.
  */
 export type CardMarks = {
   planned: boolean;
   watched: boolean;
   score: number | null;
-  pill: string | null;
+  community: boolean;
+  pill: CardPill | null;
   words: string[];
 };
 
@@ -57,6 +68,11 @@ function scoreWords(score: number | null): string[] {
   return score === null
     ? []
     : [`${LIBRARY_CARD_MESSAGES.yourScore} ${formatPersonalScore(score)}`];
+}
+
+/** The release pill, from core's `releasePillText`, as the library cards draw it. */
+function releasePill(releaseDate: string | null, today: string): CardPill {
+  return cardPill(releasePillText(formatReleaseDate(releaseDate, today)));
 }
 
 /**
@@ -97,15 +113,38 @@ export function movieCardMenu(
   ];
 }
 
-/** A movie card's marks, read from the same state as the movie screen. */
-export function movieCardMarks(state: V1MovieTitleState): CardMarks {
-  const watched = state.watchedAt !== null;
-  const score = watched ? state.rating : null;
+/**
+ * A movie card's marks, placed by core's `movieCardStatus` on the same UTC
+ * day as the web's catalog cards, never a copy (apps/mobile/AGENTS.md, BeStats
+ * rules; AGENTS.md section 9), so a card shows what the movie's library page
+ * shows: the cyan score on a scored watched movie, and on an Upcoming one the
+ * release pill and no TMDB badge.
+ */
+export function movieCardMarks(
+  state: V1MovieTitleState,
+  releaseDate: string | null,
+  today: string,
+): CardMarks {
+  const status = movieCardStatus(
+    {
+      inWatchlist: state.planned,
+      watched: state.watchedAt !== null,
+      rating: state.rating,
+    },
+    releaseDate,
+    today,
+  );
+  const watched = status?.page === "watched";
+  const score = status?.page === "watched" ? status.rating : null;
   return {
     planned: state.planned,
     watched,
     score,
-    pill: null,
+    community: status?.page !== "upcoming",
+    pill:
+      status?.page === "upcoming"
+        ? releasePill(status.releaseDate, today)
+        : null,
     words: [
       ...(state.planned ? [MOVIE_TRACKING_LABELS.planned] : []),
       ...(watched ? [MOVIE_TRACKING_LABELS.watched] : []),
@@ -142,6 +181,7 @@ export function showCardMarks(state: V1ShowTitleState): CardMarks {
     planned: state.tracked,
     watched: false,
     score: null,
+    community: true,
     pill: null,
     words: state.tracked ? [SHOW_TRACKING_COPY.tracking] : [],
   };
@@ -185,25 +225,35 @@ export function gameCardMenu(
 }
 
 /**
- * A game card's marks: the bookmark on Want to play; on Playing or Finished
- * the status pill and, when scored, the cyan score.
+ * A game card's marks, from core's `gameCardStatus`, the web card's rule
+ * (apps/mobile/AGENTS.md, BeStats rules; AGENTS.md section 7): the bookmark
+ * on Want to play, with the release pill while the game is not out; on
+ * Playing or Finished the status pill and, when scored, the cyan score.
  */
-export function gameCardMarks(state: V1GameTitleState): CardMarks {
-  const started = canHoldScore(state.status);
-  const score = started ? state.rating : null;
-  const pill =
-    started && state.status !== null ? GAME_STATUS_LABELS[state.status] : null;
+export function gameCardMarks(
+  state: V1GameTitleState,
+  releaseDate: string | null,
+  today: string,
+): CardMarks {
+  const card = gameCardStatus(state, releaseDate, today);
+  if (card === null || card.status === "want_to_play") {
+    const wanted = card !== null;
+    return {
+      planned: wanted,
+      watched: false,
+      score: null,
+      community: true,
+      pill: card?.unreleased ? releasePill(releaseDate, today) : null,
+      words: wanted ? [GAME_STATUS_LABELS.want_to_play] : [],
+    };
+  }
+  const status = GAME_STATUS_LABELS[card.status];
   return {
-    planned: state.status === "want_to_play",
+    planned: false,
     watched: false,
-    score,
-    pill,
-    words: [
-      ...(state.status === "want_to_play"
-        ? [GAME_STATUS_LABELS.want_to_play]
-        : []),
-      ...(pill ? [pill] : []),
-      ...scoreWords(score),
-    ],
+    score: card.rating,
+    community: true,
+    pill: { text: status, label: status },
+    words: scoreWords(card.rating),
   };
 }
