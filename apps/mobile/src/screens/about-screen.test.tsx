@@ -1,10 +1,14 @@
+import { ICON_KEY_ENTRIES } from "@bestats/core/catalog/icon-key";
 import {
   TMDB_APP_ATTRIBUTION,
   TMDB_ATTRIBUTION,
 } from "@bestats/core/legal/attribution";
 import {
+  CREDIT_LINE_PREFIX,
   IGDB_ATTRIBUTION,
   IGDB_HOME_URL,
+  OPERATOR_GITHUB_URL,
+  OPERATOR_HANDLE,
   PRIVACY_PATH,
   TERMS_PATH,
   TMDB_HOME_URL,
@@ -67,4 +71,26 @@ test("hints name the page each legal link opens", async () => {
     screen.getByRole("link", { name: "Terms of Service" }).props
       .accessibilityHint,
   ).toBe("Opens the Terms of Service in your browser");
+});
+
+/**
+ * covers: prompts/mobile-look-account.md, decision 9 (the web footer's icon
+ * key, in core's words and order, and the credit with the handle linking to
+ * the operator's GitHub profile)
+ */
+test("lists every card mark in the icon key, each read by its label", async () => {
+  await render(<AboutScreen />);
+  expect(screen.getByRole("header", { name: "Icon key" })).toBeOnTheScreen();
+  for (const entry of ICON_KEY_ENTRIES) {
+    expect(screen.getByLabelText(entry.label)).toBeOnTheScreen();
+  }
+});
+
+test("credits the operator, the handle opening their GitHub profile", async () => {
+  await render(<AboutScreen />);
+  expect(
+    screen.getByText(CREDIT_LINE_PREFIX, { exact: false }),
+  ).toBeOnTheScreen();
+  await userEvent.press(screen.getByRole("link", { name: OPERATOR_HANDLE }));
+  expect(Linking.openURL).toHaveBeenLastCalledWith(OPERATOR_GITHUB_URL);
 });
