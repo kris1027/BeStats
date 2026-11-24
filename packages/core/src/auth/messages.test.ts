@@ -148,3 +148,13 @@ describe("signedInAs", () => {
     expect(signedInAs(undefined)).toBe("Signed in");
   });
 });
+
+describe("change password copy", () => {
+  it("states the length the new password rule checks", async () => {
+    const { CHANGE_PASSWORD_COPY } = await import("./messages");
+    const { MINIMUM_PASSWORD_LENGTH } = await import("./schemas");
+    expect(CHANGE_PASSWORD_COPY.description).toContain(
+      `at least ${MINIMUM_PASSWORD_LENGTH} characters`,
+    );
+  });
+});

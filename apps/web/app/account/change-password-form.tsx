@@ -4,6 +4,7 @@ import {
   type AuthActionState,
   IDLE_STATE,
 } from "@bestats/core/auth/action-state";
+import { CHANGE_PASSWORD_COPY } from "@bestats/core/auth/messages";
 import { PASSWORD_HINT } from "@bestats/core/auth/schemas";
 import { useActionState } from "react";
 import {
@@ -38,16 +39,16 @@ function ChangePasswordForm() {
       <SignInAgainLink state={state} />
 
       <AuthField
-        label="Current password"
+        label={CHANGE_PASSWORD_COPY.currentLabel}
         name="currentPassword"
         type="password"
         autoComplete="current-password"
-        placeholder="Enter your current password"
+        placeholder={CHANGE_PASSWORD_COPY.currentPlaceholder}
         error={state.fieldErrors?.currentPassword}
       />
 
       <AuthField
-        label="New password"
+        label={CHANGE_PASSWORD_COPY.newLabel}
         name="password"
         type="password"
         autoComplete="new-password"
@@ -56,11 +57,11 @@ function ChangePasswordForm() {
       />
 
       <AuthField
-        label="Confirm new password"
+        label={CHANGE_PASSWORD_COPY.confirmLabel}
         name="confirmPassword"
         type="password"
         autoComplete="new-password"
-        placeholder="Type it again"
+        placeholder={CHANGE_PASSWORD_COPY.confirmPlaceholder}
         error={state.fieldErrors?.confirmPassword}
       />
 
@@ -69,8 +70,8 @@ function ChangePasswordForm() {
        * Save username; with no spare height `mt-auto` is zero.
        */}
       <div className="mt-auto">
-        <AuthSubmitButton pendingLabel="Saving…">
-          Change password
+        <AuthSubmitButton pendingLabel={CHANGE_PASSWORD_COPY.pending}>
+          {CHANGE_PASSWORD_COPY.button}
         </AuthSubmitButton>
       </div>
     </form>

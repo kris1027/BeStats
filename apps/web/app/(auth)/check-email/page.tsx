@@ -1,3 +1,4 @@
+import { AUTH_PANEL_COPY } from "@bestats/core/auth/messages";
 import { isSafeNextPath } from "@bestats/core/auth/next-path";
 import { emailSchema } from "@bestats/core/auth/schemas";
 import type { Metadata } from "next";
@@ -28,8 +29,8 @@ export default function CheckEmailPage({
 }: PageProps<"/check-email">) {
   return (
     <AuthPanel
-      title="Check your email"
-      description="If that address needed confirming, a link is on its way. Open it to finish setting up your account."
+      title={AUTH_PANEL_COPY.checkEmail.title}
+      description={AUTH_PANEL_COPY.checkEmail.description}
       footer={
         <Link
           href="/sign-in"

@@ -1,4 +1,7 @@
-import { RECOVERY_UNAVAILABLE_MESSAGE } from "@bestats/core/auth/messages";
+import {
+  AUTH_PANEL_COPY,
+  RECOVERY_UNAVAILABLE_MESSAGE,
+} from "@bestats/core/auth/messages";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AuthPanel } from "@/components/auth/auth-panel";
@@ -28,7 +31,7 @@ export default function ResetPasswordPage() {
   if (getAuthEmailDelivery() === "off") {
     return (
       <AuthPanel
-        title="Set a new password"
+        title={AUTH_PANEL_COPY.resetPassword.title}
         description={RECOVERY_UNAVAILABLE_MESSAGE}
         footer={
           <Link
@@ -46,8 +49,8 @@ export default function ResetPasswordPage() {
 
   return (
     <AuthPanel
-      title="Set a new password"
-      description="Choose a new password for your account. Saving it signs you out everywhere, then you sign in with the new one."
+      title={AUTH_PANEL_COPY.resetPassword.title}
+      description={AUTH_PANEL_COPY.resetPassword.description}
     >
       <ResetPasswordForm />
     </AuthPanel>

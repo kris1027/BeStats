@@ -1,7 +1,10 @@
 import { TMDB_APP_ATTRIBUTION } from "@bestats/core/legal/attribution";
 import {
+  CREDIT_LINE_PREFIX,
   IGDB_ATTRIBUTION,
   IGDB_HOME_URL,
+  OPERATOR_GITHUB_URL,
+  OPERATOR_HANDLE,
   PRIVACY_LABEL,
   PRIVACY_PATH,
   TERMS_LABEL,
@@ -13,6 +16,8 @@ import * as Linking from "expo-linking";
 import type { ReactNode } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { ChevronRow } from "@/components/chevron-row";
+import { GlassPanel } from "@/components/glass-panel";
+import { IconKey } from "@/components/icon-key";
 import { Text } from "@/components/text";
 import { appVersion } from "@/lib/api";
 import { getPublicEnv } from "@/lib/env";
@@ -39,15 +44,26 @@ const IGDB_LOGO_SIZE = { height: 14, width: (14 * 114) / 55 };
  * terms require (worded for an application), then IGDB's logo and credit,
  * all from core. Each logo opens its site. Below them, the Privacy Policy and
  * Terms of Service open in the phone's browser
- * (prompts/mobile-about-legal-links.md).
+ * (prompts/mobile-about-legal-links.md). The icon key sits under the version
+ * and the credit line at the end, as in the web's footer
+ * (prompts/mobile-look-account.md, decision 9).
  * Public, like the catalog it credits, so it needs no session.
  */
 export function AboutScreen() {
   return (
-    <ScrollView className="flex-1" contentContainerClassName="gap-4 px-4 py-6">
+    <ScrollView
+      className="flex-1"
+      contentContainerClassName="gap-4 px-4 py-6"
+      // The tab bar floats over the screen, so UIKit insets the end of the
+      // page above it; without this the credit line sits under the bar.
+      contentInsetAdjustmentBehavior="automatic"
+    >
       <Panel>
         <Text className="text-3xl font-bold text-foreground">BeStats</Text>
         <Text className="text-text-secondary">Version {appVersion()}</Text>
+      </Panel>
+      <Panel>
+        <IconKey />
       </Panel>
       <Panel>
         <LogoLink
@@ -73,6 +89,7 @@ export function AboutScreen() {
       </Panel>
       <LegalLink path={PRIVACY_PATH} label={PRIVACY_LABEL} />
       <LegalLink path={TERMS_PATH} label={TERMS_LABEL} />
+      <Credit />
     </ScrollView>
   );
 }
@@ -96,10 +113,34 @@ function LegalLink({ path, label }: { path: string; label: string }) {
   );
 }
 
+/** About's panels: the shared glass panel at About's tighter spacing. */
 function Panel({ children }: { children: ReactNode }) {
+  return <GlassPanel className="gap-3 p-5">{children}</GlassPanel>;
+}
+
+/**
+ * The credit line, the web footer's: core's words, then the handle as a link
+ * to the operator's GitHub profile, as every mention of it is
+ * (`legal/operator.ts`). On a phone the link gets the full 44pt tap area
+ * (prompts/mobile-look-account.md, decision 9).
+ */
+function Credit() {
   return (
-    <View className="gap-3 rounded-3xl border border-border bg-glass-plate-panel p-5">
-      {children}
+    <View className="flex-row flex-wrap items-center justify-center px-1">
+      <Text className="text-xs text-muted-foreground">
+        {CREDIT_LINE_PREFIX}{" "}
+      </Text>
+      <Pressable
+        accessibilityRole="link"
+        accessibilityLabel={OPERATOR_HANDLE}
+        accessibilityHint="Opens github.com in your browser"
+        onPress={() => Linking.openURL(OPERATOR_GITHUB_URL)}
+        className="min-h-11 justify-center"
+      >
+        <Text className="text-xs font-semibold text-foreground underline">
+          {OPERATOR_HANDLE}
+        </Text>
+      </Pressable>
     </View>
   );
 }

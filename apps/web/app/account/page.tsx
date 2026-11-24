@@ -5,6 +5,7 @@ import {
   ACCOUNT_NOTICES,
   AUTH_OUTCOME,
   authMessage,
+  CHANGE_PASSWORD_COPY,
   DELETE_ACCOUNT_COPY,
 } from "@bestats/core/auth/messages";
 import {
@@ -184,10 +185,10 @@ export default async function AccountPage({
         <section className={cn(PANEL, "gap-6", RIGHT_COLUMN)}>
           <header className="flex flex-col gap-2">
             <h2 className="text-xl leading-tight font-bold text-foreground">
-              Change password
+              {CHANGE_PASSWORD_COPY.heading}
             </h2>
             <p className="text-sm text-muted-foreground">
-              Your new password needs at least 8 characters.
+              {CHANGE_PASSWORD_COPY.description}
             </p>
           </header>
 

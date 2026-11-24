@@ -69,6 +69,9 @@ export const SEARCH_SCREEN_OPTIONS = largeTitleScreenOptions("Search");
 /** Library's header (prompts/mobile-look-library.md, decision 7). */
 export const LIBRARY_SCREEN_OPTIONS = largeTitleScreenOptions("Library");
 
+/** Account's header (prompts/mobile-look-account.md, decision 7). */
+export const ACCOUNT_SCREEN_OPTIONS = largeTitleScreenOptions("Account");
+
 /**
  * Draws the still page background under each screen of a stack, so no
  * screen paints its own (apps/mobile/AGENTS.md, Styling).

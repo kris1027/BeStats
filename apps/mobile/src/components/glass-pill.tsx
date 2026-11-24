@@ -59,12 +59,22 @@ export function GlassPill({
   );
 }
 
-/** The filled star a rating pill leads with, amber or cyan by whose it is. */
-export function RatingStar({ tone }: { tone: "community" | "personal" }) {
+/**
+ * The filled star a rating pill leads with, amber or cyan by whose it is, so
+ * the two ratings stay visibly distinct (AGENTS.md section 9). 14pt in a
+ * pill; the icon key draws it at its own size, beside the other marks.
+ */
+export function RatingStar({
+  tone,
+  size = 14,
+}: {
+  tone: "community" | "personal";
+  size?: number;
+}) {
   const color = tokenColor(
     tone === "community" ? "color-rating-tmdb" : "color-score-personal",
   );
-  return <StarIcon size={14} color={color} fill={color} />;
+  return <StarIcon size={size} color={color} fill={color} />;
 }
 
 /**

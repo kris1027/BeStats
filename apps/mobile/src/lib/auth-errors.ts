@@ -1,5 +1,14 @@
+import {
+  type AuthActionState,
+  failure,
+  passwordFieldFor,
+} from "@bestats/core/auth/action-state";
 import { classifyAuthFailure } from "@bestats/core/auth/auth-error";
-import { AUTH_MESSAGES, AUTH_OUTCOME } from "@bestats/core/auth/messages";
+import {
+  AUTH_MESSAGES,
+  AUTH_OUTCOME,
+  type AuthOutcome,
+} from "@bestats/core/auth/messages";
 import {
   type AuthError,
   isAuthSessionMissingError,
@@ -15,13 +24,35 @@ import {
  * unexpected.
  */
 export function authErrorMessage(error: AuthError | null): string {
-  if (!error) return AUTH_MESSAGES[AUTH_OUTCOME.unexpected];
-  return AUTH_MESSAGES[
-    classifyAuthFailure({
-      code: error.code,
-      status: error.status,
-      reasons: isAuthWeakPasswordError(error) ? error.reasons : undefined,
-      sessionMissing: isAuthSessionMissingError(error),
-    })
-  ];
+  return AUTH_MESSAGES[authErrorOutcome(error)];
+}
+
+/**
+ * The classified outcome behind `authErrorMessage`, for a form that marks a
+ * field as well as saying why: a password rule refusal belongs to the
+ * password field, a wrong current password to its field, and nothing else
+ * marks one (core's `passwordFieldFor`; prompts/mobile-look-account.md,
+ * decision 2). Like `authErrorMessage`, only the classified facts leave the
+ * raw error (AGENTS.md section 11).
+ */
+export function authErrorOutcome(error: AuthError | null): AuthOutcome {
+  if (!error) return AUTH_OUTCOME.unexpected;
+  return classifyAuthFailure({
+    code: error.code,
+    status: error.status,
+    reasons: isAuthWeakPasswordError(error) ? error.reasons : undefined,
+    sessionMissing: isAuthSessionMissingError(error),
+  });
+}
+
+/**
+ * The form state for a Supabase Auth refusal of a new password (sign up,
+ * reset, Change password): its words, and the password field marked when the
+ * refusal is about the password, so the three forms mark what the web's
+ * actions mark (core's `passwordFieldFor`; AGENTS.md section 11). Sign in and
+ * Forgot password keep their own reading, since neither may mark a field.
+ */
+export function newPasswordFailure(error: AuthError): AuthActionState {
+  const outcome = authErrorOutcome(error);
+  return failure(outcome, passwordFieldFor(outcome));
 }

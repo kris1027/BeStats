@@ -35,6 +35,14 @@ export const emailSchema = z
 export const PASSWORD_HINT = `At least ${MINIMUM_PASSWORD_LENGTH} characters`;
 
 /**
+ * `PASSWORD_HINT` as a sentence, for the app, which shows it under the field
+ * and reads it after the field's error, where the web shows the bare hint as
+ * a placeholder; one constant, so the three password fields never differ
+ * (AGENTS.md section 5).
+ */
+export const PASSWORD_HINT_SENTENCE = `${PASSWORD_HINT}.`;
+
+/**
  * A password being set or changed.
  *
  * Length only. Composition rules (a digit, a symbol) push people towards

@@ -1,6 +1,7 @@
 import {
   AUTH_MESSAGES,
   AUTH_OUTCOME,
+  AUTH_PANEL_COPY,
   RECOVERY_UNAVAILABLE_MESSAGE,
   RESET_REQUESTED_MESSAGE,
   SIGN_IN_NOTICE,
@@ -16,7 +17,9 @@ import { Text } from "@/components/text";
 /**
  * covers: spec 0033, AC-16 and child 0036 (Password reset and deep links);
  * prompts/mobile-deep-links.md decisions 6 to 8; spec 0018, AC-13 (no
- * recovery while no email is sent); AGENTS.md section 11 (no false success).
+ * recovery while no email is sent); AGENTS.md section 11 (no false success);
+ * prompts/mobile-look-account.md, decisions 4 and 5 (the web's heading and
+ * line, the eye, the error under its field).
  */
 let mockDelivery: "on" | "off" = "on";
 jest.mock("@/lib/env", () => ({
@@ -188,6 +191,34 @@ describe("/reset-password/app", () => {
       password: "a new long password",
     });
     expect(mockSignOut).toHaveBeenCalledTimes(1);
+  });
+
+  it("opens with the web's heading and line, the eye and the field's own error", async () => {
+    mockExchange.mockResolvedValue({ data: {}, error: null });
+    await open("/reset-password/app?code=abc");
+
+    const field = await screen.findByLabelText("New password");
+    expect(
+      screen.getByRole("header", { name: AUTH_PANEL_COPY.resetPassword.title }),
+    ).toBeOnTheScreen();
+    expect(
+      screen.getByText(AUTH_PANEL_COPY.resetPassword.description),
+    ).toBeOnTheScreen();
+
+    const user = userEvent.setup();
+    await user.type(field, "short");
+    expect(field.props.secureTextEntry).toBe(true);
+    await user.press(screen.getByRole("button", { name: "Show password" }));
+    expect(screen.getByLabelText("New password").props.secureTextEntry).toBe(
+      false,
+    );
+
+    await user.press(screen.getByRole("button", { name: "Set new password" }));
+    const tooShort = AUTH_MESSAGES[AUTH_OUTCOME.passwordTooShort];
+    expect(
+      (await screen.findByLabelText("New password")).props.accessibilityHint,
+    ).toContain(tooShort);
+    expect(mockUpdateUser).not.toHaveBeenCalled();
   });
 
   it("shows the invalid link message for a used or foreign code", async () => {

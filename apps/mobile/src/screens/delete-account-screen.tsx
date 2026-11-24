@@ -10,20 +10,26 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  View,
 } from "react-native";
 import { LoadingState, SignedOutState } from "@/components/centered-state";
-import { FormField, INPUT_CLASS } from "@/components/form-field";
+import { FormField } from "@/components/form-field";
 import { GlassButton } from "@/components/glass-button";
+import { GlassPanel } from "@/components/glass-panel";
+import { TriangleAlertIcon } from "@/components/icons";
 import { Notice } from "@/components/notice";
-import { Text, TextInput } from "@/components/text";
+import { Text } from "@/components/text";
 import { useToast } from "@/components/toast";
 import { deleteOwnAccount } from "@/lib/account";
 import { ApiError } from "@/lib/api";
 import { useSession } from "@/lib/session";
+import { tokenColor } from "@/theme/token-vars";
 
 /**
  * Delete account (spec 0033, child 0036; AC-12;
- * prompts/mobile-account-deletion.md, decision 6).
+ * prompts/mobile-account-deletion.md, decision 6), restyled as the web's
+ * Delete section: the warning on a glass panel under the heading in the
+ * destructive colour (prompts/mobile-look-account.md, decision 8).
  *
  * The button stays disabled until the field holds exactly `DELETE`, the rule
  * the server checks again. While the call runs the screen ignores Back: the
@@ -93,24 +99,41 @@ export function DeleteAccountScreen() {
       />
       <ScrollView
         contentContainerClassName="gap-5 px-4 py-6"
+        contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
       >
-        <Text className="text-base text-text-secondary">
-          {DELETE_ACCOUNT_COPY.warning}
-        </Text>
-        <FormField label={DELETE_ACCOUNT_COPY.confirmLabel}>
-          <TextInput
-            accessibilityLabel={DELETE_ACCOUNT_COPY.confirmLabel}
-            value={typed}
-            onChangeText={setTyped}
-            editable={!busy}
-            autoCapitalize="characters"
-            autoCorrect={false}
-            autoComplete="off"
-            spellCheck={false}
-            className={INPUT_CLASS}
-          />
-        </FormField>
+        <GlassPanel>
+          <View className="flex-row items-center gap-3">
+            <View
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            >
+              <TriangleAlertIcon
+                size={22}
+                color={tokenColor("color-destructive")}
+              />
+            </View>
+            <Text
+              accessibilityRole="header"
+              className="flex-1 text-xl font-bold text-destructive"
+            >
+              {DELETE_ACCOUNT_COPY.heading}
+            </Text>
+          </View>
+          <Text className="text-[15px] text-text-secondary">
+            {DELETE_ACCOUNT_COPY.warning}
+          </Text>
+        </GlassPanel>
+        <FormField
+          label={DELETE_ACCOUNT_COPY.confirmLabel}
+          value={typed}
+          onChangeText={setTyped}
+          editable={!busy}
+          autoCapitalize="characters"
+          autoCorrect={false}
+          autoComplete="off"
+          spellCheck={false}
+        />
         {error ? <Notice tone="error" message={error} /> : null}
         <GlassButton
           variant="destructive"

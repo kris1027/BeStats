@@ -1,19 +1,30 @@
 import {
+  type AuthActionState,
+  failure,
+  fromZodError,
+  IDLE_STATE,
+} from "@bestats/core/auth/action-state";
+import {
   AUTH_MESSAGES,
   AUTH_OUTCOME,
+  AUTH_PANEL_COPY,
+  CHANGE_PASSWORD_COPY,
   RECOVERY_UNAVAILABLE_MESSAGE,
   SIGN_IN_NOTICE,
 } from "@bestats/core/auth/messages";
-import { PASSWORD_HINT, resetPasswordSchema } from "@bestats/core/auth/schemas";
+import {
+  PASSWORD_HINT_SENTENCE,
+  resetPasswordSchema,
+} from "@bestats/core/auth/schemas";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { KeyboardAvoidingView, Platform, View } from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
+import { AuthIntro } from "@/components/auth-intro";
 import { LoadingState } from "@/components/centered-state";
-import { FormField, INPUT_CLASS } from "@/components/form-field";
+import { FormAlert, FormField } from "@/components/form-field";
 import { GlassButton } from "@/components/glass-button";
 import { Notice } from "@/components/notice";
-import { TextInput } from "@/components/text";
-import { authErrorMessage } from "@/lib/auth-errors";
+import { newPasswordFailure } from "@/lib/auth-errors";
 import { getPublicEnv } from "@/lib/env";
 import { useSession } from "@/lib/session";
 import { getSupabase } from "@/lib/supabase";
@@ -39,7 +50,7 @@ export default function AppResetPassword() {
   const { signOut } = useSession();
   const [link, setLink] = useState<LinkState>("checking");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [state, setState] = useState<AuthActionState>(IDLE_STATE);
   const [busy, setBusy] = useState(false);
   const exchanged = useRef(false);
 
@@ -60,7 +71,12 @@ export default function AppResetPassword() {
   if (delivery === "off") {
     return (
       <View className="flex-1 gap-5 px-4 pt-6">
-        <Notice message={RECOVERY_UNAVAILABLE_MESSAGE} />
+        <AuthIntro
+          copy={{
+            title: AUTH_PANEL_COPY.resetPassword.title,
+            description: RECOVERY_UNAVAILABLE_MESSAGE,
+          }}
+        />
       </View>
     );
   }
@@ -84,13 +100,10 @@ export default function AppResetPassword() {
   }
 
   async function submit() {
-    setError(null);
+    setState(IDLE_STATE);
     const parsed = resetPasswordSchema.safeParse({ password });
     if (!parsed.success) {
-      setError(
-        parsed.error.issues[0]?.message ??
-          AUTH_MESSAGES[AUTH_OUTCOME.invalidInput],
-      );
+      setState(fromZodError(parsed.error));
       return;
     }
     setBusy(true);
@@ -99,11 +112,11 @@ export default function AppResetPassword() {
         password: parsed.data.password,
       });
       if (authError) {
-        setError(authErrorMessage(authError));
+        setState(newPasswordFailure(authError));
         return;
       }
     } catch {
-      setError(authErrorMessage(null));
+      setState(failure(AUTH_OUTCOME.unexpected));
       return;
     } finally {
       setBusy(false);
@@ -122,29 +135,31 @@ export default function AppResetPassword() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       className="flex-1"
     >
-      <View className="gap-5 px-4 pt-6">
-        <Notice message="Choose a new password for your account. Saving it signs you out everywhere, then you sign in with the new one." />
-        <FormField label="New password" hint={`${PASSWORD_HINT}.`}>
-          <TextInput
-            accessibilityLabel="New password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoComplete="new-password"
-            textContentType="newPassword"
-            returnKeyType="go"
-            onSubmitEditing={submit}
-            className={INPUT_CLASS}
-          />
-        </FormField>
-        {error ? <Notice tone="error" message={error} /> : null}
+      <ScrollView
+        contentContainerClassName="gap-5 px-4 py-6"
+        keyboardShouldPersistTaps="handled"
+      >
+        <AuthIntro copy={AUTH_PANEL_COPY.resetPassword} />
+        <FormField
+          label={CHANGE_PASSWORD_COPY.newLabel}
+          hint={PASSWORD_HINT_SENTENCE}
+          secure
+          value={password}
+          onChangeText={setPassword}
+          error={state.fieldErrors?.password}
+          autoComplete="new-password"
+          textContentType="newPassword"
+          returnKeyType="go"
+          onSubmitEditing={submit}
+        />
+        <FormAlert state={state} />
         <GlassButton
           variant="primary"
           label="Set new password"
           busy={busy}
           onPress={submit}
         />
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }

@@ -1,8 +1,10 @@
+import { CHANGE_PASSWORD_COPY } from "@bestats/core/auth/messages";
 import { Stack, ThemeProvider, useTheme } from "expo-router";
 import { View } from "react-native";
 
 import { PageBackground } from "@/components/page-background";
 import {
+  ACCOUNT_SCREEN_OPTIONS,
   LIBRARY_SCREEN_OPTIONS,
   SEARCH_SCREEN_OPTIONS,
   STACK_SCREEN_OPTIONS,
@@ -10,10 +12,10 @@ import {
 } from "@/theme/stack-options";
 
 /**
- * Search and Library, the large title screens, have no background layer of
- * their own (`tabScreenLayout`).
+ * Search, Library and Account, the large title screens, have no background
+ * layer of their own (`tabScreenLayout`).
  */
-const TAB_SCREEN_LAYOUT = tabScreenLayout(["search", "library"]);
+const TAB_SCREEN_LAYOUT = tabScreenLayout(["search", "library", "account"]);
 
 /**
  * Each tab's first screen. The four tabs share this folder, so a movie,
@@ -32,7 +34,7 @@ export const unstable_settings = {
  * The stack inside every tab (prompts/mobile-app-shell-catalog.md, decision
  * 3). Each tab root sets its own title; title screens set theirs once their
  * data loads. The stack draws the still background once behind its screens
- * for Search and Library, whose screens have none of their own so their
+ * for Search, Library and Account, whose screens have none of their own so their
  * large titles can collapse (`tabScreenLayout`); every other screen keeps
  * its own layer.
  */
@@ -59,10 +61,14 @@ export default function TabStack() {
           <Stack.Screen name="index" options={{ title: "BeStats" }} />
           <Stack.Screen name="search" options={SEARCH_SCREEN_OPTIONS} />
           <Stack.Screen name="library" options={LIBRARY_SCREEN_OPTIONS} />
-          <Stack.Screen name="account" options={{ title: "Account" }} />
+          <Stack.Screen name="account" options={ACCOUNT_SCREEN_OPTIONS} />
           <Stack.Screen
             name="account/delete"
             options={{ title: "Delete account" }}
+          />
+          <Stack.Screen
+            name="account/password"
+            options={{ title: CHANGE_PASSWORD_COPY.heading }}
           />
           <Stack.Screen name="account/about" options={{ title: "About" }} />
           <Stack.Screen name="movies/[id]" options={{ title: "" }} />

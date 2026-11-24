@@ -1,3 +1,8 @@
+import {
+  ICON_KEY_ENTRIES,
+  ICON_KEY_LABEL,
+  type IconKeyMark,
+} from "@bestats/core/catalog/icon-key";
 import { StarIcon } from "lucide-react";
 import type * as React from "react";
 
@@ -10,32 +15,25 @@ import {
 } from "@/components/tracking/tracking-icons";
 
 /**
- * Every mark a card can carry, in one fixed order. The icons and meaning
- * colours are the badges' own, so the key can never drift from what the
- * cards show. Each two state mark is listed as a pair, action then done:
- * Plan and Planned, Mark watched and Watched.
+ * The icon for every mark core's `ICON_KEY_ENTRIES` lists, the badges' own
+ * icons and meaning colours, so the key can never drift from what the cards
+ * show. The words and the order live in core, shared with the app's About
+ * (prompts/mobile-look-account.md, decision 6).
  */
-const ENTRIES: ReadonlyArray<{ label: string; icon: React.ReactNode }> = [
-  {
-    label: "TMDB rating",
-    icon: <StarIcon className="size-4 fill-rating-tmdb text-rating-tmdb" />,
-  },
-  {
-    label: "Your score",
-    icon: (
-      <StarIcon className="size-4 fill-score-personal text-score-personal" />
-    ),
-  },
-  { label: "Plan / Want to play", icon: <PlanIcon className="size-4" /> },
-  { label: "Planned / Want to play", icon: <PlannedIcon className="size-4" /> },
-  {
-    label: "Mark watched",
-    icon: <WatchedIcon filled={false} className="size-4" />,
-  },
-  { label: "Watched", icon: <WatchedIcon filled className="size-4" /> },
-  { label: "Next episode", icon: <NextEpisodeIcon className="size-4" /> },
-  { label: "Release date", icon: <CalendarIcon className="size-4" /> },
-];
+const ICONS: Record<IconKeyMark, React.ReactNode> = {
+  communityRating: (
+    <StarIcon className="size-4 fill-rating-tmdb text-rating-tmdb" />
+  ),
+  personalScore: (
+    <StarIcon className="size-4 fill-score-personal text-score-personal" />
+  ),
+  plan: <PlanIcon className="size-4" />,
+  planned: <PlannedIcon className="size-4" />,
+  markWatched: <WatchedIcon filled={false} className="size-4" />,
+  watched: <WatchedIcon filled className="size-4" />,
+  nextEpisode: <NextEpisodeIcon className="size-4" />,
+  releaseDate: <CalendarIcon className="size-4" />,
+};
 
 /**
  * The key to the card marks, centred at the top of the footer on every route
@@ -51,13 +49,13 @@ export function IconKey() {
   return (
     <div className="pt-6 pb-2">
       <ul
-        aria-label="Icon key"
+        aria-label={ICON_KEY_LABEL}
         className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-text-legend"
       >
-        {ENTRIES.map((entry) => (
-          <li key={entry.label} className="flex items-center gap-2">
+        {ICON_KEY_ENTRIES.map((entry) => (
+          <li key={entry.mark} className="flex items-center gap-2">
             <span aria-hidden="true" className="flex">
-              {entry.icon}
+              {ICONS[entry.mark]}
             </span>
             {entry.label}
           </li>
