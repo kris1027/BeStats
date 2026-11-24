@@ -111,6 +111,7 @@ Docs: https://docs.expo.dev/eas/index.md
 - A test that imports the root `_layout.tsx` mocks `../global.css` (`jest.mock("../global.css", () => ({}))`), since Jest cannot parse it.
 - Jest loads lucide's CommonJS build through `moduleNameMapper` in `package.json`; keep that mapping (and its path) when you upgrade lucide.
 - TypeScript 6 loads no global types by default, so `tsconfig.json` lists `jest` and `node` in `types`.
+- NativeWind classes are not compiled to styles under Jest, so `toHaveStyle` never sees a `className`; a test of a layout switch reads the element's `className` instead (`landing-section.test.tsx`).
 
 ## Agent skills
 
