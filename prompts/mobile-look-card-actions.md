@@ -44,7 +44,7 @@ On the app's catalog cards (See all lists, Search results, Home rows and More li
 - `packages/core/src/tracking/messages.ts` (+ test): `CATALOG_CARD_ACTION_LABELS`.
 - `apps/web/components/tracking/card-bookmark-button.tsx`, `card-watched-button.tsx`, `show-card-bookmark-button.tsx`, `game-card-bookmark-button.tsx`: read the core labels.
 - `apps/mobile/src/lib/card-states.ts` (new): `useCardStates`, the batch read and seeding.
-- `apps/mobile/src/lib/catalog-card-actions.ts` (new): `catalogCardActions` (pure: the actions a card offers from its type, state and release date) and `useCatalogCardActions` (the writes and Undos).
+- `apps/mobile/src/lib/catalog-card-actions.ts` (new): the pure menus and marks per type (`movieCardMenu`, `movieCardMarks`, `showCardMenu`, `showCardMarks`, `gameCardMenu`, `gameCardMarks`). The writes and Undos live in `apps/mobile/src/lib/title-writes.ts` (new), shared with the movie, show and game screens, which now use it too (see Changes found while building).
 - `apps/mobile/src/components/poster-card.tsx`: the state marks, `Link.Trigger`, `Link.Menu`, `Link.Preview`, the Android long press and `accessibilityActions`.
 - `apps/mobile/src/components/poster-grid.tsx`, `landing-section.tsx`, `title-extras.tsx`: pass the screen's ids to `useCardStates` and the state to each card.
 - Tests: `src/lib/catalog-card-actions.test.ts`, `src/lib/card-states.test.tsx`, `src/__tests__/poster-card-actions.test.tsx`; the existing screen tests get `/me/titles` answers where a session is present.
@@ -55,7 +55,7 @@ On the app's catalog cards (See all lists, Search results, Home rows and More li
 - R1. A signed in user sees, on every listed surface, each card's own state as in decision 9, matching the title page and the Library tab.
 - R2. Long press on iOS shows the title's preview with the type's menu; tapping an action writes, updates the card at once, and shows the outcome toast; tapping the preview opens the title.
 - R3. On Android a long press opens the alert with the same actions; on both platforms a screen reader reaches the actions as card actions.
-- R4. Each removal (Remove from plan, Remove watched mark, Stop tracking, Remove a game, and Plan on a watched movie, which drops its mark and score) shows Undo, which restores through `postRestore`.
+- R4. Each removal offers Undo like the web (decision 2): whenever the server answers with what it cleared (Remove watched mark on a scored movie, Plan on a watched movie, which drops its mark and score, Stop tracking, Remove a game), Undo restores it through `postRestore`. Remove from plan and Remove watched mark on an unscored movie clear nothing the user would lose, so, as on the web, they show the plain toast.
 - R5. A refused write puts the card back and shows the server's message; offline offers Retry; after a 401 nothing is put back.
 - R6. One `/me/titles` request per loaded page of cards (at most 40 keys), never one per card.
 - R7. Signed out, while loading, or after a failed state read, the card is the plain catalog card with no menu, and taps still open the title.
@@ -104,3 +104,13 @@ On the app's catalog cards (See all lists, Search results, Home rows and More li
 - A signed out or not yet known card now carries the preview too (decision 6 promised it), with no menu.
 - `TitleScroll` sets no header options inside a preview, since Expo Router warns that a previewed screen should not.
 - Expo Router logs "No preloaded screen view to push" when the preview is tapped; the title still opens with a normal push. Left as is; worth a look in the signed in simulator pass.
+- The writes and Undos the plan put in `useCatalogCardActions` went into `lib/title-writes.ts` instead, and the movie, show and game screens moved onto it, so a card action and the same action on the title page share one code path (decision 11).
+- `CardMark` and `CARD_MARK_SIZE` (`components/card-action-button.tsx`) draw the drawn, unpressable marks of decision 9.
+
+## Review fixes (2026-11-24)
+
+- Marks come from core's `movieCardStatus` and `gameCardStatus` (decision 9), with the date pill from core's `releasePillText` through the library card's `cardPill`: an Upcoming planned movie shows its release pill and no TMDB badge, and an unreleased Want to play game its release pill, as the web's cards do (R1).
+- A card's own state query never goes stale (`staleTime: Infinity`), so a card scrolling back into view, a refocus or a reconnect never reads one title by itself; the per page batch keeps the seeds fresh, and a write's invalidation still refetches the card (R6).
+- `cardStateChunks` slices by screen position before removing repeats, so a title shown on two pages never shifts a later page's key.
+- Tests added: `src/lib/card-states.test.tsx` (one read per loaded page, no per card read on an old seed, none signed out; AC-7), the game Want to play and Remove with Undo and the Upcoming movie marks in `poster-card-actions.test.tsx` (AC-5, R1), and a signed in Home test in `catalog-screens.test.tsx`.
+- Kept as decided: Remove from your games is offered on Playing and Finished games too (decision 2, "a game Want to play or Remove"); the web card shows only the status chip there.
