@@ -5,6 +5,7 @@ import {
   v1GenresQuerySchema,
   v1ListParamsSchema,
   v1PageQuerySchema,
+  v1PlatformsSchema,
   v1SearchSchema,
 } from "./browse";
 import { v1LibraryEntrySchema, v1LibraryQuerySchema } from "./library";
@@ -18,6 +19,15 @@ describe("v1PageQuerySchema", () => {
 
   it.each(["0", "", "501", "1.5", "x"])("refuses %j", (value) => {
     expect(v1PageQuerySchema.safeParse(value).success).toBe(false);
+  });
+});
+
+describe("v1PlatformsSchema", () => {
+  it("takes a list of id and name pairs, and refuses a missing list", () => {
+    expect(
+      v1PlatformsSchema.parse({ platforms: [{ id: 6, name: "PC" }] }),
+    ).toEqual({ platforms: [{ id: 6, name: "PC" }] });
+    expect(v1PlatformsSchema.safeParse({}).success).toBe(false);
   });
 });
 

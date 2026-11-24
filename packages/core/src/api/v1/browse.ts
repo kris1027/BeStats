@@ -6,7 +6,7 @@ import { parsePageParam } from "../../catalog/pages";
 
 /**
  * The browse contracts of `/api/v1` (spec 0035, API surface): `/genres`,
- * `/search` and `/lists/{type}/{list}`. They answer the same reads the web's
+ * `/platforms`, `/search` and `/lists/{type}/{list}`. They answer the same reads the web's
  * `/search` page and list pages make, so a page in the app holds what the
  * same page on the web holds. Pages are the web's 24 title grid pages, so app
  * page N is web page N (prompts/mobile-api-v1.md, decided for 4d).
@@ -51,6 +51,19 @@ export const v1GenresSchema = z.object({
 });
 
 export type V1Genres = z.infer<typeof v1GenresSchema>;
+
+/**
+ * `GET /api/v1/platforms`: IGDB's platforms, the ids a games search's
+ * `platform` param takes (spec 0029, AC-10), from the same cached list the
+ * web's filter bar and the search parser read, so an id the app sends is one
+ * the parser accepts (prompts/mobile-look-search.md, decision 4). Its own
+ * route so the genres contract stays as the app already reads it.
+ */
+export const v1PlatformsSchema = z.object({
+  platforms: z.array(z.object({ id: z.number(), name: z.string() })),
+});
+
+export type V1Platforms = z.infer<typeof v1PlatformsSchema>;
 
 /**
  * One title in a browse page, from any catalog: what the web's poster card
