@@ -71,6 +71,15 @@ Changed:
 - **`INPUT_CLASS` stays** for the filters sheet's platform search, which is a search box in a sheet, not a form field.
 - **Forgot password's line** keeps the app's own ending, "Open it on this phone.", after core's description, since the link only works on the phone that asked.
 - **The username field's server refusal** now shows under the field; a saved name still shows as an info `Notice`.
+- **Review follow ups (2026-11-24).**
+  - The icon key copy shipped as `ICON_KEY_ENTRIES` (mark and label, in the web's order) and `ICON_KEY_LABEL` instead of decision 6's `ICON_KEY_LABELS`. The words and order are the same.
+  - `CHANGE_PASSWORD_COPY` also carries the description, placeholders, button and pending label, so the web form and the phone read the same words.
+  - "Open it on this phone." is core's `RESET_LINK_PHONE_NOTE`. The phone's password hint is core's `PASSWORD_HINT_SENTENCE`.
+  - With email delivery off, Forgot password and the reset screen show the panel heading over the unavailable message rather than a bare `Notice`.
+  - Sign up's taken username shows under its username field, as on the web's action.
+  - The password eye reports its pressed state as `selected`, the app's convention for a pressed toggle (`GlassButton`, the score sheet), where the web sets `aria-pressed`.
+  - The icon key draws both stars at the key's 16pt, like the other marks.
+  - The web's auth, account, footer and legal boundary tests pass unchanged (requirement 7). The automated checks list below calls them changed.
 - Simulator pass on 2026-11-24 (iPhone 18 Pro, local stack): steps 2 to 10 pass; the full record is slice 7 in docs/scope/scope.md. It found two layout faults, fixed on the branch: the end of About, Change password and Delete account sat under the floating tab bar (now `contentInsetAdjustmentBehavior="automatic"`, as Home and the grids), and a wrapped `ChevronRow` label pushed its chevron into the edge at the largest text size (the label now shrinks). Step 11 (the web unchanged) is covered by the web's tests only; the production website is off.
 
 ## Security considerations
