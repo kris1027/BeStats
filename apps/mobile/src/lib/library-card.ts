@@ -20,7 +20,10 @@ import {
   WATCHED_SHOW_LABELS,
 } from "@bestats/core/tracking/messages";
 
-import { communityRatingLabel } from "@/components/poster-card";
+import {
+  communityRatingLabel,
+  formatCommunityRating,
+} from "./community-rating";
 
 /**
  * The badge in a card's top left corner: a community rating named by its
@@ -73,7 +76,7 @@ function community(
   const label = communityRatingLabel(type, value);
   return value === null || label === null
     ? null
-    : { tone: "community", text: value.toFixed(1), label };
+    : { tone: "community", text: formatCommunityRating(value), label };
 }
 
 function personalScore(value: number | null): CardBadge | null {
