@@ -1,6 +1,7 @@
 import type { V1CatalogItem } from "@bestats/core/api/v1/browse";
 import type { LibraryType } from "@bestats/core/catalog/media-type";
 import {
+  GAME_UNDO_MESSAGES,
   MOVIE_CLEARED_MESSAGES,
   SHOW_TRACKING_COPY,
   TRACKING_MESSAGES,
@@ -64,7 +65,12 @@ async function openGrid(type: LibraryType, items: V1CatalogItem[]) {
     return <PosterGrid items={items} type={type} accessibilityLabel="Grid" />;
   }
   await renderRouter(
-    { index: Grid, "movies/[id]": () => null, "shows/[id]": () => null },
+    {
+      index: Grid,
+      "movies/[id]": () => null,
+      "shows/[id]": () => null,
+      "games/[id]": () => null,
+    },
     { initialUrl: "/", wrapper: titleWrapper(client) },
   );
   return client;
@@ -230,6 +236,86 @@ test("Stop tracking a show keeps its history and offers Undo", async () => {
     await screen.findByText(SHOW_TRACKING_COPY.stopped("Game of Thrones")),
   ).toBeOnTheScreen();
   expect(screen.getByRole("button", { name: "Undo" })).toBeOnTheScreen();
+});
+
+test("an Upcoming planned movie shows its release date and no TMDB badge, as the web does", async () => {
+  const path = "/api/v1/me/titles?ids=movie:900";
+  mockApi.on("GET", path, () => ({
+    "movie:900": { planned: true, watchedAt: null, rating: null },
+  }));
+  await openGrid("movie", [
+    { ...item(900, "Dune: Part Three"), releaseDate: "2099-12-18" },
+  ]);
+
+  const dune = await card(/^Dune: Part Three, 1999, Releases .*, Planned$/);
+  expect(dune.props.accessibilityLabel).not.toMatch(/TMDB/);
+  expect(screen.queryByText("TMDB")).toBeNull();
+});
+
+test("Want to play and Remove on a game card; Remove offers Undo", async () => {
+  const previous = {
+    status: "want_to_play",
+    rating: null,
+    addedAt: "2026-01-01T00:00:00+00:00",
+    startedAt: null,
+    finishedAt: null,
+  };
+  let status: string | null = null;
+  const path = "/api/v1/me/titles?ids=game:1942";
+  mockApi.on("GET", path, () => ({ "game:1942": { status, rating: null } }));
+  mockApi.on("PUT", "/api/v1/me/games/1942", () => {
+    status = "want_to_play";
+    return { ok: true };
+  });
+  mockApi.on("DELETE", "/api/v1/me/games/1942", () => {
+    status = null;
+    return {
+      ok: true,
+      undo: {
+        kind: "removed",
+        previous,
+        removedAt: "2026-02-01T00:00:00+00:00",
+      },
+    };
+  });
+  mockApi.on("POST", "/api/v1/me/games/1942/restore", () => {
+    status = "want_to_play";
+    return { ok: true };
+  });
+  const user = userEvent.setup();
+  await openGrid("game", [item(1942, "The Witcher 3")]);
+
+  const witcher = await readyCard(/^The Witcher 3, 1999, IGDB 8\.2$/);
+  expect(witcher.props.accessibilityActions).toEqual([
+    { name: "status", label: "Want to play" },
+  ]);
+  await act(async () => act11y(witcher, "status"));
+  expect(mockApi.callsTo("PUT", "/api/v1/me/games/1942")[0]?.body).toEqual({
+    status: "want_to_play",
+  });
+
+  const wanted = await card(/^The Witcher 3, .*Want to play$/);
+  await waitFor(() =>
+    expect(wanted.props.accessibilityActions).toEqual([
+      { name: "status", label: "Remove from your games" },
+    ]),
+  );
+  await act(async () => act11y(wanted, "status"));
+  expect(await screen.findByText(GAME_UNDO_MESSAGES.removed)).toBeOnTheScreen();
+  expect(await card(/^The Witcher 3, 1999, IGDB 8\.2$/)).toBeTruthy();
+
+  await user.press(screen.getByRole("button", { name: "Undo" }));
+  expect(
+    mockApi.callsTo("POST", "/api/v1/me/games/1942/restore")[0]?.body,
+  ).toEqual({
+    cleared: {
+      kind: "game_removed",
+      gameId: 1942,
+      previous,
+      removedAt: "2026-02-01T00:00:00+00:00",
+    },
+  });
+  expect(await card(/^The Witcher 3, .*Want to play$/)).toBeTruthy();
 });
 
 test("on Android a long press asks with an alert of the enabled actions", async () => {

@@ -5,6 +5,7 @@ import { screen, userEvent, waitFor } from "@testing-library/react-native";
 import { renderRouter } from "expo-router/testing-library";
 import type { PropsWithChildren } from "react";
 
+import { ToastProvider } from "@/components/toast";
 import { ApiError } from "@/lib/api";
 import { MediaTypeProvider } from "@/lib/media-type";
 import { CatalogListScreen } from "@/screens/catalog-list-screen";
@@ -15,10 +16,22 @@ import { SearchScreen } from "@/screens/search-screen";
  * covers: prompts/mobile-app-shell-catalog.md decisions 4, 6 and 7: Home's
  * sections come from core's slots and one failed list stays in its section;
  * a list ends quietly at a 404; Search sends core's params and the media
- * switch moves Home and Search together; AC-14's catalog notice shows
+ * switch moves Home and Search together; AC-14's catalog notice shows;
+ * prompts/mobile-look-card-actions.md R1 and R6: signed in, Home's rows show
+ * each card's own state from one `/me/titles` read per row
  */
-// The catalog screens are public; signed out, no card reads its state.
-jest.mock("@/lib/session", () => ({ useSession: () => ({ session: null }) }));
+// The catalog screens are public: signed out by default, so no card reads
+// its state; the signed in test sets a session and answers `/me/titles`.
+let mockSession: object | null = null;
+jest.mock("@/lib/session", () => ({
+  useSession: () => ({ session: mockSession }),
+}));
+
+const mockApiRequest = jest.fn();
+jest.mock("@/lib/api", () => ({
+  ...jest.requireActual("@/lib/api"),
+  apiRequest: (...args: unknown[]) => mockApiRequest(...args),
+}));
 
 const mockFetchList = jest.fn();
 const mockFetchSearch = jest.fn();
@@ -62,7 +75,9 @@ let client: QueryClient;
 function wrapper({ children }: PropsWithChildren) {
   return (
     <QueryClientProvider client={client}>
-      <MediaTypeProvider>{children}</MediaTypeProvider>
+      <ToastProvider>
+        <MediaTypeProvider>{children}</MediaTypeProvider>
+      </ToastProvider>
     </QueryClientProvider>
   );
 }
@@ -72,6 +87,10 @@ beforeEach(() => {
     defaultOptions: { queries: { retry: false } },
   });
   jest.resetAllMocks();
+  mockSession = null;
+  mockApiRequest.mockImplementation((path: string) =>
+    Promise.reject(new Error(`Unexpected ${path}`)),
+  );
   mockFetchList.mockImplementation((type: string, list: string) =>
     Promise.resolve(listPage(type, list, 1, null)),
   );
@@ -105,6 +124,35 @@ test("Home shows every landing section of Shows, with the TMDB notice", async ()
   expect(screen.getByText("On TV today")).toBeOnTheScreen();
   expect(screen.getByText(TMDB_APP_ATTRIBUTION)).toBeOnTheScreen();
   expect(mockFetchList).toHaveBeenCalledWith("tv", "airing-today", 1);
+});
+
+test("signed in, Home's rows show each card's own state from one read per row", async () => {
+  mockSession = { user: { email: "a@example.test" } };
+  mockApiRequest.mockImplementation((path: string) =>
+    path === "/api/v1/me/titles?ids=tv:101"
+      ? Promise.resolve({
+          "tv:101": {
+            tracked: true,
+            progress: null,
+            seasonRatings: [],
+            showRating: null,
+          },
+        })
+      : Promise.reject(new Error(`Unexpected ${path}`)),
+  );
+  await renderRouter({ index: HomeScreen }, { initialUrl: "/", wrapper });
+
+  const tracked = await screen.findAllByRole("link", {
+    name: /^popular title 1, 2024, TMDB 7\.5, Tracking$/,
+  });
+  expect(tracked).toHaveLength(1);
+  const reads = mockApiRequest.mock.calls.map(([path]) => path);
+  expect(reads.every((path) => path === "/api/v1/me/titles?ids=tv:101")).toBe(
+    true,
+  );
+  // One read per row, never one per card: each row here holds one card.
+  const rows = mockFetchList.mock.calls.length;
+  expect(reads.length).toBeLessThanOrEqual(rows);
 });
 
 test("one failed Home list offers Try again in its section only", async () => {
