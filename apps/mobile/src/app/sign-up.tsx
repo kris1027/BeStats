@@ -1,9 +1,16 @@
+import {
+  type AuthActionState,
+  failure,
+  fromZodError,
+  IDLE_STATE,
+  passwordFieldFor,
+} from "@bestats/core/auth/action-state";
 import { isAlreadyRegistered } from "@bestats/core/auth/auth-error";
 import {
   ACCOUNT_COPY,
   ACCOUNT_NOTICE,
-  AUTH_MESSAGES,
   AUTH_OUTCOME,
+  AUTH_PANEL_COPY,
 } from "@bestats/core/auth/messages";
 import { PASSWORD_HINT, signUpSchema } from "@bestats/core/auth/schemas";
 import {
@@ -14,16 +21,14 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView } from "react-native";
-import { FormField, INPUT_CLASS } from "@/components/form-field";
+import { AuthIntro } from "@/components/auth-intro";
+import { FormAlert, FormField } from "@/components/form-field";
 import { GlassButton } from "@/components/glass-button";
-import { Notice } from "@/components/notice";
-import { TextInput } from "@/components/text";
 import { profileKey, putUsername } from "@/lib/account";
 import { ApiError } from "@/lib/api";
-import { authErrorMessage } from "@/lib/auth-errors";
+import { authErrorOutcome } from "@/lib/auth-errors";
 import { useSession } from "@/lib/session";
 import { getSupabase } from "@/lib/supabase";
-import { tokenColor } from "@/theme/token-vars";
 
 /**
  * Create an account on the phone (spec 0035, Sign up on mobile;
@@ -51,19 +56,16 @@ export default function SignUp() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [state, setState] = useState<AuthActionState>(IDLE_STATE);
   const [registered, setRegistered] = useState(false);
   const [busy, setBusy] = useState(false);
 
   async function submit() {
-    setError(null);
+    setState(IDLE_STATE);
     setRegistered(false);
     const parsed = signUpSchema.safeParse({ username, email, password });
     if (!parsed.success) {
-      setError(
-        parsed.error.issues[0]?.message ??
-          AUTH_MESSAGES[AUTH_OUTCOME.invalidInput],
-      );
+      setState(fromZodError(parsed.error));
       return;
     }
     setBusy(true);
@@ -74,11 +76,11 @@ export default function SignUp() {
         { p_username: parsed.data.username },
       );
       if (availabilityError) {
-        setError(AUTH_MESSAGES[AUTH_OUTCOME.signUpUnavailable]);
+        setState(failure(AUTH_OUTCOME.signUpUnavailable));
         return;
       }
       if (!available) {
-        setError(AUTH_MESSAGES[AUTH_OUTCOME.usernameTaken]);
+        setState(failure(AUTH_OUTCOME.usernameTaken, ["username"]));
         return;
       }
 
@@ -87,16 +89,17 @@ export default function SignUp() {
         password: parsed.data.password,
       });
       if (isAlreadyRegistered(authError, data.user)) {
-        setError(AUTH_MESSAGES[AUTH_OUTCOME.alreadyRegistered]);
+        setState(failure(AUTH_OUTCOME.alreadyRegistered));
         setRegistered(true);
         return;
       }
       if (authError) {
-        setError(authErrorMessage(authError));
+        const outcome = authErrorOutcome(authError);
+        setState(failure(outcome, passwordFieldFor(outcome)));
         return;
       }
       if (!data.session) {
-        setError(AUTH_MESSAGES[AUTH_OUTCOME.signUpUnavailable]);
+        setState(failure(AUTH_OUTCOME.signUpUnavailable));
         return;
       }
 
@@ -112,7 +115,7 @@ export default function SignUp() {
           : { pathname: "/account" },
       );
     } catch {
-      setError(AUTH_MESSAGES[AUTH_OUTCOME.unexpected]);
+      setState(failure(AUTH_OUTCOME.unexpected));
     } finally {
       setBusy(false);
     }
@@ -127,47 +130,42 @@ export default function SignUp() {
         contentContainerClassName="gap-5 px-4 py-6"
         keyboardShouldPersistTaps="handled"
       >
-        <FormField label="Username" hint={USERNAME_HINT}>
-          <TextInput
-            accessibilityLabel="Username"
-            accessibilityHint={USERNAME_HINT}
-            value={username}
-            onChangeText={setUsername}
-            autoCapitalize="none"
-            autoCorrect={false}
-            autoComplete="username-new"
-            textContentType="nickname"
-            maxLength={USERNAME_MAX_LENGTH}
-            placeholderTextColor={tokenColor("color-muted-foreground")}
-            className={INPUT_CLASS}
-          />
-        </FormField>
-        <FormField label="Email">
-          <TextInput
-            accessibilityLabel="Email"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            autoComplete="email"
-            keyboardType="email-address"
-            textContentType="username"
-            className={INPUT_CLASS}
-          />
-        </FormField>
-        <FormField label="Password" hint={`${PASSWORD_HINT}.`}>
-          <TextInput
-            accessibilityLabel="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoComplete="new-password"
-            textContentType="newPassword"
-            returnKeyType="go"
-            onSubmitEditing={submit}
-            className={INPUT_CLASS}
-          />
-        </FormField>
-        {error ? <Notice tone="error" message={error} /> : null}
+        <AuthIntro copy={AUTH_PANEL_COPY.signUp} />
+        <FormField
+          label="Username"
+          hint={USERNAME_HINT}
+          value={username}
+          onChangeText={setUsername}
+          error={state.fieldErrors?.username}
+          autoCapitalize="none"
+          autoCorrect={false}
+          autoComplete="username-new"
+          textContentType="nickname"
+          maxLength={USERNAME_MAX_LENGTH}
+        />
+        <FormField
+          label="Email"
+          value={email}
+          onChangeText={setEmail}
+          error={state.fieldErrors?.email}
+          autoCapitalize="none"
+          autoComplete="email"
+          keyboardType="email-address"
+          textContentType="username"
+        />
+        <FormField
+          label="Password"
+          hint={`${PASSWORD_HINT}.`}
+          secure
+          value={password}
+          onChangeText={setPassword}
+          error={state.fieldErrors?.password}
+          autoComplete="new-password"
+          textContentType="newPassword"
+          returnKeyType="go"
+          onSubmitEditing={submit}
+        />
+        <FormAlert state={state} />
         {registered ? (
           <GlassButton
             label={ACCOUNT_COPY.signInInstead}

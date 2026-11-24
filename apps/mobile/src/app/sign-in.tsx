@@ -1,23 +1,28 @@
 import {
+  type AuthActionState,
+  failure,
+  fromZodError,
+  IDLE_STATE,
+} from "@bestats/core/auth/action-state";
+import {
   ACCOUNT_COPY,
-  AUTH_MESSAGES,
   AUTH_OUTCOME,
+  AUTH_PANEL_COPY,
   signInNoticeCopy,
 } from "@bestats/core/auth/messages";
 import { signInSchema } from "@bestats/core/auth/schemas";
 import { SIGN_IN_ACTION_LABEL } from "@bestats/core/tracking/messages";
 import { useIsFocused, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { KeyboardAvoidingView, Platform, View } from "react-native";
-import { FormField, INPUT_CLASS } from "@/components/form-field";
+import { KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import { AuthIntro } from "@/components/auth-intro";
+import { FormAlert, FormField } from "@/components/form-field";
 import { GlassButton } from "@/components/glass-button";
 import { Notice } from "@/components/notice";
-import { TextInput } from "@/components/text";
-import { authErrorMessage } from "@/lib/auth-errors";
+import { authErrorOutcome } from "@/lib/auth-errors";
 import { getPublicEnv } from "@/lib/env";
 import { useSession } from "@/lib/session";
 import { getSupabase } from "@/lib/supabase";
-import { tokenColor } from "@/theme/token-vars";
 
 /**
  * Email and password sign in (spec 0033, AC-11; child 0036), straight to
@@ -39,19 +44,16 @@ export default function SignIn() {
   const emailDelivery = getPublicEnv().EXPO_PUBLIC_AUTH_EMAIL_DELIVERY;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [state, setState] = useState<AuthActionState>(IDLE_STATE);
   const [busy, setBusy] = useState(false);
 
   if (session) return <CloseSignIn />;
 
   async function submit() {
-    setError(null);
+    setState(IDLE_STATE);
     const parsed = signInSchema.safeParse({ email, password });
     if (!parsed.success) {
-      setError(
-        parsed.error.issues[0]?.message ??
-          AUTH_MESSAGES[AUTH_OUTCOME.invalidInput],
-      );
+      setState(fromZodError(parsed.error));
       return;
     }
     setBusy(true);
@@ -59,10 +61,12 @@ export default function SignIn() {
       const { error: authError } = await getSupabase().auth.signInWithPassword(
         parsed.data,
       );
-      if (authError) setError(authErrorMessage(authError));
+      // The web's sign in marks no field on a refusal: naming the wrong one
+      // would tell a stranger which half matched (spec 0005, AC-2).
+      if (authError) setState(failure(authErrorOutcome(authError)));
       else clearNotice();
     } catch {
-      setError(authErrorMessage(null));
+      setState(failure(AUTH_OUTCOME.unexpected));
     } finally {
       setBusy(false);
     }
@@ -73,42 +77,41 @@ export default function SignIn() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       className="flex-1"
     >
-      <View className="gap-5 px-4 pt-6">
+      <ScrollView
+        contentContainerClassName="gap-5 px-4 py-6"
+        keyboardShouldPersistTaps="handled"
+      >
+        <AuthIntro copy={AUTH_PANEL_COPY.signIn} />
         {notice ? <Notice message={notice} /> : null}
         {linkNotice ? <Notice message={linkNotice} /> : null}
-        <FormField label="Email">
-          <TextInput
-            accessibilityLabel="Email"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            autoComplete="email"
-            keyboardType="email-address"
-            textContentType="username"
-            placeholderTextColor={tokenColor("color-muted-foreground")}
-            className={INPUT_CLASS}
-          />
-        </FormField>
-        <FormField label="Password">
-          <TextInput
-            accessibilityLabel="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoComplete="current-password"
-            textContentType="password"
-            returnKeyType="go"
-            onSubmitEditing={submit}
-            className={INPUT_CLASS}
-          />
-        </FormField>
+        <FormField
+          label="Email"
+          value={email}
+          onChangeText={setEmail}
+          error={state.fieldErrors?.email}
+          autoCapitalize="none"
+          autoComplete="email"
+          keyboardType="email-address"
+          textContentType="username"
+        />
+        <FormField
+          label="Password"
+          secure
+          value={password}
+          onChangeText={setPassword}
+          error={state.fieldErrors?.password}
+          autoComplete="current-password"
+          textContentType="password"
+          returnKeyType="go"
+          onSubmitEditing={submit}
+        />
         {emailDelivery === "on" ? (
           <GlassButton
             label="Forgot password?"
             onPress={() => router.push("/forgot-password")}
           />
         ) : null}
-        {error ? <Notice tone="error" message={error} /> : null}
+        <FormAlert state={state} />
         <GlassButton
           variant="primary"
           label={SIGN_IN_ACTION_LABEL}
@@ -119,7 +122,7 @@ export default function SignIn() {
           label={ACCOUNT_COPY.createAccount}
           onPress={() => router.replace("/sign-up")}
         />
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }

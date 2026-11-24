@@ -1,5 +1,9 @@
 import { classifyAuthFailure } from "@bestats/core/auth/auth-error";
-import { AUTH_MESSAGES, AUTH_OUTCOME } from "@bestats/core/auth/messages";
+import {
+  AUTH_MESSAGES,
+  AUTH_OUTCOME,
+  type AuthOutcome,
+} from "@bestats/core/auth/messages";
 import {
   type AuthError,
   isAuthSessionMissingError,
@@ -15,13 +19,22 @@ import {
  * unexpected.
  */
 export function authErrorMessage(error: AuthError | null): string {
-  if (!error) return AUTH_MESSAGES[AUTH_OUTCOME.unexpected];
-  return AUTH_MESSAGES[
-    classifyAuthFailure({
-      code: error.code,
-      status: error.status,
-      reasons: isAuthWeakPasswordError(error) ? error.reasons : undefined,
-      sessionMissing: isAuthSessionMissingError(error),
-    })
-  ];
+  return AUTH_MESSAGES[authErrorOutcome(error)];
+}
+
+/**
+ * The classified outcome behind `authErrorMessage`, for a form that marks a
+ * field as well as saying why: a password rule refusal belongs to the
+ * password field, a wrong current password to its field, and nothing else
+ * marks one (core's `passwordFieldFor`; prompts/mobile-look-account.md,
+ * decision 2).
+ */
+export function authErrorOutcome(error: AuthError | null): AuthOutcome {
+  if (!error) return AUTH_OUTCOME.unexpected;
+  return classifyAuthFailure({
+    code: error.code,
+    status: error.status,
+    reasons: isAuthWeakPasswordError(error) ? error.reasons : undefined,
+    sessionMissing: isAuthSessionMissingError(error),
+  });
 }
