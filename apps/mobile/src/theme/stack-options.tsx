@@ -34,7 +34,8 @@ export const STACK_SCREEN_OPTIONS = {
 } as const;
 
 /**
- * Search's header (prompts/mobile-look-search.md, decisions 1 and 7): an iOS
+ * Search's header (apps/mobile/AGENTS.md, Styling; prompts/mobile-look-search.md,
+ * decisions 1 and 7): an iOS
  * large title in Inter over the same seamless bar colour, collapsing into
  * the bar as the grid scrolls. Android has no large title and shows the
  * plain bar; the search field itself is set by the screen, which owns its
@@ -74,7 +75,8 @@ export function screenLayout({ children }: { children: ReactNode }) {
 /**
  * The tab stacks' screen layout: `screenLayout` for every screen except
  * those named in `bare`, which get no background layer of their own
- * (prompts/mobile-look-search.md, decision 7). A large title collapses only
+ * (apps/mobile/AGENTS.md, Styling; prompts/mobile-look-search.md, decision 7).
+ * A large title collapses only
  * when its scroll view is first in the screen's view chain, which UIKit
  * tracks, and the background layer sits before it; so a bare screen shows
  * the still background its tab stack draws behind every screen. The

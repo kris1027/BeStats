@@ -98,8 +98,9 @@ export function fetchGenres(type: LibraryType) {
 
 /**
  * `GET /api/v1/platforms`: IGDB's platforms for a games search's Platforms
- * filter, the same list the API's search parser checks ids against
- * (prompts/mobile-look-search.md, decision 4).
+ * filter, the same list the API's search parser checks ids against, read
+ * through `/api/v1` because the phone holds no catalog key (AGENTS.md
+ * section 5; prompts/mobile-look-search.md, decision 4).
  */
 export function fetchPlatforms() {
   return apiRequest("/api/v1/platforms", v1PlatformsSchema);

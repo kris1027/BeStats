@@ -56,7 +56,8 @@ export type V1Genres = z.infer<typeof v1GenresSchema>;
  * `GET /api/v1/platforms`: IGDB's platforms, the ids a games search's
  * `platform` param takes (spec 0029, AC-10), from the same cached list the
  * web's filter bar and the search parser read, so an id the app sends is one
- * the parser accepts (prompts/mobile-look-search.md, decision 4). Its own
+ * the parser accepts (AGENTS.md section 5; prompts/mobile-look-search.md,
+ * decision 4). Its own
  * route so the genres contract stays as the app already reads it.
  */
 export const v1PlatformsSchema = z.object({
