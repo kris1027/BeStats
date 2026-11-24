@@ -3,13 +3,17 @@ import { View } from "react-native";
 
 import { PageBackground } from "@/components/page-background";
 import {
+  LIBRARY_SCREEN_OPTIONS,
   SEARCH_SCREEN_OPTIONS,
   STACK_SCREEN_OPTIONS,
   tabScreenLayout,
 } from "@/theme/stack-options";
 
-/** Search has no background layer of its own (`tabScreenLayout`). */
-const TAB_SCREEN_LAYOUT = tabScreenLayout(["search"]);
+/**
+ * Search and Library, the large title screens, have no background layer of
+ * their own (`tabScreenLayout`).
+ */
+const TAB_SCREEN_LAYOUT = tabScreenLayout(["search", "library"]);
 
 /**
  * Each tab's first screen. The four tabs share this folder, so a movie,
@@ -28,8 +32,9 @@ export const unstable_settings = {
  * The stack inside every tab (prompts/mobile-app-shell-catalog.md, decision
  * 3). Each tab root sets its own title; title screens set theirs once their
  * data loads. The stack draws the still background once behind its screens
- * for Search, whose screen has none of its own so its large title can
- * collapse (`tabScreenLayout`); every other screen keeps its own layer.
+ * for Search and Library, whose screens have none of their own so their
+ * large titles can collapse (`tabScreenLayout`); every other screen keeps
+ * its own layer.
  */
 export default function TabStack() {
   const theme = useTheme();
@@ -53,7 +58,7 @@ export default function TabStack() {
         >
           <Stack.Screen name="index" options={{ title: "BeStats" }} />
           <Stack.Screen name="search" options={SEARCH_SCREEN_OPTIONS} />
-          <Stack.Screen name="library" options={{ title: "Library" }} />
+          <Stack.Screen name="library" options={LIBRARY_SCREEN_OPTIONS} />
           <Stack.Screen name="account" options={{ title: "Account" }} />
           <Stack.Screen
             name="account/delete"

@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { View } from "react-native";
 
 import { StarIcon } from "@/components/icons";
+import { formatCommunityRating } from "@/lib/community-rating";
 import { PILL_FONT_SCALE_CAP, PILL_RADIUS } from "@/theme/pill";
 import { tokenColor } from "@/theme/token-vars";
 
@@ -81,12 +82,13 @@ export function CommunityRatingBadge({
 }) {
   if (value === null) return null;
   const noun = source === "IGDB" ? "community rating" : "rating";
+  const text = formatCommunityRating(value);
   return (
     <GlassPill
       icon={<RatingStar tone="community" />}
-      accessibilityLabel={`${source} ${noun} ${value.toFixed(1)}`}
+      accessibilityLabel={`${source} ${noun} ${text}`}
     >
-      {value.toFixed(1)}
+      {text}
     </GlassPill>
   );
 }

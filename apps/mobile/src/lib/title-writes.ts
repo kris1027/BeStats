@@ -62,6 +62,19 @@ export function applyMovieIntents(
 }
 
 /**
+ * Closes an Undo toast once its restore settles. It waits on the restore's
+ * own promise, never `mutate`'s per call `onSettled`, which TanStack skips
+ * once the component that asked has unmounted: a library card leaves its
+ * page as soon as the server moves it, and the toast's spinner then never
+ * stopped (prompts/mobile-look-library.md, build deviations). A refused
+ * restore is already shown by `useTrackingWrite`'s own error toast
+ * (AGENTS.md section 11), so the rejection is only swallowed here.
+ */
+function settleThen(restore: Promise<unknown>, done: () => void) {
+  restore.catch(() => undefined).finally(done);
+}
+
+/**
  * Every movie write with its Undo, shared by the movie screen and the
  * catalog cards (prompts/mobile-look-card-actions.md, decision 11), so the
  * same action says the same thing wherever it starts. A movie is planned or
@@ -108,7 +121,7 @@ export function useMovieWrite(id: number, onFailure?: () => void) {
             : MOVIE_CLEARED_MESSAGES.unwatched;
       if (message === null) return;
       offerUndo(message, `${control}-${intent.kind}`, (done) =>
-        restore.mutate(cleared, { onSettled: done }),
+        settleThen(restore.mutateAsync(cleared), done),
       );
     },
   });
@@ -155,7 +168,7 @@ export function useShowTrackingWrite(id: number, name: string) {
         return;
       }
       offerUndo(message, control, (done) =>
-        restore.mutate(undo, { onSettled: done }),
+        settleThen(restore.mutateAsync(undo), done),
       );
     },
   });
@@ -210,7 +223,7 @@ export function useGameWrite(id: number, onFailure?: () => void) {
           ? GAME_UNDO_MESSAGES.removed
           : GAME_UNDO_MESSAGES.scoreCleared,
         `${control}-${intent.kind}`,
-        (done) => restore.mutate(undo, { onSettled: done }),
+        (done) => settleThen(restore.mutateAsync(undo), done),
       );
     },
   });

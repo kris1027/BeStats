@@ -7,11 +7,12 @@ import { FlatList, Pressable, useWindowDimensions, View } from "react-native";
 import { Text } from "@/components/text";
 import { useCardStates } from "@/lib/card-states";
 import { catalogKeys, fetchList } from "@/lib/catalog";
+import { communityRatingText } from "@/lib/community-rating";
 import { isAccessibilityTextSize } from "@/theme/font-scale";
 
 import { cardDateLabel } from "./dated-card";
 import { GlassButton } from "./glass-button";
-import { cardHref, communityRatingText, PosterCard } from "./poster-card";
+import { cardHref, PosterCard } from "./poster-card";
 import { PosterRowSkeleton } from "./skeleton";
 
 /** Card widths in points: Trending is the large row, as on the web. */
