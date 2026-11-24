@@ -205,6 +205,14 @@ export const EPISODE_MARK_MESSAGES = {
 } as const;
 
 /**
+ * The verbs a show's tracking controls start with, so the toggle's names and
+ * a catalog card's short menu titles never drift apart (apps/mobile/AGENTS.md,
+ * copy comes from core's message files).
+ */
+const TRACK = "Track";
+const STOP_TRACKING = "Stop tracking";
+
+/**
  * The show tracking toggle's copy and toasts (spec 0020, AC-2 to AC-6). Stop
  * tracking, whose toggle goes back to Plan to watch, confirms with a toast
  * that carries the Undo; one that found the show already untracked confirms
@@ -215,7 +223,7 @@ export const SHOW_TRACKING_COPY = {
   plan: "Plan to watch",
   tracking: "Tracking",
   unavailable: "Tracking unavailable",
-  stopLabel: (show: string) => `Stop tracking ${show}`,
+  stopLabel: (show: string) => `${STOP_TRACKING} ${show}`,
   added: (show: string) => `${show} added to your shows`,
   stopped: (show: string) => `Stopped tracking ${show}`,
   undoExpired: "Couldn't undo. Track the show again from its page.",
@@ -481,9 +489,9 @@ export const LIBRARY_CARD_ACTION_LABELS = {
  * the title's own name in the menu.
  */
 export const CATALOG_CARD_ACTION_LABELS = {
-  plan: (name: string) => `Plan ${name}`,
+  plan: (name: string) => `${MOVIE_TRACKING_LABELS.plan} ${name}`,
   unmarkMovie: LIBRARY_CARD_ACTION_LABELS.unmarkMovie,
-  track: (name: string) => `Track ${name}`,
+  track: (name: string) => `${TRACK} ${name}`,
   stopTracking: SHOW_TRACKING_COPY.stopLabel,
   wantToPlay: (name: string) => `${GAME_STATUS_LABELS.want_to_play}: ${name}`,
   menu: {
@@ -491,8 +499,8 @@ export const CATALOG_CARD_ACTION_LABELS = {
     unplan: "Remove from plan",
     markWatched: MOVIE_TRACKING_LABELS.markWatched,
     unmark: "Remove watched mark",
-    track: "Track",
-    stopTracking: "Stop tracking",
+    track: TRACK,
+    stopTracking: STOP_TRACKING,
     wantToPlay: GAME_STATUS_LABELS.want_to_play,
     removeGame: "Remove from your games",
   },
