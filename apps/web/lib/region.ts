@@ -16,6 +16,16 @@ import { cache } from "react";
  * the page picks this one after they return.
  */
 export const getVisitorRegion = cache(async (): Promise<Region> => {
-  const requestHeaders = await headers();
-  return parseRegion(requestHeaders.get("x-vercel-ip-country"));
+  return regionFromHeaders(await headers());
 });
+
+/**
+ * The one region rule both apps follow (spec 0022, AC-9; prompts/
+ * mobile-look-title-extras.md, decision 1): Vercel's approximate country of
+ * the connection, read through core's `parseRegion`. A route handler, which
+ * has its request's headers in hand, calls this directly; pages go through
+ * `getVisitorRegion`. Never stored, logged or sent to TMDB.
+ */
+export function regionFromHeaders(requestHeaders: Headers): Region {
+  return parseRegion(requestHeaders.get("x-vercel-ip-country"));
+}

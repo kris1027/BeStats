@@ -52,6 +52,12 @@ describe("the request scope boundary (AC-8, AC-9)", () => {
       )
       .map(webPath)
       .filter((path) => !path.startsWith("lib/tmdb/"));
-    expect(callers).toEqual(["components/catalog/title-extras.tsx"]);
+    // The app's extras routes (prompts/mobile-look-title-extras.md) read it
+    // for one title, as the web's title page slots do.
+    expect(callers).toEqual([
+      "app/api/v1/movies/[id]/extras/route.ts",
+      "app/api/v1/shows/[id]/extras/route.ts",
+      "components/catalog/title-extras.tsx",
+    ]);
   });
 });
