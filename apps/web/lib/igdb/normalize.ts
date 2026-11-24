@@ -1,4 +1,5 @@
 import "server-only";
+import { YOUTUBE_VIDEO_KEY } from "@bestats/core/catalog/trailer";
 import {
   IGDB_ART_SIZE,
   IGDB_COVER_LADDER,
@@ -219,9 +220,6 @@ function ids(values: readonly unknown[] | null | undefined): number[] {
   return found;
 }
 
-/** A YouTube id the embed URL can carry safely (spec 0031, AC-4). */
-const YOUTUBE_ID = /^[A-Za-z0-9_-]{6,20}$/;
-
 /**
  * The one trailer a game page offers (spec 0031, AC-4): among the videos
  * whose name says `trailer` and not `gameplay` (in any case) and whose id is
@@ -240,7 +238,7 @@ export function pickGameTrailer(
     const lower = name.toLowerCase();
     if (!lower.includes("trailer") || lower.includes("gameplay")) continue;
     const key = parsed.data.video_id.trim();
-    if (!YOUTUBE_ID.test(key)) continue;
+    if (!YOUTUBE_VIDEO_KEY.test(key)) continue;
     if (chosen === null || parsed.data.id < chosen.id) {
       chosen = { id: parsed.data.id, key, name };
     }

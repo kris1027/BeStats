@@ -1,4 +1,5 @@
 import type { Region } from "@bestats/core/catalog/region";
+import { ageRatingLabel } from "@bestats/core/catalog/where-to-watch";
 import {
   formatAirDate,
   formatUsdCompact,
@@ -64,8 +65,8 @@ function ShowCrew({ show }: { show: Pick<TvShow, "createdBy"> }) {
  */
 function AgeRatingChip({ rating, region }: { rating: string; region: Region }) {
   return (
-    <GlassPill data-slot="age-rating" title={`Age rating in ${region.name}`}>
-      <span className="sr-only">Age rating in {region.name}: </span>
+    <GlassPill data-slot="age-rating" title={ageRatingLabel(region.name)}>
+      <span className="sr-only">{ageRatingLabel(region.name)}: </span>
       {rating}
     </GlassPill>
   );

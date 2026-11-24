@@ -1,4 +1,10 @@
 import type { Region } from "@bestats/core/catalog/region";
+import {
+  ALL_WATCH_OPTIONS_LABEL,
+  notStreamingLine,
+  WHERE_TO_WATCH_GROUPS,
+  whereToWatchHeading,
+} from "@bestats/core/catalog/where-to-watch";
 import { JUSTWATCH_ATTRIBUTION } from "@bestats/core/legal/operator";
 import { ExternalLinkIcon } from "lucide-react";
 import Image from "next/image";
@@ -8,12 +14,8 @@ import type { Provider, RegionProviders } from "@/lib/tmdb";
 
 import { SECTION_HEADING_CLASS, SectionErrorLine } from "./title-section";
 
-/** The three groups in their AC-12 order, each with its label. */
-const GROUPS = [
-  { key: "stream", label: "Stream" },
-  { key: "free", label: "Free" },
-  { key: "rentOrBuy", label: "Rent or buy" },
-] as const satisfies ReadonlyArray<{
+/** The three groups in their AC-12 order, from the copy both apps share. */
+const GROUPS = WHERE_TO_WATCH_GROUPS satisfies ReadonlyArray<{
   key: keyof Omit<RegionProviders, "link">;
   label: string;
 }>;
@@ -45,7 +47,7 @@ function WhereToWatch({
     <WhereToWatchFrame region={region}>
       {groups.length === 0 ? (
         <p className="text-[15px] text-muted-foreground">
-          Not streaming in {region.name} right now.
+          {notStreamingLine(region.name)}
         </p>
       ) : (
         <div className="flex flex-col gap-5">
@@ -66,7 +68,7 @@ function WhereToWatch({
             rel="noopener noreferrer"
             className="hit-area inline-flex items-center gap-1 rounded-sm text-text-link underline-offset-4 hover:text-foreground hover:underline"
           >
-            All options on TMDB
+            {ALL_WATCH_OPTIONS_LABEL}
             <ExternalLinkIcon className="size-3.5" aria-hidden="true" />
             <span className="sr-only">(opens in a new tab)</span>
           </a>
@@ -140,9 +142,7 @@ function WhereToWatchFrame({
       className="flex flex-col gap-4"
     >
       <h2 id="where-to-watch-heading" className={SECTION_HEADING_CLASS}>
-        {region === null
-          ? "Where to watch"
-          : `Where to watch in ${region.name}`}
+        {whereToWatchHeading(region?.name ?? null)}
       </h2>
       {children}
     </section>

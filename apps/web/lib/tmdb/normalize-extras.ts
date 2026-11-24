@@ -1,3 +1,4 @@
+import { YOUTUBE_VIDEO_KEY } from "@bestats/core/catalog/trailer";
 import type {
   MovieExtras,
   MovieSummary,
@@ -34,9 +35,6 @@ import {
  * unusable video is left out, never filled.
  */
 
-/** A YouTube key the embed URL can carry safely (AC-11). */
-const YOUTUBE_KEY = /^[A-Za-z0-9_-]{6,20}$/;
-
 /**
  * The one trailer a title page offers (AC-11): a YouTube `Trailer`, else a
  * YouTube `Teaser`; within the type, an official video first, then the newest
@@ -51,7 +49,8 @@ export function pickTrailer(
     const parsed = videoSchema.safeParse(item);
     if (!parsed.success) continue;
     const video = parsed.data;
-    if (video.site !== "YouTube" || !YOUTUBE_KEY.test(video.key)) continue;
+    if (video.site !== "YouTube" || !YOUTUBE_VIDEO_KEY.test(video.key))
+      continue;
     videos.push(video);
   }
 
