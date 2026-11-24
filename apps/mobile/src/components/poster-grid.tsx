@@ -2,6 +2,7 @@ import type { V1CatalogItem } from "@bestats/core/api/v1/browse";
 import type { LibraryType } from "@bestats/core/catalog/media-type";
 import type { ReactElement } from "react";
 import { FlatList, useWindowDimensions, View } from "react-native";
+import { useCardStates } from "@/lib/card-states";
 
 import { GRID, gridCardWidth } from "./grid-layout";
 import { PosterCard } from "./poster-card";
@@ -20,6 +21,8 @@ type Props = {
  * The web's poster grid at phone width: three columns of `PosterCard`s in a
  * virtualized list, so a long list or search scrolls without rendering every
  * page at once (AGENTS.md section 3, phone width; section 10, pagination).
+ * Signed in, it reads the cards' own state one page at a time
+ * (prompts/mobile-look-card-actions.md, decision 5).
  */
 export function PosterGrid({
   items,
@@ -32,6 +35,10 @@ export function PosterGrid({
 }: Props) {
   const { width } = useWindowDimensions();
   const cardWidth = gridCardWidth(width);
+  const known = useCardStates(
+    type,
+    items.map((item) => item.id),
+  );
 
   return (
     <FlatList
@@ -54,6 +61,7 @@ export function PosterGrid({
             type={type}
             width={cardWidth}
             dateLabel={dateLabel?.(item)}
+            known={known(item.id)}
           />
         </View>
       )}

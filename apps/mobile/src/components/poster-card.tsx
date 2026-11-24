@@ -5,19 +5,40 @@ import {
   type LibraryType,
   titleHref,
 } from "@bestats/core/catalog/media-type";
+import { CATALOG_CARD_ACTION_LABELS } from "@bestats/core/tracking/messages";
+import { todayUtc } from "@bestats/core/tv/air-status";
 import { Image } from "expo-image";
 import { type Href, Link } from "expo-router";
 import type { ReactNode } from "react";
-import { Pressable, View } from "react-native";
+import { Alert, Platform, Pressable, View } from "react-native";
 import { FilmIcon } from "@/components/icons";
 
 import { Text } from "@/components/text";
+import { useCardState } from "@/lib/card-states";
+import {
+  type CardMarks,
+  gameCardMarks,
+  gameCardMenu,
+  movieCardMarks,
+  movieCardMenu,
+  showCardMarks,
+  showCardMenu,
+} from "@/lib/catalog-card-actions";
 import { sizedImageUri } from "@/lib/images";
+import {
+  useGameWrite,
+  useMovieWrite,
+  useShowTrackingWrite,
+} from "@/lib/title-writes";
 import { lengthToken, tokenColor } from "@/theme/token-vars";
-
+import { CARD_MARK_SIZE, CardMark } from "./card-action-button";
 import { GlassPlate, PlateSolid } from "./glass/plate";
 import { Rim } from "./glass/rim";
-import { CommunityRatingBadge, GlassPill } from "./glass-pill";
+import {
+  CommunityRatingBadge,
+  GlassPill,
+  PersonalScoreBadge,
+} from "./glass-pill";
 
 /**
  * The href of a catalog card's own page, from core's builders, keyed by media
@@ -61,6 +82,12 @@ type Props = {
   width: number;
   /** A short release date pill (Upcoming, Coming soon), or none. */
   dateLabel?: string | null;
+  /**
+   * Whether the user's state for this card has been read, from the screen's
+   * `useCardStates` (prompts/mobile-look-card-actions.md, decision 5). Off,
+   * the card is the plain catalog card with no menu (decision 6).
+   */
+  known?: boolean;
 };
 
 /**
@@ -121,6 +148,18 @@ export function PosterFrame({
   );
 }
 
+/** One menu entry, ready to run: the card's actions after wiring. */
+type MenuEntry = {
+  id: string;
+  title: string;
+  destructive: boolean;
+  disabled: boolean;
+  onPress: () => void;
+};
+
+/** The inset of every badge, pill and mark, the web's 10px card corners. */
+const INSET = 10;
+
 /**
  * The web's poster card, natively: the 2:3 poster in a rounded frame with
  * the gradient rim over the artwork, the community rating as an amber pill
@@ -128,52 +167,218 @@ export function PosterFrame({
  * they sit over artwork (the plate rule, decision 4), then the title and
  * year. A missing poster shows the film mark and the title on a flat solid
  * plate, as the web's placeholder does (AGENTS.md section 3).
+ *
+ * Signed in, once the screen has read the card's state (`known`), the card
+ * shows the user's own marks and carries the type's actions
+ * (prompts/mobile-look-card-actions.md): a native long press menu with the
+ * title's preview on iOS, an alert on Android, and screen reader actions on
+ * both. A tap always opens the title.
  */
-export function PosterCard({ item, type, width, dateLabel }: Props) {
+export function PosterCard(props: Props) {
+  if (!props.known) return <PosterCardView {...props} />;
+  switch (props.type) {
+    case "movie":
+      return <MovieCard {...props} />;
+    case "tv":
+      return <ShowCard {...props} />;
+    case "game":
+      return <GameCard {...props} />;
+  }
+}
+
+/** Runs the menu's writes against the card's own title key. */
+function MovieCard(props: Props) {
+  const { item } = props;
+  const state = useCardState("movie", item.id, true);
+  const write = useMovieWrite(item.id);
+  if (!state) return <PosterCardView {...props} />;
+  const menu = movieCardMenu(state, item.releaseDate, todayUtc(new Date()));
+  return (
+    <PosterCardView
+      {...props}
+      marks={movieCardMarks(state)}
+      menu={menu.map((entry) => ({
+        ...entry,
+        onPress: () => write.mutate(entry.write),
+      }))}
+    />
+  );
+}
+
+function ShowCard(props: Props) {
+  const { item } = props;
+  const state = useCardState("tv", item.id, true);
+  const toggle = useShowTrackingWrite(item.id, item.title);
+  if (!state) return <PosterCardView {...props} />;
+  return (
+    <PosterCardView
+      {...props}
+      marks={showCardMarks(state)}
+      menu={showCardMenu(state).map((entry) => ({
+        ...entry,
+        onPress: () => toggle.mutate(entry.write),
+      }))}
+    />
+  );
+}
+
+function GameCard(props: Props) {
+  const { item } = props;
+  const state = useCardState("game", item.id, true);
+  const write = useGameWrite(item.id);
+  if (!state) return <PosterCardView {...props} />;
+  const menu = gameCardMenu(state, item.releaseDate, todayUtc(new Date()));
+  return (
+    <PosterCardView
+      {...props}
+      marks={gameCardMarks(state)}
+      menu={menu.map((entry) => ({
+        ...entry,
+        onPress: () => write.mutate(entry.write),
+      }))}
+    />
+  );
+}
+
+/**
+ * Android has no native link menu, so a long press there asks with an
+ * alert holding the same enabled actions and Cancel (decision 7). The menu
+ * has at most two actions, within the three buttons Android's alert shows.
+ */
+function openAlertMenu(title: string, menu: MenuEntry[]) {
+  Alert.alert(title, undefined, [
+    ...menu
+      .filter((entry) => !entry.disabled)
+      .map((entry) => ({
+        text: entry.title,
+        style: entry.destructive
+          ? ("destructive" as const)
+          : ("default" as const),
+        onPress: entry.onPress,
+      })),
+    { text: CATALOG_CARD_ACTION_LABELS.cancel, style: "cancel" as const },
+  ]);
+}
+
+/** The card as drawn, with or without the user's marks and menu. */
+function PosterCardView({
+  item,
+  type,
+  width,
+  dateLabel,
+  marks,
+  menu,
+}: Props & { marks?: CardMarks; menu?: MenuEntry[] }) {
   const rating = communityRatingText(type, item.communityRating);
-  const label = [item.title, item.year, dateLabel, rating]
+  const pill = marks?.pill ?? dateLabel ?? null;
+  const label = [
+    item.title,
+    item.year,
+    pill,
+    rating,
+    ...(marks?.words.filter((word) => word !== pill) ?? []),
+  ]
     .filter(Boolean)
     .join(", ");
-  return (
-    <Link href={cardHref(type, item.id)} asChild>
-      <Pressable
-        accessibilityRole="link"
-        accessibilityLabel={label}
-        style={({ pressed }) => ({ width, opacity: pressed ? 0.85 : 1 })}
-        className="gap-2.5"
+  const enabled = menu?.filter((entry) => !entry.disabled) ?? [];
+
+  const trigger = (
+    <Pressable
+      accessibilityRole="link"
+      accessibilityLabel={label}
+      accessibilityActions={enabled.map((entry) => ({
+        name: entry.id,
+        label: entry.title,
+      }))}
+      onAccessibilityAction={({ nativeEvent }) =>
+        enabled.find((entry) => entry.id === nativeEvent.actionName)?.onPress()
+      }
+      onLongPress={
+        Platform.OS === "android" && enabled.length > 0
+          ? () => openAlertMenu(item.title, enabled)
+          : undefined
+      }
+      style={({ pressed }) => ({ width, opacity: pressed ? 0.85 : 1 })}
+      className="gap-2.5"
+    >
+      <PosterFrame
+        width={width}
+        imageUrl={item.posterUrl}
+        recyclingKey={`${type}:${item.id}`}
+        name={item.title}
       >
-        <PosterFrame
-          width={width}
-          imageUrl={item.posterUrl}
-          recyclingKey={`${type}:${item.id}`}
-          name={item.title}
-        >
-          {item.communityRating !== null ? (
-            <View className="absolute top-2.5 left-2.5">
-              <CommunityRatingBadge
-                source={CATALOG_SOURCES[type]}
-                value={item.communityRating}
-              />
-            </View>
-          ) : null}
-          {dateLabel ? (
-            <View className="absolute right-2.5 bottom-2.5 left-2.5">
-              <GlassPill>{dateLabel}</GlassPill>
-            </View>
-          ) : null}
-        </PosterFrame>
-        <View className="gap-0.5">
-          <Text
-            numberOfLines={2}
-            className="text-sm font-semibold text-foreground"
+        {marks?.score != null ? (
+          <View style={{ position: "absolute", top: INSET, left: INSET }}>
+            <PersonalScoreBadge value={marks.score} />
+          </View>
+        ) : item.communityRating !== null ? (
+          <View style={{ position: "absolute", top: INSET, left: INSET }}>
+            <CommunityRatingBadge
+              source={CATALOG_SOURCES[type]}
+              value={item.communityRating}
+            />
+          </View>
+        ) : null}
+        {marks?.planned ? (
+          <View style={{ position: "absolute", top: INSET, right: INSET }}>
+            <CardMark look="planned" />
+          </View>
+        ) : null}
+        {pill ? (
+          <View
+            style={{
+              position: "absolute",
+              bottom: INSET,
+              left: INSET,
+              right: marks?.watched ? INSET + CARD_MARK_SIZE + 6 : INSET,
+            }}
           >
-            {item.title}
-          </Text>
-          {item.year !== null ? (
-            <Text className="text-xs text-text-secondary">{item.year}</Text>
-          ) : null}
-        </View>
-      </Pressable>
+            <GlassPill>{pill}</GlassPill>
+          </View>
+        ) : null}
+        {marks?.watched ? (
+          <View style={{ position: "absolute", bottom: INSET, right: INSET }}>
+            <CardMark look="watched" />
+          </View>
+        ) : null}
+      </PosterFrame>
+      <View className="gap-0.5">
+        <Text
+          numberOfLines={2}
+          className="text-sm font-semibold text-foreground"
+        >
+          {item.title}
+        </Text>
+        {item.year !== null ? (
+          <Text className="text-xs text-text-secondary">{item.year}</Text>
+        ) : null}
+      </View>
+    </Pressable>
+  );
+
+  const href = cardHref(type, item.id);
+  if (!menu) {
+    return (
+      <Link href={href} asChild>
+        {trigger}
+      </Link>
+    );
+  }
+  return (
+    <Link href={href} asChild>
+      <Link.Trigger>{trigger}</Link.Trigger>
+      <Link.Menu title={item.title}>
+        {menu.map((entry) => (
+          <Link.MenuAction
+            key={entry.id}
+            title={entry.title}
+            destructive={entry.destructive}
+            disabled={entry.disabled}
+            onPress={entry.onPress}
+          />
+        ))}
+      </Link.Menu>
+      <Link.Preview />
     </Link>
   );
 }

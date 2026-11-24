@@ -25,14 +25,17 @@ const HIT_SLOP = (MIN_TOUCH_TARGET - CARD_ACTION_SIZE) / 2;
  */
 const LOOKS: Record<
   CardActionLook,
-  { icon: () => ReactNode; sheen: "glass" | "selected" }
+  { icon: (size: number) => ReactNode; sheen: "glass" | "selected" }
 > = {
-  planned: { icon: () => <PlannedIcon size={18} />, sheen: "glass" },
-  watched: { icon: () => <WatchedIcon filled size={18} />, sheen: "selected" },
+  planned: { icon: (size) => <PlannedIcon size={size} />, sheen: "glass" },
+  watched: {
+    icon: (size) => <WatchedIcon filled size={size} />,
+    sheen: "selected",
+  },
   remove: {
-    icon: () => (
+    icon: (size) => (
       <XIcon
-        size={18}
+        size={size}
         color={tokenColor("color-foreground")}
         strokeWidth={2.5}
       />
@@ -40,7 +43,7 @@ const LOOKS: Record<
     sheen: "glass",
   },
   mark: {
-    icon: () => <WatchedIcon filled={false} size={18} />,
+    icon: (size) => <WatchedIcon filled={false} size={size} />,
     sheen: "glass",
   },
 };
@@ -88,9 +91,39 @@ export function CardActionButton({
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
         >
-          {style.icon()}
+          {style.icon(18)}
         </View>
       </GlassPlate>
     </Pressable>
+  );
+}
+
+/** A card mark's drawn size: smaller than a button, since it is not one. */
+export const CARD_MARK_SIZE = 28;
+
+/**
+ * A catalog card's own state drawn as the library button's look, but not
+ * pressable (prompts/mobile-look-card-actions.md, decision 9): the card's
+ * actions live in its long press menu, so the card keeps one tap target. It
+ * is hidden from screen readers, which hear the state in the card's label.
+ */
+export function CardMark({ look }: { look: CardActionLook }) {
+  const style = LOOKS[look];
+  return (
+    <View
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      pointerEvents="none"
+      style={{ width: CARD_MARK_SIZE, height: CARD_MARK_SIZE }}
+    >
+      <GlassPlate
+        sheen={style.sheen}
+        shadow
+        radius={PILL_RADIUS}
+        className="flex-1 items-center justify-center"
+      >
+        {style.icon(16)}
+      </GlassPlate>
+    </View>
   );
 }

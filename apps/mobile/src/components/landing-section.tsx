@@ -4,8 +4,8 @@ import { todayUtc } from "@bestats/core/tv/air-status";
 import { useQuery } from "@tanstack/react-query";
 import { type Href, Link } from "expo-router";
 import { FlatList, Pressable, View } from "react-native";
-
 import { Text } from "@/components/text";
+import { useCardStates } from "@/lib/card-states";
 import { catalogKeys, fetchList } from "@/lib/catalog";
 
 import { cardDateLabel } from "./dated-card";
@@ -41,6 +41,11 @@ export function LandingSection({ list, count, variant, label, blurb }: Props) {
     queryFn: () => fetchList(list.mediaType, list.slug, 1),
   });
   const items = query.data?.results.slice(0, count) ?? [];
+  // The ranked list draws rows, not cards, so it reads no card state.
+  const known = useCardStates(
+    list.mediaType,
+    variant === "ranked" ? [] : items.map((item) => item.id),
+  );
   const line = query.isSuccess && blurb ? blurb(items.length) : null;
 
   return (
@@ -108,6 +113,7 @@ export function LandingSection({ list, count, variant, label, blurb }: Props) {
               type={list.mediaType}
               width={variant === "large" ? LARGE_CARD : CARD}
               dateLabel={cardDateLabel(list, item, todayUtc(new Date()))}
+              known={known(item.id)}
             />
           )}
         />

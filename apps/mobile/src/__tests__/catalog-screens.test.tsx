@@ -17,6 +17,9 @@ import { SearchScreen } from "@/screens/search-screen";
  * a list ends quietly at a 404; Search sends core's params and the media
  * switch moves Home and Search together; AC-14's catalog notice shows
  */
+// The catalog screens are public; signed out, no card reads its state.
+jest.mock("@/lib/session", () => ({ useSession: () => ({ session: null }) }));
+
 const mockFetchList = jest.fn();
 const mockFetchSearch = jest.fn();
 jest.mock("@/lib/catalog", () => ({
