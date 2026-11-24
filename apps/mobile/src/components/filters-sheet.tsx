@@ -135,8 +135,10 @@ export function FiltersSheet({
     >
       <View className="flex-1">
         <PageBackground />
-        <View className="flex-row items-center justify-between px-4 pt-4">
-          <View className="flex-row items-center gap-1">
+        <View className="flex-row items-center justify-between gap-3 px-4 pt-4">
+          {/* Shrinks before Done does, so Done stays on screen at the
+              largest text size (prompts/mobile-look-search.md, R5). */}
+          <View className="flex-1 flex-row items-center gap-1">
             {view === "platforms" ? (
               <Pressable
                 accessibilityRole="button"
@@ -153,7 +155,9 @@ export function FiltersSheet({
             ) : null}
             <Text
               accessibilityRole="header"
-              className="text-xl font-bold text-foreground"
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              className="shrink text-xl font-bold text-foreground"
             >
               {view === "platforms" ? "Platforms" : "Filters"}
             </Text>
