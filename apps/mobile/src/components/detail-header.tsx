@@ -2,6 +2,7 @@ import {
   CATALOG_SOURCES,
   type LibraryType,
 } from "@bestats/core/catalog/media-type";
+import { ageRatingLabel } from "@bestats/core/catalog/where-to-watch";
 import { formatVoteCount } from "@bestats/core/format";
 import { Image } from "expo-image";
 import { use } from "react";
@@ -29,6 +30,12 @@ type Props = {
   communityRating: number | null;
   /** How many votes the community rating rests on, or null when unknown. */
   voteCount: number | null;
+  /**
+   * The age rating for the connection's country, from the extras read; null
+   * or absent while it loads, after it failed and when the country has none
+   * (prompts/mobile-look-title-extras.md, decision 8).
+   */
+  ageRating?: { rating: string; regionName: string } | null;
 };
 
 /**
@@ -50,6 +57,7 @@ export function DetailHeader({
   type,
   communityRating,
   voteCount,
+  ageRating = null,
 }: Props) {
   const line = meta.filter(Boolean).join(" · ");
   // `TitleScroll` says whether it drew a backdrop the poster should overlap.
@@ -57,6 +65,14 @@ export function DetailHeader({
   const pills = [
     ...genres.map((genre) => genre.name),
     ...(status ? [status] : []),
+  ];
+  // The age pill leads and shows the rating alone; VoiceOver hears which
+  // country it is for, as the web's `AgeRatingChip` says it.
+  const spoken = [
+    ...(ageRating
+      ? [`${ageRatingLabel(ageRating.regionName)}: ${ageRating.rating}`]
+      : []),
+    ...pills,
   ];
 
   return (
@@ -97,12 +113,13 @@ export function DetailHeader({
           {title}
         </Text>
         {line ? <Text className="text-text-secondary">{line}</Text> : null}
-        {pills.length > 0 ? (
+        {spoken.length > 0 ? (
           <View
             accessible
-            accessibilityLabel={pills.join(", ")}
+            accessibilityLabel={spoken.join(", ")}
             className="flex-row flex-wrap gap-1.5"
           >
+            {ageRating ? <GlassPill>{ageRating.rating}</GlassPill> : null}
             {pills.map((pill) => (
               <GlassPill key={pill}>{pill}</GlassPill>
             ))}

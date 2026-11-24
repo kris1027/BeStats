@@ -40,9 +40,15 @@ import {
   movieFacts,
   Overview,
 } from "@/components/title-details";
+import {
+  ageRatingOf,
+  MoreLikeThisSlot,
+  TrailerButton,
+  WhereToWatch,
+} from "@/components/title-extras";
 import { TitleScroll } from "@/components/title-header";
 import { TrackingGate } from "@/components/tracking-gate";
-import { catalogKeys } from "@/lib/catalog";
+import { catalogKeys, fetchTitleExtras } from "@/lib/catalog";
 import { fetchMovie, restoreMovie, writeMovieIntent } from "@/lib/movies";
 import { useSession } from "@/lib/session";
 import {
@@ -58,7 +64,9 @@ import { TitleReadError } from "./title-states";
  * A movie's page (prompts/mobile-title-tracking.md, decision 5): the catalog
  * detail from `/api/v1/movies/{id}` in the look of the shipped movie page,
  * the three tracking pills, the crew lines, the cast row and Facts, under
- * the stretchy backdrop header (prompts/mobile-look-title-pages.md). TMDB's score is
+ * the stretchy backdrop header (prompts/mobile-look-title-pages.md). The trailer, age pill,
+ * Where to watch and More like this come from the extras read
+ * (prompts/mobile-look-title-extras.md). TMDB's score is
  * labelled TMDB, apart from the user's own score (AGENTS.md section 9).
  */
 export function MovieScreen() {
@@ -76,6 +84,13 @@ export function MovieScreen() {
     queryKey: trackingKeys.title("movie", id),
     queryFn: () => fetchTitleState("movie", id),
     enabled: parsedId.success && session !== null,
+  });
+  // Its own query, so slow or failed extras never hold up the movie
+  // (prompts/mobile-look-title-extras.md, decision 5).
+  const extras = useQuery({
+    queryKey: catalogKeys.extras("movie", id),
+    queryFn: () => fetchTitleExtras("movie", id),
+    enabled: parsedId.success,
   });
 
   if (!parsedId.success) {
@@ -99,6 +114,7 @@ export function MovieScreen() {
         voteCount={detail.tmdbVoteCount}
         genres={detail.genres}
         status={detail.status}
+        ageRating={ageRatingOf(extras.data)}
         meta={[
           formatAirDate(detail.releaseDate) ??
             (detail.releaseYear ? String(detail.releaseYear) : null),
@@ -106,6 +122,7 @@ export function MovieScreen() {
         ]}
       />
       <View className="gap-5 px-4 pt-5">
+        <TrailerButton trailer={extras.data?.trailer} title={detail.title} />
         <TrackingGate signedIn={session !== null} state={state}>
           {(data) => <MovieTracking movie={detail} state={data} />}
         </TrackingGate>
@@ -121,11 +138,15 @@ export function MovieScreen() {
         />
       </View>
       <View className="pt-6">
+        <WhereToWatch read={extras} />
+      </View>
+      <View className="pt-6">
         <CastRow
           cast={detail.cast}
           emptyMessage="TMDB lists no cast for this movie."
         />
       </View>
+      <MoreLikeThisSlot read={extras} type="movie" />
       <View className="pt-6">
         <FactsPanel facts={movieFacts(detail)} />
       </View>

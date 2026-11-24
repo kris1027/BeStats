@@ -46,9 +46,10 @@ import {
   Overview,
   textFact,
 } from "@/components/title-details";
+import { MoreLikeThis, TrailerButton } from "@/components/title-extras";
 import { TitleScroll } from "@/components/title-header";
 import { TrackingGate } from "@/components/tracking-gate";
-import { catalogKeys, fetchGame } from "@/lib/catalog";
+import { catalogKeys, fetchGame, fetchSimilarGames } from "@/lib/catalog";
 import { restoreGame, writeGameIntent } from "@/lib/games";
 import { useSession } from "@/lib/session";
 import {
@@ -66,7 +67,8 @@ import { TitleReadError } from "./title-states";
  * IGDB's summary and story, screenshots and Facts. Every part IGDB has no
  * value for is left out rather than invented (spec 0031, AC-11), and IGDB's
  * community rating stays labelled IGDB, apart from the user's score
- * (AGENTS.md section 9). The trailer and More like this are not in this slice.
+ * (AGENTS.md section 9). The trailer opens YouTube and More like this reads
+ * `/api/v1/games/{id}/similar` (prompts/mobile-look-title-extras.md).
  */
 export function GameScreen() {
   const params = useLocalSearchParams<{ id: string }>();
@@ -82,6 +84,14 @@ export function GameScreen() {
     queryKey: trackingKeys.title("game", id),
     queryFn: () => fetchTitleState("game", id),
     enabled: parsed.success && session !== null,
+  });
+  // Its own query, so slow or failed cards never hold up the game
+  // (prompts/mobile-look-title-extras.md, decisions 3 and 5).
+  const similar = useQuery({
+    queryKey: catalogKeys.similarGames(id),
+    queryFn: () => fetchSimilarGames(id),
+    // A game with no similar ids makes no request at all, as the web's.
+    enabled: parsed.success && (game.data?.similarGameIds.length ?? 0) > 0,
   });
 
   if (!parsed.success) {
@@ -111,6 +121,7 @@ export function GameScreen() {
         ]}
       />
       <View className="gap-5 px-4 pt-5">
+        <TrailerButton trailer={detail.trailer} title={detail.name} />
         <TrackingGate signedIn={session !== null} state={state}>
           {(data) => <GameTracking game={detail} state={data} />}
         </TrackingGate>
@@ -126,6 +137,20 @@ export function GameScreen() {
       <View className="pt-6">
         <ScreenshotRow name={detail.name} urls={detail.screenshotUrls} />
       </View>
+      {detail.similarGameIds.length > 0 &&
+      similar.data?.results.length !== 0 ? (
+        <View className="pt-6">
+          <MoreLikeThis
+            type="game"
+            read={{
+              isPending: similar.isPending,
+              isError: similar.isError,
+              data: similar.data?.results,
+              refetch: similar.refetch,
+            }}
+          />
+        </View>
+      ) : null}
       <View className="pt-6">
         <FactsPanel facts={gameFacts(detail)} />
       </View>
