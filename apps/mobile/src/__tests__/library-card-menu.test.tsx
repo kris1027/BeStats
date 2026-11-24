@@ -10,6 +10,7 @@ import { renderRouter } from "expo-router/testing-library";
 import type { PropsWithChildren } from "react";
 import { Alert, Platform } from "react-native";
 
+import { ApiError } from "@/lib/api";
 import { MediaTypeProvider } from "@/lib/media-type";
 import { LibraryScreen } from "@/screens/library-screen";
 import {
@@ -24,8 +25,9 @@ import { CARD_FONT_SCALE_CAP } from "@/theme/font-scale";
  * screen readers and, on Android, a long press alert), AC-5 (a menu write
  * sends the title screen's request and the page is read again, so the
  * server places the card), AC-6 (a failed card opens with no menu, a
- * missing one does not open), AC-7 (the quick action stays its own button)
- * and AC-8 (the card's text has the card's width and the text size cap).
+ * missing one does not open), AC-5 (a refused menu write or Undo says why
+ * and the card keeps its state), AC-7 (the quick action stays its own button
+ * and still writes) and AC-8 (the card's text has the card's width and the text size cap).
  */
 const mockApi = createApiMock();
 jest.mock("@/lib/api", () => ({
@@ -189,6 +191,47 @@ test("a Watchlist movie offers the catalog menu beside its quick action", async 
   );
 });
 
+test("the quick action still sends its own write beside the menu", async () => {
+  const user = userEvent.setup();
+  const page = await openPage("movie", "/watchlist", [PLANNED_MOVIE]);
+  mockApi.on("PUT", "/api/v1/me/movies/603/watchlist", () => {
+    page.leave();
+    return { ok: true };
+  });
+
+  await link(/^The Matrix/);
+  await user.press(
+    screen.getByRole("button", { name: "Remove The Matrix from Watchlist" }),
+  );
+  expect(
+    mockApi.callsTo("PUT", "/api/v1/me/movies/603/watchlist")[0]?.body,
+  ).toEqual({ planned: false });
+  await waitFor(() =>
+    expect(screen.queryByRole("link", { name: /^The Matrix/ })).toBeNull(),
+  );
+});
+
+test("a refused menu write says why and the card keeps its menu", async () => {
+  await openPage("movie", "/watchlist", [PLANNED_MOVIE]);
+  mockApi.on("PUT", "/api/v1/me/movies/603/watched", () => {
+    throw new ApiError(
+      409,
+      "not_released",
+      "This movie hasn't been released yet.",
+      "not_released",
+    );
+  });
+
+  await act(async () => act11y(await link(/^The Matrix/), "watched"));
+  expect(
+    await screen.findByText("This movie hasn't been released yet."),
+  ).toBeOnTheScreen();
+  expect((await link(/^The Matrix/)).props.accessibilityActions).toEqual([
+    { name: "plan", label: "Remove from plan" },
+    { name: "watched", label: "Mark watched" },
+  ]);
+});
+
 test("Mark watched stays out of the menu before the release day", async () => {
   await openPage("movie", "/coming-soon", [
     {
@@ -254,6 +297,29 @@ test("Undo closes its toast even after the card has left the page", async () => 
     ).toBeNull(),
   );
   expect(await link(/^Game of Thrones/)).toBeTruthy();
+});
+
+test("a refused Undo says so after the card has left the page", async () => {
+  const user = userEvent.setup();
+  const page = await openPage("tv", "/up-next", [UP_NEXT_SHOW]);
+  mockApi.on("DELETE", "/api/v1/me/shows/1399/tracking", () => {
+    page.leave();
+    return { ok: true, undo: { trackedAt: "2026-01-01T00:00:00Z" } };
+  });
+  mockApi.on("POST", "/api/v1/me/shows/1399/tracking/restore", () => {
+    throw new ApiError(409, "conflict", "Couldn't undo.", "undo_expired");
+  });
+
+  await act(async () => act11y(await link(/^Game of Thrones/), "tracking"));
+  await waitFor(() =>
+    expect(screen.queryByRole("link", { name: /^Game of Thrones/ })).toBeNull(),
+  );
+  await user.press(screen.getByRole("button", { name: "Undo" }));
+
+  expect(
+    await screen.findByText(SHOW_TRACKING_COPY.undoExpired),
+  ).toBeOnTheScreen();
+  expect(screen.queryByRole("link", { name: /^Game of Thrones/ })).toBeNull();
 });
 
 test("a Playing game offers Remove, which sends the title screen's delete", async () => {
