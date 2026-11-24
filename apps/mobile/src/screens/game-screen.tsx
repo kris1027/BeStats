@@ -11,22 +11,12 @@ import {
   formatPersonalScore,
 } from "@bestats/core/format";
 import {
-  applyGameIntent,
   canHoldScore,
-  type GameIntent,
   isGameStatusHeldBack,
   opensScoreSheet,
 } from "@bestats/core/tracking/game-intent";
-import {
-  GAME_STATUS_LABELS,
-  GAME_TRACKING_MESSAGES,
-  GAME_UNDO_MESSAGES,
-} from "@bestats/core/tracking/messages";
-import {
-  GAME_STATUSES,
-  type GameStatus,
-  type GameUndo,
-} from "@bestats/core/tracking/types";
+import { GAME_STATUS_LABELS } from "@bestats/core/tracking/messages";
+import { GAME_STATUSES, type GameStatus } from "@bestats/core/tracking/types";
 import { todayUtc } from "@bestats/core/tv/air-status";
 import { useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
@@ -50,14 +40,9 @@ import { MoreLikeThis, TrailerButton } from "@/components/title-extras";
 import { TitleScroll } from "@/components/title-header";
 import { TrackingGate } from "@/components/tracking-gate";
 import { catalogKeys, fetchGame, fetchSimilarGames } from "@/lib/catalog";
-import { restoreGame, writeGameIntent } from "@/lib/games";
 import { useSession } from "@/lib/session";
-import {
-  fetchTitleState,
-  trackingKeys,
-  useTrackingWrite,
-  useUndoToast,
-} from "@/lib/tracking";
+import { useGameWrite } from "@/lib/title-writes";
+import { fetchTitleState, trackingKeys } from "@/lib/tracking";
 
 import { TitleReadError } from "./title-states";
 
@@ -175,55 +160,10 @@ function GameTracking({
   game: V1Game;
   state: V1GameTitleState;
 }) {
-  const key = trackingKeys.title("game", game.id);
-  const offerUndo = useUndoToast();
   const [sheetOpen, setSheetOpen] = useState(false);
+  const write = useGameWrite(game.id, () => setSheetOpen(false));
   const released = isGameReleased(game.releaseDate, todayUtc(new Date()));
   const releaseNote = released ? null : gameReleaseNote(game.releaseDate);
-
-  const control = `game-${game.id}`;
-
-  const restore = useTrackingWrite({
-    stateKey: key,
-    control: `${control}-undo`,
-    apply: (_current: V1GameTitleState, undo: GameUndo) => ({
-      status: undo.previous.status,
-      rating: undo.previous.rating,
-    }),
-    write: (undo: GameUndo) =>
-      restoreGame(
-        undo.kind === "removed"
-          ? {
-              kind: "game_removed",
-              gameId: game.id,
-              previous: undo.previous,
-              removedAt: undo.removedAt,
-            }
-          : { kind: "game_status", gameId: game.id, previous: undo.previous },
-      ),
-    failure: GAME_TRACKING_MESSAGES.write_failed,
-    expired: GAME_UNDO_MESSAGES.undoExpired,
-  });
-
-  const write = useTrackingWrite({
-    stateKey: key,
-    control: (intent: GameIntent) => `${control}-${intent.kind}`,
-    apply: applyGameIntent,
-    write: (intent: GameIntent) => writeGameIntent(game.id, intent),
-    failure: GAME_TRACKING_MESSAGES.write_failed,
-    onFailure: () => setSheetOpen(false),
-    onSuccess: (result, intent) => {
-      const undo = result.undo;
-      if (!undo) return;
-      offerUndo(
-        undo.kind === "removed"
-          ? GAME_UNDO_MESSAGES.removed
-          : GAME_UNDO_MESSAGES.scoreCleared,
-        `${control}-${intent.kind}`,
-        (done) => restore.mutate(undo, { onSettled: done }),
-      );
-    },
-  });
 
   const heldBack = (status: GameStatus) =>
     isGameStatusHeldBack(released, state.status, status);

@@ -10,16 +10,10 @@ import {
   formatPersonalScore,
   formatRuntime,
 } from "@bestats/core/format";
+import { movieTrackingAvailability } from "@bestats/core/tracking/intent";
 import {
-  applyTrackingIntent,
-  movieTrackingAvailability,
-  type TrackingIntent,
-} from "@bestats/core/tracking/intent";
-import {
-  MOVIE_CLEARED_MESSAGES,
   MOVIE_OVERVIEW_MISSING,
   MOVIE_TRACKING_LABELS,
-  TRACKING_MESSAGES,
 } from "@bestats/core/tracking/messages";
 import { todayUtc } from "@bestats/core/tv/air-status";
 import { useQuery } from "@tanstack/react-query";
@@ -49,14 +43,10 @@ import {
 import { TitleScroll } from "@/components/title-header";
 import { TrackingGate } from "@/components/tracking-gate";
 import { catalogKeys, fetchTitleExtras } from "@/lib/catalog";
-import { fetchMovie, restoreMovie, writeMovieIntent } from "@/lib/movies";
+import { fetchMovie } from "@/lib/movies";
 import { useSession } from "@/lib/session";
-import {
-  fetchTitleState,
-  trackingKeys,
-  useTrackingWrite,
-  useUndoToast,
-} from "@/lib/tracking";
+import { useMovieWrite } from "@/lib/title-writes";
+import { fetchTitleState, trackingKeys } from "@/lib/tracking";
 
 import { TitleReadError } from "./title-states";
 
@@ -155,12 +145,6 @@ export function MovieScreen() {
   );
 }
 
-/** What a write that removed a watch mark returned, for its Undo. */
-type MovieCleared = { watchedAt: string; rating: number | null };
-
-/** Movie writes carry their intent, so the optimistic state is core's. */
-type MovieWrite = TrackingIntent & { clears?: "planned" | "unwatched" };
-
 /**
  * Plan, Mark watched and Your score, as the web's `MovieTrackingControls`
  * (spec 0007, AC-1): a movie is planned or watched, never both, and a score
@@ -183,53 +167,12 @@ function MovieTracking({
   state: V1MovieTitleState;
 }) {
   const id = movie.id;
-  const key = trackingKeys.title("movie", id);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const offerUndo = useUndoToast();
+  const write = useMovieWrite(id, () => setSheetOpen(false));
 
   const released = isMovieReleased(movie.releaseDate, todayUtc(new Date()));
   const releaseNote = released ? null : movieReleaseNote(movie.releaseDate);
   const watched = state.watchedAt !== null;
-
-  const control = `movie-${id}`;
-
-  const restore = useTrackingWrite({
-    stateKey: key,
-    control: `${control}-undo`,
-    apply: (current: V1MovieTitleState, cleared: MovieCleared) =>
-      applyMovieIntents(current, [
-        { kind: "watched", value: true },
-        { kind: "rating", value: cleared.rating },
-      ]),
-    write: (cleared: MovieCleared) =>
-      restoreMovie({ kind: "movie_watched", movieId: id, ...cleared }),
-    failure: TRACKING_MESSAGES.write_failed,
-    expired: MOVIE_CLEARED_MESSAGES.undoExpired,
-  });
-
-  const write = useTrackingWrite({
-    stateKey: key,
-    control: (intent: MovieWrite) => `${control}-${intent.kind}`,
-    apply: (current: V1MovieTitleState, intent: MovieWrite) =>
-      applyMovieIntents(current, [intent]),
-    write: (intent: MovieWrite) => writeMovieIntent(id, intent),
-    failure: TRACKING_MESSAGES.write_failed,
-    onFailure: () => setSheetOpen(false),
-    onSuccess: (result, intent) => {
-      const cleared = result.cleared;
-      if (!cleared || !intent.clears) return;
-      const message =
-        intent.clears === "planned"
-          ? MOVIE_CLEARED_MESSAGES.planned(cleared.rating !== null)
-          : cleared.rating === null
-            ? null
-            : MOVIE_CLEARED_MESSAGES.unwatched;
-      if (message === null) return;
-      offerUndo(message, `${control}-${intent.kind}`, (done) =>
-        restore.mutate(cleared, { onSettled: done }),
-      );
-    },
-  });
 
   const { canMark, planOnly } = movieTrackingAvailability(released, {
     watched,
@@ -310,27 +253,4 @@ function MovieTracking({
       />
     </View>
   );
-}
-
-/**
- * Core's plan, mark and score rule over the v1 movie state. Only the
- * timestamp is the app's own: a new mark shows now until the server's answer
- * replaces it (apps/mobile/AGENTS.md, BeStats rules).
- */
-function applyMovieIntents(
-  current: V1MovieTitleState,
-  intents: readonly TrackingIntent[],
-): V1MovieTitleState {
-  const next = intents.reduce(applyTrackingIntent, {
-    inWatchlist: current.planned,
-    watched: current.watchedAt !== null,
-    rating: current.rating,
-  });
-  return {
-    planned: next.inWatchlist,
-    watchedAt: next.watched
-      ? (current.watchedAt ?? new Date().toISOString())
-      : null,
-    rating: next.rating,
-  };
 }

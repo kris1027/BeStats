@@ -13,7 +13,6 @@ import {
   NEXT_EPISODE_MESSAGES,
   SHOW_PROGRESS_MESSAGES,
   SHOW_TRACKING_COPY,
-  SHOW_TRACKING_MESSAGES,
 } from "@bestats/core/tracking/messages";
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
@@ -40,18 +39,12 @@ import {
   WhereToWatch,
 } from "@/components/title-extras";
 import { TitleScroll } from "@/components/title-header";
-import { useToast } from "@/components/toast";
 import { TrackingGate } from "@/components/tracking-gate";
 import { catalogKeys, fetchShow, fetchTitleExtras } from "@/lib/catalog";
 import { SEASON_ROW_POSTER_WIDTH, sizedImageUri } from "@/lib/images";
 import { useSession } from "@/lib/session";
-import { restoreShowTracking, trackShow, untrackShow } from "@/lib/shows";
-import {
-  fetchTitleState,
-  trackingKeys,
-  useTrackingWrite,
-  useUndoToast,
-} from "@/lib/tracking";
+import { useShowTrackingWrite } from "@/lib/title-writes";
+import { fetchTitleState, trackingKeys } from "@/lib/tracking";
 
 import { TitleReadError } from "./title-states";
 
@@ -171,46 +164,7 @@ function ShowTracking({
   show: V1Show;
   state: V1ShowTitleState;
 }) {
-  const key = trackingKeys.title("tv", show.id);
-  const offerUndo = useUndoToast();
-  const toast = useToast();
-
-  const control = `show-${show.id}-tracking`;
-
-  const restore = useTrackingWrite({
-    stateKey: key,
-    control: `${control}-undo`,
-    apply: (current: V1ShowTitleState) => ({ ...current, tracked: true }),
-    write: (undo: { trackedAt: string }) =>
-      restoreShowTracking({ kind: "show_tracking", showId: show.id, undo }),
-    failure: SHOW_TRACKING_MESSAGES.write_failed,
-    expired: SHOW_TRACKING_COPY.undoExpired,
-  });
-  const toggle = useTrackingWrite({
-    stateKey: key,
-    control,
-    apply: (current: V1ShowTitleState, tracked: boolean) => ({
-      ...current,
-      tracked,
-    }),
-    write: async (tracked: boolean) =>
-      tracked
-        ? { undo: null, ...(await trackShow(show.id)) }
-        : untrackShow(show.id),
-    failure: SHOW_TRACKING_MESSAGES.write_failed,
-    onSuccess: (result, tracked) => {
-      if (tracked) return;
-      const message = SHOW_TRACKING_COPY.stopped(show.name);
-      const undo = result.undo;
-      if (undo === null) {
-        toast.show({ id: control, message });
-        return;
-      }
-      offerUndo(message, control, (done) =>
-        restore.mutate(undo, { onSettled: done }),
-      );
-    },
-  });
+  const toggle = useShowTrackingWrite(show.id, show.name);
 
   return (
     <View className="gap-3">
