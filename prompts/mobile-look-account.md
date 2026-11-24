@@ -65,6 +65,14 @@ Changed:
 7. Copy is said once, in core; the web renders exactly as before (its tests pass unchanged apart from where they import the copy from).
 8. No colour literal, no new token, no `BlurView` outside `components/glass/`, `Text` and `TextInput` only from `@/components/text` (boundary tests pass). The legal boundary test still finds the credit facts only in core's `operator.ts`.
 
+## Build deviations (2026-11-24)
+
+- **One refusal is said once.** A failure that marks a field (a taken username, a wrong current password) would have shown the same words under the field and again in the form's alert. `FormAlert` leaves the form alert out when a field already says those exact words; Zod's "Check the highlighted fields" summary still shows, as on the web.
+- **`INPUT_CLASS` stays** for the filters sheet's platform search, which is a search box in a sheet, not a form field.
+- **Forgot password's line** keeps the app's own ending, "Open it on this phone.", after core's description, since the link only works on the phone that asked.
+- **The username field's server refusal** now shows under the field; a saved name still shows as an info `Notice`.
+- No simulator pass yet: manual steps 2 to 11 are open.
+
 ## Security considerations
 
 - The password check goes straight from the phone to Supabase Auth, as sign in does; no new route, no server code, no new processor. The throwaway client stores nothing (`persistSession: false`) and is signed out with `scope: "local"` in a `finally`, so a failed `updateUser` still revokes the check's session. `scope: "global"` is never used there, as it would end every session including the app's.
