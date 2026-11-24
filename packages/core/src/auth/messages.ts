@@ -283,6 +283,14 @@ export const AUTH_PANEL_COPY = {
  * decisions 2 and 6). The success line is said only once Supabase has
  * accepted the new password (AGENTS.md section 11).
  */
+/**
+ * The line the app adds under Forgot password's description: a reset link
+ * opens the app only on the phone that asked (prompts/mobile-deep-links.md,
+ * decision 6), and the web has no such limit, so only the app shows it
+ * (AGENTS.md section 5: copy lives in core).
+ */
+export const RESET_LINK_PHONE_NOTE = "Open it on this phone.";
+
 export const CHANGE_PASSWORD_COPY = {
   heading: "Change password",
   description: "Your new password needs at least 8 characters.",

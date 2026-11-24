@@ -8,6 +8,7 @@ import {
   AUTH_OUTCOME,
   AUTH_PANEL_COPY,
   RECOVERY_UNAVAILABLE_MESSAGE,
+  RESET_LINK_PHONE_NOTE,
   RESET_REQUESTED_MESSAGE,
 } from "@bestats/core/auth/messages";
 import { emailOnlySchema } from "@bestats/core/auth/schemas";
@@ -98,7 +99,7 @@ export default function ForgotPassword() {
         <AuthIntro
           copy={{
             title: AUTH_PANEL_COPY.forgotPassword.title,
-            description: `${AUTH_PANEL_COPY.forgotPassword.description} Open it on this phone.`,
+            description: `${AUTH_PANEL_COPY.forgotPassword.description} ${RESET_LINK_PHONE_NOTE}`,
           }}
         />
         <FormField
