@@ -10,6 +10,8 @@ Decided with the owner on 2026-11-23 (design interview, four rounds).
 
 ## Progress (2026-11-23, paused here by your call)
 
+Superseded: the foundation merged in [PR #99](https://github.com/kris1027/BeStats/pull/99) on 2026-11-23; its final status, device passes included, is slice 1 in [docs/scope/scope.md](../docs/scope/scope.md). The note below is kept as it was.
+
 Done and committed on `feat/mobile-web-parity-foundation` (not pushed): the sRGB and glass token copies, the native dependencies with Inter embedded (`expo-font` plugin, not `@expo-google-fonts` at runtime: a deviation from decision 8 that removes the load step), the theme, `GlassPlate`, `Rim`, `PageBackground`, the Inter `Text` wrapper and the boundary test. `pnpm typecheck`, `pnpm lint` and `pnpm test` pass there; nothing has run in the simulator yet. One deviation from the expected files: `fonts.ts` is `components/text.tsx`, and `use-reduce-transparency.ts` is `glass/use-frosted.ts`.
 
 The icons, `GlassPill`, skeletons and the glass `StatePanel` are half built on the local branch `wip/mobile-parity-components`, with failing screen tests. What is left, in order, is the feature 29 checklist in [docs/scope/scope.md](../docs/scope/scope.md). Native headers take `color-page-top` for now (no seam with the background); the title and list slices give them large titles or a backdrop.
@@ -39,7 +41,7 @@ The icons, `GlassPill`, skeletons and the glass `StatePanel` are half built on t
 7. **Grain is a PNG tile** rendered once by a script with `sharp` (already a devDependency, as `brand-icons` does), since React Native cannot run `feTurbulence`. It is drawn at the web's `--page-grain-alpha` with `mixBlendMode: "overlay"`.
 8. **Inter, scaling with the system text size.** `@expo-google-fonts/inter` loaded with `expo-font` before the launch overlay is ready; the weights the web uses (400, 500, 600, 700, 800). Text keeps `allowFontScaling` and gets a `maxFontSizeMultiplier` cap on fixed-height controls (pills, tab-like toggles) and on the fully rounded `GlassButton` (amended after the largest text pass in the simulator: a wrapped label cut into the round ends), so Dynamic Type never clips them.
 9. **Icons**: `lucide-react-native` for the lucide set the web uses, and the web's custom tracking icons (Plan, Planned, Watched, Next episode) ported as `react-native-svg` components in `src/components/icons/`, path for path from the web's SVGs. Text glyphs (★ ✓ × › ‹) go.
-10. **Haptics** through one wrapper, `src/lib/haptics.ts` (`expo-haptics`): a medium impact on a confirmed tracking write (watched, planned, score set, Undo; changed from light on 2026-11-24, your call: on a real iPhone the light tap could not be felt while the error buzz could) and the error notification on a failed one. It fires from `useTrackingWrite` and `useUndoToast`, so no screen calls Haptics directly, and it fires after the server confirms or refuses, never on the optimistic step alone.
+10. **Haptics** through one wrapper, `src/lib/haptics.ts` (`expo-haptics`): a medium impact on a confirmed tracking write (watched, planned, score set, Undo; changed from light on 2026-11-24, your call: on a real iPhone the light tap could not be felt while the error buzz could) and the error notification on a failed one. It fires only from `useTrackingWrite` (an Undo's restore is one of those writes, so `useUndoToast` needs none; amended 2026-11-24 to match the code), so no screen calls Haptics directly, and it fires after the server confirms or refuses, never on the optimistic step alone.
 11. **Radius scale** mirrors the web: the `radius*` tokens (`--radius` 0.75rem = 12pt, `radius-panel` 24pt) read from the generated copy into NativeWind's `@theme`, replacing Tailwind defaults and the `borderRadius: 12` literal.
 12. **Selected styles** follow the web: `glass-selected` (brighter, solid plate) replaces solid white `bg-primary`, and the personal cyan selected toggle (`glass-selected-personal`, dark `text-on-personal`) is used where the web uses it (the media type switch).
 13. **Existing components are restyled in place** (`GlassButton`, `StatePanel`, `Notice`, `PosterCard`, toast, sheets, `ChevronRow`, `FormField`), keeping their props and their accessibility names, so every screen, Home included, picks up the look without a layout change.
@@ -97,6 +99,7 @@ Kept after the code review, by the owner's call:
 - `StatePanel` gives an error panel with no action of its own Go back, or Go to Home when there is nothing to go back to (a deep link), so no error panel is a dead end (AC-5, components/AGENTS.md).
 - `SHEET_DIM` in `score-sheet.tsx` (the dim behind the score sheet) and the native header's flattened page colour (`tokenColorOver` in `theme/stack-options.tsx`) came out of the simulator pass and are recorded in docs/scope/scope.md.
 - Decisions 5 and 8 and AC-4 are amended in place above.
+- A failed haptic is swallowed in a store build and logged (`console.warn`, `__DEV__` only) in a development build, added 2026-11-24 after a real iPhone stayed silent, so a missing native module shows in Metro (`src/lib/haptics.ts`).
 
 ## Security considerations
 
