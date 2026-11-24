@@ -5,19 +5,17 @@ import {
   type LibraryType,
   titleHref,
 } from "@bestats/core/catalog/media-type";
-import { CATALOG_CARD_ACTION_LABELS } from "@bestats/core/tracking/messages";
 import { todayUtc } from "@bestats/core/tv/air-status";
 import { Image } from "expo-image";
-import { type Href, Link } from "expo-router";
+import type { Href } from "expo-router";
 import type { ReactNode } from "react";
-import { Alert, Platform, Pressable, View } from "react-native";
+import { View } from "react-native";
 import { FilmIcon } from "@/components/icons";
 
 import { Text } from "@/components/text";
 import { useCardState } from "@/lib/card-states";
 import {
   type CardMarks,
-  type CardMenuItem,
   gameCardMarks,
   gameCardMenu,
   movieCardMarks,
@@ -32,9 +30,9 @@ import {
   useShowTrackingWrite,
 } from "@/lib/title-writes";
 import { CARD_FONT_SCALE_CAP } from "@/theme/font-scale";
-import { HEADER_BACKGROUND } from "@/theme/stack-options";
 import { lengthToken, tokenColor } from "@/theme/token-vars";
 import { CARD_MARK_SIZE, CardMark } from "./card-action-button";
+import { CardLink, type MenuEntry, wire } from "./card-link";
 import { GlassPlate, PlateSolid } from "./glass/plate";
 import { Rim } from "./glass/rim";
 import {
@@ -151,9 +149,6 @@ export function PosterFrame({
   );
 }
 
-/** One menu entry, ready to run: a card's menu item with its write bound. */
-type MenuEntry = Omit<CardMenuItem<unknown>, "write"> & { onPress: () => void };
-
 /**
  * The inset of every badge, pill, mark and button from a poster's edge, the
  * web's 10px card corners (components/AGENTS.md, Card corners). The library
@@ -163,17 +158,6 @@ export const CARD_INSET = 10;
 
 /** The space between the bottom pill and the Watched mark beside it. */
 const MARK_GAP = 6;
-
-/** Binds each menu item's write to the card's mutation. */
-function wire<TWrite>(
-  menu: CardMenuItem<TWrite>[],
-  run: (write: TWrite) => void,
-): MenuEntry[] {
-  return menu.map(({ write, ...entry }) => ({
-    ...entry,
-    onPress: () => run(write),
-  }));
-}
 
 /**
  * The web's poster card, natively: the 2:3 poster in a rounded frame with
@@ -246,26 +230,6 @@ function GameCard(props: Props) {
   );
 }
 
-/**
- * Android has no native link menu, so a long press there asks with an
- * alert holding the same enabled actions and Cancel (decision 7). The menu
- * has at most two actions, within the three buttons Android's alert shows.
- */
-function openAlertMenu(title: string, menu: MenuEntry[]) {
-  Alert.alert(title, undefined, [
-    ...menu
-      .filter((entry) => !entry.disabled)
-      .map((entry) => ({
-        text: entry.title,
-        style: entry.destructive
-          ? ("destructive" as const)
-          : ("default" as const),
-        onPress: entry.onPress,
-      })),
-    { text: CATALOG_CARD_ACTION_LABELS.cancel, style: "cancel" as const },
-  ]);
-}
-
 /** The card as drawn, with or without the user's marks and menu. */
 function PosterCardView({
   item,
@@ -289,26 +253,13 @@ function PosterCardView({
   ]
     .filter(Boolean)
     .join(", ");
-  const enabled = menu?.filter((entry) => !entry.disabled) ?? [];
-
-  const trigger = (
-    <Pressable
-      accessibilityRole="link"
-      accessibilityLabel={label}
-      accessibilityActions={enabled.map((entry) => ({
-        name: entry.id,
-        label: entry.title,
-      }))}
-      onAccessibilityAction={({ nativeEvent }) =>
-        enabled.find((entry) => entry.id === nativeEvent.actionName)?.onPress()
-      }
-      onLongPress={
-        Platform.OS === "android" && enabled.length > 0
-          ? () => openAlertMenu(item.title, enabled)
-          : undefined
-      }
-      style={({ pressed }) => ({ width, opacity: pressed ? 0.85 : 1 })}
-      className="gap-2.5"
+  return (
+    <CardLink
+      href={cardHref(type, item.id)}
+      title={item.title}
+      label={label}
+      width={width}
+      menu={menu}
     >
       <PosterFrame
         width={width}
@@ -385,31 +336,6 @@ function PosterCardView({
           </Text>
         ) : null}
       </View>
-    </Pressable>
-  );
-
-  // Every card peeks at its title on a long press (iOS only); the menu
-  // joins it once the card's state is known (decisions 6 and 7).
-  return (
-    <Link href={cardHref(type, item.id)} asChild>
-      <Link.Trigger>{trigger}</Link.Trigger>
-      {menu ? (
-        <Link.Menu title={item.title}>
-          {menu.map((entry) => (
-            <Link.MenuAction
-              key={entry.id}
-              title={entry.title}
-              destructive={entry.destructive}
-              disabled={entry.disabled}
-              onPress={entry.onPress}
-            />
-          ))}
-        </Link.Menu>
-      ) : null}
-      {/* Screens are transparent over the stack's page background, which
-          a preview does not get, so it takes the page's colour as the header
-          shows it. */}
-      <Link.Preview style={{ backgroundColor: HEADER_BACKGROUND }} />
-    </Link>
+    </CardLink>
   );
 }
