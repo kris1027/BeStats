@@ -23,8 +23,8 @@ const SIZE = 16;
  * colours the cards and pills draw, so the key can never drift from them.
  */
 const ICONS: Record<IconKeyMark, ReactNode> = {
-  communityRating: <RatingStar tone="community" />,
-  personalScore: <RatingStar tone="personal" />,
+  communityRating: <RatingStar tone="community" size={SIZE} />,
+  personalScore: <RatingStar tone="personal" size={SIZE} />,
   plan: <PlanIcon size={SIZE} />,
   planned: <PlannedIcon size={SIZE} />,
   markWatched: <WatchedIcon filled={false} size={SIZE} />,

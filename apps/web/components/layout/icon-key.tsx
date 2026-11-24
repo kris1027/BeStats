@@ -53,7 +53,7 @@ export function IconKey() {
         className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-text-legend"
       >
         {ICON_KEY_ENTRIES.map((entry) => (
-          <li key={entry.label} className="flex items-center gap-2">
+          <li key={entry.mark} className="flex items-center gap-2">
             <span aria-hidden="true" className="flex">
               {ICONS[entry.mark]}
             </span>
