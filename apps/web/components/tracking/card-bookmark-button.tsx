@@ -1,5 +1,6 @@
 "use client";
 
+import { CATALOG_CARD_ACTION_LABELS } from "@bestats/core/tracking/messages";
 import { useRouter } from "next/navigation";
 import { startTransition, useOptimistic } from "react";
 
@@ -58,7 +59,7 @@ function CardBookmarkButton({
 
   return (
     <CardRoundButton
-      label={`Plan ${title}`}
+      label={CATALOG_CARD_ACTION_LABELS.plan(title)}
       pressed={optimistic}
       onClick={toggle}
       corner

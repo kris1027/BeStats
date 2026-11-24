@@ -1,5 +1,6 @@
 "use client";
 
+import { CATALOG_CARD_ACTION_LABELS } from "@bestats/core/tracking/messages";
 import { CardRoundButton } from "./card-round-button";
 import { PlanIcon, PlannedIcon } from "./tracking-icons";
 import { useShowTrackingToggle } from "./use-show-tracking";
@@ -35,7 +36,11 @@ function ShowCardBookmarkButton({
 
   return (
     <CardRoundButton
-      label={shown ? `Stop tracking ${name}` : `Track ${name}`}
+      label={
+        shown
+          ? CATALOG_CARD_ACTION_LABELS.stopTracking(name)
+          : CATALOG_CARD_ACTION_LABELS.track(name)
+      }
       onClick={toggle}
       corner
     >

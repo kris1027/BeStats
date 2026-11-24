@@ -10,13 +10,7 @@ import { type CardBadge, libraryCardView } from "@/lib/library-card";
 import { CARD_ACTION_SIZE, CardActionButton } from "./card-action-button";
 import { PlateSolid } from "./glass/plate";
 import { GlassPill, RatingStar } from "./glass-pill";
-import { PosterFrame } from "./poster-card";
-
-/**
- * The inset of the badge, the pill and the action from the poster's edge,
- * the web's 10px card corners (components/AGENTS.md, Card corners).
- */
-const INSET = 10;
+import { CARD_INSET, PosterFrame } from "./poster-card";
 
 /** A card's quick action, wired by the library screen. */
 export type CardActionSlot = {
@@ -33,7 +27,7 @@ export type CardActionSlot = {
 function Badge({ badge }: { badge: CardBadge }) {
   const personal = badge.tone === "personal";
   return (
-    <View style={{ position: "absolute", top: INSET, left: INSET }}>
+    <View style={{ position: "absolute", top: CARD_INSET, left: CARD_INSET }}>
       <GlassPill
         tone={personal ? "score" : "neutral"}
         icon={<RatingStar tone={personal ? "personal" : "community"} />}
@@ -90,12 +84,12 @@ export function LibraryCard({
           <View
             style={{
               position: "absolute",
-              bottom: INSET,
-              left: INSET,
+              bottom: CARD_INSET,
+              left: CARD_INSET,
               maxWidth:
                 quick && !quick.action.corner
-                  ? width - INSET * 3 - CARD_ACTION_SIZE
-                  : width - INSET * 2,
+                  ? width - CARD_INSET * 3 - CARD_ACTION_SIZE
+                  : width - CARD_INSET * 2,
             }}
           >
             <GlassPill>{view.pill.text}</GlassPill>
@@ -148,10 +142,10 @@ export function LibraryCard({
       <View
         style={{
           position: "absolute",
-          right: INSET,
+          right: CARD_INSET,
           top: quick.action.corner
-            ? INSET
-            : posterHeight - INSET - CARD_ACTION_SIZE,
+            ? CARD_INSET
+            : posterHeight - CARD_INSET - CARD_ACTION_SIZE,
         }}
       >
         <PlateSolid>

@@ -40,6 +40,21 @@ export const trackingKeys = {
 };
 
 /**
+ * Many titles' stored states in one `/api/v1/me/titles` read (at most
+ * `MAX_TITLE_KEYS`), the one place that request is built, so a title screen
+ * and a page of catalog cards ask the same way and a page never costs one
+ * request per card (prompts/mobile-look-card-actions.md, R6; AGENTS.md
+ * section 12, rate limits).
+ */
+export function fetchTitleStates(type: TitleType, ids: readonly number[]) {
+  return apiRequest(
+    `/api/v1/me/titles?ids=${ids.map((id) => titleKey(type, id)).join(",")}`,
+    v1TitlesSchema,
+    { auth: true },
+  );
+}
+
+/**
  * One title's stored state, from `/api/v1/me/titles` (spec 0035, API
  * surface). The API answers every asked key, so a missing or misshapen one is
  * an unreadable answer, never an empty state guessed by the app (AGENTS.md
@@ -49,11 +64,7 @@ export async function fetchTitleState<T extends TitleType>(
   type: T,
   id: number,
 ) {
-  const titles = await apiRequest(
-    `/api/v1/me/titles?ids=${titleKey(type, id)}`,
-    v1TitlesSchema,
-    { auth: true },
-  );
+  const titles = await fetchTitleStates(type, [id]);
   const state = pickTitleState(titles, type, id);
   if (!state) throw new ApiError(200, "internal", V1_ERROR_MESSAGES.internal);
   return state;

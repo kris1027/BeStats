@@ -23,6 +23,7 @@ import { ExternalLinkIcon, PlayIcon } from "@/components/icons";
 import { PosterCard } from "@/components/poster-card";
 import { PosterRowSkeleton, Skeleton } from "@/components/skeleton";
 import { Text } from "@/components/text";
+import { useCardStates } from "@/lib/card-states";
 import { sizedImageUri } from "@/lib/images";
 import { lengthToken, tokenColor } from "@/theme/token-vars";
 
@@ -236,8 +237,8 @@ function ProviderLogo({ provider }: { provider: V1Provider }) {
  * More like this (spec 0022, AC-14; spec 0031, AC-8 for a game; decision 6):
  * up to 12 recommendations or similar games as Home row cards, with no See
  * all. Its own skeleton while loading and its own error line; with none,
- * the section is left out. Cards carry no tracking badge yet, like Home's
- * (per card state is slice 4).
+ * the section is left out. Signed in, its cards carry the user's marks and
+ * long press actions, as Home's do (prompts/mobile-look-card-actions.md).
  */
 export function MoreLikeThis({
   type,
@@ -246,6 +247,7 @@ export function MoreLikeThis({
   type: LibraryType;
   read: ReadState<readonly V1CatalogItem[]>;
 }) {
+  const known = useCardStates(type, read.data?.map((item) => item.id) ?? []);
   if (!read.isPending && !read.isError && (read.data?.length ?? 0) === 0) {
     return null;
   }
@@ -274,7 +276,12 @@ export function MoreLikeThis({
           showsHorizontalScrollIndicator={false}
           contentContainerClassName="gap-3 px-4"
           renderItem={({ item }) => (
-            <PosterCard item={item} type={type} width={ROW_CARD} />
+            <PosterCard
+              item={item}
+              type={type}
+              width={ROW_CARD}
+              known={known(item.id)}
+            />
           )}
         />
       )}

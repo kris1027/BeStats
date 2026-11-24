@@ -50,3 +50,19 @@ jest.mock("react-native-worklets", () => ({
   scheduleOnRN: (fn: (...args: unknown[]) => void, ...args: unknown[]) =>
     fn(...args),
 }));
+// Expo Router's link preview and menu are native iOS views Jest does not
+// have, and without them a `Link` with `Link.Menu` renders nothing. The
+// stand in draws the link's trigger and leaves the menu and preview out, so
+// a card's actions are tested through its screen reader actions
+// (prompts/mobile-look-card-actions.md).
+jest.mock("expo-router/build/link/preview/native", () => {
+  const actual = jest.requireActual("expo-router/build/link/preview/native");
+  const React = require("react");
+  return {
+    ...actual,
+    NativeLinkPreview: ({ children }: { children?: unknown }) =>
+      React.createElement(React.Fragment, null, children),
+    NativeLinkPreviewAction: () => null,
+    NativeLinkPreviewContent: () => null,
+  };
+});

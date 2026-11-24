@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  CATALOG_CARD_ACTION_LABELS,
   EPISODE_MARK_MESSAGES,
   EPISODE_TRACKING_MESSAGES,
   GAME_DATE_LINES,
@@ -253,6 +254,26 @@ describe("LIBRARY_NOTES, labels and the held section (spec 0020, AC-10, AC-12, A
     expect(labels.unmarkMovie(labels.missingTitle)).toBe(
       "Unmark missing title as watched",
     );
+  });
+
+  it("names a catalog card's actions as the web's card buttons did", () => {
+    const labels = CATALOG_CARD_ACTION_LABELS;
+    expect(labels.plan("Dune")).toBe("Plan Dune");
+    expect(labels.unmarkMovie("Dune")).toBe("Unmark Dune as watched");
+    expect(labels.track("Severance")).toBe("Track Severance");
+    expect(labels.stopTracking("Severance")).toBe("Stop tracking Severance");
+    expect(labels.wantToPlay("Hades")).toBe("Want to play: Hades");
+    expect(labels.menu).toEqual({
+      plan: "Plan",
+      unplan: "Remove from plan",
+      markWatched: "Mark watched",
+      unmark: "Remove watched mark",
+      track: "Track",
+      stopTracking: "Stop tracking",
+      wantToPlay: "Want to play",
+      removeGame: "Remove from your games",
+    });
+    expect(labels.cancel).toBe("Cancel");
   });
 
   it("labels a Watched show Finished or Caught up", () => {

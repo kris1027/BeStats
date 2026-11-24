@@ -205,6 +205,14 @@ export const EPISODE_MARK_MESSAGES = {
 } as const;
 
 /**
+ * The verbs a show's tracking controls start with, so the toggle's names and
+ * a catalog card's short menu titles never drift apart (apps/mobile/AGENTS.md,
+ * copy comes from core's message files).
+ */
+const TRACK = "Track";
+const STOP_TRACKING = "Stop tracking";
+
+/**
  * The show tracking toggle's copy and toasts (spec 0020, AC-2 to AC-6). Stop
  * tracking, whose toggle goes back to Plan to watch, confirms with a toast
  * that carries the Undo; one that found the show already untracked confirms
@@ -215,7 +223,7 @@ export const SHOW_TRACKING_COPY = {
   plan: "Plan to watch",
   tracking: "Tracking",
   unavailable: "Tracking unavailable",
-  stopLabel: (show: string) => `Stop tracking ${show}`,
+  stopLabel: (show: string) => `${STOP_TRACKING} ${show}`,
   added: (show: string) => `${show} added to your shows`,
   stopped: (show: string) => `Stopped tracking ${show}`,
   undoExpired: "Couldn't undo. Track the show again from its page.",
@@ -471,6 +479,33 @@ export const LIBRARY_CARD_ACTION_LABELS = {
   removeFromPage: (name: string, page: LibraryPageKey, type: LibraryType) =>
     `Remove ${name} from ${libraryPageName(page, type)}`,
   removeGame: (name: string) => `Remove ${name} from your games`,
+} as const;
+
+/**
+ * A catalog card's own actions, on the web's card buttons and the app's long
+ * press menu (prompts/mobile-look-card-actions.md, decision 10), so both
+ * apps name them alike. The functions are the web buttons' accessible names,
+ * word for word; `menu` holds the app's short menu titles, which sit under
+ * the title's own name in the menu.
+ */
+export const CATALOG_CARD_ACTION_LABELS = {
+  plan: (name: string) => `${MOVIE_TRACKING_LABELS.plan} ${name}`,
+  unmarkMovie: LIBRARY_CARD_ACTION_LABELS.unmarkMovie,
+  track: (name: string) => `${TRACK} ${name}`,
+  stopTracking: SHOW_TRACKING_COPY.stopLabel,
+  wantToPlay: (name: string) => `${GAME_STATUS_LABELS.want_to_play}: ${name}`,
+  menu: {
+    plan: MOVIE_TRACKING_LABELS.plan,
+    unplan: "Remove from plan",
+    markWatched: MOVIE_TRACKING_LABELS.markWatched,
+    unmark: "Remove watched mark",
+    track: TRACK,
+    stopTracking: STOP_TRACKING,
+    wantToPlay: GAME_STATUS_LABELS.want_to_play,
+    removeGame: "Remove from your games",
+  },
+  /** The app's Android menu has no native dismiss, so it names its own. */
+  cancel: "Cancel",
 } as const;
 
 /** The signed out library: no private request, only the way in. */

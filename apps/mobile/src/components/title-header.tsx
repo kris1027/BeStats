@@ -1,7 +1,7 @@
 import { Image } from "expo-image";
-import { Stack } from "expo-router";
+import { Stack, useIsPreview } from "expo-router";
 import { HeaderHeightContext } from "expo-router/react-navigation";
-import { createContext, type ReactNode, use } from "react";
+import { type ComponentProps, createContext, type ReactNode, use } from "react";
 import { StyleSheet, useWindowDimensions, View } from "react-native";
 import Animated, {
   Extrapolation,
@@ -56,6 +56,15 @@ type Props = {
 };
 
 /**
+ * The stack header's options, left out inside a long press preview of the
+ * title (prompts/mobile-look-card-actions.md): a preview has no header of
+ * its own, and Expo Router warns when a previewed screen sets one.
+ */
+function HeaderOptions(props: ComponentProps<typeof Stack.Screen>) {
+  return useIsPreview() ? null : <Stack.Screen {...props} />;
+}
+
+/**
  * A title screen's scroll view and its header (feature 29, slice 2,
  * decision 4): with a backdrop, the artwork runs full bleed under a clear
  * native header, which turns solid with the title as the artwork scrolls
@@ -92,7 +101,7 @@ export function TitleScroll({ title, backdropUrl, children }: Props) {
         style={styles.fill}
         contentContainerStyle={styles.content}
       >
-        <Stack.Screen options={{ title, headerTransparent: false }} />
+        <HeaderOptions options={{ title, headerTransparent: false }} />
         <Backdrop
           uri={sizedImageUri(backdropUrl, width)}
           height={backdropHeight(width, 0)}
@@ -111,7 +120,7 @@ export function TitleScroll({ title, backdropUrl, children }: Props) {
         style={styles.fill}
         contentContainerStyle={styles.content}
       >
-        <Stack.Screen options={{ title, headerTransparent: false }} />
+        <HeaderOptions options={{ title, headerTransparent: false }} />
         {children}
       </Animated.ScrollView>
     );
@@ -125,7 +134,7 @@ export function TitleScroll({ title, backdropUrl, children }: Props) {
       scrollEventThrottle={16}
       onScroll={onScroll}
     >
-      <Stack.Screen
+      <HeaderOptions
         options={{
           title,
           headerTransparent: true,
