@@ -97,3 +97,10 @@ On the app's catalog cards (See all lists, Search results, Home rows and More li
 10. Turn on VoiceOver, focus a card, swipe up or down for actions: the same actions are read.
 11. Sign out: cards show no marks and a long press shows only the preview.
 12. Turn on airplane mode, try Plan: the card reverts and the toast offers Retry.
+
+## Changes found while building (2026-11-24)
+
+- The long press preview drew the title screen with no background, because screens are transparent over the stack's page background, which a preview does not get. The preview now takes `HEADER_BACKGROUND`, the page colour the header shows.
+- A signed out or not yet known card now carries the preview too (decision 6 promised it), with no menu.
+- `TitleScroll` sets no header options inside a preview, since Expo Router warns that a previewed screen should not.
+- Expo Router logs "No preloaded screen view to push" when the preview is tapped; the title still opens with a normal push. Left as is; worth a look in the signed in simulator pass.

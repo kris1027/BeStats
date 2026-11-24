@@ -30,6 +30,7 @@ import {
   useMovieWrite,
   useShowTrackingWrite,
 } from "@/lib/title-writes";
+import { HEADER_BACKGROUND } from "@/theme/stack-options";
 import { lengthToken, tokenColor } from "@/theme/token-vars";
 import { CARD_MARK_SIZE, CardMark } from "./card-action-button";
 import { GlassPlate, PlateSolid } from "./glass/plate";
@@ -356,29 +357,28 @@ function PosterCardView({
     </Pressable>
   );
 
-  const href = cardHref(type, item.id);
-  if (!menu) {
-    return (
-      <Link href={href} asChild>
-        {trigger}
-      </Link>
-    );
-  }
+  // Every card peeks at its title on a long press (iOS only); the menu
+  // joins it once the card's state is known (decisions 6 and 7).
   return (
-    <Link href={href} asChild>
+    <Link href={cardHref(type, item.id)} asChild>
       <Link.Trigger>{trigger}</Link.Trigger>
-      <Link.Menu title={item.title}>
-        {menu.map((entry) => (
-          <Link.MenuAction
-            key={entry.id}
-            title={entry.title}
-            destructive={entry.destructive}
-            disabled={entry.disabled}
-            onPress={entry.onPress}
-          />
-        ))}
-      </Link.Menu>
-      <Link.Preview />
+      {menu ? (
+        <Link.Menu title={item.title}>
+          {menu.map((entry) => (
+            <Link.MenuAction
+              key={entry.id}
+              title={entry.title}
+              destructive={entry.destructive}
+              disabled={entry.disabled}
+              onPress={entry.onPress}
+            />
+          ))}
+        </Link.Menu>
+      ) : null}
+      {/* Screens are transparent over the stack's page background, which
+          a preview does not get, so it takes the page's colour as the header
+          shows it. */}
+      <Link.Preview style={{ backgroundColor: HEADER_BACKGROUND }} />
     </Link>
   );
 }
