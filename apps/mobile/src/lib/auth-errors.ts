@@ -27,7 +27,8 @@ export function authErrorMessage(error: AuthError | null): string {
  * field as well as saying why: a password rule refusal belongs to the
  * password field, a wrong current password to its field, and nothing else
  * marks one (core's `passwordFieldFor`; prompts/mobile-look-account.md,
- * decision 2).
+ * decision 2). Like `authErrorMessage`, only the classified facts leave the
+ * raw error (AGENTS.md section 11).
  */
 export function authErrorOutcome(error: AuthError | null): AuthOutcome {
   if (!error) return AUTH_OUTCOME.unexpected;

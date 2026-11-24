@@ -8,7 +8,7 @@ import { GlassPlate } from "./glass/plate";
  * web's `PANEL` (`glass glass-rim glass-plate-panel glass-shadow
  * rounded-panel`): the panel plate with its sheen, rim and shadow
  * (prompts/mobile-look-account.md, decision 8). One component, so those
- * screens keep one look.
+ * screens keep one look (AGENTS.md section 3: reuse, never redesign).
  */
 export function GlassPanel({
   children,

@@ -109,7 +109,8 @@ export function FormField({
  * state's message, unless a field already says those exact words under
  * itself (a taken username, a wrong current password), so a phone screen
  * never repeats one refusal twice. Zod's summary ("Check the highlighted
- * fields") differs from every field's words, so it still shows, as on the web.
+ * fields") differs from every field's words, so it still shows, as on the web
+ * (AGENTS.md section 11: a failed write shows visibly, once).
  */
 export function formAlert(state: AuthActionState): string | null {
   if (state.status !== "error" || !state.message) return null;
@@ -117,7 +118,11 @@ export function formAlert(state: AuthActionState): string | null {
   return fieldWords.includes(state.message) ? null : state.message;
 }
 
-/** `formAlert`'s message as the form's error `Notice`, or nothing. */
+/**
+ * `formAlert`'s message as the form's error `Notice`, or nothing, so every
+ * form draws its refusal with the one shared notice rather than its own
+ * (AGENTS.md sections 3 and 11).
+ */
 export function FormAlert({ state }: { state: AuthActionState }) {
   const message = formAlert(state);
   return message ? <Notice tone="error" message={message} /> : null;

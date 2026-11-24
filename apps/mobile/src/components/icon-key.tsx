@@ -35,12 +35,14 @@ const ICONS: Record<IconKeyMark, ReactNode> = {
 
 /**
  * The key to the card marks on About, the web footer's `IconKey`
- * (prompts/mobile-look-account.md, decision 9), with core's words and order.
- * Icons are decorative; each entry is read by its label alone.
+ * (prompts/mobile-look-account.md, decision 9), with core's words and order,
+ * so the community and personal stars are named apart as on the web (AGENTS.md
+ * section 9). Icons are decorative; each entry is read by its label alone,
+ * and the header names the list (AGENTS.md section 3).
  */
 export function IconKey() {
   return (
-    <View accessibilityLabel={ICON_KEY_LABEL} className="gap-3">
+    <View className="gap-3">
       <Text
         accessibilityRole="header"
         className="text-base font-semibold text-foreground"
