@@ -3,16 +3,19 @@ import {
   failure,
   fromZodError,
   IDLE_STATE,
-  passwordFieldFor,
 } from "@bestats/core/auth/action-state";
 import {
   AUTH_MESSAGES,
   AUTH_OUTCOME,
   AUTH_PANEL_COPY,
+  CHANGE_PASSWORD_COPY,
   RECOVERY_UNAVAILABLE_MESSAGE,
   SIGN_IN_NOTICE,
 } from "@bestats/core/auth/messages";
-import { PASSWORD_HINT, resetPasswordSchema } from "@bestats/core/auth/schemas";
+import {
+  PASSWORD_HINT_SENTENCE,
+  resetPasswordSchema,
+} from "@bestats/core/auth/schemas";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
@@ -21,7 +24,7 @@ import { LoadingState } from "@/components/centered-state";
 import { FormAlert, FormField } from "@/components/form-field";
 import { GlassButton } from "@/components/glass-button";
 import { Notice } from "@/components/notice";
-import { authErrorOutcome } from "@/lib/auth-errors";
+import { newPasswordFailure } from "@/lib/auth-errors";
 import { getPublicEnv } from "@/lib/env";
 import { useSession } from "@/lib/session";
 import { getSupabase } from "@/lib/supabase";
@@ -109,8 +112,7 @@ export default function AppResetPassword() {
         password: parsed.data.password,
       });
       if (authError) {
-        const outcome = authErrorOutcome(authError);
-        setState(failure(outcome, passwordFieldFor(outcome)));
+        setState(newPasswordFailure(authError));
         return;
       }
     } catch {
@@ -139,8 +141,8 @@ export default function AppResetPassword() {
       >
         <AuthIntro copy={AUTH_PANEL_COPY.resetPassword} />
         <FormField
-          label="New password"
-          hint={`${PASSWORD_HINT}.`}
+          label={CHANGE_PASSWORD_COPY.newLabel}
+          hint={PASSWORD_HINT_SENTENCE}
           secure
           value={password}
           onChangeText={setPassword}

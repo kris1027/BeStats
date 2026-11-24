@@ -3,7 +3,6 @@ import {
   failure,
   fromZodError,
   IDLE_STATE,
-  passwordFieldFor,
 } from "@bestats/core/auth/action-state";
 import { isAlreadyRegistered } from "@bestats/core/auth/auth-error";
 import {
@@ -12,7 +11,10 @@ import {
   AUTH_OUTCOME,
   AUTH_PANEL_COPY,
 } from "@bestats/core/auth/messages";
-import { PASSWORD_HINT, signUpSchema } from "@bestats/core/auth/schemas";
+import {
+  PASSWORD_HINT_SENTENCE,
+  signUpSchema,
+} from "@bestats/core/auth/schemas";
 import {
   USERNAME_HINT,
   USERNAME_MAX_LENGTH,
@@ -26,7 +28,7 @@ import { FormAlert, FormField } from "@/components/form-field";
 import { GlassButton } from "@/components/glass-button";
 import { profileKey, putUsername } from "@/lib/account";
 import { ApiError } from "@/lib/api";
-import { authErrorOutcome } from "@/lib/auth-errors";
+import { newPasswordFailure } from "@/lib/auth-errors";
 import { useSession } from "@/lib/session";
 import { getSupabase } from "@/lib/supabase";
 
@@ -94,8 +96,7 @@ export default function SignUp() {
         return;
       }
       if (authError) {
-        const outcome = authErrorOutcome(authError);
-        setState(failure(outcome, passwordFieldFor(outcome)));
+        setState(newPasswordFailure(authError));
         return;
       }
       if (!data.session) {
@@ -155,7 +156,7 @@ export default function SignUp() {
         />
         <FormField
           label="Password"
-          hint={`${PASSWORD_HINT}.`}
+          hint={PASSWORD_HINT_SENTENCE}
           secure
           value={password}
           onChangeText={setPassword}

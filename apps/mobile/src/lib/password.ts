@@ -2,7 +2,6 @@ import {
   type AuthActionState,
   failure,
   fromZodError,
-  passwordFieldFor,
   success,
 } from "@bestats/core/auth/action-state";
 import {
@@ -13,7 +12,7 @@ import { changePasswordSchema } from "@bestats/core/auth/schemas";
 import type { Database } from "@bestats/core/supabase/database.types";
 import { createClient } from "@supabase/supabase-js";
 
-import { authErrorOutcome } from "./auth-errors";
+import { authErrorOutcome, newPasswordFailure } from "./auth-errors";
 import { getPublicEnv } from "./env";
 import { getSupabase } from "./supabase";
 
@@ -98,10 +97,7 @@ export async function changePassword(input: {
     const { error } = await app.auth.updateUser({
       password: parsed.data.password,
     });
-    if (error) {
-      const outcome = authErrorOutcome(error);
-      return failure(outcome, passwordFieldFor(outcome));
-    }
+    if (error) return newPasswordFailure(error);
   } catch {
     return failure(AUTH_OUTCOME.unexpected);
   }

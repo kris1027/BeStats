@@ -1,3 +1,8 @@
+import {
+  type AuthActionState,
+  failure,
+  passwordFieldFor,
+} from "@bestats/core/auth/action-state";
 import { classifyAuthFailure } from "@bestats/core/auth/auth-error";
 import {
   AUTH_MESSAGES,
@@ -38,4 +43,16 @@ export function authErrorOutcome(error: AuthError | null): AuthOutcome {
     reasons: isAuthWeakPasswordError(error) ? error.reasons : undefined,
     sessionMissing: isAuthSessionMissingError(error),
   });
+}
+
+/**
+ * The form state for a Supabase Auth refusal of a new password (sign up,
+ * reset, Change password): its words, and the password field marked when the
+ * refusal is about the password, so the three forms mark what the web's
+ * actions mark (core's `passwordFieldFor`; AGENTS.md section 11). Sign in and
+ * Forgot password keep their own reading, since neither may mark a field.
+ */
+export function newPasswordFailure(error: AuthError): AuthActionState {
+  const outcome = authErrorOutcome(error);
+  return failure(outcome, passwordFieldFor(outcome));
 }
