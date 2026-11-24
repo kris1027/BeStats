@@ -56,7 +56,7 @@ export type CardMenuItem<TWrite> = {
  * the marks besides the pill.
  */
 export type CardMarks = {
-  planned: boolean;
+  bookmark: boolean;
   watched: boolean;
   score: number | null;
   community: boolean;
@@ -137,7 +137,7 @@ export function movieCardMarks(
   const watched = status?.page === "watched";
   const score = status?.page === "watched" ? status.rating : null;
   return {
-    planned: state.planned,
+    bookmark: state.planned,
     watched,
     score,
     community: status?.page !== "upcoming",
@@ -173,12 +173,13 @@ export function showCardMenu(state: V1ShowTitleState): CardMenuItem<boolean>[] {
 /**
  * A show card's marks: the bookmark while tracked. The web's show rating,
  * Upcoming pill and Finished line need the library page placement, which the
- * v1 title state does not carry and the app may not work out itself, so
- * they stay off the app's cards (decision 9).
+ * v1 title state does not carry and the app may not work out itself
+ * (apps/mobile/AGENTS.md, BeStats rules: placement is the server's; AGENTS.md
+ * section 9), so they stay off the app's cards (decision 9).
  */
 export function showCardMarks(state: V1ShowTitleState): CardMarks {
   return {
-    planned: state.tracked,
+    bookmark: state.tracked,
     watched: false,
     score: null,
     community: true,
@@ -190,8 +191,9 @@ export function showCardMarks(state: V1ShowTitleState): CardMarks {
 /**
  * A game card's menu, the web's bookmark: Want to play on a game not in the
  * list, and Remove from your games on one that is, whatever its status,
- * with Undo. Want to play is never held back by the release gate; if core
- * ever holds it back, it shows off rather than vanishing.
+ * with Undo. Want to play is never held back by the release gate (AGENTS.md
+ * section 7, games carry a status behind a release gate); if core ever holds
+ * it back, it shows off rather than vanishing.
  */
 export function gameCardMenu(
   state: V1GameTitleState,
@@ -239,7 +241,7 @@ export function gameCardMarks(
   if (card === null || card.status === "want_to_play") {
     const wanted = card !== null;
     return {
-      planned: wanted,
+      bookmark: wanted,
       watched: false,
       score: null,
       community: true,
@@ -249,7 +251,7 @@ export function gameCardMarks(
   }
   const status = GAME_STATUS_LABELS[card.status];
   return {
-    planned: false,
+    bookmark: false,
     watched: false,
     score: card.rating,
     community: true,

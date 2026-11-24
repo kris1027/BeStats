@@ -15,6 +15,10 @@ const MIN_TOUCH_TARGET = 44;
 export const CARD_ACTION_SIZE = 36;
 const HIT_SLOP = (MIN_TOUCH_TARGET - CARD_ACTION_SIZE) / 2;
 
+/** Icon sizes that keep the web's icon to plate ratio on each size. */
+const ACTION_ICON_SIZE = 18;
+const MARK_ICON_SIZE = 16;
+
 /**
  * Icon and sheen per look, the web's tracking marks in place of text glyphs
  * (prompts/mobile-web-parity-foundation.md, decision 9). The green is only
@@ -91,7 +95,7 @@ export function CardActionButton({
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
         >
-          {style.icon(18)}
+          {style.icon(ACTION_ICON_SIZE)}
         </View>
       </GlassPlate>
     </Pressable>
@@ -104,8 +108,9 @@ export const CARD_MARK_SIZE = 28;
 /**
  * A catalog card's own state drawn as the library button's look, but not
  * pressable (prompts/mobile-look-card-actions.md, decision 9): the card's
- * actions live in its long press menu, so the card keeps one tap target. It
- * is hidden from screen readers, which hear the state in the card's label.
+ * actions live in its long press menu, so the card keeps one tap target of
+ * 44 points or more rather than small buttons to miss (AGENTS.md section 3).
+ * It is hidden from screen readers, which hear the state in the card's label.
  */
 export function CardMark({ look }: { look: CardActionLook }) {
   const style = LOOKS[look];
@@ -122,7 +127,7 @@ export function CardMark({ look }: { look: CardActionLook }) {
         radius={PILL_RADIUS}
         className="flex-1 items-center justify-center"
       >
-        {style.icon(16)}
+        {style.icon(MARK_ICON_SIZE)}
       </GlassPlate>
     </View>
   );

@@ -17,6 +17,7 @@ import { Text } from "@/components/text";
 import { useCardState } from "@/lib/card-states";
 import {
   type CardMarks,
+  type CardMenuItem,
   gameCardMarks,
   gameCardMenu,
   movieCardMarks,
@@ -149,17 +150,29 @@ export function PosterFrame({
   );
 }
 
-/** One menu entry, ready to run: the card's actions after wiring. */
-type MenuEntry = {
-  id: string;
-  title: string;
-  destructive: boolean;
-  disabled: boolean;
-  onPress: () => void;
-};
+/** One menu entry, ready to run: a card's menu item with its write bound. */
+type MenuEntry = Omit<CardMenuItem<unknown>, "write"> & { onPress: () => void };
 
-/** The inset of every badge, pill and mark, the web's 10px card corners. */
-const INSET = 10;
+/**
+ * The inset of every badge, pill, mark and button from a poster's edge, the
+ * web's 10px card corners (components/AGENTS.md, Card corners). The library
+ * cards share it, so both cards place their corners alike.
+ */
+export const CARD_INSET = 10;
+
+/** The space between the bottom pill and the Watched mark beside it. */
+const MARK_GAP = 6;
+
+/** Binds each menu item's write to the card's mutation. */
+function wire<TWrite>(
+  menu: CardMenuItem<TWrite>[],
+  run: (write: TWrite) => void,
+): MenuEntry[] {
+  return menu.map(({ write, ...entry }) => ({
+    ...entry,
+    onPress: () => run(write),
+  }));
+}
 
 /**
  * The web's poster card, natively: the 2:3 poster in a rounded frame with
@@ -194,15 +207,11 @@ function MovieCard(props: Props) {
   const write = useMovieWrite(item.id);
   if (!state) return <PosterCardView {...props} />;
   const today = todayUtc(new Date());
-  const menu = movieCardMenu(state, item.releaseDate, today);
   return (
     <PosterCardView
       {...props}
       marks={movieCardMarks(state, item.releaseDate, today)}
-      menu={menu.map((entry) => ({
-        ...entry,
-        onPress: () => write.mutate(entry.write),
-      }))}
+      menu={wire(movieCardMenu(state, item.releaseDate, today), write.mutate)}
     />
   );
 }
@@ -216,10 +225,7 @@ function ShowCard(props: Props) {
     <PosterCardView
       {...props}
       marks={showCardMarks(state)}
-      menu={showCardMenu(state).map((entry) => ({
-        ...entry,
-        onPress: () => toggle.mutate(entry.write),
-      }))}
+      menu={wire(showCardMenu(state), toggle.mutate)}
     />
   );
 }
@@ -230,15 +236,11 @@ function GameCard(props: Props) {
   const write = useGameWrite(item.id);
   if (!state) return <PosterCardView {...props} />;
   const today = todayUtc(new Date());
-  const menu = gameCardMenu(state, item.releaseDate, today);
   return (
     <PosterCardView
       {...props}
       marks={gameCardMarks(state, item.releaseDate, today)}
-      menu={menu.map((entry) => ({
-        ...entry,
-        onPress: () => write.mutate(entry.write),
-      }))}
+      menu={wire(gameCardMenu(state, item.releaseDate, today), write.mutate)}
     />
   );
 }
@@ -314,19 +316,25 @@ function PosterCardView({
         name={item.title}
       >
         {marks?.score != null ? (
-          <View style={{ position: "absolute", top: INSET, left: INSET }}>
+          <View
+            style={{ position: "absolute", top: CARD_INSET, left: CARD_INSET }}
+          >
             <PersonalScoreBadge value={marks.score} />
           </View>
         ) : community && item.communityRating !== null ? (
-          <View style={{ position: "absolute", top: INSET, left: INSET }}>
+          <View
+            style={{ position: "absolute", top: CARD_INSET, left: CARD_INSET }}
+          >
             <CommunityRatingBadge
               source={CATALOG_SOURCES[type]}
               value={item.communityRating}
             />
           </View>
         ) : null}
-        {marks?.planned ? (
-          <View style={{ position: "absolute", top: INSET, right: INSET }}>
+        {marks?.bookmark ? (
+          <View
+            style={{ position: "absolute", top: CARD_INSET, right: CARD_INSET }}
+          >
             <CardMark look="planned" />
           </View>
         ) : null}
@@ -334,16 +342,24 @@ function PosterCardView({
           <View
             style={{
               position: "absolute",
-              bottom: INSET,
-              left: INSET,
-              right: marks?.watched ? INSET + CARD_MARK_SIZE + 6 : INSET,
+              bottom: CARD_INSET,
+              left: CARD_INSET,
+              right: marks?.watched
+                ? CARD_INSET + CARD_MARK_SIZE + MARK_GAP
+                : CARD_INSET,
             }}
           >
             <GlassPill>{pill}</GlassPill>
           </View>
         ) : null}
         {marks?.watched ? (
-          <View style={{ position: "absolute", bottom: INSET, right: INSET }}>
+          <View
+            style={{
+              position: "absolute",
+              bottom: CARD_INSET,
+              right: CARD_INSET,
+            }}
+          >
             <CardMark look="watched" />
           </View>
         ) : null}

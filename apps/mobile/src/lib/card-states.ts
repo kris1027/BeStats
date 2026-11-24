@@ -3,30 +3,31 @@ import {
   MAX_TITLE_KEYS,
   pickTitleState,
   type TitleType,
-  titleKey,
-  v1TitlesSchema,
 } from "@bestats/core/api/v1/titles";
 import { idsKey } from "@bestats/core/tracking/ids-key";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 
-import { apiRequest } from "./api";
 import { PRIVATE_QUERY_ROOT } from "./query-client";
 import { useSession } from "./session";
-import { fetchTitleState, trackingKeys } from "./tracking";
+import { fetchTitleState, fetchTitleStates, trackingKeys } from "./tracking";
 
 /**
  * How many cards one state read covers: a loaded grid page, so scrolling to
  * the next page adds one read and never changes an earlier one's key
- * (prompts/mobile-look-card-actions.md, R6). It stays within the API's
- * `MAX_TITLE_KEYS`.
+ * (prompts/mobile-look-card-actions.md, R6; AGENTS.md section 12, rate
+ * limits). It stays within the API's `MAX_TITLE_KEYS`.
  */
 export const CARD_STATE_CHUNK = Math.min(V1_PAGE_SIZE, MAX_TITLE_KEYS);
 
-/** How long a seeded card state counts as fresh before a card reads it again. */
+/** How long a page's batch read counts as fresh before the screen reads it again. */
 const CARD_STATE_STALE_MS = 60_000;
 
-/** The batch read's key, under the private root so sign out wipes it. */
+/**
+ * The batch read's key, under the private root so sign out, an expired
+ * session and account deletion wipe it with every other private answer
+ * (AGENTS.md section 11, private responses stay out of shared caches).
+ */
 export const cardStatesKey = (type: TitleType, ids: readonly number[]) =>
   [PRIVATE_QUERY_ROOT, "titles", "cards", type, idsKey(ids)] as const;
 
@@ -56,7 +57,8 @@ export function cardStateChunks(ids: readonly number[]): number[][] {
  * Returns whether one card's state is known. Signed out, loading or after a
  * failed read it is not, and the card stays the plain catalog card with no
  * menu (decision 6): a missing status on twenty cards is quieter than an
- * error, as on the web. A state with a write in flight is never overwritten
+ * error, as on the web, and the catalog never waits on the session
+ * (AGENTS.md section 7, the catalog is public). A state with a write in flight is never overwritten
  * by a seed, so an older batch answer cannot undo an optimistic tap.
  */
 export function useCardStates(
@@ -73,11 +75,7 @@ export function useCardStates(
       enabled: session !== null,
       staleTime: CARD_STATE_STALE_MS,
       queryFn: async () => {
-        const titles = await apiRequest(
-          `/api/v1/me/titles?ids=${chunk.map((id) => titleKey(type, id)).join(",")}`,
-          v1TitlesSchema,
-          { auth: true },
-        );
+        const titles = await fetchTitleStates(type, chunk);
         for (const id of chunk) {
           const state = pickTitleState(titles, type, id);
           const key = trackingKeys.title(type, id);

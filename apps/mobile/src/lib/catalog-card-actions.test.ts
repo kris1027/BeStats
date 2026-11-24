@@ -77,7 +77,7 @@ describe("movie card menu", () => {
     expect(
       movieCardMarks({ ...EMPTY_MOVIE, planned: true }, RELEASED, TODAY),
     ).toEqual({
-      planned: true,
+      bookmark: true,
       watched: false,
       score: null,
       community: true,
@@ -91,7 +91,7 @@ describe("movie card menu", () => {
         TODAY,
       ),
     ).toEqual({
-      planned: false,
+      bookmark: false,
       watched: true,
       score: 8,
       community: true,
@@ -107,7 +107,7 @@ describe("movie card menu", () => {
       UNRELEASED,
       TODAY,
     );
-    expect(upcoming).toMatchObject({ planned: true, community: false });
+    expect(upcoming).toMatchObject({ bookmark: true, community: false });
     expect(upcoming.pill?.text).toBe("Mar 1, 2027");
     expect(
       movieCardMarks({ ...EMPTY_MOVIE, planned: true }, null, TODAY).pill?.text,
@@ -147,14 +147,14 @@ describe("show card menu", () => {
 
   it("marks a tracked show with the bookmark only, never a rating", () => {
     expect(showCardMarks({ ...show, tracked: true })).toEqual({
-      planned: true,
+      bookmark: true,
       watched: false,
       score: null,
       community: true,
       pill: null,
       words: ["Tracking"],
     });
-    expect(showCardMarks(show).planned).toBe(false);
+    expect(showCardMarks(show).bookmark).toBe(false);
   });
 });
 
@@ -193,7 +193,7 @@ describe("game card menu", () => {
     expect(
       gameCardMarks({ status: "want_to_play", rating: null }, RELEASED, TODAY),
     ).toEqual({
-      planned: true,
+      bookmark: true,
       watched: false,
       score: null,
       community: true,
@@ -203,7 +203,7 @@ describe("game card menu", () => {
     expect(
       gameCardMarks({ status: "finished", rating: 9 }, RELEASED, TODAY),
     ).toEqual({
-      planned: false,
+      bookmark: false,
       watched: false,
       score: 9,
       community: true,
