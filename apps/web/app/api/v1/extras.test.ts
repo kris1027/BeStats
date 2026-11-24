@@ -232,6 +232,26 @@ describe("GET /api/v1/shows/{id}/extras", () => {
     ]);
   });
 
+  it("answers 404 for a show the detail read does not find", async () => {
+    loadShow.mockResolvedValue({ kind: "not_found" });
+    const response = await getShowExtrasRoute(
+      req("/api/v1/shows/2/extras", VERSION),
+      ctx({ id: "2" }),
+    );
+    expect(response.status).toBe(404);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    expect((await errorOf(response)).code).toBe("not_found");
+  });
+
+  it("refuses a bad id before any read", async () => {
+    const response = await getShowExtrasRoute(
+      req("/api/v1/shows/abc/extras", VERSION),
+      ctx({ id: "abc" }),
+    );
+    expect(response.status).toBe(400);
+    expect(getTvExtras).not.toHaveBeenCalled();
+  });
+
   it("answers 502 when the show read fails", async () => {
     loadShow.mockResolvedValue({ kind: "failed" });
     const response = await getShowExtrasRoute(
@@ -275,6 +295,16 @@ describe("GET /api/v1/games/{id}/similar", () => {
     expect(v1SimilarGamesSchema.parse(await response.json()).results).toEqual(
       [],
     );
+    expect(getGamesByIds).not.toHaveBeenCalled();
+  });
+
+  it("refuses a bad id before any read", async () => {
+    const response = await getSimilar(
+      req("/api/v1/games/abc/similar", VERSION),
+      ctx({ id: "abc" }),
+    );
+    expect(response.status).toBe(400);
+    expect(loadGame).not.toHaveBeenCalled();
     expect(getGamesByIds).not.toHaveBeenCalled();
   });
 
