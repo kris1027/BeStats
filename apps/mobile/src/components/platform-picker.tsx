@@ -123,7 +123,9 @@ function PlatformRow({
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
         className={`size-6 items-center justify-center rounded-md border-[1.5px] ${
-          checked ? "border-foreground bg-glass-plate" : "border-input"
+          checked
+            ? "border-foreground bg-glass-plate"
+            : "border-muted-foreground"
         }`}
       >
         {checked ? (

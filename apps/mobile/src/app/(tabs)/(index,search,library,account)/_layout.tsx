@@ -1,10 +1,15 @@
-import { Stack } from "expo-router";
+import { Stack, ThemeProvider, useTheme } from "expo-router";
+import { View } from "react-native";
 
+import { PageBackground } from "@/components/page-background";
 import {
   SEARCH_SCREEN_OPTIONS,
   STACK_SCREEN_OPTIONS,
-  screenLayout,
+  tabScreenLayout,
 } from "@/theme/stack-options";
+
+/** Search has no background layer of its own (`tabScreenLayout`). */
+const TAB_SCREEN_LAYOUT = tabScreenLayout(["search"]);
 
 /**
  * Each tab's first screen. The four tabs share this folder, so a movie,
@@ -22,30 +27,48 @@ export const unstable_settings = {
 /**
  * The stack inside every tab (prompts/mobile-app-shell-catalog.md, decision
  * 3). Each tab root sets its own title; title screens set theirs once their
- * data loads.
+ * data loads. The stack draws the still background once behind its screens
+ * for Search, whose screen has none of its own so its large title can
+ * collapse (`tabScreenLayout`); every other screen keeps its own layer.
  */
 export default function TabStack() {
+  const theme = useTheme();
   return (
-    <Stack
-      screenOptions={{
-        ...STACK_SCREEN_OPTIONS,
-        headerBackButtonDisplayMode: "minimal",
-      }}
-      screenLayout={screenLayout}
-    >
-      <Stack.Screen name="index" options={{ title: "BeStats" }} />
-      <Stack.Screen name="search" options={SEARCH_SCREEN_OPTIONS} />
-      <Stack.Screen name="library" options={{ title: "Library" }} />
-      <Stack.Screen name="account" options={{ title: "Account" }} />
-      <Stack.Screen
-        name="account/delete"
-        options={{ title: "Delete account" }}
-      />
-      <Stack.Screen name="account/about" options={{ title: "About" }} />
-      <Stack.Screen name="movies/[id]" options={{ title: "" }} />
-      <Stack.Screen name="shows/[id]" options={{ title: "" }} />
-      <Stack.Screen name="shows/[id]/season/[number]" options={{ title: "" }} />
-      <Stack.Screen name="games/[id]" options={{ title: "" }} />
-    </Stack>
+    <View style={{ flex: 1 }}>
+      <PageBackground />
+      {/* The native stack paints its container in the theme's background,
+          which would hide the still background behind a bare screen. */}
+      <ThemeProvider
+        value={{
+          ...theme,
+          colors: { ...theme.colors, background: "transparent" },
+        }}
+      >
+        <Stack
+          screenOptions={{
+            ...STACK_SCREEN_OPTIONS,
+            headerBackButtonDisplayMode: "minimal",
+          }}
+          screenLayout={TAB_SCREEN_LAYOUT}
+        >
+          <Stack.Screen name="index" options={{ title: "BeStats" }} />
+          <Stack.Screen name="search" options={SEARCH_SCREEN_OPTIONS} />
+          <Stack.Screen name="library" options={{ title: "Library" }} />
+          <Stack.Screen name="account" options={{ title: "Account" }} />
+          <Stack.Screen
+            name="account/delete"
+            options={{ title: "Delete account" }}
+          />
+          <Stack.Screen name="account/about" options={{ title: "About" }} />
+          <Stack.Screen name="movies/[id]" options={{ title: "" }} />
+          <Stack.Screen name="shows/[id]" options={{ title: "" }} />
+          <Stack.Screen
+            name="shows/[id]/season/[number]"
+            options={{ title: "" }}
+          />
+          <Stack.Screen name="games/[id]" options={{ title: "" }} />
+        </Stack>
+      </ThemeProvider>
+    </View>
   );
 }
