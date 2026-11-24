@@ -59,6 +59,18 @@ Changed:
 5. No colour literal, no new token, no `BlurView` outside `components/glass/`, `Text` only from `@/components/text` (the boundary tests keep passing).
 6. Loading, empty, error, signed out and missing image states stay; none hides under the header.
 
+## Build deviations (2026-11-24)
+
+Found in the simulator pass (iPhone 18 Pro, iOS 27.2, local stack, signed in) and fixed on the branch:
+
+- **Undo never closed its toast on a library card.** `useMovieWrite`, `useShowTrackingWrite` and `useGameWrite` closed the toast through `mutate`'s per call `onSettled`, which TanStack skips once the asking component has unmounted, and a library card leaves its page as soon as the server moves it. The restore ran and the title came back, but the toast kept spinning. `lib/title-writes.ts` now closes it from the restore's own promise (`settleThen`), so every caller (title screens, catalog cards, library cards) behaves the same. Regression test in `library-card-menu.test.tsx`.
+- **The list stayed pushed down after a write.** The pull spinner was tied to `isRefetching`, so every write's background reload turned it on, and under the translucent large title bar iOS left the content inset open. The spinner now shows only for a pull you start.
+- **The community badge read "TMDB 8.0"** and ran under the corner quick action. It now shows the amber star and the value, as the catalog cards' `CommunityRatingBadge` does; the source stays in what a screen reader hears (AGENTS.md section 9).
+- Signed out and the session load sit in a `ScrollView` with `contentInsetAdjustmentBehavior="automatic"` rather than in the `FlatList` (decision 8), which keeps the hooks above the early returns simple. Same effect: both sit below the bar.
+- No separate `card-link.test.tsx`: `CardLink` is covered through both cards (`poster-card-actions.test.tsx`, unchanged and passing, and `library-card-menu.test.tsx`).
+
+Checked in the simulator: the large title over Library, signed in empty states below it, cards with the new badge, long press preview and menu on a show and a movie, Stop tracking with the toast and Undo (card leaves and comes back), no gap after switching type mid write. Not checked: the title collapsing on a long grid (this user had too few titles to scroll), the largest text size, Reduce Motion, VoiceOver, signed out on the device, and Android. Seen and left alone: Metro warns of a require cycle `poster-card` → `catalog-card-actions` → `library-card` → `poster-card` that is already on `main`.
+
 ## Security considerations
 
 No new route, no new read and no new secret. Library stays private: signed out it sends no private request, and every write still rechecks the session on the server, which also enforces the release gate and ownership (AGENTS.md section 11). The preview opens the public title screen only.
