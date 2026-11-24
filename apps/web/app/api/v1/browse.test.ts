@@ -1,6 +1,7 @@
 import {
   v1GenresSchema,
   v1ListSchema,
+  v1PlatformsSchema,
   v1SearchSchema,
 } from "@bestats/core/api/v1/browse";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -28,7 +29,12 @@ vi.mock("@/lib/tmdb", () => ({
   TmdbError: FakeTmdbError,
 }));
 const getGameGenres = vi.fn();
-vi.mock("@/lib/igdb", () => ({ getGameGenres, IgdbError: FakeIgdbError }));
+const getGamePlatforms = vi.fn();
+vi.mock("@/lib/igdb", () => ({
+  getGameGenres,
+  getGamePlatforms,
+  IgdbError: FakeIgdbError,
+}));
 
 const readSearchGridPage = vi.fn();
 vi.mock("@/lib/search/read", () => ({ readSearchGridPage }));
@@ -56,6 +62,7 @@ vi.mock("@/lib/catalog-list-read", () => ({
 }));
 
 const { GET: getGenres } = await import("./genres/route");
+const { GET: getPlatforms } = await import("./platforms/route");
 const { GET: getSearch } = await import("./search/route");
 const { GET: getList } = await import("./lists/[type]/[list]/route");
 
@@ -153,6 +160,41 @@ describe("GET /api/v1/genres", () => {
     getGameGenres.mockRejectedValue(new FakeIgdbError("down"));
     const response = await getGenres(
       req("/api/v1/genres?type=game", VERSION),
+      ctx(),
+    );
+    expect(response.status).toBe(502);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    expect((await errorOf(response)).code).toBe("catalog_unavailable");
+  });
+});
+
+describe("GET /api/v1/platforms", () => {
+  it("answers IGDB's platforms from the web's cached list, for a day", async () => {
+    getGamePlatforms.mockResolvedValue([
+      { id: 6, name: "PC", slug: "win" },
+      { id: 130, name: "Nintendo Switch" },
+    ]);
+    const response = await getPlatforms(
+      req("/api/v1/platforms", VERSION),
+      ctx(),
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe(
+      "public, s-maxage=86400",
+    );
+    expect(v1PlatformsSchema.parse(await response.json())).toEqual({
+      platforms: [
+        { id: 6, name: "PC" },
+        { id: 130, name: "Nintendo Switch" },
+      ],
+    });
+    expect(getGamePlatforms).toHaveBeenCalledOnce();
+  });
+
+  it("answers an IGDB failure with 502 no-store", async () => {
+    getGamePlatforms.mockRejectedValue(new FakeIgdbError("down"));
+    const response = await getPlatforms(
+      req("/api/v1/platforms", VERSION),
       ctx(),
     );
     expect(response.status).toBe(502);

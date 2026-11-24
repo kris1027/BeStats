@@ -6,6 +6,7 @@
  * and a new icon is one line to review.
  */
 export {
+  CheckIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   CircleAlertIcon,

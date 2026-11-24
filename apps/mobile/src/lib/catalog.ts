@@ -1,6 +1,7 @@
 import {
   v1GenresSchema,
   v1ListSchema,
+  v1PlatformsSchema,
   v1SearchSchema,
 } from "@bestats/core/api/v1/browse";
 import {
@@ -32,6 +33,7 @@ export const catalogKeys = {
   search: (params: SearchParams) =>
     [CATALOG_QUERY_ROOT, "search", searchHref({ ...params, page: 1 })] as const,
   genres: (type: LibraryType) => [CATALOG_QUERY_ROOT, "genres", type] as const,
+  platforms: () => [CATALOG_QUERY_ROOT, "platforms"] as const,
   show: (id: number) => [CATALOG_QUERY_ROOT, "show", id] as const,
   season: (showId: number, seasonNumber: number) =>
     [CATALOG_QUERY_ROOT, "season", showId, seasonNumber] as const,
@@ -92,6 +94,16 @@ export function fetchSearch(params: SearchParams, page: number) {
  */
 export function fetchGenres(type: LibraryType) {
   return apiRequest(`/api/v1/genres?type=${type}`, v1GenresSchema);
+}
+
+/**
+ * `GET /api/v1/platforms`: IGDB's platforms for a games search's Platforms
+ * filter, the same list the API's search parser checks ids against, read
+ * through `/api/v1` because the phone holds no catalog key (AGENTS.md
+ * section 5; prompts/mobile-look-search.md, decision 4).
+ */
+export function fetchPlatforms() {
+  return apiRequest("/api/v1/platforms", v1PlatformsSchema);
 }
 
 /**

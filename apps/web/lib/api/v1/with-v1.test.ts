@@ -383,6 +383,8 @@ describe("every /api/v1 handler", () => {
     "shows/[id]": "public, s-maxage=60",
     "shows/[id]/seasons/[n]": "public, s-maxage=60",
     genres: "public, s-maxage=86400",
+    // prompts/mobile-look-search.md: IGDB's platform list, shared like genres.
+    platforms: "public, s-maxage=86400",
     search: "public, s-maxage=300, stale-while-revalidate=600",
     "lists/[type]/[list]": "public, s-maxage=300, stale-while-revalidate=600",
     "movies/[id]": "public, s-maxage=300, stale-while-revalidate=600",

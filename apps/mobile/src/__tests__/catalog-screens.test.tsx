@@ -40,6 +40,13 @@ jest.mock("@/lib/catalog", () => ({
   fetchList: (...args: unknown[]) => mockFetchList(...args),
   fetchSearch: (...args: unknown[]) => mockFetchSearch(...args),
   fetchGenres: () => Promise.resolve({ type: "tv", genres: [] }),
+  fetchPlatforms: () =>
+    Promise.resolve({
+      platforms: [
+        { id: 6, name: "PC (Microsoft Windows)" },
+        { id: 130, name: "Nintendo Switch" },
+      ],
+    }),
 }));
 
 function item(id: number, title: string) {
@@ -227,5 +234,45 @@ test("Search offers Try again when the catalog fails", async () => {
     .press(screen.getByRole("button", { name: "Try again" }));
   await waitFor(() =>
     expect(screen.getByText("Popular shows on TMDB")).toBeOnTheScreen(),
+  );
+});
+
+// prompts/mobile-look-search.md, AC-3 and AC-5
+test("a games search filters by platform, and other catalogs offer none", async () => {
+  const user = userEvent.setup();
+  await renderRouter(
+    { search: SearchScreen },
+    { initialUrl: "/search", wrapper },
+  );
+  await user.press(await screen.findByRole("button", { name: "Filters" }));
+  expect(screen.queryByRole("button", { name: "Any platform" })).toBeNull();
+  await user.press(screen.getByRole("button", { name: "Done" }));
+
+  await user.press(screen.getByRole("tab", { name: "Games" }));
+  await user.press(await screen.findByRole("button", { name: "Filters" }));
+  await user.press(await screen.findByRole("button", { name: "Any platform" }));
+  await user.press(
+    await screen.findByRole("checkbox", { name: "Nintendo Switch" }),
+  );
+  await user.press(screen.getByRole("button", { name: "Back to filters" }));
+  expect(
+    screen.getByRole("button", { name: "Platforms (1)" }),
+  ).toBeOnTheScreen();
+  await user.press(screen.getByRole("button", { name: "Done" }));
+
+  await waitFor(() =>
+    expect(mockFetchSearch).toHaveBeenLastCalledWith(
+      expect.objectContaining({ type: "game", platformIds: [130] }),
+      1,
+    ),
+  );
+  expect(screen.getByRole("button", { name: "Filters (1)" })).toBeOnTheScreen();
+
+  await user.press(screen.getByRole("button", { name: "Clear filters" }));
+  await waitFor(() =>
+    expect(mockFetchSearch).toHaveBeenLastCalledWith(
+      expect.objectContaining({ type: "game", platformIds: [] }),
+      1,
+    ),
   );
 });

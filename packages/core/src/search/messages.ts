@@ -94,3 +94,27 @@ export function scanEmptyMessage({
 export function browseCountLine(type: SearchType): string {
   return `Popular ${mediaNoun(type)} on ${CATALOG_SOURCES[type]}`;
 }
+
+/**
+ * The filter pickers' fixed words, so the web's popovers and the phone's
+ * filters sheet label them alike (apps/mobile/AGENTS.md: copy comes from
+ * core's message files; spec 0029, AC-10, AC-11).
+ */
+export const PICKER_COPY = {
+  platformsLegend: "ON ANY OF",
+  filterPlatforms: "Filter platforms",
+  noPlatformsMatch: "No platforms match",
+} as const;
+
+/**
+ * What a picker says when its list could not be read, with the rest of the
+ * filters still working (AGENTS.md section 10; spec 0029, AC-11).
+ */
+export function pickerUnavailable(label: "Genres" | "Platforms"): string {
+  return `${label} unavailable`;
+}
+
+/** The hint once a picker holds its most ids (spec 0029, AC-10). */
+export function pickerCapHint(max: number): string {
+  return `Up to ${max}`;
+}

@@ -5,6 +5,8 @@ import {
   emptyBrowseMessage,
   hasFilter,
   noMatchesMessage,
+  pickerCapHint,
+  pickerUnavailable,
   scanEmptyMessage,
 } from "./messages";
 import { emptySearchParams } from "./params";
@@ -90,5 +92,12 @@ describe("browseCountLine", () => {
   it("names the catalog", () => {
     expect(browseCountLine("game")).toBe("Popular games on IGDB");
     expect(browseCountLine("movie")).toBe("Popular movies on TMDB");
+  });
+});
+
+describe("picker copy", () => {
+  it("names the list that failed and the cap reached", () => {
+    expect(pickerUnavailable("Platforms")).toBe("Platforms unavailable");
+    expect(pickerCapHint(20)).toBe("Up to 20");
   });
 });

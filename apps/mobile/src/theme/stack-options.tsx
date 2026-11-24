@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { View } from "react-native";
 
 import { PageBackground } from "@/components/page-background";
+import { FONT_FAMILY } from "@/components/text";
 
 import { fractionToken, tokenColor, tokenColorOver } from "./token-vars";
 
@@ -33,6 +34,32 @@ export const STACK_SCREEN_OPTIONS = {
 } as const;
 
 /**
+ * Search's header (apps/mobile/AGENTS.md, Styling; prompts/mobile-look-search.md,
+ * decisions 1 and 7): an iOS
+ * large title in Inter over the same seamless bar colour, collapsing into
+ * the bar as the grid scrolls. Android has no large title and shows the
+ * plain bar; the search field itself is set by the screen, which owns its
+ * text. The other tab roots take theirs in their own slices.
+ */
+export const SEARCH_SCREEN_OPTIONS = {
+  title: "Search",
+  // A large title needs a translucent bar: on iOS 26 and later
+  // react-native-screens insets a screen under an opaque bar itself, and
+  // UIKit then loses track of the grid's scroll position. Expanded, the bar
+  // is clear over the page background; collapsed, it takes the bar colour.
+  headerTransparent: true,
+  headerLargeStyle: { backgroundColor: "transparent" },
+  headerLargeTitle: true,
+  headerLargeTitleShadowVisible: false,
+  headerLargeTitleStyle: {
+    fontFamily: FONT_FAMILY,
+    fontWeight: "700",
+    color: tokenColor("color-foreground"),
+  },
+  headerTitleStyle: { fontFamily: FONT_FAMILY, fontWeight: "600" },
+} as const;
+
+/**
  * Draws the still page background under each screen of a stack, so no
  * screen paints its own (apps/mobile/AGENTS.md, Styling).
  */
@@ -43,4 +70,30 @@ export function screenLayout({ children }: { children: ReactNode }) {
       {children}
     </View>
   );
+}
+
+/**
+ * The tab stacks' screen layout: `screenLayout` for every screen except
+ * those named in `bare`, which get no background layer of their own
+ * (apps/mobile/AGENTS.md, Styling; prompts/mobile-look-search.md, decision 7).
+ * A large title collapses only
+ * when its scroll view is first in the screen's view chain, which UIKit
+ * tracks, and the background layer sits before it; so a bare screen shows
+ * the still background its tab stack draws behind every screen. The
+ * background never moves, so the two look alike.
+ */
+export function tabScreenLayout(bare: readonly string[]) {
+  return function layout({
+    route,
+    children,
+  }: {
+    route: { name: string };
+    children: ReactNode;
+  }) {
+    return bare.includes(route.name) ? (
+      <>{children}</>
+    ) : (
+      screenLayout({ children })
+    );
+  };
 }
