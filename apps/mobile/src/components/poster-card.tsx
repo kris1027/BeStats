@@ -364,7 +364,10 @@ function PosterCardView({
           </View>
         ) : null}
       </PosterFrame>
-      <View className="gap-0.5">
+      {/* Its own width too: inside `Link asChild` the Pressable's function
+          style may not reach layout, and a long title then widens the card
+          past its grid column (found on Search, slice 5). */}
+      <View className="gap-0.5" style={{ width }}>
         <Text
           numberOfLines={2}
           className="text-sm font-semibold text-foreground"
