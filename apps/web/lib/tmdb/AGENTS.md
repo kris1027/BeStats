@@ -52,6 +52,11 @@ feature 4. Runtime steps live in that spec's `verify.md`.
   providers and age ratings, so the cache holds no request state and the page
   picks its region afterwards. Appending them to `getTvShow` would multiply
   their cost by every tracked show the library pages read (spec 0022).
+- **A URL from TMDB is checked, not trusted.** `normalize-extras.ts` keeps a
+  trailer only when its key passes core's `YOUTUBE_VIDEO_KEY`, and a watch
+  page link only when it passes `TMDB_WATCH_LINK` (an https page on
+  `www.themoviedb.org`), else null, since the web renders it and the app
+  opens it.
 - **No Zod schema is `.strict()`.** TMDB adds keys freely and an unknown key
   must never fail a read.
 - **Missing stays missing.** A null path yields a null URL, an empty string
