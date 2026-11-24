@@ -21,6 +21,13 @@ export const OPERATOR_HANDLE = "kris1027";
 /** The operator's GitHub profile, where every mention of the handle links. */
 export const OPERATOR_GITHUB_URL = "https://github.com/kris1027";
 
+/**
+ * The words before the handle in the credit line, on the web's footer and the
+ * app's About (prompts/mobile-look-account.md, decision 9). The handle that
+ * follows always links to `OPERATOR_GITHUB_URL`.
+ */
+export const CREDIT_LINE_PREFIX = "© BeStats · Crafted with love by";
+
 /** Where rights requests, deletion requests and complaints go. */
 export const CONTACT_EMAIL = "kris1027.dev@gmail.com";
 

@@ -1,3 +1,4 @@
+import { AUTH_PANEL_COPY } from "@bestats/core/auth/messages";
 import { isSafeNextPath } from "@bestats/core/auth/next-path";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -33,8 +34,8 @@ export const metadata: Metadata = {
 export default function SignUpPage({ searchParams }: PageProps<"/sign-up">) {
   return (
     <AuthPanel
-      title="Create an account"
-      description="Start keeping track of what you watch."
+      title={AUTH_PANEL_COPY.signUp.title}
+      description={AUTH_PANEL_COPY.signUp.description}
       footer={
         <>
           Already have an account?{" "}

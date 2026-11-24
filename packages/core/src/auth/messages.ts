@@ -243,3 +243,55 @@ export const DELETE_ACCOUNT_COPY = {
   failed: "We couldn't delete your account. It's still here. Please try again.",
   deleted: "Your account was deleted.",
 } as const;
+
+/**
+ * The heading and line at the top of each auth screen, the web's `AuthPanel`
+ * and the app's auth modals alike (prompts/mobile-look-account.md, decision
+ * 6), so both apps greet you with the same words (AGENTS.md section 3, real
+ * copy only). Forgot password's line is for a build that sends email; one
+ * that does not shows `RECOVERY_UNAVAILABLE_MESSAGE` instead.
+ */
+export const AUTH_PANEL_COPY = {
+  signIn: {
+    title: "Welcome back",
+    description: "Sign in to keep track of what you watch.",
+  },
+  signUp: {
+    title: "Create an account",
+    description: "Start keeping track of what you watch.",
+  },
+  forgotPassword: {
+    title: "Forgot password",
+    description:
+      "Enter your address and we will send you a link to set a new password.",
+  },
+  resetPassword: {
+    title: "Set a new password",
+    description:
+      "Choose a new password for your account. Saving it signs you out everywhere, then you sign in with the new one.",
+  },
+  checkEmail: {
+    title: "Check your email",
+    description:
+      "If that address needed confirming, a link is on its way. Open it to finish setting up your account.",
+  },
+} as const;
+
+/**
+ * The change password section's words, on `/account` and on the app's
+ * Change password screen (spec 0005, AC-16; prompts/mobile-look-account.md,
+ * decisions 2 and 6). The success line is said only once Supabase has
+ * accepted the new password (AGENTS.md section 11).
+ */
+export const CHANGE_PASSWORD_COPY = {
+  heading: "Change password",
+  description: "Your new password needs at least 8 characters.",
+  currentLabel: "Current password",
+  currentPlaceholder: "Enter your current password",
+  newLabel: "New password",
+  confirmLabel: "Confirm new password",
+  confirmPlaceholder: "Type it again",
+  button: "Change password",
+  pending: "Saving…",
+  changed: "Your password has been changed.",
+} as const;

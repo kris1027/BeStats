@@ -11,6 +11,7 @@ import {
 } from "@bestats/core/auth/action-state";
 import {
   AUTH_OUTCOME,
+  CHANGE_PASSWORD_COPY,
   DELETE_ACCOUNT_COPY,
   USERNAME_UNCHANGED_MESSAGE,
   USERNAME_UPDATED_MESSAGE,
@@ -112,7 +113,7 @@ export async function changePasswordAction(
     return failure(outcome, passwordFieldFor(outcome));
   }
 
-  return success("Your password has been changed.");
+  return success(CHANGE_PASSWORD_COPY.changed);
 }
 
 /**

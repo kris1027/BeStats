@@ -1,5 +1,6 @@
 import { TMDB_ATTRIBUTION } from "@bestats/core/legal/attribution";
 import {
+  CREDIT_LINE_PREFIX,
   IGDB_ATTRIBUTION,
   IGDB_HOME_URL,
   OPERATOR_GITHUB_URL,
@@ -119,7 +120,7 @@ export function SiteFooter() {
            * the `px-4` gutter.
            */}
           <p className="text-xs text-muted-foreground">
-            © BeStats · Crafted with love by{" "}
+            {CREDIT_LINE_PREFIX}{" "}
             <a
               href={OPERATOR_GITHUB_URL}
               target="_blank"

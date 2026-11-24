@@ -1,5 +1,6 @@
 import {
   AUTH_MESSAGES,
+  AUTH_PANEL_COPY,
   type AuthOutcome,
   authMessage,
   signInNoticeCopy,
@@ -36,8 +37,8 @@ export const metadata: Metadata = {
 export default function SignInPage({ searchParams }: PageProps<"/sign-in">) {
   return (
     <AuthPanel
-      title="Welcome back"
-      description="Sign in to keep track of what you watch."
+      title={AUTH_PANEL_COPY.signIn.title}
+      description={AUTH_PANEL_COPY.signIn.description}
       footer={
         <>
           New to BeStats?{" "}
