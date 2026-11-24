@@ -473,6 +473,31 @@ export const LIBRARY_CARD_ACTION_LABELS = {
   removeGame: (name: string) => `Remove ${name} from your games`,
 } as const;
 
+/**
+ * A catalog card's own actions, on the web's card buttons and the app's long
+ * press menu (prompts/mobile-look-card-actions.md, decision 10), so both
+ * apps name them alike. The functions are the web buttons' accessible names,
+ * word for word; `menu` holds the app's short menu titles, which sit under
+ * the title's own name in the menu.
+ */
+export const CATALOG_CARD_ACTION_LABELS = {
+  plan: (name: string) => `Plan ${name}`,
+  unmarkMovie: LIBRARY_CARD_ACTION_LABELS.unmarkMovie,
+  track: (name: string) => `Track ${name}`,
+  stopTracking: SHOW_TRACKING_COPY.stopLabel,
+  wantToPlay: (name: string) => `${GAME_STATUS_LABELS.want_to_play}: ${name}`,
+  menu: {
+    plan: MOVIE_TRACKING_LABELS.plan,
+    unplan: "Remove from plan",
+    markWatched: MOVIE_TRACKING_LABELS.markWatched,
+    unmark: "Remove watched mark",
+    track: "Track",
+    stopTracking: "Stop tracking",
+    wantToPlay: GAME_STATUS_LABELS.want_to_play,
+    removeGame: "Remove from your games",
+  },
+} as const;
+
 /** The signed out library: no private request, only the way in. */
 export const LIBRARY_SIGNED_OUT = {
   title: "Sign in to see your library",

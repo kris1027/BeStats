@@ -1,5 +1,6 @@
 "use client";
 
+import { CATALOG_CARD_ACTION_LABELS } from "@bestats/core/tracking/messages";
 import { useRouter } from "next/navigation";
 import { startTransition, useOptimistic } from "react";
 
@@ -55,7 +56,7 @@ function CardWatchedButton({
 
   return (
     <CardRoundButton
-      label={`Unmark ${title} as watched`}
+      label={CATALOG_CARD_ACTION_LABELS.unmarkMovie(title)}
       disabled={!watched}
       onClick={unmark}
       className="ml-auto"

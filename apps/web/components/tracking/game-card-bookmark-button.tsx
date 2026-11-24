@@ -1,5 +1,6 @@
 "use client";
 
+import { CATALOG_CARD_ACTION_LABELS } from "@bestats/core/tracking/messages";
 import { useRouter } from "next/navigation";
 import { useOptimistic, useTransition } from "react";
 
@@ -66,7 +67,7 @@ function GameCardBookmarkButton({
 
   return (
     <CardRoundButton
-      label={`Want to play: ${name}`}
+      label={CATALOG_CARD_ACTION_LABELS.wantToPlay(name)}
       pressed={optimistic}
       disabled={pending}
       onClick={toggle}
