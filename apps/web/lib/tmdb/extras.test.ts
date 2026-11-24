@@ -290,6 +290,19 @@ describe("normalizeWatchProviders (AC-12)", () => {
     ]);
   });
 
+  it("drops a watch link that is not a TMDB https page", () => {
+    const regions = normalizeWatchProviders({
+      US: { link: "javascript:alert(1)" },
+      PL: { link: "https://evil.example/movie/1/watch" },
+      DE: { link: " https://www.themoviedb.org/movie/1/watch?locale=DE " },
+    });
+    expect(regions.US?.link).toBeNull();
+    expect(regions.PL?.link).toBeNull();
+    expect(regions.DE?.link).toBe(
+      "https://www.themoviedb.org/movie/1/watch?locale=DE",
+    );
+  });
+
   it("keeps a country with no providers, with empty groups and no link", () => {
     expect(normalizeWatchProviders({ FR: {} })).toEqual({
       FR: { link: null, stream: [], free: [], rentOrBuy: [] },

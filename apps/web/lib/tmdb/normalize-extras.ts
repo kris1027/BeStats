@@ -1,4 +1,5 @@
 import { YOUTUBE_VIDEO_KEY } from "@bestats/core/catalog/trailer";
+import { TMDB_WATCH_LINK } from "@bestats/core/catalog/where-to-watch";
 import type {
   MovieExtras,
   MovieSummary,
@@ -103,6 +104,12 @@ function providerGroup(...lists: (unknown[] | null | undefined)[]): Provider[] {
     .map(({ priority: _, ...provider }) => provider);
 }
 
+/** TMDB's watch page link, or null when it is not one (`TMDB_WATCH_LINK`). */
+function watchLink(link: string | null | undefined): string | null {
+  const trimmed = link?.trim();
+  return trimmed && TMDB_WATCH_LINK.test(trimmed) ? trimmed : null;
+}
+
 /**
  * Every country's providers, grouped into Stream, Free and Rent or buy
  * (AC-12). A country whose entry does not parse is dropped; a country with
@@ -118,7 +125,7 @@ export function normalizeWatchProviders(
     if (!parsed.success) continue;
     const region = parsed.data;
     regions[code] = {
-      link: region.link?.trim() || null,
+      link: watchLink(region.link),
       stream: providerGroup(region.flatrate),
       free: providerGroup(region.free, region.ads),
       rentOrBuy: providerGroup(region.rent, region.buy),

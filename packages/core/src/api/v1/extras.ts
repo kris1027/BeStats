@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { YOUTUBE_VIDEO_KEY } from "../../catalog/trailer";
+import { TMDB_WATCH_LINK } from "../../catalog/where-to-watch";
 import { v1CatalogItemSchema } from "./browse";
 
 /**
@@ -26,16 +28,20 @@ export type V1Provider = z.infer<typeof providerSchema>;
  * depends on a country is already picked for the connection's country, which
  * `region` names (decision 1), so the answer is `private`: it never reaches a
  * shared cache. `ageRating` is null and `watch` is null when TMDB has nothing
- * for that country. `trailer.key` is checked again with `youtubeWatchUrl`
- * before any link is built.
+ * for that country. `trailer.key` must match `YOUTUBE_VIDEO_KEY` and
+ * `watch.link` must match `TMDB_WATCH_LINK` (decision 2; AGENTS.md section
+ * 11), so the app refuses an answer that would open any other URL, on top of
+ * the normalizers dropping such values and `youtubeWatchUrl` checking again.
  */
 export const v1TitleExtrasSchema = z.object({
   region: z.object({ code: z.string(), name: z.string() }),
-  trailer: z.object({ key: z.string(), name: z.string() }).nullable(),
+  trailer: z
+    .object({ key: z.string().regex(YOUTUBE_VIDEO_KEY), name: z.string() })
+    .nullable(),
   ageRating: z.string().nullable(),
   watch: z
     .object({
-      link: z.string().nullable(),
+      link: z.string().regex(TMDB_WATCH_LINK).nullable(),
       stream: z.array(providerSchema),
       free: z.array(providerSchema),
       rentOrBuy: z.array(providerSchema),

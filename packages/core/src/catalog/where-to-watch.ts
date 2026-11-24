@@ -27,6 +27,16 @@ export function notStreamingLine(regionName: string): string {
 /** The link to TMDB's watch page for the country. */
 export const ALL_WATCH_OPTIONS_LABEL = "All options on TMDB";
 
+/**
+ * The only watch link the web renders and the app opens (AGENTS.md section
+ * 11: validate what crosses a boundary; prompts/mobile-look-title-extras.md,
+ * "External URLs the app opens are built from validated values only"). TMDB
+ * sends it as free text, so the normalizer drops anything that is not an
+ * https page on TMDB's own host, and the v1 schema refuses it again, so a
+ * changed upstream value can never hand the phone another scheme or site.
+ */
+export const TMDB_WATCH_LINK = /^https:\/\/www\.themoviedb\.org\/[^\s]*$/;
+
 /** What a screen reader says before the age rating, and the web's tooltip. */
 export function ageRatingLabel(regionName: string): string {
   return `Age rating in ${regionName}`;
