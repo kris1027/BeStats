@@ -17,22 +17,20 @@ import { useCardState } from "@/lib/card-states";
 import {
   type CardMarks,
   gameCardMarks,
-  gameCardMenu,
   movieCardMarks,
-  movieCardMenu,
   showCardMarks,
-  showCardMenu,
 } from "@/lib/catalog-card-actions";
+import { communityRatingText } from "@/lib/community-rating";
 import { sizedImageUri } from "@/lib/images";
-import {
-  useGameWrite,
-  useMovieWrite,
-  useShowTrackingWrite,
-} from "@/lib/title-writes";
 import { CARD_FONT_SCALE_CAP } from "@/theme/font-scale";
 import { lengthToken, tokenColor } from "@/theme/token-vars";
 import { CARD_MARK_SIZE, CardMark } from "./card-action-button";
-import { CardLink, type MenuEntry, wire } from "./card-link";
+import { CardLink, type MenuEntry } from "./card-link";
+import {
+  useGameCardMenu,
+  useMovieCardMenu,
+  useShowCardMenu,
+} from "./card-menus";
 import { GlassPlate, PlateSolid } from "./glass/plate";
 import { Rim } from "./glass/rim";
 import {
@@ -48,32 +46,6 @@ import {
  */
 export function cardHref(type: LibraryType, id: number): Href {
   return (type === "game" ? gameHref(id) : titleHref(type, id)) as Href;
-}
-
-/**
- * A community rating as one line that names its source, `TMDB 7.4` or
- * `IGDB 8.1`, so it can never be read as a personal score (AGENTS.md
- * section 9). Null when the catalog has no rating: absent is not zero.
- */
-export function communityRatingText(
-  type: LibraryType,
-  value: number | null,
-): string | null {
-  return value === null ? null : `${CATALOG_SOURCES[type]} ${value.toFixed(1)}`;
-}
-
-/**
- * What a screen reader says for a community rating, "TMDB rating 7.4" or
- * "IGDB community rating 81.0", so it is never heard as the user's own score
- * (AGENTS.md section 9). Every title screen and episode row reads it here.
- */
-export function communityRatingLabel(
-  type: LibraryType,
-  value: number | null,
-): string | null {
-  if (value === null) return null;
-  const noun = type === "game" ? "community rating" : "rating";
-  return `${CATALOG_SOURCES[type]} ${noun} ${value.toFixed(1)}`;
 }
 
 type Props = {
@@ -185,18 +157,21 @@ export function PosterCard(props: Props) {
   }
 }
 
-/** Runs the menu's writes against the card's own title key. */
+/**
+ * Each typed card reads its state and menu hook unconditionally, then draws
+ * the plain card until the state is known (decision 6).
+ */
 function MovieCard(props: Props) {
   const { item } = props;
-  const state = useCardState("movie", item.id);
-  const write = useMovieWrite(item.id);
-  if (!state) return <PosterCardView {...props} />;
   const today = todayUtc(new Date());
+  const state = useCardState("movie", item.id);
+  const menu = useMovieCardMenu(item.id, state, item.releaseDate, today);
+  if (!state) return <PosterCardView {...props} />;
   return (
     <PosterCardView
       {...props}
       marks={movieCardMarks(state, item.releaseDate, today)}
-      menu={wire(movieCardMenu(state, item.releaseDate, today), write.mutate)}
+      menu={menu}
     />
   );
 }
@@ -204,28 +179,22 @@ function MovieCard(props: Props) {
 function ShowCard(props: Props) {
   const { item } = props;
   const state = useCardState("tv", item.id);
-  const toggle = useShowTrackingWrite(item.id, item.title);
+  const menu = useShowCardMenu(item.id, item.title, state);
   if (!state) return <PosterCardView {...props} />;
-  return (
-    <PosterCardView
-      {...props}
-      marks={showCardMarks(state)}
-      menu={wire(showCardMenu(state), toggle.mutate)}
-    />
-  );
+  return <PosterCardView {...props} marks={showCardMarks(state)} menu={menu} />;
 }
 
 function GameCard(props: Props) {
   const { item } = props;
-  const state = useCardState("game", item.id);
-  const write = useGameWrite(item.id);
-  if (!state) return <PosterCardView {...props} />;
   const today = todayUtc(new Date());
+  const state = useCardState("game", item.id);
+  const menu = useGameCardMenu(item.id, state, item.releaseDate, today);
+  if (!state) return <PosterCardView {...props} />;
   return (
     <PosterCardView
       {...props}
       marks={gameCardMarks(state, item.releaseDate, today)}
-      menu={wire(gameCardMenu(state, item.releaseDate, today), write.mutate)}
+      menu={menu}
     />
   );
 }

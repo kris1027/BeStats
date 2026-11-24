@@ -13,7 +13,8 @@ export type MenuEntry = Omit<CardMenuItem<unknown>, "write"> & {
 
 /**
  * Binds each menu item's write to the card's mutation, so `CardLink` never
- * knows which write a type uses (prompts/mobile-look-card-actions.md).
+ * knows which write a type uses (apps/mobile/AGENTS.md, Catalog card
+ * actions; prompts/mobile-look-card-actions.md).
  */
 export function wire<TWrite>(
   menu: CardMenuItem<TWrite>[],
@@ -51,8 +52,9 @@ function openAlertMenu(title: string, menu: MenuEntry[]) {
  * 4): a tap opens the title, a long press peeks at it on iOS and, with a
  * `menu`, offers the card's actions as the native menu, an alert on Android
  * and screen reader actions on both. The catalog and library cards share it
- * so their menus never drift apart. `children` is the card as drawn, one
- * accessible element named by `label`.
+ * so their menus never drift apart (apps/mobile/AGENTS.md, Catalog card
+ * actions). `children` is the card as drawn, one accessible element named by
+ * `label`, reachable by keyboard and screen reader (AGENTS.md section 3).
  */
 export function CardLink({
   href,

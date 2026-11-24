@@ -5,22 +5,17 @@ import type { ReactNode } from "react";
 import { View } from "react-native";
 
 import { Text } from "@/components/text";
-import {
-  gameCardMenu,
-  movieCardMenu,
-  showCardMenu,
-} from "@/lib/catalog-card-actions";
 import type { CardAction } from "@/lib/library-actions";
 import { type CardBadge, libraryCardView } from "@/lib/library-card";
-import {
-  useGameWrite,
-  useMovieWrite,
-  useShowTrackingWrite,
-} from "@/lib/title-writes";
 import { CARD_FONT_SCALE_CAP } from "@/theme/font-scale";
 
 import { CARD_ACTION_SIZE, CardActionButton } from "./card-action-button";
-import { CardLink, wire } from "./card-link";
+import { CardLink } from "./card-link";
+import {
+  useGameCardMenu,
+  useMovieCardMenu,
+  useShowCardMenu,
+} from "./card-menus";
 import { PlateSolid } from "./glass/plate";
 import { GlassPill, RatingStar } from "./glass-pill";
 import { CARD_INSET, PosterFrame } from "./poster-card";
@@ -51,14 +46,18 @@ function Badge({ badge }: { badge: CardBadge }) {
   );
 }
 
+/** What `CardLink` draws for a library card, besides its href and menu. */
 type LinkProps = {
-  entry: V1LibraryEntry;
-  name: string;
+  title: string;
   label: string;
-  today: string;
   width: number;
   children: ReactNode;
 };
+
+type EntryOf<T extends V1LibraryEntry["type"]> = Extract<
+  V1LibraryEntry,
+  { type: T }
+>;
 
 /**
  * The library card's link with the catalog card's menu for its type
@@ -67,80 +66,60 @@ type LinkProps = {
  * read. Its writes are the title screen's, whose invalidation of every
  * library page lets the server move the card (AGENTS.md section 9).
  */
-function MenuLink(props: LinkProps) {
-  switch (props.entry.type) {
+function MenuLink({
+  entry,
+  today,
+  ...link
+}: LinkProps & { entry: V1LibraryEntry; today: string }) {
+  switch (entry.type) {
     case "movie":
-      return <MovieMenuLink {...props} entry={props.entry} />;
+      return <MovieMenuLink entry={entry} today={today} {...link} />;
     case "tv":
-      return <ShowMenuLink {...props} entry={props.entry} />;
+      return <ShowMenuLink entry={entry} {...link} />;
     case "game":
-      return <GameMenuLink {...props} entry={props.entry} />;
+      return <GameMenuLink entry={entry} today={today} {...link} />;
   }
 }
 
-type EntryOf<T extends V1LibraryEntry["type"]> = Extract<
-  V1LibraryEntry,
-  { type: T }
->;
-
 /** The release date of a card the catalog answered, else none. */
-function releaseDateOf(
-  card: { kind: string; releaseDate?: string | null } | null,
-) {
-  return card?.kind === "title" ? (card.releaseDate ?? null) : null;
+function releaseDateOf(card: EntryOf<"movie" | "game">["card"]) {
+  return card?.kind === "title" ? card.releaseDate : null;
 }
 
 function MovieMenuLink({
   entry,
-  name,
   today,
-  ...rest
-}: LinkProps & { entry: EntryOf<"movie"> }) {
-  const write = useMovieWrite(entry.id);
-  const menu = movieCardMenu(entry.user, releaseDateOf(entry.card), today);
-  return (
-    <CardLink
-      href={entry.path as Href}
-      title={name}
-      menu={wire(menu, write.mutate)}
-      {...rest}
-    />
+  ...link
+}: LinkProps & { entry: EntryOf<"movie">; today: string }) {
+  const menu = useMovieCardMenu(
+    entry.id,
+    entry.user,
+    releaseDateOf(entry.card),
+    today,
   );
+  return <CardLink href={entry.path as Href} menu={menu} {...link} />;
 }
 
 function ShowMenuLink({
   entry,
-  name,
-  today: _today,
-  ...rest
+  ...link
 }: LinkProps & { entry: EntryOf<"tv"> }) {
-  const toggle = useShowTrackingWrite(entry.id, name);
-  return (
-    <CardLink
-      href={entry.path as Href}
-      title={name}
-      menu={wire(showCardMenu(entry.user), toggle.mutate)}
-      {...rest}
-    />
-  );
+  const menu = useShowCardMenu(entry.id, link.title, entry.user);
+  return <CardLink href={entry.path as Href} menu={menu} {...link} />;
 }
 
 function GameMenuLink({
   entry,
-  name,
   today,
-  ...rest
-}: LinkProps & { entry: EntryOf<"game"> }) {
-  const write = useGameWrite(entry.id);
-  const menu = gameCardMenu(entry.user, releaseDateOf(entry.card), today);
-  return (
-    <CardLink
-      href={entry.path as Href}
-      title={name}
-      menu={wire(menu, write.mutate)}
-      {...rest}
-    />
+  ...link
+}: LinkProps & { entry: EntryOf<"game">; today: string }) {
+  const menu = useGameCardMenu(
+    entry.id,
+    entry.user,
+    releaseDateOf(entry.card),
+    today,
   );
+  return <CardLink href={entry.path as Href} menu={menu} {...link} />;
 }
 
 /**
@@ -245,7 +224,7 @@ export function LibraryCard({
     ) : view.kind === "title" ? (
       <MenuLink
         entry={entry}
-        name={view.name}
+        title={view.name}
         label={label}
         today={today}
         width={width}
