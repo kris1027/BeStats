@@ -68,7 +68,7 @@ jest.mock("./haptics", () => ({
 
 /**
  * covers: prompts/mobile-web-parity-foundation.md, decision 10, requirement
- * 10 and AC-6 (a light tap once the server confirms, the error buzz on a
+ * 10 and AC-6 (a medium tap once the server confirms, the error buzz on a
  * refusal, nothing before the answer and nothing after a sign out)
  */
 describe("haptics", () => {
