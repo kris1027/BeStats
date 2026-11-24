@@ -16,11 +16,15 @@ test("hides a password until the eye shows it, and says which it will do", async
   const field = screen.getByLabelText("Password");
   expect(field.props.secureTextEntry).toBe(true);
 
+  expect(
+    screen.getByRole("button", { name: "Show password" }),
+  ).not.toBeSelected();
+
   await userEvent.press(screen.getByRole("button", { name: "Show password" }));
   expect(screen.getByLabelText("Password").props.secureTextEntry).toBe(false);
-  expect(
-    screen.getByRole("button", { name: "Hide password" }),
-  ).toBeOnTheScreen();
+  // The app's pressed toggle state (as GlassButton and the score sheet), the
+  // web's `aria-pressed`.
+  expect(screen.getByRole("button", { name: "Hide password" })).toBeSelected();
 });
 
 test("draws no eye on a field that is not a password", async () => {

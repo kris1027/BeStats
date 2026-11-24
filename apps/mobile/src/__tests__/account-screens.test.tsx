@@ -1,4 +1,5 @@
 import {
+  ACCOUNT_COPY,
   ACCOUNT_NOTICES,
   AUTH_MESSAGES,
   AUTH_OUTCOME,
@@ -19,12 +20,14 @@ import {
   testQueryClient,
   titleWrapper,
 } from "@/test-utils/title-harness";
+import { ACCOUNT_SCREEN_OPTIONS } from "@/theme/stack-options";
 
 /**
  * covers: prompts/mobile-account-deletion.md decisions 5, 6 and 8; spec 0033,
  * AC-12 (delete behind typing DELETE, then signed out); spec 0035, Sign up on
  * mobile (availability, signUp, then the claim); AGENTS.md section 11 (a
- * failed delete keeps you signed in and says so).
+ * failed delete keeps you signed in and says so); prompts/mobile-look-account.md,
+ * decision 7 (the large title, the signed-out panel under it).
  */
 const mockApi = createApiMock();
 jest.mock("@/lib/api", () => ({
@@ -92,6 +95,22 @@ beforeEach(() => {
 });
 
 describe("Account tab", () => {
+  it("takes the translucent large title the other tab roots use", () => {
+    expect(ACCOUNT_SCREEN_OPTIONS).toMatchObject({
+      title: "Account",
+      headerLargeTitle: true,
+      headerTransparent: true,
+    });
+  });
+
+  it("shows the signed-out panel with About under it", async () => {
+    mockSession = null;
+    await openAccount();
+    expect(screen.getByText(ACCOUNT_COPY.signedOutTitle)).toBeOnTheScreen();
+    expect(screen.getByText(ACCOUNT_COPY.signedOutTrack)).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "About" })).toBeOnTheScreen();
+  });
+
   it("offers Sign in and Create account signed out, with no private request", async () => {
     mockSession = null;
     await openAccount();
