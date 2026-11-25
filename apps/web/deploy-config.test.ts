@@ -78,6 +78,13 @@ function table(name: string): Map<string, TomlValue> {
 const productionAuth = table("remotes.production.auth");
 const PRODUCTION_ORIGIN = productionAuth.get("site_url") as string;
 
+/**
+ * The Netlify backup host's origin, which serves the same build and so may
+ * receive auth redirects too (prompts/netlify-mirror.md). It is a redirect
+ * target only; the site URL stays on Vercel.
+ */
+const BACKUP_ORIGIN = "https://bestats-app.netlify.app";
+
 /** covers: spec 0018, AC-7, AC-8 */
 describe("the auth settings config push sends", () => {
   it.each([
@@ -115,10 +122,12 @@ describe("the production remote", () => {
     expect(PRODUCTION_ORIGIN).toMatch(/^https:\/\/[a-z0-9.-]+$/);
   });
 
-  it("allows exactly the callback and the origin wildcard as redirects", () => {
+  it("allows exactly each host's callback and origin wildcard as redirects", () => {
     expect(productionAuth.get("additional_redirect_urls")).toEqual([
       `${PRODUCTION_ORIGIN}/auth/callback`,
       `${PRODUCTION_ORIGIN}/**`,
+      `${BACKUP_ORIGIN}/auth/callback`,
+      `${BACKUP_ORIGIN}/**`,
     ]);
   });
 
@@ -145,11 +154,12 @@ describe("the redirect allow list", () => {
     ...(productionAuth.get("additional_redirect_urls") as string[]),
   ] as string[];
 
-  it("holds only localhost and the production origin", () => {
+  it("holds only localhost, the production origin and the backup host", () => {
     for (const url of everyRedirect) {
       expect(
         url.startsWith("http://localhost:3000") ||
-          url.startsWith(PRODUCTION_ORIGIN),
+          url.startsWith(PRODUCTION_ORIGIN) ||
+          url.startsWith(BACKUP_ORIGIN),
         url,
       ).toBe(true);
     }
