@@ -56,39 +56,42 @@ export function LandingSection({ list, count, variant, label, blurb }: Props) {
 
   return (
     <View className="gap-3 pt-6">
-      <View
-        className={
-          stacked
-            ? "items-start gap-1 px-4"
-            : "flex-row items-end justify-between gap-3 px-4"
-        }
-      >
-        <View className={stacked ? "gap-0.5" : "flex-1 gap-0.5"}>
-          {label ? (
-            <Text className="text-xs font-semibold tracking-wide text-text-label uppercase">
-              {label}
-            </Text>
-          ) : null}
+      <View className={stacked ? "items-start gap-1 px-4" : "gap-0.5 px-4"}>
+        {label ? (
+          <Text className="text-xs font-semibold tracking-wide text-text-label uppercase">
+            {label}
+          </Text>
+        ) : null}
+        {/* The title and See all share a baseline, as the web's row does;
+            bottom aligned, the 44pt link box lifted its text above the
+            title's. At the accessibility sizes this row stacks instead. */}
+        <View
+          className={
+            stacked
+              ? "items-start gap-1"
+              : "flex-row items-baseline justify-between gap-3"
+          }
+        >
           <Text
             accessibilityRole="header"
-            className="text-xl font-bold text-foreground"
+            className={`text-xl font-bold text-foreground ${stacked ? "" : "flex-1"}`}
           >
             {list.rowTitle}
           </Text>
-          {line ? (
-            <Text className="text-sm text-text-secondary">{line}</Text>
-          ) : null}
+          <Link href={listPath(list) as Href} asChild>
+            <Pressable
+              accessibilityRole="link"
+              accessibilityLabel={`See all: ${list.heading}`}
+              hitSlop={8}
+              className="min-h-11 justify-center px-1"
+            >
+              <Text className="font-semibold text-text-link">See all</Text>
+            </Pressable>
+          </Link>
         </View>
-        <Link href={listPath(list) as Href} asChild>
-          <Pressable
-            accessibilityRole="link"
-            accessibilityLabel={`See all: ${list.heading}`}
-            hitSlop={8}
-            className="min-h-11 justify-center px-1"
-          >
-            <Text className="font-semibold text-text-link">See all</Text>
-          </Pressable>
-        </Link>
+        {line ? (
+          <Text className="text-sm text-text-secondary">{line}</Text>
+        ) : null}
       </View>
 
       {query.isPending ? (
