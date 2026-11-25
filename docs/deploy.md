@@ -273,6 +273,7 @@ Netlify serves the same build as Vercel, so the phone app keeps working when one
    | `TMDB_READ_ACCESS_TOKEN` | your TMDB read token (mark it secret) |
    | `NEXT_PUBLIC_SITE_URL` | `https://bestats-app.netlify.app`, no trailing slash |
    | `NEXT_PUBLIC_AUTH_EMAIL_DELIVERY` | `off` |
+   | `WEBSITE_OFF` | `on` |
    | `IGDB_CLIENT_ID` | your Twitch app's client id (mark it secret) |
    | `IGDB_CLIENT_SECRET` | your Twitch app's client secret (mark it secret) |
 
@@ -293,7 +294,7 @@ A deploy that merged a migration still follows section 2: push the migration bef
 
 The `X-BeStats-App-Version` value below is `MIN_APP_VERSION` from `packages/core/src/api/v1/version.ts`.
 
-1. Website off: `curl -sI https://bestats-app.netlify.app/movies` answers `403`, and so do `/`, `/sign-in` and `/sitemap.xml`. A private page such as `/watchlist` answers `307` to `/sign-in`, which answers `403`: the Next.js proxy runs as a Netlify edge function, and edge functions run before `netlify.toml` redirects. No page renders, but each page request still costs one edge invocation.
+1. Website off: `curl -sI https://bestats-app.netlify.app/movies` answers `403`, and so do `/`, `/sign-in` and `/sitemap.xml`. So do private pages such as `/watchlist` and a malformed `/movies/abc`, with no `Location` header. The Next.js proxy runs as a Netlify edge function before the `netlify.toml` rules, so with `WEBSITE_OFF=on` it answers `403` itself; without the variable, private pages answer `307` to `/sign-in` instead (prompts/netlify-private-pages-403.md). Each page request still costs one edge invocation.
 2. API on: `curl -s https://bestats-app.netlify.app/api/v1/config -H "X-BeStats-App-Version: <version>"` answers `200` with the app config. `/privacy`, `/terms` and `/robots.txt` answer `200`, and `robots.txt` disallows everything.
 3. Country: `curl -s https://bestats-app.netlify.app/api/v1/movies/550/extras -H "X-BeStats-App-Version: <version>"` lists your own country's watch providers. If it always lists the United States, Netlify sends no `x-country`, so report it.
 4. Rate limit: send about 310 quick requests to `/api/v1/config` from one address. The last ones answer `429`, and a minute later every `/api` route answers again. If any `/api` route fails while unthrottled (a `404`, or a loop), the self rewrite broke it: delete the rate limit rule from `netlify.toml` together with its test, redeploy, and note it here.
