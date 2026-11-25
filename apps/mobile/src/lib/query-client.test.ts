@@ -4,12 +4,14 @@ import { QueryClient } from "@tanstack/react-query";
 import { persistQueryClientSave } from "@tanstack/react-query-persist-client";
 
 import { appVersion } from "./api";
+import { catalogKeys } from "./catalog";
 import {
   clearPrivateQueries,
   PERSIST_MAX_AGE_MS,
   persistOptions,
   QUERY_CACHE_STORAGE_KEY,
   queryClient,
+  shouldPersistQuery,
 } from "./query-client";
 
 /** No garbage collection timers, so a test leaves nothing running. */
@@ -90,4 +92,22 @@ test("persists 24 hours of successful queries, never mutations, per app version"
 /** covers: spec 0033, AC-13 (offline writes fail, never queue) */
 test("runs writes even offline, so they fail instead of waiting", () => {
   expect(queryClient.getDefaultOptions().mutations?.networkMode).toBe("always");
+});
+
+/** covers: prompts/mobile-look-review-fixes.md, decision 7 (extras stay in memory) */
+test("a title's extras are never written to disk; other catalog answers are", async () => {
+  const client = testClient();
+  client.setQueryData(catalogKeys.extras("movie", 603), { region: "PL" });
+  client.setQueryData(catalogKeys.movie(603), { id: 603 });
+  const find = (key: readonly unknown[]) =>
+    client.getQueryCache().find({ queryKey: key, exact: true });
+
+  const extras = find(catalogKeys.extras("movie", 603));
+  const movie = find(catalogKeys.movie(603));
+  if (!extras || !movie) throw new Error("queries not cached");
+  expect(shouldPersistQuery(extras)).toBe(false);
+  expect(shouldPersistQuery(movie)).toBe(true);
+  expect(persistOptions.dehydrateOptions?.shouldDehydrateQuery).toBe(
+    shouldPersistQuery,
+  );
 });
