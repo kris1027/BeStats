@@ -72,8 +72,10 @@ export const queryPersister = createAsyncStoragePersister({
  * the server picks their country from the connection, which the app cannot
  * know before it asks, so the key cannot carry it, and a page restored after
  * a trip would show the last country's Where to watch for a day. Kept in
- * memory only, a restart always reads the current country
- * (prompts/mobile-look-review-fixes.md, decision 7).
+ * memory only, a restart always reads the current country: the country is
+ * never stored (apps/web/app/AGENTS.md, Visitor region) and time-sensitive
+ * metadata refreshes rather than caching for a day (AGENTS.md section 12;
+ * prompts/mobile-look-review-fixes.md, decision 7).
  */
 export function shouldPersistQuery(query: Query): boolean {
   const [root, kind] = query.queryKey;

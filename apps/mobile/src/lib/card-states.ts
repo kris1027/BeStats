@@ -50,8 +50,9 @@ export function cardStateChunks(ids: readonly number[]): number[][] {
 /**
  * The same ids array for as long as the ids stay the same. Every caller maps
  * its items to a new array on each render, so without this the chunks and
- * `useQueries`' input were rebuilt every render
- * (prompts/mobile-look-review-fixes.md, decision 4).
+ * `useQueries`' input were rebuilt every render; the batch read is how the
+ * cards stay within the catalog's request budget (AGENTS.md section 12,
+ * rate limits; prompts/mobile-look-review-fixes.md, decision 4).
  */
 export function useStableIds(ids: readonly number[]): readonly number[] {
   const kept = useRef(ids);
