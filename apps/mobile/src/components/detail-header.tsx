@@ -6,13 +6,14 @@ import { ageRatingLabel } from "@bestats/core/catalog/where-to-watch";
 import { formatVoteCount } from "@bestats/core/format";
 import { Image } from "expo-image";
 import { use } from "react";
-import { View } from "react-native";
+import { useWindowDimensions, View } from "react-native";
 
 import { GlassPlate, PlateSolid } from "@/components/glass/plate";
 import { CommunityRatingBadge, GlassPill } from "@/components/glass-pill";
 import { Text } from "@/components/text";
 import { OverBackdrop, POSTER_OVERLAP } from "@/components/title-header";
 import { DETAIL_POSTER_WIDTH, sizedImageUri } from "@/lib/images";
+import { isAccessibilityTextSize } from "@/theme/font-scale";
 import { lengthToken } from "@/theme/token-vars";
 
 type Props = {
@@ -74,9 +75,13 @@ export function DetailHeader({
       : []),
     ...pills,
   ];
+  // At the accessibility text sizes the text goes under the poster: beside
+  // it, a column narrower than a word breaks the title mid word
+  // (prompts/mobile-large-text-titles.md, decision 1, applied to the hero).
+  const stacked = isAccessibilityTextSize(useWindowDimensions().fontScale);
 
   return (
-    <View className="flex-row gap-4 px-4 pt-4">
+    <View className={stacked ? "gap-4 px-4 pt-4" : "flex-row gap-4 px-4 pt-4"}>
       <View style={overBackdrop ? { marginTop: -POSTER_OVERLAP } : null}>
         {posterUrl ? (
           <Image
@@ -105,7 +110,7 @@ export function DetailHeader({
           </PlateSolid>
         )}
       </View>
-      <View className="flex-1 gap-2">
+      <View className={stacked ? "gap-2" : "flex-1 gap-2"}>
         <Text
           accessibilityRole="header"
           className="text-2xl font-bold leading-tight text-foreground"
