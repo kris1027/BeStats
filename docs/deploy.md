@@ -316,3 +316,5 @@ Checked on 2026-11-25, first deploy (`6b06b21d414f59539972129d`):
 4. After about 320 requests in a minute, `/api` answered `429`; a minute later it answered again. Cached answers (`/api/v1/config`) still came from the CDN while limited.
 5. `/api/v1/me/library` with no token answered `401` with `cache-control: private,no-store`. The extras answer was `private,max-age=300` with a CDN bypass.
 
+Rechecked on 2026-11-25 with `WEBSITE_OFF=on` (deploy `6b06c6969baedb2e3243feab`): `/watchlist`, `/account`, `/up-next` and `/movies/abc` answered `403` with the static body and no `Location`; `/`, `/movies`, `/sign-in`, `/sitemap.xml` and `/opengraph-image` still answered `403`; `/privacy`, `/terms`, `/robots.txt`, the favicon, the logos and `/api/v1/config` answered `200`, and a `me` route with no token `401`. An earlier build that rewrote to `/403.html` answered `200` on Netlify and was rolled back.
+
