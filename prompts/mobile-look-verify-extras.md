@@ -37,6 +37,8 @@ The other three findings were bugs, fixed with these four on the branch of PR #1
 
    Built differently from first planned (a panel of three 44pt rows): Account draws its rows as standalone 56pt `ChevronRow`s, not inside a panel, so the skeleton follows the screen. The header panel sits in `GlassPanel`'s padding and the rows in the screen's gap, so nothing jumps when the real ones arrive. The username panel is left out because it only shows for some accounts. Both of Account's loading states use it: the session read and the profile read. Signed out isn't affected.
 
+6. **Up next button in the corner (your choice, 2026-11-25, from the simulator check):** with the TV icon the pill no longer fit beside Mark watched on the app's three column grid (about 114pt cards, 48pt left for the pill), so "S1E2" read "S1E". Mark watched moves to the top right corner, where Up next cards have nothing, and the pill takes the poster's width. The web keeps the button in the bottom row, where its two column phone grid has room.
+
 ## Assumptions
 
 - On iOS, registering a second file in the same `Inter` family is enough for `fontStyle: "italic"` (the `italic` class) to pick it. If it isn't, the fallback is naming the family on the tagline (`Inter-Italic`). I'll check this in the simulator before building on it.
@@ -77,7 +79,7 @@ None new: the season read is the public catalog route the app already calls, hol
 2. Open Blade Runner 2099 and check the tagline under the tracking controls, in italic.
 3. Open any movie with a tagline and check it's italic.
 4. Sign in with an account that tracks a show with an episode left, open Library, Shows, Up next: check the TV icon in the pill and the episode name under the title. Turn on airplane mode, pull to refresh, and check the card still shows without a name.
-5. Quit the app, open it on Account while signed in, and watch the skeleton: two panels, no posters.
+5. Quit the app, open it on Account while signed in, and watch the skeleton: the header panel and three rows, no posters.
 
 ## Review fixes (2026-11-25)
 
@@ -89,3 +91,4 @@ From `/mattpocock-skills:code-review` against `main`:
 - Home's section blurb is back under the title, inside the baseline row's title column, as before the See all fix (the web draws it under the heading too).
 - Regression tests for the two `/debug` fixes that had none: Search commits no frame of the old type's results under the new tab (`catalog-screens.test.tsx`, fails on the effect version), and Home's header row is baseline aligned with the blurb in the title's column (`landing-section.test.tsx`).
 - Verify is unticked in scope.md until the Up next card and Account's skeleton are seen on screen.
+- Simulator check (iPhone 18 Pro, iOS 27.2, local stack): Home's blurb under its title on the See all baseline, the Up next TV icon and episode name, and Account's skeleton (header panel and three rows, seen with the API held open) all pass; the pill read "S1E" beside Mark watched, fixed by decision 6.
