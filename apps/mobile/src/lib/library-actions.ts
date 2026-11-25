@@ -146,10 +146,16 @@ export function cardActionFor(
         entry.card.place.page === "watchlist"
       ) {
         const { season, episode } = entry.card.place.next;
+        // Top right, unlike the web's bottom row: on the app's three column
+        // grid a card is about 114pt wide, and beside the button the pill
+        // had 48pt, too narrow for the TV icon and "S1E2". Up next cards
+        // carry no badge or bookmark, so the corner is free and the pill
+        // gets the poster's width (prompts/mobile-look-verify-extras.md,
+        // decision 6, chosen 2026-11-25).
         return {
           kind: "mark_next",
           look: "mark",
-          corner: false,
+          corner: true,
           label: MARK_NEXT_MESSAGES.markLabel(entry.card.name, season, episode),
           next: { season, episode },
         };

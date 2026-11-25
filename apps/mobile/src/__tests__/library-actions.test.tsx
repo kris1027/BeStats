@@ -225,6 +225,8 @@ describe("cardActionFor", () => {
   test("Up next marks the next episode; Upcoming and Watched shows have none", () => {
     expect(cardActionFor(entry(UP_NEXT_SHOW), "watchlist")).toMatchObject({
       kind: "mark_next",
+      // The corner, so the pill keeps the poster's width (decision 6).
+      corner: true,
       label: MARK_NEXT_MESSAGES.markLabel("Game of Thrones", 2, 3),
       next: { season: 2, episode: 3 },
     });
