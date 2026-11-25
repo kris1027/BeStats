@@ -12,7 +12,6 @@ import {
   TMDB_HOME_URL,
 } from "@bestats/core/legal/operator";
 import { Image } from "expo-image";
-import * as Linking from "expo-linking";
 import type { ReactNode } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { ChevronRow } from "@/components/chevron-row";
@@ -21,6 +20,7 @@ import { IconKey } from "@/components/icon-key";
 import { Text } from "@/components/text";
 import { appVersion } from "@/lib/api";
 import { getPublicEnv } from "@/lib/env";
+import { useOpenLink } from "@/lib/open-link";
 
 /**
  * The official logo files, copied byte for byte from the web's `public/`
@@ -101,13 +101,14 @@ export function AboutScreen() {
  * rendering. The hint names the page, as the plan asks (decision 4).
  */
 function LegalLink({ path, label }: { path: string; label: string }) {
+  const openLink = useOpenLink();
   return (
     <ChevronRow
       role="link"
       label={label}
       hint={`Opens the ${label} in your browser`}
       onPress={() =>
-        Linking.openURL(`${getPublicEnv().EXPO_PUBLIC_API_BASE_URL}${path}`)
+        openLink(() => `${getPublicEnv().EXPO_PUBLIC_API_BASE_URL}${path}`)
       }
     />
   );
@@ -125,6 +126,7 @@ function Panel({ children }: { children: ReactNode }) {
  * (prompts/mobile-look-account.md, decision 9).
  */
 function Credit() {
+  const openLink = useOpenLink();
   return (
     <View className="flex-row flex-wrap items-center justify-center px-1">
       <Text className="text-xs text-muted-foreground">
@@ -134,7 +136,7 @@ function Credit() {
         accessibilityRole="link"
         accessibilityLabel={OPERATOR_HANDLE}
         accessibilityHint="Opens github.com in your browser"
-        onPress={() => Linking.openURL(OPERATOR_GITHUB_URL)}
+        onPress={() => openLink(OPERATOR_GITHUB_URL)}
         className="min-h-11 justify-center"
       >
         <Text className="text-xs font-semibold text-foreground underline">
@@ -157,12 +159,13 @@ function LogoLink({
   source: number;
   size: { width: number; height: number };
 }) {
+  const openLink = useOpenLink();
   return (
     <Pressable
       accessibilityRole="link"
       accessibilityLabel={label}
       accessibilityHint={`Opens ${url.replace("https://", "")}`}
-      onPress={() => Linking.openURL(url)}
+      onPress={() => openLink(url)}
       className="min-h-11 self-start justify-center"
     >
       <Image

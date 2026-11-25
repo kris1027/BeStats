@@ -17,6 +17,8 @@ import { render, screen, userEvent } from "@testing-library/react-native";
 import * as Linking from "expo-linking";
 
 import { appVersion } from "@/lib/api";
+import { OPEN_LINK_FAILED } from "@/lib/open-link";
+import { testQueryClient, titleWrapper } from "@/test-utils/title-harness";
 
 import { AboutScreen } from "./about-screen";
 
@@ -30,7 +32,7 @@ jest.mock("@/lib/env", () => ({
 }));
 
 test("credits TMDB and IGDB with their logos and the app's wording", async () => {
-  await render(<AboutScreen />);
+  await render(<AboutScreen />, { wrapper: titleWrapper(testQueryClient()) });
   expect(screen.getByText("BeStats")).toBeOnTheScreen();
   expect(screen.getByText(`Version ${appVersion()}`)).toBeOnTheScreen();
   expect(screen.getByText(TMDB_APP_ATTRIBUTION)).toBeOnTheScreen();
@@ -45,7 +47,7 @@ test("credits TMDB and IGDB with their logos and the app's wording", async () =>
 });
 
 test("links the Privacy Policy and Terms of Service on the API's origin", async () => {
-  await render(<AboutScreen />);
+  await render(<AboutScreen />, { wrapper: titleWrapper(testQueryClient()) });
   const user = userEvent.setup();
   await user.press(screen.getByRole("link", { name: "Privacy Policy" }));
   await user.press(screen.getByRole("link", { name: "Terms of Service" }));
@@ -62,7 +64,7 @@ test("links the Privacy Policy and Terms of Service on the API's origin", async 
  * names its page, and says browser rather than one platform's)
  */
 test("hints name the page each legal link opens", async () => {
-  await render(<AboutScreen />);
+  await render(<AboutScreen />, { wrapper: titleWrapper(testQueryClient()) });
   expect(
     screen.getByRole("link", { name: "Privacy Policy" }).props
       .accessibilityHint,
@@ -79,7 +81,7 @@ test("hints name the page each legal link opens", async () => {
  * the operator's GitHub profile)
  */
 test("lists every card mark in the icon key, each read by its label", async () => {
-  await render(<AboutScreen />);
+  await render(<AboutScreen />, { wrapper: titleWrapper(testQueryClient()) });
   expect(screen.getByRole("header", { name: "Icon key" })).toBeOnTheScreen();
   for (const entry of ICON_KEY_ENTRIES) {
     expect(screen.getByLabelText(entry.label)).toBeOnTheScreen();
@@ -87,10 +89,19 @@ test("lists every card mark in the icon key, each read by its label", async () =
 });
 
 test("credits the operator, the handle opening their GitHub profile", async () => {
-  await render(<AboutScreen />);
+  await render(<AboutScreen />, { wrapper: titleWrapper(testQueryClient()) });
   expect(
     screen.getByText(CREDIT_LINE_PREFIX, { exact: false }),
   ).toBeOnTheScreen();
   await userEvent.press(screen.getByRole("link", { name: OPERATOR_HANDLE }));
   expect(Linking.openURL).toHaveBeenLastCalledWith(OPERATOR_GITHUB_URL);
+});
+
+/** covers: prompts/mobile-look-review-fixes.md, decision 1 (no silent link) */
+test("says so when the phone cannot open a link", async () => {
+  jest.mocked(Linking.openURL).mockRejectedValueOnce(new Error("no handler"));
+  await render(<AboutScreen />, { wrapper: titleWrapper(testQueryClient()) });
+  const user = userEvent.setup();
+  await user.press(screen.getByRole("link", { name: "TMDB" }));
+  expect(await screen.findByText(OPEN_LINK_FAILED)).toBeOnTheScreen();
 });
