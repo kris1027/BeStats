@@ -102,7 +102,7 @@ describe("/privacy", () => {
     const text = container.textContent ?? "";
 
     expect(text).toMatch(
-      /server functions run in the\s+matching Vercel region, except when our backup host, Netlify, serves\s+the app/,
+      /server functions run in the\s+matching Vercel region or, when Netlify serves the app, in\s+Ohio, United States\./,
     );
     expect(text).toContain("Netlify is a United States company.");
     expect(text).toContain("Ohio, United States");

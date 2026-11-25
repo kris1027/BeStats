@@ -1,4 +1,5 @@
 import {
+  BACKUP_HOST,
   DELETION_DAYS,
   IGDB_HOME_URL,
   MINIMUM_AGE,
@@ -164,8 +165,8 @@ export default function PrivacyPage() {
         <p>
           Your data is stored in the EU: the database is in{" "}
           {SUPABASE_REGION.name}. The app&rsquo;s server functions run in the
-          matching Vercel region, except when our backup host, Netlify, serves
-          the app, as its line below explains.
+          matching Vercel region or, when {BACKUP_HOST.name} serves the app, in{" "}
+          {BACKUP_HOST.functionLocation}.
         </p>
         {PROCESSORS.flatMap((processor) =>
           processor.transfer ? (

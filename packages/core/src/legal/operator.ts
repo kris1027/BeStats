@@ -145,6 +145,18 @@ export type Processor = {
 };
 
 /**
+ * The host that serves the same build when Vercel can't (prompts/netlify-
+ * mirror.md, decisions 1 and 10). Its name and where its functions run are
+ * legal facts: Netlify's transfer line and `/privacy`'s "Transfers outside the
+ * EEA" both read them here, so the two never drift (root AGENTS.md, Commands
+ * and repo facts). Netlify's Free plan can't choose a region, hence Ohio.
+ */
+export const BACKUP_HOST = {
+  name: "Netlify",
+  functionLocation: "Ohio, United States",
+} as const;
+
+/**
  * Only the processors live today. Production sends no email (spec 0018), so
  * neither Google nor an email provider is listed; both join with the deferred
  * email delivery and Google sign in work, in the PR that turns them on.
@@ -174,12 +186,11 @@ export const PROCESSORS: readonly Processor[] = [
       "Vercel is a United States company. Where its staff access your data for support and operations, that access is covered by the EU Standard Contractual Clauses.",
   },
   {
-    name: "Netlify",
+    name: BACKUP_HOST.name,
     purpose:
-      "Hosts the website and the app's API as our backup host, and keeps request logs.",
+      "Hosts the website and the app's API when it serves the app in place of Vercel, and keeps request logs.",
     url: "https://www.netlify.com",
-    transfer:
-      "Netlify is a United States company. When it serves the app, the app's server functions run on its servers in Ohio, United States, so the requests you make there, with the account and tracking data they carry, are processed in the United States.",
+    transfer: `${BACKUP_HOST.name} is a United States company. When it serves the app, the app's server functions run on its servers in ${BACKUP_HOST.functionLocation}, so the requests you make there, with the account and tracking data they carry, are processed in the United States.`,
   },
   {
     name: "TMDB",
