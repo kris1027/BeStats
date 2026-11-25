@@ -7,7 +7,7 @@ Routes, plus the root files that shape them: `proxy.ts` and `next.config.ts`. Th
 - `turbopack.root` and `outputFileTracingRoot` in `next.config.ts` point at the workspace root, two folders up, so the build can resolve and ship files from `packages/*`.
 - `/` is a temporary (307) redirect to `/shows` in `redirects()` in `next.config.ts`; there is no `app/page.tsx`.
 - Library routes and their legacy redirects: [lib/catalog/AGENTS.md](../lib/catalog/AGENTS.md). A new private route registers in `PRIVATE_PATH_PREFIXES` ([lib/auth/AGENTS.md](../lib/auth/AGENTS.md)).
-- The website is off in production (2026-11-21): a Vercel Firewall rule answers `403` to every page except `/api/`, `/privacy` and `/terms`, and robots.txt disallows everything ([docs/deploy.md](../../../docs/deploy.md), section 5). Routes still build and run locally.
+- The website is off in production (2026-11-21): a Vercel Firewall rule answers `403` to every page except `/api/`, `/privacy` and `/terms`, and robots.txt disallows everything ([docs/deploy.md](../../../docs/deploy.md), section 5). On the Netlify backup host, `netlify.toml` denies each page route by name (section 13), so a new top-level route gets a deny rule there; `deploy-config.test.ts` fails until it has one. Routes still build and run locally.
 - `/games` is the games landing with five paged list pages (`/games/{slug}`), indexable and in the sitemap. Game detail pages keep their `index` meta, but they and season pages are disallowed in robots.txt and left out of the sitemap to protect Vercel's Active CPU budget ([lib/seo/AGENTS.md](../lib/seo/AGENTS.md)).
 - `app/not-found.tsx` is the styled 404 for every unmatched URL. The game page answers a hidden game with a soft 404.
 - `/showcase` is a static 404 in production and renders under `next dev` and Vitest.
@@ -34,8 +34,8 @@ Every image goes through `next/image` and the one `loaderFile`, `lib/images/load
 
 ## Visitor region
 
-Where to watch and the age rating chip read the country only from `getVisitorRegion()` in `lib/region.ts` (Vercel's `x-vercel-ip-country`, `US` fallback). Call it inside a streamed Suspense boundary only, never in a page shell, cached scope or SEO surface, and never store, log or send it to TMDB. A `/api/v1` route has its request in hand and calls `regionFromHeaders(request.headers)` instead, the same rule; its answer is then `private`, never shared cached (the title extras routes, prompts/mobile-look-title-extras.md).
+Where to watch and the age rating chip read the country only from `getVisitorRegion()` in `lib/region.ts` (Vercel's `x-vercel-ip-country`, else Netlify's `x-country`, `US` fallback). Call it inside a streamed Suspense boundary only, never in a page shell, cached scope or SEO surface, and never store, log or send it to TMDB. A `/api/v1` route has its request in hand and calls `regionFromHeaders(request.headers)` instead, the same rule; its answer is then `private`, never shared cached (the title extras routes, prompts/mobile-look-title-extras.md).
 
 ## Search rate limit
 
-The `/api/search` rate limit is a Vercel Firewall rule, recorded only in [docs/deploy.md](../../../docs/deploy.md).
+The `/api/search` rate limit is a Vercel Firewall rule, recorded only in [docs/deploy.md](../../../docs/deploy.md). On Netlify one code rule in `netlify.toml` limits all of `/api/*`.

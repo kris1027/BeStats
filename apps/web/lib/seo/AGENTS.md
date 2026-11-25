@@ -4,7 +4,7 @@ How BeStats presents itself to search engines and link previews. Governed by [sp
 
 ## Files
 
-- `site.ts`: `siteUrl()` (the http(s) origin from `NEXT_PUBLIC_SITE_URL`, or null), `absoluteUrl()` (that origin plus a path, or null) and `isIndexableDeployment()` (true only with `VERCEL_ENV=production` and a valid site URL).
+- `site.ts`: `siteUrl()` (the http(s) origin from `NEXT_PUBLIC_SITE_URL`, or null), `absoluteUrl()` (that origin plus a path, or null) and `isIndexableDeployment()` (true only with `VERCEL_ENV=production` and a valid site URL, so the Netlify backup host, which sets no `VERCEL_ENV`, is never indexable).
 - `metadata.ts`: `catalogMetadata()` for every public catalog page, `landingMetadata()` for `/movies`, `/shows`, `/games` and their list pages (called through `lib/landing-metadata.ts`, which sits outside this folder because it catches `TmdbError` and `IgdbError`), `shareMetadata()` for the Open Graph and X fields every page shares, `SITE_NAME` and `siteCardUrl()`.
 - `json-ld.ts`: `movieJsonLd()`, `showJsonLd()`, `gameJsonLd()` (a `VideoGame`, spec 0032) and `jsonLdScript()`. Rendered by `components/catalog/json-ld.tsx`.
 - `sitemap.ts`: `sitemapEntries()` and `DISCOVER_PAGES_PER_TYPE`, the pure half of `app/sitemap.ts`.

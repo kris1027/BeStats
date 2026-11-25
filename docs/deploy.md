@@ -1,6 +1,6 @@
 # Deploying BeStats
 
-This is the runbook for production, written for you, the operator. Every step is a recommendation you may run or skip. It follows spec [0018](specs/0018-deploy-and-provider-setup/index.md): Vercel hosts the app, the existing Supabase Free project holds the data, and everything Supabase knows comes from this repo.
+This is the runbook for production, written for you, the operator. Every step is a recommendation you may run or skip. It follows spec [0018](specs/0018-deploy-and-provider-setup/index.md): Vercel hosts the app, the existing Supabase Free project holds the data, and everything Supabase knows comes from this repo. Since 2026-11-25 Netlify hosts the same build as a backup, and is the primary host while Vercel's quota is spent (section 13).
 
 Steps that change Vercel, GitHub or the Supabase project are marked **remote**. Run them yourself from your own terminal. Since CLI v3, `db push --remote` and `config push` ask before they change the hosted project, and an agent can still answer for you or pass `--yes`, so never ask an agent to run one "just to see the diff".
 
@@ -14,7 +14,10 @@ Steps that change Vercel, GitHub or the Supabase project are marked **remote**. 
 | Vercel function region | `fra1`, Frankfurt | `regions` in `apps/web/vercel.json` |
 | Vercel Root Directory | `apps/web`, with files outside the root directory included | the Vercel project settings (spec 0034) |
 | Supabase CLI | `3.2.0`, run as `pnpm exec supabase` | the root `package.json`, and the `database` job in `.github/workflows/checks.yml` |
-| Node | 22 | the Vercel project settings, and CI |
+| Node | 22 | the Vercel project settings, `NODE_VERSION` in `apps/web/netlify.toml`, and CI |
+| Backup origin | `https://bestats-app.netlify.app` | Netlify site `bestats-app` (Free plan); in `[remotes.production.auth]` as a redirect only (section 13) |
+| Netlify function region | Ohio (`us-east-2`) | Netlify's Free plan default; choosing one needs Pro |
+| Netlify base and package directory | repo root, and `apps/web` | the Netlify site settings |
 | Access token signing | ES256 (asymmetric) | Supabase dashboard, JWT Keys |
 
 ## 1. Link the CLI and check the project (remote, read only)
@@ -238,3 +241,70 @@ The store release of the phone app (spec [0033](specs/0033-mobile-app-expo/index
 7. **App links.** Read the Team ID from your Apple account and the SHA 256 fingerprint of the **Play app signing** key from the Play Console (App integrity), then follow section 5, "When the app link files ship". Check that an https title link and a reset link open the installed store build (AC-16).
 8. **Smoke test** on a TestFlight and a Play internal build: sign in, browse, search, track a movie, an episode and a game, open every library page (AC-17).
 9. **Over the air fixes.** For a JavaScript only fix, `eas update --channel production --environment production --message "<what changed>"`. Try it on `preview` first. A change to native code or `app.json` needs a new build instead. A store build shows an update after up to two cold launches.
+
+## 13. Netlify backup host (remote)
+
+Netlify serves the same build as Vercel, so the phone app keeps working when one host runs out of its free quota ([prompts/netlify-mirror.md](../prompts/netlify-mirror.md)). One host is primary at a time, and you switch the phone app by hand. Nothing in sections 1 to 12 changes: Vercel's settings, firewall rules and `vercel.json` stay as they are.
+
+**What the repo holds.** `apps/web/netlify.toml` sets the build command and Node 22, rate limits `/api/*`, and turns the website off. `deploy-config.test.ts` pins all of it, and fails when a new top-level route under `app/` is neither denied there nor on the allow list.
+
+**The Free plan's limits** (read on 2026-11-25):
+- 300 credits a month as a hard cap. When they run out, the site pauses until the next cycle.
+- A production deploy costs 15 credits, so about 20 deploys a month at most, less what requests (2 credits per 10,000) and compute (10 per GB-hour) use. Failed deploys and rollbacks cost nothing.
+- Functions run in Ohio. Every Supabase call crosses the Atlantic, so screens are slower than on Vercel `fra1`. `/privacy` says so through Netlify's line in `PROCESSORS`.
+- No AI bot ruleset and no dashboard firewall rules. The `403` rules and `robots.txt` already stop page renders.
+
+### Set up the site (once)
+
+1. In Netlify, Add new project, Import from Git, pick `kris1027/BeStats`.
+2. Base directory: leave empty (the repo root). Package directory: `apps/web`. Netlify reads `apps/web/netlify.toml` and uses its build command. Leave the publish directory to the Next.js adapter.
+3. Site name: `bestats-app`, giving `https://bestats-app.netlify.app`. If it is taken, pick another, then update `BACKUP_ORIGIN` in `deploy-config.test.ts`, the redirect URLs in `supabase/config.toml`, and this section.
+4. Project configuration, Build and deploy:
+   - Continuous deployment, Build settings: set **Builds** to **Stopped**, so a merge to `main` costs no credits.
+   - Deploy Previews: **Off**.
+   - Branch deploys: **None**.
+5. Environment variables, scoped to Builds and Functions, production context:
+
+   | Variable | Value |
+   |---|---|
+   | `NEXT_PUBLIC_SUPABASE_URL` | `https://kyatxtclyikcmkebjxan.supabase.co` |
+   | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | the project's publishable key |
+   | `TMDB_READ_ACCESS_TOKEN` | your TMDB read token (mark it secret) |
+   | `NEXT_PUBLIC_SITE_URL` | `https://bestats-app.netlify.app`, no trailing slash |
+   | `NEXT_PUBLIC_AUTH_EMAIL_DELIVERY` | `off` |
+   | `IGDB_CLIENT_ID` | your Twitch app's client id (mark it secret) |
+   | `IGDB_CLIENT_SECRET` | your Twitch app's client secret (mark it secret) |
+
+   The rules from section 4 apply: no service role key, secret key or database password, and no `NEXT_PUBLIC_` prefix on the TMDB or IGDB values. Don't set `VERCEL_ENV`, so the build is never indexable.
+6. Push the redirect URLs: run `pnpm exec supabase config push` (section 3). The diff should show only the two `bestats-app.netlify.app` entries in `additional_redirect_urls`.
+7. Optional: complete the appendix of Netlify's DPA (`https://www.netlify.com/pdf/netlify-dpa.pdf`) and email it to Netlify. Once that's done, Netlify's transfer line in `PROCESSORS` may name the EU Standard Contractual Clauses, the same way Vercel's does. Bump `LEGAL_LAST_UPDATED` with that change.
+
+### Deploy (by hand)
+
+Netlify builds only when you ask. Deploy when you switch to Netlify, or when a fix the phone app needs has merged:
+- In the dashboard: Deploys, Trigger deploy, Deploy project.
+- Or from `apps/web`: `npx netlify-cli@latest deploy --build --prod` (it asks you to log in and link the site the first time).
+
+A deploy that merged a migration still follows section 2: push the migration before you merge.
+
+### Check it after the first deploy
+
+The `X-BeStats-App-Version` value below is `MIN_APP_VERSION` from `packages/core/src/api/v1/version.ts`.
+
+1. Website off: `curl -sI https://bestats-app.netlify.app/movies` answers `403`, and so do `/`, `/watchlist`, `/sign-in` and `/sitemap.xml`. Netlify's function log shows no line for them.
+2. API on: `curl -s https://bestats-app.netlify.app/api/v1/config -H "X-BeStats-App-Version: <version>"` answers `200` with the app config. `/privacy`, `/terms` and `/robots.txt` answer `200`, and `robots.txt` disallows everything.
+3. Country: `curl -s https://bestats-app.netlify.app/api/v1/movies/550/extras -H "X-BeStats-App-Version: <version>"` lists your own country's watch providers. If it always lists the United States, Netlify sends no `x-country`, so report it.
+4. Rate limit: send about 310 quick requests to `/api/v1/config` from one address. The last ones answer `429`, and a minute later every `/api` route answers again. If any `/api` route fails while unthrottled (a `404`, or a loop), the self rewrite broke it: delete the rate limit rule from `netlify.toml` together with its test, redeploy, and note it here.
+5. Private answers stay private: `curl -sI` on a `me` route with a bearer token shows `cache-control: private, no-store` and no CDN cache hit in `cache-status`.
+
+### Switch the phone app
+
+The app reads its API origin from `EXPO_PUBLIC_API_BASE_URL`, baked in at build time.
+1. In `apps/mobile/.env.production.local`, set `EXPO_PUBLIC_API_BASE_URL=https://bestats-app.netlify.app`. To switch back, set it to `https://bestats-app.vercel.app`.
+2. Rebuild and install your local release build.
+3. Sign in, browse, search, and track a movie, an episode and a game.
+
+The app's About links to `/privacy` and `/terms` on the same origin, so they follow the switch. App links (Universal Links, App Links and the reset link) stay bound to `bestats-app.vercel.app` (section 5), so they don't work while Vercel is paused. Production sends no email, so no reset link is affected today.
+
+Checked: not yet. Record the date and results of the checks above here after the first deploy.
+

@@ -39,8 +39,9 @@ export function absoluteUrl(path: string): string | null {
  * Whether this deployment may be indexed: only Vercel's production deployment
  * with a site URL set (spec 0016, AC-2).
  *
- * Local runs, CI builds and preview deployments all answer false, so a half
- * finished build never competes with the real site in search results.
+ * Local runs, CI builds, preview deployments and the Netlify backup host all
+ * answer false, so a half finished build or a second origin never competes
+ * with the real site in search results (prompts/netlify-mirror.md, decision 8).
  * `/robots.txt` and `/sitemap.xml` are prerendered, so this is read when
  * `pnpm build` runs, not per request (`lib/seo/AGENTS.md`, Rules).
  */
