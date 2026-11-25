@@ -239,7 +239,8 @@ The store release of the phone app (spec [0033](specs/0033-mobile-app-expo/index
 6. **Privacy labels.** Type the answers from [store-privacy-labels.md](store-privacy-labels.md) into App Store Connect and the Play Console.
 7. **App links.** Read the Team ID from your Apple account and the SHA 256 fingerprint of the **Play app signing** key from the Play Console (App integrity), then follow section 5, "When the app link files ship". Check that an https title link and a reset link open the installed store build (AC-16).
 8. **Smoke test** on a TestFlight and a Play internal build: sign in, browse, search, track a movie, an episode and a game, open every library page (AC-17).
-9. **Over the air fixes.** For a JavaScript only fix, `eas update --channel production --environment production --message "<what changed>"`. Try it on `preview` first. A change to native code or `app.json` needs a new build instead. A store build shows an update after up to two cold launches.
+9. **Deploy the web first when a v1 answer gains a required field.** The app's schemas in `@bestats/core/api/v1` are strict, so a build or an update that expects a new required field fails to read every answer from a web deploy that lacks it (an older app is safe: it drops keys it does not know). Deploy the web, check the field in a live answer, then build or publish the app (prompts/mobile-look-review-fixes.md, decision 5).
+10. **Over the air fixes.** For a JavaScript only fix, `eas update --channel production --environment production --message "<what changed>"`. Try it on `preview` first. A change to native code or `app.json` needs a new build instead. A store build shows an update after up to two cold launches.
 
 ## 13. Netlify backup host (remote)
 

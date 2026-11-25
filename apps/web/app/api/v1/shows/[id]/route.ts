@@ -39,6 +39,10 @@ export const GET = withV1({
   cache: "public, s-maxage=60",
   input: { params: z.object({ id: showIdParamSchema }) },
   handler: async ({ input }) => {
+    // The cast read runs beside the show read even though a missing show
+    // drops it: reading it after would add a TMDB round trip to every cold
+    // show page to save one call on a bad id, and the cast has its own day
+    // long cache (prompts/mobile-look-review-fixes.md, decision 6).
     const [loaded, cast] = await Promise.all([
       loadShow(input.params.id),
       showCastOrNull(input.params.id),
