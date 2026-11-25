@@ -6,7 +6,7 @@ import {
 } from "@bestats/core/api/v1/titles";
 import { idsKey } from "@bestats/core/tracking/ids-key";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 
 import { PRIVATE_QUERY_ROOT } from "./query-client";
 import { useSession } from "./session";
@@ -48,6 +48,19 @@ export function cardStateChunks(ids: readonly number[]): number[][] {
 }
 
 /**
+ * The same ids array for as long as the ids stay the same. Every caller maps
+ * its items to a new array on each render, so without this the chunks and
+ * `useQueries`' input were rebuilt every render; the batch read is how the
+ * cards stay within the catalog's request budget (AGENTS.md section 12,
+ * rate limits; prompts/mobile-look-review-fixes.md, decision 4).
+ */
+export function useStableIds(ids: readonly number[]): readonly number[] {
+  const kept = useRef(ids);
+  if (idsKey(kept.current) !== idsKey(ids)) kept.current = ids;
+  return kept.current;
+}
+
+/**
  * The signed in user's state for every card on a screen
  * (prompts/mobile-look-card-actions.md, decision 5): one `/me/titles` read
  * per slice of cards, never one per card, each answer written into the
@@ -58,8 +71,12 @@ export function cardStateChunks(ids: readonly number[]): number[][] {
  * failed read it is not, and the card stays the plain catalog card with no
  * menu (decision 6): a missing status on twenty cards is quieter than an
  * error, as on the web, and the catalog never waits on the session
- * (AGENTS.md section 7, the catalog is public). A state with a write in flight is never overwritten
- * by a seed, so an older batch answer cannot undo an optimistic tap.
+ * (AGENTS.md section 7, the catalog is public). Only a title the answer
+ * carried counts as known, so a card never falls back to reading its title
+ * alone (R6). A seed never overwrites a state with a write in flight, nor
+ * one written after the read started, so an older batch answer cannot undo
+ * an optimistic tap or a confirmed write
+ * (prompts/mobile-look-review-fixes.md, decisions 3 and 8).
  */
 export function useCardStates(
   type: TitleType,
@@ -67,7 +84,8 @@ export function useCardStates(
 ): (id: number) => boolean {
   const { session } = useSession();
   const queries = useQueryClient();
-  const chunks = useMemo(() => cardStateChunks(ids), [ids]);
+  const stableIds = useStableIds(ids);
+  const chunks = useMemo(() => cardStateChunks(stableIds), [stableIds]);
 
   const results = useQueries({
     queries: chunks.map((chunk) => ({
@@ -75,23 +93,28 @@ export function useCardStates(
       enabled: session !== null,
       staleTime: CARD_STATE_STALE_MS,
       queryFn: async () => {
+        const startedAt = Date.now();
         const titles = await fetchTitleStates(type, chunk);
+        const carried: number[] = [];
         for (const id of chunk) {
           const state = pickTitleState(titles, type, id);
-          const key = trackingKeys.title(type, id);
           if (state === null) continue;
+          carried.push(id);
+          const key = trackingKeys.title(type, id);
           if (queries.isMutating({ mutationKey: key }) > 0) continue;
+          const updatedAt = queries.getQueryState(key)?.dataUpdatedAt ?? 0;
+          if (updatedAt >= startedAt) continue;
           queries.setQueryData(key, state);
         }
-        return chunk;
+        return carried;
       },
     })),
   });
 
   const known = new Set<number>();
-  results.forEach((result, index) => {
-    if (result.isSuccess) for (const id of chunks[index] ?? []) known.add(id);
-  });
+  for (const result of results) {
+    if (result.isSuccess) for (const id of result.data) known.add(id);
+  }
   return (id) => session !== null && known.has(id);
 }
 

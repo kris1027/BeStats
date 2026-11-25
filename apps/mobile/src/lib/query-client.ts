@@ -1,12 +1,17 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
-import { QueryClient } from "@tanstack/react-query";
+import {
+  defaultShouldDehydrateQuery,
+  type Query,
+  QueryClient,
+} from "@tanstack/react-query";
 import type {
   Persister,
   PersistQueryClientProviderProps,
 } from "@tanstack/react-query-persist-client";
 
 import { ApiError, appVersion } from "./api";
+import { CATALOG_QUERY_ROOT } from "./catalog";
 
 /**
  * The first segment of every private query key. `clearPrivateQueries` wipes
@@ -63,9 +68,25 @@ export const queryPersister = createAsyncStoragePersister({
 });
 
 /**
+ * Whether a successful query is written to disk. A title's extras are not:
+ * the server picks their country from the connection, which the app cannot
+ * know before it asks, so the key cannot carry it, and a page restored after
+ * a trip would show the last country's Where to watch for a day. Kept in
+ * memory only, a restart always reads the current country: the country is
+ * never stored (apps/web/app/AGENTS.md, Visitor region) and time-sensitive
+ * metadata refreshes rather than caching for a day (AGENTS.md section 12;
+ * prompts/mobile-look-review-fixes.md, decision 7).
+ */
+export function shouldPersistQuery(query: Query): boolean {
+  const [root, kind] = query.queryKey;
+  if (root === CATALOG_QUERY_ROOT && kind === "extras") return false;
+  return defaultShouldDehydrateQuery(query);
+}
+
+/**
  * The persistence rules from child 0036: 24 hours, dropped by an app update
  * (`buster` is the app version, so an old answer shape is never read), and
- * only successful queries. Mutations are never written: their input can be
+ * only successful queries, never a title's extras (`shouldPersistQuery`). Mutations are never written: their input can be
  * private, and an offline write fails rather than waiting to be replayed.
  */
 export const persistOptions: PersistQueryClientProviderProps["persistOptions"] =
@@ -73,7 +94,10 @@ export const persistOptions: PersistQueryClientProviderProps["persistOptions"] =
     persister: queryPersister,
     maxAge: PERSIST_MAX_AGE_MS,
     buster: appVersion(),
-    dehydrateOptions: { shouldDehydrateMutation: () => false },
+    dehydrateOptions: {
+      shouldDehydrateMutation: () => false,
+      shouldDehydrateQuery: shouldPersistQuery,
+    },
   };
 
 /**

@@ -45,7 +45,7 @@ _2026-10-06: the `design/` artboards were removed. The UI built from them carrie
 | 26 | Library page names per media type | Slice 13 | done |
 | 27 | Library page URLs follow their names | Slice 13 | done |
 | 28 | Mobile app (iOS and Android) | Slice 14 | done |
-| 29 | Mobile look: the web's visual language, a native feel | Slice 15 | in-progress |
+| 29 | Mobile look: the web's visual language, a native feel | Slice 15 | done |
 
 ## Foundations
 
@@ -491,7 +491,7 @@ spec [0033](../specs/0033-mobile-app-expo/index.md) · code in `apps/mobile/`, `
 
 ## Slice 15: Mobile look
 
-### 29. Mobile look: the web's visual language, a native feel · in-progress
+### 29. Mobile look: the web's visual language, a native feel · done
 The app takes the web's visual language (warm still page background, frosted glass with gradient rims and sheen, Inter, lucide and the tracking icons, `GlassPill` badges, skeletons, glass state panels) while layout and interaction follow iOS and Android conventions. It is not a 1:1 copy of the web. Home keeps its layout and loses the parallax for good; the web is not changed. Decided with you in a design interview on 2026-11-23; every decision is in the plan.
 **Done when:** every app screen reads as the web's brand beside the web at 375px (materials, colours, radii, type; not layout), the missing web features are in the app, and each slice below is merged with its screenshot check.
 - [x] Design it (spec): the 2026-11-23 design interview, captured in [prompts/mobile-web-parity-foundation.md](../../prompts/mobile-web-parity-foundation.md) (decisions, requirements, acceptance criteria and the slice roadmap)
@@ -548,9 +548,9 @@ The app takes the web's visual language (warm still page background, frosted gla
   - [x] Library next episode pill: the web's pill has the TV icon and the card shows the episode name under the title ("Ho, Ho, Folks"); the app's `library-card.tsx` shows "S1E3" with no icon and no episode name. Built 2026-11-25: the pill leads with `NextEpisodeIcon`, and the card reads its season through `catalogKeys.season` (shared with Mark watched) for the episode name; tested, not yet seen signed in on screen
   - [x] Still owed from run 1, not failures: AC-2 on Android (plates opaque, no blur; no emulator on this Mac, so run it on a real Android phone), AC-6's medium haptic felt on a device (a simulator has none; felt on the iPhone 2026-11-24), VoiceOver on the community pill's source name (AC-4). Everything else passed: AC-1, AC-3 (no control label clipped at AX5), AC-4 on screen, AC-5, AC-7, and AC-8 (`pnpm typecheck`, `pnpm lint`, `pnpm test`: core 949, mobile 458, web 3380). Checked by you on 2026-11-25: AC-2 on a real Android phone, AC-6's haptic on a device and VoiceOver on the community pill's source name all pass
 - [x] Verify it: `/check verify mobile look` (passed 2026-11-25: run 1's findings fixed on PR #113's branch, and the owed device checks done by you. Simulator, iPhone 18 Pro, iOS 27.2, local stack: Home's blurb under its title on the See all baseline; the Up next card's TV icon and episode name, whose pill read "S1E" beside Mark watched on the three column grid until the button moved to the top right corner (prompts/mobile-look-verify-extras.md, decision 6), then marked S1E2 with its Undo; Account's skeleton, the header panel and three rows, seen with the API held open)
-- [ ] Test it: `/test mobile look`
-- [ ] Review it (fresh model): `/check review mobile look`
-- [ ] Document it: `/document mobile look`
+- [x] Test it: `/test mobile look` (2026-11-25: the feature's logic gaps filled with `apps/mobile/src/lib/title-writes.test.ts` and `community-rating.test.ts`, 26 tests; the mobile suite passes, 495 tests)
+- [x] Review it (fresh model): `/check review mobile look` (2026-11-25, on sonnet over 208 files: Approve with nits, no blocker or major, 8 minors and 4 nits in [docs/reviews/2026-11-25-feat-mobile-look-close.md](../reviews/2026-11-25-feat-mobile-look-close.md); the 8 minors handled the same day under [prompts/mobile-look-review-fixes.md](../../prompts/mobile-look-review-fixes.md), the nits left open; simulator check the same day, iPhone 18 Pro, local stack, signed in: Trailer and "All options on TMDB" open outside the app, one batched `/me/titles` read per card section and none per card, a wrong current password still marked under its field)
+- [x] Document it: `/document mobile look` (2026-11-25: PR description for `feat/mobile-look-close`)
 spec: none (decisions in [prompts/mobile-web-parity-foundation.md](../../prompts/mobile-web-parity-foundation.md)) · code in `apps/mobile/src/components/glass/`, `apps/mobile/src/components/page-background.tsx`, `apps/mobile/src/components/text.tsx`, `apps/mobile/src/theme/`, `packages/core/scripts/tokens.ts`
 
 ## Deferred

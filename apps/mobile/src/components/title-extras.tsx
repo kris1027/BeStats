@@ -13,7 +13,6 @@ import {
 } from "@bestats/core/catalog/where-to-watch";
 import { JUSTWATCH_ATTRIBUTION } from "@bestats/core/legal/operator";
 import { Image } from "expo-image";
-import * as Linking from "expo-linking";
 import type { ReactNode } from "react";
 import { FlatList, Pressable, View } from "react-native";
 
@@ -25,6 +24,7 @@ import { PosterRowSkeleton, Skeleton } from "@/components/skeleton";
 import { Text } from "@/components/text";
 import { useCardStates } from "@/lib/card-states";
 import { sizedImageUri } from "@/lib/images";
+import { useOpenLink } from "@/lib/open-link";
 import { lengthToken, tokenColor } from "@/theme/token-vars";
 
 /** The web's provider logo size, in points (spec 0022, AC-12). */
@@ -58,6 +58,7 @@ export function TrailerButton({
   trailer: { key: string; name: string } | null | undefined;
   title: string;
 }) {
+  const openLink = useOpenLink();
   const url = trailer ? youtubeWatchUrl(trailer.key) : null;
   if (url === null) return null;
   return (
@@ -66,7 +67,7 @@ export function TrailerButton({
         label="Trailer"
         accessibilityLabel={`Play the ${title} trailer on YouTube`}
         icon={<PlayIcon size={16} color={tokenColor("color-foreground")} />}
-        onPress={() => Linking.openURL(url)}
+        onPress={() => openLink(url)}
       />
     </View>
   );
@@ -116,6 +117,7 @@ function SectionError({
  * providers it says so and never borrows another country's.
  */
 export function WhereToWatch({ read }: { read: ReadState<V1TitleExtras> }) {
+  const openLink = useOpenLink();
   if (read.isPending) {
     return (
       <View className="gap-3">
@@ -188,7 +190,7 @@ export function WhereToWatch({ read }: { read: ReadState<V1TitleExtras> }) {
             <Pressable
               accessibilityRole="link"
               accessibilityLabel={`${ALL_WATCH_OPTIONS_LABEL}, opens in the browser`}
-              onPress={() => Linking.openURL(link)}
+              onPress={() => openLink(link)}
               hitSlop={8}
               className="min-h-11 flex-row items-center gap-1 self-start"
             >
