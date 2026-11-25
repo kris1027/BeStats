@@ -6,6 +6,7 @@ import { persistQueryClientSave } from "@tanstack/react-query-persist-client";
 import { appVersion } from "./api";
 import { catalogKeys } from "./catalog";
 import {
+  cacheBuster,
   clearPrivateQueries,
   PERSIST_MAX_AGE_MS,
   persistOptions,
@@ -70,7 +71,7 @@ test("removes the persisted cache, so no me entry stays on disk", async () => {
 test("persists 24 hours of successful queries, never mutations, per app version", () => {
   expect(persistOptions.maxAge).toBe(PERSIST_MAX_AGE_MS);
   expect(PERSIST_MAX_AGE_MS).toBe(24 * 60 * 60 * 1000);
-  expect(persistOptions.buster).toBe(appVersion());
+  expect(persistOptions.buster?.startsWith(appVersion())).toBe(true);
   expect(
     persistOptions.dehydrateOptions?.shouldDehydrateMutation?.(
       {} as Parameters<
@@ -110,4 +111,20 @@ test("a title's extras are never written to disk; other catalog answers are", as
   expect(persistOptions.dehydrateOptions?.shouldDehydrateQuery).toBe(
     shouldPersistQuery,
   );
+});
+
+/**
+ * covers: prompts/mobile-cache-buster-build-id.md, AC-1 and AC-2
+ *
+ * Two builds of 1.1.0 shared one buster, so the newer build restored a show
+ * saved without `networks` and crashed opening it.
+ */
+test("a build from another commit never reads the same persisted cache", () => {
+  expect(cacheBuster("1.1.0", "5e5bcb1")).not.toBe(
+    cacheBuster("1.1.0", "a1b2c3d"),
+  );
+  expect(cacheBuster("1.1.0", "5e5bcb1")).not.toBe(
+    cacheBuster("1.2.0", "5e5bcb1"),
+  );
+  expect(cacheBuster("1.1.0", undefined)).toBe("1.1.0");
 });
