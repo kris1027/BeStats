@@ -31,6 +31,7 @@ import {
   FactsPanel,
   Overview,
   showFacts,
+  Tagline,
 } from "@/components/title-details";
 import {
   ageRatingOf,
@@ -126,9 +127,7 @@ export function ShowScreen() {
         <TrackingGate signedIn={session !== null} state={state}>
           {(data) => <ShowTracking show={detail} state={data} />}
         </TrackingGate>
-        {detail.tagline ? (
-          <Text className="italic text-text-secondary">{detail.tagline}</Text>
-        ) : null}
+        <Tagline text={detail.tagline} />
         <Overview text={detail.overview} />
         <CrewLines lines={[{ label: "Created by", names: detail.createdBy }]} />
         <Seasons

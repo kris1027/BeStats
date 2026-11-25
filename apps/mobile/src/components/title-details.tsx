@@ -56,6 +56,18 @@ export function Overview({
   ) : null;
 }
 
+/**
+ * A title's tagline, italic in the secondary colour after the tracking
+ * controls, as the web shows it on both movie and show pages; nothing when
+ * the catalog has none (AGENTS.md sections 3 and 14). Regular weight only:
+ * Inter Italic is embedded at 400 alone (apps/mobile/AGENTS.md, fonts).
+ */
+export function Tagline({ text }: { text: string | null }) {
+  return text ? (
+    <Text className="italic text-text-secondary">{text}</Text>
+  ) : null;
+}
+
 export type Fact = { label: string; value: string };
 
 /**
