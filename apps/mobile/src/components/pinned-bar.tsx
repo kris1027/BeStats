@@ -15,7 +15,7 @@ const FADE_TAIL = 16;
 /**
  * The room a screen's scroll view keeps under a bar pinned over its top
  * (prompts/mobile-media-switch-glass.md, decisions 5 and 10). `barTop` is
- * where the bar sits: the status bar's height, or the header's on Search.
+ * where the bar sits, the status bar's height on every screen.
  * The bar's measured height pads the top of the content, so every state the
  * list draws starts below the bar, and offsets the pull to refresh spinner
  * to below it. On iOS the automatic inset already covers `barTop`; Android

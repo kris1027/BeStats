@@ -13,8 +13,10 @@ import {
 } from "@/theme/stack-options";
 
 /**
- * Search, Library and Account, the large title screens, have no background
- * layer of their own (`tabScreenLayout`).
+ * Search, Library and Account have no background layer of their own
+ * (`tabScreenLayout`): Account for its large title, Search and Library
+ * because they once had one and the shared layer behind them looks the same
+ * (prompts/mobile-media-switch-glass.md, decision 5).
  */
 const TAB_SCREEN_LAYOUT = tabScreenLayout(["search", "library", "account"]);
 
@@ -35,9 +37,9 @@ export const unstable_settings = {
  * The stack inside every tab (prompts/mobile-app-shell-catalog.md, decision
  * 3). Each tab root sets its own title; title screens set theirs once their
  * data loads. The stack draws the still background once behind its screens
- * for Search, Library and Account, whose screens have none of their own so their
- * large titles can collapse (`tabScreenLayout`); every other screen keeps
- * its own layer.
+ * for Search, Library and Account, whose screens have none of their own
+ * (`tabScreenLayout`), so Account's large title can collapse; every other
+ * screen keeps its own layer.
  */
 export default function TabStack() {
   const theme = useTheme();

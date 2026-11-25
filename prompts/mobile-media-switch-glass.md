@@ -51,6 +51,16 @@ The user asked for the switch's transition to match the native tab bar's. One ab
 
 As on the iOS 26 tab bar, a sideways drag across the switch carries the capsule under the finger, swollen, and on release springs it to the nearest segment, which becomes the choice (`onChange` through `scheduleOnRN`). Gesture Handler v3's `usePanGesture` in a `GestureDetector` around the bar, its worklets on the UI thread; it activates after 8pt sideways and fails after 12pt vertical, so taps stay the segments' own `Pressable`s. While a drag holds the capsule, the press effect leaves it alone. `jest.setup.ts` stubs `GestureDetector` and `usePanGesture`; the drag is checked in the simulator, not in Jest.
 
+## Follow-up: review fixes (2026-11-25)
+
+A two-axis review against this plan found these gaps, now settled:
+
+- Library's loading and signed out states drew no switch, and with the header hidden nothing named the tab. Both now sit in `ScrollState` padded by `usePinnedBar` with the same `PinnedBar` over them (requirement 6, manual step 5); `library-screen.test.tsx` checks the switch on the signed out state.
+- Built sizes, tuned against the native tab bar in the iOS 26 simulator, replace decision 4's 24pt and decision 9's 44pt: symbols are 30pt (`MEDIA_SYMBOL_SIZE`) and segments at least 52pt (`SEGMENT_MIN_HEIGHT`, still above the 44pt touch rule). `LiquidBar` also sets `colorScheme="dark"` (the app is dark only) and `isInteractive`, so the bar answers a touch as the system tab bar does.
+- The selected capsule is glass again, as decisions 2 and 7 ask; the motion follow-up had made it a plain translucent fill. `LiquidCapsule` (`glass/liquid-bar.tsx`) fills the animated holder: Liquid Glass tinted with `color-background` at 50% where the bar is Liquid Glass, else a `GlassPlate` on the denser `float` plate. It takes no touches, so it is not `isInteractive`; the bar's glass answers the touch and the holder's 1.08 swell is the lens. Checked in the iOS 27 simulator: the capsule draws as glass inside the bar and springs between segments.
+- Decision 6's fade colour is `HEADER_BACKGROUND`, the page background's own colour at its top edge, so the fade meets the page without a seam.
+- Decision 10 holds on iOS: React Native 0.88's Fabric pull to refresh view applies `progressViewOffset` on iOS too (`RCTPullToRefreshViewComponentView.mm`).
+
 ## Expected files
 
 - `apps/mobile/package.json`, `pnpm-lock.yaml` (two new deps)
@@ -71,7 +81,7 @@ As on the iOS 26 tab bar, a sideways drag across the switch carries the capsule 
 2. On iOS 26+ without Reduce Transparency the bar and selected capsule are Liquid Glass; elsewhere the same layout draws on `GlassPlate`.
 3. The selected segment is a darker capsule with a white label; no cyan remains on the switch.
 4. Switching type behaves exactly as today: Home and Search share the type; Library changes its own type and keeps its page mapping (`libraryPath`).
-5. Search keeps the native search field visible above the switch; Home and Library show no header title; Account is unchanged.
+5. Search pins its own search field under the switch (Follow-up: Search's field under the switch); Home and Library show no header title; Account is unchanged.
 6. Nothing scrolls into view under the status bar without the fade; no state (loading, empty, error, signed out) hides under the bar; pull to refresh shows its spinner below the bar.
 7. Labels one line up to the 1.4× cap; segments at least 44pt; roles and selected state announced.
 8. No colour literal (`design-tokens-boundary.test.ts`); no opacity below 1 on a `GlassView` or its parents.
@@ -84,7 +94,7 @@ None beyond the usual: a UI change with no data, auth or network path. The two n
 
 - AC-1: Home, Search, Library on iOS 26 show the pinned Liquid Glass switch with icons over labels, matching the sketch.
 - AC-2: Content scrolls under the switch with the top fade; the switch never moves.
-- AC-3: Search shows its native search field, then the switch, and searching and filters work as before.
+- AC-3: Search shows the switch, then its search field, and searching and filters work as before.
 - AC-4: Library's switch changes type and keeps the matching page; page pills scroll with the content.
 - AC-5: Android and Reduce Transparency show the same layout on `GlassPlate`.
 - AC-6: Largest Dynamic Type keeps every label on one line inside its segment; VoiceOver reads "Shows, tab, selected, 1 of 3".
