@@ -276,14 +276,15 @@ Netlify serves the same build as Vercel, so the phone app keeps working when one
    | `IGDB_CLIENT_SECRET` | your Twitch app's client secret (mark it secret) |
 
    The rules from section 4 apply: no service role key, secret key or database password, and no `NEXT_PUBLIC_` prefix on the TMDB or IGDB values. Don't set `VERCEL_ENV`, so the build is never indexable.
-6. Push the redirect URLs: run `pnpm exec supabase config push` (section 3). The diff should show only the two `bestats-app.netlify.app` entries in `additional_redirect_urls`. While the website is off, `/auth/*` answers `403` on Netlify as it does on Vercel, so the callback entry waits for the day sign in on the web comes back; today's app flows never redirect there.
-7. Optional: complete the appendix of Netlify's DPA (`https://www.netlify.com/pdf/netlify-dpa.pdf`) and email it to Netlify. Once that's done, Netlify's transfer line in `PROCESSORS` may name the EU Standard Contractual Clauses, the same way Vercel's does. Bump `LEGAL_LAST_UPDATED` with that change.
+6. Project configuration, Access & security, Visitor access: a new project sits behind **Netlify team login** for all deploys, so every path, `/api/v1` included, answers `401` with a login page. Set it to non-production deploys only (the API's `sso_login_context` is `non_production`). Password protection stays off.
+7. Push the redirect URLs: run `pnpm exec supabase config push` (section 3). The diff should show only the two `bestats-app.netlify.app` entries in `additional_redirect_urls`. While the website is off, `/auth/*` answers `403` on Netlify as it does on Vercel, so the callback entry waits for the day sign in on the web comes back; today's app flows never redirect there.
+8. Optional: complete the appendix of Netlify's DPA (`https://www.netlify.com/pdf/netlify-dpa.pdf`) and email it to Netlify. Once that's done, Netlify's transfer line in `PROCESSORS` may name the EU Standard Contractual Clauses, the same way Vercel's does. Bump `LEGAL_LAST_UPDATED` with that change.
 
 ### Deploy (by hand)
 
 Netlify builds only when you ask. Deploy when you switch to Netlify, or when a fix the phone app needs has merged:
 - In the dashboard: Deploys, Trigger deploy, Deploy project.
-- Or from `apps/web`: `npx netlify-cli@latest deploy --build --prod` (it asks you to log in and link the site the first time).
+- Or from the repo root: `npx netlify-cli@latest deploy --prod --filter @bestats/web` (it asks you to log in and link the site the first time). Run it from the root, not from `apps/web`: the project's publish directory is `apps/web/.next` relative to the root, so a run inside `apps/web` looks for `apps/web/apps/web/.next` and fails. A CLI deploy builds on your machine with `apps/web/.env.local` loaded; the Netlify variables win where both exist, so keep nothing in `.env.local` that production must not carry.
 
 A deploy that merged a migration still follows section 2: push the migration before you merge.
 
@@ -291,7 +292,7 @@ A deploy that merged a migration still follows section 2: push the migration bef
 
 The `X-BeStats-App-Version` value below is `MIN_APP_VERSION` from `packages/core/src/api/v1/version.ts`.
 
-1. Website off: `curl -sI https://bestats-app.netlify.app/movies` answers `403`, and so do `/`, `/watchlist`, `/sign-in` and `/sitemap.xml`. Netlify's function log shows no line for them.
+1. Website off: `curl -sI https://bestats-app.netlify.app/movies` answers `403`, and so do `/`, `/sign-in` and `/sitemap.xml`. A private page such as `/watchlist` answers `307` to `/sign-in`, which answers `403`: the Next.js proxy runs as a Netlify edge function, and edge functions run before `netlify.toml` redirects. No page renders, but each page request still costs one edge invocation.
 2. API on: `curl -s https://bestats-app.netlify.app/api/v1/config -H "X-BeStats-App-Version: <version>"` answers `200` with the app config. `/privacy`, `/terms` and `/robots.txt` answer `200`, and `robots.txt` disallows everything.
 3. Country: `curl -s https://bestats-app.netlify.app/api/v1/movies/550/extras -H "X-BeStats-App-Version: <version>"` lists your own country's watch providers. If it always lists the United States, Netlify sends no `x-country`, so report it.
 4. Rate limit: send about 310 quick requests to `/api/v1/config` from one address. The last ones answer `429`, and a minute later every `/api` route answers again. If any `/api` route fails while unthrottled (a `404`, or a loop), the self rewrite broke it: delete the rate limit rule from `netlify.toml` together with its test, redeploy, and note it here.
@@ -306,5 +307,10 @@ The app reads its API origin from `EXPO_PUBLIC_API_BASE_URL`, baked in at build 
 
 The app's About links to `/privacy` and `/terms` on the same origin, so they follow the switch. App links (Universal Links, App Links and the reset link) stay bound to `bestats-app.vercel.app` (section 5), so they don't work while Vercel is paused. Production sends no email, so no reset link is affected today.
 
-Checked: not yet. Record the date and results of the checks above here after the first deploy.
+Checked on 2026-11-25, first deploy (`6b06b21d414f59539972129d`):
+1. `/`, `/movies`, `/movies/550`, `/shows`, `/games`, `/search`, `/sign-in`, `/showcase`, `/auth/callback`, `/sitemap.xml` and `/opengraph-image` answered `403` with the static body. `/watchlist` and `/account` answered `307` to `/sign-in` (see check 1).
+2. `/api/v1/config` answered `200` (`{"minAppVersion":"1.0.0","apiVersion":1}`), and version `0.0.1` got `426`. `/privacy`, `/terms`, `/robots.txt`, the favicon and both logos answered `200`; `robots.txt` disallows everything, and `/privacy` names Ohio for Netlify.
+3. `/api/v1/movies/550/extras` named Poland from Netlify's own country header; a client sent `x-country: DE` was ignored.
+4. After about 320 requests in a minute, `/api` answered `429`; a minute later it answered again. Cached answers (`/api/v1/config`) still came from the CDN while limited.
+5. `/api/v1/me/library` with no token answered `401` with `cache-control: private,no-store`. The extras answer was `private,max-age=300` with a CDN bypass.
 
