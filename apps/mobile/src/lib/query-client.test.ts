@@ -1,7 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 import { QueryClient } from "@tanstack/react-query";
-import { persistQueryClientSave } from "@tanstack/react-query-persist-client";
+import {
+  persistQueryClientRestore,
+  persistQueryClientSave,
+} from "@tanstack/react-query-persist-client";
 
 import { appVersion } from "./api";
 import { catalogKeys } from "./catalog";
@@ -127,4 +130,57 @@ test("a build from another commit never reads the same persisted cache", () => {
     cacheBuster("1.2.0", "5e5bcb1"),
   );
   expect(cacheBuster("1.1.0", undefined)).toBe("1.1.0");
+});
+
+/**
+ * Saves a show under one build's buster and restores it under `restoredBy`,
+ * through TanStack's own save and restore, the path the crash took.
+ */
+async function restoreAcrossBuilds(restoredBy: string) {
+  const persister = createAsyncStoragePersister({
+    storage: AsyncStorage,
+    key: QUERY_CACHE_STORAGE_KEY,
+    throttleTime: 0,
+  });
+  const saving = testClient();
+  saving.setQueryData(catalogKeys.show(259909), { id: 259909 });
+  await persistQueryClientSave({
+    queryClient: saving,
+    persister,
+    buster: cacheBuster("1.1.0", "aaaaaaa"),
+  });
+  await new Promise((done) => setTimeout(done, 0));
+  expect(await AsyncStorage.getItem(QUERY_CACHE_STORAGE_KEY)).not.toBeNull();
+
+  const restoring = testClient();
+  await persistQueryClientRestore({
+    queryClient: restoring,
+    persister,
+    maxAge: persistOptions.maxAge,
+    buster: restoredBy,
+  });
+  await new Promise((done) => setTimeout(done, 0));
+  return restoring;
+}
+
+/**
+ * covers: prompts/mobile-cache-buster-guards.md, AC-1
+ *
+ * A build of 1.1.0 restored a show an older 1.1.0 build had saved without
+ * `networks`, and the show screen crashed on it.
+ */
+test("a newer build of the same version restores nothing an older build saved", async () => {
+  const restored = await restoreAcrossBuilds(cacheBuster("1.1.0", "bbbbbbb"));
+
+  expect(restored.getQueryData(catalogKeys.show(259909))).toBeUndefined();
+  expect(await AsyncStorage.getItem(QUERY_CACHE_STORAGE_KEY)).toBeNull();
+});
+
+/** covers: prompts/mobile-cache-buster-guards.md, AC-2 */
+test("the same build restores what it saved", async () => {
+  const restored = await restoreAcrossBuilds(cacheBuster("1.1.0", "aaaaaaa"));
+
+  expect(restored.getQueryData(catalogKeys.show(259909))).toEqual({
+    id: 259909,
+  });
 });
