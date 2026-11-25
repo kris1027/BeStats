@@ -167,25 +167,46 @@ export const WEBSITE_OFF_ALLOWED_PAGES: readonly string[] = [
   "/terms",
 ];
 
-/** The static body `netlify.toml` serves with its 403 rules. */
-const WEBSITE_OFF_BODY = "/403.html";
+/** The static page `netlify.toml` serves with its 403 rules. */
+const WEBSITE_OFF_PATH = "/403.html";
 
 /**
- * The 403 for a page while `WEBSITE_OFF` is on, or null to carry on. A
- * rewrite rather than a redirect, so the address bar keeps the URL and the
- * body is the same file the CDN rules serve (app/AGENTS.md, Routing).
+ * The body of `public/403.html`, byte for byte (`proxy.test.ts` compares
+ * them). Sent from here rather than rewritten to the file, because Netlify
+ * serves a rewritten static file with its own 200 and drops the 403.
+ */
+export const WEBSITE_OFF_HTML = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>BeStats</title>
+  </head>
+  <body>
+    <p>The BeStats website is off. The BeStats app still works.</p>
+    <p><a href="/privacy">Privacy Policy</a></p>
+  </body>
+</html>
+`;
+
+/**
+ * The 403 for a page while `WEBSITE_OFF` is on, or null to carry on. The URL
+ * stays as asked, and the body is the page the CDN rules serve
+ * (app/AGENTS.md, Routing).
  */
 function websiteOffResponse(request: NextRequest): NextResponse | null {
   if (!websiteOff()) return null;
   const { pathname } = request.nextUrl;
   if (
-    pathname === WEBSITE_OFF_BODY ||
+    pathname === WEBSITE_OFF_PATH ||
     WEBSITE_OFF_ALLOWED_PAGES.includes(pathname)
   ) {
     return null;
   }
-  return NextResponse.rewrite(new URL(WEBSITE_OFF_BODY, request.url), {
+  return new NextResponse(WEBSITE_OFF_HTML, {
     status: 403,
+    headers: { "content-type": "text/html; charset=utf-8" },
   });
 }
 

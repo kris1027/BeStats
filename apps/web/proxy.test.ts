@@ -4,7 +4,7 @@ import { NextRequest } from "next/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { stubNoPublicEnv, stubPublicEnv } from "@/lib/env.test-helpers";
-import { config } from "./proxy";
+import { config, WEBSITE_OFF_HTML } from "./proxy";
 
 /**
  * The session the mocked Supabase client reports. Only the legal page cases
@@ -500,11 +500,21 @@ describe("the proxy with the website off", () => {
 
     expect(response.status).toBe(403);
     expect(response.headers.get("location")).toBeNull();
-    expect(response.headers.get("x-middleware-rewrite")).toBe(
-      "http://localhost/403.html",
+    // A body of its own, not a rewrite: Netlify serves a rewritten static
+    // file with its own 200.
+    expect(response.headers.get("x-middleware-rewrite")).toBeNull();
+    expect(response.headers.get("content-type")).toBe(
+      "text/html; charset=utf-8",
     );
+    expect(await response.text()).toBe(WEBSITE_OFF_HTML);
     expect(response.headers.get("set-cookie")).toBeNull();
     expect(create).not.toHaveBeenCalled();
+  });
+
+  it("sends the same page netlify.toml's 403 rules serve", () => {
+    expect(
+      readFileSync(new URL("./public/403.html", import.meta.url), "utf8"),
+    ).toBe(WEBSITE_OFF_HTML);
   });
 
   it.each(["/privacy", "/terms", "/403.html"])(

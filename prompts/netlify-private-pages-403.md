@@ -20,7 +20,7 @@ None beyond the repo's own docs. No schema, Supabase or catalog change.
 
 ## Decisions and assumptions
 
-1. **A server-only flag, `WEBSITE_OFF=on`, set only on Netlify.** When it is on, the proxy answers `403` first, before the catalog id rule and before any Supabase call, for every matched path except `/privacy` and `/terms`. The response is a rewrite to `/403.html` with status `403`, so the body is the same file `netlify.toml` serves. Not `NEXT_PUBLIC_`: the browser never needs it.
+1. **A server-only flag, `WEBSITE_OFF=on`, set only on Netlify.** When it is on, the proxy answers `403` first, before the catalog id rule and before any Supabase call, for every matched path except `/privacy` and `/terms`. The response carries the body of `public/403.html` itself, with status `403`; a test keeps the two identical. (Amended 2026-11-25: the first deploy rewrote to `/403.html`, and Netlify served the rewritten static file with its own `200`, so pages answered `200` and `/movies` lost its `403`. Production was rolled back to the previous deploy within minutes.) Not `NEXT_PUBLIC_`: the browser never needs it.
 2. **Vercel doesn't set it**, so on Vercel the Firewall rule keeps doing this job and the proxy behaves exactly as today. Local runs and CI don't set it either.
 3. **`netlify.toml` keeps its forced `403` rules.** The proxy's matcher skips `sitemap.xml`, `opengraph-image` and image paths, so those still need the CDN rules, and the rules cost no function call for paths the proxy doesn't match. The two layers deny the same set, and a test checks they agree on the allow list.
 4. **Every page request still runs the edge function.** Netlify offers no way to skip the plugin's generated edge function for chosen paths from `netlify.toml`, so this fixes the status code, not the invocation. What it saves is the Supabase `getClaims` work on those requests.
@@ -30,7 +30,7 @@ None beyond the repo's own docs. No schema, Supabase or catalog change.
 
 1. `apps/web/lib/env.ts`: `websiteOff()`, with JSDoc citing `app/AGENTS.md` (Routing).
 2. `apps/web/proxy.ts`: the `403` branch first in `proxy()`, with a `WEBSITE_OFF_ALLOWED` set (`/privacy`, `/terms`).
-3. `apps/web/proxy.test.ts`: with the flag on, `/watchlist`, `/account`, `/movies`, `/movies/abc` and `/sign-in` answer `403` rewritten to `/403.html`, with no Supabase client created; `/privacy` and `/terms` pass through; with the flag off or unset, today's behavior is unchanged.
+3. `apps/web/proxy.test.ts`: with the flag on, `/watchlist`, `/account`, `/movies`, `/movies/abc` and `/sign-in` answer `403` with the `403.html` body and no rewrite header, with no Supabase client created; `/privacy` and `/terms` pass through; with the flag off or unset, today's behavior is unchanged.
 4. `apps/web/deploy-config.test.ts`: the proxy's allowed pages equal the page routes on the Netlify allow list.
 5. `apps/web/.env.example`: `WEBSITE_OFF` documented, unset by default.
 6. `docs/deploy.md` section 13: add `WEBSITE_OFF=on` to the Netlify env table, correct check 1, record the recheck. `apps/web/app/AGENTS.md`: the proxy line.
