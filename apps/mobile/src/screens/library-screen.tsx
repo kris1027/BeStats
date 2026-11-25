@@ -32,12 +32,14 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LoadingState, StatePanel } from "@/components/centered-state";
 import { GlassPlate } from "@/components/glass/plate";
 import { GlassButton } from "@/components/glass-button";
 import { GRID, gridCardWidth } from "@/components/grid-layout";
 import { LibraryCard } from "@/components/library-card";
 import { MediaSwitchView } from "@/components/media-switch";
+import { PinnedBar, usePinnedBar } from "@/components/pinned-bar";
 import { PosterCardSkeleton } from "@/components/skeleton";
 import { Text } from "@/components/text";
 import { useLibraryPage } from "@/lib/library";
@@ -190,6 +192,10 @@ export function LibraryScreen() {
   // down by the spinner's height (prompts/mobile-look-library.md, build
   // deviations).
   const [pulling, setPulling] = useState(false);
+  // The switch floats over the list under the status bar, Library's header
+  // hidden; the page pills scroll with the list
+  // (prompts/mobile-media-switch-glass.md, decisions 5 and 12).
+  const pinned = usePinnedBar(useSafeAreaInsets().top);
 
   if (loading) {
     return (
@@ -226,14 +232,6 @@ export function LibraryScreen() {
 
   const header = (
     <View className="gap-3 pb-2">
-      <MediaSwitchView
-        value={type}
-        // The same page on the other tab, Playing to Upcoming, as the web's
-        // tabs switch (components/AGENTS.md, Selection comes from the URL).
-        onChange={(next) =>
-          router.setParams({ type: next, path: libraryPath(page, next) })
-        }
-      />
       <PagePills
         type={type}
         page={page}
@@ -282,70 +280,90 @@ export function LibraryScreen() {
   );
 
   return (
-    <FlatList
-      accessibilityLabel={name}
-      className="flex-1"
-      contentInsetAdjustmentBehavior="automatic"
-      data={entries}
-      numColumns={COLUMNS}
-      keyExtractor={(entry) => `${entry.type}:${entry.id}`}
-      columnWrapperStyle={{ gap: GAP, paddingHorizontal: GUTTER }}
-      contentContainerStyle={{ gap: 20, paddingBottom: 24 }}
-      ListHeaderComponent={header}
-      ListEmptyComponent={empty}
-      ListFooterComponent={
-        query.isFetchingNextPage ? (
-          <ActivityIndicator
-            className="py-6"
-            accessibilityLabel="Loading more"
-          />
-        ) : nextFailed ? (
-          <View accessibilityRole="alert" className="items-center gap-3 py-6">
-            <Text className="text-text-secondary">{LIBRARY_LIST_FAILED}</Text>
-            <GlassButton label="Retry" onPress={() => query.fetchNextPage()} />
-          </View>
-        ) : undefined
-      }
-      onEndReached={() => {
-        if (query.hasNextPage && !nextFailed && !query.isFetchingNextPage) {
-          query.fetchNextPage();
-        }
-      }}
-      onEndReachedThreshold={0.6}
-      refreshControl={
-        <RefreshControl
-          refreshing={pulling}
-          onRefresh={() => {
-            setPulling(true);
-            query.refetch().finally(() => setPulling(false));
-          }}
-          tintColor={tokenColor("color-foreground")}
-        />
-      }
-      renderItem={({ item }) => {
-        // The web card's quick action for this page, if it has one
-        // (prompts/mobile-card-quick-actions.md, decision 1).
-        const action = cardActionFor(item, page);
-        return (
-          <View>
-            <LibraryCard
-              entry={item}
-              page={page}
-              today={today}
-              width={cardWidth}
-              quick={
-                action
-                  ? {
-                      action,
-                      disabled: actions.isPending(item),
-                      onPress: () => actions.run(item, action),
-                    }
-                  : undefined
-              }
+    <View className="flex-1">
+      <FlatList
+        accessibilityLabel={name}
+        className="flex-1"
+        contentInsetAdjustmentBehavior="automatic"
+        data={entries}
+        numColumns={COLUMNS}
+        keyExtractor={(entry) => `${entry.type}:${entry.id}`}
+        columnWrapperStyle={{ gap: GAP, paddingHorizontal: GUTTER }}
+        contentContainerStyle={{
+          gap: 20,
+          paddingBottom: 24,
+          paddingTop: pinned.paddingTop,
+        }}
+        ListHeaderComponent={header}
+        ListEmptyComponent={empty}
+        ListFooterComponent={
+          query.isFetchingNextPage ? (
+            <ActivityIndicator
+              className="py-6"
+              accessibilityLabel="Loading more"
             />
-          </View>
-        );
-      }}
-    />
+          ) : nextFailed ? (
+            <View accessibilityRole="alert" className="items-center gap-3 py-6">
+              <Text className="text-text-secondary">{LIBRARY_LIST_FAILED}</Text>
+              <GlassButton
+                label="Retry"
+                onPress={() => query.fetchNextPage()}
+              />
+            </View>
+          ) : undefined
+        }
+        onEndReached={() => {
+          if (query.hasNextPage && !nextFailed && !query.isFetchingNextPage) {
+            query.fetchNextPage();
+          }
+        }}
+        onEndReachedThreshold={0.6}
+        refreshControl={
+          <RefreshControl
+            refreshing={pulling}
+            onRefresh={() => {
+              setPulling(true);
+              query.refetch().finally(() => setPulling(false));
+            }}
+            progressViewOffset={pinned.refreshOffset}
+            tintColor={tokenColor("color-foreground")}
+          />
+        }
+        renderItem={({ item }) => {
+          // The web card's quick action for this page, if it has one
+          // (prompts/mobile-card-quick-actions.md, decision 1).
+          const action = cardActionFor(item, page);
+          return (
+            <View>
+              <LibraryCard
+                entry={item}
+                page={page}
+                today={today}
+                width={cardWidth}
+                quick={
+                  action
+                    ? {
+                        action,
+                        disabled: actions.isPending(item),
+                        onPress: () => actions.run(item, action),
+                      }
+                    : undefined
+                }
+              />
+            </View>
+          );
+        }}
+      />
+      <PinnedBar barTop={pinned.barTop} onLayout={pinned.onLayout}>
+        <MediaSwitchView
+          value={type}
+          // The same page on the other tab, Playing to Upcoming, as the web's
+          // tabs switch (components/AGENTS.md, Selection comes from the URL).
+          onChange={(next) =>
+            router.setParams({ type: next, path: libraryPath(page, next) })
+          }
+        />
+      </PinnedBar>
+    </View>
   );
 }

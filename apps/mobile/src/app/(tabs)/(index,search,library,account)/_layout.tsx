@@ -5,6 +5,7 @@ import { View } from "react-native";
 import { PageBackground } from "@/components/page-background";
 import {
   ACCOUNT_SCREEN_OPTIONS,
+  HOME_SCREEN_OPTIONS,
   LIBRARY_SCREEN_OPTIONS,
   SEARCH_SCREEN_OPTIONS,
   STACK_SCREEN_OPTIONS,
@@ -58,7 +59,7 @@ export default function TabStack() {
           }}
           screenLayout={TAB_SCREEN_LAYOUT}
         >
-          <Stack.Screen name="index" options={{ title: "BeStats" }} />
+          <Stack.Screen name="index" options={HOME_SCREEN_OPTIONS} />
           <Stack.Screen name="search" options={SEARCH_SCREEN_OPTIONS} />
           <Stack.Screen name="library" options={LIBRARY_SCREEN_OPTIONS} />
           <Stack.Screen name="account" options={ACCOUNT_SCREEN_OPTIONS} />
