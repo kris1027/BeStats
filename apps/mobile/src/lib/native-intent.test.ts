@@ -99,6 +99,15 @@ describe("app.config.ts variants", () => {
     ]);
   });
 
+  it("carries the build's commit SHA in both variants", () => {
+    // prompts/mobile-cache-buster-build-id.md: the query cache buster reads it
+    expect(configForVariant().extra?.buildId).toMatch(/^[0-9a-f]{4,40}$/);
+    expect(configForVariant("personal").extra?.buildId).toBe(
+      configForVariant().extra?.buildId,
+    );
+    expect(configForVariant().extra?.eas).toEqual(appJson.expo.extra.eas);
+  });
+
   it("has no associated domains in the personal variant", () => {
     const config = configForVariant("personal");
     expect(config.ios?.associatedDomains).toBeUndefined();
