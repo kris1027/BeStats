@@ -3,7 +3,7 @@ import { TMDB_APP_ATTRIBUTION } from "@bestats/core/legal/attribution";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { screen, userEvent, waitFor } from "@testing-library/react-native";
 import { renderRouter } from "expo-router/testing-library";
-import type { PropsWithChildren } from "react";
+import { Profiler, type PropsWithChildren } from "react";
 
 import { ToastProvider } from "@/components/toast";
 import { ApiError } from "@/lib/api";
@@ -207,6 +207,42 @@ test("Search sends core's params and follows the media switch", async () => {
     expect.objectContaining({ type: "game", q: null, genreIds: [] }),
     1,
   );
+});
+
+// The stale type fix in prompts/mobile-look-verify-extras.md's run (scope.md,
+// "Search keeps the old type's results after a switch"): no committed frame
+// may light the Games tab while the shows grid and caption are still drawn,
+// since a tap in that frame opened a show from the Movies or Games tab.
+test("Search never commits the old type's results under the new tab", async () => {
+  const user = userEvent.setup();
+  let staleFrames = 0;
+  // The first commits happen inside render, before `screen` exists.
+  let rendered = false;
+  const onCommit = () => {
+    if (!rendered) return;
+    const games = screen.queryByRole("tab", { name: "Games" });
+    if (
+      games?.props.accessibilityState?.selected &&
+      screen.queryByText("Popular shows on TMDB")
+    ) {
+      staleFrames += 1;
+    }
+  };
+  await renderRouter(
+    {
+      search: () => (
+        <Profiler id="search" onRender={onCommit}>
+          <SearchScreen />
+        </Profiler>
+      ),
+    },
+    { initialUrl: "/search", wrapper },
+  );
+  rendered = true;
+  expect(await screen.findByText("Popular shows on TMDB")).toBeOnTheScreen();
+  await user.press(screen.getByRole("tab", { name: "Games" }));
+  expect(await screen.findByText("Popular games on IGDB")).toBeOnTheScreen();
+  expect(staleFrames).toBe(0);
 });
 
 test("Search offers Try again when the catalog fails", async () => {
