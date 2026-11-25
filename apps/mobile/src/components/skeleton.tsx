@@ -183,8 +183,8 @@ export function TitleSkeleton() {
  * (prompts/mobile-look-verify-extras.md, decision 5): the header panel (your
  * name, your email and Sign out) and the three rows under it, in the same
  * padding, gaps and radius as `AccountScreen`, so nothing jumps when they
- * arrive. No posters: Account has none (AC-5, skeletons in the shape of
- * what is coming). The username panel shows only for some accounts, so it
+ * arrive. No posters: Account has none (AGENTS.md section 3, a loading state
+ * per view; AC-5, skeletons in the shape of what is coming). The username panel shows only for some accounts, so it
  * is left out rather than guessed.
  */
 export function AccountSkeleton() {

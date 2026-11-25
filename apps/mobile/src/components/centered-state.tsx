@@ -21,6 +21,14 @@ import {
   TitleSkeleton,
 } from "./skeleton";
 
+/** Each loading layout's skeleton, so a new screen shape is one entry. */
+const SKELETONS = {
+  page: PageSkeleton,
+  grid: PosterGridSkeleton,
+  title: TitleSkeleton,
+  account: AccountSkeleton,
+} as const;
+
 /**
  * A whole screen's loading state: skeletons in the shape of what is coming,
  * a grid of posters for a list or search, a title's hero, Account's panels,
@@ -34,8 +42,9 @@ export function LoadingState({
   layout = "page",
 }: {
   label: string;
-  layout?: "page" | "grid" | "title" | "account";
+  layout?: keyof typeof SKELETONS;
 }) {
+  const Skeleton = SKELETONS[layout];
   return (
     <View
       accessible
@@ -43,15 +52,7 @@ export function LoadingState({
       accessibilityLabel={label}
       className="flex-1"
     >
-      {layout === "grid" ? (
-        <PosterGridSkeleton />
-      ) : layout === "title" ? (
-        <TitleSkeleton />
-      ) : layout === "account" ? (
-        <AccountSkeleton />
-      ) : (
-        <PageSkeleton />
-      )}
+      <Skeleton />
     </View>
   );
 }
