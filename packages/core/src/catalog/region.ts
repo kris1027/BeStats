@@ -22,8 +22,9 @@ const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
 
 /**
  * The visitor's region from the host's country header value, Vercel's
- * `x-vercel-ip-country` or Netlify's `x-country` (spec 0022, AC-9): two capital letters that `Intl.DisplayNames` can name,
- * and not `XX` or `T1`, otherwise `US`.
+ * `x-vercel-ip-country` or Netlify's `x-country` (apps/web/app/AGENTS.md,
+ * Visitor region; spec 0022, AC-9): two capital letters that
+ * `Intl.DisplayNames` can name, and not `XX` or `T1`, otherwise `US`.
  *
  * Pure and free of `server-only`, like the rest of `lib/catalog/`, so it is
  * tested alone. The header read itself lives in `lib/region.ts`.

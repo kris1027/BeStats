@@ -24,8 +24,8 @@ export const getVisitorRegion = cache(async (): Promise<Region> => {
  * mobile-look-title-extras.md, decision 1): the host's approximate country of
  * the connection, read through core's `parseRegion`. The same build runs on
  * Vercel (`x-vercel-ip-country`) and on the Netlify backup host (`x-country`),
- * so it reads whichever header is present, Vercel's first
- * (prompts/netlify-mirror.md, decision 7). A route handler, which has its
+ * so it reads whichever header is present, Vercel's first (app/AGENTS.md,
+ * Visitor region). A route handler, which has its
  * request's headers in hand, calls this directly; pages go through
  * `getVisitorRegion`. Never stored, logged or sent to TMDB.
  */

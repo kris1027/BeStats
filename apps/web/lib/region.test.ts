@@ -10,7 +10,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const header = vi.fn<(name: string) => string | null>();
 
 /** Answers each header from `values`, and null for any other. */
-function headersOf(values: Record<string, string>) {
+function stubHeaders(values: Record<string, string>) {
   header.mockImplementation((name) => values[name] ?? null);
 }
 
@@ -56,7 +56,7 @@ describe("getVisitorRegion", () => {
  */
 describe("the country header on either host", () => {
   it("reads Netlify's country header when Vercel's is absent", async () => {
-    headersOf({ "x-country": "PL" });
+    stubHeaders({ "x-country": "PL" });
 
     await expect(getVisitorRegion()).resolves.toEqual({
       code: "PL",
