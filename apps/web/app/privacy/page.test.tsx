@@ -92,8 +92,21 @@ describe("/privacy", () => {
     expect(text).toContain("YouTube");
     expect(text).toContain("only after you press Trailer");
     expect(text).toMatch(
-      /approximate country Vercel derives from your\s+connection picks the region for where to watch and the age rating\. It\s+is not stored\./,
+      /approximate country our hosting provider derives\s+from your connection picks the region for where to watch and the age\s+rating\. It is not stored\./,
     );
+  });
+
+  /** covers: prompts/netlify-mirror.md, decision 9 */
+  it("says where functions run on each host, Netlify's outside the EEA", () => {
+    const { container } = render(<PrivacyPage />);
+    const text = container.textContent ?? "";
+
+    expect(text).toMatch(
+      /server functions run in the\s+matching Vercel region or, when Netlify serves the app, in\s+Ohio, United States\./,
+    );
+    expect(text).toContain("Netlify is a United States company.");
+    expect(text).toContain("Ohio, United States");
+    expect(text).not.toContain("stored and processed in the EU");
   });
 
   /** covers: prompts/tmdb-image-loader.md, AC-6 */
@@ -154,7 +167,7 @@ describe("/privacy", () => {
     const { container } = render(<PrivacyPage />);
     const text = container.textContent ?? "";
 
-    expect(text).toContain(`the database in ${SUPABASE_REGION.name}`);
+    expect(text).toContain(`the database is in ${SUPABASE_REGION.name}`);
     expect(text).toContain("EU Standard Contractual Clauses");
   });
 

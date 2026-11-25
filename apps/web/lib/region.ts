@@ -6,7 +6,7 @@ import { cache } from "react";
 
 /**
  * The visitor's country for Where to watch and the age rating (spec 0022,
- * AC-9), from the approximate country Vercel derives from the connection.
+ * AC-9), from the approximate country the host derives from the connection.
  *
  * Read once per request (React `cache()`), always outside a `use cache`
  * scope and inside the Suspense boundary of the section that needs it, so
@@ -21,11 +21,17 @@ export const getVisitorRegion = cache(async (): Promise<Region> => {
 
 /**
  * The one region rule both apps follow (spec 0022, AC-9; prompts/
- * mobile-look-title-extras.md, decision 1): Vercel's approximate country of
- * the connection, read through core's `parseRegion`. A route handler, which
- * has its request's headers in hand, calls this directly; pages go through
+ * mobile-look-title-extras.md, decision 1): the host's approximate country of
+ * the connection, read through core's `parseRegion`. The same build runs on
+ * Vercel (`x-vercel-ip-country`) and on the Netlify backup host (`x-country`),
+ * so it reads whichever header is present, Vercel's first (app/AGENTS.md,
+ * Visitor region). A route handler, which has its
+ * request's headers in hand, calls this directly; pages go through
  * `getVisitorRegion`. Never stored, logged or sent to TMDB.
  */
 export function regionFromHeaders(requestHeaders: Headers): Region {
-  return parseRegion(requestHeaders.get("x-vercel-ip-country"));
+  return parseRegion(
+    requestHeaders.get("x-vercel-ip-country") ??
+      requestHeaders.get("x-country"),
+  );
 }

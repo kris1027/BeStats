@@ -466,10 +466,12 @@ enabled = true
 # this block over the settings above when the linked project's ref matches, so
 # the two origin dependent values are the only differences from the local
 # stack. Never set them in the dashboard: the next push overwrites them. See
-# docs/deploy.md for the push routine.
+# docs/deploy.md for the push routine. The redirect list also names the Netlify
+# backup host, which serves the same build (prompts/netlify-mirror.md); the site
+# URL stays on Vercel.
 [remotes.production]
 project_id = "kyatxtclyikcmkebjxan"
 
 [remotes.production.auth]
 site_url = "https://bestats-app.vercel.app"
-additional_redirect_urls = ["https://bestats-app.vercel.app/auth/callback", "https://bestats-app.vercel.app/**"]
+additional_redirect_urls = ["https://bestats-app.vercel.app/auth/callback", "https://bestats-app.vercel.app/**", "https://bestats-app.netlify.app/auth/callback", "https://bestats-app.netlify.app/**"]

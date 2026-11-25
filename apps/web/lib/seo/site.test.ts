@@ -78,4 +78,11 @@ describe("isIndexableDeployment (AC-2)", () => {
     vi.stubEnv("NEXT_PUBLIC_SITE_URL", "nope");
     expect(isIndexableDeployment()).toBe(false);
   });
+
+  /** covers: prompts/netlify-mirror.md, decision 8 */
+  it("is false on a Netlify build, which sets no VERCEL_ENV", () => {
+    vi.stubEnv("VERCEL_ENV", undefined);
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://bestats-app.netlify.app");
+    expect(isIndexableDeployment()).toBe(false);
+  });
 });

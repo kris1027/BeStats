@@ -1,5 +1,6 @@
 import { extname } from "node:path";
 import {
+  BACKUP_HOST,
   CONTACT_EMAIL,
   IGDB_ATTRIBUTION,
   IGDB_HOME_URL,
@@ -81,6 +82,13 @@ describe("one home for each legal fact", () => {
 
   it("names no processor's country in /privacy itself", () => {
     expect(read(`${WEB}/app/privacy/page.tsx`)).not.toContain("United States");
+  });
+
+  /** covers: prompts/netlify-mirror.md, decision 9 */
+  it("names the backup host and its function region only in core", () => {
+    const source = read(`${WEB}/app/privacy/page.tsx`);
+    expect(source).not.toContain(BACKUP_HOST.name);
+    expect(source).not.toContain(BACKUP_HOST.functionLocation);
   });
 
   it("writes the JustWatch credit only in core legal/operator.ts (spec 0022, AC-12)", () => {

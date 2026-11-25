@@ -9,11 +9,16 @@ import { afterEach, describe, expect, it, vi } from "vitest";
  */
 const header = vi.fn<(name: string) => string | null>();
 
+/** Answers each header from `values`, and null for any other. */
+function stubHeaders(values: Record<string, string>) {
+  header.mockImplementation((name) => values[name] ?? null);
+}
+
 vi.mock("next/headers", () => ({
   headers: async () => ({ get: (name: string) => header(name) }),
 }));
 
-const { getVisitorRegion } = await import("./region");
+const { getVisitorRegion, regionFromHeaders } = await import("./region");
 
 afterEach(() => {
   header.mockReset();
@@ -40,5 +45,34 @@ describe("getVisitorRegion", () => {
       code: "US",
       name: "United States",
     });
+  });
+});
+
+/**
+ * covers: prompts/netlify-mirror.md, decision 7
+ *
+ * The same build runs on Vercel and on the Netlify backup host, which names
+ * the country `x-country`.
+ */
+describe("the country header on either host", () => {
+  it("reads Netlify's country header when Vercel's is absent", async () => {
+    stubHeaders({ "x-country": "PL" });
+
+    await expect(getVisitorRegion()).resolves.toEqual({
+      code: "PL",
+      name: "Poland",
+    });
+  });
+
+  it("prefers Vercel's header when both are present", () => {
+    const region = regionFromHeaders(
+      new Headers({ "x-vercel-ip-country": "DE", "x-country": "PL" }),
+    );
+
+    expect(region.code).toBe("DE");
+  });
+
+  it("falls back to the United States with neither header", () => {
+    expect(regionFromHeaders(new Headers()).code).toBe("US");
   });
 });

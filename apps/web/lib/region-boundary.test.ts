@@ -6,14 +6,21 @@ import { readWorkspaceFile, workspaceFiles } from "@/workspace-files";
  *
  * The request scope boundary around the region: it is read only in the title
  * page slots, never inside the TMDB module, and no library or grid read ever
- * reaches the extras read. Local runs have no `x-vercel-ip-country` header, so
- * another real country is checked on a preview with
- * `curl -H "x-vercel-ip-country: PL"`. The scan is web only on purpose (core
- * cannot read a header), and walks the tree the way every boundary test does
- * (AGENTS.md, Commands and repo facts); paths are reported relative to the
- * web app.
+ * reaches the extras read. Local runs have no `x-vercel-ip-country` (Vercel)
+ * or `x-country` (Netlify) header, so another real country is checked on a
+ * deployment with `curl -H "x-vercel-ip-country: PL"`. The scan is web only
+ * on purpose (core cannot read a header), and walks the tree the way every
+ * boundary test does (AGENTS.md, Commands and repo facts); paths are reported
+ * relative to the web app.
  */
 const WEB = "apps/web/";
+
+/**
+ * Vercel's and Netlify's country headers (app/AGENTS.md, Visitor region),
+ * spelled out rather than imported, since a boundary test names the strings
+ * it forbids.
+ */
+const COUNTRY_HEADERS = ["x-vercel-ip-country", "x-country"] as const;
 
 /** Application source under web app folders, tests left out. */
 function sourcesUnder(...dirs: string[]): string[] {
@@ -32,14 +39,18 @@ describe("the request scope boundary (AC-8, AC-9)", () => {
     for (const path of sourcesUnder("lib/tmdb")) {
       const source = readWorkspaceFile(path);
       expect(source, path).not.toContain("next/headers");
-      expect(source, path).not.toContain('"x-vercel-ip-country"');
+      for (const name of COUNTRY_HEADERS) {
+        expect(source, path).not.toContain(`"${name}"`);
+      }
     }
   });
 
   it("reads the country header only in lib/region.ts", () => {
     const readers = sourcesUnder("app", "components", "lib")
       .filter((path) =>
-        readWorkspaceFile(path).includes('"x-vercel-ip-country"'),
+        COUNTRY_HEADERS.some((name) =>
+          readWorkspaceFile(path).includes(`"${name}"`),
+        ),
       )
       .map(webPath);
     expect(readers).toEqual(["lib/region.ts"]);
