@@ -1,0 +1,293 @@
+# Netlify, the backup host beside Vercel (prompts/netlify-mirror.md;
+# docs/deploy.md, section 13). The same build runs on both. Vercel's own
+# settings live in vercel.json and its dashboard, and nothing here changes
+# them. No secret ever goes in this file: env values live in the Netlify
+# site settings.
+
+[build]
+  # The site's base directory is the repo root and its package directory is
+  # apps/web, so pnpm installs the whole workspace before this runs.
+  command = "pnpm --filter @bestats/web build"
+
+[build.environment]
+  # CI and Vercel build on Node 22 (docs/deploy.md, The facts).
+  NODE_VERSION = "22"
+
+# Rules run in order, before the Next.js adapter's routing, and the first match
+# wins. A forced rule runs no function, so a blocked page costs no compute.
+
+# One rate limit for the whole API, keyed per IP (decision 12). The Free plan
+# allows two code rules; this is the only one.
+[[redirects]]
+  from = "/api/*"
+  to = "/api/:splat"
+  status = 200
+  force = true
+  [redirects.rate_limit]
+    window_limit = 300
+    window_size = 60
+    aggregate_by = ["ip", "domain"]
+
+# Website off, API on (decision 11; docs/deploy.md, section 5). Every page
+# route answers 403 with a static body. /api/*, /_next/*, /privacy, /terms,
+# /robots.txt, /favicon.ico and the two logos match no rule and pass through.
+# deploy-config.test.ts fails when a new top-level route under app/ is neither
+# denied here nor on that allow list.
+
+[[redirects]]
+  from = "/"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/account"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/account/*"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/auth"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/auth/*"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/coming-soon"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/coming-soon/*"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/finished"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/finished/*"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/games"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/games/*"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/movies"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/movies/*"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/playing"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/playing/*"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/search"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/search/*"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/showcase"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/showcase/*"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/shows"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/shows/*"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/up-next"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/up-next/*"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/upcoming"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/upcoming/*"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/want-to-play"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/want-to-play/*"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/watched"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/watched/*"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/watchlist"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/watchlist/*"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/sign-in"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/sign-in/*"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/sign-up"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/sign-up/*"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/forgot-password"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/forgot-password/*"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/reset-password"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/reset-password/*"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/check-email"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/check-email/*"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/sitemap.xml"
+  to = "/403.html"
+  status = 403
+  force = true
+
+[[redirects]]
+  from = "/opengraph-image"
+  to = "/403.html"
+  status = 403
+  force = true

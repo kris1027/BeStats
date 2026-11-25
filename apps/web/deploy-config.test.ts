@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { SUPABASE_REGION } from "@bestats/core/legal/operator";
@@ -258,5 +258,193 @@ describe(".env.example", () => {
           !ALLOWED_SECRETS.has(name),
       ),
     ).toEqual([]);
+  });
+});
+
+type NetlifyRule = Map<string, TomlValue> & {
+  rateLimit?: Map<string, TomlValue>;
+};
+
+/**
+ * Reads `netlify.toml`: its plain tables, plus the `[[redirects]]` array and
+ * each rule's `[redirects.rate_limit]` table, the only nesting the file uses.
+ * Values are one line and JSON compatible, as in `config.toml`.
+ */
+function readNetlify(): { tables: TomlTables; redirects: NetlifyRule[] } {
+  const tables: TomlTables = new Map();
+  const redirects: NetlifyRule[] = [];
+  let current: Map<string, TomlValue> = new Map();
+
+  for (const raw of readFileSync(join(ROOT, "netlify.toml"), "utf8").split(
+    "\n",
+  )) {
+    const line = raw.trim();
+    if (line === "" || line.startsWith("#")) continue;
+
+    if (line === "[[redirects]]") {
+      current = new Map();
+      redirects.push(current);
+      continue;
+    }
+    if (line === "[redirects.rate_limit]") {
+      const rule = redirects.at(-1) as NetlifyRule;
+      current = new Map();
+      rule.rateLimit = current;
+      continue;
+    }
+    const header = /^\[([^\]]+)\]$/.exec(line);
+    if (header) {
+      current = new Map();
+      tables.set(header[1], current);
+      continue;
+    }
+
+    const pair = /^([A-Za-z0-9_]+)\s*=\s*(.+)$/.exec(line);
+    if (pair) current.set(pair[1], parseValue(pair[2]));
+  }
+
+  return { tables, redirects };
+}
+
+/** Whether a Netlify `from` pattern (exact, or a trailing `/*` splat) matches. */
+function matches(from: string, path: string): boolean {
+  return from.endsWith("/*")
+    ? path.startsWith(from.slice(0, -1))
+    : from === path;
+}
+
+/**
+ * Every top-level URL the app answers, read from `app/`: each route folder
+ * (route groups opened one level, as `(auth)` is), plus the metadata files
+ * that answer at the root.
+ */
+function topLevelRoutes(): string[] {
+  const APP = join(ROOT, "app");
+  const ROOT_FILES: Record<string, string> = {
+    "robots.ts": "/robots.txt",
+    "sitemap.ts": "/sitemap.xml",
+    "opengraph-image.tsx": "/opengraph-image",
+    "favicon.ico": "/favicon.ico",
+  };
+  const folders = (dir: string) =>
+    readdirSync(dir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && !entry.name.startsWith("_"))
+      .map((entry) => entry.name);
+
+  const routes = readdirSync(APP)
+    .filter((name) => name in ROOT_FILES)
+    .map((name) => ROOT_FILES[name]);
+  for (const name of folders(APP)) {
+    if (name.startsWith("(")) {
+      routes.push(...folders(join(APP, name)).map((child) => `/${child}`));
+    } else {
+      routes.push(`/${name}`);
+    }
+  }
+  return routes.sort();
+}
+
+/**
+ * covers: prompts/netlify-mirror.md, decisions 11 and 12
+ *
+ * Netlify, the backup host, must serve what Vercel serves: the website off and
+ * the API on (docs/deploy.md, sections 5 and 13). Its rules deny each page
+ * route by name, so a new route stays reachable on Netlify until it is listed
+ * here, and these tests make that a failing test rather than a quiet gap.
+ */
+describe("netlify.toml", () => {
+  const { tables, redirects } = readNetlify();
+  const denied = redirects.filter((rule) => rule.get("status") === 403);
+  const deniedFrom = denied.map((rule) => rule.get("from") as string);
+  const isDenied = (path: string) =>
+    deniedFrom.some((from) => matches(from, path));
+
+  /** What Vercel's "Website off, API on" rule lets through. */
+  const ALLOWED_ROUTES = [
+    "/api",
+    "/privacy",
+    "/terms",
+    "/robots.txt",
+    "/favicon.ico",
+  ];
+
+  it("builds the web package on Node 22, like CI and Vercel", () => {
+    expect(tables.get("build")?.get("command")).toBe(
+      "pnpm --filter @bestats/web build",
+    );
+    expect(tables.get("build.environment")?.get("NODE_VERSION")).toBe("22");
+  });
+
+  it("rate limits the whole API with one rule, 300 per minute per IP", () => {
+    const limited = redirects.filter((rule) => rule.rateLimit);
+
+    expect(limited).toHaveLength(1);
+    const [rule] = limited;
+    expect(rule.get("from")).toBe("/api/*");
+    expect(rule.get("to")).toBe("/api/:splat");
+    expect(rule.get("status")).toBe(200);
+    expect(rule.get("force")).toBe(true);
+    expect(rule.rateLimit?.get("window_limit")).toBe(300);
+    expect(rule.rateLimit?.get("window_size")).toBe(60);
+    expect(rule.rateLimit?.get("aggregate_by")).toEqual(["ip", "domain"]);
+  });
+
+  it("forces every deny rule to the static 403 page, so no function runs", () => {
+    expect(denied.length).toBeGreaterThan(0);
+    for (const rule of denied) {
+      expect(rule.get("to"), String(rule.get("from"))).toBe("/403.html");
+      expect(rule.get("force"), String(rule.get("from"))).toBe(true);
+    }
+    expect(readdirSync(join(ROOT, "public"))).toContain("403.html");
+  });
+
+  it("holds only the rate limit rule and deny rules", () => {
+    expect(redirects).toHaveLength(denied.length + 1);
+  });
+
+  it("denies the root and every top-level route outside the allow list", () => {
+    const routes = topLevelRoutes();
+    const uncovered = routes.filter(
+      (route) =>
+        !ALLOWED_ROUTES.includes(route) &&
+        !(
+          isDenied(route) &&
+          (route.includes(".") ||
+            route === "/opengraph-image" ||
+            isDenied(`${route}/x`))
+        ),
+    );
+
+    expect(isDenied("/")).toBe(true);
+    expect(uncovered).toEqual([]);
+  });
+
+  it.each([
+    "/api/v1/config",
+    "/api/v1/movies/550/extras",
+    "/api/search",
+    "/privacy",
+    "/terms",
+    "/robots.txt",
+    "/favicon.ico",
+    "/tmdb-logo.svg",
+    "/igdb-logo.svg",
+    "/_next/static/chunks/main.js",
+    "/403.html",
+  ])("lets %s through", (path) => {
+    expect(isDenied(path)).toBe(false);
+  });
+
+  it.each([
+    "/movies",
+    "/movies/550",
+    "/shows/1399/seasons/1",
+    "/watchlist",
+    "/sign-in",
+    "/auth/callback",
+    "/sitemap.xml",
+    "/showcase",
+  ])("denies %s", (path) => {
+    expect(isDenied(path)).toBe(true);
   });
 });
