@@ -37,8 +37,11 @@ export type CardBadge = {
   label: string;
 };
 
-/** A pill over the poster's foot: a date, Date TBA or the next episode. */
-export type CardPill = { text: string; label: string };
+/**
+ * A pill over the poster's foot: a date, Date TBA or the next episode. `icon`
+ * names the mark it leads with, kept a key so this file stays free of views.
+ */
+export type CardPill = { text: string; label: string; icon?: "next-episode" };
 
 /**
  * Everything a library card shows, worked out from the server's entry
@@ -53,6 +56,12 @@ export type LibraryCardView =
       badge: CardBadge | null;
       pill: CardPill | null;
       meta: string | null;
+      /**
+       * Up next only: the episode whose name the card reads from its season,
+       * as the web's `NextEpisodeName` does (prompts/mobile-look-verify-extras.md,
+       * decision 3).
+       */
+      next?: { season: number; episode: number };
     }
   /** The catalog no longer has the title: no page to open. */
   | { kind: "missing"; name: string }
@@ -197,8 +206,10 @@ export function libraryCardView(
       pill: {
         text: NEXT_EPISODE_MESSAGES.pill(season, episode),
         label: NEXT_EPISODE_MESSAGES.accessible(season, episode),
+        icon: "next-episode",
       },
       meta: null,
+      next: { season, episode },
     };
   }
   if (place.page === "upcoming") {
