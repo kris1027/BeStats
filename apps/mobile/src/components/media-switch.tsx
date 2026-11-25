@@ -13,10 +13,10 @@ import { MediaSymbol } from "@/components/icons";
 import { Text } from "@/components/text";
 import { useMediaType } from "@/lib/media-type";
 import { useReduceMotion } from "@/lib/reduce-motion";
-import { PILL_FONT_SCALE_CAP, PILL_RADIUS } from "@/theme/pill";
-import { tokenColor, tokenColorAlpha } from "@/theme/token-vars";
+import { PILL_FONT_SCALE_CAP } from "@/theme/pill";
+import { tokenColor } from "@/theme/token-vars";
 
-import { LiquidBar } from "./glass/liquid-bar";
+import { LiquidBar, LiquidCapsule } from "./glass/liquid-bar";
 
 /** The web's media tabs, in their order and with their names. */
 const OPTIONS: readonly { type: LibraryType; label: string }[] = [
@@ -24,13 +24,6 @@ const OPTIONS: readonly { type: LibraryType; label: string }[] = [
   { type: "movie", label: "Movies" },
   { type: "game", label: "Games" },
 ];
-
-/**
- * The selected segment's darker capsule, the native tab bar's own selection
- * (prompts/mobile-media-switch-glass.md, decision 3): the page's darkest
- * colour, translucent, so the glass still shows through it.
- */
-const SELECTED_FILL = tokenColorAlpha("color-background", 0.5);
 
 /**
  * A segment's least height, the native tab bar's selected capsule as
@@ -180,8 +173,8 @@ export function MediaSwitchView({
     },
   });
 
-  // An absolute capsule with no children, so moving it and setting its
-  // width re-lays out nothing else, and its round ends keep their shape.
+  // An absolute holder whose only child fills it, so moving it and setting
+  // its width re-lays out nothing else, and its round ends keep their shape.
   const capsuleStyle = useAnimatedStyle(() => ({
     width: width.get(),
     transform: [{ translateX: x.get() }, { scale: scale.get() }],
@@ -204,12 +197,12 @@ export function MediaSwitchView({
                   top: BAR_PADDING,
                   bottom: BAR_PADDING,
                   left: 0,
-                  backgroundColor: SELECTED_FILL,
-                  borderRadius: PILL_RADIUS,
                 },
                 capsuleStyle,
               ]}
-            />
+            >
+              <LiquidCapsule />
+            </Animated.View>
           ) : null}
           {OPTIONS.map((option) => {
             const selected = option.type === value;
@@ -230,18 +223,11 @@ export function MediaSwitchView({
                 onPressOut={() => setPressing(null)}
                 onPress={() => onChange(option.type)}
                 pressRetentionOffset={16}
-                style={[
-                  { flex: 1, minHeight: SEGMENT_MIN_HEIGHT },
-                  // Until the segments are measured, the chosen one carries the
-                  // capsule itself, so the first frame is never bare.
-                  selected && !measured
-                    ? {
-                        backgroundColor: SELECTED_FILL,
-                        borderRadius: PILL_RADIUS,
-                      }
-                    : null,
-                ]}
+                style={{ flex: 1, minHeight: SEGMENT_MIN_HEIGHT }}
               >
+                {/* Until the segments are measured, the chosen one carries
+                    the capsule itself, so the first frame is never bare. */}
+                {selected && !measured ? <LiquidCapsule /> : null}
                 <View
                   style={{
                     flex: 1,

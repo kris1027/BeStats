@@ -4,10 +4,11 @@ import {
   isLiquidGlassAvailable,
 } from "expo-glass-effect";
 import type { ReactNode } from "react";
-import { Platform, type ViewProps } from "react-native";
+import { Platform, StyleSheet, type ViewProps } from "react-native";
 
 import { useReduceTransparency } from "@/lib/reduce-transparency";
 import { PILL_RADIUS } from "@/theme/pill";
+import { tokenColorAlpha } from "@/theme/token-vars";
 
 import { GlassPlate } from "./plate";
 
@@ -63,5 +64,48 @@ export function LiquidBar({ style, children, ...rest }: Props) {
     <GlassPlate {...rest} shadow radius={PILL_RADIUS} style={style}>
       {children}
     </GlassPlate>
+  );
+}
+
+/**
+ * The capsule's tint: the page's darkest colour, translucent, so the glass
+ * still shows through it, as the native tab bar's selection does
+ * (prompts/mobile-media-switch-glass.md, decisions 2 and 3).
+ */
+const CAPSULE_TINT = tokenColorAlpha("color-background", 0.5);
+
+/**
+ * The selected segment's darker glass capsule, filling whatever holds it, so
+ * the switch can move and resize the holder while the material stays here
+ * (prompts/mobile-media-switch-glass.md, decisions 2 and 7): Liquid Glass
+ * tinted darker where the bar is Liquid Glass, else the denser `float`
+ * plate over the bar's `control` one. It takes no touches; the segments
+ * under it do, and the bar's own glass answers them.
+ */
+export function LiquidCapsule() {
+  const liquid = useLiquidGlass();
+  if (liquid) {
+    return (
+      <GlassView
+        testID="liquid-capsule"
+        pointerEvents="none"
+        glassEffectStyle="regular"
+        colorScheme="dark"
+        tintColor={CAPSULE_TINT}
+        style={[
+          StyleSheet.absoluteFill,
+          { borderRadius: PILL_RADIUS, overflow: "hidden" },
+        ]}
+      />
+    );
+  }
+  return (
+    <GlassPlate
+      testID="plate-capsule"
+      pointerEvents="none"
+      plate="float"
+      radius={PILL_RADIUS}
+      style={StyleSheet.absoluteFill}
+    />
   );
 }

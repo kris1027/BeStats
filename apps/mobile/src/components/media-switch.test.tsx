@@ -8,7 +8,7 @@ import { MediaSwitchView } from "./media-switch";
 
 /**
  * covers: prompts/mobile-media-switch-glass.md, requirements 1, 2, 4 and 7
- * (icon over label, Liquid Glass only where the phone has it, the same
+ * (icon over label, Liquid Glass bar and capsule only where the phone has it, the same
  * choice handed back, tabs announced with their selected state)
  */
 
@@ -44,6 +44,9 @@ test("pressing a tab hands its type back", async () => {
 test("without Liquid Glass the bar is the app's glass plate", async () => {
   await render(<MediaSwitchView value="tv" onChange={() => {}} />);
   expect(screen.queryByTestId("liquid-glass")).toBeNull();
+  // The capsule is the darker plate, never Liquid Glass on a plate bar.
+  expect(screen.getByTestId("plate-capsule")).toBeOnTheScreen();
+  expect(screen.queryByTestId("liquid-capsule")).toBeNull();
 });
 
 test("with Liquid Glass the bar is the system glass", async () => {
@@ -51,4 +54,7 @@ test("with Liquid Glass the bar is the system glass", async () => {
   jest.mocked(isGlassEffectAPIAvailable).mockReturnValue(true);
   await render(<MediaSwitchView value="tv" onChange={() => {}} />);
   expect(screen.getByTestId("liquid-glass")).toBeOnTheScreen();
+  // The selected capsule is glass too, tinted darker (decision 2).
+  expect(screen.getByTestId("liquid-capsule")).toBeOnTheScreen();
+  expect(screen.queryByTestId("plate-capsule")).toBeNull();
 });
