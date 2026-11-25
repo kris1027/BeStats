@@ -49,14 +49,17 @@ export const MINIMUM_AGE = 16;
  * whenever the text changes materially. Pages format it in UTC and never read
  * the clock (spec 0017, AC-7).
  */
-export const LEGAL_LAST_UPDATED = "2026-11-22";
+export const LEGAL_LAST_UPDATED = "2026-11-25";
 
 /**
  * Where the production Supabase project stores your data, read from
  * `supabase projects list` (spec 0018, AC-23). A region can't change after a
  * project is created, so this moves only with a new project, and the EU test
  * beside it fails if that project ever leaves the EU. The app's functions sit
- * in the matching Vercel region, pinned in `vercel.json`.
+ * in the matching Vercel region, pinned in `vercel.json`, except when the
+ * Netlify backup host serves the app: Netlify's Free plan can't choose a
+ * region, so its functions run in Ohio, which Netlify's transfer line in
+ * `PROCESSORS` says (prompts/netlify-mirror.md, decisions 9 and 10).
  */
 export const SUPABASE_REGION = {
   code: "eu-central-1",
@@ -151,7 +154,9 @@ export type Processor = {
  * Expo joined with EAS Update in the phone app (spec 0033, AC-15): every store
  * build asks Expo's update service for a newer bundle when it starts. Its
  * transfer line claims no contract clauses, since none was checked
- * (prompts/mobile-release-prep.md, decision 5).
+ * (prompts/mobile-release-prep.md, decision 5). Netlify joined as the backup
+ * host beside Vercel (prompts/netlify-mirror.md); its transfer line claims no
+ * contract clauses until the operator has completed Netlify's DPA.
  */
 export const PROCESSORS: readonly Processor[] = [
   {
@@ -163,10 +168,18 @@ export const PROCESSORS: readonly Processor[] = [
   },
   {
     name: "Vercel",
-    purpose: "Hosts the website and keeps request logs.",
+    purpose: "Hosts the website and the app's API, and keeps request logs.",
     url: "https://vercel.com",
     transfer:
       "Vercel is a United States company. Where its staff access your data for support and operations, that access is covered by the EU Standard Contractual Clauses.",
+  },
+  {
+    name: "Netlify",
+    purpose:
+      "Hosts the website and the app's API as our backup host, and keeps request logs.",
+    url: "https://www.netlify.com",
+    transfer:
+      "Netlify is a United States company. When it serves the app, the app's server functions run on its servers in Ohio, United States, so the requests you make there, with the account and tracking data they carry, are processed in the United States.",
   },
   {
     name: "TMDB",

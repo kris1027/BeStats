@@ -78,9 +78,9 @@ export default function PrivacyPage() {
           beyond what an IP address implies.
         </p>
         <p>
-          On a title page, the approximate country Vercel derives from your
-          connection picks the region for where to watch and the age rating. It
-          is not stored.
+          On a title page, the approximate country our hosting provider derives
+          from your connection picks the region for where to watch and the age
+          rating. It is not stored.
         </p>
       </LegalSection>
 
@@ -162,9 +162,10 @@ export default function PrivacyPage() {
 
       <LegalSection title="Transfers outside the EEA">
         <p>
-          Your data is stored and processed in the EU: the database in{" "}
-          {SUPABASE_REGION.name}, and the app&rsquo;s server functions in the
-          matching Vercel region.
+          Your data is stored in the EU: the database is in{" "}
+          {SUPABASE_REGION.name}. The app&rsquo;s server functions run in the
+          matching Vercel region, except when our backup host, Netlify, serves
+          the app, as its line below explains.
         </p>
         {PROCESSORS.flatMap((processor) =>
           processor.transfer ? (
