@@ -80,10 +80,16 @@ const PRODUCTION_ORIGIN = productionAuth.get("site_url") as string;
 
 /**
  * The Netlify backup host's origin, which serves the same build and so may
- * receive auth redirects too (prompts/netlify-mirror.md). It is a redirect
- * target only; the site URL stays on Vercel.
+ * receive auth redirects too (docs/deploy.md, section 13). It is a redirect
+ * target only; the site URL stays on Vercel. Read from `config.toml` like the
+ * production origin, so a site rename is one edit there; empty when no
+ * `*.netlify.app` redirect exists, which the tests below then fail on.
  */
-const BACKUP_ORIGIN = "https://bestats-app.netlify.app";
+const BACKUP_ORIGIN = (
+  (productionAuth.get("additional_redirect_urls") as string[]).find((url) =>
+    /^https:\/\/[a-z0-9-]+\.netlify\.app\//.test(url),
+  ) ?? ""
+).replace(/^(https:\/\/[^/]+).*$/, "$1");
 
 /** covers: spec 0018, AC-7, AC-8 */
 describe("the auth settings config push sends", () => {
@@ -120,6 +126,10 @@ describe("the production remote", () => {
 
   it("sets the site URL to an https origin with no trailing slash", () => {
     expect(PRODUCTION_ORIGIN).toMatch(/^https:\/\/[a-z0-9.-]+$/);
+  });
+
+  it("names the backup host by its https netlify.app origin", () => {
+    expect(BACKUP_ORIGIN).toMatch(/^https:\/\/[a-z0-9-]+\.netlify\.app$/);
   });
 
   it("allows exactly each host's callback and origin wildcard as redirects", () => {
@@ -317,7 +327,7 @@ function readNetlify(): { tables: TomlTables; redirects: NetlifyRule[] } {
 }
 
 /** Whether a Netlify `from` pattern (exact, or a trailing `/*` splat) matches. */
-function matches(from: string, path: string): boolean {
+function netlifyRuleMatches(from: string, path: string): boolean {
   return from.endsWith("/*")
     ? path.startsWith(from.slice(0, -1))
     : from === path;
@@ -367,7 +377,7 @@ describe("netlify.toml", () => {
   const denied = redirects.filter((rule) => rule.get("status") === 403);
   const deniedFrom = denied.map((rule) => rule.get("from") as string);
   const isDenied = (path: string) =>
-    deniedFrom.some((from) => matches(from, path));
+    deniedFrom.some((from) => netlifyRuleMatches(from, path));
 
   /** What Vercel's "Website off, API on" rule lets through. */
   const ALLOWED_ROUTES = [
