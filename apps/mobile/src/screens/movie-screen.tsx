@@ -33,6 +33,7 @@ import {
   FactsPanel,
   movieFacts,
   Overview,
+  Tagline,
 } from "@/components/title-details";
 import {
   ageRatingOf,
@@ -116,9 +117,7 @@ export function MovieScreen() {
         <TrackingGate signedIn={session !== null} state={state}>
           {(data) => <MovieTracking movie={detail} state={data} />}
         </TrackingGate>
-        {detail.tagline ? (
-          <Text className="italic text-text-secondary">{detail.tagline}</Text>
-        ) : null}
+        <Tagline text={detail.tagline} />
         <Overview text={detail.overview} missing={MOVIE_OVERVIEW_MISSING} />
         <CrewLines
           lines={[

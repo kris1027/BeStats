@@ -63,7 +63,7 @@ export function AccountScreen({ notice }: { notice?: string }) {
   if (loading) {
     return (
       <AccountScroll>
-        <LoadingState label="Loading" />
+        <LoadingState label="Loading" layout="account" />
       </AccountScroll>
     );
   }
@@ -88,7 +88,7 @@ export function AccountScreen({ notice }: { notice?: string }) {
   if (profile.isPending) {
     return (
       <AccountScroll>
-        <LoadingState label="Loading your account" />
+        <LoadingState label="Loading your account" layout="account" />
       </AccountScroll>
     );
   }

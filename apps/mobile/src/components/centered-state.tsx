@@ -14,11 +14,25 @@ import { lengthToken, tokenColor } from "@/theme/token-vars";
 
 import { GlassPlate } from "./glass/plate";
 import { GlassButton } from "./glass-button";
-import { PageSkeleton, PosterGridSkeleton, TitleSkeleton } from "./skeleton";
+import {
+  AccountSkeleton,
+  PageSkeleton,
+  PosterGridSkeleton,
+  TitleSkeleton,
+} from "./skeleton";
+
+/** Each loading layout's skeleton, so a new screen shape is one entry. */
+const SKELETONS = {
+  page: PageSkeleton,
+  grid: PosterGridSkeleton,
+  title: TitleSkeleton,
+  account: AccountSkeleton,
+} as const;
 
 /**
  * A whole screen's loading state: skeletons in the shape of what is coming,
- * a grid of posters for a list or search, a page for a title or account
+ * a grid of posters for a list or search, a title's hero, Account's panels,
+ * or a generic page
  * (prompts/mobile-web-parity-foundation.md, AC-5). The skeletons are hidden
  * from screen readers; this view announces the wait once by its label, so it
  * is never silent (AGENTS.md section 3).
@@ -28,8 +42,9 @@ export function LoadingState({
   layout = "page",
 }: {
   label: string;
-  layout?: "page" | "grid" | "title";
+  layout?: keyof typeof SKELETONS;
 }) {
+  const Skeleton = SKELETONS[layout];
   return (
     <View
       accessible
@@ -37,13 +52,7 @@ export function LoadingState({
       accessibilityLabel={label}
       className="flex-1"
     >
-      {layout === "grid" ? (
-        <PosterGridSkeleton />
-      ) : layout === "title" ? (
-        <TitleSkeleton />
-      ) : (
-        <PageSkeleton />
-      )}
+      <Skeleton />
     </View>
   );
 }

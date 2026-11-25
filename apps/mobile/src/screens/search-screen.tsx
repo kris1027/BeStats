@@ -62,14 +62,12 @@ export function SearchScreen() {
   const currentYear = new Date().getUTCFullYear();
 
   // A new catalog keeps the title and drops filters, whose genre ids belong
-  // to the old catalog.
-  useEffect(() => {
-    setParams((current) =>
-      current.type === mediaType
-        ? current
-        : { ...emptySearchParams(mediaType), q: current.q },
-    );
-  }, [mediaType]);
+  // to the old catalog. Adjusted during render, not in an effect: an effect
+  // commits one frame of the old type's grid, placeholder and caption first,
+  // and its cards stay tappable until the second pass lands.
+  if (params.type !== mediaType) {
+    setParams({ ...emptySearchParams(mediaType), q: params.q });
+  }
 
   useEffect(() => {
     const timer = setTimeout(() => {

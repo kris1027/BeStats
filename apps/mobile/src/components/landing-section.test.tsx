@@ -78,3 +78,43 @@ test("at an accessibility text size See all moves under the title", async () => 
   await renderSection();
   expect((await headerRow())?.props.className).not.toContain("flex-row");
 });
+
+/**
+ * covers: prompts/mobile-look-verify-extras.md, the See all baseline fix
+ * (the title and See all align by baseline, as the web's `SectionHeader`;
+ * aligned by their bottoms, the 44pt link box lifted See all above the title)
+ */
+test("the title and See all share a baseline, not their bottoms", async () => {
+  setFontScale(1);
+  await renderSection();
+  const row = (await headerRow())?.props.className;
+  expect(row).toContain("items-baseline");
+  expect(row).not.toContain("items-end");
+});
+
+test("the blurb sits under the title, in the title's column", async () => {
+  setFontScale(1);
+  const list = catalogList("tv", "trending");
+  if (!list) throw new Error("no trending list");
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  await renderRouter(
+    {
+      index: () => (
+        <QueryClientProvider client={client}>
+          <LandingSection
+            list={list}
+            count={6}
+            variant="large"
+            blurb={() => "Six on the air"}
+          />
+        </QueryClientProvider>
+      ),
+    },
+    { initialUrl: "/" },
+  );
+  const blurb = await screen.findByText("Six on the air");
+  const title = screen.getByRole("header", { name: list.rowTitle });
+  expect(blurb.parent).toBe(title.parent);
+});

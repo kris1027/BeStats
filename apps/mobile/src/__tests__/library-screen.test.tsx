@@ -180,6 +180,63 @@ test("opens on Shows, Up next, with core's pages and names", async () => {
   ).toBeSelected();
 });
 
+// prompts/mobile-look-verify-extras.md, decisions 3 and 4
+const SEASON_2 = {
+  show: { id: 1399, name: "Game of Thrones" },
+  seasonNumber: 2,
+  name: "Season 2",
+  overview: null,
+  airDate: "2012-04-01",
+  posterUrl: null,
+  episodes: [3, 4].map((number) => ({
+    id: 200 + number,
+    seasonNumber: 2,
+    episodeNumber: number,
+    name: number === 3 ? "What Is Dead May Never Die" : null,
+    overview: null,
+    airDate: "2012-04-15",
+    stillUrl: null,
+    runtimeMinutes: 55,
+    tmdbRating: null,
+  })),
+};
+
+test("an Up next card names its next episode once the season loads", async () => {
+  mockApi.on("GET", libraryPath("tv", "/up-next"), () =>
+    answer("tv", "/up-next", [UP_NEXT_SHOW]),
+  );
+  mockApi.on("GET", "/api/v1/shows/1399/seasons/2", () => SEASON_2);
+  await openLibrary();
+  expect(
+    await screen.findByText("What Is Dead May Never Die"),
+  ).toBeOnTheScreen();
+  expect(
+    screen.getByLabelText(
+      "Game of Thrones, Next episode, season 2 episode 3, What Is Dead May Never Die",
+    ),
+  ).toBeOnTheScreen();
+});
+
+test("an Up next card shows no episode name after a failed season read", async () => {
+  mockApi.on("GET", libraryPath("tv", "/up-next"), () =>
+    answer("tv", "/up-next", [UP_NEXT_SHOW]),
+  );
+  mockApi.on("GET", "/api/v1/shows/1399/seasons/2", () => {
+    throw new ApiError(502, "catalog_unavailable", "TMDB didn't respond.");
+  });
+  await openLibrary();
+  expect(await screen.findByText("S2E3")).toBeOnTheScreen();
+  await waitFor(() =>
+    expect(mockApi.callsTo("GET", "/api/v1/shows/1399/seasons/2")).toHaveLength(
+      1,
+    ),
+  );
+  expect(screen.queryByText("What Is Dead May Never Die")).toBeNull();
+  expect(
+    screen.getByLabelText("Game of Thrones, Next episode, season 2 episode 3"),
+  ).toBeOnTheScreen();
+});
+
 test("Games lists Coming soon, Want to play, Playing, Finished and sends routes", async () => {
   const user = userEvent.setup();
   await openLibrary();
@@ -373,6 +430,15 @@ test("signed out, the tab offers Sign in and sends no private request", async ()
 });
 
 describe("libraryCardView", () => {
+  test("an Up next show's pill leads with the next episode mark", () => {
+    expect(
+      libraryCardView(UP_NEXT_SHOW as never, "watchlist", TODAY),
+    ).toMatchObject({
+      pill: { text: "S2E3", nextEpisode: true },
+      next: { season: 2, episode: 3 },
+    });
+  });
+
   test("an Upcoming show with a date reads as the web's pill", () => {
     const view = libraryCardView(
       {

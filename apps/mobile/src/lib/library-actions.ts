@@ -19,6 +19,7 @@ import {
   UNDO_EXPIRED_MESSAGES,
 } from "@bestats/core/tracking/messages";
 import { isStartedGame } from "@bestats/core/tracking/types";
+import type { EpisodePlace } from "@bestats/core/tv/library-page";
 import {
   type InfiniteData,
   useMutationState,
@@ -28,7 +29,7 @@ import {
 import { useToast } from "@/components/toast";
 
 import { ApiError } from "./api";
-import { catalogKeys, fetchSeason } from "./catalog";
+import { catalogKeys, fetchSeason, findEpisode } from "./catalog";
 import { removeGame, restoreGame } from "./games";
 import { libraryKeys } from "./library";
 import { putMovieWatched, putMovieWatchlist, restoreMovie } from "./movies";
@@ -66,7 +67,7 @@ export type CardAction = {
   /** The web button's accessible name, word for word. */
   label: string;
   /** Up next only: the episode the button marks. */
-  next?: { season: number; episode: number };
+  next?: EpisodePlace;
 };
 
 /**
@@ -145,10 +146,16 @@ export function cardActionFor(
         entry.card.place.page === "watchlist"
       ) {
         const { season, episode } = entry.card.place.next;
+        // Top right, unlike the web's bottom row: on the app's three column
+        // grid a card is about 114pt wide, and beside the button the pill
+        // had 48pt, too narrow for the TV icon and "S1E2". Up next cards
+        // carry no badge or bookmark, so the corner is free and the pill
+        // gets the poster's width (prompts/mobile-look-verify-extras.md,
+        // decision 6, chosen 2026-11-25).
         return {
           kind: "mark_next",
           look: "mark",
-          corner: false,
+          corner: true,
           label: MARK_NEXT_MESSAGES.markLabel(entry.card.name, season, episode),
           next: { season, episode },
         };
@@ -403,9 +410,7 @@ export function useLibraryCardActions(
           queryKey: catalogKeys.season(entry.id, next.season),
           queryFn: () => fetchSeason(entry.id, next.season),
         });
-        episodeId = season.episodes.find(
-          (episode) => episode.episodeNumber === next.episode,
-        )?.id;
+        episodeId = findEpisode(season, next)?.id;
       } catch (error) {
         // Offline keeps its own error, so the toast offers Retry.
         if (error instanceof ApiError && error.code === "network") throw error;
