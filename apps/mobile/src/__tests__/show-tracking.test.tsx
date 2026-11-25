@@ -191,6 +191,23 @@ test("shows progress, an unrated show as Not rated, and Specials last", async ()
   ).toEqual(["Season 1", "Season 2", "Specials"]);
 });
 
+test("shows the tagline, italic, only when TMDB has one", async () => {
+  // prompts/mobile-look-verify-extras.md, decision 1
+  mockApi.on("GET", "/api/v1/shows/1399", () => ({
+    ...SHOW,
+    tagline: "Winter is coming.",
+  }));
+  await openShow();
+  const tagline = await screen.findByText("Winter is coming.");
+  expect(tagline.props.className).toContain("italic");
+});
+
+test("shows no tagline line when TMDB has none", async () => {
+  await openShow();
+  await screen.findByText(SHOW_PROGRESS_MESSAGES.counted(1, 2));
+  expect(screen.queryByText("Winter is coming.")).toBeNull();
+});
+
 test("Stop tracking offers Undo that posts the show_tracking state", async () => {
   mockApi.on("DELETE", "/api/v1/me/shows/1399/tracking", () => {
     showState = { ...showState, tracked: false };
