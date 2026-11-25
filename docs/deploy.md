@@ -244,7 +244,9 @@ The store release of the phone app (spec [0033](specs/0033-mobile-app-expo/index
 
 ## 13. Netlify backup host (remote)
 
-Netlify serves the same build as Vercel, so the phone app keeps working when one host runs out of its free quota ([prompts/netlify-mirror.md](../prompts/netlify-mirror.md)). One host is primary at a time, and you switch the phone app by hand. Nothing in sections 1 to 12 changes: Vercel's settings, firewall rules and `vercel.json` stay as they are.
+Netlify serves the same build as Vercel, so the phone app keeps working when one host runs out of its free quota ([prompts/netlify-mirror.md](../prompts/netlify-mirror.md)). One host is primary at a time, and you switch the phone app by hand. Nothing in sections 1 to 12 changes: Vercel's settings and firewall rules stay as they are.
+
+**While Netlify is primary** (since 2026-11-25, Vercel's account blocked), `apps/web/vercel.json` sets `"git": { "deploymentEnabled": false }`, so a push or pull request builds nothing on Vercel and shows no failing Vercel check. To switch back to Vercel, remove that block and its test in `deploy-config.test.ts` in one PR; the merge to `main` then deploys production again.
 
 **What the repo holds.** `apps/web/netlify.toml` sets the build command and Node 22, rate limits `/api/*`, and turns the website off. `deploy-config.test.ts` pins all of it, and fails when a new top-level route under `app/` is neither denied there nor on the allow list.
 

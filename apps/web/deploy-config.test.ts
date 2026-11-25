@@ -226,7 +226,7 @@ const VERCEL_REGION_FOR_SUPABASE: Record<string, string> = {
 describe("vercel.json", () => {
   const vercel = JSON.parse(
     readFileSync(join(ROOT, "vercel.json"), "utf8"),
-  ) as { regions?: string[] };
+  ) as { regions?: string[]; git?: { deploymentEnabled?: boolean } };
 
   it("pins functions to one region", () => {
     expect(vercel.regions).toHaveLength(1);
@@ -236,6 +236,16 @@ describe("vercel.json", () => {
     expect(vercel.regions?.[0]).toBe(
       VERCEL_REGION_FOR_SUPABASE[SUPABASE_REGION.code],
     );
+  });
+
+  /**
+   * Temporary, while Vercel's account is blocked and Netlify serves the app
+   * (docs/deploy.md, section 13): Git pushes build nothing on Vercel, so no
+   * pull request carries a failing Vercel check. Switching back to Vercel
+   * removes the `git` block and this test together.
+   */
+  it("builds no Git push while Netlify is the primary host", () => {
+    expect(vercel.git).toEqual({ deploymentEnabled: false });
   });
 });
 
