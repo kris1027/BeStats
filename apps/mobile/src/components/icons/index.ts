@@ -17,11 +17,13 @@ export {
   InboxIcon,
   InfoIcon,
   PlayIcon,
+  SearchIcon,
   StarIcon,
   TriangleAlertIcon,
   UserRoundIcon,
   XIcon,
 } from "lucide-react-native";
+export { MEDIA_SYMBOL_SIZE, MediaSymbol } from "./media-symbol";
 export {
   CalendarIcon,
   NextEpisodeIcon,

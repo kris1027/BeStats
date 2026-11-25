@@ -34,6 +34,20 @@ test("only components/glass imports expo-blur", () => {
   expect(offenders).toEqual([]);
 });
 
+/**
+ * covers: prompts/mobile-media-switch-glass.md, decision 8. Liquid Glass
+ * enters only through `glass/liquid-bar.tsx`, which keeps the `GlassPlate`
+ * fallback for Android, older iOS and Reduce Transparency.
+ */
+test("only components/glass imports expo-glass-effect", () => {
+  const offenders = FILES.filter(
+    ({ path, text }) =>
+      !path.startsWith("components/glass/") &&
+      /from "expo-glass-effect"/.test(text),
+  ).map(({ path }) => path);
+  expect(offenders).toEqual([]);
+});
+
 test("only components/text.tsx imports Text or TextInput from react-native", () => {
   const offenders = FILES.filter(({ path, text }) => {
     if (path === "components/text.tsx") return false;
@@ -67,6 +81,15 @@ test("only components/icons imports lucide-react-native", () => {
     ({ path, text }) =>
       !path.startsWith("components/icons/") &&
       /from "lucide-react-native"/.test(text),
+  ).map(({ path }) => path);
+  expect(offenders).toEqual([]);
+});
+
+/** covers: prompts/mobile-media-switch-glass.md, decision 4. */
+test("only components/icons imports expo-symbols", () => {
+  const offenders = FILES.filter(
+    ({ path, text }) =>
+      !path.startsWith("components/icons/") && /from "expo-symbols"/.test(text),
   ).map(({ path }) => path);
   expect(offenders).toEqual([]);
 });

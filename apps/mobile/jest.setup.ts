@@ -18,7 +18,13 @@ jest.mock("react-native-reanimated", () =>
 // (src/components/swipe-row.tsx).
 jest.mock("react-native-gesture-handler", () => {
   const { View } = require("react-native");
-  return { GestureHandlerRootView: View };
+  // The media switch's drag is a pan the tests never perform; its taps are
+  // the segments' own presses (src/components/media-switch.tsx).
+  return {
+    GestureHandlerRootView: View,
+    GestureDetector: ({ children }: { children: unknown }) => children,
+    usePanGesture: () => ({}),
+  };
 });
 jest.mock("react-native-gesture-handler/ReanimatedSwipeable", () => {
   const { View } = require("react-native");
@@ -64,5 +70,26 @@ jest.mock("expo-router/build/link/preview/native", () => {
       React.createElement(React.Fragment, null, children),
     NativeLinkPreviewAction: () => null,
     NativeLinkPreviewContent: () => null,
+  };
+});
+// Liquid Glass and system symbols are native views. Glass reports itself
+// unavailable, so plates take the `GlassPlate` path unless a test says
+// otherwise (`media-switch.test.tsx`), and a symbol is a plain view named
+// by its SF Symbol (prompts/mobile-media-switch-glass.md).
+jest.mock("expo-glass-effect", () => {
+  const { View } = require("react-native");
+  return {
+    GlassView: View,
+    GlassContainer: View,
+    isLiquidGlassAvailable: jest.fn(() => false),
+    isGlassEffectAPIAvailable: jest.fn(() => false),
+  };
+});
+jest.mock("expo-symbols", () => {
+  const React = require("react");
+  const { View } = require("react-native");
+  return {
+    SymbolView: ({ name, ...rest }: { name: { ios: string } }) =>
+      React.createElement(View, { ...rest, testID: `symbol-${name.ios}` }),
   };
 });
