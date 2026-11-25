@@ -40,3 +40,19 @@ test("a title screen loads behind its hero shaped skeleton, not a spinner", asyn
     screen.getAllByTestId("skeleton", { includeHiddenElements: true }),
   ).toHaveLength(8);
 });
+
+test("Account loads behind its panel and rows, with no posters", async () => {
+  // prompts/mobile-look-verify-extras.md, decision 5
+  await render(<LoadingState layout="account" label="Loading your account" />);
+  expect(screen.getByLabelText("Loading your account")).toBeOnTheScreen();
+  const skeletons = screen.getAllByTestId("skeleton", {
+    includeHiddenElements: true,
+  });
+  // Name, email and Sign out in the panel, then three rows.
+  expect(skeletons).toHaveLength(6);
+  for (const skeleton of skeletons) {
+    expect(skeleton.props.style).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ aspectRatio: 2 / 3 })]),
+    );
+  }
+});

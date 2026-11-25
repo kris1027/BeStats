@@ -12,6 +12,7 @@ import { PILL_RADIUS } from "@/theme/pill";
 import { lengthToken } from "@/theme/token-vars";
 
 import { GlassPlate, PlateSolid } from "./glass/plate";
+import { GlassPanel } from "./glass-panel";
 import { GRID, gridCardWidth } from "./grid-layout";
 
 /** The web's skeleton shapes: a 2:3 poster, a pill and a text line. */
@@ -173,6 +174,36 @@ export function TitleSkeleton() {
         <Skeleton shape="pill" style={{ width: 110, height: 44 }} />
         <Skeleton shape="pill" style={{ width: 140, height: 44 }} />
       </View>
+    </View>
+  );
+}
+
+/**
+ * Account's footprint while the session or profile loads
+ * (prompts/mobile-look-verify-extras.md, decision 5): the header panel (your
+ * name, your email and Sign out) and the three rows under it, in the same
+ * padding, gaps and radius as `AccountScreen`, so nothing jumps when they
+ * arrive. No posters: Account has none (AC-5, skeletons in the shape of
+ * what is coming). The username panel shows only for some accounts, so it
+ * is left out rather than guessed.
+ */
+export function AccountSkeleton() {
+  return (
+    <View className="gap-4 px-4 py-6">
+      <GlassPanel>
+        <View className="gap-2">
+          <Skeleton shape="line" style={{ width: "50%", height: 22 }} />
+          <Skeleton shape="line" style={{ width: "70%" }} />
+        </View>
+        <Skeleton shape="pill" style={{ width: 110, height: 44 }} />
+      </GlassPanel>
+      {slotKeys("account-row", 3).map((key) => (
+        <Skeleton
+          key={key}
+          shape="line"
+          style={{ height: 56, borderRadius: lengthToken("radius-panel") }}
+        />
+      ))}
     </View>
   );
 }

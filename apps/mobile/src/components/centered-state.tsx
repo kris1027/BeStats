@@ -14,11 +14,17 @@ import { lengthToken, tokenColor } from "@/theme/token-vars";
 
 import { GlassPlate } from "./glass/plate";
 import { GlassButton } from "./glass-button";
-import { PageSkeleton, PosterGridSkeleton, TitleSkeleton } from "./skeleton";
+import {
+  AccountSkeleton,
+  PageSkeleton,
+  PosterGridSkeleton,
+  TitleSkeleton,
+} from "./skeleton";
 
 /**
  * A whole screen's loading state: skeletons in the shape of what is coming,
- * a grid of posters for a list or search, a page for a title or account
+ * a grid of posters for a list or search, a title's hero, Account's panels,
+ * or a generic page
  * (prompts/mobile-web-parity-foundation.md, AC-5). The skeletons are hidden
  * from screen readers; this view announces the wait once by its label, so it
  * is never silent (AGENTS.md section 3).
@@ -28,7 +34,7 @@ export function LoadingState({
   layout = "page",
 }: {
   label: string;
-  layout?: "page" | "grid" | "title";
+  layout?: "page" | "grid" | "title" | "account";
 }) {
   return (
     <View
@@ -41,6 +47,8 @@ export function LoadingState({
         <PosterGridSkeleton />
       ) : layout === "title" ? (
         <TitleSkeleton />
+      ) : layout === "account" ? (
+        <AccountSkeleton />
       ) : (
         <PageSkeleton />
       )}
