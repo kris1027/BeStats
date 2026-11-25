@@ -19,6 +19,7 @@ import {
   UNDO_EXPIRED_MESSAGES,
 } from "@bestats/core/tracking/messages";
 import { isStartedGame } from "@bestats/core/tracking/types";
+import type { EpisodePlace } from "@bestats/core/tv/library-page";
 import {
   type InfiniteData,
   useMutationState,
@@ -28,7 +29,7 @@ import {
 import { useToast } from "@/components/toast";
 
 import { ApiError } from "./api";
-import { catalogKeys, fetchSeason } from "./catalog";
+import { catalogKeys, fetchSeason, findEpisode } from "./catalog";
 import { removeGame, restoreGame } from "./games";
 import { libraryKeys } from "./library";
 import { putMovieWatched, putMovieWatchlist, restoreMovie } from "./movies";
@@ -66,7 +67,7 @@ export type CardAction = {
   /** The web button's accessible name, word for word. */
   label: string;
   /** Up next only: the episode the button marks. */
-  next?: { season: number; episode: number };
+  next?: EpisodePlace;
 };
 
 /**
@@ -403,9 +404,7 @@ export function useLibraryCardActions(
           queryKey: catalogKeys.season(entry.id, next.season),
           queryFn: () => fetchSeason(entry.id, next.season),
         });
-        episodeId = season.episodes.find(
-          (episode) => episode.episodeNumber === next.episode,
-        )?.id;
+        episodeId = findEpisode(season, next)?.id;
       } catch (error) {
         // Offline keeps its own error, so the toast offers Retry.
         if (error instanceof ApiError && error.code === "network") throw error;

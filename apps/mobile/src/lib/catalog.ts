@@ -9,9 +9,14 @@ import {
   v1TitleExtrasSchema,
 } from "@bestats/core/api/v1/extras";
 import { v1GameSchema } from "@bestats/core/api/v1/game";
-import { v1SeasonSchema, v1ShowSchema } from "@bestats/core/api/v1/show";
+import {
+  type V1Season,
+  v1SeasonSchema,
+  v1ShowSchema,
+} from "@bestats/core/api/v1/show";
 import type { LibraryType } from "@bestats/core/catalog/media-type";
 import { type SearchParams, searchHref } from "@bestats/core/search/params";
+import type { EpisodePlace } from "@bestats/core/tv/library-page";
 
 import { apiRequest } from "./api";
 
@@ -132,4 +137,15 @@ export function fetchSeason(showId: number, seasonNumber: number) {
     `/api/v1/shows/${showId}/seasons/${seasonNumber}`,
     v1SeasonSchema,
   );
+}
+
+/**
+ * The episode at `place` in a season read, or undefined when TMDB no longer
+ * lists it. An Up next card's name and its Mark watched action both look the
+ * next episode up this way, from the one cached season read, so the two can
+ * never name different episodes (prompts/mobile-look-verify-extras.md,
+ * decision 3; AGENTS.md section 14, never invent unavailable data).
+ */
+export function findEpisode(season: V1Season, place: EpisodePlace) {
+  return season.episodes.find((item) => item.episodeNumber === place.episode);
 }

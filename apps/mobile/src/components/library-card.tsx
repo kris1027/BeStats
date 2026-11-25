@@ -1,5 +1,6 @@
 import type { V1LibraryEntry } from "@bestats/core/api/v1/library";
 import type { LibraryPageKey } from "@bestats/core/catalog/library-list";
+import type { EpisodePlace } from "@bestats/core/tv/library-page";
 import { useQuery } from "@tanstack/react-query";
 import type { Href } from "expo-router";
 import type { ReactNode } from "react";
@@ -7,7 +8,7 @@ import { View } from "react-native";
 
 import { NextEpisodeIcon } from "@/components/icons";
 import { Text } from "@/components/text";
-import { catalogKeys, fetchSeason } from "@/lib/catalog";
+import { catalogKeys, fetchSeason, findEpisode } from "@/lib/catalog";
 import type { CardAction } from "@/lib/library-actions";
 import { type CardBadge, libraryCardView } from "@/lib/library-card";
 import { CARD_FONT_SCALE_CAP } from "@/theme/font-scale";
@@ -157,12 +158,12 @@ export function LibraryCard({
   quick?: CardActionSlot;
 }) {
   const view = libraryCardView(entry, page, today);
-  const title = view.kind === "title";
+  const isTitle = view.kind === "title";
   const episodeName = useNextEpisodeName(
     entry.id,
-    view.kind === "title" ? view.next : undefined,
+    isTitle ? view.next : undefined,
   );
-  const label = title
+  const label = isTitle
     ? [view.name, view.pill?.label, episodeName, view.badge?.label, view.meta]
         .filter(Boolean)
         .join(", ")
@@ -172,12 +173,12 @@ export function LibraryCard({
     <>
       <PosterFrame
         width={width}
-        imageUrl={title ? view.imageUrl : null}
+        imageUrl={isTitle ? view.imageUrl : null}
         recyclingKey={`${entry.type}:${entry.id}`}
         name={view.name}
       >
-        {title && view.badge ? <Badge badge={view.badge} /> : null}
-        {title && view.pill ? (
+        {isTitle && view.badge ? <Badge badge={view.badge} /> : null}
+        {isTitle && view.pill ? (
           <View
             style={{
               position: "absolute",
@@ -190,16 +191,14 @@ export function LibraryCard({
             }}
           >
             <GlassPill
-              icon={
-                view.pill.icon === "next-episode" ? <NextEpisodeIcon /> : null
-              }
+              icon={view.pill.nextEpisode ? <NextEpisodeIcon /> : null}
             >
               {view.pill.text}
             </GlassPill>
           </View>
         ) : null}
       </PosterFrame>
-      {title ? (
+      {isTitle ? (
         // Its own width, as on `PosterCard`: inside `Link asChild` the
         // Pressable's function style may not reach layout, and a long title
         // would widen the card past its column (prompts/mobile-look-search.md).
@@ -301,7 +300,7 @@ export function LibraryCard({
  */
 function useNextEpisodeName(
   showId: number,
-  next: { season: number; episode: number } | undefined,
+  next: EpisodePlace | undefined,
 ): string | null {
   const season = useQuery({
     queryKey: catalogKeys.season(showId, next?.season ?? 0),
@@ -309,8 +308,5 @@ function useNextEpisodeName(
     enabled: next !== undefined,
   });
   if (!next || !season.data) return null;
-  return (
-    season.data.episodes.find((item) => item.episodeNumber === next.episode)
-      ?.name ?? null
-  );
+  return findEpisode(season.data, next)?.name ?? null;
 }

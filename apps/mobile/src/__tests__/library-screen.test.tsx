@@ -434,7 +434,7 @@ describe("libraryCardView", () => {
     expect(
       libraryCardView(UP_NEXT_SHOW as never, "watchlist", TODAY),
     ).toMatchObject({
-      pill: { text: "S2E3", icon: "next-episode" },
+      pill: { text: "S2E3", nextEpisode: true },
       next: { season: 2, episode: 3 },
     });
   });

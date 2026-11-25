@@ -19,6 +19,7 @@ import {
   UPCOMING_MESSAGES,
   WATCHED_SHOW_LABELS,
 } from "@bestats/core/tracking/messages";
+import type { EpisodePlace } from "@bestats/core/tv/library-page";
 
 import {
   communityRatingLabel,
@@ -38,10 +39,12 @@ export type CardBadge = {
 };
 
 /**
- * A pill over the poster's foot: a date, Date TBA or the next episode. `icon`
- * names the mark it leads with, kept a key so this file stays free of views.
+ * A pill over the poster's foot: a date, Date TBA or the next episode.
+ * `nextEpisode` marks the Up next pill, which leads with the TV icon as the
+ * web's `NextEpisodePill` does; a flag rather than the icon itself, so this
+ * file stays free of views (prompts/mobile-look-verify-extras.md, decision 4).
  */
-export type CardPill = { text: string; label: string; icon?: "next-episode" };
+export type CardPill = { text: string; label: string; nextEpisode?: boolean };
 
 /**
  * Everything a library card shows, worked out from the server's entry
@@ -61,7 +64,7 @@ export type LibraryCardView =
        * as the web's `NextEpisodeName` does (prompts/mobile-look-verify-extras.md,
        * decision 3).
        */
-      next?: { season: number; episode: number };
+      next?: EpisodePlace;
     }
   /** The catalog no longer has the title: no page to open. */
   | { kind: "missing"; name: string }
@@ -206,7 +209,7 @@ export function libraryCardView(
       pill: {
         text: NEXT_EPISODE_MESSAGES.pill(season, episode),
         label: NEXT_EPISODE_MESSAGES.accessible(season, episode),
-        icon: "next-episode",
+        nextEpisode: true,
       },
       meta: null,
       next: { season, episode },
