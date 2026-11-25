@@ -465,3 +465,74 @@ describe("the proxy and the legal pages", () => {
     expect(isPrivatePath("/terms")).toBe(false);
   });
 });
+
+/**
+ * covers: prompts/netlify-private-pages-403.md, R1 to R3
+ *
+ * Netlify runs the proxy before its `netlify.toml` rules, so with the website
+ * off the proxy itself must answer 403, ahead of the sign in redirect and the
+ * catalog id rule, and without a Supabase call.
+ */
+describe("the proxy with the website off", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+    session.signedIn = false;
+  });
+
+  it.each([
+    "/",
+    "/watchlist",
+    "/watchlist?type=tv",
+    "/account",
+    "/movies",
+    "/movies/abc",
+    "/shows/1396/season/x",
+    "/sign-in",
+  ])("answers %s with the 403 body, before Supabase", async (path) => {
+    stubPublicEnv();
+    vi.stubEnv("WEBSITE_OFF", "on");
+    const ssr = await import("@supabase/ssr");
+    const create = vi.spyOn(ssr, "createServerClient");
+
+    const { proxy } = await import("./proxy");
+    const response = await proxy(new NextRequest(`http://localhost${path}`));
+
+    expect(response.status).toBe(403);
+    expect(response.headers.get("location")).toBeNull();
+    expect(response.headers.get("x-middleware-rewrite")).toBe(
+      "http://localhost/403.html",
+    );
+    expect(response.headers.get("set-cookie")).toBeNull();
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it.each(["/privacy", "/terms", "/403.html"])(
+    "lets %s through",
+    async (path) => {
+      stubPublicEnv();
+      vi.stubEnv("WEBSITE_OFF", "on");
+
+      const { proxy } = await import("./proxy");
+      const response = await proxy(new NextRequest(`http://localhost${path}`));
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get("x-middleware-rewrite")).toBeNull();
+    },
+  );
+
+  it.each([undefined, "off"])(
+    "keeps today's redirect with WEBSITE_OFF=%j",
+    async (value) => {
+      stubPublicEnv();
+      vi.stubEnv("WEBSITE_OFF", value);
+
+      const { proxy } = await import("./proxy");
+      const response = await proxy(
+        new NextRequest("http://localhost/watchlist"),
+      );
+
+      expect(response.status).toBe(307);
+    },
+  );
+});

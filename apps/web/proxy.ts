@@ -8,7 +8,7 @@ import { isCatalogListSlug } from "@bestats/core/catalog/lists";
 import type { LibraryType } from "@bestats/core/catalog/media-type";
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
-import { getPublicEnv, publicEnvProblems } from "@/lib/env";
+import { getPublicEnv, publicEnvProblems, websiteOff } from "@/lib/env";
 import { sessionCookieOptions } from "@/lib/supabase/cookie-options";
 
 let warnedAboutMissingConfig = false;
@@ -38,6 +38,13 @@ const PATHNAME_HEADER = "x-pathname";
  * `middleware.ts` is deprecated.
  */
 export async function proxy(request: NextRequest) {
+  // The website is off on the Netlify host, and Netlify runs this proxy
+  // before its `netlify.toml` rules, so a redirect or 404 below would win
+  // over the forced 403. First, so it makes no Supabase call and sets no
+  // cookie (prompts/netlify-private-pages-403.md).
+  const off = websiteOffResponse(request);
+  if (off) return off;
+
   // A malformed title id or season number is a real 404, decided here because
   // the page streams its shell first and by then the status is already 200
   // (spec 0006, AC-8; spec 0009, AC-13). First, so it needs no auth
@@ -147,6 +154,39 @@ export async function proxy(request: NextRequest) {
   }
 
   return response;
+}
+
+/**
+ * The page paths that stay up while the website is off, the same pages the
+ * Netlify allow list in `netlify.toml` leaves open (`deploy-config.test.ts`
+ * checks they agree). `/api/`, `robots.txt`, the favicon and the logos never
+ * reach the proxy, since its matcher skips them.
+ */
+export const WEBSITE_OFF_ALLOWED_PAGES: readonly string[] = [
+  "/privacy",
+  "/terms",
+];
+
+/** The static body `netlify.toml` serves with its 403 rules. */
+const WEBSITE_OFF_BODY = "/403.html";
+
+/**
+ * The 403 for a page while `WEBSITE_OFF` is on, or null to carry on. A
+ * rewrite rather than a redirect, so the address bar keeps the URL and the
+ * body is the same file the CDN rules serve (app/AGENTS.md, Routing).
+ */
+function websiteOffResponse(request: NextRequest): NextResponse | null {
+  if (!websiteOff()) return null;
+  const { pathname } = request.nextUrl;
+  if (
+    pathname === WEBSITE_OFF_BODY ||
+    WEBSITE_OFF_ALLOWED_PAGES.includes(pathname)
+  ) {
+    return null;
+  }
+  return NextResponse.rewrite(new URL(WEBSITE_OFF_BODY, request.url), {
+    status: 403,
+  });
 }
 
 /**
