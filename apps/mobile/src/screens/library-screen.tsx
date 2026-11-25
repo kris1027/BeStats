@@ -104,15 +104,22 @@ function LibrarySkeleton({ width, label }: { width: number; label: string }) {
 
 /**
  * A state drawn before the list exists (the session load, signed out) inside
- * a scroll view, so the large title's translucent bar never covers it and
- * UIKit insets it as it does the list (prompts/mobile-look-library.md,
- * decision 8).
+ * a scroll view, so UIKit insets it as it does the list
+ * (prompts/mobile-look-library.md, decision 8), padded like the list so it
+ * starts below the pinned switch (prompts/mobile-media-switch-glass.md,
+ * requirement 6).
  */
-function ScrollState({ children }: { children: ReactNode }) {
+function ScrollState({
+  paddingTop,
+  children,
+}: {
+  paddingTop: number;
+  children: ReactNode;
+}) {
   return (
     <ScrollView
       contentInsetAdjustmentBehavior="automatic"
-      contentContainerStyle={{ flexGrow: 1 }}
+      contentContainerStyle={{ flexGrow: 1, paddingTop }}
     >
       {children}
     </ScrollView>
@@ -197,22 +204,47 @@ export function LibraryScreen() {
   // (prompts/mobile-media-switch-glass.md, decisions 5 and 12).
   const pinned = usePinnedBar(useSafeAreaInsets().top);
 
+  // Every state keeps the switch, since the hidden header leaves nothing
+  // else to name the tab (prompts/mobile-media-switch-glass.md, manual
+  // step 5). The bar comes after the content so it draws over it.
+  const bar = (
+    <PinnedBar barTop={pinned.barTop} onLayout={pinned.onLayout}>
+      <MediaSwitchView
+        value={type}
+        // The same page on the other tab, Playing to Upcoming, as the web's
+        // tabs switch (components/AGENTS.md, Selection comes from the URL).
+        onChange={(next) =>
+          router.setParams({ type: next, path: libraryPath(page, next) })
+        }
+      />
+    </PinnedBar>
+  );
+
   if (loading) {
     return (
-      <ScrollState>
-        <LoadingState label="Loading" />
-      </ScrollState>
+      <View className="flex-1">
+        <ScrollState paddingTop={pinned.paddingTop}>
+          <LoadingState label="Loading" />
+        </ScrollState>
+        {bar}
+      </View>
     );
   }
   if (!session) {
     return (
-      <ScrollState>
-        <StatePanel
-          title={LIBRARY_SIGNED_OUT.title}
-          description={LIBRARY_SIGNED_OUT.description}
-          action={{ label: "Sign in", onPress: () => router.push("/sign-in") }}
-        />
-      </ScrollState>
+      <View className="flex-1">
+        <ScrollState paddingTop={pinned.paddingTop}>
+          <StatePanel
+            title={LIBRARY_SIGNED_OUT.title}
+            description={LIBRARY_SIGNED_OUT.description}
+            action={{
+              label: "Sign in",
+              onPress: () => router.push("/sign-in"),
+            }}
+          />
+        </ScrollState>
+        {bar}
+      </View>
     );
   }
 
@@ -354,16 +386,7 @@ export function LibraryScreen() {
           );
         }}
       />
-      <PinnedBar barTop={pinned.barTop} onLayout={pinned.onLayout}>
-        <MediaSwitchView
-          value={type}
-          // The same page on the other tab, Playing to Upcoming, as the web's
-          // tabs switch (components/AGENTS.md, Selection comes from the URL).
-          onChange={(next) =>
-            router.setParams({ type: next, path: libraryPath(page, next) })
-          }
-        />
-      </PinnedBar>
+      {bar}
     </View>
   );
 }

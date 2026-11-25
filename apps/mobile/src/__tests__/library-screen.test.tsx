@@ -427,6 +427,9 @@ test("signed out, the tab offers Sign in and sends no private request", async ()
     scroll = scroll.parent;
   }
   expect(scroll?.props.contentInsetAdjustmentBehavior).toBe("automatic");
+  // The header is hidden, so the pinned switch still names the tab
+  // (prompts/mobile-media-switch-glass.md, manual step 5).
+  expect(screen.getByRole("tab", { name: "Shows" })).toBeOnTheScreen();
   expect(mockApi.calls).toHaveLength(0);
 });
 
