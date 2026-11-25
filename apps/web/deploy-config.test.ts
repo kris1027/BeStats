@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { SUPABASE_REGION } from "@bestats/core/legal/operator";
 import { describe, expect, it } from "vitest";
+import { WEBSITE_OFF_ALLOWED_PAGES } from "./proxy";
 
 /**
  * The deployment is configured from the repo: `supabase config push` sends
@@ -426,6 +427,20 @@ describe("netlify.toml", () => {
       expect(rule.get("force"), String(rule.get("from"))).toBe(true);
     }
     expect(readdirSync(join(ROOT, "public"))).toContain("403.html");
+  });
+
+  /**
+   * covers: prompts/netlify-private-pages-403.md, decision 3
+   *
+   * With `WEBSITE_OFF=on` the proxy answers 403 before these rules run, so it
+   * must leave open the same pages they do. `/api` and the files never reach
+   * the proxy, which skips them.
+   */
+  it("leaves open the same pages as the proxy's website off rule", () => {
+    const pages = ALLOWED_ROUTES.filter(
+      (route) => route !== "/api" && !route.includes("."),
+    );
+    expect([...WEBSITE_OFF_ALLOWED_PAGES].sort()).toEqual(pages.sort());
   });
 
   it("holds only the rate limit rule and deny rules", () => {

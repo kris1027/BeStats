@@ -8,7 +8,7 @@ import { isCatalogListSlug } from "@bestats/core/catalog/lists";
 import type { LibraryType } from "@bestats/core/catalog/media-type";
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
-import { getPublicEnv, publicEnvProblems } from "@/lib/env";
+import { getPublicEnv, publicEnvProblems, websiteOff } from "@/lib/env";
 import { sessionCookieOptions } from "@/lib/supabase/cookie-options";
 
 let warnedAboutMissingConfig = false;
@@ -38,6 +38,13 @@ const PATHNAME_HEADER = "x-pathname";
  * `middleware.ts` is deprecated.
  */
 export async function proxy(request: NextRequest) {
+  // The website is off on the Netlify host, and Netlify runs this proxy
+  // before its `netlify.toml` rules, so a redirect or 404 below would win
+  // over the forced 403. First, so it makes no Supabase call and sets no
+  // cookie (prompts/netlify-private-pages-403.md).
+  const off = websiteOffResponse(request);
+  if (off) return off;
+
   // A malformed title id or season number is a real 404, decided here because
   // the page streams its shell first and by then the status is already 200
   // (spec 0006, AC-8; spec 0009, AC-13). First, so it needs no auth
@@ -147,6 +154,60 @@ export async function proxy(request: NextRequest) {
   }
 
   return response;
+}
+
+/**
+ * The page paths that stay up while the website is off, the same pages the
+ * Netlify allow list in `netlify.toml` leaves open (`deploy-config.test.ts`
+ * checks they agree). `/api/`, `robots.txt`, the favicon and the logos never
+ * reach the proxy, since its matcher skips them.
+ */
+export const WEBSITE_OFF_ALLOWED_PAGES: readonly string[] = [
+  "/privacy",
+  "/terms",
+];
+
+/** The static page `netlify.toml` serves with its 403 rules. */
+const WEBSITE_OFF_PATH = "/403.html";
+
+/**
+ * The body of `public/403.html`, byte for byte (`proxy.test.ts` compares
+ * them). Sent from here rather than rewritten to the file, because Netlify
+ * serves a rewritten static file with its own 200 and drops the 403.
+ */
+export const WEBSITE_OFF_HTML = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>BeStats</title>
+  </head>
+  <body>
+    <p>The BeStats website is off. The BeStats app still works.</p>
+    <p><a href="/privacy">Privacy Policy</a></p>
+  </body>
+</html>
+`;
+
+/**
+ * The 403 for a page while `WEBSITE_OFF` is on, or null to carry on. The URL
+ * stays as asked, and the body is the page the CDN rules serve
+ * (app/AGENTS.md, Routing).
+ */
+function websiteOffResponse(request: NextRequest): NextResponse | null {
+  if (!websiteOff()) return null;
+  const { pathname } = request.nextUrl;
+  if (
+    pathname === WEBSITE_OFF_PATH ||
+    WEBSITE_OFF_ALLOWED_PAGES.includes(pathname)
+  ) {
+    return null;
+  }
+  return new NextResponse(WEBSITE_OFF_HTML, {
+    status: 403,
+    headers: { "content-type": "text/html; charset=utf-8" },
+  });
 }
 
 /**
