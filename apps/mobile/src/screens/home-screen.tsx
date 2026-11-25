@@ -5,11 +5,13 @@ import {
 } from "@bestats/core/catalog/landing";
 import { useQueryClient } from "@tanstack/react-query";
 import { useDeferredValue, useState } from "react";
-import { RefreshControl, ScrollView } from "react-native";
+import { RefreshControl, ScrollView, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { CatalogNotice } from "@/components/catalog-notice";
 import { LandingSection } from "@/components/landing-section";
 import { MediaSwitch } from "@/components/media-switch";
+import { PinnedBar, usePinnedBar } from "@/components/pinned-bar";
 import { CATALOG_QUERY_ROOT } from "@/lib/catalog";
 import { useMediaType } from "@/lib/media-type";
 import { tokenColor } from "@/theme/token-vars";
@@ -32,6 +34,9 @@ export function HomeScreen() {
   const slots = landingSlots(mediaType);
   const queries = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
+  // The switch floats over the landing under the status bar, Home's header
+  // hidden (prompts/mobile-media-switch-glass.md, decision 5).
+  const pinned = usePinnedBar(useSafeAreaInsets().top);
 
   async function refresh() {
     setRefreshing(true);
@@ -41,52 +46,60 @@ export function HomeScreen() {
   }
 
   return (
-    <ScrollView
-      className="flex-1"
-      contentContainerClassName="pb-6"
-      contentInsetAdjustmentBehavior="automatic"
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={refresh}
-          tintColor={tokenColor("color-foreground")}
+    <View className="flex-1">
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="pb-6"
+        contentContainerStyle={{ paddingTop: pinned.paddingTop }}
+        contentInsetAdjustmentBehavior="automatic"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={refresh}
+            progressViewOffset={pinned.refreshOffset}
+            tintColor={tokenColor("color-foreground")}
+          />
+        }
+      >
+        <LandingSection
+          key={`${mediaType}-trending`}
+          list={slots.trending}
+          count={LANDING_COUNTS.trending}
+          variant="large"
         />
-      }
-    >
-      <MediaSwitch />
-      <LandingSection
-        key={`${mediaType}-trending`}
-        list={slots.trending}
-        count={LANDING_COUNTS.trending}
-        variant="large"
-      />
-      <LandingSection
-        key={`${mediaType}-popular`}
-        list={slots.popular}
-        count={LANDING_COUNTS.popular}
-        variant="row"
-      />
-      <LandingSection
-        key={`${mediaType}-now`}
-        list={slots.now}
-        count={LANDING_COUNTS.now}
-        variant="row"
-        label={slots.nowLabel}
-        blurb={(shown) => nowBlurb(slots.now, shown)}
-      />
-      <LandingSection
-        key={`${mediaType}-upcoming`}
-        list={slots.upcoming}
-        count={LANDING_COUNTS.upcomingRow * LANDING_COUNTS.upcomingRowsPerPage}
-        variant="row"
-      />
-      <LandingSection
-        key={`${mediaType}-top`}
-        list={slots.top}
-        count={LANDING_COUNTS.top}
-        variant="ranked"
-      />
-      <CatalogNotice type={mediaType} />
-    </ScrollView>
+        <LandingSection
+          key={`${mediaType}-popular`}
+          list={slots.popular}
+          count={LANDING_COUNTS.popular}
+          variant="row"
+        />
+        <LandingSection
+          key={`${mediaType}-now`}
+          list={slots.now}
+          count={LANDING_COUNTS.now}
+          variant="row"
+          label={slots.nowLabel}
+          blurb={(shown) => nowBlurb(slots.now, shown)}
+        />
+        <LandingSection
+          key={`${mediaType}-upcoming`}
+          list={slots.upcoming}
+          count={
+            LANDING_COUNTS.upcomingRow * LANDING_COUNTS.upcomingRowsPerPage
+          }
+          variant="row"
+        />
+        <LandingSection
+          key={`${mediaType}-top`}
+          list={slots.top}
+          count={LANDING_COUNTS.top}
+          variant="ranked"
+        />
+        <CatalogNotice type={mediaType} />
+      </ScrollView>
+      <PinnedBar barTop={pinned.barTop} onLayout={pinned.onLayout}>
+        <MediaSwitch />
+      </PinnedBar>
+    </View>
   );
 }

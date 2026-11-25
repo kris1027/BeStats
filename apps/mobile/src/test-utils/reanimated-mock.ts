@@ -25,7 +25,15 @@ export const Extrapolation = {
 
 export const useSharedValue = <T>(initial: T) => {
   const { useRef } = require("react") as typeof import("react");
-  return useRef({ value: initial }).current;
+  return useRef({
+    value: initial,
+    get() {
+      return this.value;
+    },
+    set(next: T) {
+      this.value = next;
+    },
+  }).current;
 };
 
 export const useAnimatedStyle = (updater: () => object) => updater();
@@ -49,6 +57,11 @@ export function withTiming<T>(
   callback?: (finished: boolean) => void,
 ): T {
   if (callback) setTimeout(() => callback(true), config?.duration ?? 300);
+  return toValue;
+}
+
+/** A spring lands at once here, as `withTiming` does. */
+export function withSpring<T>(toValue: T): T {
   return toValue;
 }
 

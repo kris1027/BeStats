@@ -3,7 +3,7 @@ import {
   MAX_QUERY_LENGTH,
 } from "@bestats/core/search/constants";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, screen, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { renderRouter } from "expo-router/testing-library";
 import type { PropsWithChildren } from "react";
 
@@ -12,31 +12,11 @@ import { MediaTypeProvider } from "@/lib/media-type";
 import { SearchScreen } from "@/screens/search-screen";
 
 /**
- * covers: prompts/mobile-look-search.md, decision 1 and AC-2 (the header
- * search bar runs the title search after the pause, cuts text past
- * `MAX_QUERY_LENGTH`, and Cancel shows browse results again). The native bar
- * does not exist in Jest, so the test drives the options the screen hands
- * to `navigation.setOptions`.
+ * covers: prompts/mobile-look-search.md, AC-2, and
+ * prompts/mobile-media-switch-glass.md, Search follow up (the title field
+ * pinned under the switch runs the title search after the pause, cuts text
+ * past `MAX_QUERY_LENGTH`, and Clear search shows browse results again).
  */
-type SearchBarOptions = {
-  ref: { current: unknown };
-  onChangeText: (event: { nativeEvent: { text: string } }) => void;
-  onCancelButtonPress: () => void;
-};
-
-let mockBarOptions: SearchBarOptions | null = null;
-jest.mock("expo-router", () => {
-  const actual = jest.requireActual("expo-router");
-  const navigation = {
-    setOptions: (options: { headerSearchBarOptions?: SearchBarOptions }) => {
-      if (options.headerSearchBarOptions) {
-        mockBarOptions = options.headerSearchBarOptions;
-      }
-    },
-  };
-  return { ...actual, useNavigation: () => navigation };
-});
-
 jest.mock("@/lib/session", () => ({
   useSession: () => ({ session: null }),
 }));
@@ -59,7 +39,7 @@ function wrapper({ children }: PropsWithChildren) {
   );
 }
 
-const setText = jest.fn();
+const FIELD = "Search shows by title";
 
 async function renderSearch() {
   await renderRouter(
@@ -67,16 +47,12 @@ async function renderSearch() {
     { initialUrl: "/search", wrapper },
   );
   await screen.findByText("Popular shows on TMDB");
-  const bar = mockBarOptions;
-  if (!bar) throw new Error("Search set no header search bar");
-  bar.ref.current = { setText, clearText: jest.fn() };
-  return bar;
 }
 
-/** Types into the bar, then lets the screen's pause run out. */
-async function typed(bar: SearchBarOptions, text: string) {
+/** Types into the field, then lets the screen's pause run out. */
+async function typed(text: string) {
   await act(async () => {
-    bar.onChangeText({ nativeEvent: { text } });
+    fireEvent.changeText(screen.getByLabelText(FIELD), text);
   });
   await act(async () => {
     await jest.advanceTimersByTimeAsync(FILTER_DEBOUNCE_MS);
@@ -89,7 +65,6 @@ beforeEach(() => {
   jest.useFakeTimers();
   client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   jest.clearAllMocks();
-  mockBarOptions = null;
   mockFetchSearch.mockImplementation((params: { type: string; q: string }) =>
     Promise.resolve({
       type: params.type,
@@ -114,9 +89,9 @@ beforeEach(() => {
   );
 });
 
-test("typing in the header bar runs the title search after the pause", async () => {
-  const bar = await renderSearch();
-  await typed(bar, "zelda");
+test("typing in the field runs the title search after the pause", async () => {
+  await renderSearch();
+  await typed("zelda");
   await waitFor(() =>
     expect(mockFetchSearch).toHaveBeenLastCalledWith(
       expect.objectContaining({ type: "tv", q: "zelda" }),
@@ -125,11 +100,11 @@ test("typing in the header bar runs the title search after the pause", async () 
   );
 });
 
-test("text past MAX_QUERY_LENGTH is cut in the bar and the query", async () => {
-  const bar = await renderSearch();
-  await typed(bar, "a".repeat(MAX_QUERY_LENGTH + 5));
+test("text past MAX_QUERY_LENGTH is cut in the field and the query", async () => {
+  await renderSearch();
+  await typed("a".repeat(MAX_QUERY_LENGTH + 5));
   const capped = "a".repeat(MAX_QUERY_LENGTH);
-  expect(setText).toHaveBeenCalledWith(capped);
+  expect(screen.getByLabelText(FIELD)).toHaveDisplayValue(capped);
   await waitFor(() =>
     expect(mockFetchSearch).toHaveBeenLastCalledWith(
       expect.objectContaining({ q: capped }),
@@ -138,9 +113,9 @@ test("text past MAX_QUERY_LENGTH is cut in the bar and the query", async () => {
   );
 });
 
-test("Cancel shows browse results again", async () => {
-  const bar = await renderSearch();
-  await typed(bar, "zelda");
+test("Clear search shows browse results again", async () => {
+  await renderSearch();
+  await typed("zelda");
   await waitFor(() =>
     expect(mockFetchSearch).toHaveBeenLastCalledWith(
       expect.objectContaining({ q: "zelda" }),
@@ -148,7 +123,7 @@ test("Cancel shows browse results again", async () => {
     ),
   );
   await act(async () => {
-    bar.onCancelButtonPress();
+    fireEvent.press(screen.getByRole("button", { name: "Clear search" }));
   });
   await act(async () => {
     await jest.advanceTimersByTimeAsync(FILTER_DEBOUNCE_MS);

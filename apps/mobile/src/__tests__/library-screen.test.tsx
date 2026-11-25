@@ -170,9 +170,10 @@ test("opens on Shows, Up next, with core's pages and names", async () => {
     ),
   ).toBeOnTheScreen();
   expect(screen.getByText("S2E3")).toBeOnTheScreen();
-  // The three media tabs come first, then the pills in core's order.
+  // The pills in core's order, then the three media tabs of the switch
+  // pinned over the list (prompts/mobile-media-switch-glass.md).
   const names = libraryPages("tv").map((page) => libraryPageName(page, "tv"));
-  expect(screen.getAllByRole("tab").slice(3)).toEqual(
+  expect(screen.getAllByRole("tab").slice(0, -3)).toEqual(
     names.map((name) => screen.getByRole("tab", { name })),
   );
   expect(
@@ -426,6 +427,9 @@ test("signed out, the tab offers Sign in and sends no private request", async ()
     scroll = scroll.parent;
   }
   expect(scroll?.props.contentInsetAdjustmentBehavior).toBe("automatic");
+  // The header is hidden, so the pinned switch still names the tab
+  // (prompts/mobile-media-switch-glass.md, manual step 5).
+  expect(screen.getByRole("tab", { name: "Shows" })).toBeOnTheScreen();
   expect(mockApi.calls).toHaveLength(0);
 });
 

@@ -76,11 +76,24 @@ export function largeTitleScreenOptions(title: string) {
   } as const;
 }
 
-/** Search's header; the search field itself is set by the screen, which owns its text. */
-export const SEARCH_SCREEN_OPTIONS = largeTitleScreenOptions("Search");
+/**
+ * Home's, Search's and Library's header: none, since the pinned media
+ * switch takes the top of the screen (prompts/mobile-media-switch-glass.md,
+ * decision 5). The title still names the screen for the back label of a
+ * pushed title.
+ */
+export function pinnedSwitchScreenOptions(title: string) {
+  return { title, headerShown: false } as const;
+}
 
-/** Library's header (prompts/mobile-look-library.md, decision 7). */
-export const LIBRARY_SCREEN_OPTIONS = largeTitleScreenOptions("Library");
+/** Search's screen options; its title field sits under the switch. */
+export const SEARCH_SCREEN_OPTIONS = pinnedSwitchScreenOptions("Search");
+
+/** Library's screen options. */
+export const LIBRARY_SCREEN_OPTIONS = pinnedSwitchScreenOptions("Library");
+
+/** Home's screen options. */
+export const HOME_SCREEN_OPTIONS = pinnedSwitchScreenOptions("BeStats");
 
 /** Account's header (prompts/mobile-look-account.md, decision 7). */
 export const ACCOUNT_SCREEN_OPTIONS = largeTitleScreenOptions("Account");

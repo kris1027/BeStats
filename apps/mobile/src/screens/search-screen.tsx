@@ -1,38 +1,29 @@
 import type { V1Search } from "@bestats/core/api/v1/browse";
 import { CATALOG_SOURCES } from "@bestats/core/catalog/media-type";
-import {
-  FILTER_DEBOUNCE_MS,
-  MAX_QUERY_LENGTH,
-} from "@bestats/core/search/constants";
+import { FILTER_DEBOUNCE_MS } from "@bestats/core/search/constants";
 import { mediaNoun } from "@bestats/core/search/count";
 import {
   emptySearchParams,
   type SearchParams,
 } from "@bestats/core/search/params";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { useNavigation } from "expo-router";
-import {
-  type ReactNode,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, View } from "react-native";
-import type { SearchBarCommands } from "react-native-screens";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CatalogNotice } from "@/components/catalog-notice";
 import { LoadingState, StatePanel } from "@/components/centered-state";
 import { FiltersSheet } from "@/components/filters-sheet";
 import { GlassButton } from "@/components/glass-button";
 import { MediaSwitch } from "@/components/media-switch";
+import { PinnedBar, usePinnedBar } from "@/components/pinned-bar";
 import { PosterGrid } from "@/components/poster-grid";
+import { SearchField } from "@/components/search-field";
 import { Text } from "@/components/text";
 import { ApiError } from "@/lib/api";
 import { catalogKeys, fetchSearch } from "@/lib/catalog";
 import { useMediaType } from "@/lib/media-type";
 import { joinPageResults } from "@/lib/page-results";
 import { searchView } from "@/lib/search-results";
-import { tokenColor } from "@/theme/token-vars";
 
 /** True for the 404 a page past the last one answers: the results' end. */
 function isPastEnd(error: unknown): boolean {
@@ -42,9 +33,10 @@ function isPastEnd(error: unknown): boolean {
 /**
  * Search (prompts/mobile-app-shell-catalog.md, decision 7): the web's
  * `/search` with the same params, sent through core's `searchHref`, and the
- * same count copy and states (AGENTS.md section 10). The title field is the
- * platform's own search bar under the large title (prompts/mobile-look-search.md,
- * decision 1), so it lives in the header options, not the grid. Titles load as you
+ * same count copy and states (AGENTS.md section 10). The media switch and
+ * the title field are pinned at the top, the switch first, so the field is
+ * the app's own `SearchField`, not the header's search bar, which can only
+ * sit above the screen (prompts/mobile-media-switch-glass.md). Titles load as you
  * scroll; a filtered title search loads its next TMDB range on Load more,
  * since each range may keep none. The query and filters live in this
  * screen, which the tab's stack keeps mounted, so they survive opening a
@@ -57,9 +49,11 @@ export function SearchScreen() {
     emptySearchParams(mediaType),
   );
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const searchBar = useRef<SearchBarCommands>(null);
-  const navigation = useNavigation();
   const currentYear = new Date().getUTCFullYear();
+  // The switch floats under the status bar with the title field under it,
+  // Search's header hidden (prompts/mobile-media-switch-glass.md, Search
+  // follow up).
+  const pinned = usePinnedBar(useSafeAreaInsets().top);
 
   // A new catalog keeps the title and drops filters, whose genre ids belong
   // to the old catalog. Adjusted during render, not in an effect: an effect
@@ -78,38 +72,8 @@ export function SearchScreen() {
   }, [text]);
 
   const placeholder = `Search ${mediaNoun(params.type)} by title`;
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerSearchBarOptions: {
-        ref: searchBar,
-        placeholder,
-        placement: "stacked",
-        hideWhenScrolling: false,
-        hideNavigationBar: false,
-        obscureBackground: false,
-        autoCapitalize: "none",
-        textColor: tokenColor("color-foreground"),
-        hintTextColor: tokenColor("color-muted-foreground"),
-        tintColor: tokenColor("color-foreground"),
-        onChangeText: (event: { nativeEvent: { text: string } }) => {
-          const value = event.nativeEvent.text;
-          // The native bar has no maxLength, so the cap the web's field
-          // keeps is applied here (AGENTS.md section 11, validate input).
-          if (value.length > MAX_QUERY_LENGTH) {
-            const capped = value.slice(0, MAX_QUERY_LENGTH);
-            searchBar.current?.setText(capped);
-            setText(capped);
-          } else {
-            setText(value);
-          }
-        },
-        onCancelButtonPress: () => setText(""),
-      },
-    });
-  }, [navigation, placeholder]);
 
   function clearAll() {
-    searchBar.current?.clearText();
     setText("");
     setParams(emptySearchParams(params.type));
   }
@@ -129,7 +93,6 @@ export function SearchScreen() {
 
   const header = (
     <View>
-      <MediaSwitch />
       <View className="gap-3 px-4 pb-3">
         <View className="flex-row items-center gap-3">
           <GlassButton
@@ -229,6 +192,7 @@ export function SearchScreen() {
   return (
     <View className="flex-1">
       <PosterGrid
+        paddingTop={pinned.paddingTop}
         accessibilityLabel="Search results"
         items={view?.kind === "results" ? items : []}
         type={params.type}
@@ -264,6 +228,16 @@ export function SearchScreen() {
           </View>
         }
       />
+      <PinnedBar barTop={pinned.barTop} onLayout={pinned.onLayout}>
+        <View className="gap-3">
+          <MediaSwitch />
+          <SearchField
+            value={text}
+            placeholder={placeholder}
+            onChangeText={setText}
+          />
+        </View>
+      </PinnedBar>
       {sheet}
     </View>
   );

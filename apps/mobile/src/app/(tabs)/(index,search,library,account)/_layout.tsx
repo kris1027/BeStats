@@ -5,6 +5,7 @@ import { View } from "react-native";
 import { PageBackground } from "@/components/page-background";
 import {
   ACCOUNT_SCREEN_OPTIONS,
+  HOME_SCREEN_OPTIONS,
   LIBRARY_SCREEN_OPTIONS,
   SEARCH_SCREEN_OPTIONS,
   STACK_SCREEN_OPTIONS,
@@ -12,8 +13,10 @@ import {
 } from "@/theme/stack-options";
 
 /**
- * Search, Library and Account, the large title screens, have no background
- * layer of their own (`tabScreenLayout`).
+ * Search, Library and Account have no background layer of their own
+ * (`tabScreenLayout`): Account for its large title, Search and Library
+ * because they once had one and the shared layer behind them looks the same
+ * (prompts/mobile-media-switch-glass.md, decision 5).
  */
 const TAB_SCREEN_LAYOUT = tabScreenLayout(["search", "library", "account"]);
 
@@ -34,9 +37,9 @@ export const unstable_settings = {
  * The stack inside every tab (prompts/mobile-app-shell-catalog.md, decision
  * 3). Each tab root sets its own title; title screens set theirs once their
  * data loads. The stack draws the still background once behind its screens
- * for Search, Library and Account, whose screens have none of their own so their
- * large titles can collapse (`tabScreenLayout`); every other screen keeps
- * its own layer.
+ * for Search, Library and Account, whose screens have none of their own
+ * (`tabScreenLayout`), so Account's large title can collapse; every other
+ * screen keeps its own layer.
  */
 export default function TabStack() {
   const theme = useTheme();
@@ -58,7 +61,7 @@ export default function TabStack() {
           }}
           screenLayout={TAB_SCREEN_LAYOUT}
         >
-          <Stack.Screen name="index" options={{ title: "BeStats" }} />
+          <Stack.Screen name="index" options={HOME_SCREEN_OPTIONS} />
           <Stack.Screen name="search" options={SEARCH_SCREEN_OPTIONS} />
           <Stack.Screen name="library" options={LIBRARY_SCREEN_OPTIONS} />
           <Stack.Screen name="account" options={ACCOUNT_SCREEN_OPTIONS} />

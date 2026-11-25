@@ -15,6 +15,8 @@ type Props = {
   onEndReached?: () => void;
   dateLabel?: (item: V1CatalogItem) => string | null;
   accessibilityLabel: string;
+  /** Room above the first row for a pinned bar (`usePinnedBar`). */
+  paddingTop?: number;
 };
 
 /**
@@ -32,6 +34,7 @@ export function PosterGrid({
   onEndReached,
   dateLabel,
   accessibilityLabel,
+  paddingTop = 0,
 }: Props) {
   const { width } = useWindowDimensions();
   const cardWidth = gridCardWidth(width);
@@ -45,11 +48,12 @@ export function PosterGrid({
       accessibilityLabel={accessibilityLabel}
       className="flex-1"
       contentInsetAdjustmentBehavior="automatic"
+      keyboardDismissMode="on-drag"
       data={items}
       numColumns={GRID.columns}
       keyExtractor={(item) => String(item.id)}
       columnWrapperStyle={{ gap: GRID.gap, paddingHorizontal: GRID.gutter }}
-      contentContainerStyle={{ gap: 20, paddingBottom: 24 }}
+      contentContainerStyle={{ gap: 20, paddingBottom: 24, paddingTop }}
       ListHeaderComponent={header}
       ListFooterComponent={footer}
       onEndReached={onEndReached}
