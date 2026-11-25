@@ -1,5 +1,5 @@
 import type { QueryClient } from "@tanstack/react-query";
-import { renderHook, waitFor } from "@testing-library/react-native";
+import { render, renderHook, waitFor } from "@testing-library/react-native";
 
 import {
   createApiMock,
@@ -19,8 +19,9 @@ import { trackingKeys } from "./tracking";
  * covers: prompts/mobile-look-card-actions.md, R6 (one `/me/titles` read per
  * loaded page of cards, never one per card; AC-7) and R7 (signed out, no
  * read and no card known); prompts/mobile-look-review-fixes.md, decisions 3,
- * 4 and 8 (a title the answer leaves out is not known and reads nothing
- * alone, the same ids keep one array, a newer state is never overwritten)
+ * 4 and 8 (a title the answer leaves out is not known, and a card for it
+ * reads nothing alone, the same ids keep one array, a newer state is never
+ * overwritten)
  */
 const mockApi = createApiMock();
 jest.mock("@/lib/api", () => ({
@@ -116,6 +117,24 @@ test("signed out, nothing is read and no card is known", async () => {
   expect(titleReads()).toEqual([]);
 });
 
+/** A card as `PosterCard` builds it: its own state read only once known. */
+function Card({ id }: { id: number }) {
+  useCardState("movie", id);
+  return null;
+}
+
+/** A grid as the screens build it: one batch read, then the known cards. */
+function Grid({ ids }: { ids: number[] }) {
+  const known = useCardStates("movie", ids);
+  return (
+    <>
+      {ids.filter(known).map((id) => (
+        <Card key={id} id={id} />
+      ))}
+    </>
+  );
+}
+
 test("a title the answer leaves out stays unknown and never reads alone", async () => {
   const ids = [1, 2];
   mockApi.on("GET", pathFor(ids), () => ({ "movie:1": EMPTY }));
@@ -128,7 +147,21 @@ test("a title the answer leaves out stays unknown and never reads alone", async 
 
   expect(result.current(2)).toBe(false);
   expect(queries.getQueryData(trackingKeys.title("movie", 2))).toBeUndefined();
-  expect(titleReads()).toHaveLength(1);
+});
+
+test("a card the answer leaves out never sends a read of its own", async () => {
+  const ids = [1, 2];
+  mockApi.on("GET", pathFor(ids), () => ({ "movie:1": EMPTY }));
+  const queries = client();
+
+  await render(<Grid ids={ids} />, { wrapper: titleWrapper(queries) });
+  await waitFor(() =>
+    expect(queries.getQueryData(trackingKeys.title("movie", 1))).toEqual(EMPTY),
+  );
+  // Gives a card that wrongly counted as known the time to send its read.
+  await new Promise((resolve) => setImmediate(resolve));
+
+  expect(titleReads().map((call) => call.path)).toEqual([pathFor(ids)]);
 });
 
 test("a state written while the read was out is not overwritten by it", async () => {
