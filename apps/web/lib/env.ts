@@ -152,3 +152,29 @@ export function getAuthEmailDelivery(): AuthEmailDelivery {
     "Invalid public environment configuration. NEXT_PUBLIC_AUTH_EMAIL_DELIVERY must be on or off.",
   );
 }
+
+/**
+ * Reads `WEBSITE_OFF`, set to `on` only on the Netlify host, where the proxy
+ * must answer `403` to every page itself: Netlify runs the proxy as an edge
+ * function before the `netlify.toml` rules, so its own redirects would
+ * otherwise win (app/AGENTS.md, Routing; prompts/netlify-private-pages-403.md).
+ * Vercel's Firewall does this job there, so Vercel, local runs and CI leave
+ * it unset.
+ *
+ * Server only, read at request time rather than inlined, so a change takes
+ * effect without a rebuild where the host passes it to the edge at runtime.
+ *
+ * @returns Whether the website is off on this host.
+ * @throws If the variable holds anything but empty, `on` or `off`. The
+ * message names the variable and never its value.
+ */
+export function websiteOff(): boolean {
+  const value = process.env.WEBSITE_OFF;
+
+  if (value === undefined || value === "" || value === "off") return false;
+  if (value === "on") return true;
+
+  throw new Error(
+    "Invalid environment configuration. WEBSITE_OFF must be on or off.",
+  );
+}

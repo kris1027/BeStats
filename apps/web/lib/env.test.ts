@@ -4,6 +4,7 @@ import {
   getAuthEmailDelivery,
   getPublicEnv,
   publicEnvProblems,
+  websiteOff,
 } from "@/lib/env";
 
 /**
@@ -92,5 +93,25 @@ describe("getAuthEmailDelivery", () => {
       "NEXT_PUBLIC_AUTH_EMAIL_DELIVERY",
     );
     expect(() => getAuthEmailDelivery()).not.toThrow("yes-please");
+  });
+});
+
+/** covers: prompts/netlify-private-pages-403.md, decision 5 */
+describe("websiteOff", () => {
+  it.each([undefined, "", "off"])("keeps the website on for %j", (value) => {
+    vi.stubEnv("WEBSITE_OFF", value);
+    expect(websiteOff()).toBe(false);
+  });
+
+  it("turns the website off for on", () => {
+    vi.stubEnv("WEBSITE_OFF", "on");
+    expect(websiteOff()).toBe(true);
+  });
+
+  it("throws on anything else, naming the variable and never the value", () => {
+    vi.stubEnv("WEBSITE_OFF", "yes-please");
+
+    expect(() => websiteOff()).toThrow("WEBSITE_OFF");
+    expect(() => websiteOff()).not.toThrow("yes-please");
   });
 });
