@@ -62,6 +62,32 @@ test("a title with a backdrop draws the artwork, hidden from screen readers", as
   ).toBeOnTheScreen();
 });
 
+/**
+ * covers: prompts/mobile-look-title-pages.md, AC-1: over a backdrop the bar
+ * itself is clear. The stack's solid `headerStyle` colour (STACK_SCREEN_OPTIONS)
+ * still paints under a transparent native header, which hid the artwork's
+ * top behind an opaque band; only `HeaderFade` may draw the solid colour.
+ */
+test("a title with a backdrop clears the stack's solid bar colour", async () => {
+  const screenSpy = jest.spyOn(Stack, "Screen");
+  try {
+    await open("https://image.tmdb.org/t/p/original/backdrop.jpg");
+    expect(await screen.findByText("Hero")).toBeOnTheScreen();
+    const options = screenSpy.mock.calls
+      .map(([props]) => props.options)
+      .find(
+        (o): o is Record<string, unknown> =>
+          typeof o === "object" && o !== null && "headerTransparent" in o,
+      );
+    expect(options).toMatchObject({
+      headerTransparent: true,
+      headerStyle: { backgroundColor: "transparent" },
+    });
+  } finally {
+    screenSpy.mockRestore();
+  }
+});
+
 test("a title with no backdrop draws no artwork", async () => {
   await open(null);
   expect(await screen.findByText("Hero")).toBeOnTheScreen();

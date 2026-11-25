@@ -138,6 +138,10 @@ export function TitleScroll({ title, backdropUrl, children }: Props) {
         options={{
           title,
           headerTransparent: true,
+          // The stack's solid bar colour would still paint under a
+          // transparent header and hide the artwork, so the bar is clear
+          // here and `HeaderFade` alone draws the solid colour on scroll.
+          headerStyle: { backgroundColor: "transparent" },
           headerBackground: () => (
             <HeaderFade
               scrollY={scrollY}
