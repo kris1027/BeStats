@@ -16,7 +16,10 @@ import { Text } from "@/components/text";
 import { artworkHeight, sizedImageUri } from "@/lib/images";
 import { useReduceMotion } from "@/lib/reduce-motion";
 import { useReduceTransparency } from "@/lib/reduce-transparency";
-import { HEADER_BACKGROUND } from "@/theme/stack-options";
+import {
+  BACKDROP_HEADER_OPTIONS,
+  HEADER_BACKGROUND,
+} from "@/theme/stack-options";
 import { fractionToken, tokenColorAlpha } from "@/theme/token-vars";
 
 /**
@@ -137,7 +140,8 @@ export function TitleScroll({ title, backdropUrl, children }: Props) {
       <HeaderOptions
         options={{
           title,
-          headerTransparent: true,
+          // `HeaderFade` alone draws the solid colour, on scroll.
+          ...BACKDROP_HEADER_OPTIONS,
           headerBackground: () => (
             <HeaderFade
               scrollY={scrollY}

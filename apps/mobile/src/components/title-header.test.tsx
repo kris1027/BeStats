@@ -4,6 +4,7 @@ import { renderRouter } from "expo-router/testing-library";
 import { Dimensions } from "react-native";
 
 import { Text } from "@/components/text";
+import { BACKDROP_HEADER_OPTIONS } from "@/theme/stack-options";
 
 import {
   backdropHeight,
@@ -60,6 +61,33 @@ test("a title with a backdrop draws the artwork, hidden from screen readers", as
   expect(
     screen.getByTestId("title-backdrop", { includeHiddenElements: true }),
   ).toBeOnTheScreen();
+});
+
+/**
+ * covers: prompts/mobile-look-title-pages.md, AC-1, and
+ * prompts/mobile-title-header-clear-bar.md: over a backdrop the bar itself
+ * is clear. The stack's solid `headerStyle` colour (STACK_SCREEN_OPTIONS)
+ * still paints under a transparent native header, which hid the artwork's
+ * top behind an opaque band; only `HeaderFade` may draw the solid colour.
+ * The options reach `Stack.Screen` unchanged through `HeaderOptions`, so the
+ * spy reads exactly what the native header gets.
+ */
+test("a title with a backdrop clears the stack's solid bar colour", async () => {
+  const screenSpy = jest.spyOn(Stack, "Screen");
+  try {
+    await open("https://image.tmdb.org/t/p/original/backdrop.jpg");
+    expect(await screen.findByText("Hero")).toBeOnTheScreen();
+    const clearHeader = screenSpy.mock.calls.some(([{ options }]) =>
+      expect.objectContaining(BACKDROP_HEADER_OPTIONS).asymmetricMatch(options),
+    );
+    expect(clearHeader).toBe(true);
+    expect(BACKDROP_HEADER_OPTIONS).toEqual({
+      headerTransparent: true,
+      headerStyle: { backgroundColor: "transparent" },
+    });
+  } finally {
+    screenSpy.mockRestore();
+  }
 });
 
 test("a title with no backdrop draws no artwork", async () => {

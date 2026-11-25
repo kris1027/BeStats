@@ -34,6 +34,19 @@ export const STACK_SCREEN_OPTIONS = {
 } as const;
 
 /**
+ * A clear header over a title's backdrop (prompts/mobile-look-title-pages.md,
+ * decision 4; prompts/mobile-title-header-clear-bar.md). Kept beside
+ * `STACK_SCREEN_OPTIONS` because it undoes that bar colour: a native header
+ * still paints its `headerStyle` colour when transparent, which would cover
+ * the artwork's top with an opaque band. The screen's own `headerBackground`
+ * then draws the solid colour as the artwork scrolls under it.
+ */
+export const BACKDROP_HEADER_OPTIONS = {
+  headerTransparent: true,
+  headerStyle: { backgroundColor: "transparent" },
+} as const;
+
+/**
  * A tab root's large title header (apps/mobile/AGENTS.md, Styling;
  * prompts/mobile-look-search.md, decisions 1 and 7; prompts/mobile-look-library.md,
  * decision 7): an iOS large title in Inter over the same seamless bar
