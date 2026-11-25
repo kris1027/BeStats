@@ -32,21 +32,29 @@ const mockGetSession = jest.fn();
 const mockUpdateUser = jest.fn();
 const mockAppSignIn = jest.fn();
 const mockAppSignOut = jest.fn();
+let mockConfigMissing: "supabase" | "env" | null = null;
 jest.mock("./supabase", () => ({
-  getSupabase: () => ({
-    auth: {
-      getSession: () => mockGetSession(),
-      updateUser: (input: unknown) => mockUpdateUser(input),
-      signInWithPassword: (input: unknown) => mockAppSignIn(input),
-      signOut: (options: unknown) => mockAppSignOut(options),
-    },
-  }),
+  getSupabase: () => {
+    if (mockConfigMissing === "supabase") throw new Error("no config");
+    return mockAppClient();
+  },
 }));
+const mockAppClient = () => ({
+  auth: {
+    getSession: () => mockGetSession(),
+    updateUser: (input: unknown) => mockUpdateUser(input),
+    signInWithPassword: (input: unknown) => mockAppSignIn(input),
+    signOut: (options: unknown) => mockAppSignOut(options),
+  },
+});
 jest.mock("./env", () => ({
-  getPublicEnv: () => ({
-    EXPO_PUBLIC_SUPABASE_URL: "http://supabase.test",
-    EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "publishable",
-  }),
+  getPublicEnv: () => {
+    if (mockConfigMissing === "env") throw new Error("no config");
+    return {
+      EXPO_PUBLIC_SUPABASE_URL: "http://supabase.test",
+      EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "publishable",
+    };
+  },
 }));
 
 const { changePassword } = require("./password") as typeof import("./password");
@@ -58,6 +66,7 @@ const VALID = {
 };
 
 beforeEach(() => {
+  mockConfigMissing = null;
   jest.clearAllMocks();
   mockGetSession.mockResolvedValue({
     data: { session: { user: { email: "a@example.test" } } },
@@ -155,3 +164,14 @@ test("reads a thrown network failure as unexpected, never as success", async () 
   const result = await changePassword(VALID);
   expect(result.message).toBe(AUTH_MESSAGES[AUTH_OUTCOME.unexpected]);
 });
+
+test.each(["supabase", "env"] as const)(
+  "a missing %s config answers the unexpected error, never a throw",
+  async (missing) => {
+    mockConfigMissing = missing;
+    const state = await changePassword(VALID);
+    expect(state.status).toBe("error");
+    expect(state.message).toBe(AUTH_MESSAGES[AUTH_OUTCOME.unexpected]);
+    expect(mockUpdateUser).not.toHaveBeenCalled();
+  },
+);

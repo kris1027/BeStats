@@ -49,9 +49,14 @@ export async function changePassword(input: {
   const parsed = changePasswordSchema.safeParse(input);
   if (!parsed.success) return fromZodError(parsed.error);
 
-  const app = getSupabase();
+  // Both clients are made inside a try: `getSupabase` and `getPublicEnv` throw
+  // on a missing config by design, and that must reach the form as the
+  // unexpected error, never a dead button (prompts/mobile-look-review-fixes.md,
+  // decision 2).
+  let app: ReturnType<typeof getSupabase>;
   let email: string | undefined;
   try {
+    app = getSupabase();
     const { data } = await app.auth.getSession();
     email = data.session?.user.email;
   } catch {
@@ -59,19 +64,24 @@ export async function changePassword(input: {
   }
   if (!email) return failure(AUTH_OUTCOME.sessionExpired);
 
-  const env = getPublicEnv();
-  const checker = createClient<Database>(
-    env.EXPO_PUBLIC_SUPABASE_URL,
-    env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
-    {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-        detectSessionInUrl: false,
-        storageKey: CHECK_STORAGE_KEY,
+  let checker: ReturnType<typeof createClient<Database>>;
+  try {
+    const env = getPublicEnv();
+    checker = createClient<Database>(
+      env.EXPO_PUBLIC_SUPABASE_URL,
+      env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+      {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false,
+          storageKey: CHECK_STORAGE_KEY,
+        },
       },
-    },
-  );
+    );
+  } catch {
+    return failure(AUTH_OUTCOME.unexpected);
+  }
 
   try {
     const { error } = await checker.auth.signInWithPassword({
