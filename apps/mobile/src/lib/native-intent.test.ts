@@ -74,9 +74,13 @@ describe("app.json link config", () => {
  * shell started with.
  */
 const startingVariant = process.env.APP_VARIANT;
+const startingEasCommit = process.env.EAS_BUILD_GIT_COMMIT_HASH;
 afterEach(() => {
   if (startingVariant === undefined) delete process.env.APP_VARIANT;
   else process.env.APP_VARIANT = startingVariant;
+  if (startingEasCommit === undefined)
+    delete process.env.EAS_BUILD_GIT_COMMIT_HASH;
+  else process.env.EAS_BUILD_GIT_COMMIT_HASH = startingEasCommit;
 });
 
 /** The config `app.config.ts` returns for a variant, or for none. */
@@ -97,6 +101,24 @@ describe("app.config.ts variants", () => {
     expect(configForVariant().ios?.associatedDomains).toEqual([
       `applinks:${APP_LINK_HOST}`,
     ]);
+  });
+
+  it("carries the build's commit SHA in both variants", () => {
+    // prompts/mobile-cache-buster-build-id.md: the query cache buster reads it
+    delete process.env.EAS_BUILD_GIT_COMMIT_HASH;
+    expect(configForVariant().extra?.buildId).toMatch(/^[0-9a-f]{4,40}$/);
+    expect(configForVariant("personal").extra?.buildId).toBe(
+      configForVariant().extra?.buildId,
+    );
+    expect(configForVariant().extra?.eas).toEqual(appJson.expo.extra.eas);
+  });
+
+  it("takes the commit EAS built, so a cloud build needs no git", () => {
+    // prompts/mobile-cache-buster-guards.md, AC-3
+    process.env.EAS_BUILD_GIT_COMMIT_HASH =
+      "88f28ab5ea39108ade978de2d0d1adeedf0ece76";
+    expect(configForVariant().extra?.buildId).toBe("88f28ab");
+    expect(configForVariant("personal").extra?.buildId).toBe("88f28ab");
   });
 
   it("has no associated domains in the personal variant", () => {

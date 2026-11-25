@@ -9,6 +9,7 @@ import type {
   Persister,
   PersistQueryClientProviderProps,
 } from "@tanstack/react-query-persist-client";
+import Constants from "expo-constants";
 
 import { ApiError, appVersion } from "./api";
 import { CATALOG_QUERY_ROOT } from "./catalog";
@@ -84,8 +85,29 @@ export function shouldPersistQuery(query: Query): boolean {
 }
 
 /**
+ * The persisted cache's buster: the app version, plus the build's commit SHA
+ * when `app.config.ts` found one. The version alone let a rebuild of the same
+ * version restore answers an older build had saved without the fields the
+ * new screens read, and the show screen crashed on them; restored data never
+ * passes `apiRequest`'s schema parse (prompts/mobile-cache-buster-build-id.md).
+ * Without a build ID it stays the version, as before.
+ */
+export function cacheBuster(
+  version: string,
+  buildId: string | undefined,
+): string {
+  return buildId === undefined ? version : `${version}:${buildId}`;
+}
+
+function configuredBuildId(): string | undefined {
+  const buildId: unknown = Constants.expoConfig?.extra?.buildId;
+  return typeof buildId === "string" && buildId !== "" ? buildId : undefined;
+}
+
+/**
  * The persistence rules from child 0036: 24 hours, dropped by an app update
- * (`buster` is the app version, so an old answer shape is never read), and
+ * or a build from a new commit (`cacheBuster`, so an old answer shape is
+ * never read), and
  * only successful queries, never a title's extras (`shouldPersistQuery`). Mutations are never written: their input can be
  * private, and an offline write fails rather than waiting to be replayed.
  */
@@ -93,7 +115,7 @@ export const persistOptions: PersistQueryClientProviderProps["persistOptions"] =
   {
     persister: queryPersister,
     maxAge: PERSIST_MAX_AGE_MS,
-    buster: appVersion(),
+    buster: cacheBuster(appVersion(), configuredBuildId()),
     dehydrateOptions: {
       shouldDehydrateMutation: () => false,
       shouldDehydrateQuery: shouldPersistQuery,

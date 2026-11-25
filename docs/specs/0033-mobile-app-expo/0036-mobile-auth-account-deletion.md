@@ -42,7 +42,7 @@ Email and password only, using the rules in `lib/auth/schemas.ts` (core) and the
 
 ### Offline cache and sign out
 
-- TanStack Query persists catalog queries and `/api/v1/me/*` reads to AsyncStorage, `maxAge` 24 hours, `gcTime` at least as long, `buster` set to the app version so an update drops old shapes. Tokens never go in this cache.
+- TanStack Query persists catalog queries and `/api/v1/me/*` reads to AsyncStorage, `maxAge` 24 hours, `gcTime` at least as long. The `buster` is the app version plus the build's short commit SHA (`EAS_BUILD_GIT_COMMIT_HASH` on EAS, else git, else the version alone), so an update or a rebuild from a new commit drops old shapes. Restored data skips the schema parse, and the version alone let a rebuild of the same version crash on an older build's saved show (prompts/mobile-cache-buster-build-id.md, prompts/mobile-cache-buster-guards.md). Tokens never go in this cache.
 - The persisted `me` data is private data at rest. Sign out, an expired session and account deletion all wipe every `"me"` query and every mutation (`clearPrivateQueries()`) and remove the persisted store, so the next person on a shared phone never sees the previous library. Public catalog queries stay: `queryClient.clear()` cancelled the reload of a query an open screen observed and left it spinning (prompts/mobile-sign-out-spinner.md).
 - `@react-native-community/netinfo` drives the offline banner. Offline, the last loaded library and title pages show with the banner; writes fail visibly with Retry (no queued writes).
 - Optimistic writes: a mark updates the screen at once and reverts with the error message when the server refuses it.
