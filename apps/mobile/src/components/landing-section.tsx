@@ -64,7 +64,9 @@ export function LandingSection({ list, count, variant, label, blurb }: Props) {
         ) : null}
         {/* The title and See all share a baseline, as the web's row does;
             bottom aligned, the 44pt link box lifted its text above the
-            title's. At the accessibility sizes this row stacks instead. */}
+            title's. The blurb stays under the title in its own column, and
+            Yoga takes a column's baseline from its first child, the title.
+            At the accessibility sizes this row stacks instead. */}
         <View
           className={
             stacked
@@ -72,12 +74,17 @@ export function LandingSection({ list, count, variant, label, blurb }: Props) {
               : "flex-row items-baseline justify-between gap-3"
           }
         >
-          <Text
-            accessibilityRole="header"
-            className={`text-xl font-bold text-foreground ${stacked ? "" : "flex-1"}`}
-          >
-            {list.rowTitle}
-          </Text>
+          <View className={stacked ? "gap-0.5" : "flex-1 gap-0.5"}>
+            <Text
+              accessibilityRole="header"
+              className="text-xl font-bold text-foreground"
+            >
+              {list.rowTitle}
+            </Text>
+            {line ? (
+              <Text className="text-sm text-text-secondary">{line}</Text>
+            ) : null}
+          </View>
           <Link href={listPath(list) as Href} asChild>
             <Pressable
               accessibilityRole="link"
@@ -89,9 +96,6 @@ export function LandingSection({ list, count, variant, label, blurb }: Props) {
             </Pressable>
           </Link>
         </View>
-        {line ? (
-          <Text className="text-sm text-text-secondary">{line}</Text>
-        ) : null}
       </View>
 
       {query.isPending ? (
