@@ -2,7 +2,7 @@
 
 ## Goal
 
-Make the same `apps/web` deployable to Netlify as well as Vercel, so the phone app keeps working when one host runs out of its free quota. On 2026-11-25 Vercel production answered `402` on every path, `/api/v1` included, so the iPhone app has no API. Netlify becomes the primary host. Vercel keeps its configuration unchanged and is the fallback. Both serve the same "website off, API on" shape (prompts/web-off-keep-api.md).
+Make the same `apps/web` deployable to Netlify as well as Vercel, so the phone app keeps working when one host runs out of its free quota. On 2026-11-25 Vercel production answered `402` on every path, `/api/v1` included, so the iPhone app has no API. Netlify becomes the primary host. Vercel keeps its configuration unchanged and is the fallback. The code and docs call Netlify "the backup host" for its role beside Vercel, which stays the configured production origin; it is primary while Vercel's quota is spent, so nothing legal depends on which host is serving. Both serve the same "website off, API on" shape (prompts/web-off-keep-api.md).
 
 ## Inspected
 
@@ -61,7 +61,7 @@ Branch `feat/netlify-mirror`, small conventional commits that each build:
    - `packages/core/src/catalog/region.ts`: JSDoc names both hosts. `XX` stays unknown.
 2. `feat(web): netlify.toml for the backup host`
    - `apps/web/netlify.toml`:
-     - `[build]`: `command = "pnpm --filter @bestats/web build"`, `publish = ".next"`.
+     - `[build]`: `command = "pnpm --filter @bestats/web build"`. No `publish` key: Netlify's Next.js adapter sets it (amended after review, 2026-11-25).
      - `[build.environment]`: `NODE_VERSION = "22"`.
      - `[build.processing]` left alone.
      - The rate limit rule (decision 12), then the deny rules (decision 11).
@@ -73,7 +73,8 @@ Branch `feat/netlify-mirror`, small conventional commits that each build:
    - `deploy-config.test.ts` pins the new list.
 4. `docs(legal): name Netlify as a host`
    - `packages/core/src/legal/operator.ts`:
-     - `PROCESSORS` gains Netlify: "Hosts the website and the app's API when it is served from Netlify, and keeps request logs."
+     - `PROCESSORS` gains Netlify: "Hosts the website and the app's API when it serves the app in place of Vercel, and keeps request logs." Its name and function region live in `BACKUP_HOST`, which `/privacy` reads too.
+     - `/terms` names no host or processor, so it needs no change.
      - The transfer line: Netlify is a United States company, and when it serves the app, the server functions run in Ohio, United States.
      - The Vercel purpose says "website and the app's API".
      - Bump `LEGAL_LAST_UPDATED`, and update the `SUPABASE_REGION` JSDoc.

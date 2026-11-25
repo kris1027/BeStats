@@ -258,7 +258,7 @@ Netlify serves the same build as Vercel, so the phone app keeps working when one
 
 1. In Netlify, Add new project, Import from Git, pick `kris1027/BeStats`.
 2. Base directory: leave empty (the repo root). Package directory: `apps/web`. Netlify reads `apps/web/netlify.toml` and uses its build command. Leave the publish directory to the Next.js adapter.
-3. Site name: `bestats-app`, giving `https://bestats-app.netlify.app`. If it is taken, pick another, then update `BACKUP_ORIGIN` in `deploy-config.test.ts`, the redirect URLs in `supabase/config.toml`, and this section.
+3. Site name: `bestats-app`, giving `https://bestats-app.netlify.app`. If it is taken, pick another, then update the redirect URLs in `supabase/config.toml` (`deploy-config.test.ts` reads the origin from there) and this section.
 4. Project configuration, Build and deploy:
    - Continuous deployment, Build settings: set **Builds** to **Stopped**, so a merge to `main` costs no credits.
    - Deploy Previews: **Off**.
@@ -276,7 +276,7 @@ Netlify serves the same build as Vercel, so the phone app keeps working when one
    | `IGDB_CLIENT_SECRET` | your Twitch app's client secret (mark it secret) |
 
    The rules from section 4 apply: no service role key, secret key or database password, and no `NEXT_PUBLIC_` prefix on the TMDB or IGDB values. Don't set `VERCEL_ENV`, so the build is never indexable.
-6. Push the redirect URLs: run `pnpm exec supabase config push` (section 3). The diff should show only the two `bestats-app.netlify.app` entries in `additional_redirect_urls`.
+6. Push the redirect URLs: run `pnpm exec supabase config push` (section 3). The diff should show only the two `bestats-app.netlify.app` entries in `additional_redirect_urls`. While the website is off, `/auth/*` answers `403` on Netlify as it does on Vercel, so the callback entry waits for the day sign in on the web comes back; today's app flows never redirect there.
 7. Optional: complete the appendix of Netlify's DPA (`https://www.netlify.com/pdf/netlify-dpa.pdf`) and email it to Netlify. Once that's done, Netlify's transfer line in `PROCESSORS` may name the EU Standard Contractual Clauses, the same way Vercel's does. Bump `LEGAL_LAST_UPDATED` with that change.
 
 ### Deploy (by hand)
