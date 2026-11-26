@@ -43,8 +43,15 @@ export type CardBadge = {
  * `nextEpisode` marks the Up next pill, which leads with the TV icon as the
  * web's `NextEpisodePill` does; a flag rather than the icon itself, so this
  * file stays free of views (prompts/mobile-look-verify-extras.md, decision 4).
+ * `isDate` marks a date or Date TBA, which must always show whole
+ * (prompts/mobile-date-pill-visible.md, decision 3).
  */
-export type CardPill = { text: string; label: string; nextEpisode?: boolean };
+export type CardPill = {
+  text: string;
+  label: string;
+  nextEpisode?: boolean;
+  isDate: boolean;
+};
 
 /**
  * Everything a library card shows, worked out from the server's entry
@@ -65,6 +72,12 @@ export type LibraryCardView =
        * decision 3).
        */
       next?: EpisodePlace;
+      /**
+       * Upcoming shows only: the episode under the name, since its pill has
+       * room for the date alone (prompts/mobile-date-pill-visible.md,
+       * decisions 1 and 2). The pill's label already speaks it.
+       */
+      episodeLine?: string;
     }
   /** The catalog no longer has the title: no page to open. */
   | { kind: "missing"; name: string }
@@ -101,7 +114,6 @@ function personalScore(value: number | null): CardBadge | null {
   };
 }
 
-/** Core's pill words as the card draws them: Date TBA prints its own text. */
 /**
  * A core pill as a card draws it: Date TBA prints short and is heard in full.
  * The library cards and the catalog cards' own marks
@@ -110,24 +122,26 @@ function personalScore(value: number | null): CardBadge | null {
  * days).
  */
 export function cardPill(pill: CardPillText): CardPill {
-  return pill.kind === "tba"
-    ? { text: UPCOMING_MESSAGES.dateTba, label: pill.label }
-    : { text: pill.text, label: pill.label };
+  const text = pill.kind === "tba" ? UPCOMING_MESSAGES.dateTba : pill.text;
+  return { text, label: pill.label, isDate: true };
 }
 
 /**
  * A library card as the web's cards draw it on each page. The badge per page
- * is core's `libraryCardBadge`, the pills core's `releasePillText` and
- * `upcomingEpisodePill`, and a game's month line core's `gameDateLine`, the
- * same rules the web reads (prompts/mobile-library-review-fixes.md), so the
- * app adds no data the server did not send and no rule of its own (AGENTS.md
- * section 14; apps/mobile/AGENTS.md, BeStats rules):
+ * is core's `libraryCardBadge`, the date pills' words come from core's
+ * `releasePillText` and `upcomingEpisodePill`, and a game's month line from
+ * core's `gameDateLine`, the same rules the web reads
+ * (prompts/mobile-library-review-fixes.md), so the app adds no data the server
+ * did not send (AGENTS.md section 14; apps/mobile/AGENTS.md, BeStats rules).
+ * One layout differs: an Upcoming show splits core's pill into the date and
+ * the episode:
  *
  * - Movies: Watchlist the TMDB rating; Coming soon the release date; Watched
  *   the user's score when there is one.
- * - Shows: Up next the next episode; Upcoming the next episode with its air
- *   date, or Date TBA; Watched the calculated show rating when a season is
- *   rated, and Finished or Caught up.
+ * - Shows: Up next the next episode; Upcoming the air date, or Date TBA,
+ *   with the next episode under the name, unlike the web's one pill, which a
+ *   three column card cuts short; Watched the calculated show rating when a
+ *   season is rated, and Finished or Caught up.
  * - Games: Coming soon and Want to play the IGDB rating, Coming soon also the
  *   release date; Playing and Finished the user's score, else the IGDB
  *   rating, and the Started or Finished month.
@@ -210,17 +224,25 @@ export function libraryCardView(
         text: NEXT_EPISODE_MESSAGES.pill(season, episode),
         label: NEXT_EPISODE_MESSAGES.accessible(season, episode),
         nextEpisode: true,
+        isDate: false,
       },
       meta: null,
       next: { season, episode },
     };
   }
   if (place.page === "upcoming") {
+    const pill = upcomingEpisodePill(place.airDate, place.next, today);
     return {
       ...base,
       badge: null,
-      pill: cardPill(upcomingEpisodePill(place.airDate, place.next, today)),
+      // Core's dated text names the episode too; the card prints the date.
+      pill: cardPill(
+        pill.kind === "dated" ? { ...pill, text: pill.date } : pill,
+      ),
       meta: null,
+      episodeLine: place.next
+        ? NEXT_EPISODE_MESSAGES.pill(place.next.season, place.next.episode)
+        : undefined,
     };
   }
   const rating = entry.user.showRating;

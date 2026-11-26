@@ -22,6 +22,7 @@ import {
 } from "@/lib/catalog-card-actions";
 import { communityRatingText } from "@/lib/community-rating";
 import { sizedImageUri } from "@/lib/images";
+import type { CardPill } from "@/lib/library-card";
 import { CARD_FONT_SCALE_CAP } from "@/theme/font-scale";
 import { lengthToken, tokenColor } from "@/theme/token-vars";
 import { CARD_MARK_SIZE, CardMark } from "./card-action-button";
@@ -211,12 +212,14 @@ function PosterCardView({
   const rating = communityRatingText(type, item.communityRating);
   // The user's own pill wins: a game's status, or a release date the row's
   // own date label would only repeat.
-  const pill = marks?.pill?.text ?? dateLabel ?? null;
+  const pill: CardPill | null =
+    marks?.pill ??
+    (dateLabel ? { text: dateLabel, label: dateLabel, isDate: true } : null);
   const community = marks?.community ?? true;
   const label = [
     item.title,
     item.year,
-    marks?.pill?.label ?? pill,
+    pill?.label,
     community ? rating : null,
     ...(marks?.words ?? []),
   ]
@@ -270,7 +273,7 @@ function PosterCardView({
                 : CARD_INSET,
             }}
           >
-            <GlassPill>{pill}</GlassPill>
+            <GlassPill fitDate={pill.isDate}>{pill.text}</GlassPill>
           </View>
         ) : null}
         {marks?.watched ? (

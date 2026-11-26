@@ -50,6 +50,25 @@ function Badge({ badge }: { badge: CardBadge }) {
   );
 }
 
+/** A grey line under a card's name, capped as the poster's width asks. */
+function CardLine({
+  numberOfLines,
+  children,
+}: {
+  numberOfLines?: number;
+  children: string;
+}) {
+  return (
+    <Text
+      numberOfLines={numberOfLines}
+      maxFontSizeMultiplier={CARD_FONT_SCALE_CAP}
+      className="text-xs text-text-secondary"
+    >
+      {children}
+    </Text>
+  );
+}
+
 /** What `CardLink` draws for a library card, besides its href and menu. */
 type LinkProps = {
   title: string;
@@ -192,6 +211,7 @@ export function LibraryCard({
           >
             <GlassPill
               icon={view.pill.nextEpisode ? <NextEpisodeIcon /> : null}
+              fitDate={view.pill.isDate}
             >
               {view.pill.text}
             </GlassPill>
@@ -211,22 +231,10 @@ export function LibraryCard({
             {view.name}
           </Text>
           {episodeName ? (
-            <Text
-              numberOfLines={2}
-              maxFontSizeMultiplier={CARD_FONT_SCALE_CAP}
-              className="text-xs text-text-secondary"
-            >
-              {episodeName}
-            </Text>
+            <CardLine numberOfLines={2}>{episodeName}</CardLine>
           ) : null}
-          {view.meta ? (
-            <Text
-              maxFontSizeMultiplier={CARD_FONT_SCALE_CAP}
-              className="text-xs text-text-secondary"
-            >
-              {view.meta}
-            </Text>
-          ) : null}
+          {view.episodeLine ? <CardLine>{view.episodeLine}</CardLine> : null}
+          {view.meta ? <CardLine>{view.meta}</CardLine> : null}
         </View>
       ) : null}
     </>

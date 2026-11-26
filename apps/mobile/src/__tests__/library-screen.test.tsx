@@ -443,7 +443,7 @@ describe("libraryCardView", () => {
     });
   });
 
-  test("an Upcoming show with a date reads as the web's pill", () => {
+  test("an Upcoming show's pill is the date alone, the episode under it", () => {
     const view = libraryCardView(
       {
         ...UP_NEXT_SHOW,
@@ -459,7 +459,40 @@ describe("libraryCardView", () => {
       "upcoming",
       TODAY,
     );
-    expect(view.kind === "title" && view.pill?.text).toBe("S3E1 · Dec 3");
+    expect(view).toMatchObject({
+      pill: {
+        text: "Dec 3",
+        label: "Season 3 episode 1 airs Dec 3, 2026",
+        isDate: true,
+      },
+      episodeLine: "S3E1",
+    });
+  });
+
+  test.each([
+    [
+      "another year",
+      "2027-02-23",
+      { season: 12, episode: 10 },
+      "Feb 23, 2027",
+      "S12E10",
+    ],
+    ["no date", null, { season: 3, episode: 1 }, "Date TBA", "S3E1"],
+    ["no date or episode", null, null, "Date TBA", undefined],
+  ])("an Upcoming show with %s", (_, airDate, next, text, episodeLine) => {
+    const view = libraryCardView(
+      {
+        ...UP_NEXT_SHOW,
+        card: {
+          ...UP_NEXT_SHOW.card,
+          place: { page: "upcoming", airDate, next },
+        },
+      } as never,
+      "upcoming",
+      TODAY,
+    );
+    expect(view).toMatchObject({ pill: { text, isDate: true } });
+    expect(view.kind === "title" && view.episodeLine).toBe(episodeLine);
   });
 
   test("a Watched show with no rated season has no badge, never 0", () => {

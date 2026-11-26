@@ -207,7 +207,7 @@ describe("game card menu", () => {
       watched: false,
       score: 9,
       community: true,
-      pill: { text: "Finished", label: "Finished" },
+      pill: { text: "Finished", label: "Finished", isDate: false },
       words: ["Your score 9"],
     });
     expect(
@@ -244,4 +244,23 @@ describe("card state chunks (R6)", () => {
     expect(chunks[1]).toEqual(second);
     expect(cardStateChunks([])).toEqual([]);
   });
+});
+
+/**
+ * The pill beside a Watched mark has no room for a date with its year, so the
+ * two must never meet (prompts/mobile-date-pill-visible.md).
+ */
+test("no movie card has both a date pill and the Watched mark", () => {
+  for (const releaseDate of [RELEASED, TODAY, UNRELEASED, null]) {
+    for (const planned of [true, false]) {
+      for (const watchedAt of [WATCHED, null]) {
+        const marks = movieCardMarks(
+          { planned, watchedAt, rating: null },
+          releaseDate,
+          TODAY,
+        );
+        expect(marks.watched && marks.pill !== null).toBe(false);
+      }
+    }
+  }
 });
