@@ -1,7 +1,13 @@
 import { Image } from "expo-image";
 import { Stack, useIsPreview } from "expo-router";
 import { HeaderHeightContext } from "expo-router/react-navigation";
-import { type ComponentProps, createContext, type ReactNode, use } from "react";
+import {
+  type ComponentProps,
+  createContext,
+  type ReactNode,
+  use,
+  useState,
+} from "react";
 import { StyleSheet, useWindowDimensions, View } from "react-native";
 import Animated, {
   Extrapolation,
@@ -66,15 +72,27 @@ function HeaderOptions(props: ComponentProps<typeof Stack.Screen>) {
  * native header, which turns solid with the title as the artwork scrolls
  * under it, and stretches when pulled down. The backdrop moves 1:1 with the
  * content (the owner ruled out parallax), and under Reduce Motion it does
- * not stretch and the header switches at once. Without a backdrop the
- * screen keeps the stack's solid header and its title.
+ * not stretch and the header switches at once. Without a backdrop, and under
+ * Reduce Transparency, the header is solid and the content starts under it.
  *
- * The scroll handler and both styles run on the UI thread, so scrolling
+ * The scroll view is the screen's first view, with the page background inside
+ * it, which is how `react-native-screens` finds it to hide iOS's top edge
+ * effect. That setting is applied only when it changes, and a change that
+ * arrives with the scroll view is applied before the view is inserted, so it
+ * is sent once the scroll view has laid out. Being found also lets
+ * the native tab bar turn a `never` inset behaviour into `automatic`, though
+ * only on a screen whose scroll view is there when it is pushed. So the
+ * behaviour is `automatic` outright, and the top inset it adds, the header's
+ * height, is taken back. The header stays transparent in every case, so that
+ * one rule holds (prompts/mobile-backdrop-clear-top.md).
+ *
+ * The scroll handler and the styles run on the UI thread, so scrolling
  * renders no React frame. Reduce Motion and Reduce Transparency both keep
  * the header usable without the effect (AGENTS.md section 3, accessibility).
  */
 export function TitleScroll({ title, backdropUrl, children }: Props) {
   const scrollY = useSharedValue(0);
+  const [laidOut, setLaidOut] = useState(false);
   const onScroll = useAnimatedScrollHandler((event) => {
     scrollY.value = event.contentOffset.y;
   });
@@ -85,88 +103,94 @@ export function TitleScroll({ title, backdropUrl, children }: Props) {
   const { width } = useWindowDimensions();
   const reduceMotion = useReduceMotion();
   const reduceTransparency = useReduceTransparency();
-  const height = backdropHeight(width, headerHeight);
+  // Reduce Transparency keeps the solid header: the artwork starts under it,
+  // nothing shows through the bar, and nothing stretches (decision 4,
+  // requirement 6).
+  const underHeader = backdropUrl !== null && !reduceTransparency;
+  const height = backdropHeight(width, underHeader ? headerHeight : 0);
   const solidAt = height - headerHeight;
-
-  if (backdropUrl && reduceTransparency) {
-    // Reduce Transparency keeps the solid header: the artwork starts under
-    // it, nothing shows through the bar, and nothing stretches (decision 4,
-    // requirement 6).
-    return (
-      <Animated.ScrollView
-        style={styles.fill}
-        contentContainerStyle={styles.content}
-      >
-        <HeaderOptions options={{ title, headerTransparent: false }} />
-        <Backdrop
-          uri={sizedImageUri(backdropUrl, width)}
-          height={backdropHeight(width, 0)}
-          scrollY={scrollY}
-          stretch={false}
-        />
-        <OverBackdrop value>{children}</OverBackdrop>
-      </Animated.ScrollView>
-    );
-  }
-
-  if (!backdropUrl) {
-    return (
-      <Animated.ScrollView
-        style={styles.fill}
-        contentContainerStyle={styles.content}
-      >
-        <HeaderOptions options={{ title, headerTransparent: false }} />
-        {children}
-      </Animated.ScrollView>
-    );
-  }
 
   return (
     <Animated.ScrollView
       style={styles.fill}
-      contentContainerStyle={styles.content}
-      contentInsetAdjustmentBehavior="never"
+      contentContainerStyle={[
+        styles.content,
+        { paddingTop: underHeader ? 0 : headerHeight },
+      ]}
+      contentInsetAdjustmentBehavior="automatic"
+      contentInset={{ top: -headerHeight }}
       scrollEventThrottle={16}
       onScroll={onScroll}
+      onLayout={() => setLaidOut(true)}
     >
+      <StillBackground scrollY={scrollY} />
       <HeaderOptions
         options={{
           title,
-          // `HeaderFade` alone draws the solid colour, on scroll.
+          // `headerBackground` alone draws the solid colour.
           ...BACKDROP_HEADER_OPTIONS,
-          headerBackground: () => (
-            <HeaderFade
-              scrollY={scrollY}
-              solidAt={solidAt}
-              reduceMotion={reduceMotion}
-            />
-          ),
-          headerTitle: () => (
-            <HeaderTitle
-              title={title}
-              scrollY={scrollY}
-              solidAt={solidAt}
-              reduceMotion={reduceMotion}
-            />
-          ),
+          scrollEdgeEffects: { top: laidOut ? "hidden" : "automatic" },
+          headerBackground: underHeader
+            ? () => (
+                <HeaderFade
+                  scrollY={scrollY}
+                  solidAt={solidAt}
+                  reduceMotion={reduceMotion}
+                />
+              )
+            : () => <HeaderSolid />,
+          // `undefined` gives back the stack's own title.
+          headerTitle: underHeader
+            ? () => (
+                <HeaderTitle
+                  title={title}
+                  scrollY={scrollY}
+                  solidAt={solidAt}
+                  reduceMotion={reduceMotion}
+                />
+              )
+            : undefined,
         }}
       />
-      <Backdrop
-        uri={sizedImageUri(backdropUrl, width)}
-        height={height}
-        scrollY={scrollY}
-        stretch={!reduceMotion}
-      />
-      <OverBackdrop value>{children}</OverBackdrop>
+      {backdropUrl ? (
+        <Backdrop
+          uri={sizedImageUri(backdropUrl, width)}
+          height={height}
+          scrollY={scrollY}
+          stretch={underHeader && !reduceMotion}
+        />
+      ) : null}
+      <OverBackdrop value={backdropUrl !== null}>{children}</OverBackdrop>
     </Animated.ScrollView>
   );
 }
 
 /**
+ * The page background, inside the scroll view and moved with the offset so it
+ * stays still on screen. It is the pushed screen's opaque backing, and it
+ * cannot sit beside the scroll view: any view before that one hides it from
+ * iOS (prompts/mobile-backdrop-clear-top.md).
+ */
+function StillBackground({ scrollY }: { scrollY: SharedValue<number> }) {
+  const { height } = useWindowDimensions();
+  const style = useAnimatedStyle(() => ({
+    transform: [{ translateY: scrollY.value }],
+  }));
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[styles.background, { height }, style]}
+    >
+      <PageBackground />
+    </Animated.View>
+  );
+}
+
+/**
  * A title screen before its scroll view: loading, not found or a failed
- * read. It draws the page background itself, so these states stay backed once
- * the title routes lose the stack layout's one
- * (prompts/mobile-backdrop-clear-top.md; AGENTS.md section 3, every state).
+ * read. These routes get no background from the stack's layout
+ * (prompts/mobile-backdrop-clear-top.md), so this draws it, and a pushed
+ * screen is never see through (AGENTS.md section 3, every state).
  */
 export function TitleState({ children }: { children: ReactNode }) {
   return (
@@ -200,6 +224,15 @@ export function solidness(
     [solidAt - FADE_DISTANCE, solidAt],
     [0, 1],
     Extrapolation.CLAMP,
+  );
+}
+
+/** The header's colour with nothing under the bar to show through to. */
+function HeaderSolid() {
+  return (
+    <View
+      style={[StyleSheet.absoluteFill, { backgroundColor: HEADER_BACKGROUND }]}
+    />
   );
 }
 
@@ -310,4 +343,5 @@ function Backdrop({
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   content: { paddingBottom: 96 },
+  background: { position: "absolute", top: 0, left: 0, right: 0 },
 });
