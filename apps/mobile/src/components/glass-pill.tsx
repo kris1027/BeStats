@@ -25,15 +25,13 @@ type PillProps = {
   accessibilityLabel?: string;
   /**
    * For a date, which must show whole on a three column card: tighter sides,
-   * and the text shrinks, to 80% at most, only when it does not fit
-   * (prompts/mobile-date-pill-visible.md, decision 3).
+   * and the text shrinks only when it does not fit. It sets no
+   * `minimumFontScale`: iOS ignores it, and where it applies it would cut a
+   * long date at large text (prompts/mobile-date-pill-visible.md, decision 3).
    */
   fitDate?: boolean;
   children: ReactNode;
 };
-
-/** How far a date may shrink to fit its pill before it would be cut. */
-const MIN_DATE_SCALE = 0.8;
 
 /**
  * The web's `GlassPill`: plate, glass and rim, fully rounded, bold 13pt text,
@@ -62,7 +60,6 @@ export function GlassPill({
         numberOfLines={1}
         maxFontSizeMultiplier={PILL_FONT_SCALE_CAP}
         adjustsFontSizeToFit={fitDate}
-        minimumFontScale={fitDate ? MIN_DATE_SCALE : undefined}
         className={`text-[13px] leading-none font-bold text-foreground ${fitDate ? "shrink" : ""}`}
       >
         {children}

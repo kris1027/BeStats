@@ -55,9 +55,9 @@ test("only a date pill shrinks its text to fit", async () => {
       <GlassPill>Playing</GlassPill>
     </>,
   );
-  expect(screen.getByText("Feb 23, 2027").props).toMatchObject({
-    adjustsFontSizeToFit: true,
-    minimumFontScale: 0.8,
-  });
+  const date = screen.getByText("Feb 23, 2027").props;
+  expect(date.adjustsFontSizeToFit).toBe(true);
+  // A floor would cut a long date at large text, so there is none.
+  expect(date.minimumFontScale).toBeUndefined();
   expect(screen.getByText("Playing").props.adjustsFontSizeToFit).toBe(false);
 });
