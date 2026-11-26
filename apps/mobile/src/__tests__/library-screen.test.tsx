@@ -463,7 +463,7 @@ describe("libraryCardView", () => {
       pill: {
         text: "Dec 3",
         label: "Season 3 episode 1 airs Dec 3, 2026",
-        date: true,
+        isDate: true,
       },
       episodeLine: "S3E1",
     });
@@ -491,7 +491,7 @@ describe("libraryCardView", () => {
       "upcoming",
       TODAY,
     );
-    expect(view).toMatchObject({ pill: { text, date: true } });
+    expect(view).toMatchObject({ pill: { text, isDate: true } });
     expect(view.kind === "title" && view.episodeLine).toBe(episodeLine);
   });
 

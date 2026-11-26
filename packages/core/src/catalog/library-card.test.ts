@@ -66,6 +66,7 @@ describe("upcomingEpisodePill", () => {
       kind: "dated",
       text: "S2E1 · Dec 20",
       label: "Season 2 episode 1 airs Dec 20, 2026",
+      date: "Dec 20",
     });
   });
 
@@ -75,7 +76,11 @@ describe("upcomingEpisodePill", () => {
       { season: 3, episode: 4 },
       today,
     );
-    expect(pill).toMatchObject({ kind: "dated", text: "S3E4 · Feb 3, 2027" });
+    expect(pill).toMatchObject({
+      kind: "dated",
+      text: "S3E4 · Feb 3, 2027",
+      date: "Feb 3, 2027",
+    });
   });
 
   it("is Date TBA naming the episode when only the episode is known", () => {

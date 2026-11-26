@@ -255,7 +255,7 @@ export function gameCardMarks(
     watched: false,
     score: card.rating,
     community: true,
-    pill: { text: status, label: status },
+    pill: { text: status, label: status, isDate: false },
     words: scoreWords(card.rating),
   };
 }

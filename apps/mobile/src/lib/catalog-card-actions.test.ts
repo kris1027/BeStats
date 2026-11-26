@@ -207,7 +207,7 @@ describe("game card menu", () => {
       watched: false,
       score: 9,
       community: true,
-      pill: { text: "Finished", label: "Finished" },
+      pill: { text: "Finished", label: "Finished", isDate: false },
       words: ["Your score 9"],
     });
     expect(

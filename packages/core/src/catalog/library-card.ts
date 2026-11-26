@@ -62,6 +62,15 @@ export type CardPillText =
   | { kind: "tba"; label: string };
 
 /**
+ * An Upcoming show pill's words, with the date also on its own for a card too
+ * narrow to print the episode beside it, so no caller formats the date again
+ * (prompts/mobile-date-pill-visible.md, decision 1).
+ */
+export type EpisodePillText =
+  | (Extract<CardPillText, { kind: "dated" }> & { date: string })
+  | Extract<CardPillText, { kind: "tba" }>;
+
+/**
  * The release pill on a movie's Coming soon card and a game's Coming soon
  * card (spec 0020, AC-13; prompts/game-coming-soon.md): the short date, or
  * Date TBA. The date is `formatReleaseDate`'s, a UTC day (AGENTS.md section 9).
@@ -88,7 +97,7 @@ export function upcomingEpisodePill(
   airDate: string | null,
   next: EpisodePlace | null,
   today: string,
-): CardPillText {
+): EpisodePillText {
   if (airDate !== null && next !== null) {
     const fullDate = formatAirDate(airDate) ?? airDate;
     const shortDate = formatShortDate(airDate, today) ?? fullDate;
@@ -96,6 +105,7 @@ export function upcomingEpisodePill(
       kind: "dated",
       text: UPCOMING_MESSAGES.datedPill(next.season, next.episode, shortDate),
       label: UPCOMING_MESSAGES.episodeAirs(next.season, next.episode, fullDate),
+      date: shortDate,
     };
   }
   return {
