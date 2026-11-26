@@ -22,14 +22,6 @@ import {
 } from "@/theme/stack-options";
 import { fractionToken, tokenColorAlpha } from "@/theme/token-vars";
 
-/**
- * How far below the header the web's `backdrop-scrim` keeps lifting (8rem),
- * and its shade across the bar (75% of the background), so the back button
- * and title keep their contrast over any artwork (components/AGENTS.md, the
- * navbar's scrim; prompts/mobile-look-title-pages.md, decision 4).
- */
-const SCRIM_FADE = 128;
-const SCRIM_ALPHA = 0.75;
 /** The scroll distance over which the header turns solid. */
 const FADE_DISTANCE = 48;
 /** How much of the poster hangs over the backdrop's lower edge. */
@@ -108,7 +100,6 @@ export function TitleScroll({ title, backdropUrl, children }: Props) {
         <Backdrop
           uri={sizedImageUri(backdropUrl, width)}
           height={backdropHeight(width, 0)}
-          headerHeight={0}
           scrollY={scrollY}
           stretch={false}
         />
@@ -162,7 +153,6 @@ export function TitleScroll({ title, backdropUrl, children }: Props) {
       <Backdrop
         uri={sizedImageUri(backdropUrl, width)}
         height={height}
-        headerHeight={headerHeight}
         scrollY={scrollY}
         stretch={!reduceMotion}
       />
@@ -256,27 +246,25 @@ export function stretchTransform(
 }
 
 /**
- * The full bleed artwork with the web's scrim at its top. Pulled down past
- * the top (iOS bounce), it grows from its bottom edge so its top stays at the
+ * The full bleed artwork, washed into the page at its bottom and left clear
+ * at its top (prompts/mobile-backdrop-clear-top.md). Pulled down past the top
+ * (iOS bounce), it grows from its bottom edge so its top stays at the
  * screen's top; it never moves at another speed than the content.
  */
 function Backdrop({
   uri,
   height,
-  headerHeight,
   scrollY,
   stretch,
 }: {
   uri: string;
   height: number;
-  headerHeight: number;
   scrollY: SharedValue<number>;
   stretch: boolean;
 }) {
   const style = useAnimatedStyle(() => ({
     transform: stretchTransform(scrollY.value, height, stretch),
   }));
-  const shade = tokenColorAlpha("color-background", SCRIM_ALPHA);
   return (
     <Animated.View
       testID="title-backdrop"
@@ -290,17 +278,6 @@ function Backdrop({
         contentFit="cover"
         style={StyleSheet.absoluteFill}
       />
-      {headerHeight > 0 ? (
-        <View
-          pointerEvents="none"
-          style={[
-            StyleSheet.absoluteFill,
-            {
-              backgroundImage: `linear-gradient(to bottom, ${shade} 0px, ${shade} ${headerHeight}px, ${tokenColorAlpha("color-background", 0)} ${headerHeight + SCRIM_FADE}px)`,
-            },
-          ]}
-        />
-      ) : null}
       <View
         pointerEvents="none"
         style={[
