@@ -37,7 +37,7 @@ import {
   textFact,
 } from "@/components/title-details";
 import { MoreLikeThis, TrailerButton } from "@/components/title-extras";
-import { TitleScroll } from "@/components/title-header";
+import { TitleScroll, TitleState } from "@/components/title-header";
 import { TrackingGate } from "@/components/tracking-gate";
 import { catalogKeys, fetchGame, fetchSimilarGames } from "@/lib/catalog";
 import { useSession } from "@/lib/session";
@@ -80,13 +80,25 @@ export function GameScreen() {
   });
 
   if (!parsed.success) {
-    return <StatePanel tone="error" title={V1_ERROR_MESSAGES.not_found} />;
+    return (
+      <TitleState>
+        <StatePanel tone="error" title={V1_ERROR_MESSAGES.not_found} />
+      </TitleState>
+    );
   }
   if (game.isPending) {
-    return <LoadingState label="Loading the game" layout="title" />;
+    return (
+      <TitleState>
+        <LoadingState label="Loading the game" layout="title" />
+      </TitleState>
+    );
   }
   if (game.isError) {
-    return <TitleReadError error={game.error} retry={() => game.refetch()} />;
+    return (
+      <TitleState>
+        <TitleReadError error={game.error} retry={() => game.refetch()} />
+      </TitleState>
+    );
   }
 
   const detail = game.data;

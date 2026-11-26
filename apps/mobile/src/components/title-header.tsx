@@ -12,6 +12,7 @@ import Animated, {
   useSharedValue,
 } from "react-native-reanimated";
 
+import { PageBackground } from "@/components/page-background";
 import { Text } from "@/components/text";
 import { artworkHeight, sizedImageUri } from "@/lib/images";
 import { useReduceMotion } from "@/lib/reduce-motion";
@@ -158,6 +159,21 @@ export function TitleScroll({ title, backdropUrl, children }: Props) {
       />
       <OverBackdrop value>{children}</OverBackdrop>
     </Animated.ScrollView>
+  );
+}
+
+/**
+ * A title screen before its scroll view: loading, not found or a failed
+ * read. It draws the page background itself, so these states stay backed once
+ * the title routes lose the stack layout's one
+ * (prompts/mobile-backdrop-clear-top.md; AGENTS.md section 3, every state).
+ */
+export function TitleState({ children }: { children: ReactNode }) {
+  return (
+    <View style={styles.fill}>
+      <PageBackground />
+      {children}
+    </View>
   );
 }
 

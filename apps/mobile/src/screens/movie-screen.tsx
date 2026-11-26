@@ -41,7 +41,7 @@ import {
   TrailerButton,
   WhereToWatch,
 } from "@/components/title-extras";
-import { TitleScroll } from "@/components/title-header";
+import { TitleScroll, TitleState } from "@/components/title-header";
 import { TrackingGate } from "@/components/tracking-gate";
 import { catalogKeys, fetchTitleExtras } from "@/lib/catalog";
 import { fetchMovie } from "@/lib/movies";
@@ -85,13 +85,25 @@ export function MovieScreen() {
   });
 
   if (!parsedId.success) {
-    return <StatePanel tone="error" title={V1_ERROR_MESSAGES.not_found} />;
+    return (
+      <TitleState>
+        <StatePanel tone="error" title={V1_ERROR_MESSAGES.not_found} />
+      </TitleState>
+    );
   }
   if (movie.isPending) {
-    return <LoadingState label="Loading the movie" layout="title" />;
+    return (
+      <TitleState>
+        <LoadingState label="Loading the movie" layout="title" />
+      </TitleState>
+    );
   }
   if (movie.isError) {
-    return <TitleReadError error={movie.error} retry={() => movie.refetch()} />;
+    return (
+      <TitleState>
+        <TitleReadError error={movie.error} retry={() => movie.refetch()} />
+      </TitleState>
+    );
   }
 
   const detail = movie.data;

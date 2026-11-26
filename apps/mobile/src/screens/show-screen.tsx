@@ -39,7 +39,7 @@ import {
   TrailerButton,
   WhereToWatch,
 } from "@/components/title-extras";
-import { TitleScroll } from "@/components/title-header";
+import { TitleScroll, TitleState } from "@/components/title-header";
 import { TrackingGate } from "@/components/tracking-gate";
 import { catalogKeys, fetchShow, fetchTitleExtras } from "@/lib/catalog";
 import { SEASON_ROW_POSTER_WIDTH, sizedImageUri } from "@/lib/images";
@@ -83,13 +83,25 @@ export function ShowScreen() {
   });
 
   if (!parsed.success) {
-    return <StatePanel tone="error" title={V1_ERROR_MESSAGES.not_found} />;
+    return (
+      <TitleState>
+        <StatePanel tone="error" title={V1_ERROR_MESSAGES.not_found} />
+      </TitleState>
+    );
   }
   if (show.isPending) {
-    return <LoadingState label="Loading the show" layout="title" />;
+    return (
+      <TitleState>
+        <LoadingState label="Loading the show" layout="title" />
+      </TitleState>
+    );
   }
   if (show.isError) {
-    return <TitleReadError error={show.error} retry={() => show.refetch()} />;
+    return (
+      <TitleState>
+        <TitleReadError error={show.error} retry={() => show.refetch()} />
+      </TitleState>
+    );
   }
 
   const detail = show.data;
