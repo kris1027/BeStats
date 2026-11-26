@@ -23,8 +23,17 @@ type PillProps = {
   tone?: "neutral" | "score";
   /** What a screen reader hears for the whole pill. */
   accessibilityLabel?: string;
+  /**
+   * For a date, which must show whole on a three column card: tighter sides,
+   * and the text shrinks, to 80% at most, only when it does not fit
+   * (prompts/mobile-date-pill-visible.md, decision 3).
+   */
+  fitDate?: boolean;
   children: ReactNode;
 };
+
+/** How far a date may shrink to fit its pill before it would be cut. */
+const MIN_DATE_SCALE = 0.8;
 
 /**
  * The web's `GlassPill`: plate, glass and rim, fully rounded, bold 13pt text,
@@ -36,6 +45,7 @@ export function GlassPill({
   icon,
   tone = "neutral",
   accessibilityLabel,
+  fitDate = false,
   children,
 }: PillProps) {
   return (
@@ -45,13 +55,15 @@ export function GlassPill({
       radius={PILL_RADIUS}
       accessible={accessibilityLabel !== undefined}
       accessibilityLabel={accessibilityLabel}
-      className="h-7 max-w-full flex-row items-center gap-1.5 self-start px-2.5"
+      className={`h-7 max-w-full flex-row items-center gap-1.5 self-start ${fitDate ? "px-2" : "px-2.5"}`}
     >
       {icon ? <View className="shrink-0">{icon}</View> : null}
       <Text
         numberOfLines={1}
         maxFontSizeMultiplier={PILL_FONT_SCALE_CAP}
-        className="text-[13px] leading-none font-bold text-foreground"
+        adjustsFontSizeToFit={fitDate}
+        minimumFontScale={fitDate ? MIN_DATE_SCALE : undefined}
+        className={`text-[13px] leading-none font-bold text-foreground ${fitDate ? "shrink" : ""}`}
       >
         {children}
       </Text>

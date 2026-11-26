@@ -43,8 +43,15 @@ export type CardBadge = {
  * `nextEpisode` marks the Up next pill, which leads with the TV icon as the
  * web's `NextEpisodePill` does; a flag rather than the icon itself, so this
  * file stays free of views (prompts/mobile-look-verify-extras.md, decision 4).
+ * `date` marks a date or Date TBA, which must always show whole
+ * (prompts/mobile-date-pill-visible.md, decision 3).
  */
-export type CardPill = { text: string; label: string; nextEpisode?: boolean };
+export type CardPill = {
+  text: string;
+  label: string;
+  nextEpisode?: boolean;
+  date?: boolean;
+};
 
 /**
  * Everything a library card shows, worked out from the server's entry
@@ -110,9 +117,8 @@ function personalScore(value: number | null): CardBadge | null {
  * days).
  */
 export function cardPill(pill: CardPillText): CardPill {
-  return pill.kind === "tba"
-    ? { text: UPCOMING_MESSAGES.dateTba, label: pill.label }
-    : { text: pill.text, label: pill.label };
+  const text = pill.kind === "tba" ? UPCOMING_MESSAGES.dateTba : pill.text;
+  return { text, label: pill.label, date: true };
 }
 
 /**

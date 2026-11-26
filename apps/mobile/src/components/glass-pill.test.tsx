@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react-native";
 import {
   CalculatedRatingBadge,
   CommunityRatingBadge,
+  GlassPill,
   PersonalScoreBadge,
 } from "./glass-pill";
 
@@ -44,4 +45,19 @@ test("a calculated rating keeps one decimal and its label", async () => {
   await render(<CalculatedRatingBadge value={7} label="Season rating" />);
   expect(screen.getByLabelText("Season rating 7.0")).toBeOnTheScreen();
   expect(screen.getByText("7.0")).toBeOnTheScreen();
+});
+
+/** covers: prompts/mobile-date-pill-visible.md, decision 3 */
+test("only a date pill shrinks its text to fit", async () => {
+  await render(
+    <>
+      <GlassPill fitDate>Feb 23, 2027</GlassPill>
+      <GlassPill>Playing</GlassPill>
+    </>,
+  );
+  expect(screen.getByText("Feb 23, 2027").props).toMatchObject({
+    adjustsFontSizeToFit: true,
+    minimumFontScale: 0.8,
+  });
+  expect(screen.getByText("Playing").props.adjustsFontSizeToFit).toBe(false);
 });

@@ -192,6 +192,7 @@ export function LibraryCard({
           >
             <GlassPill
               icon={view.pill.nextEpisode ? <NextEpisodeIcon /> : null}
+              fitDate={view.pill.date}
             >
               {view.pill.text}
             </GlassPill>

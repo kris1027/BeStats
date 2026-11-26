@@ -212,6 +212,8 @@ function PosterCardView({
   // The user's own pill wins: a game's status, or a release date the row's
   // own date label would only repeat.
   const pill = marks?.pill?.text ?? dateLabel ?? null;
+  // A game's status is the one pill here that is not a date.
+  const datePill = marks?.pill ? marks.pill.date : true;
   const community = marks?.community ?? true;
   const label = [
     item.title,
@@ -270,7 +272,7 @@ function PosterCardView({
                 : CARD_INSET,
             }}
           >
-            <GlassPill>{pill}</GlassPill>
+            <GlassPill fitDate={datePill}>{pill}</GlassPill>
           </View>
         ) : null}
         {marks?.watched ? (
