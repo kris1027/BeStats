@@ -1,7 +1,9 @@
 import { screen } from "@testing-library/react-native";
 import { Stack } from "expo-router";
+import { HeaderHeightContext } from "expo-router/react-navigation";
 import { renderRouter } from "expo-router/testing-library";
 import { Dimensions } from "react-native";
+import { SafeAreaInsetsContext } from "react-native-safe-area-context";
 
 import { Text } from "@/components/text";
 import { BACKDROP_HEADER_OPTIONS } from "@/theme/stack-options";
@@ -18,8 +20,20 @@ jest.mock("@/lib/reduce-transparency", () => ({
   useReduceTransparency: () => mockReduceTransparency,
 }));
 
+// Only a native long press makes a real preview, so the hook is stood in for;
+// every other export stays Expo Router's own.
+let mockIsPreview = false;
+jest.mock("expo-router", () => {
+  const actual = jest.requireActual("expo-router");
+  return new Proxy(actual, {
+    get: (target, key) =>
+      key === "useIsPreview" ? () => mockIsPreview : target[key],
+  });
+});
+
 afterEach(() => {
   mockReduceTransparency = false;
+  mockIsPreview = false;
 });
 
 /**
@@ -131,4 +145,48 @@ test("Reduce Transparency: the artwork starts under the solid header", async () 
   });
   const { width } = Dimensions.get("window");
   expect(backdrop).toHaveStyle({ height: backdropHeight(width, 0) });
+});
+
+async function openWithInsets() {
+  const Title = screenWith("https://image.tmdb.org/t/p/original/backdrop.jpg");
+  await renderRouter(
+    {
+      _layout: () => <Stack />,
+      index: () => (
+        <SafeAreaInsetsContext
+          value={{ top: 62, bottom: 83, left: 0, right: 0 }}
+        >
+          <HeaderHeightContext value={116}>
+            <Title />
+          </HeaderHeightContext>
+        </SafeAreaInsetsContext>
+      ),
+    },
+    { initialUrl: "/" },
+  );
+  expect(await screen.findByText("Hero")).toBeOnTheScreen();
+  return screen.getByTestId("title-scroll");
+}
+
+/**
+ * covers: prompts/mobile-backdrop-clear-top.md, "Backdrop height and layout
+ * do not change": the `automatic` behaviour's insets are both taken back, so
+ * the artwork starts at the screen's top and no gap grows at the bottom.
+ */
+test("the header and tab bar insets iOS adds are taken back", async () => {
+  expect(await openWithInsets()).toHaveProp("contentInset", {
+    top: -116,
+    bottom: -83,
+  });
+});
+
+test("a long press preview takes none of the opening screen's insets", async () => {
+  mockIsPreview = true;
+  const scroll = await openWithInsets();
+  expect(scroll.props.contentInset.top).toBeCloseTo(0);
+  expect(scroll.props.contentInset.bottom).toBeCloseTo(0);
+  const { width } = Dimensions.get("window");
+  expect(
+    screen.getByTestId("title-backdrop", { includeHiddenElements: true }),
+  ).toHaveStyle({ height: backdropHeight(width, 0) });
 });

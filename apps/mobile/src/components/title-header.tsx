@@ -17,6 +17,7 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
 } from "react-native-reanimated";
+import { SafeAreaInsetsContext } from "react-native-safe-area-context";
 
 import { PageBackground } from "@/components/page-background";
 import { Text } from "@/components/text";
@@ -82,9 +83,12 @@ function HeaderOptions(props: ComponentProps<typeof Stack.Screen>) {
  * is sent once the scroll view has laid out. Being found also lets
  * the native tab bar turn a `never` inset behaviour into `automatic`, though
  * only on a screen whose scroll view is there when it is pushed. So the
- * behaviour is `automatic` outright, and the top inset it adds, the header's
- * height, is taken back. The header stays transparent in every case, so that
- * one rule holds (prompts/mobile-backdrop-clear-top.md).
+ * behaviour is `automatic` outright, and both insets it adds are taken back:
+ * the header's height at the top, and the tab bar's at the bottom, where the
+ * content's own padding already clears the bar. The header stays transparent
+ * in every case, so that one rule holds. A long press preview has no header
+ * or tab bar, but renders inside the screen it was opened from and would read
+ * that screen's, so it takes neither (prompts/mobile-backdrop-clear-top.md).
  *
  * The scroll handler and the styles run on the UI thread, so scrolling
  * renders no React frame. Reduce Motion and Reduce Transparency both keep
@@ -96,10 +100,14 @@ export function TitleScroll({ title, backdropUrl, children }: Props) {
   const onScroll = useAnimatedScrollHandler((event) => {
     scrollY.value = event.contentOffset.y;
   });
-  // The context, not `useHeaderHeight`, which throws outside a stack header
-  // (a screen rendered on its own, as the screen tests do): no header means
-  // nothing for the artwork to run under.
-  const headerHeight = use(HeaderHeightContext) ?? 0;
+  const isPreview = useIsPreview();
+  // The contexts, not `useHeaderHeight` and `useSafeAreaInsets`, which throw
+  // outside their providers (a screen rendered on its own, as the screen tests
+  // do): no header means nothing for the artwork to run under.
+  const stackHeaderHeight = use(HeaderHeightContext) ?? 0;
+  const safeBottom = use(SafeAreaInsetsContext)?.bottom ?? 0;
+  const headerHeight = isPreview ? 0 : stackHeaderHeight;
+  const bottomInset = isPreview ? 0 : safeBottom;
   const { width } = useWindowDimensions();
   const reduceMotion = useReduceMotion();
   const reduceTransparency = useReduceTransparency();
@@ -112,13 +120,14 @@ export function TitleScroll({ title, backdropUrl, children }: Props) {
 
   return (
     <Animated.ScrollView
+      testID="title-scroll"
       style={styles.fill}
       contentContainerStyle={[
         styles.content,
         { paddingTop: underHeader ? 0 : headerHeight },
       ]}
       contentInsetAdjustmentBehavior="automatic"
-      contentInset={{ top: -headerHeight }}
+      contentInset={{ top: -headerHeight, bottom: -bottomInset }}
       scrollEventThrottle={16}
       onScroll={onScroll}
       onLayout={() => setLaidOut(true)}
