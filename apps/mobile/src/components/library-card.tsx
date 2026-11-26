@@ -220,6 +220,14 @@ export function LibraryCard({
               {episodeName}
             </Text>
           ) : null}
+          {view.episodeLine ? (
+            <Text
+              maxFontSizeMultiplier={CARD_FONT_SCALE_CAP}
+              className="text-xs text-text-secondary"
+            >
+              {view.episodeLine}
+            </Text>
+          ) : null}
           {view.meta ? (
             <Text
               maxFontSizeMultiplier={CARD_FONT_SCALE_CAP}

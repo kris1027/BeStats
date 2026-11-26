@@ -72,6 +72,12 @@ export type LibraryCardView =
        * decision 3).
        */
       next?: EpisodePlace;
+      /**
+       * Upcoming shows only: the episode under the name, since its pill has
+       * room for the date alone (prompts/mobile-date-pill-visible.md,
+       * decisions 1 and 2). The pill's label already speaks it.
+       */
+      episodeLine?: string;
     }
   /** The catalog no longer has the title: no page to open. */
   | { kind: "missing"; name: string }
@@ -131,8 +137,9 @@ export function cardPill(pill: CardPillText): CardPill {
  *
  * - Movies: Watchlist the TMDB rating; Coming soon the release date; Watched
  *   the user's score when there is one.
- * - Shows: Up next the next episode; Upcoming the next episode with its air
- *   date, or Date TBA; Watched the calculated show rating when a season is
+ * - Shows: Up next the next episode; Upcoming the air date, or Date TBA,
+ *   with the next episode under the name, unlike the web's one pill, which a
+ *   three column card cuts short; Watched the calculated show rating when a season is
  *   rated, and Finished or Caught up.
  * - Games: Coming soon and Want to play the IGDB rating, Coming soon also the
  *   release date; Playing and Finished the user's score, else the IGDB
@@ -222,11 +229,21 @@ export function libraryCardView(
     };
   }
   if (place.page === "upcoming") {
+    const pill = upcomingEpisodePill(place.airDate, place.next, today);
+    const date = formatReleaseDate(place.airDate, today);
     return {
       ...base,
       badge: null,
-      pill: cardPill(upcomingEpisodePill(place.airDate, place.next, today)),
+      // Core's dated text names the episode too; the card prints the date.
+      pill: cardPill(
+        pill.kind === "dated" && date
+          ? { ...pill, text: date.shortDate }
+          : pill,
+      ),
       meta: null,
+      episodeLine: place.next
+        ? NEXT_EPISODE_MESSAGES.pill(place.next.season, place.next.episode)
+        : undefined,
     };
   }
   const rating = entry.user.showRating;
