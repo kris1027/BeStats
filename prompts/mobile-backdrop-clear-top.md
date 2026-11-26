@@ -77,3 +77,23 @@ Files beyond "Expected files": the tab stack's `_layout.tsx`, the movie, show an
 Checked on the iOS 27.2 simulator from a cold launch: a movie, a show and a game open sharp at the top, at the same backdrop height as before. Not checked: scrolling, pull to stretch, push transitions, the loading and error states, a title with no backdrop, Reduce Transparency, a bottom of page scroll, iOS before 26 and Android.
 
 Added manual steps: open a title from Home and watch it slide in (never see through); scroll to the bottom (nothing hidden behind the tab bar, no large empty gap); long press a poster (the preview has a background).
+
+## Review fixes (2026-11-26)
+
+A two axis review of the branch found these. They replace the matching lines in "As built".
+
+1. `movies/[id]`, `shows/[id]` and `games/[id]` also serve the catalog lists, which lost the page background when the routes went bare. `tabScreenLayout` now leaves the layer off title pages only, telling them from lists by core's list slugs, so the lists look as before. `TitleRead` (`screens/title-states.tsx`) replaces `TitleState` and its nine call sites, and draws the background for the invalid id, loading and failed states.
+2. `automatic` also added the tab bar's inset at the bottom, on top of the 96pt padding, where all three old layouts used `never`. This replaces the last sentence of As built 2: `contentInset` now takes back the bottom safe area too, read from the `SafeAreaProvider` Expo Router puts around each tab.
+3. A long press preview renders inside the screen it was opened from, so it read that screen's header height and bottom inset. It now takes neither.
+4. As built 4 covers the edge effect too: `scrollEdgeEffects.top` turns `hidden` in all three header cases, including no backdrop and Reduce Transparency, where the header is solid.
+
+The new files beyond As built: `screens/title-states.tsx`, `theme/stack-options.tsx` (changed after all) with `stack-options.test.tsx`, and `title-header.test.tsx`.
+
+Not checked on a device or simulator (agent device access is off): all four fixes. The tests cover which routes get the layer and which inset values the scroll view receives, not what iOS draws with them. In particular, fix 2 assumes the tab's safe area equals the inset iOS adds to the scroll view. The earlier unchecked items also remain.
+
+Added manual steps:
+
+1. From Home, open a movie, show and game list: each slides in with the page background, never see through.
+2. Scroll to the bottom of a title with a backdrop, one without, and one under Reduce Transparency: the last item clears the tab bar by the same gap as on `main`.
+3. Long press a poster on a title's More like this: the preview's artwork starts at its top edge, with no gap or crop.
+
