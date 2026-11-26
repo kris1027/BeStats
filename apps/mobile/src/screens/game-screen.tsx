@@ -1,4 +1,3 @@
-import { V1_ERROR_MESSAGES } from "@bestats/core/api/v1/errors";
 import { gameIdParamSchema, type V1Game } from "@bestats/core/api/v1/game";
 import type { V1GameTitleState } from "@bestats/core/api/v1/titles";
 import {
@@ -23,7 +22,6 @@ import { useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
 import { CatalogNotice } from "@/components/catalog-notice";
-import { LoadingState, StatePanel } from "@/components/centered-state";
 import { DetailHeader, DetailSection } from "@/components/detail-header";
 import { GlassButton } from "@/components/glass-button";
 import { RatingStar } from "@/components/glass-pill";
@@ -37,14 +35,14 @@ import {
   textFact,
 } from "@/components/title-details";
 import { MoreLikeThis, TrailerButton } from "@/components/title-extras";
-import { TitleScroll, TitleState } from "@/components/title-header";
+import { TitleScroll } from "@/components/title-header";
 import { TrackingGate } from "@/components/tracking-gate";
 import { catalogKeys, fetchGame, fetchSimilarGames } from "@/lib/catalog";
 import { useSession } from "@/lib/session";
 import { useGameWrite } from "@/lib/title-writes";
 import { fetchTitleState, trackingKeys } from "@/lib/tracking";
 
-import { TitleReadError } from "./title-states";
+import { TitleRead } from "./title-states";
 
 /**
  * A game's page (prompts/mobile-title-tracking.md, decision 8): the public
@@ -79,80 +77,65 @@ export function GameScreen() {
     enabled: parsed.success && (game.data?.similarGameIds.length ?? 0) > 0,
   });
 
-  if (!parsed.success) {
-    return (
-      <TitleState>
-        <StatePanel tone="error" title={V1_ERROR_MESSAGES.not_found} />
-      </TitleState>
-    );
-  }
-  if (game.isPending) {
-    return (
-      <TitleState>
-        <LoadingState label="Loading the game" layout="title" />
-      </TitleState>
-    );
-  }
-  if (game.isError) {
-    return (
-      <TitleState>
-        <TitleReadError error={game.error} retry={() => game.refetch()} />
-      </TitleState>
-    );
-  }
-
-  const detail = game.data;
   return (
-    <TitleScroll title={detail.name} backdropUrl={detail.artUrl}>
-      <DetailHeader
-        title={detail.name}
-        posterUrl={detail.coverUrl}
-        type="game"
-        communityRating={detail.communityRating}
-        voteCount={detail.communityRatingCount}
-        genres={detail.genres}
-        status={null}
-        meta={[
-          formatAirDate(detail.releaseDate) ??
-            (detail.releaseYear ? String(detail.releaseYear) : null),
-        ]}
-      />
-      <View className="gap-5 px-4 pt-5">
-        <TrailerButton trailer={detail.trailer} title={detail.name} />
-        <TrackingGate signedIn={session !== null} state={state}>
-          {(data) => <GameTracking game={detail} state={data} />}
-        </TrackingGate>
-        <Overview text={detail.summary} />
-        <CrewLines
-          lines={[
-            { label: "Developed by", names: detail.developers },
-            { label: "Published by", names: detail.publishers },
-          ]}
-        />
-        <DetailSection heading="Story" text={detail.storyline} />
-      </View>
-      <View className="pt-6">
-        <ScreenshotRow name={detail.name} urls={detail.screenshotUrls} />
-      </View>
-      {detail.similarGameIds.length > 0 &&
-      similar.data?.results.length !== 0 ? (
-        <View className="pt-6">
-          <MoreLikeThis
+    <TitleRead
+      valid={parsed.success}
+      read={game}
+      loadingLabel="Loading the game"
+    >
+      {(detail) => (
+        <TitleScroll title={detail.name} backdropUrl={detail.artUrl}>
+          <DetailHeader
+            title={detail.name}
+            posterUrl={detail.coverUrl}
             type="game"
-            read={{
-              isPending: similar.isPending,
-              isError: similar.isError,
-              data: similar.data?.results,
-              refetch: similar.refetch,
-            }}
+            communityRating={detail.communityRating}
+            voteCount={detail.communityRatingCount}
+            genres={detail.genres}
+            status={null}
+            meta={[
+              formatAirDate(detail.releaseDate) ??
+                (detail.releaseYear ? String(detail.releaseYear) : null),
+            ]}
           />
-        </View>
-      ) : null}
-      <View className="pt-6">
-        <FactsPanel facts={gameFacts(detail)} />
-      </View>
-      <CatalogNotice type="game" />
-    </TitleScroll>
+          <View className="gap-5 px-4 pt-5">
+            <TrailerButton trailer={detail.trailer} title={detail.name} />
+            <TrackingGate signedIn={session !== null} state={state}>
+              {(data) => <GameTracking game={detail} state={data} />}
+            </TrackingGate>
+            <Overview text={detail.summary} />
+            <CrewLines
+              lines={[
+                { label: "Developed by", names: detail.developers },
+                { label: "Published by", names: detail.publishers },
+              ]}
+            />
+            <DetailSection heading="Story" text={detail.storyline} />
+          </View>
+          <View className="pt-6">
+            <ScreenshotRow name={detail.name} urls={detail.screenshotUrls} />
+          </View>
+          {detail.similarGameIds.length > 0 &&
+          similar.data?.results.length !== 0 ? (
+            <View className="pt-6">
+              <MoreLikeThis
+                type="game"
+                read={{
+                  isPending: similar.isPending,
+                  isError: similar.isError,
+                  data: similar.data?.results,
+                  refetch: similar.refetch,
+                }}
+              />
+            </View>
+          ) : null}
+          <View className="pt-6">
+            <FactsPanel facts={gameFacts(detail)} />
+          </View>
+          <CatalogNotice type="game" />
+        </TitleScroll>
+      )}
+    </TitleRead>
   );
 }
 

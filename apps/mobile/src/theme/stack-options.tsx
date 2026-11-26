@@ -1,3 +1,5 @@
+import { isCatalogListSlug } from "@bestats/core/catalog/lists";
+import type { LibraryType } from "@bestats/core/catalog/media-type";
 import type { ReactNode } from "react";
 import { View } from "react-native";
 
@@ -111,25 +113,46 @@ export function screenLayout({ children }: { children: ReactNode }) {
   );
 }
 
+/** The routes that open a title, or a catalog list when named by its slug. */
+const TITLE_ROUTES: Partial<Record<string, LibraryType>> = {
+  "movies/[id]": "movie",
+  "shows/[id]": "tv",
+  "games/[id]": "game",
+};
+
+/**
+ * True when a route is showing a title: its segment is not one of core's list
+ * slugs, the same split the route file makes.
+ */
+function isTitlePage(route: { name: string; params?: object }): boolean {
+  const type = TITLE_ROUTES[route.name];
+  if (!type) return false;
+  const id = (route.params as { id?: unknown } | undefined)?.id;
+  return !(typeof id === "string" && isCatalogListSlug(type, id));
+}
+
 /**
  * The tab stacks' screen layout: `screenLayout` for every screen except
- * those named in `bare`, which get no background layer of their own
- * (apps/mobile/AGENTS.md, Styling; prompts/mobile-look-search.md, decision 7).
- * A large title collapses only
- * when its scroll view is first in the screen's view chain, which UIKit
- * tracks, and the background layer sits before it; so a bare screen shows
- * the still background its tab stack draws behind every screen. The
- * background never moves, so the two look alike.
+ * those named in `bare` and the title pages (apps/mobile/AGENTS.md, Styling).
+ *
+ * A screen named in `bare` shows the still background its tab stack draws
+ * behind every screen. A large title collapses only when its scroll view is
+ * first in the screen's view chain, and the background layer sits before it
+ * (prompts/mobile-look-search.md, decision 7). The background never moves,
+ * so the two look alike. A title page has its scroll view first too, so that
+ * iOS finds it to hide the top edge effect, but it draws its own background,
+ * in `TitleScroll` and `TitleRead` (prompts/mobile-backdrop-clear-top.md).
+ * The catalog lists share the title routes and keep the layer.
  */
 export function tabScreenLayout(bare: readonly string[]) {
   return function layout({
     route,
     children,
   }: {
-    route: { name: string };
+    route: { name: string; params?: object };
     children: ReactNode;
   }) {
-    return bare.includes(route.name) ? (
+    return bare.includes(route.name) || isTitlePage(route) ? (
       <>{children}</>
     ) : (
       screenLayout({ children })

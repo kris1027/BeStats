@@ -186,21 +186,6 @@ function StillBackground({ scrollY }: { scrollY: SharedValue<number> }) {
   );
 }
 
-/**
- * A title screen before its scroll view: loading, not found or a failed
- * read. These routes get no background from the stack's layout
- * (prompts/mobile-backdrop-clear-top.md), so this draws it, and a pushed
- * screen is never see through (AGENTS.md section 3, every state).
- */
-export function TitleState({ children }: { children: ReactNode }) {
-  return (
-    <View style={styles.fill}>
-      <PageBackground />
-      {children}
-    </View>
-  );
-}
-
 type FadeProps = {
   scrollY: SharedValue<number>;
   solidAt: number;
