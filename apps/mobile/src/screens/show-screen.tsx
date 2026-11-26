@@ -1,4 +1,3 @@
-import { V1_ERROR_MESSAGES } from "@bestats/core/api/v1/errors";
 import { showIdParamSchema, type V1Show } from "@bestats/core/api/v1/show";
 import type { V1ShowTitleState } from "@bestats/core/api/v1/titles";
 import { orderSeasons } from "@bestats/core/catalog/seasons";
@@ -20,7 +19,6 @@ import { Link, useLocalSearchParams } from "expo-router";
 import { Pressable, View } from "react-native";
 import { CastRow } from "@/components/cast-row";
 import { CatalogNotice } from "@/components/catalog-notice";
-import { LoadingState, StatePanel } from "@/components/centered-state";
 import { DetailHeader } from "@/components/detail-header";
 import { GlassButton } from "@/components/glass-button";
 import { RatingStar } from "@/components/glass-pill";
@@ -47,7 +45,7 @@ import { useSession } from "@/lib/session";
 import { useShowTrackingWrite } from "@/lib/title-writes";
 import { fetchTitleState, trackingKeys } from "@/lib/tracking";
 
-import { TitleReadError } from "./title-states";
+import { TitleRead } from "./title-states";
 
 /**
  * A show's page (prompts/mobile-title-tracking.md, decision 6): the public
@@ -82,74 +80,80 @@ export function ShowScreen() {
     enabled: parsed.success,
   });
 
-  if (!parsed.success) {
-    return <StatePanel tone="error" title={V1_ERROR_MESSAGES.not_found} />;
-  }
-  if (show.isPending) {
-    return <LoadingState label="Loading the show" layout="title" />;
-  }
-  if (show.isError) {
-    return <TitleReadError error={show.error} retry={() => show.refetch()} />;
-  }
-
-  const detail = show.data;
-  const regularSeasons = detail.seasons.filter((season) => !season.isSpecials);
-
   return (
-    <TitleScroll title={detail.name} backdropUrl={detail.backdropUrl}>
-      <DetailHeader
-        title={detail.name}
-        posterUrl={detail.posterUrl}
-        type="tv"
-        communityRating={detail.tmdbRating}
-        voteCount={detail.tmdbVoteCount}
-        genres={detail.genres}
-        status={detail.status}
-        ageRating={ageRatingOf(extras.data)}
-        meta={[
-          formatAirSpan({
-            firstAirYear: detail.firstAirYear,
-            lastAirYear: detail.lastAirDate
-              ? Number(detail.lastAirDate.slice(0, 4))
-              : null,
-            status: detail.status,
-          }),
-          regularSeasons.length > 0
-            ? `${regularSeasons.length} ${regularSeasons.length === 1 ? "season" : "seasons"}`
-            : null,
-          detail.numberOfEpisodes > 0
-            ? formatEpisodeCount(detail.numberOfEpisodes)
-            : null,
-        ]}
-      />
-      <View className="gap-5 px-4 pt-5">
-        <TrailerButton trailer={extras.data?.trailer} title={detail.name} />
-        <TrackingGate signedIn={session !== null} state={state}>
-          {(data) => <ShowTracking show={detail} state={data} />}
-        </TrackingGate>
-        <Tagline text={detail.tagline} />
-        <Overview text={detail.overview} />
-        <CrewLines lines={[{ label: "Created by", names: detail.createdBy }]} />
-        <Seasons
-          show={detail}
-          state={session !== null ? (state.data ?? null) : null}
-        />
-      </View>
-      <View className="pt-6">
-        <WhereToWatch read={extras} />
-      </View>
-      <View className="pt-6">
-        <CastRow
-          cast={detail.cast}
-          emptyMessage="TMDB lists no cast for this show."
-        />
-      </View>
-      <MoreLikeThisSlot read={extras} type="tv" />
-      <View className="pt-6">
-        <FactsPanel facts={showFacts(detail)} />
-      </View>
-      <CatalogNotice type="tv" />
-    </TitleScroll>
+    <TitleRead
+      valid={parsed.success}
+      read={show}
+      loadingLabel="Loading the show"
+    >
+      {(detail) => {
+        const regularSeasons = detail.seasons.filter(
+          (season) => !season.isSpecials,
+        );
+
+        return (
+          <TitleScroll title={detail.name} backdropUrl={detail.backdropUrl}>
+            <DetailHeader
+              title={detail.name}
+              posterUrl={detail.posterUrl}
+              type="tv"
+              communityRating={detail.tmdbRating}
+              voteCount={detail.tmdbVoteCount}
+              genres={detail.genres}
+              status={detail.status}
+              ageRating={ageRatingOf(extras.data)}
+              meta={[
+                formatAirSpan({
+                  firstAirYear: detail.firstAirYear,
+                  lastAirYear: detail.lastAirDate
+                    ? Number(detail.lastAirDate.slice(0, 4))
+                    : null,
+                  status: detail.status,
+                }),
+                regularSeasons.length > 0
+                  ? `${regularSeasons.length} ${regularSeasons.length === 1 ? "season" : "seasons"}`
+                  : null,
+                detail.numberOfEpisodes > 0
+                  ? formatEpisodeCount(detail.numberOfEpisodes)
+                  : null,
+              ]}
+            />
+            <View className="gap-5 px-4 pt-5">
+              <TrailerButton
+                trailer={extras.data?.trailer}
+                title={detail.name}
+              />
+              <TrackingGate signedIn={session !== null} state={state}>
+                {(data) => <ShowTracking show={detail} state={data} />}
+              </TrackingGate>
+              <Tagline text={detail.tagline} />
+              <Overview text={detail.overview} />
+              <CrewLines
+                lines={[{ label: "Created by", names: detail.createdBy }]}
+              />
+              <Seasons
+                show={detail}
+                state={session !== null ? (state.data ?? null) : null}
+              />
+            </View>
+            <View className="pt-6">
+              <WhereToWatch read={extras} />
+            </View>
+            <View className="pt-6">
+              <CastRow
+                cast={detail.cast}
+                emptyMessage="TMDB lists no cast for this show."
+              />
+            </View>
+            <MoreLikeThisSlot read={extras} type="tv" />
+            <View className="pt-6">
+              <FactsPanel facts={showFacts(detail)} />
+            </View>
+            <CatalogNotice type="tv" />
+          </TitleScroll>
+        );
+      }}
+    </TitleRead>
   );
 }
 

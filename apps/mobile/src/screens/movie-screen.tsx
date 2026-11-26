@@ -1,4 +1,3 @@
-import { V1_ERROR_MESSAGES } from "@bestats/core/api/v1/errors";
 import { movieIdParamSchema, type V1Movie } from "@bestats/core/api/v1/movie";
 import type { V1MovieTitleState } from "@bestats/core/api/v1/titles";
 import {
@@ -22,7 +21,6 @@ import { useState } from "react";
 import { View } from "react-native";
 import { CastRow } from "@/components/cast-row";
 import { CatalogNotice } from "@/components/catalog-notice";
-import { LoadingState, StatePanel } from "@/components/centered-state";
 import { DetailHeader } from "@/components/detail-header";
 import { GlassButton } from "@/components/glass-button";
 import { RatingStar } from "@/components/glass-pill";
@@ -49,7 +47,7 @@ import { useSession } from "@/lib/session";
 import { useMovieWrite } from "@/lib/title-writes";
 import { fetchTitleState, trackingKeys } from "@/lib/tracking";
 
-import { TitleReadError } from "./title-states";
+import { TitleRead } from "./title-states";
 
 /**
  * A movie's page (prompts/mobile-title-tracking.md, decision 5): the catalog
@@ -84,63 +82,65 @@ export function MovieScreen() {
     enabled: parsedId.success,
   });
 
-  if (!parsedId.success) {
-    return <StatePanel tone="error" title={V1_ERROR_MESSAGES.not_found} />;
-  }
-  if (movie.isPending) {
-    return <LoadingState label="Loading the movie" layout="title" />;
-  }
-  if (movie.isError) {
-    return <TitleReadError error={movie.error} retry={() => movie.refetch()} />;
-  }
-
-  const detail = movie.data;
   return (
-    <TitleScroll title={detail.title} backdropUrl={detail.backdropUrl}>
-      <DetailHeader
-        title={detail.title}
-        posterUrl={detail.posterUrl}
-        type="movie"
-        communityRating={detail.tmdbRating}
-        voteCount={detail.tmdbVoteCount}
-        genres={detail.genres}
-        status={detail.status}
-        ageRating={ageRatingOf(extras.data)}
-        meta={[
-          formatAirDate(detail.releaseDate) ??
-            (detail.releaseYear ? String(detail.releaseYear) : null),
-          detail.runtimeMinutes ? formatRuntime(detail.runtimeMinutes) : null,
-        ]}
-      />
-      <View className="gap-5 px-4 pt-5">
-        <TrailerButton trailer={extras.data?.trailer} title={detail.title} />
-        <TrackingGate signedIn={session !== null} state={state}>
-          {(data) => <MovieTracking movie={detail} state={data} />}
-        </TrackingGate>
-        <Tagline text={detail.tagline} />
-        <Overview text={detail.overview} missing={MOVIE_OVERVIEW_MISSING} />
-        <CrewLines
-          lines={[
-            { label: "Directed by", names: detail.directors },
-            { label: "Written by", names: detail.writers },
-          ]}
-        />
-      </View>
-      <View className="pt-6">
-        <WhereToWatch read={extras} />
-      </View>
-      <View className="pt-6">
-        <CastRow
-          cast={detail.cast}
-          emptyMessage="TMDB lists no cast for this movie."
-        />
-      </View>
-      <MoreLikeThisSlot read={extras} type="movie" />
-      <View className="pt-6">
-        <FactsPanel facts={movieFacts(detail)} />
-      </View>
-      <CatalogNotice type="movie" />
-    </TitleScroll>
+    <TitleRead
+      valid={parsedId.success}
+      read={movie}
+      loadingLabel="Loading the movie"
+    >
+      {(detail) => (
+        <TitleScroll title={detail.title} backdropUrl={detail.backdropUrl}>
+          <DetailHeader
+            title={detail.title}
+            posterUrl={detail.posterUrl}
+            type="movie"
+            communityRating={detail.tmdbRating}
+            voteCount={detail.tmdbVoteCount}
+            genres={detail.genres}
+            status={detail.status}
+            ageRating={ageRatingOf(extras.data)}
+            meta={[
+              formatAirDate(detail.releaseDate) ??
+                (detail.releaseYear ? String(detail.releaseYear) : null),
+              detail.runtimeMinutes
+                ? formatRuntime(detail.runtimeMinutes)
+                : null,
+            ]}
+          />
+          <View className="gap-5 px-4 pt-5">
+            <TrailerButton
+              trailer={extras.data?.trailer}
+              title={detail.title}
+            />
+            <TrackingGate signedIn={session !== null} state={state}>
+              {(data) => <MovieTracking movie={detail} state={data} />}
+            </TrackingGate>
+            <Tagline text={detail.tagline} />
+            <Overview text={detail.overview} missing={MOVIE_OVERVIEW_MISSING} />
+            <CrewLines
+              lines={[
+                { label: "Directed by", names: detail.directors },
+                { label: "Written by", names: detail.writers },
+              ]}
+            />
+          </View>
+          <View className="pt-6">
+            <WhereToWatch read={extras} />
+          </View>
+          <View className="pt-6">
+            <CastRow
+              cast={detail.cast}
+              emptyMessage="TMDB lists no cast for this movie."
+            />
+          </View>
+          <MoreLikeThisSlot read={extras} type="movie" />
+          <View className="pt-6">
+            <FactsPanel facts={movieFacts(detail)} />
+          </View>
+          <CatalogNotice type="movie" />
+        </TitleScroll>
+      )}
+    </TitleRead>
   );
 }
 

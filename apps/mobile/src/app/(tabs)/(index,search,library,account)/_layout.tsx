@@ -13,10 +13,11 @@ import {
 } from "@/theme/stack-options";
 
 /**
- * Search, Library and Account have no background layer of their own
- * (`tabScreenLayout`): Account for its large title, Search and Library
- * because they once had one and the shared layer behind them looks the same
- * (prompts/mobile-media-switch-glass.md, decision 5).
+ * Search, Library and Account have no background layer of their own: Account
+ * for its large title, Search and Library because they once had one and the
+ * shared layer behind them looks the same
+ * (prompts/mobile-media-switch-glass.md, decision 5). `tabScreenLayout` also
+ * leaves the layer off movie, show and game pages, which draw their own.
  */
 const TAB_SCREEN_LAYOUT = tabScreenLayout(["search", "library", "account"]);
 
