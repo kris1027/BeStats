@@ -2,6 +2,7 @@
   "name": "bestats",
   "version": "0.1.0",
   "private": true,
+  "license": "UNLICENSED",
   "scripts": {
     "dev": "pnpm --filter @bestats/web dev",
     "dev:docker": "./scripts/dev-docker.sh",
