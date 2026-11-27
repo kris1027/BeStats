@@ -68,6 +68,30 @@ The mobile app, captured on 2026-11-27 in the iOS Simulator with live TMDB and I
 
 Every planned feature of the web app has shipped: features 1 to 25 in the [movie and TV scope](docs/scope/scope.md) and G1 to G10 in the [games scope](docs/scope/games.md). The mobile app follows [spec 0033](docs/specs/0033-mobile-app-expo/index.md); its store release is still to come. The decisions behind each feature are in [docs/specs/](docs/specs/), and the plans for smaller changes in [prompts/](prompts/).
 
+## How it fits together
+
+```mermaid
+flowchart LR
+  phone["Mobile app<br/>Expo, iPhone"]
+  browser["Browser"]
+  subgraph web["Next.js on Netlify"]
+    api["API<br/>/api/v1"]
+    pages["Web pages"]
+  end
+  tmdb["TMDB<br/>movies and TV"]
+  igdb["IGDB<br/>games"]
+  supabase["Supabase<br/>accounts and your data"]
+
+  phone --> api
+  phone -. sign in .-> supabase
+  browser --> pages
+  web --> tmdb
+  web --> igdb
+  web --> supabase
+```
+
+The mobile app signs in with Supabase Auth directly and reaches the catalog and your data only through `/api/v1`. The TMDB token and IGDB credentials stay on the server, and Postgres row level security keeps every user's data to its owner.
+
 ## Local setup
 
 You will want Node.js 22 (the version CI and Vercel use), the pnpm version pinned in the `packageManager` field of [package.json](package.json), and a running Docker compatible container runtime for local Supabase and the database tests. For the app you also need Xcode with the iOS Simulator.
@@ -120,14 +144,22 @@ Open [localhost:3000](http://localhost:3000): `/` redirects to `/shows`; movies 
 
 Three ways, from `apps/mobile`. The details are in [apps/mobile/AGENTS.md](apps/mobile/AGENTS.md).
 
-**In the iOS Simulator.** The first run builds the development app and installs it; after that, starting Metro is enough:
+<details>
+<summary><strong>In the iOS Simulator</strong></summary>
+
+The first run builds the development app and installs it; after that, starting Metro is enough:
 
 ```sh
 npx expo run:ios
 npx expo start --dev-client
 ```
 
-**On your iPhone over Wi‑Fi, with Expo Go.** A phone can't reach your Mac's `localhost`, so give the app your Mac's network address in a gitignored `apps/mobile/.env.development.local`. Print the address with `ipconfig getifaddr en0`:
+</details>
+
+<details>
+<summary><strong>On your iPhone over Wi‑Fi, with Expo Go</strong></summary>
+
+A phone can't reach your Mac's `localhost`, so give the app your Mac's network address in a gitignored `apps/mobile/.env.development.local`. Print the address with `ipconfig getifaddr en0`:
 
 ```sh
 EXPO_PUBLIC_API_BASE_URL=http://<your-mac-ip>:3000
@@ -140,7 +172,12 @@ Then start Metro and scan the QR code with the iPhone camera. The phone and the 
 npx expo start --go --lan
 ```
 
-**On your iPhone anywhere, with a free Apple ID.** A Release build carries its own code and talks to production, so it works on mobile data with no Mac running. Put the production values in a gitignored `apps/mobile/.env.production.local`. With your Apple ID added in Xcode and the phone plugged in:
+</details>
+
+<details>
+<summary><strong>On your iPhone anywhere, with a free Apple ID</strong></summary>
+
+A Release build carries its own code and talks to production, so it works on mobile data with no Mac running. Put the production values in a gitignored `apps/mobile/.env.production.local`. With your Apple ID added in Xcode and the phone plugged in:
 
 ```sh
 APP_VARIANT=personal npx expo prebuild --clean -p ios
@@ -148,6 +185,8 @@ APP_VARIANT=personal npx expo run:ios --configuration Release --device <udid> --
 ```
 
 `APP_VARIANT=personal` installs it as "BeStats Personal" under its own bundle ID, so the store ID stays free. Apple stops apps signed with a free Apple ID from opening after 7 days; rerun the second command to reinstall. Your data lives on the server, so nothing is lost.
+
+</details>
 
 #### Local test accounts
 
