@@ -1,27 +1,54 @@
-# BeStats
+<h1 align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/brand/bestats-logo-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="docs/brand/bestats-logo-light.svg">
+    <img src="docs/brand/bestats-logo-light.svg" alt="BeStats" width="280">
+  </picture>
+</h1>
 
-[![Checks](https://github.com/kris1027/BeStats/actions/workflows/checks.yml/badge.svg?branch=main)](https://github.com/kris1027/BeStats/actions/workflows/checks.yml)
+<p align="center">
+  <strong>Track every show, movie and game you watch and play: episodes, ratings and what's next.</strong>
+</p>
 
-A tracker for TV shows, movies and games, inspired by TV Time, as a web app and a mobile app. You browse and search the catalog, keep a private list of what you plan to watch or play, mark movies and episodes watched, and rate what you finish. BeStats tracks what you watch and play; it does not stream anything.
+<p align="center">
+  <a href="https://github.com/kris1027/BeStats/actions/workflows/checks.yml"><img src="https://img.shields.io/github/actions/workflow/status/kris1027/BeStats/checks.yml?branch=main&style=flat-square&label=checks&labelColor=000000" alt="Checks"></a>
+  <img src="https://img.shields.io/badge/Next.js-16-333333?style=flat-square&logo=nextdotjs&logoColor=white&labelColor=000000" alt="Next.js 16">
+  <img src="https://img.shields.io/badge/Expo-SDK%2058-333333?style=flat-square&logo=expo&logoColor=white&labelColor=000000" alt="Expo SDK 58">
+  <img src="https://img.shields.io/badge/Supabase-Postgres%20%2B%20Auth-333333?style=flat-square&logo=supabase&logoColor=white&labelColor=000000" alt="Supabase">
+  <img src="https://img.shields.io/badge/TypeScript-strict-333333?style=flat-square&logo=typescript&logoColor=white&labelColor=000000" alt="TypeScript strict">
+  <img src="https://img.shields.io/badge/Platform-iOS-333333?style=flat-square&logo=apple&logoColor=white&labelColor=000000" alt="Platform: iOS">
+</p>
 
-- **Web:** built with Next.js. It also serves the API the mobile app uses. Netlify hosts it at [bestats-app.netlify.app](https://bestats-app.netlify.app) since 2026-11-25; the Vercel deployment at [bestats-app.vercel.app](https://bestats-app.vercel.app) stays as the fallback.
-- **Mobile:** an Expo app for iPhone, reading the catalog and your data through that API.
+<p align="center">
+  <img src="docs/screenshots/mobile-library-shows.jpg" alt="Library Up next page with tracked shows and the next episode of each" width="250">
+  <img src="docs/screenshots/mobile-show-page.jpg" alt="Severance title screen with Tracking, 15 of 19 episodes watched and the next episode" width="250">
+  <img src="docs/screenshots/mobile-game-page.jpg" alt="Baldur's Gate III set to Finished with a personal score of 10" width="250">
+</p>
+
+BeStats is a tracker for TV shows, movies and games, inspired by TV Time, as a web app and an iPhone app. Browse and search the catalog, keep a private list of what you plan to watch or play, mark movies and episodes watched, and rate what you finish. It tracks what you watch and play; it never streams anything.
+
+- **Web:** Next.js, which also serves the API the mobile app uses.
+- **Mobile:** an Expo app for iPhone that reads the catalog and your data through that API.
 
 TMDB supplies movie and TV metadata, IGDB supplies game metadata, and Supabase stores accounts and your private data, so both apps show the same library. The stack and product rules live in [AGENTS.md](AGENTS.md); installed versions live in each `package.json`.
 
-> **The website is temporarily paused** (since 2026-11-21) to stay within the free hosting plans: its pages answer `403`, while the API, `/privacy` and `/terms` stay up and the mobile app works as usual. On Netlify the `WEBSITE_OFF=on` variable turns the pages off; on Vercel a firewall rule does. Everything still runs locally, and [docs/deploy.md](docs/deploy.md), sections 5 and 13, explains how to switch it back on.
+> [!NOTE]
+> The website is paused since 2026-11-21 to stay within the free hosting plans: its pages answer `403`, while the API, `/privacy` and `/terms` stay up and the mobile app works as usual. [Deployment](#deployment) explains how to switch it back on.
 
 ## What it does
 
-- **Catalog:** shows, movies and games, each with a home page of rows and paged lists (trending, popular, top rated and more), plus title pages with cast, seasons and episodes.
-- **Search:** title search with genre, year and minimum community rating filters, for all three media types, plus a Platforms filter for games in the mobile app; shareable URLs on the web.
-- **Accounts:** email and password sign in. Google sign in is planned but not built yet.
-- **Shows:** mark single episodes or whole seasons watched (only episodes that already aired), rate episodes from 1 to 10, and see season and show ratings calculated from your episode scores. Tracking a show is separate from your history, so stopping it keeps every mark and rating.
-- **Movies:** plan a movie, or mark it watched and rate it from its release day.
-- **Games:** set Want to play, Playing or Finished by hand, and rate a game once you play it.
-- **Library:** a SHOWS | MOVIES | GAMES switch with the pages for each type: Up next, Upcoming and Watched for shows; Watchlist, Coming soon and Watched for movies; Coming soon, Want to play, Playing and Finished for games. Shows and movies land on the right page by themselves, based on what you watched and what has aired; games follow the status you set.
+| Shows | Movies | Games |
+| --- | --- | --- |
+| Mark single episodes or whole seasons watched, only episodes that already aired. | Plan a movie, or mark it watched once it is out. | Set Want to play, Playing or Finished by hand. |
+| Rate episodes from 1 to 10; season and show ratings are calculated from your episode scores. | Rate it from 1 to 10 after you watch it. | Rate a game once you play it. |
+| Stop tracking a show and keep every mark and rating. | | |
+| Library: Up next, Upcoming and Watched. | Library: Watchlist, Coming soon and Watched. | Library: Coming soon, Want to play, Playing and Finished. |
 
-Every personal rating is kept apart from the TMDB or IGDB community rating, and is labelled that way.
+- **Catalog:** a home page of rows and paged lists (trending, popular, top rated and more) for each type, plus title pages with cast, seasons and episodes.
+- **Search:** title search with genre, year and minimum community rating filters for all three types, plus a Platforms filter for games in the mobile app; shareable URLs on the web.
+- **Library:** a SHOWS | MOVIES | GAMES switch. Shows and movies land on the right page by themselves, based on what you watched and what has aired; games follow the status you set.
+- **Ratings:** every personal rating is kept apart from the TMDB or IGDB community rating, and labelled that way.
+- **Accounts:** email and password sign in. Google sign in is planned but not built yet.
 
 **Platforms:** the web app runs in any modern browser. On mobile, iOS is the tested platform; Android is configured in `app.json` but has not been run yet. The mobile app takes the web's glass look (Inter type, frosted panels, rating pills) with a native feel: large titles, long press menus on cards, swipe to mark episodes watched, haptics and a launch animation.
 
@@ -163,7 +190,7 @@ The live checks read their credentials from the environment or `apps/web/.env.lo
 
 ## Deployment
 
-Since 2026-11-25 Netlify is the primary host for the web app and its API, on the Free plan, with functions in Ohio. It builds only when you deploy by hand (each production deploy costs 15 of the 300 monthly credits), and `apps/web/netlify.toml` holds the build, the `/api` rate limit and the website off rules. Vercel stays as the fallback, in Frankfurt (`fra1`) next to the Supabase project in `eu-central-1`; its Git deployments are off while Netlify serves. The phone app picks its host through `EXPO_PUBLIC_API_BASE_URL`. Schema and auth settings reach the cloud only from this repo, through `supabase db push --remote` and `supabase config push` (Supabase CLI v3 needs `--remote` to target the cloud). The runbook, including the firewall rules and the Netlify setup, is [docs/deploy.md](docs/deploy.md). The app is not in the App Store yet; EAS builds and store release are planned in [spec 0033](docs/specs/0033-mobile-app-expo/index.md).
+Since 2026-11-25 Netlify is the primary host for the web app and its API, at [bestats-app.netlify.app](https://bestats-app.netlify.app), on the Free plan, with functions in Ohio. It builds only when you deploy by hand (each production deploy costs 15 of the 300 monthly credits), and `apps/web/netlify.toml` holds the build, the `/api` rate limit and the website off rules. Vercel stays as the fallback at [bestats-app.vercel.app](https://bestats-app.vercel.app), in Frankfurt (`fra1`) next to the Supabase project in `eu-central-1`; its Git deployments are off while Netlify serves. The phone app picks its host through `EXPO_PUBLIC_API_BASE_URL`. Schema and auth settings reach the cloud only from this repo, through `supabase db push --remote` and `supabase config push` (Supabase CLI v3 needs `--remote` to target the cloud). The runbook, including the firewall rules and the Netlify setup, is [docs/deploy.md](docs/deploy.md). While the website is paused, the `WEBSITE_OFF=on` variable turns its pages off on Netlify and a firewall rule does on Vercel; sections 5 and 13 of the runbook switch it back on. The app is not in the App Store yet; EAS builds and store release are planned in [spec 0033](docs/specs/0033-mobile-app-expo/index.md).
 
 ## Repository map
 
