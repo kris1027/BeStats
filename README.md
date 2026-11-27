@@ -4,17 +4,17 @@
 
 A tracker for TV shows, movies and games, inspired by TV Time, as a web app and a mobile app. You browse and search the catalog, keep a private list of what you plan to watch or play, mark movies and episodes watched, and rate what you finish. BeStats tracks what you watch and play; it does not stream anything.
 
-- **Web:** [bestats-app.vercel.app](https://bestats-app.vercel.app), built with Next.js. It also serves the API the mobile app uses.
+- **Web:** built with Next.js. It also serves the API the mobile app uses. Netlify hosts it at [bestats-app.netlify.app](https://bestats-app.netlify.app) since 2026-11-25; the Vercel deployment at [bestats-app.vercel.app](https://bestats-app.vercel.app) stays as the fallback.
 - **Mobile:** an Expo app for iPhone, reading the catalog and your data through that API.
 
 TMDB supplies movie and TV metadata, IGDB supplies game metadata, and Supabase stores accounts and your private data, so both apps show the same library. The stack and product rules live in [AGENTS.md](AGENTS.md); installed versions live in each `package.json`.
 
-> **The website is temporarily paused** (since 2026-11-21) to stay within the Vercel Hobby plan: its pages answer `403`, while the API, `/privacy` and `/terms` stay up and the mobile app works as usual. Everything still runs locally, and [docs/deploy.md](docs/deploy.md), section 5, explains how to switch it back on.
+> **The website is temporarily paused** (since 2026-11-21) to stay within the free hosting plans: its pages answer `403`, while the API, `/privacy` and `/terms` stay up and the mobile app works as usual. On Netlify the `WEBSITE_OFF=on` variable turns the pages off; on Vercel a firewall rule does. Everything still runs locally, and [docs/deploy.md](docs/deploy.md), sections 5 and 13, explains how to switch it back on.
 
 ## What it does
 
 - **Catalog:** shows, movies and games, each with a home page of rows and paged lists (trending, popular, top rated and more), plus title pages with cast, seasons and episodes.
-- **Search:** title search with genre, year and minimum community rating filters, for all three media types; shareable URLs on the web.
+- **Search:** title search with genre, year and minimum community rating filters, for all three media types, plus a Platforms filter for games in the mobile app; shareable URLs on the web.
 - **Accounts:** email and password sign in. Google sign in is planned but not built yet.
 - **Shows:** mark single episodes or whole seasons watched (only episodes that already aired), rate episodes from 1 to 10, and see season and show ratings calculated from your episode scores. Tracking a show is separate from your history, so stopping it keeps every mark and rating.
 - **Movies:** plan a movie, or mark it watched and rate it from its release day.
@@ -23,11 +23,11 @@ TMDB supplies movie and TV metadata, IGDB supplies game metadata, and Supabase s
 
 Every personal rating is kept apart from the TMDB or IGDB community rating, and is labelled that way.
 
-**Platforms:** the web app runs in any modern browser. On mobile, iOS is the tested platform; Android is configured in `app.json` but has not been run yet.
+**Platforms:** the web app runs in any modern browser. On mobile, iOS is the tested platform; Android is configured in `app.json` but has not been run yet. The mobile app takes the web's glass look (Inter type, frosted panels, rating pills) with a native feel: large titles, long press menus on cards, swipe to mark episodes watched, haptics and a launch animation.
 
 ## Screenshots
 
-The mobile app, captured on 2026-11-21 in the iOS Simulator with live TMDB and IGDB content and the local test account. Catalog titles and ratings change over time.
+The mobile app, captured on 2026-11-21 in the iOS Simulator, before the restyle to the web's glass look with live TMDB and IGDB content and the local test account. Catalog titles and ratings change over time.
 
 | Shows home | Show page | Search | Library |
 | --- | --- | --- | --- |
@@ -159,7 +159,7 @@ The live checks read their credentials from the environment or `apps/web/.env.lo
 
 ## Deployment
 
-Vercel hosts the web app and its API in Frankfurt (`fra1`), next to the Supabase project in `eu-central-1`. Schema and auth settings reach the cloud only from this repo, through `supabase db push --remote` and `supabase config push`. The runbook, including the firewall rules, is [docs/deploy.md](docs/deploy.md). The app is not in the App Store yet; EAS builds and store release are planned in [spec 0033](docs/specs/0033-mobile-app-expo/index.md).
+Since 2026-11-25 Netlify is the primary host for the web app and its API, on the Free plan, with functions in Ohio. It builds only when you deploy by hand (each production deploy costs 15 of the 300 monthly credits), and `apps/web/netlify.toml` holds the build, the `/api` rate limit and the website off rules. Vercel stays as the fallback, in Frankfurt (`fra1`) next to the Supabase project in `eu-central-1`; its Git deployments are off while Netlify serves. The phone app picks its host through `EXPO_PUBLIC_API_BASE_URL`. Schema and auth settings reach the cloud only from this repo, through `supabase db push --remote` and `supabase config push` (Supabase CLI v3 needs `--remote` to target the cloud). The runbook, including the firewall rules and the Netlify setup, is [docs/deploy.md](docs/deploy.md). The app is not in the App Store yet; EAS builds and store release are planned in [spec 0033](docs/specs/0033-mobile-app-expo/index.md).
 
 ## Repository map
 
@@ -172,7 +172,7 @@ Vercel hosts the web app and its API in Frankfurt (`fra1`), next to the Supabase
 | [apps/web/lib/igdb/](apps/web/lib/igdb/) | Server only IGDB access, token handling, catalog filter and fixtures. |
 | [apps/web/lib/supabase/](apps/web/lib/supabase/) | Browser and server clients, plus the generated database types. |
 | [apps/web/lib/](apps/web/lib/) | Auth, tracking, rating and library rules, SEO, legal facts and helpers. |
-| [apps/web/proxy.ts](apps/web/proxy.ts) | Request middleware: session refresh and early 404s. |
+| [apps/web/proxy.ts](apps/web/proxy.ts) | Request middleware: session refresh, early 404s and the website off `403`. |
 | [packages/core/](packages/core/) | `@bestats/core`: the pure rules, API shapes, messages and colour tokens both apps share. |
 | [supabase/](supabase/) | Local configuration, declarative schemas, migrations, seed and database tests. |
 | [scripts/](scripts/) | The local dev stack, the local API checks and the database type check. |
