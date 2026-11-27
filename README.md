@@ -27,11 +27,15 @@ Every personal rating is kept apart from the TMDB or IGDB community rating, and 
 
 ## Screenshots
 
-The mobile app, captured on 2026-11-21 in the iOS Simulator, before the restyle to the web's glass look with live TMDB and IGDB content and the local test account. Catalog titles and ratings change over time.
+The mobile app, captured on 2026-11-27 in the iOS Simulator with live TMDB and IGDB content. The library belongs to a local demo account, filled through the API with 24 tracked shows, about 45 movies and 27 games. Catalog titles and community ratings change over time.
 
-| Shows home | Show page | Search | Library |
+| Shows: Up next | Shows: Watched | Show page | Season page |
 | --- | --- | --- | --- |
-| ![Shows home with the Trending this week and Popular rows](docs/screenshots/mobile-shows-home.jpg) | ![Severance title screen with Tracking, progress and the next episode](docs/screenshots/mobile-show-page.jpg) | ![Game search filtered to role-playing games from 2025 rated IGDB 7 or more](docs/screenshots/mobile-search-games.jpg) | ![Library Up next page with six tracked shows and their next episode](docs/screenshots/mobile-library-up-next.jpg) |
+| ![Library Up next page with tracked shows and the next episode of each](docs/screenshots/mobile-library-shows.jpg) | ![Library Watched page with finished and caught up shows and their calculated show ratings](docs/screenshots/mobile-library-shows-watched.jpg) | ![Severance title screen with Tracking, 15 of 19 episodes watched and the next episode](docs/screenshots/mobile-show-page.jpg) | ![Severance season 1 watched, with a season rating of 9.0 from 9 rated episodes](docs/screenshots/mobile-season-page.jpg) |
+
+| Movies: Watched | Movie page | Games: Finished | Game page |
+| --- | --- | --- | --- |
+| ![Library Watched movies page with a personal score on each poster](docs/screenshots/mobile-library-movies.jpg) | ![Dune: Part Two marked Watched with a personal score of 9](docs/screenshots/mobile-movie-page.jpg) | ![Library Finished games page with a personal score on each poster](docs/screenshots/mobile-library-games.jpg) | ![Baldur's Gate III set to Finished with a personal score of 10](docs/screenshots/mobile-game-page.jpg) |
 
 ## Development status
 
