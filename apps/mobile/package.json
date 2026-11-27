@@ -67,6 +67,7 @@
     "grain": "node scripts/grain.mts"
   },
   "private": true,
+  "license": "UNLICENSED",
   "jest": {
     "preset": "jest-expo",
     "setupFiles": [
