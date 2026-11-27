@@ -189,3 +189,7 @@ Work on a `feat/<slug>` branch and merge through a pull request. Changes to `mai
 ## Credits
 
 Movie and TV data comes from [TMDB](https://www.themoviedb.org) and game data from [IGDB](https://www.igdb.com). TMDB's required notice and the IGDB credit are on the `/terms` page.
+
+## License
+
+Copyright (c) 2026 kris1027. All rights reserved. The source is public so you can read it, but no license is granted to use, copy, modify or distribute it without written permission. See [LICENSE](LICENSE).
